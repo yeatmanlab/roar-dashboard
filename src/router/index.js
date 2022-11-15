@@ -1,45 +1,54 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { findById } from "@/helpers";
-import store from "@/store";
+import { useAuthStore } from "@/store/auth";
+
 const routes = [
   {
     path: "/",
     name: "Home",
-    component: () => import(/* webpackChunkName: "Home" */ "@/pages/Home"),
+    component: () => import(/* webpackChunkName: "Home" */ "../pages/Home.vue"),
   },
-  {
-    path: "/me",
-    name: "Profile",
-    component: () =>
-      import(/* webpackChunkName: "Profile" */ "@/pages/Profile"),
-    meta: { toTop: true, smoothScroll: true, requiresAuth: true },
-  },
+  // {
+  //   path: "/me",
+  //   name: "Profile",
+  //   component: () =>
+  //     import(/* webpackChunkName: "Profile" */ "../pages/Profile.vue"),
+  //   meta: { toTop: true, smoothScroll: true, requiresAuth: true },
+  // },
   {
     path: "/register",
     name: "Register",
     component: () =>
-      import(/* webpackChunkName: "Register" */ "@/pages/Register"),
+      import(/* webpackChunkName: "Register" */ "../pages/SignInOrRegister.vue"),
     meta: { requiresGuest: true },
   },
   {
     path: "/signin",
     name: "SignIn",
-    component: () => import(/* webpackChunkName: "SignIn" */ "@/pages/SignIn"),
+    component: () => import(/* webpackChunkName: "SignIn" */ "../pages/SignInOrRegister.vue"),
     meta: { requiresGuest: true },
   },
   {
     path: "/logout",
     name: "SignOut",
     async beforeEnter(to, from) {
-      await store.dispatch("auth/signOut");
-      return { name: "Home" };
+      const store = useAuthStore();
+      await store.signOut();
+      return { name: "SignIn" };
     },
+  },
+  {
+    path: "/enable-cookies",
+    name: "EnableCookies",
+    component: () =>
+      import(/* webpackChunkName: "Register" */ "../pages/EnableCookies.vue"),
+    meta: { requiresGuest: true },
   },
   {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () =>
-      import(/* webpackChunkName: "NotFound" */ "@/pages/NotFound"),
+      import(/* webpackChunkName: "NotFound" */ "../pages/NotFound.vue"),
   },
 ];
 const router = createRouter({
@@ -53,18 +62,20 @@ const router = createRouter({
   },
 });
 router.afterEach(() => {
-  store.dispatch("clearItems", {
-    modules: ["categories", "forums", "posts", "threads"],
-  });
+  // const store = useAuthStore();
+  // store.dispatch("clearItems", {
+  //   modules: ["categories", "forums", "posts", "threads"],
+  // });
 });
 
 router.beforeEach(async (to, from) => {
-  await store.dispatch("auth/initAuthentication");
-  store.dispatch("unsubscribeAllSnapshots");
-  if (to.meta.requiresAuth && !store.state.auth.authId) {
+  const store = useAuthStore();
+  // await store.dispatch("auth/initAuthentication");
+  // store.dispatch("unsubscribeAllSnapshots");
+  if (to.meta.requiresAuth && !store.isAuthenticated) {
     return { name: "SignIn", query: { redirectTo: to.path } };
   }
-  if (to.meta.requiresGuest && store.state.auth.authId) {
+  if (to.meta.requiresGuest && store.isAuthenticated) {
     return { name: "Home" };
   }
 });

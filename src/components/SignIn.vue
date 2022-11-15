@@ -109,8 +109,8 @@
 import { reactive, ref } from "vue";
 import { email, required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
-import { useAuthStore } from "../store/auth";
-import { isMobileBrowser } from "../helpers";
+import { useAuthStore } from "@/store/auth";
+import { isMobileBrowser } from "@/helpers";
 
 export default {
   props: {

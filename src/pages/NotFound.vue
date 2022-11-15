@@ -1,7 +1,10 @@
 <template>
   <div class="col-full text-center">
-    <h1>Not Found</h1>
-    <router-link :to="{ name: 'Home' }">Click here to go home!</router-link>
+    <h1>Page not found. Sorry!</h1>
+    <p>We couldn't find that page.</p>
+    <router-link :to="{ name: 'Home' }">
+      <Button label="Click here to go to the home page" icon="pi pi-home" />
+    </router-link>
   </div>
 </template>
 

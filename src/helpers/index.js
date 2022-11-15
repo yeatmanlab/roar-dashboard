@@ -1,6 +1,6 @@
-import { query, where, getDocs } from "@firebase/firestore";
+import { arrayUnion, query, where, getDocs, updateDoc, doc } from "@firebase/firestore";
 import { RoarUser } from "@bdelab/roar-firekit";
-import { rootDoc } from "../firebaseInit.js";
+import { rootDoc, adminCollection } from "../firebaseInit.js";
 
 export const isMobileBrowser = () => {
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -17,6 +17,25 @@ export const isMobileBrowser = () => {
   return false;
 };
 
+export const getRolesFromAdminCollection = async (uid) => {
+  const q = query(adminCollection)
+  const querySnapshot = await getDocs(q);
+
+  const roles = {};
+  querySnapshot.forEach((doc) => {
+    roles[doc.id.replace(/s$/, '')] = doc.data().users.includes(uid);
+  });
+  return roles;
+};
+
+export const addUserToRequests = async (uid) => {
+  const requestsRef = doc(adminCollection, 'requests');
+
+  await updateDoc(requestsRef, {
+    users: arrayUnion(uid)
+  });
+};
+
 export const getDocsFromQuery = async (collection, field, value) => {
   const q = query(collection, where(field, "==", value));
   const querySnapshot = await getDocs(q);
@@ -30,7 +49,7 @@ export const getDocsFromQuery = async (collection, field, value) => {
   }
 };
 
-export const userToFireStore = async (userEmail, firebaseUid) => {
+export const userToFirestore = async (userEmail, firebaseUid) => {
   const user = new RoarUser({
     id: userEmail,
     firebaseUid,

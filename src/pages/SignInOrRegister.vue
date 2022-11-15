@@ -1,7 +1,7 @@
 <template>
-  <div class="mt-8 flex align-items-center justify-content-center">
+  <div class="flex align-items-center justify-content-center">
     <TabView>
-      <TabPanel header="Log in">
+      <TabPanel header="Sign in">
         <SignIn :isRegistering="false" />
       </TabPanel>
       <TabPanel header="Register">
@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import SignIn from "../pages/SignIn.vue";
+import SignIn from "@/components/SignIn.vue";
 </script>
 
 <style></style>
