@@ -85,6 +85,36 @@
         </span>
       </div>
 
+      <div class="field col-12 md:col-6 mt-2">
+        <span class="p-float-label">
+          <MultiSelect
+            inputId="roaruids"
+            v-model="queryStore.selectedRoarUids"
+            :options="queryStore.roarUids"
+            optionLabel="roarUid"
+            :filter="true"
+            filterPlaceholder="Filter by ROAR UID"
+            class="multiselect-custom"
+            :loading="!queryStore.roarUidsReady"
+            :selectAll="true"
+          />
+          <label for="roaruids">ROAR UID / PID</label>
+        </span>
+      </div>
+
+      <div class="field col-12 md:col-6 mt-2">
+        <span class="p-float-label">
+          <MultiSelect
+            inputId="studies"
+            v-model="queryStore.selectedStudies"
+            :options="queryStore.studies"
+            optionLabel="Study"
+            display="chip"
+          />
+          <label for="studies">Studies</label>
+        </span>
+      </div>
+
       <div class="field col-12 md:col-4 mt-2">
         <span class="p-float-label">
           <MultiSelect
@@ -123,35 +153,6 @@
           <label for="classes">Classes</label>
         </span>
       </div>
-
-      <div class="field col-12 md:col-6 mt-2">
-        <span class="p-float-label">
-          <MultiSelect
-            inputId="studies"
-            v-model="queryStore.selectedStudies"
-            :options="queryStore.studies"
-            optionLabel="Study"
-            display="chip"
-          />
-          <label for="studies">Studies</label>
-        </span>
-      </div>
-
-      <div class="field col-12 md:col-6 mt-2">
-        <span class="p-float-label">
-          <MultiSelect
-            inputId="roaruids"
-            v-model="queryStore.selectedRoarUids"
-            :options="queryStore.roarUids"
-            optionLabel="roarUid"
-            :filter="true"
-            filterPlaceholder="Filter by ROAR UID"
-            class="multiselect-custom"
-            :loading="!queryStore.roarUidsReady"
-          />
-          <label for="roaruids">ROAR UID / PID</label>
-        </span>
-      </div>
     </div>
   </Panel>
 
@@ -185,6 +186,7 @@ export default {
 
     watch(selectedRootPath, queryStore.getTasks);
     watch(selectedTasks, queryStore.getVariants);
+    watch([selectedRootPath, selectedTasks, selectedVariants], queryStore.getUsers);
 
     return {
       queryStore,
