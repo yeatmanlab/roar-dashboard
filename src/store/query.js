@@ -1,16 +1,16 @@
 import { defineStore } from "pinia";
 import {
   collection,
-  collectionGroup,
   doc,
   getDocs,
   query,
+  where,
 } from "@firebase/firestore";
 import { db } from "../firebaseInit.js";
 
-export const useFireStore = () => {
+export const useQueryStore = () => {
   return defineStore({
-    id: "fireStore",
+    id: "queryStore",
     state: () => {
       return {
         tasks: [],
@@ -18,6 +18,7 @@ export const useFireStore = () => {
         variants: [],
         variantsReady: false,
         roarUids: [],
+        roarUidsReady: false,
         districts: [],
         schools: [],
         classes: [],
@@ -25,6 +26,7 @@ export const useFireStore = () => {
         rootDocs: {},
         runs: [],
         selectedTasks: [],
+        selectedVariants: [],
         selectedRoarUids: [],
         startDate: null,
         endDate: null,
@@ -53,6 +55,8 @@ export const useFireStore = () => {
         return rootPathOptions;
       },
       selectedRootDoc: (state) => state.rootDocs[state.selectedRootPath?.value],
+      selectedTaskIds: (state) => state.selectedTasks.map((task) => task.id),
+      selectedVariantIds: (state) => state.selectedVariants.map((variant) => variant.id),
     },
     actions: {
       async getRootDocs() {
@@ -97,9 +101,9 @@ export const useFireStore = () => {
         this.variantsReady = false;
         const variants = [];
 
-        for (const task of this.selectedTasks) {
+        for (const taskId of this.selectedTaskIds) {
           const variantQuery = query(collection(
-            this.selectedRootDoc, 'tasks', task.id, 'variants',
+            this.selectedRootDoc, 'tasks', taskId, 'variants',
           ));
           const variantsSnapshot = await getDocs(variantQuery);
 
@@ -112,13 +116,33 @@ export const useFireStore = () => {
           });
 
           variants.push({
-            task: task.id,
+            task: taskId,
             items,
           });
         }
 
         this.variants = variants;
         this.variantsReady = true;
+      },
+      async getUsers() {
+        this.roarUidsReady = false;
+        const users = [];
+
+        const userQuery = query(
+          collection(this.selectedRootDoc, 'users'),
+          where('tasks', 'array-contains-any', this.selectedTaskIds),
+          where('variants', 'array-contains-any', this.selectedVariantIds),
+        );
+
+        const usersSnapshot = await getDocs(userQuery);
+        usersSnapshot.forEach((doc) => {
+          users.push({
+            roarUid: doc.id,
+          })
+        });
+
+        this.roarUids = users;
+        this.roarUidsReady = true;
       }
     },
   })();

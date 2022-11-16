@@ -31,14 +31,24 @@
 
       <div class="field col-12 md:col-4 mt-2 align-self-end">
         <span class="p-float-label">
-          <Calendar inputId="startdate" v-model="fireStore.startDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
+          <Calendar
+            inputId="startdate"
+            v-model="queryStore.startDate"
+            dateFormat="mm/dd/yyyy"
+            :showIcon="true"
+          />
           <label for="startdate">Start date</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-4 mt-2 align-self-end">
         <span class="p-float-label">
-          <Calendar inputId="enddate" v-model="fireStore.endDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
+          <Calendar
+            inputId="enddate"
+            v-model="queryStore.endDate"
+            dateFormat="mm/dd/yyyy"
+            :showIcon="true"
+          />
           <label for="enddate">End date</label>
         </span>
       </div>
@@ -48,10 +58,10 @@
           <MultiSelect
             inputId="tasks"
             v-model="selectedTasks"
-            :options="fireStore.tasks"
+            :options="queryStore.tasks"
             optionLabel="id"
             display="chip"
-            :loading="!fireStore.tasksReady"
+            :loading="!queryStore.tasksReady"
             :filter="true"
           />
           <label for="tasks">Tasks</label>
@@ -63,12 +73,13 @@
           <MultiSelect
             inputId="variants"
             v-model="selectedVariants"
-            :options="fireStore.variants"
+            :options="queryStore.variants"
             optionLabel="name"
             optionGroupLabel="task"
             optionGroupChildren="items"
             display="chip"
-            :loading="!fireStore.variantsReady"
+            :loading="!queryStore.variantsReady"
+            :selectAll="true"
           />
           <label for="variants">Variants</label>
         </span>
@@ -76,35 +87,68 @@
 
       <div class="field col-12 md:col-4 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="districts" v-model="fireStore.selectedDistricts" :options="fireStore.districts" optionLabel="District" display="chip" />
+          <MultiSelect
+            inputId="districts"
+            v-model="queryStore.selectedDistricts"
+            :options="queryStore.districts"
+            optionLabel="District"
+            display="chip"
+          />
           <label for="districts">Districts</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-4 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="schools" v-model="fireStore.selectedSchools" :options="fireStore.schools" optionLabel="School" display="chip" />
+          <MultiSelect
+            inputId="schools"
+            v-model="queryStore.selectedSchools"
+            :options="queryStore.schools"
+            optionLabel="School"
+            display="chip"
+          />
           <label for="schools">Schools</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-4 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="classes" v-model="fireStore.selectedClasses" :options="fireStore.classes" optionLabel="Class" display="chip" />
+          <MultiSelect
+            inputId="classes"
+            v-model="queryStore.selectedClasses"
+            :options="queryStore.classes"
+            optionLabel="Class"
+            display="chip"
+          />
           <label for="classes">Classes</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-6 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="studies" v-model="fireStore.selectedStudies" :options="fireStore.studies" optionLabel="Study" display="chip" />
+          <MultiSelect
+            inputId="studies"
+            v-model="queryStore.selectedStudies"
+            :options="queryStore.studies"
+            optionLabel="Study"
+            display="chip"
+          />
           <label for="studies">Studies</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-6 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="roaruids" v-model="fireStore.selectedRoarUids" :options="fireStore.roarUids" optionLabel="name" :filter="true" filterPlaceholder="Filter by ROAR UID" class="multiselect-custom" />
+          <MultiSelect
+            inputId="roaruids"
+            v-model="queryStore.selectedRoarUids"
+            :options="queryStore.roarUids"
+            optionLabel="roarUid"
+            :filter="true"
+            filterPlaceholder="Filter by ROAR UID"
+            class="multiselect-custom"
+            :loading="!queryStore.roarUidsReady"
+          />
           <label for="roaruids">ROAR UID / PID</label>
         </span>
       </div>
@@ -123,21 +167,32 @@
 <script>
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia'
-import { useFireStore } from "@/store/firestore";
+import { useQueryStore } from "@/store/query";
 
 export default {
   setup() {
-    const fireStore = useFireStore();
+    const queryStore = useQueryStore();
     onMounted(async () => {
-      fireStore.getRootDocs().then(fireStore.getTasks);
+      queryStore.getRootDocs().then(queryStore.getTasks);
     });
 
-    const { rootPaths, selectedRootPath, selectedTasks } = storeToRefs(fireStore);
+    const {
+      rootPaths,
+      selectedRootPath,
+      selectedTasks,
+      selectedVariants
+    } = storeToRefs(queryStore);
 
-    watch(selectedRootPath, fireStore.getTasks);
-    watch(selectedTasks, fireStore.getVariants);
+    watch(selectedRootPath, queryStore.getTasks);
+    watch(selectedTasks, queryStore.getVariants);
 
-    return { fireStore, rootPaths, selectedRootPath, selectedTasks };
+    return {
+      queryStore,
+      rootPaths,
+      selectedRootPath,
+      selectedTasks,
+      selectedVariants
+    };
   }
 }
 
