@@ -18,7 +18,7 @@ export const isMobileBrowser = () => {
 };
 
 export const getRolesFromAdminCollection = async (uid) => {
-  const q = query(adminCollection)
+  const q = query(adminCollection);
   const querySnapshot = await getDocs(q);
 
   const roles = {};

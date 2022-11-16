@@ -16,7 +16,7 @@ export const useAuthStore = () => {
   const router = useRouter();
   return defineStore({
     // id is required so that Pinia can connect the store to the devtools
-    id: "authUser",
+    id: "authStore",
     state: () => {
       return {
         firebaseUser: null,

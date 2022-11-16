@@ -6,7 +6,7 @@
       </router-link>
       <h1 class="ml-2">ROAR Web Query</h1>
       <Button icon="pi pi-info-circle" class="p-button-rounded p-button-secondary p-button-text" @click="openInfo"/>
-      <Dialog header="ROAR Info" v-model:visible="displayInfo" position="topleft" :breakpoints="{'960px': '75vw', '640px': '90vw'}" :style="{width: '50vw'}">
+      <Dialog header="What is ROAR?" v-model:visible="displayInfo" position="topleft" :breakpoints="{'960px': '75vw', '640px': '90vw'}" :style="{width: '50vw'}">
         <div class="text-left">
           <p>
             The <b>Rapid Online Assessment of Reading (ROAR)</b> is an ongoing
