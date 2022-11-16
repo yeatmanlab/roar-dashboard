@@ -5,66 +5,107 @@
       Query Filters
     </template>
     <div class="p-fluid grid formgrid text-left">
-      <div class="field col-12 md:col-6 mt-2">
-        <span class="p-float-label">
-          <TreeSelect inputId="tasks" v-model="selectedTasks" :options="tasks" display="chip" selectionMode="checkbox" />
-          <label for="tasks">Tasks / Variants</label>
-        </span>
+      <div class="field col-12 md:col-4 mt-0">
+        <p class="mb-1 mt-0 mx-1">Choose the database to query</p>
+        <div class="p-inputgroup">
+          <span class="p-inputgroup-addon">
+            <i class="pi pi-database"></i>
+          </span>
+          <Dropdown
+            inputId="rootdoc"
+            v-model="selectedRootPath"
+            :options="rootPaths"
+            optionLabel="label"
+            optionGroupLabel="label"
+            optionGroupChildren="items"
+          >
+            <template #optiongroup="slotProps">
+              <div class="flex align-items-center country-item">
+                <i class="pi pi-folder-open mr-2"></i>
+                <div>{{slotProps.option.label}}</div>
+              </div>
+            </template>
+          </Dropdown>
+        </div>
       </div>
 
-      <div class="field col-12 md:col-6 mt-2">
+      <div class="field col-12 md:col-4 mt-2 align-self-end">
         <span class="p-float-label">
-          <MultiSelect v-model="selectedRoarUids" :options="roarUids" optionLabel="name" :filter="true" filterPlaceholder="Filter by ROAR UID" class="multiselect-custom" />
-          <label for="districts">ROAR UID / PID</label>
-        </span>
-      </div>
-
-      <div class="field col-12 md:col-6 mt-2">
-        <span class="p-float-label">
-          <Calendar inputId="startdate" v-model="startDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
+          <Calendar inputId="startdate" v-model="fireStore.startDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
           <label for="startdate">Start date</label>
         </span>
       </div>
 
+      <div class="field col-12 md:col-4 mt-2 align-self-end">
+        <span class="p-float-label">
+          <Calendar inputId="enddate" v-model="fireStore.endDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
+          <label for="enddate">End date</label>
+        </span>
+      </div>
+
       <div class="field col-12 md:col-6 mt-2">
         <span class="p-float-label">
-          <Calendar inputId="enddate" v-model="endDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
-          <label for="enddate">End date</label>
+          <MultiSelect
+            inputId="tasks"
+            v-model="selectedTasks"
+            :options="fireStore.tasks"
+            optionLabel="id"
+            display="chip"
+            :loading="!fireStore.tasksReady"
+            :filter="true"
+          />
+          <label for="tasks">Tasks</label>
+        </span>
+      </div>
+
+      <div class="field col-12 md:col-6 mt-2">
+        <span class="p-float-label">
+          <MultiSelect
+            inputId="variants"
+            v-model="selectedVariants"
+            :options="fireStore.variants"
+            optionLabel="name"
+            optionGroupLabel="task"
+            optionGroupChildren="items"
+            display="chip"
+            :loading="!fireStore.variantsReady"
+          />
+          <label for="variants">Variants</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-4 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="districts" v-model="selectedDistricts" :options="districts" optionLabel="District" display="chip" />
+          <MultiSelect inputId="districts" v-model="fireStore.selectedDistricts" :options="fireStore.districts" optionLabel="District" display="chip" />
           <label for="districts">Districts</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-4 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="schools" v-model="selectedSchools" :options="schools" optionLabel="School" display="chip" />
+          <MultiSelect inputId="schools" v-model="fireStore.selectedSchools" :options="fireStore.schools" optionLabel="School" display="chip" />
           <label for="schools">Schools</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-4 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="classes" v-model="selectedClasses" :options="classes" optionLabel="Class" display="chip" />
+          <MultiSelect inputId="classes" v-model="fireStore.selectedClasses" :options="fireStore.classes" optionLabel="Class" display="chip" />
           <label for="classes">Classes</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-6 mt-2">
         <span class="p-float-label">
-          <MultiSelect inputId="studies" v-model="selectedStudies" :options="studies" optionLabel="Study" display="chip" />
+          <MultiSelect inputId="studies" v-model="fireStore.selectedStudies" :options="fireStore.studies" optionLabel="Study" display="chip" />
           <label for="studies">Studies</label>
         </span>
       </div>
 
       <div class="field col-12 md:col-6 mt-2">
         <span class="p-float-label">
-          <TreeSelect inputId="rootdoc" v-model="selectedRootDocs" :options="rootDocs" display="chip" selectionMode="checkbox"></TreeSelect>
-          <label for="rootdoc">Database collection</label>
+          <MultiSelect inputId="roaruids" v-model="fireStore.selectedRoarUids" :options="fireStore.roarUids" optionLabel="name" :filter="true" filterPlaceholder="Filter by ROAR UID" class="multiselect-custom" />
+          <label for="roaruids">ROAR UID / PID</label>
         </span>
       </div>
     </div>
@@ -79,12 +120,25 @@
   </Panel>
 </template>
 
-<script setup>
-// import { useFireStore } from "@/store/firestore";
+<script>
+import { onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia'
+import { useFireStore } from "@/store/firestore";
 
-// const fireStore = useFireStore();
+export default {
+  setup() {
+    const fireStore = useFireStore();
+    onMounted(async () => {
+      fireStore.getRootDocs().then(fireStore.getTasks);
+    });
 
-// onMounted(async () => {
-//   await fireStore.retrieveTasks();
-// });
+    const { rootPaths, selectedRootPath, selectedTasks } = storeToRefs(fireStore);
+
+    watch(selectedRootPath, fireStore.getTasks);
+    watch(selectedTasks, fireStore.getVariants);
+
+    return { fireStore, rootPaths, selectedRootPath, selectedTasks };
+  }
+}
+
 </script>

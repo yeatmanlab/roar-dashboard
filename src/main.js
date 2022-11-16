@@ -12,6 +12,7 @@ import Calendar from 'primevue/calendar';
 import Checkbox from "primevue/checkbox";
 import Dialog from 'primevue/dialog';
 import Divider from "primevue/divider";
+import Dropdown from "primevue/dropdown";
 import InputText from "primevue/inputtext";
 import Message from 'primevue/message';
 import MultiSelect from 'primevue/multiselect';
@@ -21,6 +22,7 @@ import SplitButton from "primevue/splitbutton";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import Toolbar from "primevue/toolbar";
+import Tooltip from 'primevue/tooltip';
 import TreeSelect from 'primevue/treeselect';
 
 import "primevue/resources/themes/tailwind-light/theme.css"; // theme
@@ -42,6 +44,7 @@ app.component("Calendar", Calendar);
 app.component("Checkbox", Checkbox);
 app.component("Dialog", Dialog);
 app.component("Divider", Divider);
+app.component("Dropdown", Dropdown);
 app.component("InputText", InputText);
 app.component("Message", Message);
 app.component("MultiSelect", MultiSelect);
@@ -52,6 +55,8 @@ app.component("TabPanel", TabPanel);
 app.component("TabView", TabView);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
+
+app.directive("tooltip", Tooltip);
 
 // Register all components that begin with App
 const appComponentFiles = import.meta.globEager(

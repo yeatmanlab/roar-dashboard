@@ -41,13 +41,15 @@
 
 <script setup>
 import { ref } from 'vue';
+import { storeToRefs } from 'pinia'
 import { useAuthStore } from "@/store/auth";
 
 const authStore = useAuthStore();
+const { email } = storeToRefs(authStore);
 
 const loggedInItems = ref([
   {
-    label: `Logged in as: ${authStore.email}`,
+    label: `Logged in as: ${email.value}`,
     icon: 'pi pi-user',
     to: '/profile',
   },
