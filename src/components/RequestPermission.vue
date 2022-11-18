@@ -2,7 +2,7 @@
   <h1>Permission denied</h1>
   <div class="col-full">
     <Message severity="warn" class="text-left" :closable="false">
-      You are logged in as {{ authStore.email }}, but this account does not have
+      You are logged in as {{ email }}, but this account does not have
       sufficient permissions to query ROAR assessment data.
     </Message>
     <Message v-if="authStore.hasRequested" severity="info" class="text-left" :closable="false">
@@ -16,6 +16,8 @@
 
 <script setup>
 import { useAuthStore } from "@/store/auth";
+import { storeToRefs } from 'pinia'
 
 const authStore = useAuthStore();
+const { email } = storeToRefs(authStore);
 </script>

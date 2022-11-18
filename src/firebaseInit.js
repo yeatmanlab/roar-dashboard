@@ -6,10 +6,18 @@ import {
   collection,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { markRaw } from "vue";
 import firebaseConfig from "./config/firebase";
 
 const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+
+// Use markRaw to wrap the firestore instance for use in components and the
+// pinia store.
+// See https://vuejs.org/api/reactivity-advanced.html#markraw for general info
+// about markRaw and see
+// https://github.com/firebase/firebase-js-sdk/issues/6087#issuecomment-1233478793
+// for a recommendation specific to Vue 3 and Firestore indexedDbPersistence
+const db = markRaw(getFirestore(firebaseApp));
 
 enableIndexedDbPersistence(db).catch((err) => {
   if (err.code == "failed-precondition") {

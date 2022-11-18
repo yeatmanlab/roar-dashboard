@@ -1,14 +1,17 @@
 <template>
-  <div v-if="authStore.isAuthenticated">
-    <QueryRuns v-if="authStore.canRead" />
-    <RequestPermission v-else />
+  <div v-if="authStore.homepageReady">
+    <div v-if="authStore.isAuthenticated">
+      <QueryRuns v-if="authStore.canRead" />
+      <RequestPermission v-else />
+    </div>
+    <div v-else class="col-full text-center">
+      <p>You are not yet logged in. Click below to log in.</p>
+      <router-link :to="{ name: 'SignIn' }">
+        <Button label="Log In" icon="pi pi-sign-in" />
+      </router-link>
+    </div>
   </div>
-  <div v-else class="col-full text-center">
-    <p>You are not yet logged in. Click below to log in.</p>
-    <router-link :to="{ name: 'SignIn' }">
-      <Button label="Log In" icon="pi pi-sign-in" />
-    </router-link>
-  </div>
+  <AppSpinner v-else />
 </template>
 
 <script setup>

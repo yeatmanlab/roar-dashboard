@@ -24,6 +24,7 @@ export const useAuthStore = () => {
         email: null,
         isAuthenticated: false,
         roles: null,
+        homepageReady: true,
       };
     },
     getters: {
@@ -35,29 +36,35 @@ export const useAuthStore = () => {
         this.roles = await getRolesFromAdminCollection(this.uid);
       },
       async registerWithEmailAndPassword({ email, password }) {
+        this.homepageReady = false;
         return createUserWithEmailAndPassword(auth, email, password).then(
           (userCredential) => {
             this.user = userCredential.user;
             this.uid = userCredential.user.uid;
             this.email = email;
-            this.isAuthenticated = true;
             router.replace({ name: 'Home' });
           }
-        ).then(this.setRoles);
+        ).then(this.setRoles).then(() => {
+          this.isAuthenticated = true;
+          this.homepageReady = true;
+        });
       },
       async logInWithEmailAndPassword({ email, password }) {
+        this.homepageReady = false;
         return signInWithEmailAndPassword(auth, email, password).then(
           (userCredential) => {
             this.user = userCredential.user;
             this.uid = userCredential.user.uid;
             this.email = email;
-            this.isAuthenticated = true;
-            this.setRoles();
             router.replace({ name: 'Home' });
           }
-        ).then(this.setRoles);
+        ).then(this.setRoles).then(() => {
+          this.isAuthenticated = true;
+          this.homepageReady = true;
+        });
       },
       async signInWithGooglePopup() {
+        this.homepageReady = false;
         const provider = new GoogleAuthProvider();
         signInWithPopup(auth, provider).then((result) => {
           // This gives you a Google Access Token. You can use it to access the Google API.
@@ -67,14 +74,16 @@ export const useAuthStore = () => {
           this.firebaseUser = result.user;
           this.uid = result.user.uid;
           this.email = result.user.email;
-          this.isAuthenticated = true;
           router.replace({ name: 'Home' });
         }).catch((error) => {
           const allowedErrors = ['auth/cancelled-popup-request', 'auth/popup-closed-by-user'];
           if (!allowedErrors.includes(error.code)) {
             throw error;
           }
-        }).then(this.setRoles);
+        }).then(this.setRoles).then(() => {
+          this.isAuthenticated = true;
+          this.homepageReady = true;
+        });
       },
       async signInWithGoogleRedirect() {
         const provider = new GoogleAuthProvider();
@@ -84,6 +93,7 @@ export const useAuthStore = () => {
       async initStateFromRedirect() {
         return getRedirectResult(auth).then((result) => {
           if (result !== null) {
+            this.homepageReady = false;
             // This gives you a Google Access Token. You can use it to access Google APIs.
             // const credential = GoogleAuthProvider.credentialFromResult(result);
             // const token = credential.accessToken;
@@ -92,31 +102,32 @@ export const useAuthStore = () => {
             this.firebaseUser = result.user;
             this.uid = result.user.uid;
             this.email = result.user.email;
-            this.isAuthenticated = true;
             router.replace({ name: 'Home' });
+            return this.setRoles().then(() => {
+              this.isAuthenticated = true;
+              this.homepageReady = true;
+            });
           }
-        }).catch ((error) => {
+        }).catch((error) => {
           if (error.code == 'auth/web-storage-unsupported') {
             router.replace({ name: 'EnableCookies' });
           } else {
             throw error;
           }
-        }).then(() => {
-          if (this.isAuthenticated) {
-            this.setRoles();
-          }
         });
       },
       async signOut() {
+        this.homepageReady = false;
         return auth.signOut().then(() => {
           this.uid = null;
           this.firebaseUser = null;
           this.email = null;
-          this.isAuthenticated = false;
           this.roles = null;
+          this.isAuthenticated = false;
+          this.homepageReady = true;
         });
       },
-      requestAccess() {
+      async requestAccess() {
         emailjs.init('aTzH_RwYwuqBh_9EU');
         const serviceId = 'service_2lrq22a';
         const templateId = 'template_jr6dh6m';
@@ -132,7 +143,7 @@ export const useAuthStore = () => {
         );
         
         addUserToRequests(this.uid);
-        this.setRoles();
+        await this.setRoles();
       },
     },
   })();

@@ -79,7 +79,7 @@
             optionGroupChildren="items"
             display="chip"
             :loading="!queryStore.variantsReady"
-            :selectAll="true"
+            :filter="true"
           />
           <label for="variants">Variants</label>
         </span>
@@ -95,8 +95,7 @@
             :filter="true"
             filterPlaceholder="Filter by ROAR UID"
             class="multiselect-custom"
-            :loading="!queryStore.roarUidsReady"
-            :selectAll="true"
+            :loading="!queryStore.usersReady"
           />
           <label for="roaruids">ROAR UID / PID</label>
         </span>
@@ -108,8 +107,9 @@
             inputId="studies"
             v-model="queryStore.selectedStudies"
             :options="queryStore.studies"
-            optionLabel="Study"
+            optionLabel="id"
             display="chip"
+            :loading="!queryStore.usersReady"
           />
           <label for="studies">Studies</label>
         </span>
@@ -121,8 +121,9 @@
             inputId="districts"
             v-model="queryStore.selectedDistricts"
             :options="queryStore.districts"
-            optionLabel="District"
+            optionLabel="id"
             display="chip"
+            :loading="!queryStore.usersReady"
           />
           <label for="districts">Districts</label>
         </span>
@@ -134,8 +135,9 @@
             inputId="schools"
             v-model="queryStore.selectedSchools"
             :options="queryStore.schools"
-            optionLabel="School"
+            optionLabel="id"
             display="chip"
+            :loading="!queryStore.usersReady"
           />
           <label for="schools">Schools</label>
         </span>
@@ -147,8 +149,9 @@
             inputId="classes"
             v-model="queryStore.selectedClasses"
             :options="queryStore.classes"
-            optionLabel="Class"
+            optionLabel="id"
             display="chip"
+            :loading="!queryStore.usersReady"
           />
           <label for="classes">Classes</label>
         </span>
@@ -166,7 +169,7 @@
 </template>
 
 <script>
-import { onMounted, ref } from 'vue';
+import { onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia'
 import { useQueryStore } from "@/store/query";
 

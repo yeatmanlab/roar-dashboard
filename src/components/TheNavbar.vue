@@ -47,7 +47,9 @@ import { useAuthStore } from "@/store/auth";
 const authStore = useAuthStore();
 const { email } = storeToRefs(authStore);
 
-const loggedInItems = ref([
+console.log(email);
+
+const loggedInItems = [
   {
     label: `Logged in as: ${email.value}`,
     icon: 'pi pi-user',
@@ -58,7 +60,7 @@ const loggedInItems = ref([
     icon: 'pi pi-sign-out',
     to: '/logout',
   }
-]);
+];
 
 const displayInfo = ref(false);
 const openInfo = () => displayInfo.value = true;

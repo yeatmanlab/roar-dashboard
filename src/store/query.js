@@ -7,6 +7,7 @@ import {
   where,
 } from "@firebase/firestore";
 import { db } from "../firebaseInit.js";
+import { getIds, idArrayToObjArray } from "../helpers/index.js";
 
 export const useQueryStore = () => {
   return defineStore({
@@ -18,7 +19,7 @@ export const useQueryStore = () => {
         variants: [],
         variantsReady: false,
         roarUids: [],
-        roarUidsReady: false,
+        usersReady: false,
         districts: [],
         schools: [],
         classes: [],
@@ -109,10 +110,13 @@ export const useQueryStore = () => {
 
           const items = []
           variantsSnapshot.forEach((doc) => {
-            items.push({
-              id: doc.id,
-              name: doc.data().name,
-            })
+            if (doc.id !== 'empty') {
+              items.push({
+                id: doc.id,
+                name: doc.data().name,
+                nameId: `${doc.data().name}-${doc.id}`
+              });
+            }
           });
 
           variants.push({
@@ -121,28 +125,61 @@ export const useQueryStore = () => {
           });
         }
 
+        const selectedVariants = []
+        variants.forEach((task) => selectedVariants.push(...task.items))
+
         this.variants = variants;
+        this.selectedVariants = selectedVariants;
         this.variantsReady = true;
       },
       async getUsers() {
-        this.roarUidsReady = false;
+        this.usersReady = false;
         const users = [];
+        const userDistricts = [];
+        const userSchools = [];
+        const userClasses = [];
+        const userStudies = [];
 
-        const userQuery = query(
-          collection(this.selectedRootDoc, 'users'),
-          where('tasks', 'array-contains-any', this.selectedTaskIds),
-          where('variants', 'array-contains-any', this.selectedVariantIds),
-        );
+        if (this.selectedVariantIds.length > 0) {
+          const userQuery = query(
+            collection(this.selectedRootDoc, 'users'),
+            where('variants', 'array-contains-any', this.selectedVariantIds),
+          );
 
-        const usersSnapshot = await getDocs(userQuery);
-        usersSnapshot.forEach((doc) => {
-          users.push({
-            roarUid: doc.id,
-          })
-        });
+          const usersSnapshot = await getDocs(userQuery);
+          usersSnapshot.forEach((doc) => {
+            users.push({
+              roarUid: doc.id,
+            })
+            const {
+              districtId,
+              schoolId,
+              schools,
+              classId,
+              classes,
+              studyId,
+              studies,
+            } = doc.data()
+            userDistricts.push(...getIds(districtId, null))
+            userSchools.push(...getIds(schoolId, schools))
+            userClasses.push(...getIds(classId, classes))
+            userStudies.push(...getIds(studyId, studies))
+          });
 
-        this.roarUids = users;
-        this.roarUidsReady = true;
+          this.roarUids = users;
+          this.districts = idArrayToObjArray(userDistricts);
+          this.schools = idArrayToObjArray(userSchools);
+          this.classes = idArrayToObjArray(userClasses);
+          this.studies = idArrayToObjArray(userStudies);
+          this.usersReady = true;
+        } else {
+          this.roarUids = [];
+          this.districts = [];
+          this.schools = [];
+          this.classes = [];
+          this.studies = [];
+          this.usersReady = false;
+        }
       }
     },
   })();

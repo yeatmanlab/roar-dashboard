@@ -90,3 +90,15 @@ export const arrayRandom = (array) => {
   const randomIndex = Math.floor(Math.random() * array.length);
   return array[randomIndex];
 };
+
+export const getIds = (id, idArray) => {
+  const resultIds = [];
+  if (id) resultIds.push(id);
+  if (idArray && idArray.length) resultIds.push(...idArray);
+
+  return [...new Set(resultIds)];
+};
+
+export const idArrayToObjArray = (idArray) => {
+  return [...new Set(idArray)].map((item) => ({id: item}))
+}
