@@ -29,7 +29,7 @@ export const useAuthStore = () => {
     },
     getters: {
       canRead: (state) => Boolean(state.roles?.admin || state.roles?.researcher),
-      hasRequested: (state) => Boolean(state.roles?.request),
+      hasRequestedAccess: (state) => Boolean(state.roles?.request),
     },
     actions: {
       async setRoles() {

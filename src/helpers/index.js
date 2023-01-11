@@ -99,6 +99,65 @@ export const getIds = (id, idArray) => {
   return [...new Set(resultIds)];
 };
 
-export const idArrayToObjArray = (idArray) => {
-  return [...new Set(idArray)].map((item) => ({id: item}))
+export const getOrgs = (docData) => {
+  const {
+    districtId,
+    schoolId,
+    schools,
+    classId,
+    classes,
+    studyId,
+    studies,
+  } = docData;
+  const districtIds = getIds(districtId, null)
+  const schoolIds = getIds(schoolId, schools);
+  const classIds = getIds(classId, classes);
+  const studyIds = getIds(studyId, studies);
+
+  return {
+    districtIds,
+    schoolIds,
+    classIds,
+    studyIds,
+  };
+}
+
+export const getUniquePropsFromUsers = (users, prop) => {
+  const propArrays = users.map((user) => user[prop]).flat()
+  return [...new Set(propArrays)].map((item) => ({id: item}))
+}
+
+export const userHasSelectedOrgs = (userArray, selections) => {
+  // If the selected org list is empty, return all users
+  if (selections.length === 0) {
+    return true;
+  }
+  const selectionArray = selections.map((item) => item.id)
+  return Boolean(userArray.filter(value => selectionArray.includes(value)).length);
+}
+
+export const formatDate = (date) => date?.toLocaleString("en-US");
+
+const camelCase = (string) => string.replace(
+  /_([a-z])/g,
+  (groups) => groups[1].toUpperCase(),
+);
+
+export const flattenObj = (obj) => {
+  const result = {};
+
+  for (const i in obj) {
+    // We check the type of the i using
+    // typeof() function and recursively
+    // call the function again
+    if ((typeof obj[i]) === 'object' && !Array.isArray(obj[i]) && obj[i] !== null) {
+      const temp = flattenObj(obj[i]);
+      for (const j in temp) {
+        result[camelCase(i + '_' + j)] = temp[j] || "";
+      }
+    } else {
+      result[i] = obj[i] || "";
+    }
+  }
+  return result;
 }

@@ -1,10 +1,10 @@
 <template>
   <h1>Enable Third-Party Cookies</h1>
-  <p class="text-left">
+  <Message severity="warn" class="text-left" :closable="false">
     We tried to log you in but were unable to do so because the login method
     that you selected required third-party cookies to be enabled. Please enable
     third-party cookies and then click below to sign in.
-  </p>
+  </Message>
   <router-link :to="{ name: 'SignIn' }">
     <Button label="Log In" icon="pi pi-sign-in" />
   </router-link>

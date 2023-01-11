@@ -5,7 +5,7 @@
       You are logged in as {{ email }}, but this account does not have
       sufficient permissions to query ROAR assessment data.
     </Message>
-    <Message v-if="authStore.hasRequested" severity="info" class="text-left" :closable="false">
+    <Message v-if="authStore.hasRequestedAccess" severity="info" class="text-left" :closable="false">
       You have requested access to the the ROAR assessment data. Please allow
       a few business days to be granted access to the ROAR-query.
     </Message>

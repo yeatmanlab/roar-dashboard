@@ -7,24 +7,36 @@ import App from "@/App.vue";
 import PrimeVue from "primevue/config";
 
 // PrimeVue components
+import Accordion from 'primevue/accordion';
+import AccordionTab from 'primevue/accordiontab';
+import Badge from 'primevue/badge';
 import Button from "primevue/button";
 import Calendar from 'primevue/calendar';
 import Checkbox from "primevue/checkbox";
+import Chip from "primevue/chip";
 import Dialog from 'primevue/dialog';
 import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
+import FocusTrap from "primevue/focustrap";
 import InputText from "primevue/inputtext";
-import Message from 'primevue/message';
-import MultiSelect from 'primevue/multiselect';
+import Message from "primevue/message";
+import MultiSelect from "primevue/multiselect";
 import Panel from "primevue/panel";
 import Password from "primevue/password";
-import Skeleton from 'primevue/skeleton';
+import ProgressBar from 'primevue/progressbar';
+import Skeleton from "primevue/skeleton";
 import SplitButton from "primevue/splitbutton";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import Toolbar from "primevue/toolbar";
-import Tooltip from 'primevue/tooltip';
-import TreeSelect from 'primevue/treeselect';
+import Tooltip from "primevue/tooltip";
+import TreeSelect from "primevue/treeselect";
+
+// PrimeVue data table imports
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import ColumnGroup from 'primevue/columngroup';     //optional for column grouping
+import Row from 'primevue/row';
 
 import "primevue/resources/themes/tailwind-light/theme.css"; // theme
 import "./assets/styles/theme.css" // theme
@@ -35,14 +47,18 @@ import "primeflex/primeflex.scss";
 const app = createApp(App);
 const pinia = createPinia()
 
-app.use(PrimeVue);
+app.use(PrimeVue, {ripple: true});
 app.use(pinia);
 app.use(router);
 app.use(createHead());
 
+app.component("Accordion", Accordion);
+app.component("AccordionTab", AccordionTab);
+app.component("Badge", Badge);
 app.component("Button", Button);
 app.component("Calendar", Calendar);
 app.component("Checkbox", Checkbox);
+app.component("Chip", Chip);
 app.component("Dialog", Dialog);
 app.component("Divider", Divider);
 app.component("Dropdown", Dropdown);
@@ -51,6 +67,7 @@ app.component("Message", Message);
 app.component("MultiSelect", MultiSelect);
 app.component("Panel", Panel);
 app.component("Password", Password);
+app.component("ProgressBar", ProgressBar);
 app.component("Skeleton", Skeleton);
 app.component("SplitButton", SplitButton);
 app.component("TabPanel", TabPanel);
@@ -58,7 +75,13 @@ app.component("TabView", TabView);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
 
+app.component("DataTable", DataTable);
+app.component("Column", Column);
+app.component("ColumnGroup", ColumnGroup);
+app.component("Row", Row);
+
 app.directive("tooltip", Tooltip);
+app.directive("focustrap", FocusTrap);
 
 // Register all components that begin with App
 const appComponentFiles = import.meta.globEager(

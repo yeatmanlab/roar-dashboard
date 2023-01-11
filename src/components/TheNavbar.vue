@@ -1,5 +1,5 @@
 <template>
-  <Toolbar class="mb-2">
+  <Toolbar class="mb-1 px-3 py-0">
     <template #start>
       <router-link :to="{ name: 'Home' }">
         <img src="../assets/roar-icon.png" height="50" alt="The ROAR logo" />
@@ -24,9 +24,6 @@
             href="https://roar.stanford.edu/">ROAR website.</a>
           </p>
         </div>
-        <template #footer>
-            <Button label="Close" icon="pi pi-check" @click="closeInfo" autofocus />
-        </template>
       </Dialog>
     </template>
 
@@ -46,8 +43,6 @@ import { useAuthStore } from "@/store/auth";
 
 const authStore = useAuthStore();
 const { email } = storeToRefs(authStore);
-
-console.log(email);
 
 const loggedInItems = [
   {
