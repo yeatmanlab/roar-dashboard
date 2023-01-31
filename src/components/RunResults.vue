@@ -6,16 +6,8 @@
   <div v-else style="height: 55vh">
     <div class="flex flex-row align-content-center">
       <span class="flex-grow-1 flex align-items-start align-content-center text-align-left">
-        <b class="align-self-center ml-1">Select runs below to query trials or export</b>
+        <b class="align-self-center ml-1">Select runs below to export</b>
       </span>
-      <Button
-        icon="pi pi-search"
-        :label="queryStore.selectedRuns.length !== 0 ? 'Query Trials' : 'Select runs to enable query'"
-        class="flex-none mb-1 ml-2 p-2"
-        :loading="queryStore.selectedRuns.length === 0"
-        :disabled="queryStore.selectedRuns.length === 0"
-        @click="queryStore.getTrials"
-      />
       <Button
         icon="pi pi-external-link"
         :label="queryStore.selectedRuns.length !== 0 ? 'Export Selected Runs' : 'Select runs to enable export'"

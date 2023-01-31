@@ -6,7 +6,7 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: () => import(/* webpackChunkName: "Home" */ "../pages/Home.vue"),
+    component: () => import(/* webpackChunkName: "Home" */ "../pages/QueryPage.vue"),
   },
   // {
   //   path: "/me",
@@ -15,6 +15,11 @@ const routes = [
   //     import(/* webpackChunkName: "Profile" */ "../pages/Profile.vue"),
   //   meta: { toTop: true, smoothScroll: true, requiresAuth: true },
   // },
+  {
+    path: "/query",
+    name: "Query",
+    component: () => import(/* webpackChunkName: "Home" */ "../pages/QueryPage.vue"),
+  },
   {
     path: "/register",
     name: "Register",

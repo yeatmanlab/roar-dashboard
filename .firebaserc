@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "gse-yeatmanlab"
+  },
+  "targets": {
+    "gse-yeatmanlab": {
+      "hosting": {
+        "dashboard": [
+          "roar-platform"
+        ]
+      }
+    }
+  }
+}
