@@ -1,45 +1,47 @@
 <template>
-    <div id="viz"></div>
+  <h1>{{ scoreStore.taskId }}</h1>
+  <div id="viz"></div>
 </template>
 
-<script>
+<script setup>
+import { onMounted } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
 
 const scoreStore = useScoreStore();
 
-export default {
-    name: 'BarChart',
-    mounted() {
-        this.draw()
+const chart1 = {
+  $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+  description: 'A histogram of the number of correct and incorrect responses.',
+  data: {
+    values: scoreStore.scores,
+  },
+  vconcat: [
+    {
+      mark: 'bar',
+      encoding: {
+        x: { bin: true, field: 'correct' },
+        y: { aggregate: "count" },
+      },
     },
-  data() {
-    let values = [];
+    {
+      mark: 'bar',
+      encoding: {
+        x: { bin: true, field: 'incorrect' },
+        y: { aggregate: "count" },
+      },
+    },
+  ],
+};
 
-    for (let row of scoreStore.scores) {
-      values.push({
-        correct: row.correct
-      });
-    }
-    return {
-            chart1: {
-                $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-                description: 'A histogram of the number of correct responses.',
-                data: {
-                    values,
-                },
-                mark: 'bar',
-                encoding: {
-                  x: { bin: true, field: 'correct' },
-                  y: { aggregate: "count" },
-                },
-            },
-        }
-    },
-    methods: {
-        async draw() {
-            const result = await embed('#viz', this.chart1)
-        },
-    },
-}
+const draw = async () => {
+  const result = await embed('#viz', chart1)
+};
+
+onMounted(() => {
+  draw()
+})
 </script>
+
+<style>
+</style>

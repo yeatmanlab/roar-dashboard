@@ -8,7 +8,12 @@ export const useScoreStore = () => {
         scores: [],
       };
     },
-    getters: { },
+    getters: { 
+      taskId: (state) => {
+        // TODO: Add error handling to check that there is only one taskId
+        return [...new Set(state.scores.map((row) => row?.taskId))][0];
+      }
+    },
     actions: { },
   })();
 };

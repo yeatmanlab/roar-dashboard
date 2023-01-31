@@ -29,7 +29,7 @@ const onUpload = async (event) => {
   toast.add({ severity: 'info', summary: 'Success', detail: 'File Uploaded', life: 3000 });
   uploadedFile.value = event.files[0];
   scoreStore.scores = await csvFileToJson(uploadedFile.value);
-  router.replace({ name: "ScoreReport" });
+  router.push({ name: "ScoreReport" });
 }
 </script>
 
