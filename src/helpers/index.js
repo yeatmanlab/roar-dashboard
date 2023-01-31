@@ -1,6 +1,7 @@
 import { arrayUnion, query, where, getDocs, updateDoc, doc } from "@firebase/firestore";
 import { RoarUser } from "@bdelab/roar-firekit";
 import { rootDoc, adminCollection } from "../firebaseInit.js";
+import * as Papa from "papaparse";
 
 export const isMobileBrowser = () => {
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -161,3 +162,18 @@ export const flattenObj = (obj) => {
   }
   return result;
 }
+
+export const csvFileToJson = (fileObject) =>
+  new Promise((resolve, reject) => {
+    Papa.parse(fileObject, {
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: function (results) {
+        if (results.errors.length !== 0) {
+          reject(results.errors);
+        }
+        resolve(results.data);
+      },
+    });
+  });

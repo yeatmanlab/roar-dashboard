@@ -6,7 +6,7 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: () => import(/* webpackChunkName: "Home" */ "../pages/QueryPage.vue"),
+    component: () => import(/* webpackChunkName: "Home" */ "../pages/Home.vue"),
   },
   // {
   //   path: "/me",
@@ -19,6 +19,11 @@ const routes = [
     path: "/query",
     name: "Query",
     component: () => import(/* webpackChunkName: "Home" */ "../pages/QueryPage.vue"),
+  },
+  {
+    path: "/score-report",
+    name: "ScoreReport",
+    component: () => import(/* webpackChunkName: "Home" */ "../pages/ScoreReport.vue"),
   },
   {
     path: "/register",
@@ -56,6 +61,7 @@ const routes = [
       import(/* webpackChunkName: "NotFound" */ "../pages/NotFound.vue"),
   },
 ];
+
 const router = createRouter({
   history: createWebHistory(),
   routes,
@@ -66,6 +72,7 @@ const router = createRouter({
     return scroll;
   },
 });
+
 router.afterEach(() => {
   // const store = useAuthStore();
   // store.dispatch("clearItems", {
