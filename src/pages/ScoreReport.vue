@@ -1,6 +1,9 @@
 <template>
   <h1>{{ scoreStore.taskId }}</h1>
-  <div id="viz"></div>
+  <p>This is an introductory paragraph. Score reports are amazing!</p>
+  <div id="distribution-by-grade"></div>
+  <p>This is another exquisitely written paragraph!</p>
+  <div id="normed-percentile-distribution"></div>
 </template>
 
 <script setup>
@@ -9,33 +12,40 @@ import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
 
 const scoreStore = useScoreStore();
-
-const chart1 = {
+const globalChartConfig = {
   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-  description: 'A histogram of the number of correct and incorrect responses.',
   data: {
     values: scoreStore.scores,
   },
-  vconcat: [
-    {
-      mark: 'bar',
-      encoding: {
-        x: { bin: true, field: 'correct' },
-        y: { aggregate: "count" },
-      },
-    },
-    {
-      mark: 'bar',
-      encoding: {
-        x: { bin: true, field: 'incorrect' },
-        y: { aggregate: "count" },
-      },
-    },
-  ],
+}
+
+const distributionByGrade = {
+  ...globalChartConfig,
+  description: 'ROAR Score Distribution by Grade Level',
+  mark: 'bar',
+  encoding: {
+    row: { field: "grade" },
+    // thetaEstimate should be changed to ROAR score
+    x: { bin: true, field: 'thetaEstimate' },
+    y: { aggregate: 'count' },
+    color: { field: 'grade' },
+  },
 };
 
+const normedPercentileDistribution = {
+  ...globalChartConfig,
+  description: 'Distribution of Normed Percentiles (all grades)',
+  mark: 'bar',
+  encoding: {
+    // thetaEstimate should be changed to percentile
+    x: { bin: true, field: 'thetaEstimate'},
+    y: { aggregate: 'count' },
+  },
+}
+
 const draw = async () => {
-  const result = await embed('#viz', chart1)
+  await embed('#distribution-by-grade', distributionByGrade);
+  await embed('#normed-percentile-distribution', normedPercentileDistribution);
 };
 
 onMounted(() => {
