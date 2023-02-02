@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { standardDeviation } from "@/helpers";
 
 export const useScoreStore = () => {
   return defineStore({
@@ -34,7 +35,24 @@ export const useScoreStore = () => {
             }
           })
         }
-      }
+      },
+      numStudents: (state) => state.scores.length,
+      ageMean: (state) => {
+        const ages = state.scores.map((score) => score.age);
+        return ages.reduce((a, b) => a + b) / ages.length;
+      },
+      grades: (state) => state.scores.map((score) => score.grade),
+      gradeMin: (state) => Math.min(...state.grades),
+      gradeMax: (state) => Math.max(...state.grades),
+      // TODO: thetaEstimate should be changed to ROAR score
+      roarScores: (state) => state.scores.map((score) => score.thetaEstimate),
+      roarScoreMean: (state) => state.roarScores.reduce((a, b) => a + b) / state.roarScores.length,
+      roarScoreMin: (state) => Math.min(...state.roarScores),
+      roarScoreMax: (state) => Math.max(...state.roarScores),
+      roarScoreSD: (state) => standardDeviation(state.roarScores),
+      // numStudentsAboveAverage: (state) =>
+      // numStudentsNeedSomeSupport: (state) =>
+      // numStudentsNeedExtraSupport: (state) =>
     },
     actions: {
       // assignRiskCategories: (scoreField, cutoffs) => {

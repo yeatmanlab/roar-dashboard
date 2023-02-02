@@ -2,7 +2,7 @@
   <div>
     <div v-if="authStore.homepageReady">
       <Toast />
-      <FileUpload mode="basic" name="scorereport[]" :customUpload="true" @uploader="onScoreUpload" accept=".csv" :multiple="false" :auto="true" chooseLabel="Choose a score file" >
+      <FileUpload class="mt-3" mode="basic" name="scorereport[]" :customUpload="true" @uploader="onScoreUpload" accept=".csv" :multiple="false" :auto="true" chooseLabel="Choose a score file" >
         <!-- <template #empty>
           <p>Drag and drop the score file here to upload.</p>
         </template> -->
@@ -15,7 +15,7 @@
       <Button
         icon="pi pi-chart-line"
         label="View Score Report"
-        class="flex-none mt-3 mb-1 ml-2 p-2"
+        class="flex-none mb-1 ml-2"
         :loading="scoreStore.scores.length === 0"
         :disabled="scoreStore.scores.length === 0"
         @click="submit"

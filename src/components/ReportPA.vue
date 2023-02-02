@@ -126,7 +126,9 @@
 <script setup>
 import { onMounted } from 'vue';
 import embed from 'vega-embed';
+import marked from 'marked';
 import { useScoreStore } from "@/store/scores";
+import * as markdown from "@/components/reportMarkdownPA";
 
 const scoreStore = useScoreStore();
 const globalChartConfig = {
