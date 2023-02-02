@@ -7,6 +7,16 @@
   <p>Yet more amazing explanation!</p>
   <div id="stacked-support-by-grade"></div>
 
+  // Datatable example
+    <DataTable :data="data" class="display">
+        <thead>
+            <tr>
+                <th>A</th>
+                <th>B</th>
+            </tr>
+        </thead>
+    </DataTable>
+
 </template>
 
 <script setup>
@@ -14,6 +24,20 @@ import { onMounted } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
 import { getDistributionByGrade } from "@/helpers/plotting.js"
+//import dt  from 'datatables.net';
+//import 'datatables.net';
+//import 'datatables.net-dt/css/jquery.dataTables.css';
+//import { DataTables } from "datatables.net"
+
+import DataTable from 'datatables.net-vue3'
+import DataTablesLib from 'datatables.net';
+ 
+DataTable.use(DataTablesLib);
+
+const data = [
+  [1, 2],
+  [3, 4],
+];
 
 const scoreStore = useScoreStore();
 
@@ -131,6 +155,8 @@ const draw = async () => {
 
   //await embed('#distribution-by-grade', getDistributionByGrade(scoreStore.scores));
 };
+
+
 
 onMounted(() => {
   draw()
