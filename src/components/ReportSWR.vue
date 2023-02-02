@@ -5,8 +5,10 @@
   <div id="viz-normed-percentile-distribution"></div>
   <!-- <div v-html="html.supportSection2"></div> -->
   <div id="viz-stacked-support-by-grade"></div>
+  <div v-html="html.supportClassificationDistributions"></div>
+  <div v-html="html.automaticityDistributionsFirstGrade"></div>
+  <div v-html="html.studentScoreInformation"></div>
 
-  // Datatable example
   <DataTable :data="data" class="display">
     <thead>
       <tr>
@@ -15,6 +17,8 @@
       </tr>
     </thead>
   </DataTable>
+
+  <div v-html="html.interpretation"></div>
 </template>
 
 <script setup>
