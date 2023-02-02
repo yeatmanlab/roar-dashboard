@@ -1,7 +1,7 @@
 <template>
   <h1>{{ scoreStore.taskId }}</h1>
   <p>This is an introductory paragraph. Score reports are amazing!</p>
-  //<div id="distribution-by-grade"></div>
+  <div id="distribution-by-grade"></div>
   <p>This is another exquisitely written paragraph!</p>
   <div id="normed-percentile-distribution"></div>
   <p>Yet more amazing explanation!</p>
@@ -98,7 +98,7 @@ const debugStackedSupportByGrade = {
 
   description: 'Distribution of Support Classificaiton by Grade Level',
         title: {"text": "Distribution of Support Classificaiton by Grade Level", "anchor": "middle","fontSize":24},
-        "height": 75,
+        "height": 200,
         "width": 600,
         data: {values: scoreStore.scores,},
         "transform": [
@@ -110,7 +110,11 @@ const debugStackedSupportByGrade = {
         encoding: {
             //row: { field: "grade" },
             x: { aggregate: 'count', "title": "# of students" },
-            y: { bin: true, field: 'grade', "title": "grade", }, 
+            y: { bin: true, 
+                field: 'grade', 
+                "title": "grade", 
+                "axis": { "tickBand": "extent" },
+                }, 
             
             //"x": {"aggregate": "grade", /*"field": "support_level"*/},
             //color: { field: 'grade' },
