@@ -4,7 +4,7 @@
   <div v-html="html.supportSection1"></div>
   <div id="viz-normed-percentile-distribution"></div>
   <!-- <div v-html="html.supportSection2"></div> -->
-  <div id="stacked-support-by-grade"></div>
+  <div id="viz-stacked-support-by-grade"></div>
 
   // Datatable example
   <DataTable :data="data" class="display">
@@ -71,28 +71,28 @@ const distributionByGrade = {
 const normedPercentileDistribution = {
   // ...globalChartConfig,
   description: 'Distribution of Normed Percentiles (all grades)',
-  title: {"text": "Distribution of Woodcock-Johnson Equivalent Percentiles", "anchor": "middle","fontSize":24},
+  title: { "text": "Distribution of Woodcock-Johnson Equivalent Percentiles", "anchor": "middle", "fontSize": 24 },
   "height": 200,
   "width": 600,
-  data: {values: scoreStore.scores, },
+  data: { values: scoreStore.scores, },
   "transform": [
     //TODO replace fake calculation with real percent conversion
-    {"calculate": "100 * (datum.thetaEstimate +4)/8", "as": "swr_percentile"}, 
+    { "calculate": "100 * (datum.thetaEstimate +4)/8", "as": "swr_percentile" },
   ],
   mark: 'bar',
   encoding: {
     // thetaEstimate should be changed to percentile
-    x: { bin: true, 
-      field: 'swr_percentile', 
+    x: {
+      bin: true,
+      field: 'swr_percentile',
       "title": "Percentile (relative to national norms)",
-      "scale": {"domain": [0,100]},
-      //"bin": {"maxbins": 10, "minstep":5},},
-      //"bin": {"divide":[5,2]},
-      "bin": {"step": 5},
+      "scale": { "domain": [0, 100] },
+      "bin": { "step": 5 },
     },
-    y: { aggregate: 'count', "title": "count of students" },    
+    y: { aggregate: 'count', "title": "count of students" },
     //"color": {"condition": {"test": "datum['swr_score'] < 500", "value": "black"},"value": "red"},
-  }
+  },
+};
 
 const stackedSupportByGrade = {
   description: 'Distribution of Support Classificaiton by Grade Level',

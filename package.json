@@ -13,6 +13,7 @@
     "@vuelidate/validators": "^2.0.0-alpha.28",
     "@vueuse/head": "^1.0.13",
     "d3": "^7.4.4",
+    "datatables.net-vue3": "^2.0.0",
     "emailjs-com": "^3.2.0",
     "firebase": "^9.14.0",
     "marked": "^4.2.12",
