@@ -9,6 +9,7 @@ export default defineConfig({
     vue(),
     ViteFaviconsPlugin("./src/assets/roar-icon.png"),
   ],
+  assetsInclude: ['**/*.md'],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

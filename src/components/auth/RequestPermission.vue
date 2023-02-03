@@ -9,8 +9,7 @@
       You have requested access to the the ROAR assessment data. Please allow
       a few business days to be granted access to the ROAR-query.
     </Message>
-    <Button v-else label="Request Access" icon="pi pi-lock-open"
-    @click="authStore.requestAccess" />
+    <Button v-else label="Request Access" icon="pi pi-lock-open" @click="authStore.requestAccess" />
   </div>
 </template>
 

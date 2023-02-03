@@ -39,6 +39,9 @@ export const useScoreStore = () => {
       numStudents: (state) => state.scores.length,
       ageMean: (state) => {
         const ages = state.scores.map((score) => score.age);
+        if (ages.length === 0) {
+          return null;
+        }
         return ages.reduce((a, b) => a + b) / ages.length;
       },
       grades: (state) => state.scores.map((score) => score.grade),
@@ -46,7 +49,12 @@ export const useScoreStore = () => {
       gradeMax: (state) => Math.max(...state.grades),
       // TODO: thetaEstimate should be changed to ROAR score
       roarScores: (state) => state.scores.map((score) => score.thetaEstimate),
-      roarScoreMean: (state) => state.roarScores.reduce((a, b) => a + b) / state.roarScores.length,
+      roarScoreMean: (state) => {
+        if (state.roarScores.length === 0) {
+          return null;
+        }
+        return state.roarScores.reduce((a, b) => a + b) / state.roarScores.length;
+      },
       roarScoreMin: (state) => Math.min(...state.roarScores),
       roarScoreMax: (state) => Math.max(...state.roarScores),
       roarScoreSD: (state) => standardDeviation(state.roarScores),

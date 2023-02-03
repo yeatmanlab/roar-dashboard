@@ -1,45 +1,102 @@
 <template>
-  <div v-html="html.introduction"></div>
-  <div id="viz-distribution-by-grade"></div>
-  <div v-html="html.supportSection1"></div>
-  <div id="viz-normed-percentile-distribution"></div>
-  <!-- <div v-html="html.supportSection2"></div> -->
-  <div id="viz-stacked-support-by-grade"></div>
-  <div v-html="html.supportClassificationDistributions"></div>
-  <div v-html="html.automaticityDistributionsFirstGrade"></div>
-  <div v-html="html.studentScoreInformation"></div>
-
-  <DataTable :data="data" class="display">
+  <div v-html="html"></div>
+  <DataTable id="dt-table" :data="data" :columns="columns" :options=dataTableOptions class="display">
     <thead>
       <tr>
-        <th>A</th>
-        <th>B</th>
+        <th>Student ID</th>
+        <th>Grade</th>
+        <th>Age</th>
+        <th>SWR Score</th>
+        <th>Estimated WJ standard score</th>
+        <th>Estimated WJ percentile rank</th>
+        <th>Estimated risk level</th>
       </tr>
     </thead>
+    <tfoot>
+      <tr>
+        <th>Student ID</th>
+        <th>Grade</th>
+        <th>Age</th>
+        <th>SWR Score</th>
+        <th>Estimated WJ standard score</th>
+        <th>Estimated WJ percentile rank</th>
+        <th>Estimated risk level</th>
+      </tr>
+    </tfoot>
   </DataTable>
-
-  <div v-html="html.interpretation"></div>
 </template>
 
 <script setup>
 import { onMounted } from 'vue';
 import embed from 'vega-embed';
 import { marked } from 'marked';
+import Mustache from 'mustache';
 import { useScoreStore } from "@/store/scores";
-import * as markdown from "@/components/reportMarkdownSWR";
+import markdown from "@/assets/markdown/reportSWR.md?raw";
+
 import DataTable from 'datatables.net-vue3'
 import DataTablesLib from 'datatables.net';
+import Select from 'datatables.net-select';
+import Buttons from 'datatables.net-buttons';
 
 DataTable.use(DataTablesLib);
+DataTable.use(Select);
+DataTable.use(Buttons);
+
+const columns = [
+  { data: 'pid' },
+  { data: 'grade' },
+  { data: 'age' },
+  { data: 'roarScore' },
+  { data: 'wjStandardScore' },
+  { data: 'wjPercentile' },
+  { data: 'riskLevel' },
+];
+
+const dataTableOptions = {
+  dom: 'Bfrtip',
+  select: true,
+  buttons: [
+    'copy', 'csv', 'excel', 'pdf', 'print'
+  ],
+};
 
 const data = [
-  [1, 2],
-  [3, 4],
+  {
+    "id": "1",
+    "pid": "demo-1",
+    "grade": 6,
+    "age": 11,
+    "roarScore": 561,
+    "wjStandardScore": 104,
+    "wjPercentile": 61,
+    "riskLevel": "At or Above Average",
+  },
+  {
+    "id": "2",
+    "pid": "demo-2",
+    "grade": 7,
+    "age": 12,
+    "roarScore": 306,
+    "wjStandardScore": 78,
+    "wjPercentile": 7,
+    "riskLevel": "Needs Extra Support",
+  },
+  {
+    "id": "3",
+    "pid": "demo-3",
+    "grade": 7,
+    "age": 12,
+    "roarScore": 501,
+    "wjStandardScore": 94,
+    "wjPercentile": 34,
+    "riskLevel": "Needs Some Support",
+  },
 ];
 
 const scoreStore = useScoreStore();
 
-const html = Object.fromEntries(Object.entries(markdown).map(([k, v]) => [k, marked.parse(v(scoreStore))]));
+const html = marked.parse(Mustache.render(markdown, scoreStore));
 
 const globalChartConfig = {
   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
@@ -52,14 +109,14 @@ const globalChartConfig = {
 const distributionByGrade = {
   // ...globalChartConfig,
   description: 'ROAR Score Distribution by Grade Level',
-  title: {"text": "ROAR Score Distribution by Grade Level", "anchor": "middle","fontSize":24},
+  title: { "text": "ROAR Score Distribution by Grade Level", "anchor": "middle", "fontSize": 24 },
   "height": 75,
   "width": 600,
   data: {
     values: scoreStore.scores,
   },
   "transform": [
-    {"calculate": "100 * (datum.thetaEstimate +5)", "as": "swr_score"},
+    { "calculate": "100 * (datum.thetaEstimate +5)", "as": "swr_score" },
   ],
   mark: 'bar',
   encoding: {
@@ -100,24 +157,31 @@ const normedPercentileDistribution = {
 
 const stackedSupportByGrade = {
   description: 'Distribution of Support Classificaiton by Grade Level',
-  title: {"text": "Distribution of Support Classificaiton by Grade Level", "anchor": "middle","fontSize":24},
+  title: { "text": "Distribution of Support Classificaiton by Grade Level", "anchor": "middle", "fontSize": 24 },
   "height": 200,
   "width": 600,
-  data: {values: scoreStore.scores,},
+  data: { values: scoreStore.scores, },
   "transform": [
-    {"calculate": "100 * (datum.thetaEstimate +5)", "as": "swr_score"},
+    { "calculate": "100 * (datum.thetaEstimate +5)", "as": "swr_score" },
     //{"filter": "datum.swr_score > 60"}
   ],
   mark: 'bar',
   encoding: {
     x: { aggregate: 'count', "title": "# of students" },
-    y: { bin: true, 
-      field: 'grade', 
-      "title": "grade", 
+    y: {
+      bin: true,
+      field: 'grade',
+      "title": "grade",
       "axis": { "tickBand": "extent" },
-    }, 
+    },
   },
 };
+
+const moveTableElements = () => {
+  const dataTableDiv = document.getElementById("dt-table");
+  const targetDiv = document.getElementById("table-student-scores");
+  targetDiv.appendChild(dataTableDiv);
+}
 
 const draw = async () => {
   await embed('#viz-distribution-by-grade', distributionByGrade);
@@ -126,11 +190,14 @@ const draw = async () => {
 };
 
 onMounted(() => {
+  moveTableElements();
   draw()
 })
 </script>
 
 <style>
+@import 'datatables.net-dt';
+
 p {
   text-align: left;
 }
