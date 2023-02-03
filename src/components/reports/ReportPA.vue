@@ -54,7 +54,7 @@
             <strong>Deletion:</strong> Three pictures are shown, and the
             narrator asks the student to choose the picture that corresponds to
             the word described by a deletion, e.g. <em>“What is rainbow without
-            bow?”</em> To answer correctly, the student would choose the picture
+              bow?”</em> To answer correctly, the student would choose the picture
             of rain. In this test, the narrator does not narrate the answer
             pictures.
           </p>
@@ -84,7 +84,7 @@
       <p>
         This task is comprised of three skills related to phonological
         awareness: <strong>First Sound Matching (FSM)</strong>, <strong>Last
-        Sound Matching (LSM)</strong>, and <strong>Deletion (DEL).</strong>
+          Sound Matching (LSM)</strong>, and <strong>Deletion (DEL).</strong>
       </p>
       <p>
         We have classified students into three categories, based on whether
@@ -157,7 +157,7 @@ const normedPercentileDistribution = {
   mark: 'bar',
   encoding: {
     // thetaEstimate should be changed to percentile
-    x: { bin: true, field: 'thetaEstimate'},
+    x: { bin: true, field: 'thetaEstimate' },
     y: { aggregate: 'count' },
   },
 }
@@ -173,4 +173,5 @@ onMounted(() => {
 </script>
 
 <style>
+
 </style>

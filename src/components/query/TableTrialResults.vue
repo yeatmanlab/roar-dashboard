@@ -8,35 +8,15 @@
       <span class="flex-grow-1 flex align-items-start align-content-center text-align-left">
         <b class="align-self-center ml-1">Select trials below to export specific trials</b>
       </span>
-      <Button
-        icon="pi pi-external-link"
+      <Button icon="pi pi-external-link"
         :label="queryStore.selectedTrials.length !== 0 ? 'Export Selected Trials' : 'Select trials to enable export'"
-        class="flex-none mb-1 ml-2 p-2"
-        :loading="queryStore.selectedTrials.length === 0"
-        :disabled="queryStore.selectedTrials.length === 0"
-        @click="exportSelectedCSV"
-      />
-      <Button
-        icon="pi pi-external-link"
-        label="Export All Trials"
-        class="flex-none mb-1 ml-2 p-2"
-        @click="exportCSV"
-      />
+        class="flex-none mb-1 ml-2 p-2" :loading="queryStore.selectedTrials.length === 0"
+        :disabled="queryStore.selectedTrials.length === 0" @click="exportSelectedCSV" />
+      <Button icon="pi pi-external-link" label="Export All Trials" class="flex-none mb-1 ml-2 p-2" @click="exportCSV" />
     </div>
-    <DataTable
-      :value="queryStore.trials"
-      ref="trialtable"
-      :rowHover="true"
-      removableSort
-      sortMode="multiple"
-      scrollHeight="50vh"
-      :reorderableColumns="true"
-      :resizableColumns="true" columnResizeMode="fit" showGridlines
-      :virtualScrollerOptions="{ itemSize: 44 }"
-      :row="10"
-      dataKey="runId"
-      v-model:selection="selectedTrials"
-    >
+    <DataTable :value="queryStore.trials" ref="trialtable" :rowHover="true" removableSort sortMode="multiple"
+      scrollHeight="50vh" :reorderableColumns="true" :resizableColumns="true" columnResizeMode="fit" showGridlines
+      :virtualScrollerOptions="{ itemSize: 44 }" :row="10" dataKey="runId" v-model:selection="selectedTrials">
       <template #empty>
         No trials found.
       </template>
@@ -45,13 +25,8 @@
       </template>
       <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
 
-      <Column
-        v-for="col of queryStore.trialColumns"
-        :field="col.field"
-        :header="col.header"
-        :key="col.field"
-        sortable
-      />
+      <Column v-for="col of queryStore.trialColumns" :field="col.field" :header="col.header" :key="col.field"
+        sortable />
     </DataTable>
   </div>
 </template>
@@ -102,7 +77,7 @@ export default {
     onBeforeUnmount(() => {
       endProgress();
     })
-        
+
     const percentComplete = ref(0);
     const interval = ref(null);
     const startProgress = () => {
