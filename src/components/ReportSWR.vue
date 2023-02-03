@@ -82,6 +82,8 @@ const normedPercentileDistribution = {
   "transform": [
     //TODO replace fake calculation with real percent conversion
     { "calculate": "100 * (datum.thetaEstimate +4)/8", "as": "swr_percentile" },
+    {"calculate": "datum.swr_percentile <= 25? 'Extra Support Needed': datum.swr_percentile <=50? 'Some Support Needed': 'Average or Above Average' ",
+              "as": "Support" }
   ],
   mark: 'bar',
   encoding: {
@@ -99,8 +101,8 @@ const normedPercentileDistribution = {
 };
 
 const stackedSupportByGrade = {
-  description: 'Distribution of Support Classificaiton by Grade Level',
-  title: {"text": "Distribution of Support Classificaiton by Grade Level", "anchor": "middle","fontSize":24},
+  description: 'Distribution of Support Classification by Grade Level',
+  title: {"text": "Distribution of Support Classification by Grade Level", "anchor": "middle","fontSize":24},
   "height": 200,
   "width": 600,
   data: {values: scoreStore.scores,},
