@@ -48,6 +48,11 @@ const routes = [
     },
   },
   {
+    path: "/participant",
+    name: "Participant",
+    component: () => import(/* webpackChunkName: "Participant" */ "../pages/Participant.vue"),
+  },
+  {
     path: "/enable-cookies",
     name: "EnableCookies",
     component: () =>
