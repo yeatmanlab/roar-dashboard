@@ -60,7 +60,7 @@ const globalChartConfig = {
 const distributionByGrade = {
   // ...globalChartConfig,
   description: 'ROAR Score Distribution by Grade Level',
-  title: {"text": "ROAR Score Distribution by Grade Level", "anchor": "middle","fontSize":24},
+  title: {"text": "ROAR Score Distribution by Grade Level", "anchor": "middle","fontSize":18},
   config: {view: {"stroke": null} },
   data: {
     values: scoreStore.scores,
@@ -97,13 +97,15 @@ const distributionByGrade = {
 const normedPercentileDistribution = {
   // ...globalChartConfig,
   description: 'Distribution of Normed Percentiles (all grades)',
-  title: { "text": "Distribution of Woodcock-Johnson Equivalent Percentiles", "anchor": "middle", "fontSize": 24 },
+  title: { 
+    "text": "Distribution of Woodcock-Johnson Equivalent Percentiles", "anchor": "middle", "fontSize": 18, 
+    "subtitle": "all grades", subtitleFontStyle:"bold", subtitleFontSize:16,
+  },
   "height": 200,
   "width": 600,
   data: { values: scoreStore.scores, },
   "transform": [
-    //TODO replace fake calculation with real percent conversion
-    {"calculate": "100 * (datum.thetaEstimate +4)/8", "as": "swr_percentile" },
+    {"calculate": "100 * (datum.thetaEstimate +4)/8", "as": "swr_percentile" }, // TODO replace fake calculation with real percent conversion
     {"calculate": "datum.swr_percentile <= 25? 'Extra Support Needed': datum.swr_percentile <50? 'Some Support Needed': 'Average or Above Average' ",
               "as": "Support" }
   ],
@@ -119,28 +121,31 @@ const normedPercentileDistribution = {
       "axis": {"tickMinStep":1},
     },
     y: { aggregate: 'count', "title": "count of students" },
-    "color": {"field": "Support",
+    "color": {
+      "field": "Support",
       title: "Support",
       "sort": ['Extra Support Needed', 'Some Support Needed', 'Average or Above Average'],
       scale: {
-                domain: ["Extra Support Needed", "Some Support Needed", "Average or Above Average"],
-              range: ["#cc79a7", "#f0e442", "#0072b2"]
-              }
+        domain: ["Extra Support Needed", "Some Support Needed", "Average or Above Average"],
+        range: ["#cc79a7", "#f0e442", "#0072b2"]
       }
-    //"color": {"condition": {"test": "datum['swr_score'] < 500", "value": "black"},"value": "red"},
+    }
   },
 };
 
 const firstGradePercentileDistribution = {
   // ...globalChartConfig,
   description: 'Distribution of First Grade Woodcock-Johnson Equivalent Percentiles',
-  title: { "text": "Distribution of First Grade Woodcock-Johnson Equivalent Percentiles", "anchor": "middle", "fontSize": 24 },
+  title: { 
+    "text": "Distribution of Woodcock-Johnson Equivalent Percentiles", "anchor": "middle", "fontSize": 18,
+    "subtitle": "Kindergarten and 1st Grade", subtitleFontStyle:"bold", subtitleFontSize:16, 
+  },
   "height": 100,
   "width": 600,
   data: { values: scoreStore.scores, },
   "transform": [
-    { "calculate": "100 * (datum.thetaEstimate +4)/8", "as": "swr_percentile" },
-    {"filter": "datum.grade <= 1"},  
+    {"calculate": "100 * (datum.thetaEstimate +4)/8", "as": "swr_percentile" }, // TODO replace fake calculation with real percent conversion
+    {"filter": "(datum.grade == 'Kindergarten') || (datum.grade <= 1)" },  
     {"calculate": "datum.swr_percentile <= 50? 'Limited': 'Average or Above Average' ","as": "Automaticity" },
   ],
   mark: 'bar',
@@ -170,7 +175,7 @@ const firstGradePercentileDistribution = {
 
 const stackedSupportByGrade = {
   description: 'Distribution of Support Classification by Grade Level',
-  title: {"text": "Distribution of Support Classification by Grade Level", "anchor": "middle","fontSize":24},
+  title: {"text": "Distribution of Support Classification by Grade Level", "anchor": "middle","fontSize":18},
   "height": 200,
   "width": 600,
   data: {values: scoreStore.scores,},
@@ -181,9 +186,7 @@ const stackedSupportByGrade = {
               "as": "Support" },
     {"calculate": "indexof(['Extra Support Needed', 'Some Support Needed', 'Average or Above Average'], datum.Support)",
       "as": "order" },
-    {"filter": "datum.grade >= 2"},  // TODO fix, should be 1, using 2 to test
-
-    //{"filter": "datum.swr_score > 60"}
+    {"filter": "datum.grade >= 2"}, 
   ],
   mark: 'bar',
   encoding: {
@@ -211,7 +214,7 @@ const stackedSupportByGrade = {
 
 const stackedAutomaticityFirstGrade = {
   description: 'Distribution of Automaticity in First Grade',
-  title: {"text": "Distribution of Automaticity in First Grade", "anchor": "middle","fontSize":24},
+  title: {"text": "Distribution of Automaticity in Kindergarten and First Grade", "anchor": "middle","fontSize":18},
   "height": 100,
   "width": 600,
   data: {values: scoreStore.scores,},
@@ -221,7 +224,8 @@ const stackedAutomaticityFirstGrade = {
     {"calculate": "datum.swr_percentile <= 50? 'Limited': 'Average or Above Average' ","as": "Automaticity" },
     {"calculate": "indexof(['Limited', 'Average or Above Average'], datum.Automaticity)",
       "as": "order" },
-    {"filter": ("datum.grade <= 1") },  
+    {"filter": "(datum.grade == 'Kindergarten') || (datum.grade <= 1)" },  
+
   ],
   mark: 'bar',
   encoding: {
