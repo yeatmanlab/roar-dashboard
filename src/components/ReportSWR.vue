@@ -1,6 +1,7 @@
 <template>
   <div v-html="html.introduction"></div>
   <div id="viz-distribution-by-grade"></div>
+  <div v-html="html.overviewStats"></div>
 
   <div v-html="html.supportSection1"></div>
   <div id="viz-normed-percentile-distribution"></div>
@@ -37,6 +38,7 @@ import { useScoreStore } from "@/store/scores";
 import * as markdown from "@/components/reportMarkdownSWR";
 import DataTable from 'datatables.net-vue3'
 import DataTablesLib from 'datatables.net';
+import { ascending } from 'vega';
 
 DataTable.use(DataTablesLib);
 
@@ -46,6 +48,7 @@ const data = [
 ];
 
 const scoreStore = useScoreStore();
+console.log(scoreStore);
 
 const html = Object.fromEntries(Object.entries(markdown).map(([k, v]) => [k, marked.parse(v(scoreStore))]));
 
@@ -60,38 +63,58 @@ const globalChartConfig = {
 const distributionByGrade = {
   // ...globalChartConfig,
   description: 'ROAR Score Distribution by Grade Level',
-  title: {"text": "ROAR Score Distribution by Grade Level", "anchor": "middle","fontSize":18},
-  config: {view: {"stroke": null} },
-  data: {
-    values: scoreStore.scores,
-  },
-  "transform": [
+  title: {text: "ROAR Score Distribution", anchor: "middle", fontSize:18},
+  config: {view: {"stroke": "#000000", strokeWidth:1 } },
+  data: {values: scoreStore.scores,},
+  transform: [
     {"calculate": "100 * (datum.thetaEstimate +5)", "as": "swr_score"},
   ],
   mark: 'bar',
-  "height": 50,
-  "width": 400,
+  height: 50,
+  width: 500,
+
   encoding: {
     facet: {field: "grade",
             type: "nominal",
             columns: 1,
-            title: "Grade",
+            title: "By Grade",
+            header: {
+              titleColor: "navy",
+              titleFontSize:12,
+              titleAlign:"top",
+              titleAnchor:"middle",
+              labelColor: "navy",
+              labelFontSize:10,
+              labelFontStyle:"bold", 
+              labelAnchor:"middle",
+              labelAngle:0,
+              labelAlign:"left",
+              labelOrient:"left",
+              labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
+              //sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
+              //sort: "ascending",
+            },
             sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
-            spacing: 5
+
+            spacing: 5,
    },
    color: {field: 'grade', 
-          type: "nominal",
-          "sort": ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
+          type: "ordinal",
+          sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
           legend: null
     },
     // thetaEstimate should be changed to ROAR score
-    x: { bin: true, field: 'swr_score', "title": "ROAR Score", "bin": { "step": 50 }},
-    y: { aggregate: 'count', "title": "count", 
-        axis : {orient: "right"}}
-   
-    
+    x: { bin: true, 
+         field: 'swr_score', 
+         title: "ROAR Score", 
+         bin: { "step": 50 }},
+    y: { aggregate: 'count', 
+         title: "count", 
+         axis : {orient: "right", }
+        },
 
   }
+
 };
 
 const normedPercentileDistribution = {
@@ -99,7 +122,7 @@ const normedPercentileDistribution = {
   description: 'Distribution of Normed Percentiles (all grades)',
   title: { 
     "text": "Distribution of Woodcock-Johnson Equivalent Percentiles", "anchor": "middle", "fontSize": 18, 
-    "subtitle": "all grades", subtitleFontStyle:"bold", subtitleFontSize:16,
+    "subtitle": "(all grades)", subtitleFontStyle:"bold", subtitleFontSize:12,
   },
   "height": 200,
   "width": 600,
@@ -109,7 +132,7 @@ const normedPercentileDistribution = {
     {"calculate": "datum.swr_percentile <= 25? 'Extra Support Needed': datum.swr_percentile <50? 'Some Support Needed': 'Average or Above Average' ",
               "as": "Support" }
   ],
-  mark: 'bar',
+  "mark": "bar",
   encoding: {
     // thetaEstimate should be changed to percentile
     x: {
@@ -131,6 +154,7 @@ const normedPercentileDistribution = {
       }
     }
   },
+
 };
 
 const firstGradePercentileDistribution = {
@@ -138,7 +162,7 @@ const firstGradePercentileDistribution = {
   description: 'Distribution of First Grade Woodcock-Johnson Equivalent Percentiles',
   title: { 
     "text": "Distribution of Woodcock-Johnson Equivalent Percentiles", "anchor": "middle", "fontSize": 18,
-    "subtitle": "Kindergarten and 1st Grade", subtitleFontStyle:"bold", subtitleFontSize:16, 
+    "subtitle": "Kindergarten and 1st Grade", subtitleFontStyle:"bold", subtitleFontSize:12, 
   },
   "height": 100,
   "width": 600,
@@ -273,6 +297,6 @@ onMounted(() => {
 <style>
 p {
   text-align: left;
-  font-family:   "Helvetica Neue", "Palatino Linotype", sans-serif;
+  font-family:   "Source Sans Pro", "Helvetica Neue", "Palatino Linotype", sans-serif;
 }
 </style>
