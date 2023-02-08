@@ -1,4 +1,4 @@
-export const introduction = ({ numStudents, ageMean, gradeMin, gradeMax, roarScoreMean, roarScoreMin, roarScoreMax, roarScoreSD }) => `
+export const introduction = ({}) => `
 # Single Word Recognition Score Report
 
 ## Introduction to ROAR - Single Word Recognition
@@ -22,11 +22,13 @@ flashes on the screen, and students categorize the word as real or
 made-up, e.g., *“bake”* is a real word, and *“xop”* is a made-up word.
 
 The entire assessment takes most students fewer than 10 minutes.
+`;
 
+export const overviewStats = ({ adminSeason, numStudents, ageMean, gradeMin, gradeMax, roarScoreMean, roarScoreMin, roarScoreMax, roarScoreSD }) => `
 ## Overview
 
 This score report presents information from the recent administration of
-the ROAR assessment to students in sample during .
+the ROAR assessment to students during ${adminSeason}.
 
 -   ${numStudents} students completed the Single Word Recognition task.
 
