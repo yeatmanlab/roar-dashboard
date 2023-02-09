@@ -1,149 +1,66 @@
 <template>
-  <div style="height: 55vh">
-    <div class="flex flex-row align-content-center">
-      <span class="flex-grow-1 flex align-items-start align-content-center text-align-left">
-        <b class="align-self-center ml-1">Select runs below to export</b>
-      </span>
-      <Button icon="pi pi-external-link"
-        :label="queryStore.selectedRuns.length !== 0 ? 'Export Selected Runs' : 'Select runs to enable export'"
-        class="flex-none mb-1 ml-2 p-2" :loading="queryStore.selectedRuns.length === 0"
-        :disabled="queryStore.selectedRuns.length === 0" @click="exportCSV" />
-    </div>
-    <DataTable :value="queryStore.runs" ref="runtable" :rowHover="true" removableSort sortMode="multiple"
-      scrollHeight="50vh" :reorderableColumns="true" :resizableColumns="true" columnResizeMode="fit" showGridlines
-      :virtualScrollerOptions="{ itemSize: 44 }" :row="10" dataKey="runId" v-model:selection="selectedRuns"
-      v-model:filters="filters" filterDisplay="menu">
-      <template #empty>
-        No runs found.
-      </template>
-      <template #loading>
-        Loading run data. Please wait.
-      </template>
-      <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
-
-      <Column field="roarUid" header="roarUid" sortable style="min-width: 8rem">
-        <template #body="{ data }">
-          {{ data.roarUid }}
-        </template>
-        <template #filter="{ filterModel }">
-          <InputText type="text" v-model="filterModel.value" class="p-column-filter" placeholder="Search by roarUid" />
-        </template>
-      </Column>
-
-      <Column field="runId" header="runId" sortable style="min-width: 10rem">
-        <template #body="{ data }">
-          {{ data.runId }}
-        </template>
-        <template #filter="{ filterModel }">
-          <InputText type="text" v-model="filterModel.value" class="p-column-filter" placeholder="Search by runId" />
-        </template>
-      </Column>
-
-      <Column header="taskId" filterField="task" sortField="task.id" sortable :showFilterMatchModes="false"
-        :filterMenuStyle="{ 'width': '12rem' }" style="min-width: 6rem">
-        <template #body="{ data }">
-          {{ data.task.id }}
-        </template>
-        <template #filter="{ filterModel }">
-          <div class="mb-3 font-bold">Task Picker</div>
-          <MultiSelect v-model="filterModel.value" :options="runTasks" optionLabel="id" placeholder="Any"
-            :showToggleAll="false" class="p-column-filter" />
-        </template>
-      </Column>
-
-      <Column header="variantId" filterField="variant" sortField="variant.id" sortable :showFilterMatchModes="false"
-        :filterMenuStyle="{ 'width': '12rem' }" style="min-width: 6rem">
-        <template #body="{ data }">
-          {{ data.variant.id }}
-        </template>
-        <template #filter="{ filterModel }">
-          <div class="mb-3 font-bold">Variant Picker</div>
-          <MultiSelect v-model="filterModel.value" :options="runVariants" optionLabel="id" placeholder="Any"
-            :showToggleAll="false" class="p-column-filter" />
-        </template>
-      </Column>
-
-      <Column header="districtId" filterField="district" sortField="district.id" sortable :showFilterMatchModes="false"
-        :filterMenuStyle="{ 'width': '12rem' }" style="min-width: 6rem">
-        <template #body="{ data }">
-          {{ data.district.id }}
-        </template>
-        <template #filter="{ filterModel }">
-          <div class="mb-3 font-bold">District Picker</div>
-          <MultiSelect v-model="filterModel.value" :options="runDistricts" optionLabel="id" placeholder="Any"
-            :showToggleAll="false" class="p-column-filter" />
-        </template>
-      </Column>
-
-      <Column header="schoolId" filterField="school" sortField="school.id" sortable :showFilterMatchModes="false"
-        :filterMenuStyle="{ 'width': '12rem' }" style="min-width: 6rem">
-        <template #body="{ data }">
-          {{ data.school.id }}
-        </template>
-        <template #filter="{ filterModel }">
-          <div class="mb-3 font-bold">School Picker</div>
-          <MultiSelect v-model="filterModel.value" :options="runSchools" optionLabel="id" placeholder="Any"
-            :showToggleAll="false" class="p-column-filter" />
-        </template>
-      </Column>
-
-      <Column header="classId" filterField="class" sortField="class.id" sortable :showFilterMatchModes="false"
-        :filterMenuStyle="{ 'width': '12rem' }" style="min-width: 6rem">
-        <template #body="{ data }">
-          {{ data.class.id }}
-        </template>
-        <template #filter="{ filterModel }">
-          <div class="mb-3 font-bold">Class Picker</div>
-          <MultiSelect v-model="filterModel.value" :options="runClasses" optionLabel="id" placeholder="Any"
-            :showToggleAll="false" class="p-column-filter" />
-        </template>
-      </Column>
-
-      <Column header="studyId" filterField="study" sortField="study.id" sortable :showFilterMatchModes="false"
-        :filterMenuStyle="{ 'width': '12rem' }" style="min-width: 6rem">
-        <template #body="{ data }">
-          {{ data.study.id }}
-        </template>
-        <template #filter="{ filterModel }">
-          <div class="mb-3 font-bold">Study Picker</div>
-          <MultiSelect v-model="filterModel.value" :options="runStudies" optionLabel="id" placeholder="Any"
-            :showToggleAll="false" class="p-column-filter" />
-        </template>
-      </Column>
-
-      <Column field="timeStarted" header="timeStarted" sortable dataType="date" style="min-width: 8rem">
-        <template #body="{ data }">
-          {{ data.timeStarted }}
-        </template>
-        <template #filter="{ filterModel }">
-          <Calendar v-model="filterModel.value" dateFormat="mm/dd/yy" placeholder="mm/dd/yyyy" />
-        </template>
-      </Column>
-
-      <Column field="timeFinished" header="timeFinished" sortable dataType="date" style="min-width: 8rem">
-        <template #body="{ data }">
-          {{ data.timeFinished }}
-        </template>
-        <template #filter="{ filterModel }">
-          <Calendar v-model="filterModel.value" dateFormat="mm/dd/yy" placeholder="mm/dd/yyyy" />
-        </template>
-      </Column>
-
-      <Column field="completed" header="completed" sortable :showAddButton="false" :showFilterOperator="false"
-        :showFilterMatchModes="false" :filterMenuStyle="{ 'width': '12rem' }" style="min-width: 6rem">
-        <template #body="{ data }">
-          <Chip v-if="data.completed" label="completed" icon="pi pi-check-circle" />
-          <Chip v-else label="incomplete" icon="pi pi-times-circle" />
-        </template>
-        <template #filter="{ filterModel }">
-          <div class="field-checkbox">
-            <Checkbox inputId="completedcheck" v-model="filterModel.value" :binary="true" />
-            <label for="completedcheck">Require completed</label>
-          </div>
-        </template>
-      </Column>
-    </DataTable>
+  <div class="flex flex-row align-content-center">
+    <span class="flex-grow-1 flex align-items-start align-content-center text-align-left">
+      <b class="align-self-center ml-1">Select students below to export</b>
+    </span>
+    <Button icon="pi pi-external-link"
+      :label="scoreStore.selectedStudents.length !== 0 ? 'Export Selected Students' : 'Select students to enable export'"
+      class="flex-none mb-1 ml-2 p-2" :loading="scoreStore.selectedStudents.length === 0"
+      :disabled="scoreStore.selectedStudents.length === 0" @click="exportSelectedCSV" />
+    <Button icon="pi pi-external-link" label="Export All" class="flex-none mb-1 ml-2 p-2"
+      :loading="queryStore.selectedRuns.length === 0" :disabled="scoreStore.selectedRuns.length === 0"
+      @click="exportAllCSV" />
   </div>
+  <DataTable :value="scoreStore.tableRoarScores" ref="runtable" :rowHover="true" removableSort sortMode="multiple"
+    scrollHeight="50vh" :reorderableColumns="true" :resizableColumns="true" columnResizeMode="fit" showGridlines
+    :virtualScrollerOptions="{ itemSize: 44 }" :row="10" dataKey="runId" v-model:selection="selectedStudents"
+    v-model:filters="filters" filterDisplay="menu">
+    <template #empty>
+      No students found.
+    </template>
+    <template #loading>
+      Loading ROAR scores. Please wait.
+    </template>
+    <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+
+    <Column field="studentId" header="Student ID" sortable style="min-width: 8rem">
+      <template #body="{ data }">
+        {{ data.studentId }}
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText type="text" v-model="filterModel.value" class="p-column-filter" placeholder="Search by student ID" />
+      </template>
+    </Column>
+
+    <Column header="Grade" field="grade" sortable :showFilterMatchModes="false" :filterMenuStyle="{ 'width': '12rem' }"
+      style="min-width: 6rem">
+      <template #body="{ data }">
+        {{ data.grade }}
+      </template>
+      <template #filter="{ filterModel }">
+        <div class="mb-3 font-bold">Grade Picker</div>
+        <MultiSelect v-model="filterModel.value" :options="grades" optionLabel="id" placeholder="Any"
+          :showToggleAll="false" class="p-column-filter" />
+      </template>
+    </Column>
+
+    <Column header="age" field="age" sortable :showFilterMatchModes="false" :filterMenuStyle="{ 'width': '12rem' }"
+      style="min-width: 6rem">
+      <template #body="{ data }">
+        {{ data.age }}
+      </template>
+      <template #filter="{ filterModel }">
+        <div class="mb-3 font-bold">Age Picker</div>
+        <MultiSelect v-model="filterModel.value" :options="ages" optionLabel="id" placeholder="Any"
+          :showToggleAll="false" class="p-column-filter" />
+      </template>
+    </Column>
+
+    <!-- <th>SWR Score</th>
+    <th>Estimated WJ standard score</th>
+    <th>Estimated WJ percentile rank</th>
+    <th>Estimated risk level</th> -->
+  </DataTable>
 </template>
 
 <script setup>
@@ -152,28 +69,68 @@ import { FilterMatchMode, FilterOperator } from "primevue/api";
 import { storeToRefs } from 'pinia';
 import Papa from "papaparse";
 import { flattenObj } from '@/helpers';
-import { useQueryStore } from "@/store/query";
+import { useScoreStore } from "@/store/scores";
 import SkeletonTable from "@/components/SkeletonTable.vue";
 
-const queryStore = useQueryStore();
+const data = [
+  {
+    "id": "1",
+    "pid": "demo-1",
+    "grade": 6,
+    "age": 11,
+    "roarScore": 561,
+    "wjStandardScore": 104,
+    "wjPercentile": 61,
+    "riskLevel": "At or Above Average",
+  },
+  {
+    "id": "2",
+    "pid": "demo-2",
+    "grade": 7,
+    "age": 12,
+    "roarScore": 306,
+    "wjStandardScore": 78,
+    "wjPercentile": 7,
+    "riskLevel": "Needs Extra Support",
+  },
+  {
+    "id": "3",
+    "pid": "demo-3",
+    "grade": 7,
+    "age": 12,
+    "roarScore": 501,
+    "wjStandardScore": 94,
+    "wjPercentile": 34,
+    "riskLevel": "Needs Some Support",
+  },
+];
+
+const scoreStore = useScoreStore();
+
 const {
-  percentCompleteRuns,
-  selectedRuns,
-  runTasks,
-  runVariants,
-  runDistricts,
-  runSchools,
-  runClasses,
-  runStudies,
-} = storeToRefs(queryStore);
+  tableRoarScores,
+  selectedStudents,
+} = storeToRefs(scoreStore);
+
 const runtable = ref();
 
-const exportCSV = async () => {
-  const csv = Papa.unparse(selectedRuns.value.map(flattenObj));
+const exportAllCSV = async () => {
+  const csv = Papa.unparse(tableRoarScores.value.map(flattenObj));
   const blob = new Blob([csv]);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob, { type: 'text/plain' });
-  a.download = 'runs.csv';
+  a.download = 'roar_scores.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
+const exportSelectedCSV = async () => {
+  const csv = Papa.unparse(selectedStudents.value.map(flattenObj));
+  const blob = new Blob([csv]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob, { type: 'text/plain' });
+  a.download = 'roar_scores_selected.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -186,18 +143,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   endProgress();
 })
-
-const percentComplete = ref(0);
-const interval = ref(null);
-const startProgress = () => {
-  interval.value = setInterval(() => {
-    percentComplete.value = Math.round(percentCompleteRuns.value);
-  }, 1000);
-};
-const endProgress = () => {
-  clearInterval(interval.value);
-  interval.value = null;
-};
 
 const filters = ref({
   roarUid: {

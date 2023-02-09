@@ -6,36 +6,34 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: () => import(/* webpackChunkName: "Home" */ "../pages/Home.vue"),
+    component: () => import("../pages/Home.vue"),
   },
-  // {
-  //   path: "/me",
-  //   name: "Profile",
-  //   component: () =>
-  //     import(/* webpackChunkName: "Profile" */ "../pages/Profile.vue"),
-  //   meta: { toTop: true, smoothScroll: true, requiresAuth: true },
-  // },
+  {
+    path: "/upload-scores",
+    name: "UploadScores",
+    component: () => import("../pages/UploadFiles.vue"),
+  },
   {
     path: "/query",
     name: "Query",
-    component: () => import(/* webpackChunkName: "Home" */ "../pages/QueryPage.vue"),
+    component: () => import("../pages/QueryPage.vue"),
   },
   {
     path: "/score-report",
     name: "ScoreReport",
-    component: () => import(/* webpackChunkName: "Home" */ "../pages/ScoreReport.vue"),
+    component: () => import("../pages/ScoreReport.vue"),
   },
   {
     path: "/register",
     name: "Register",
     component: () =>
-      import(/* webpackChunkName: "Register" */ "../pages/SignInOrRegister.vue"),
+      import("../pages/SignInOrRegister.vue"),
     meta: { requiresGuest: true },
   },
   {
     path: "/signin",
     name: "SignIn",
-    component: () => import(/* webpackChunkName: "SignIn" */ "../pages/SignInOrRegister.vue"),
+    component: () => import("../pages/SignInOrRegister.vue"),
     meta: { requiresGuest: true },
   },
   {
@@ -51,14 +49,14 @@ const routes = [
     path: "/enable-cookies",
     name: "EnableCookies",
     component: () =>
-      import(/* webpackChunkName: "Register" */ "../pages/EnableCookies.vue"),
+      import("../pages/EnableCookies.vue"),
     meta: { requiresGuest: true },
   },
   {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () =>
-      import(/* webpackChunkName: "NotFound" */ "../pages/NotFound.vue"),
+      import("../pages/NotFound.vue"),
   },
 ];
 

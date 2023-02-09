@@ -1,29 +1,6 @@
 <template>
   <div v-html="html"></div>
-  <DataTable id="dt-table" :data="data" :columns="columns" :options=dataTableOptions class="display">
-    <thead>
-      <tr>
-        <th>Student ID</th>
-        <th>Grade</th>
-        <th>Age</th>
-        <th>SWR Score</th>
-        <th>Estimated WJ standard score</th>
-        <th>Estimated WJ percentile rank</th>
-        <th>Estimated risk level</th>
-      </tr>
-    </thead>
-    <tfoot>
-      <tr>
-        <th>Student ID</th>
-        <th>Grade</th>
-        <th>Age</th>
-        <th>SWR Score</th>
-        <th>Estimated WJ standard score</th>
-        <th>Estimated WJ percentile rank</th>
-        <th>Estimated risk level</th>
-      </tr>
-    </tfoot>
-  </DataTable>
+  <TableRoarScores />
 </template>
 
 <script setup>
@@ -33,68 +10,7 @@ import { marked } from 'marked';
 import Mustache from 'mustache';
 import { useScoreStore } from "@/store/scores";
 import markdown from "@/assets/markdown/reportSWR.md?raw";
-
-import DataTable from 'datatables.net-vue3'
-import DataTablesLib from 'datatables.net';
-import Select from 'datatables.net-select';
-import Buttons from 'datatables.net-buttons';
-
-DataTable.use(DataTablesLib);
-DataTable.use(Select);
-DataTable.use(Buttons);
-
-const columns = [
-  { data: 'pid' },
-  { data: 'grade' },
-  { data: 'age' },
-  { data: 'roarScore' },
-  { data: 'wjStandardScore' },
-  { data: 'wjPercentile' },
-  { data: 'riskLevel' },
-];
-
-const dataTableOptions = {
-  dom: 'Bfrtip',
-  select: true,
-  buttons: [
-    'copy', 'csv', 'excel', 'pdf', 'print'
-  ],
-};
-
-const data = [
-  {
-    "id": "1",
-    "pid": "demo-1",
-    "grade": 6,
-    "age": 11,
-    "roarScore": 561,
-    "wjStandardScore": 104,
-    "wjPercentile": 61,
-    "riskLevel": "At or Above Average",
-  },
-  {
-    "id": "2",
-    "pid": "demo-2",
-    "grade": 7,
-    "age": 12,
-    "roarScore": 306,
-    "wjStandardScore": 78,
-    "wjPercentile": 7,
-    "riskLevel": "Needs Extra Support",
-  },
-  {
-    "id": "3",
-    "pid": "demo-3",
-    "grade": 7,
-    "age": 12,
-    "roarScore": 501,
-    "wjStandardScore": 94,
-    "wjPercentile": 34,
-    "riskLevel": "Needs Some Support",
-  },
-];
-
-const scoreStore = useScoreStore();
+import TableRoarScores from './TableRoarScores.vue';
 
 const html = marked.parse(Mustache.render(markdown, scoreStore));
 
