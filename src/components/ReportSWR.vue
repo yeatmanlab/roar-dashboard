@@ -106,7 +106,11 @@ const distributionByGrade = {
     // thetaEstimate should be changed to ROAR score
     x: { bin: true, 
          field: 'swr_score', 
-         title: "ROAR Score", 
+         title: ["ROAR Score" , 
+         "<---------------------------------                                                                            --------------------------------->", 
+         "Fewer words                                                                                                               More words", 
+         "recognized                                                                                                                   recognized",
+         "automatically                                                                                                           automatically"],
          bin: { "step": 50 }},
     y: { aggregate: 'count', 
          title: "count", 

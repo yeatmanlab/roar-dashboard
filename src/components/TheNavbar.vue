@@ -6,6 +6,8 @@
       </router-link>
       <h1 class="ml-2">ROAR Web Query</h1>
       <Button icon="pi pi-info-circle" class="p-button-rounded p-button-secondary p-button-text" @click="openInfo"/>
+      <Button icon="pi pi-print" class="p-button-rounded p-button-secondary" @click="print"/>
+
       <Dialog header="What is ROAR?" v-model:visible="displayInfo" position="topleft" :breakpoints="{'960px': '75vw', '640px': '90vw'}" :style="{width: '50vw'}">
         <div class="text-left">
           <p>
@@ -25,6 +27,7 @@
           </p>
         </div>
       </Dialog>
+      
     </template>
 
     <template #end>
@@ -60,6 +63,7 @@ const loggedInItems = [
 const displayInfo = ref(false);
 const openInfo = () => displayInfo.value = true;
 const closeInfo = () => displayInfo.value = false;
+const print = () => window.print();
 </script>
 
 <style scoped></style>

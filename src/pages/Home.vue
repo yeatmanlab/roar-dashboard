@@ -12,6 +12,11 @@
           <p>Drag and drop the identifier file here to upload.</p>
         </template> -->
       </FileUpload>
+      <FileUpload class="my-3" mode="basic" name="sectionreport[]" :customUpload="true" @uploader="onSectionUpload" accept=".csv" :multiple="false" :auto="true" chooseLabel="Choose a section identifier file" >
+        <!-- <template #empty>
+          <p>Drag and drop the identifier file here to upload.</p>
+        </template> -->
+      </FileUpload>
       <Button
         icon="pi pi-chart-line"
         label="View Score Report"
@@ -47,6 +52,11 @@ const onAdminUpload = async (event) => {
   toast.add({ severity: 'info', summary: 'Success', detail: 'Identifier File Uploaded', life: 3000 });
   uploadedFile.value = event.files[0];
   scoreStore.identifiers = await csvFileToJson(uploadedFile.value);
+}
+const onSectionUpload = async (event) => {
+  toast.add({ severity: 'info', summary: 'Success', detail: 'Section File Uploaded', life: 3000 });
+  uploadedFile.value = event.files[0];
+  scoreStore.sectionsidentifiers = await csvFileToJson(uploadedFile.value);
 }
 const submit = () => {
   router.push({ name: "ScoreReport" });
