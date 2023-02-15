@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { standardDeviation } from "@/helpers";
+import { csvFileToJson, standardDeviation } from "@/helpers";
 
 export const useScoreStore = () => {
   return defineStore({
@@ -8,6 +8,8 @@ export const useScoreStore = () => {
       return {
         appScores: [],
         identifiers: [],
+        sections: [],
+        selectedStudentId: null,
       };
     },
     getters: { 
@@ -15,6 +17,15 @@ export const useScoreStore = () => {
         // TODO: Add error handling to check that there is only one taskId
         return [...new Set(state.appScores.map((row) => row?.taskId))][0];
       },
+      reportType: (state) => {
+        // Lots of complicated logic in here to determine the report type.
+        // Options might include
+        // SWR
+        // PA
+        // A mix of the above
+        return null;
+      },
+      scoresReady: (state) => state.scores.length > 0,
       scores: (state) => {
         // If identifiers were not uploaded, simply return the appScores
         if (state.identifiers.length === 0) {
@@ -37,32 +48,67 @@ export const useScoreStore = () => {
         }
       },
       numStudents: (state) => state.scores.length,
-      ageMean: (state) => {
+      ages: (state) => {
         const ages = state.scores.map((score) => score.age);
         if (ages.length === 0) {
           return null;
         }
-        return ages.reduce((a, b) => a + b) / ages.length;
+        return {
+          ages: ages,
+          mean: ages.reduce((a, b) => a + b) / ages.length,
+        };
       },
-      grades: (state) => state.scores.map((score) => score.grade),
-      gradeMin: (state) => Math.min(...state.grades),
-      gradeMax: (state) => Math.max(...state.grades),
+      grades: (state) => {
+        const gradesArray = state.scores.map((score) => score.grade);
+        return {
+          grades: gradesArray,
+          min: Math.min(...gradesArray),
+          max: Math.max(...gradesArray),
+        };
+      },
       // TODO: thetaEstimate should be changed to ROAR score
-      roarScores: (state) => state.scores.map((score) => score.thetaEstimate),
-      roarScoreMean: (state) => {
-        if (state.roarScores.length === 0) {
-          return null;
+      roarScores: (state) => {
+        const roarScoresArray = state.scores.map((score) => score.thetaEstimate);
+        if (roarScoresArray.length === 0) {
+          return {
+            scores: roarScoresArray,
+            min: null,
+            max: null,
+            mean: null,
+            sd: null,
+          };
+        } else {
+          return {
+            scores: roarScoresArray,
+            min: Math.min(...roarScoresArray),
+            max: Math.max(...roarScoresArray),
+            mean: roarScoresArray.reduce((a, b) => a + b) / roarScoresArray.length,
+            sd: standardDeviation(roarScoresArray),
+          };
         }
-        return state.roarScores.reduce((a, b) => a + b) / state.roarScores.length;
       },
-      roarScoreMin: (state) => Math.min(...state.roarScores),
-      roarScoreMax: (state) => Math.max(...state.roarScores),
-      roarScoreSD: (state) => standardDeviation(state.roarScores),
-      // numStudentsAboveAverage: (state) =>
-      // numStudentsNeedSomeSupport: (state) =>
-      // numStudentsNeedExtraSupport: (state) =>
+      classifications: (state) => {
+        return {
+          support: {
+            high: null,
+            medium: null,
+            low: null,
+          },
+          automaticity: {
+            high: null,
+            low: null,
+          }
+        }
+
+
+      }
     },
     actions: {
+      mergeSectionsWithIdentifiers: async (csvFile) => {
+        const sectionsData = await csvFileToJson(csvFile);
+        console.log(sectionsData);
+        this.sections = sectionsData;
+      },
       // assignRiskCategories: (scoreField, cutoffs) => {
       //   // Expect that cutoff is an array of objects with structure
       //   // { category: string, lowerBound: number, upperBound: number}

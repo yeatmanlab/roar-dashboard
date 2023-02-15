@@ -17,8 +17,8 @@ norms for their age group.
 
 **The assessment** provides a measure of orthographic mapping, the
 automatic use of sound-symbol correspondence. During the test, a word flashes on
-the screen, and students categorize the word as real or made-up, e.g., *“bake”*
-is a real word, and *“xop”* is a made-up word.
+the screen, and students categorize the word as real or made-up, e.g., *'lake'*
+is a real word, and *'xop'* is a made-up word.
 
 The entire assessment takes most students fewer than 10 minutes.
 
@@ -29,14 +29,14 @@ ROAR assessment to students in sample during .
 
 - {{ numStudents }} students completed the Single Word Recognition task.
 
-- The average age of the student was {{ ageMean }}.
+- The average age of the student was {{ ages.mean }}.
 
-- The grades ranged from grade {{ grade.min }} to grade {{ grades.max }}.
+- The grades ranged from grade {{ grades.min }} to grade {{ grades.max }}.
 
 - The average ROAR score was {{ roarScores.mean }} on a scale of 100 - 900 (min =
 {{ roarScores.min }}, max = {{ roarScores.max }} , sd = {{ roarScores.sd }}).
 
-<div id="viz-distribution-by-grade"></div>
+<div id='viz-distribution-by-grade'></div>
 
 ## Identifying Students who could Benefit from Support
 
@@ -58,18 +58,18 @@ percentile.
 - Needs Extra Support: Students whose word recognition is below the 25th
 percentile.
 
-<div id="viz-normed-percentile-distribution"></div>
+<div id='viz-normed-percentile-distribution'></div>
 
 According to these classifications:
 
-- {{ classifications.support.high }} students are classified as "At or Above Average."
+- {{ classifications.support.high }} students are classified as 'At or Above Average.'
 
-- {{ classification.support.medium }} students are classified as "Need Some Support."
+- {{ classifications.support.medium }} students are classified as 'Need Some Support.'
 
-- {{ classification.support.low }} students are classified as "Need Extra
-Support."
+- {{ classifications.support.low }} students are classified as 'Need Extra
+Support.'
 
-<div id="viz-stacked-support-by-grade"></div>
+<div id='viz-stacked-support-by-grade'></div>
 
 ### Identifying Automaticity in First Grade
 
@@ -78,26 +78,26 @@ than sounding out words one letter at a time, they develop automaticity in word
 recognition and can recognize a word at a glance. This ability begins developing
 around first grade but some children do not begin achieving automaticity until
 later. In this score report, first grade children are categorized as either
-having "limited automaticity" or "at or above average automaticity". Students
+having 'limited automaticity' or 'at or above average automaticity.' Students
 with limited automaticity are likely to benefit from increased instruction and
 continued monitoring of progress.
 
-<div id="viz-another-vizualization-1"></div>
+<div id='viz-another-vizualization-1'></div>
 
 According to these classifications:
 
-- {{ classifications.automaticity.high }} students displayed "At or Above Average
-Automaticity."
+- {{ classifications.automaticity.high }} students displayed 'At or Above Average
+Automaticity.'
 
-- {{ classifications.automaticity.low }} students displayed "Limited Automaticity."
+- {{ classifications.automaticity.low }} students displayed 'Limited Automaticity.'
 
 ### Distribution of Support Classifications by Grade
 
-<div id="viz-another-vizualization-2"></div>
+<div id='viz-another-vizualization-2'></div>
 
 ### Distribution of Automaticity in First Grade
 
-<div id="viz-another-vizualization-3"></div>
+<div id='viz-another-vizualization-3'></div>
 
 ## Student Score Information
 
@@ -105,7 +105,7 @@ Below is an interactive data table of the de-identified students that can be
 filtered and downloaded. We will provide a list of identified IDs as part of a
 secure file transfer, separately from this report.
 
-<div id="table-student-scores"></div>
+<TableRoarScores />
 
 ### Notes on Interpreting this Score Report
 

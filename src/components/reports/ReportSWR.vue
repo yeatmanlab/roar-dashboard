@@ -1,18 +1,20 @@
 <template>
-  <div v-html="html"></div>
-  <TableRoarScores />
+  <div v-if="scoreStore.scoresReady">
+    <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" />
+  </div>
+  <AppSpinner v-else />
 </template>
 
 <script setup>
 import { onMounted } from 'vue';
 import embed from 'vega-embed';
-import { marked } from 'marked';
-import Mustache from 'mustache';
 import { useScoreStore } from "@/store/scores";
-import markdown from "@/assets/markdown/reportSWR.md?raw";
+import { storeToRefs } from 'pinia'
+import markdownText from "@/assets/markdown/reportSWR.md?raw";
 import TableRoarScores from './TableRoarScores.vue';
 
-const html = marked.parse(Mustache.render(markdown, scoreStore));
+const scoreStore = useScoreStore();
+const scoreStoreRefs = storeToRefs(scoreStore);
 
 const globalChartConfig = {
   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
@@ -96,7 +98,9 @@ const stackedSupportByGrade = {
 const moveTableElements = () => {
   const dataTableDiv = document.getElementById("dt-table");
   const targetDiv = document.getElementById("table-student-scores");
-  targetDiv.appendChild(dataTableDiv);
+  if (dataTableDiv !== null) {
+    targetDiv?.appendChild(dataTableDiv);
+  }
 }
 
 const draw = async () => {
@@ -112,8 +116,6 @@ onMounted(() => {
 </script>
 
 <style>
-@import 'datatables.net-dt';
-
 p {
   text-align: left;
 }

@@ -13,11 +13,7 @@
           <AccordionTab>
             <template #header>
               <i class="pi pi-table mr-2"></i>
-              <Badge
-                v-if="queryStore.runsReady"
-                class="mr-2"
-                :value="queryStore.nRuns"
-              />
+              <Badge v-if="queryStore.runsReady" class="mr-2" :value="queryStore.nRuns" />
               <span>Runs</span>
             </template>
             <TableRunResults />
@@ -51,4 +47,5 @@ const { activeTab } = storeToRefs(queryStore);
 </script>
 
 <style scoped>
+
 </style>
