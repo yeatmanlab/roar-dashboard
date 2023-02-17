@@ -7,15 +7,15 @@
   <div id="viz-normed-percentile-distribution"></div>
   <!-- <div v-html="html.supportSection2"></div> -->
 
-  <div v-html="html.automaticity1"></div>
-  <div id="viz-first-grade-percentile-distribution"></div>
+  <div v-if="(scoreStore.gradeMin <= 1)" v-html="html.automaticity1"></div>
+  <div v-if="(scoreStore.gradeMin <= 1)" id="viz-first-grade-percentile-distribution"></div>
   <!-- <div v-html="html.automaticity2"></div> -->
 
   <div v-html="html.supportClassificationDistributions"></div>
   <div id="viz-stacked-support-by-grade"></div>
 
-  <div v-html="html.automaticityDistributionsFirstGrade"></div>
-  <div id="viz-automaticity-distributions-first-grade"></div>
+  <div v-if="(scoreStore.gradeMin <= 1)" v-html="html.automaticityDistributionsFirstGrade"></div>
+  <div v-if="(scoreStore.gradeMin <= 1)" id="viz-automaticity-distributions-first-grade"></div>
   
   <div v-html="html.studentScoreInformation"></div>
   <DataTable :data="data" class="display">
@@ -96,7 +96,7 @@ const distributionByGrade = {
             },
             sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
 
-            spacing: 5,
+            spacing: 7,
    },
    color: {field: 'grade', 
           type: "ordinal",
@@ -147,7 +147,7 @@ const normedPercentileDistribution = {
     "color": {
       "field": "Support",
       title: "Support",
-      "sort": ['Extra Support Needed', 'Some Support Needed', 'Average or Above Average'],
+      "sort": ['Needs Exra Support', 'Some Support Needed', 'Average or Above Average'],
       scale: {
         domain: ["Extra Support Needed", "Some Support Needed", "Average or Above Average"],
         range: ["#cc79a7", "#f0e442", "#0072b2"]
@@ -286,7 +286,6 @@ const draw = async () => {
   await embed('#viz-first-grade-percentile-distribution', firstGradePercentileDistribution);
   await embed('#viz-stacked-support-by-grade', stackedSupportByGrade);
   await embed('#viz-automaticity-distributions-first-grade', stackedAutomaticityFirstGrade);
-
 };
 
 onMounted(() => {

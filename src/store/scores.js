@@ -1,6 +1,11 @@
 import { defineStore } from "pinia";
 import { standardDeviation } from "@/helpers";
 
+export function thetaToRoarScore (thetaEstimate) {
+  return (Math.round(100 * (thetaEstimate + 5)));
+};
+
+
 export const useScoreStore = () => {
   return defineStore({
     id: "scoreStore",
@@ -37,19 +42,23 @@ export const useScoreStore = () => {
         }
       },
       numStudents: (state) => state.scores.length,
+
       ageMean: (state) => {
         const ages = state.scores.map((score) => score.age);
-        return ages.reduce((a, b) => a + b) / ages.length;
+        let averageAge = ages.reduce((a, b) => a + b) / ages.length;
+        averageAge = Math.round(averageAge * 10) / 10;
+        return averageAge;
       },
       grades: (state) => state.scores.map((score) => score.grade),
-      gradeMin: (state) => Math.min(...state.grades),
-      gradeMax: (state) => Math.max(...state.grades),
-      // TODO: thetaEstimate should be changed to ROAR score
+      gradeMin: (state) => Math.min(...state.grades) || 0,
+      gradeMax: (state) => Math.max(...state.grades) || 0,
+
       roarScores: (state) => state.scores.map((score) => score.thetaEstimate),
-      roarScoreMean: (state) => state.roarScores.reduce((a, b) => a + b) / state.roarScores.length,
-      roarScoreMin: (state) => Math.min(...state.roarScores),
-      roarScoreMax: (state) => Math.max(...state.roarScores),
-      roarScoreSD: (state) => standardDeviation(state.roarScores),
+      roarScoreMean: (state) => thetaToRoarScore(state.roarScores.reduce((a, b) => a + b) / state.roarScores.length),
+      roarScoreMin: (state) => thetaToRoarScore(Math.min(...state.roarScores)),
+      roarScoreMax: (state) => thetaToRoarScore(Math.max(...state.roarScores)),
+      roarScoreSD: (state) => standardDeviation(state.roarScores).toFixed(2),
+
       // numStudentsAboveAverage: (state) =>
       // numStudentsNeedSomeSupport: (state) =>
       // numStudentsNeedExtraSupport: (state) =>

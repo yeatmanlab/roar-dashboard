@@ -30,14 +30,13 @@ export const overviewStats = ({ adminSeason, numStudents, ageMean, gradeMin, gra
 This score report presents information from the recent administration of
 the ROAR assessment to students during ${adminSeason}.
 
--   ${numStudents} students completed the Single Word Recognition task.
+-   ${numStudents} students in grades ${gradeMin} to ${gradeMax} completed the Single Word Recognition task.
 
--   The average age of the student was ${ageMean}.
+-   The average age of the students was ${ageMean}.
 
--   The grades ranged from grade ${gradeMin} to grade ${gradeMax}.
+-   The average ROAR score was ${roarScoreMean} on a scale of 100 - 900 
 
--   The average ROAR score was ${roarScoreMean} on a scale of 100 - 900 (min =
-    ${roarScoreMin}, max = ${roarScoreMax} , sd = ${roarScoreSD}).
+-   The scores ranged from ${roarScoreMin} to ${roarScoreMax}, with standard deviation of ${roarScoreSD}.
 `;
 
 export const supportSection1 = ({}) => `
