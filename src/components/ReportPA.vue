@@ -1,7 +1,8 @@
 <template>
   <!-- <div v-html="html.introductionPA"></div> -->
   <div id="viz-distribution-by-grade-pa"></div>
-  <div id="viz-normed-percentile-distribution-pa"></div>
+  <div id="viz-normed-percentile-distribution-1-4-pa"></div>
+  <div id="viz-normed-percentile-distribution-5-12-pa"></div>
   <div id="viz-stacked-support-by-grade-pa"></div>
 </template>
 
@@ -86,14 +87,14 @@ const distributionByGradePA = {
   },
 };
 
-const normedPercentileDistributionPA = {
+const normedPercentileDistribution1to4PA = {
   // ...globalChartConfig,
   description: "Distribution of Normed Percentiles (all grades)",
   title: {
     text: "Distribution of CTOPP Equivalent Percentiles",
     anchor: "middle",
     fontSize: 18,
-    subtitle: "(all grades)",
+    subtitle: "(grades k to 4)",
     subtitleFontStyle: "bold",
     subtitleFontSize: 12,
   },
@@ -102,12 +103,13 @@ const normedPercentileDistributionPA = {
   data: { values: scoreStore.scores },
 
   transform: [
-  {
-      calculate:
-        "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
-      as: "Support",
+    {  calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+       as: "SupportGrade1to4",
     },
-
+    {  calculate: "datum.percentileRankCTOPP <= 15? 'Extra Support Needed': datum.percentileRankCTOPP <=30? 'Some Support Needed': 'Average or Above Average' ",
+       as: "SupportGrade5to12",
+    },
+    {"filter": "(datum.grade == 'Kindergarten') || (datum.grade <= 4)" },  
   ],
 
   mark: "bar",
@@ -123,7 +125,57 @@ const normedPercentileDistributionPA = {
     y: { aggregate: "count", title: "count of students" },
     order: { field: "order" },
     color: {
-      field: "Support",
+      field: "SupportGrade1to4",
+      title: "Support",
+      scale: {
+        domain: ["Extra Support Needed", "Some Support Needed", "Average or Above Average"],
+        //domain: ["At Risk", "Some Risk", "Doing Well"],
+        range: ["#cc79a7", "#f0e442", "#0072b2"],
+      },
+      order: { field: "order", type: "nominal" },
+    },
+  },
+};
+
+const normedPercentileDistribution5to12PA = {
+  // ...globalChartConfig,
+  description: "Distribution of Normed Percentiles (all grades)",
+  title: {
+    text: "Distribution of CTOPP Equivalent Percentiles",
+    anchor: "middle",
+    fontSize: 18,
+    subtitle: "(grades 5 to 12)",
+    subtitleFontStyle: "bold",
+    subtitleFontSize: 12,
+  },
+  height: 200,
+  width: 600,
+  data: { values: scoreStore.scores },
+
+  transform: [
+    {  calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+       as: "SupportGrade1to4",
+    },
+    {  calculate: "datum.percentileRankCTOPP <= 15? 'Extra Support Needed': datum.percentileRankCTOPP <=30? 'Some Support Needed': 'Average or Above Average' ",
+       as: "SupportGrade5to12",
+    },
+    {"filter": "datum.grade >= 5" },  
+  ],
+
+  mark: "bar",
+  encoding: {
+    x: {
+      bin: true,
+      field: "percentileRankCTOPP",
+      title: "Percentile (relative to national norms)",
+      scale: { domain: [0, 100] },
+      bin: { step: 5, "extent":[0,100], },
+      axis: { tickMinStep: 1 },
+    },
+    y: { aggregate: "count", title: "count of students" },
+    order: { field: "order" },
+    color: {
+      field: "SupportGrade5to12",
       title: "Support",
       scale: {
         domain: ["Extra Support Needed", "Some Support Needed", "Average or Above Average"],
@@ -192,7 +244,8 @@ const stackedSupportByGradePA = {
 
 const draw = async () => {
   await embed('#viz-distribution-by-grade-pa', distributionByGradePA);
-  await embed('#viz-normed-percentile-distribution-pa',normedPercentileDistributionPA);
+  await embed('#viz-normed-percentile-distribution-1-4-pa',normedPercentileDistribution1to4PA);
+  await embed('#viz-normed-percentile-distribution-5-12-pa',normedPercentileDistribution5to12PA);
   await embed("#viz-stacked-support-by-grade-pa", stackedSupportByGradePA);
 };
 
