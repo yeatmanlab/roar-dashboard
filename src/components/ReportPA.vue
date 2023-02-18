@@ -28,6 +28,7 @@ const globalChartConfig = {
   data: {
     values: scoreStore.scores,
   },
+
 };
 
 const distributionByGradePA = {
@@ -36,7 +37,7 @@ const distributionByGradePA = {
   title: { text: "ROAR PA Score Distribution", anchor: "middle", fontSize: 18 },
   config: { view: { stroke: "#000000", strokeWidth: 1 } },
   data: { values: scoreStore.scores },
-  transform: [{ calculate: "100 * (datum.thetaEstimate +5)", as: "swr_score" }],
+
   mark: "bar",
   height: 50,
   width: 500,
@@ -99,6 +100,7 @@ const normedPercentileDistributionPA = {
   height: 200,
   width: 600,
   data: { values: scoreStore.scores },
+
   transform: [
   {
       calculate:
@@ -107,6 +109,7 @@ const normedPercentileDistributionPA = {
     },
 
   ],
+
   mark: "bar",
   encoding: {
     x: {
@@ -143,9 +146,15 @@ const stackedSupportByGradePA = {
   width: 600,
   data: { values: scoreStore.scores },
   transform: [
+    {  calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+       as: "SupportGrade1to4",
+    },
+    {  calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+       as: "SupportGrade5to12",
+    },
     {
       calculate:
-        "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+      "(datum.grade >=5)? datum.SupportGrade5to12 :datum.SupportGrade1to4 ",
       as: "Support",
     },
     {
@@ -183,10 +192,7 @@ const stackedSupportByGradePA = {
 
 const draw = async () => {
   await embed('#viz-distribution-by-grade-pa', distributionByGradePA);
-  await embed(
-    "#viz-normed-percentile-distribution-pa",
-    normedPercentileDistributionPA
-  );
+  await embed('#viz-normed-percentile-distribution-pa',normedPercentileDistributionPA);
   await embed("#viz-stacked-support-by-grade-pa", stackedSupportByGradePA);
 };
 
