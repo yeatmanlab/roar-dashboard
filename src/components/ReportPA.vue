@@ -1,6 +1,10 @@
 <template>
   <!-- <div v-html="html.introductionPA"></div> -->
   <div id="viz-distribution-by-grade-pa"></div>
+  <div id="viz-stacked-skill-by-grade-pa"></div>
+  <div id="viz-skill-focus-by-grade-pa"></div>
+
+
   <div id="viz-normed-percentile-distribution-1-4-pa"></div>
   <div id="viz-normed-percentile-distribution-5-12-pa"></div>
   <div id="viz-stacked-support-by-grade-pa"></div>
@@ -84,6 +88,107 @@ const distributionByGradePA = {
       bin: { step: 5 },
     },
     y: { aggregate: "count", title: "count", axis: { orient: "right" } },
+  },
+};
+
+const stackedSkillByGradePA = {
+  description: "Distribution of Skill Classification by Grade Level",
+  title: {
+    text: "Distribution of Skill Classification by Grade Level",
+    anchor: "middle",
+    fontSize: 18,
+  },
+  height: 200,
+  width: 600,
+  data: { values: scoreStore.scores },
+  transform: [
+    {
+      calculate:
+        "indexof(['No Mastery', 'Some Mastery', 'Beginning to Exhibit Full Mastery', 'Full Mastery'], datum.skillSummary)",
+      as: "order",
+    },
+  ],
+  mark: "bar",
+  encoding: {
+    x: { aggregate: "count", title: "# of students", axis: { tickMinStep: 5,  } },
+    y: {
+      bin: false,
+      type: "ordinal",
+      field: "grade",
+      title: "grade",
+      axis: { tickBand: "extent", tickMinStep: 1 },
+    },
+    color: {
+      field: "skillSummary",
+      type: "nominal",
+      scale: {
+        domain: [
+          'No Mastery',
+          'Some Mastery',
+          'Beginning to Exhibit Full Mastery',
+           'Full Mastery',
+        ],
+        //range: ["#aa4599","#342288", "#88ccee", "#44aa99"],
+        range: ["#aa4599","#ddcc77", "#b4ddd1", "#44aa99"],
+
+      },
+      title: "Skill Classification",
+    },
+    order: { field: "order", type: "nominal" },
+  },
+};
+
+const skillFocusByGradePA = {
+  // TODO: data FSM, LSM, DEL
+  description: "Skills to Focus On  by Grade Level",
+  title: {
+    text: "Skills to Focus On by Grade Level",
+    anchor: "middle",
+    fontSize: 18,
+  },
+  height: 100,
+  width: 300,
+  data: { values: scoreStore.scores },
+  transform: [
+    {
+      calculate:
+        "indexof(['No Mastery', 'Some Mastery', 'Beginning to Exhibit Full Mastery', 'Full Mastery'], datum.skillSummary)",
+      as: "order",
+    },
+  ],
+  mark: "bar",
+  encoding: {
+    facet: {
+      field: "grade",
+      "type": "ordinal",
+      columns: 2,
+      sort: {field: "grade"}
+    },
+    y: { aggregate: "count", title: "# of students", axis: { tickMinStep: 5,  } },
+    x: {
+      bin: false,
+      type: "ordinal",
+      field: "skillSummary",
+      title: "skillSummary",
+      axis: { tickBand: "extent", tickMinStep: 1 },
+    },
+    color: {
+      field: "skillSummary",
+      type: "nominal",
+      scale: {
+        domain: [
+          'No Mastery',
+          'Some Mastery',
+          'Beginning to Exhibit Full Mastery',
+           'Full Mastery',
+        ],
+        //range: ["#aa4599","#342288", "#88ccee", "#44aa99"],
+        range: ["#342288", "#44aa99","#ddcc77", "#88ccee"],
+
+      },
+      title: "Skill Classification",
+    },
+    order: { field: "order", type: "nominal" },
   },
 };
 
@@ -244,6 +349,9 @@ const stackedSupportByGradePA = {
 
 const draw = async () => {
   await embed('#viz-distribution-by-grade-pa', distributionByGradePA);
+  await embed("#viz-stacked-skill-by-grade-pa", stackedSkillByGradePA);
+  await embed("#viz-skill-focus-by-grade-pa", skillFocusByGradePA);
+
   await embed('#viz-normed-percentile-distribution-1-4-pa',normedPercentileDistribution1to4PA);
   await embed('#viz-normed-percentile-distribution-5-12-pa',normedPercentileDistribution5to12PA);
   await embed("#viz-stacked-support-by-grade-pa", stackedSupportByGradePA);
