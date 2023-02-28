@@ -3,6 +3,8 @@
   <div id="viz-distribution-by-grade-pa"></div>
   <div id="viz-stacked-skill-by-grade-pa"></div>
   <div id="viz-skill-focus-by-grade-pa"></div>
+  <div id="viz-skill-focus-by-grade-pa-orig"></div>
+
 
 
   <div id="viz-normed-percentile-distribution-1-4-pa"></div>
@@ -139,6 +141,47 @@ const stackedSkillByGradePA = {
 };
 
 const skillFocusByGradePA = {
+  description: "Skills to Focus On by Grade Level",
+  title: {
+    text: "Skills to Focus On by Grade Level",
+    anchor: "middle",
+    fontSize: 18,
+  },
+  height: 200,
+  width: 600,
+  data: { values: scoreStore.scores },
+  transform: [
+      // convert mastery to focus so we can use sum to count the number who need to work on the skill
+      {calculate: "(datum.masteryFSM==0)?1:0", as: "focusFSM"},
+      {calculate: "(datum.masteryLSM==0)?1:0", as: "focusLSM"},
+      {calculate: "(datum.masteryDEL==0)?1:0", as: "focusDEL"},
+  ],
+  "repeat": {"layer": ["focusFSM", "focusLSM", "focusDEL"]},
+  "spec": {
+    "mark": "bar",
+    "encoding": {
+      "x": {
+        "field": "grade",
+        "type": "nominal",
+        axis: {labelAngle:"0"},
+      },
+      "y": {
+        "aggregate": "sum",
+        "field": {"repeat": "layer"},
+        "type": "quantitative",
+        "title": "# of students"
+      },
+      "color": {"datum": {"repeat": "layer"}, "title": "Skill"},
+      "xOffset": {"datum": {"repeat": "layer"}}
+    }
+  },
+  "config": {
+    "mark": {"invalid": null}
+  }
+};
+
+
+const skillFocusByGradePA_orig = {
   // TODO: data FSM, LSM, DEL
   description: "Skills to Focus On  by Grade Level",
   title: {
@@ -162,6 +205,23 @@ const skillFocusByGradePA = {
       field: "grade",
       "type": "ordinal",
       columns: 2,
+      header: {
+              titleColor: "navy",
+              titleFontSize:12,
+              titleAlign:"top",
+              titleAnchor:"middle",
+              labelColor: "navy",
+              labelFontSize:10,
+              labelFontStyle:"bold", 
+              labelAnchor:"middle",
+              labelAngle:0,
+              labelAlign:"top",
+              labelOrient:"top",
+              labelBaseline: "line-bottom",
+              labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
+              //sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
+              //sort: "ascending",
+            },
       sort: {field: "grade"}
     },
     y: { aggregate: "count", title: "# of students", axis: { tickMinStep: 5,  } },
@@ -171,6 +231,7 @@ const skillFocusByGradePA = {
       field: "skillSummary",
       title: "skillSummary",
       axis: { tickBand: "extent", tickMinStep: 1 },
+      sort: "order",
     },
     color: {
       field: "skillSummary",
@@ -180,7 +241,7 @@ const skillFocusByGradePA = {
           'No Mastery',
           'Some Mastery',
           'Beginning to Exhibit Full Mastery',
-           'Full Mastery',
+          'Full Mastery',
         ],
         //range: ["#aa4599","#342288", "#88ccee", "#44aa99"],
         range: ["#342288", "#44aa99","#ddcc77", "#88ccee"],
@@ -348,13 +409,15 @@ const stackedSupportByGradePA = {
 };
 
 const draw = async () => {
-  await embed('#viz-distribution-by-grade-pa', distributionByGradePA);
-  await embed("#viz-stacked-skill-by-grade-pa", stackedSkillByGradePA);
+  //await embed('#viz-distribution-by-grade-pa', distributionByGradePA);
+  //await embed("#viz-stacked-skill-by-grade-pa", stackedSkillByGradePA);
   await embed("#viz-skill-focus-by-grade-pa", skillFocusByGradePA);
+  await embed("#viz-skill-focus-by-grade-pa-orig", skillFocusByGradePA_orig);
 
-  await embed('#viz-normed-percentile-distribution-1-4-pa',normedPercentileDistribution1to4PA);
-  await embed('#viz-normed-percentile-distribution-5-12-pa',normedPercentileDistribution5to12PA);
-  await embed("#viz-stacked-support-by-grade-pa", stackedSupportByGradePA);
+
+  //await embed('#viz-normed-percentile-distribution-1-4-pa',normedPercentileDistribution1to4PA);
+  //await embed('#viz-normed-percentile-distribution-5-12-pa',normedPercentileDistribution5to12PA);
+  //await embed("#viz-stacked-support-by-grade-pa", stackedSupportByGradePA);
 };
 
 onMounted(() => {
