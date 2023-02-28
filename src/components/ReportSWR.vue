@@ -147,7 +147,7 @@ const normedPercentileDistribution = {
     "color": {
       "field": "Support",
       title: "Support",
-      "sort": ['Needs Exra Support', 'Some Support Needed', 'Average or Above Average'],
+      "sort": ['Needs Extra Support', 'Some Support Needed', 'Average or Above Average'],
       scale: {
         domain: ["Extra Support Needed", "Some Support Needed", "Average or Above Average"],
         range: ["#cc79a7", "#f0e442", "#0072b2"]
