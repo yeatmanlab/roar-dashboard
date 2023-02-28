@@ -3,9 +3,6 @@
   <div id="viz-distribution-by-grade-pa"></div>
   <div id="viz-stacked-skill-by-grade-pa"></div>
   <div id="viz-skill-focus-by-grade-pa"></div>
-  <div id="viz-skill-focus-by-grade-pa-orig"></div>
-
-
 
   <div id="viz-normed-percentile-distribution-1-4-pa"></div>
   <div id="viz-normed-percentile-distribution-5-12-pa"></div>
@@ -131,7 +128,7 @@ const stackedSkillByGradePA = {
            'Full Mastery',
         ],
         //range: ["#aa4599","#342288", "#88ccee", "#44aa99"],
-        range: ["#aa4599","#ddcc77", "#b4ddd1", "#44aa99"],
+        range: ["#aa4599","#F8E768", "#b4ddd1", "#44aa99"],
 
       },
       title: "Skill Classification",
@@ -143,7 +140,8 @@ const stackedSkillByGradePA = {
 const skillFocusByGradePA = {
   description: "Skills to Focus On by Grade Level",
   title: {
-    text: "Skills to Focus On by Grade Level",
+    text: "Skills to Focus On",
+    subtitle: "by grade level",
     anchor: "middle",
     fontSize: 18,
   },
@@ -160,6 +158,7 @@ const skillFocusByGradePA = {
   "spec": {
     "mark": "bar",
     "encoding": {
+
       "x": {
         "field": "grade",
         "type": "nominal",
@@ -171,86 +170,17 @@ const skillFocusByGradePA = {
         "type": "quantitative",
         "title": "# of students"
       },
-      "color": {"datum": {"repeat": "layer"}, "title": "Skill"},
+      "color": {
+        "datum": {"repeat": "layer"}, 
+        "title": "Skill",
+        scale: {range: ["#be95c4","#5e548e", "#0072b2", ]},
+      },
       "xOffset": {"datum": {"repeat": "layer"}}
     }
   },
   "config": {
     "mark": {"invalid": null}
   }
-};
-
-
-const skillFocusByGradePA_orig = {
-  // TODO: data FSM, LSM, DEL
-  description: "Skills to Focus On  by Grade Level",
-  title: {
-    text: "Skills to Focus On by Grade Level",
-    anchor: "middle",
-    fontSize: 18,
-  },
-  height: 100,
-  width: 300,
-  data: { values: scoreStore.scores },
-  transform: [
-    {
-      calculate:
-        "indexof(['No Mastery', 'Some Mastery', 'Beginning to Exhibit Full Mastery', 'Full Mastery'], datum.skillSummary)",
-      as: "order",
-    },
-  ],
-  mark: "bar",
-  encoding: {
-    facet: {
-      field: "grade",
-      "type": "ordinal",
-      columns: 2,
-      header: {
-              titleColor: "navy",
-              titleFontSize:12,
-              titleAlign:"top",
-              titleAnchor:"middle",
-              labelColor: "navy",
-              labelFontSize:10,
-              labelFontStyle:"bold", 
-              labelAnchor:"middle",
-              labelAngle:0,
-              labelAlign:"top",
-              labelOrient:"top",
-              labelBaseline: "line-bottom",
-              labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
-              //sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
-              //sort: "ascending",
-            },
-      sort: {field: "grade"}
-    },
-    y: { aggregate: "count", title: "# of students", axis: { tickMinStep: 5,  } },
-    x: {
-      bin: false,
-      type: "ordinal",
-      field: "skillSummary",
-      title: "skillSummary",
-      axis: { tickBand: "extent", tickMinStep: 1 },
-      sort: "order",
-    },
-    color: {
-      field: "skillSummary",
-      type: "nominal",
-      scale: {
-        domain: [
-          'No Mastery',
-          'Some Mastery',
-          'Beginning to Exhibit Full Mastery',
-          'Full Mastery',
-        ],
-        //range: ["#aa4599","#342288", "#88ccee", "#44aa99"],
-        range: ["#342288", "#44aa99","#ddcc77", "#88ccee"],
-
-      },
-      title: "Skill Classification",
-    },
-    order: { field: "order", type: "nominal" },
-  },
 };
 
 const normedPercentileDistribution1to4PA = {
@@ -409,15 +339,13 @@ const stackedSupportByGradePA = {
 };
 
 const draw = async () => {
-  //await embed('#viz-distribution-by-grade-pa', distributionByGradePA);
-  //await embed("#viz-stacked-skill-by-grade-pa", stackedSkillByGradePA);
+  await embed('#viz-distribution-by-grade-pa', distributionByGradePA);
+  await embed("#viz-stacked-skill-by-grade-pa", stackedSkillByGradePA);
   await embed("#viz-skill-focus-by-grade-pa", skillFocusByGradePA);
-  await embed("#viz-skill-focus-by-grade-pa-orig", skillFocusByGradePA_orig);
 
-
-  //await embed('#viz-normed-percentile-distribution-1-4-pa',normedPercentileDistribution1to4PA);
-  //await embed('#viz-normed-percentile-distribution-5-12-pa',normedPercentileDistribution5to12PA);
-  //await embed("#viz-stacked-support-by-grade-pa", stackedSupportByGradePA);
+  await embed('#viz-normed-percentile-distribution-1-4-pa',normedPercentileDistribution1to4PA);
+  await embed('#viz-normed-percentile-distribution-5-12-pa',normedPercentileDistribution5to12PA);
+  await embed("#viz-stacked-support-by-grade-pa", stackedSupportByGradePA);
 };
 
 onMounted(() => {
