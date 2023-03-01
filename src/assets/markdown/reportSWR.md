@@ -105,7 +105,7 @@ Below is an interactive data table of the de-identified students that can be
 filtered and downloaded. We will provide a list of identified IDs as part of a
 secure file transfer, separately from this report.
 
-<TableRoarScores />
+<table-roar-scores />
 
 ### Notes on Interpreting this Score Report
 

@@ -119,4 +119,8 @@ onMounted(() => {
 p {
   text-align: left;
 }
+
+li {
+  text-align: left;
+}
 </style>

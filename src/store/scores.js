@@ -69,6 +69,7 @@ export const useScoreStore = () => {
       // TODO: thetaEstimate should be changed to ROAR score
       roarScores: (state) => {
         const roarScoresArray = state.scores.map((score) => score.thetaEstimate);
+        const filterScores = 0;
         if (roarScoresArray.length === 0) {
           return {
             scores: roarScoresArray,
@@ -108,6 +109,8 @@ export const useScoreStore = () => {
         const sectionsData = await csvFileToJson(csvFile);
         console.log(sectionsData);
         this.sections = sectionsData;
+        // Do stuff to sectionsData
+        // merge with this.identifiers
       },
       // assignRiskCategories: (scoreField, cutoffs) => {
       //   // Expect that cutoff is an array of objects with structure

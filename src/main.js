@@ -65,6 +65,9 @@ app.use(VueShowdownPlugin, {
   options: {
     emoji: true,
     underline: true,
+    omitExtraWLInCodeBlocks: true,
+    simpleLineBreaks: false,
+    backslashEscapesHTMLTags: true,
   },
 });
 
