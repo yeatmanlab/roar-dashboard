@@ -1,6 +1,10 @@
 import { defineStore } from "pinia";
 import { csvFileToJson, standardDeviation } from "@/helpers";
 
+export function thetaToRoarScore (thetaEstimate) {
+  return (Math.round(100 * (thetaEstimate + 5)));
+};
+
 export const useScoreStore = () => {
   return defineStore({
     id: "scoreStore",
@@ -66,7 +70,6 @@ export const useScoreStore = () => {
           max: Math.max(...gradesArray),
         };
       },
-      // TODO: thetaEstimate should be changed to ROAR score
       roarScores: (state) => {
         const roarScoresArray = state.scores.map((score) => score.thetaEstimate);
         const filterScores = 0;
@@ -81,10 +84,10 @@ export const useScoreStore = () => {
         } else {
           return {
             scores: roarScoresArray,
-            min: Math.min(...roarScoresArray),
-            max: Math.max(...roarScoresArray),
-            mean: roarScoresArray.reduce((a, b) => a + b) / roarScoresArray.length,
-            sd: standardDeviation(roarScoresArray),
+            min: thetaToRoarScore(Math.min(...roarScoresArray)),
+            max: thetaToRoarScore(Math.max(...roarScoresArray)),
+            mean: thetaToRoarScore(roarScoresArray.reduce((a, b) => a + b) / roarScoresArray.length),
+            sd: standardDeviation(roarScoresArray).toFixed(2),
           };
         }
       },

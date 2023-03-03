@@ -1,97 +1,305 @@
 <template>
   <div v-if="scoreStore.scoresReady">
-    <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" />
+    <VueShowdown
+      :vue-template="true"
+      :vue-template-data="{ ...scoreStoreRefs }"
+      :markdown="markdownText"
+    />
   </div>
   <AppSpinner v-else />
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
-import embed from 'vega-embed';
+import { onMounted } from "vue";
+import embed from "vega-embed";
 import { useScoreStore } from "@/store/scores";
-import { storeToRefs } from 'pinia'
+import { storeToRefs } from "pinia";
 import markdownText from "@/assets/markdown/reportSWR.md?raw";
-import TableRoarScores from './TableRoarScores.vue';
+import TableRoarScores from "./TableRoarScores.vue";
 
 const scoreStore = useScoreStore();
 const scoreStoreRefs = storeToRefs(scoreStore);
 
+console.log(scoreStore);
+
 const globalChartConfig = {
-  $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-  description: 'default settings to be used for all charts',
+  $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+  description: "default settings to be used for all charts",
   data: {
     values: scoreStore.scores,
   },
-}
+};
 
 const distributionByGrade = {
   // ...globalChartConfig,
-  description: 'ROAR Score Distribution by Grade Level',
-  title: { "text": "ROAR Score Distribution by Grade Level", "anchor": "middle", "fontSize": 24 },
-  "height": 75,
-  "width": 600,
-  data: {
-    values: scoreStore.scores,
-  },
-  "transform": [
-    { "calculate": "100 * (datum.thetaEstimate +5)", "as": "swr_score" },
-  ],
-  mark: 'bar',
+  description: "ROAR Score Distribution by Grade Level",
+  title: { text: "ROAR Score Distribution", anchor: "middle", fontSize: 18 },
+  config: { view: { stroke: "#000000", strokeWidth: 1 } },
+  data: { values: scoreStore.scores },
+  transform: [{ calculate: "100 * (datum.thetaEstimate +5)", as: "swr_score" }],
+  mark: "bar",
+  height: 50,
+  width: 500,
+
   encoding: {
-    row: { field: "grade" },
+    facet: {
+      field: "grade",
+      type: "nominal",
+      columns: 1,
+      title: "By Grade",
+      header: {
+        titleColor: "navy",
+        titleFontSize: 12,
+        titleAlign: "top",
+        titleAnchor: "middle",
+        labelColor: "navy",
+        labelFontSize: 10,
+        labelFontStyle: "bold",
+        labelAnchor: "middle",
+        labelAngle: 0,
+        labelAlign: "left",
+        labelOrient: "left",
+        labelExpr:
+          "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
+        //sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
+        //sort: "ascending",
+      },
+      sort: ["Kindergarten", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+
+      spacing: 7,
+    },
+    color: {
+      field: "grade",
+      type: "ordinal",
+      sort: ["Kindergarten", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+      legend: null,
+    },
     // thetaEstimate should be changed to ROAR score
-    x: { bin: true, field: 'swr_score', "title": "ROAR Score", },
-    y: { aggregate: 'count', "title": "# of students" },
-    color: { field: 'grade' },
+    x: {
+      bin: true,
+      field: "swr_score",
+      title: "ROAR Score",
+      bin: { step: 50 },
+    },
+    y: { aggregate: "count", title: "count", axis: { orient: "right" } },
   },
 };
 
 // TODO look at the colors in this example: https://vega.github.io/vega-lite/examples/bar_heatlane.html
 const normedPercentileDistribution = {
   // ...globalChartConfig,
-  description: 'Distribution of Normed Percentiles (all grades)',
-  title: { "text": "Distribution of Woodcock-Johnson Equivalent Percentiles", "anchor": "middle", "fontSize": 24 },
-  "height": 200,
-  "width": 600,
-  data: { values: scoreStore.scores, },
-  "transform": [
-    //TODO replace fake calculation with real percent conversion
-    { "calculate": "100 * (datum.thetaEstimate +4)/8", "as": "swr_percentile" },
+  description: "Distribution of Normed Percentiles (all grades)",
+  title: {
+    text: "Distribution of Woodcock-Johnson Equivalent Percentiles",
+    anchor: "middle",
+    fontSize: 18,
+    subtitle: "(all grades)",
+    subtitleFontStyle: "bold",
+    subtitleFontSize: 12,
+  },
+  height: 200,
+  width: 600,
+  data: { values: scoreStore.scores },
+  transform: [
+    { calculate: "100 * (datum.thetaEstimate +4)/8", as: "swr_percentile" }, // TODO replace fake calculation with real percent conversion
+    {
+      calculate:
+        "datum.swr_percentile <= 25? 'Extra Support Needed': datum.swr_percentile <50? 'Some Support Needed': 'Average or Above Average' ",
+      as: "Support",
+    },
   ],
-  mark: 'bar',
+  mark: "bar",
   encoding: {
     // thetaEstimate should be changed to percentile
     x: {
       bin: true,
-      field: 'swr_percentile',
-      "title": "Percentile (relative to national norms)",
-      "scale": { "domain": [0, 100] },
-      "bin": { "step": 5 },
+      field: "swr_percentile",
+      title: "Percentile (relative to national norms)",
+      scale: { domain: [0, 100] },
+      bin: { step: 5 },
+      axis: { tickMinStep: 1 },
     },
-    y: { aggregate: 'count', "title": "count of students" },
-    //"color": {"condition": {"test": "datum['swr_score'] < 500", "value": "black"},"value": "red"},
+    y: { aggregate: "count", title: "count of students" },
+    color: {
+      field: "Support",
+      title: "Support",
+      sort: [
+        "Needs Extra Support",
+        "Some Support Needed",
+        "Average or Above Average",
+      ],
+      scale: {
+        domain: [
+          "Extra Support Needed",
+          "Some Support Needed",
+          "Average or Above Average",
+        ],
+        range: ["#cc79a7", "#f0e442", "#0072b2"],
+      },
+    },
+  },
+};
+
+const firstGradePercentileDistribution = {
+  // ...globalChartConfig,
+  description:
+    "Distribution of First Grade Woodcock-Johnson Equivalent Percentiles",
+  title: {
+    text: "Distribution of Woodcock-Johnson Equivalent Percentiles",
+    anchor: "middle",
+    fontSize: 18,
+    subtitle: "Kindergarten and 1st Grade",
+    subtitleFontStyle: "bold",
+    subtitleFontSize: 12,
+  },
+  height: 100,
+  width: 600,
+  data: { values: scoreStore.scores },
+  transform: [
+    { calculate: "100 * (datum.thetaEstimate +4)/8", as: "swr_percentile" }, // TODO replace fake calculation with real percent conversion
+    { filter: "(datum.grade == 'Kindergarten') || (datum.grade <= 1)" },
+    {
+      calculate:
+        "datum.swr_percentile <= 50? 'Limited': 'Average or Above Average' ",
+      as: "Automaticity",
+    },
+  ],
+  mark: "bar",
+  encoding: {
+    x: {
+      bin: true,
+      field: "swr_percentile",
+      title: "Percentile (relative to national norms)",
+      scale: { domain: [0, 100] },
+      bin: { step: 5, minstep: 1, extent: [0, 100] },
+      axis: { tickMinStep: 1 },
+    },
+    y: {
+      aggregate: "count",
+      title: "count of students",
+      axis: { tickMinStep: 1 },
+    },
+    color: {
+      field: "Automaticity",
+      title: "Automaticity",
+      sort: ["Limited", "Average or Above Average"],
+      scale: {
+        domain: ["Limited", "Average or Above Average"],
+        range: ["#342288", "#44aa99"],
+      },
+    },
   },
 };
 
 const stackedSupportByGrade = {
-  description: 'Distribution of Support Classificaiton by Grade Level',
-  title: { "text": "Distribution of Support Classificaiton by Grade Level", "anchor": "middle", "fontSize": 24 },
-  "height": 200,
-  "width": 600,
-  data: { values: scoreStore.scores, },
-  "transform": [
-    { "calculate": "100 * (datum.thetaEstimate +5)", "as": "swr_score" },
-    //{"filter": "datum.swr_score > 60"}
-  ],
-  mark: 'bar',
-  encoding: {
-    x: { aggregate: 'count', "title": "# of students" },
-    y: {
-      bin: true,
-      field: 'grade',
-      "title": "grade",
-      "axis": { "tickBand": "extent" },
+  description: "Distribution of Support Classification by Grade Level",
+  title: {
+    text: "Distribution of Support Classification",
+    anchor: "middle",
+    fontSize: 18,
+    subtitle: "(by grade)",
+    subtitleFontStyle: "bold",
+    subtitleFontSize: 12,
+  },
+  height: 200,
+  width: 600,
+  data: { values: scoreStore.scores },
+  transform: [
+    { calculate: "100 * (datum.thetaEstimate +5)", as: "swr_score" },
+    { calculate: "100 * (datum.thetaEstimate +4)/8", as: "swr_percentile" },
+    {
+      calculate:
+        "datum.swr_percentile <= 25? 'Extra Support Needed': datum.swr_percentile <=50? 'Some Support Needed': 'Average or Above Average' ",
+      as: "Support",
     },
+    {
+      calculate:
+        "indexof(['Extra Support Needed', 'Some Support Needed', 'Average or Above Average'], datum.Support)",
+      as: "order",
+    },
+    { filter: "datum.grade >= 2" },
+  ],
+  mark: "bar",
+  encoding: {
+    x: { aggregate: "count", title: "# of students", axis: { tickMinStep: 1 } },
+    y: {
+      bin: false,
+      type: "ordinal",
+      field: "grade",
+      title: "grade",
+      axis: { tickBand: "extent", tickMinStep: 1 },
+    },
+    color: {
+      field: "Support",
+      type: "nominal",
+
+      scale: {
+        domain: [
+          "Extra Support Needed",
+          "Some Support Needed",
+          "Average or Above Average",
+        ],
+        range: ["#cc79a7", "#f0e442", "#0072b2"],
+      },
+      title: "Support",
+    },
+    order: { field: "order", type: "nominal" },
+  },
+};
+
+const stackedAutomaticityFirstGrade = {
+  description: "Distribution of Automaticity in First Grade",
+  title: {
+    text: "Distribution of Automaticity",
+    subtitle: ("Kindergarten and 1st grade"),
+    anchor: "middle",
+    fontSize: 18,
+    subtitleFontStyle: "bold",
+    subtitleFontSize: 12,
+  },
+  height: 100,
+  width: 600,
+  data: { values: scoreStore.scores },
+  transform: [
+    { calculate: "100 * (datum.thetaEstimate +5)", as: "swr_score" },
+    { calculate: "100 * (datum.thetaEstimate +4)/8", as: "swr_percentile" },
+    {
+      calculate:
+        "datum.swr_percentile <= 50? 'Limited': 'Average or Above Average' ",
+      as: "Automaticity",
+    },
+    {
+      calculate:
+        "indexof(['Limited', 'Average or Above Average'], datum.Automaticity)",
+      as: "order",
+    },
+    { filter: "(datum.grade == 'Kindergarten') || (datum.grade <= 1)" },
+  ],
+  mark: "bar",
+  encoding: {
+    x: {
+      aggregate: "count",
+      title: "# of students",
+      axis: { tickBand: "extent", tickMinStep: 1 },
+    },
+    y: {
+      bin: false,
+      field: "grade",
+      title: "grade",
+      axis: { tickBand: "extent",
+      labelExpr:
+          "join([if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')", },
+    },
+    color: {
+      field: "Automaticity",
+      type: "nominal",
+      scale: {
+        domain: ["Limited", "Average or Above Average"],
+        range: ["#342288", "#44aa99"],
+      },
+      title: "Automaticity",
+    },
+    order: { field: "order", type: "nominal" },
   },
 };
 
@@ -101,23 +309,38 @@ const moveTableElements = () => {
   if (dataTableDiv !== null) {
     targetDiv?.appendChild(dataTableDiv);
   }
-}
+};
 
 const draw = async () => {
-  await embed('#viz-distribution-by-grade', distributionByGrade);
-  await embed('#viz-normed-percentile-distribution', normedPercentileDistribution);
-  await embed('#viz-stacked-support-by-grade', stackedSupportByGrade);
+  await embed("#viz-distribution-by-grade", distributionByGrade);
+  await embed(
+    "#viz-normed-percentile-distribution",
+    normedPercentileDistribution
+  );
+  await embed(
+    "#viz-first-grade-percentile-distribution",
+    firstGradePercentileDistribution
+  );
+  await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
+  await embed(
+    "#viz-automaticity-distributions-first-grade",
+    stackedAutomaticityFirstGrade
+  );
 };
 
 onMounted(() => {
   moveTableElements();
-  draw()
-})
+  draw();
+});
 </script>
 
 <style>
 p {
   text-align: left;
+  font-size:medium;
+  font-family: "Helvetica Neue", "Source Sans Pro", "Palatino Linotype",
+    sans-serif;
+
 }
 
 li {
