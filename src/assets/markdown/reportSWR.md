@@ -1,3 +1,7 @@
+---
+name: Single Word Recognition Score Report
+---
+
 # Single Word Recognition Score Report
 
 ## Introduction to ROAR - Single Word Recognition
@@ -27,14 +31,14 @@ The entire assessment takes most students fewer than 10 minutes.
 This score report presents information from the recent administration of the
 ROAR assessment to students in sample during .
 
-- {{ numStudents }} students completed the Single Word Recognition task.
+- {{ scoreStore.numStudents }} students completed the Single Word Recognition task.
 
-- The average age of the student was {{ ages.mean }}.
+- The average age of the student was {{ scoreStore.ages.mean }}.
 
-- The grades ranged from grade {{ grades.min }} to grade {{ grades.max }}.
+- The grades ranged from grade {{ scoreStore.grades.min }} to grade {{ scoreStore.grades.max }}.
 
-- The average ROAR score was {{ roarScores.mean }} on a scale of 100 - 900 (min =
-{{ roarScores.min }}, max = {{ roarScores.max }} , sd = {{ roarScores.sd }}).
+- The average ROAR score was {{ scoreStore.roarScores.mean }} on a scale of 100 - 900 (min =
+{{ scoreStore.roarScores.min }}, max = {{ scoreStore.roarScores.max }} , sd = {{ scoreStore.roarScores.sd }}).
 
 <div id='viz-distribution-by-grade'></div>
 
@@ -62,11 +66,11 @@ percentile.
 
 According to these classifications:
 
-- {{ classifications.support.high }} students are classified as 'At or Above Average.'
+- {{ scoreStore.classifications.support.high }} students are classified as 'At or Above Average.'
 
-- {{ classifications.support.medium }} students are classified as 'Need Some Support.'
+- {{ scoreStore.classifications.support.medium }} students are classified as 'Need Some Support.'
 
-- {{ classifications.support.low }} students are classified as 'Need Extra
+- {{ scoreStore.classifications.support.low }} students are classified as 'Need Extra
 Support.'
 
 <div id='viz-stacked-support-by-grade'></div>
@@ -86,10 +90,10 @@ continued monitoring of progress.
 
 According to these classifications:
 
-- {{ classifications.automaticity.high }} students displayed 'At or Above Average
+- {{ scoreStore.classifications.automaticity.high }} students displayed 'At or Above Average
 Automaticity.'
 
-- {{ classifications.automaticity.low }} students displayed 'Limited Automaticity.'
+- {{ scoreStore.classifications.automaticity.low }} students displayed 'Limited Automaticity.'
 
 ### Distribution of Support Classifications by Grade
 
@@ -105,7 +109,7 @@ Below is an interactive data table of the de-identified students that can be
 filtered and downloaded. We will provide a list of identified IDs as part of a
 secure file transfer, separately from this report.
 
-<table-roar-scores />
+<!-- <TableRoarScores /> -->
 
 ### Notes on Interpreting this Score Report
 
@@ -145,8 +149,19 @@ research-based lessons on phonological awareness and other foundational reading
 skills designed for pre-K through 5th-grade students
 [here](https://fcrr.org/student-center-activities/teacher-resource-guide).
 
+<div v-if="showCollab">
 ### Invitation to Collaborate
 
 Please reach out to [Jasmine Tran](jasetran@stanford.edu) and [Tonya
 Murray](tonyamur@stanford.edu) for questions or clarification on this score
 report and/or recommendations for how to improve future score reports.
+</div>
+
+<script setup>
+import { ref } from 'vue';
+import { useScoreStore } from "@/store/scores";
+import TableRoarScores from '@/components/reports/TableRoarScores.vue';
+
+const scoreStore = useScoreStore();
+const showCollab = ref(false);
+</script>

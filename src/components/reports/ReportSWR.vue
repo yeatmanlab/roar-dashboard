@@ -1,6 +1,7 @@
 <template>
   <div v-if="scoreStore.scoresReady">
-    <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" />
+    <!-- <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" /> -->
+    <MarkdownSWR />
   </div>
   <AppSpinner v-else />
 </template>
@@ -9,12 +10,9 @@
 import { onMounted } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
-import { storeToRefs } from 'pinia'
-import markdownText from "@/assets/markdown/reportSWR.md?raw";
-import TableRoarScores from './TableRoarScores.vue';
+import MarkdownSWR from "@/assets/markdown/reportSWR.md";
 
 const scoreStore = useScoreStore();
-const scoreStoreRefs = storeToRefs(scoreStore);
 
 const globalChartConfig = {
   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',

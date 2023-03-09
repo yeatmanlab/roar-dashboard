@@ -42,8 +42,6 @@ import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     //optional for column grouping
 import Row from 'primevue/row';
 
-import { VueShowdownPlugin } from 'vue-showdown';
-
 import "primevue/resources/themes/tailwind-light/theme.css"; // theme
 import "./assets/styles/theme.css" // theme
 import "primevue/resources/primevue.min.css"; // core css
@@ -58,18 +56,6 @@ app.use(ToastService);
 app.use(pinia);
 app.use(router);
 app.use(createHead());
-app.use(VueShowdownPlugin, {
-  // set default flavor of showdown
-  flavor: 'github',
-  // set default options of showdown (will override the flavor options)
-  options: {
-    emoji: true,
-    underline: true,
-    omitExtraWLInCodeBlocks: true,
-    simpleLineBreaks: false,
-    backslashEscapesHTMLTags: true,
-  },
-});
 
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
