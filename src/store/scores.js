@@ -59,7 +59,7 @@ export const useScoreStore = () => {
         }
         return {
           ages: ages,
-          mean: ages.reduce((a, b) => a + b) / ages.length,
+          mean: (ages.reduce((a, b) => a + b) / ages.length).toFixed(1),
         };
       },
       grades: (state) => {

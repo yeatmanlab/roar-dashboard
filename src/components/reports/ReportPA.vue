@@ -68,7 +68,7 @@ const distributionByGradePA = {
       sort: ["Kindergarten", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       legend: null,
     },
-    // thetaEstimate should be changed to ROAR score
+    // TODO thetaEstimate should be changed to ROAR score
     x: {
       bin: true,
       field: "roarTotalCorrect",
@@ -82,7 +82,8 @@ const distributionByGradePA = {
 const stackedSkillByGradePA = {
   description: "Distribution of Skill Classification by Grade Level",
   title: {
-    text: "Distribution of Skill Classification by Grade Level",
+    text: "Distribution of Skill Classification ",
+    subtitle: "By grade",
     anchor: "middle",
     fontSize: 18,
   },
@@ -179,7 +180,7 @@ const normedPercentileDistribution1to4PA = {
     text: "Distribution of CTOPP Equivalent Percentiles",
     anchor: "middle",
     fontSize: 18,
-    subtitle: "(grades k to 4)",
+    subtitle: "(grades K to 4)",
     subtitleFontStyle: "bold",
     subtitleFontSize: 12,
   },
@@ -333,7 +334,7 @@ const distributionByGrade = {
   mark: 'bar',
   encoding: {
     row: { field: "grade" },
-    // thetaEstimate should be changed to ROAR score
+    // TODO thetaEstimate should be changed to ROAR score
     x: { bin: true, field: 'thetaEstimate' },
     y: { aggregate: 'count' },
     color: { field: 'grade' },
@@ -345,7 +346,7 @@ const normedPercentileDistribution = {
   description: 'Distribution of Normed Percentiles (all grades)',
   mark: 'bar',
   encoding: {
-    // thetaEstimate should be changed to percentile
+    // TODO thetaEstimate should be changed to percentile
     x: { bin: true, field: 'thetaEstimate' },
     y: { aggregate: 'count' },
   },

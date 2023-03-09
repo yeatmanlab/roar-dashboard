@@ -47,28 +47,30 @@ The following tasks are used to measure the students' skill level:
 
 ## Identifying Students who could Benefit from Support
 
-The Comprehensive Test of Phonological Processing (CTOPP) is a standardized test that was normed on a representative sample. By using the ROAR scores to estimate CTOPP scores, we show how each student's phonemic awareness skills relate to national norms. Growth in Phonological Processing is expected to plateau after mastery is reached. Thresholds for support classification are lower in the upper grades because the average student has already achieved mastery.
+The Comprehensive Test of Phonological Processing (CTOPP) is a standardized test that was normed on a representative sample. By using the ROAR scores to estimate CTOPP scores, we show how each student's phonemic awareness skills relate to national norms. 
 
-The vertical cut scores represent thresholds for classifying students into three different support categories: *Doing Well*, *Needs Some Support*, or *Needs Extra Support*. 
+The vertical cut scores represent thresholds for classifying students into three different support categories: *Average or Above Average*, *Some Support Needed*, or *Extra Support Needed*. 
 
 <div id="viz-normed-percentile-distribution-1-4-pa"></div>
 **Kindergarten to 4th Grade**
 
--   **Doing Well:** TBD students scored above the 50th percentile
+-   **Average or Above Average:** TBD students scored above the 50th percentile
 
--   **Needs Some Support:** TBD students scored between the 25th and 50th percentile.
+-   **Needs Some Support Needed:** TBD students scored between the 25th and 50th percentile.
 
--   **Needs Extra Support:** TBD students scored below the 25th percentile.
+-   **Needs Extra Support Needed:** TBD students scored below the 25th percentile.
+
+Growth in Phonological Processing is expected to plateau after mastery is reached. Thresholds for support classification are lower in the upper grades because the average student has already achieved mastery.
 
 <div id="viz-normed-percentile-distribution-5-12-pa"></div>
 
 **5th to 8th Grade**
 
--   **Doing Well:** TBD students scored  above the 30th percentile
+-   **Average or Above Average:** TBD students scored  above the 30th percentile
 
--   **Needs Some Support:** TBD students scored  between the 15th and 30th percentile.
+-   **Some Support Needed:** TBD students scored  between the 15th and 30th percentile.
 
--   **Needs Extra Support:** TBD students scored  below the 15th percentile.
+-   **Extra Support Needed:** TBD students scored  below the 15th percentile.
 
 
 ### Distribution of Support Classifications by Grade
@@ -76,11 +78,11 @@ The vertical cut scores represent thresholds for classifying students into three
 <div id="viz-stacked-support-by-grade-pa"></div>
 According to these classifications:
 
--   **Doing Well:** TBD students.
+-   **Average or Above Average:** TBD students.
 
--   **Needs Some Support:** TBD students.
+-   **Some Support Needed:** TBD students.
 
--   **Needs Extra Support:** TBD students.
+-   **Extra Support Needed:** TBD students.
 
 ## Student Score Information
 
