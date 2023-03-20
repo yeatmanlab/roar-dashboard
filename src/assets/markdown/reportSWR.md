@@ -13,12 +13,12 @@
 <div id='viz-distribution-by-grade'></div>
 This score report presents information from the recent administration of the ROAR assessment.
 
-- {{ numStudents }} students in grades {{ grades.min }} to {{ grades.max }} completed the Single Word Recognition task.
+- {{ swrStats.numStudents }} students in grades {{ swrStats.gradeMin }} to {{ swrStats.gradeMax }} completed the Single Word Recognition task.
 
-- The average age of the student was {{ ages.mean }}.
+- The average age of the students was {{ swrStats.ageMean }}.
 
-- The average ROAR score was {{ roarScores.mean }} on a scale of 100 - 900 
-- Scores ranged from {{ roarScores.min }} to {{ roarScores.max }} , with a standard deviation of {{ roarScores.sd }}.
+- The average ROAR score was {{ swrStats.roarScoreMean }} on a scale of 100 - 900 
+- Scores ranged from {{ swrStats.roarScoreMin }} to {{ swrStats.roarScoreMax }}, with a standard deviation of {{ swrStats.roarScoreStdDev }}.
 
 ## Identifying Students who could Benefit from Support
 
@@ -27,11 +27,11 @@ The Woodcock-Johnson Basic Reading Skills Index WJ is a standardized test that w
 <div id='viz-normed-percentile-distribution'></div>
 
 The vertical cut scores represent thresholds for classifying students into three categories: *At or Above Average*, *Some Support Needed*, or * Extra Support Needed*
-- {{ classifications.support.high }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
+- {{ swrStats.support.high }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
 
-- {{ classifications.support.medium }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
+- {{ swrStats.support.medium }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
 
-- {{ classifications.support.low }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
+- {{ swrStats.support.low }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
 
 
 <div id='viz-stacked-support-by-grade'></div>
@@ -44,9 +44,9 @@ As children's reading skills improve, word recognition becomes automatic: Rather
 
 According to these classifications:
 
-- {{ classifications.automaticity.high }} students displayed 'At or Above Average Automaticity.'
+- {{ swrStats.automaticity.high }} students displayed 'At or Above Average Automaticity.'
 
-- {{ classifications.automaticity.low }} students displayed 'Limited Automaticity.'
+- {{ swrStats.automaticity.low }} students displayed 'Limited Automaticity.'
 
 
 <div id='viz-automaticity-distributions-first-grade'></div>
@@ -55,7 +55,7 @@ According to these classifications:
 
 Below is an interactive data table of the de-identified students that can be filtered and downloaded. We will provide a list of identified IDs as part of a secure file transfer, separately from this report.
 
-<table-roar-scores />
+<!-- <table-student-scores /> -->
 
 ### Notes on Interpreting this Score Report
 

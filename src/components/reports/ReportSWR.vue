@@ -12,7 +12,7 @@
 <script setup>
 import { onMounted } from "vue";
 import embed from "vega-embed";
-import { useScoreStore } from "@/store/scores";
+import { useScoreStore, thetaToRoarScore, percentileToSupportClassification } from "@/store/scores";
 import { storeToRefs } from "pinia";
 import markdownText from "@/assets/markdown/reportSWR.md?raw";
 import TableRoarScores from "./TableRoarScores.vue";
@@ -24,6 +24,7 @@ console.log(scoreStore);
 
 const globalChartConfig = {
   $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+  // TODO look at the colors in this example: https://vega.github.io/vega-lite/examples/bar_heatlane.html
   description: "default settings to be used for all charts",
   data: {
     values: scoreStore.scores,
@@ -35,15 +36,15 @@ const distributionByGrade = {
   description: "ROAR Score Distribution by Grade Level",
   title: { text: "ROAR Score Distribution", anchor: "middle", fontSize: 18 },
   config: { view: { stroke: "#000000", strokeWidth: 1 } },
-  data: { values: scoreStore.scores },
-  transform: [{ calculate: "100 * (datum.thetaEstimate +5)", as: "swr_score" }],
-  mark: "bar",
+  data: { values: scoreStore.scores},
+
+  mark: "bar", 
   height: 50,
   width: 500,
 
   encoding: {
     facet: {
-      field: "grade",
+      field: "runInfoOrig.grade",
       type: "nominal",
       columns: 1,
       title: "By Grade",
@@ -59,33 +60,35 @@ const distributionByGrade = {
         labelAngle: 0,
         labelAlign: "left",
         labelOrient: "left",
-        labelExpr:
-          "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
-        //sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],
+        //labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
+        //sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],    // TODO why is sort not working?
         //sort: "ascending",
       },
-      sort: ["Kindergarten", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
 
+      //sort: ["Kindergarten", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       spacing: 7,
     },
+
     color: {
-      field: "grade",
+      field: "runInfoOrig.grade",
       type: "ordinal",
       sort: ["Kindergarten", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       legend: null,
     },
-    // thetaEstimate should be changed to ROAR score
+
     x: {
       bin: true,
-      field: "swr_score",
+      field: "runInfoCommon.roarScore",
       title: "ROAR Score",
       bin: { step: 50 },
     },
-    y: { aggregate: "count", title: "count", axis: { orient: "right" } },
+    
+    y: { aggregate: "count", 
+         title: "count", 
+         axis: { orient: "right" } },
   },
 };
 
-// TODO look at the colors in this example: https://vega.github.io/vega-lite/examples/bar_heatlane.html
 const normedPercentileDistribution = {
   // ...globalChartConfig,
   description: "Distribution of Normed Percentiles (all grades)",
@@ -100,20 +103,12 @@ const normedPercentileDistribution = {
   height: 200,
   width: 600,
   data: { values: scoreStore.scores },
-  transform: [
-    { calculate: "100 * (datum.thetaEstimate +4)/8", as: "swr_percentile" }, // TODO replace fake calculation with real percent conversion
-    {
-      calculate:
-        "datum.swr_percentile <= 25? 'Extra Support Needed': datum.swr_percentile <50? 'Some Support Needed': 'Average or Above Average' ",
-      as: "Support",
-    },
-  ],
   mark: "bar",
   encoding: {
     // thetaEstimate should be changed to percentile
     x: {
       bin: true,
-      field: "swr_percentile",
+      field: "runInfoCommon.normedPercentile",
       title: "Percentile (relative to national norms)",
       scale: { domain: [0, 100] },
       bin: { step: 5 },
@@ -121,10 +116,10 @@ const normedPercentileDistribution = {
     },
     y: { aggregate: "count", title: "count of students" },
     color: {
-      field: "Support",
+      field: "runInfoCommon.supportLevel",
       title: "Support",
       sort: [
-        "Needs Extra Support",
+        "Extra Support Needed",
         "Some Support Needed",
         "Average or Above Average",
       ],
@@ -135,7 +130,7 @@ const normedPercentileDistribution = {
           "Average or Above Average",
         ],
         range: ["#cc79a7", "#f0e442", "#0072b2"],
-      },
+      }, 
     },
   },
 };
@@ -156,19 +151,13 @@ const firstGradePercentileDistribution = {
   width: 600,
   data: { values: scoreStore.scores },
   transform: [
-    { calculate: "100 * (datum.thetaEstimate +4)/8", as: "swr_percentile" }, // TODO replace fake calculation with real percent conversion
-    { filter: "(datum.grade == 'Kindergarten') || (datum.grade <= 1)" },
-    {
-      calculate:
-        "datum.swr_percentile <= 50? 'Limited': 'Average or Above Average' ",
-      as: "Automaticity",
-    },
+    { filter: "(datum.runInfoOrig.grade == 'Kindergarten') || (datum.runInfoOrig.grade <= 1)" },
   ],
   mark: "bar",
   encoding: {
     x: {
       bin: true,
-      field: "swr_percentile",
+      field: "runInfoCommon.normedPercentile",
       title: "Percentile (relative to national norms)",
       scale: { domain: [0, 100] },
       bin: { step: 5, minstep: 1, extent: [0, 100] },
@@ -180,11 +169,11 @@ const firstGradePercentileDistribution = {
       axis: { tickMinStep: 1 },
     },
     color: {
-      field: "Automaticity",
+      field: "runInfoCommon.supportLevel",
       title: "Automaticity",
       sort: ["Limited", "Average or Above Average"],
       scale: {
-        domain: ["Limited", "Average or Above Average"],
+        //domain: ["Limited", "Average or Above Average"],
         range: ["#342288", "#44aa99"],
       },
     },
@@ -205,32 +194,25 @@ const stackedSupportByGrade = {
   width: 600,
   data: { values: scoreStore.scores },
   transform: [
-    { calculate: "100 * (datum.thetaEstimate +5)", as: "swr_score" },
-    { calculate: "100 * (datum.thetaEstimate +4)/8", as: "swr_percentile" },
     {
       calculate:
-        "datum.swr_percentile <= 25? 'Extra Support Needed': datum.swr_percentile <=50? 'Some Support Needed': 'Average or Above Average' ",
-      as: "Support",
-    },
-    {
-      calculate:
-        "indexof(['Extra Support Needed', 'Some Support Needed', 'Average or Above Average'], datum.Support)",
+        "indexof(['Extra Support Needed', 'Some Support Needed', 'Average or Above Average'], datum.runInfoCommon.supportLevel)",
       as: "order",
     },
-    { filter: "datum.grade >= 2" },
+    { filter: "datum.runInfoOrig.grade >= 2" },
   ],
   mark: "bar",
   encoding: {
     x: { aggregate: "count", title: "# of students", axis: { tickMinStep: 1 } },
     y: {
       bin: false,
-      type: "ordinal",
-      field: "grade",
+      type: "nominal",
+      field: "runInfoOrig.grade",
       title: "grade",
       axis: { tickBand: "extent", tickMinStep: 1 },
     },
     color: {
-      field: "Support",
+      field: "runInfoCommon.supportLevel",
       type: "nominal",
 
       scale: {
@@ -261,19 +243,8 @@ const stackedAutomaticityFirstGrade = {
   width: 600,
   data: { values: scoreStore.scores },
   transform: [
-    { calculate: "100 * (datum.thetaEstimate +5)", as: "swr_score" },
-    { calculate: "100 * (datum.thetaEstimate +4)/8", as: "swr_percentile" },
-    {
-      calculate:
-        "datum.swr_percentile <= 50? 'Limited': 'Average or Above Average' ",
-      as: "Automaticity",
-    },
-    {
-      calculate:
-        "indexof(['Limited', 'Average or Above Average'], datum.Automaticity)",
-      as: "order",
-    },
-    { filter: "(datum.grade == 'Kindergarten') || (datum.grade <= 1)" },
+    { calculate: "indexof(['Limited', 'Average or Above Average'], datum.Automaticity)", as: "order",},
+    { filter: "(datum.runInfoOrig.grade == 'Kindergarten') || (datum.runInfoOrig.grade <= 1)" },
   ],
   mark: "bar",
   encoding: {
@@ -284,14 +255,16 @@ const stackedAutomaticityFirstGrade = {
     },
     y: {
       bin: false,
-      field: "grade",
+      field: "runInfoOrig.grade",
       title: "grade",
-      axis: { tickBand: "extent",
-      labelExpr:
-          "join([if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')", },
+      axis: { 
+        tickBand: "extent", 
+        labelExpr: "join([if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')", 
+      },
+
     },
     color: {
-      field: "Automaticity",
+      field: "runInfoCommon.supportLevel",
       type: "nominal",
       scale: {
         domain: ["Limited", "Average or Above Average"],
@@ -313,19 +286,10 @@ const moveTableElements = () => {
 
 const draw = async () => {
   await embed("#viz-distribution-by-grade", distributionByGrade);
-  await embed(
-    "#viz-normed-percentile-distribution",
-    normedPercentileDistribution
-  );
-  await embed(
-    "#viz-first-grade-percentile-distribution",
-    firstGradePercentileDistribution
-  );
+  await embed("#viz-normed-percentile-distribution", normedPercentileDistribution);
+  await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
   await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
-  await embed(
-    "#viz-automaticity-distributions-first-grade",
-    stackedAutomaticityFirstGrade
-  );
+  await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
 };
 
 onMounted(() => {
