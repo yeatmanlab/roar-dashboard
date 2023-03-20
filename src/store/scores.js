@@ -2,26 +2,19 @@ import { defineStore } from "pinia";
 import { csvFileToJson, standardDeviation } from "@/helpers";
 
 const getRunInfoCommon = (run) => {
-  // TODO Adam  I can see the field in run, but get this for each field:
-  // "TypeError: Cannot read properties of undefined (reading 'taskId')"
-  //console.log(run);
-  //console.log(run.taskId, run.thetaEstimate, run.grade);
-  return {
-    task: run.taskId,
-    theta:run.thetaEstimate,
-    grade:run.grade,
-  };
   // note: new fields should be added to all cases
-/*   switch(run.taskId) {
+  let normedPercentile;
+  switch(run.taskId) {
     case "swr":
+      normedPercentile = woodcockJohnsonLookup(run.thetaEstimate);
       return { 
-        roarScore: thetaToRoarScore(run.runInfoOrig.thetaEstimate),
-        normedPercentile: woodcockJohnsonLookup(run.runInfoOrig.thetaEstimate),
+        roarScore: thetaToRoarScore(run.thetaEstimate),
+        normedPercentile: normedPercentile,
         //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
 
 
         // TODO_ADAM -- how do I pass normedPercentile to the function below?
-        //supportLevel: percentileToSupportClassification("swr", normedPerecentile, run.runInfoOrig.grade),
+        supportLevel: percentileToSupportClassification("swr", normedPercentile, run.grade),
 
       };
       break;
@@ -32,7 +25,7 @@ const getRunInfoCommon = (run) => {
     default:
       console.log("TODO: add", run.taskId, " to getRunInfoCommon()");
       break;
-  } */
+  }
 
 };
 
@@ -92,7 +85,7 @@ export function computeAges(dob, timeStarted) {
   let dateOfRun = new Date(timeStartedDate);
 
   let ageMonths = differenceInMonths(dateOfRun, dateOfBirth);
-  let ageYears = (ageMonths/12).toFixed(1);
+  let ageYears = parseFloat((ageMonths/12).toFixed(1));
 
   return { ageMonths, ageYears };
 };
@@ -212,15 +205,17 @@ export const useScoreStore = () => {
                  },
               };
             } else {
+              const mergedRun = {
+                        ...run,
+                        ...matchingIdentifier[0]
+                      };
               return {
                 // original, unaltered, run-level info and identifiers from the databases
-                runInfoOrig: { 
-                  ...run,
-                  ...matchingIdentifier[0]
-                 },
+                runInfoOrig: mergedRun,
 
                 // computed values common to all tasks
-                //runInfoCommon: getRunInfoCommon(run),
+                runInfoTest: getRunInfoCommon(mergedRun),
+
                 // TODO move these into getRunInfoCommon:
                 runInfoCommon: {
                   roarScore: thetaToRoarScore(run.thetaEstimate),
@@ -246,37 +241,42 @@ export const useScoreStore = () => {
         };
       }, */
 
-      // TODO Adam -- why does roarScoreStats work but ageStats doesn't?
       ageStats: (state) => {
         const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted)); 
+
         if (ages.length === 0) {
           return null;
         }
+
+        const ageYears = ages.map((age) => age.ageYears);
+        const ageMonths = ages.map((age) => age.ageMonths);
+        console.log(ageYears[0],ageMonths[0]);
         return {
           ages: ages,
-          // TODO Adam -- this is returning NaN
-          ageMin: Math.min(ages.ageYears),
-          ageMax: Math.max(ages.ageYears),
-          //TODO Adam -- "TypeError: Cannot read properties of undefined (reading 'reduce')"
-          //ageMean: (ages.ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
+          ageYearArray: ageYears,
+
+          ageMin: Math.min(...ageYears),
+          ageMax: Math.max(...ageYears),
+          ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
         };
       },
       gradeStats: (state) => {
+        // TODO utility function handle "Kindergarten"
         const grades = state.scores.map((score) => score.runInfoOrig.grade); 
         if (grades.length === 0) {
           return null;
         }
         return {
           grades: grades,
-          gradeMin: Math.min(grades.grade),
-          gradeMax: Math.max(grades.grade),
+          gradeMin: Math.min(...grades),
+          gradeMax: Math.max(...grades),
 
         };
       },
 
       swrStats: (state) => { 
         return { 
-          numStudents: state.scores.length,
+/*           numStudents: state.scores.length,
           ageMin: Number,
           ageMax: Number,
           ageMean: Number,
@@ -294,33 +294,23 @@ export const useScoreStore = () => {
           automaticity: {
             high: null,
             low: null,
-          },
-          // TODO Adam -- how do I move or nest ages here? Console says "ages is not defined"
-          //...ageStats,
-          //...gradeStats,
-          //...roarScoreStats,
+          }, */
+          ...state.ageStats,
+          ...state.gradeStats,
+          ...state.roarScoreStats,
 
         };
       },
 
       roarScoreStats: (state) => {
         const roarScoresArray = state.scores.map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
-        if (roarScoresArray.length === 0) {
-          return {
-            roarScoreMin: null,
-            roarScoreMax: null,
-            roarScoreMean: null,
-            roarScoreStandardDev: null,
-          };
-        } else {
-          return {
-            //roarScores: roarScoresArray,
-            roarScoreMin: Math.min(...roarScoresArray),
-            roarScoreMax: Math.max(...roarScoresArray),
-            roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b) / roarScoresArray.length),
-            roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
-          };
-        }
+        return {
+          // Note: all calculations must gracefully handle an array length of 0
+          roarScoreMin: Math.min(...roarScoresArray),
+          roarScoreMax: Math.max(...roarScoresArray),
+          roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b,0) / roarScoresArray.length),
+          roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
+        };
       },
 
     },
