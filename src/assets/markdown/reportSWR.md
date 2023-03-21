@@ -18,7 +18,7 @@ This score report presents information from the recent administration of the ROA
 - The average age of the students was {{ swrStats.ageMean }}.
 
 - The average ROAR score was {{ swrStats.roarScoreMean }} on a scale of 100 - 900 
-- Scores ranged from {{ swrStats.roarScoreMin }} to {{ swrStats.roarScoreMax }}, with a standard deviation of {{ swrStats.roarScoreStdDev }}.
+- Scores ranged from {{ swrStats.roarScoreMin }} to {{ swrStats.roarScoreMax }}, with a standard deviation of {{ swrStats.roarScoreStandardDev }}.
 
 ## Identifying Students who could Benefit from Support
 
@@ -27,11 +27,11 @@ The Woodcock-Johnson Basic Reading Skills Index WJ is a standardized test that w
 <div id='viz-normed-percentile-distribution'></div>
 
 The vertical cut scores represent thresholds for classifying students into three categories: *At or Above Average*, *Some Support Needed*, or * Extra Support Needed*
-- {{ swrStats.support.high }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
+- {{ swrStats.supportHigh }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
 
-- {{ swrStats.support.medium }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
+- {{ swrStats.supportMedium }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
 
-- {{ swrStats.support.low }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
+- {{ swrStats.supportLow }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
 
 
 <div id='viz-stacked-support-by-grade'></div>

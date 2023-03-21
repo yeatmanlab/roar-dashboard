@@ -1,21 +1,21 @@
 import { defineStore } from "pinia";
 import { csvFileToJson, standardDeviation } from "@/helpers";
+import { connectFirestoreEmulator } from "firebase/firestore";
 
-const getRunInfoCommon = (run) => {
-  // note: new fields should be added to all cases
+const getRunInfoCommon = (mergedRun) => {
   let normedPercentile;
-  switch(run.taskId) {
+  let parsedGrade = parseGrade(mergedRun.grade);
+
+  // note: new fields should be added to all cases
+  switch(mergedRun.taskId) {
     case "swr":
-      normedPercentile = woodcockJohnsonLookup(run.thetaEstimate);
+      normedPercentile = woodcockJohnsonLookup(mergedRun.thetaEstimate);
       return { 
-        roarScore: thetaToRoarScore(run.thetaEstimate),
+        parsedGrade: parsedGrade,
+        roarScore: thetaToRoarScore(mergedRun.thetaEstimate),
         normedPercentile: normedPercentile,
         //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
-
-
-        // TODO_ADAM -- how do I pass normedPercentile to the function below?
-        supportLevel: percentileToSupportClassification("swr", normedPercentile, run.grade),
-
+        supportLevel: percentileToSupportClassification("swr", normedPercentile, mergedRun.grade),
       };
       break;
 
@@ -23,29 +23,29 @@ const getRunInfoCommon = (run) => {
     case "sre":
     case "vocab":
     default:
-      console.log("TODO: add", run.taskId, " to getRunInfoCommon()");
+      console.log("TODO: add", mergedRun.taskId, " to getRunInfoCommon()");
       break;
   }
 
 };
 
-const getRunInfoTask =(run) => {
-  switch(run.taskId) {
+const getRunInfoTask =(mergedRun) => {
+  switch(mergedRun.taskId) {
     case "swr":
-      return processSWRRun(run);
+      return processSWRRun(mergedRun);
       break;
 
     case "pa":
     case "sre":
     case "vocab":
     default:
-      console.log("TODO: add", run.taskId, " to getTaskSpecificScores()");
+      console.log(mergedRun.taskId, "missing from switch");
       break;
   }
 };
 
 
-const processSWRRun =(run) => {
+const processSWRRun =(mergedRun) => {
   return {    
     // fields that vary between tasks
     subScores: {
@@ -90,6 +90,52 @@ export function computeAges(dob, timeStarted) {
   return { ageMonths, ageYears };
 };
 
+export function parseGrade(grade) {
+  if (!grade) {
+    // null, undefined, or empty string
+    return "NA";
+  } else if (isNaN(grade)) {
+    // parse as a string
+    if (grade.toLowerCase() === "k") { 
+      return("k");
+    } else if (grade.substring(0,2).toLowerCase() === "tk") {
+      return("tk");
+    } else if (grade.toLowerCase().includes("trans")) {
+      return("tk");
+    } else if (grade.toLowerCase().includes("p")) {
+      return("pk");
+    } else if (grade.toLowerCase().includes("j")) {
+      return("jk");
+    } else if (grade.substring(0,3).toLowerCase() === "kin") { 
+      return("k");
+    } else if (grade.toLowerCase() == "adult") {
+      return("adult");
+    } else if (!isNaN(parseInt(grade))) {
+      // this catches strings like 1st, 2nd, 3rd
+      let gradeNum = parseInt(grade);
+      return(gradeNum.toString());
+    } else {
+      console.warn(grade, "not recognized as a grade");
+      return grade.toString();
+    }
+  } else {
+    // parse as a number
+    let gradeNum = parseInt(grade);
+
+    if (gradeNum < 0) {
+      return("pk");
+    } else if (gradeNum === 0) {
+      return("k");
+    } else if ((gradeNum >= 1) && (gradeNum <=12)) {
+      return(gradeNum.toString());
+    } else {
+      return("adult");
+    }
+
+  }
+
+};
+
 export function thetaToSupportSWR (percentile, grade) {
   let support;
 
@@ -99,12 +145,12 @@ export function thetaToSupportSWR (percentile, grade) {
   } else {
     support = (percentile < 25) ? "Extra Support Needed" : (percentile < 50) ? "Some Support Needed": "Average or Above Average";
   }
-  //console.log(percentile, " ", grade, " ", support);
   return support;
 };
 
 export function woodcockJohnsonLookup (thetaEstimate) {
-  // TODO replace this totally fake calculation with a real lookup table based on thetaEstimate and ageMonths
+  // TODO_Adam replace this totally fake calculation with a real lookup table based on thetaEstimate and ageMonths
+  console.log("WARNING: fake woodcockJohnsonLookup still in use");
   return Math.round(100 * (thetaEstimate +4)/8);
 };
 
@@ -114,30 +160,77 @@ export function percentileToSupportClassification(taskId, percentile, grade=1) {
   switch(taskId) {
     case "pa":
       if ((grade == "K") || (grade <= "4")) {
-        support = (percentile <= 25) ? "Extra Support Needed" : (percentile <= 50) ? "Some Support Needed": "Average or Above Average";
+        support = (percentile < 25) ? "Extra Support Needed" : (percentile < 50) ? "Some Support Needed": "Average or Above Average";
       } else {
-        support = (percentile <= 15) ? "Extra Support Needed" : (percentile <= 30) ? "Some Support Needed": "Average or Above Average";
+        support = (percentile < 15) ? "Extra Support Needed" : (percentile < 30) ? "Some Support Needed": "Average or Above Average";
       }
       break;
 
     case "swr":
-      if ((grade == "K") || (grade == "1")) {
-        support = (percentile <= 50) ? "Limited" : "Average or Above Average";
-      } else {
-        support = (percentile <= 25) ? "Extra Support Needed" : (percentile <= 50) ? "Some Support Needed": "Average or Above Average";
-      }
+    // we report automaticity instead of support for grades K/1 
+    if ((grade == "K") || (grade == "1")) {
+      support = (percentile < 50) ? "Limited" : "Average or Above Average";
+    } else {
+      support = (percentile < 25) ? "Extra Support Needed" : (percentile < 50) ? "Some Support Needed": "Average or Above Average";
+    }
       break;
 
     case "sre":
     case "vocab":
       console.log("TODO add sre and vocab cases to percentileToSupportClassification() ")
       break;
+
+    default:
+      console.log(taskId, "missing from switch statement");
   }
 
   return(support);
 };
 
+export function countItems(dataArray, searchValue) {
+/*   //TODO_Adam -- how do I make the first param be treated as an array?
+  let count = dataArray.reduce((n, x) => n + (x === searchValue), 0);
+  return(count); */
+  return 0;  // TODO temp 
+};
+
+const gradeComparator = (a, b) => {
+  const order = ['pk', 'jk', 'tk', 'k', '1', '2', '3','4', '5', '6', '7', 
+                 '8', '9', '10', '11', '12', 'adult'];  
+
+  if (a === b) {
+    // equal inputs
+    return 0;
+  }
+
+  let indexA = order.length;
+  let indexB = order.length;
+
+  if (order.includes(a)) {
+    indexA = order.indexOf(a);
+  }
+
+  if (order.includes(b)) {
+    indexB = order.indexOf(b);
+  }
+
+  if (indexA === indexB) {
+    // neither input found
+    if (a > b)
+      return 1;
+    else
+      return -1;
+  } else if (indexA > indexB){
+    // string a was later in the array
+    return 1;
+  } else {
+    // b was later in the array
+    return -1;
+  }
+}
+
 export function debugTestFunction () {
+
   return {
     field1: 'true',
     field2: 'false',
@@ -163,6 +256,7 @@ export const useScoreStore = () => {
 
       debugTempVariable: (state) => 'false',
       debugTempContainer: (state) => {
+      
         return {
           showDebug: 'false',
           fromFunction: debugTestFunction(),
@@ -177,6 +271,7 @@ export const useScoreStore = () => {
         // A mix of the above
         return null;
       },
+
       scoresReady: (state) => state.scores.length > 0,
       scores: (state) => {
         // If identifiers were not uploaded, simply return the appScores
@@ -187,7 +282,7 @@ export const useScoreStore = () => {
               // original, unaltered, run-level info from the databases (no identifiers)
               runInfoOrig: { 
                 ...run,
-               },
+              },
             };
           })
         } else {
@@ -214,93 +309,103 @@ export const useScoreStore = () => {
                 runInfoOrig: mergedRun,
 
                 // computed values common to all tasks
-                runInfoTest: getRunInfoCommon(mergedRun),
+                runInfoCommon: getRunInfoCommon(mergedRun),
 
-                // TODO move these into getRunInfoCommon:
-                runInfoCommon: {
-                  roarScore: thetaToRoarScore(run.thetaEstimate),
-                  normedPercentile: woodcockJohnsonLookup(run.thetaEstimate),
-                  grade: matchingIdentifier[0].grade,
-                  supportLevel: thetaToSupportSWR(woodcockJohnsonLookup(run.thetaEstimate), matchingIdentifier[0].grade)
-                },
- 
-                // computed values unique to each task
-                //runInfoTask: getRunInfoTask(run),
+                // compute values unique to each task
+                //runInfoTask: getRunInfoTask(mergedRun),
               }
             }
           })
         }
       },
 
-/*       runInfoCommon: (state) => {
-        const runs = state.scores.map((score) => score.runInfoOrig);
-        if (runs.length === 0) {
-          return null;
-        } else {
-          return getRunInfoCommon(runs);
-        };
-      }, */
-
       ageStats: (state) => {
         const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted)); 
-
         if (ages.length === 0) {
           return null;
         }
 
         const ageYears = ages.map((age) => age.ageYears);
         const ageMonths = ages.map((age) => age.ageMonths);
-        console.log(ageYears[0],ageMonths[0]);
         return {
-          ages: ages,
-          ageYearArray: ageYears,
-
           ageMin: Math.min(...ageYears),
           ageMax: Math.max(...ageYears),
           ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
         };
       },
+
       gradeStats: (state) => {
-        // TODO utility function handle "Kindergarten"
-        const grades = state.scores.map((score) => score.runInfoOrig.grade); 
-        if (grades.length === 0) {
+        const parsedGrades = state.scores.map((score) => parseGrade(score.runInfoOrig.grade)); 
+        if (parsedGrades.length === 0) {
           return null;
         }
         return {
-          grades: grades,
-          gradeMin: Math.min(...grades),
-          gradeMax: Math.max(...grades),
+          gradeMin: parsedGrades.reduce(function(prev, curr) {
+            return (gradeComparator(curr, prev) === 1)? prev : curr;
+          }),
+          gradeMax: parsedGrades.reduce(function(prev, curr) {
+            return (gradeComparator(curr, prev) === 1)? curr : prev;
+          }),
 
         };
       },
 
       swrStats: (state) => { 
         return { 
-/*           numStudents: state.scores.length,
-          ageMin: Number,
-          ageMax: Number,
-          ageMean: Number,
-          gradeMin: Number,
-          gradeMax: Number,
-          roarScoreMin: Number,
-          roarScoreMax: Number,
-          roarScoreMean: Number,
-          roarScoreStdDev: Number,
-          support: {
-            high: null,
-            medium: null,
-            low: null,
-          },
-          automaticity: {
-            high: null,
-            low: null,
-          }, */
+          numStudents: state.scores.length,
           ...state.ageStats,
           ...state.gradeStats,
           ...state.roarScoreStats,
-
+          support: { ...state.supportStats},
+          automaticity: { ...state.swrAutomaticityStats},
         };
       },
+
+      supportStats: (state) => {
+        let stats = {
+          // set defaults
+          High: "",
+          Medium: "",
+          Low: "",
+        };
+        if (state.identifiers.length === 0) {
+          // TODO_Adam how to test whether match was found, not just file loaded?
+          return stats;
+        }
+        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
+        if (supportArray.length === 0) {
+          return stats;
+        } 
+
+        // update values
+        stats.High = countItems(...supportArray, "Average or Above Average");
+        stats.Low = countItems(...supportArray, "Limited");
+
+        return stats;
+      },
+
+      swrAutomaticityStats: (state) => {
+        let stats = {
+          // set defaults
+          High: "",
+          Low: "",
+        };
+        if (state.identifiers.length === 0) {
+          // TODO_Adam how to test whether match was found, not just file loaded?
+          return stats;
+        }
+        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
+        if (supportArray.length === 0) {
+          return stats;
+        } 
+
+        // update values
+        stats.High = countItems(...supportArray, "Average or Above Average");
+        stats.Low = countItems(...supportArray, "Limited");
+
+        return stats;
+      },
+  
 
       roarScoreStats: (state) => {
         const roarScoresArray = state.scores.map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
@@ -314,6 +419,7 @@ export const useScoreStore = () => {
       },
 
     },
+
     actions: {
       mergeSectionsWithIdentifiers: async (csvFile) => {
         const sectionsData = await csvFileToJson(csvFile);
