@@ -15,6 +15,7 @@
     "d3": "^7.4.4",
     "emailjs-com": "^3.2.0",
     "firebase": "^9.14.0",
+    "lodash": "^4.17.21",
     "papaparse": "^5.3.2",
     "pinia": "^2.0.0-rc.10",
     "primeflex": "^3.1.3",
