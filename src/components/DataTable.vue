@@ -97,10 +97,10 @@ const props = defineProps({
   columns: {type:Array, required: true},
   data: {type: Array, required: true},
   allowExport: {type: Boolean, default: true}
-})
+});
 
 let selectedRows = [];
-const refSelectedRows = ref(selectedRows)
+const refSelectedRows = ref(selectedRows);
 
 const exportCSV = async () => {
   const csv = Papa.unparse(_flatMap(refSelectedRows.value));
@@ -125,28 +125,28 @@ const exportFullCSV = async () => {
 };
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'TEXT', 'DATE']
-let filters = {}
-let options = {}
+const valid_dataTypes = ['NUMERIC', 'TEXT', 'DATE'];
+let filters = {};
+let options = {};
 _forEach(props.columns, column => {
   // Check if header text is supplied; if not, generate.
   if(!_get(column, 'header')){
     column['header'] = _startCase(_get(column, 'field'))
   }
-  const dataType = _toUpper(_get(column, 'dataType'))
-  let returnMatchMode = null
+  const dataType = _toUpper(_get(column, 'dataType'));
+  let returnMatchMode = null;
   if(valid_dataTypes.includes(dataType)){
     if(dataType === 'NUMERIC'){
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS}
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS};
     } else if(dataType === 'TEXT'){
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH}
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH};
     } else if(dataType === 'DATE'){
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS}
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS};
     }
     
     if(_get(column, 'useMultiSelect')){
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.IN}
-      options[column.field] = getUniqueOptions(column)
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.IN};
+      options[column.field] = getUniqueOptions(column);
     }
   }
   if(_get(column, 'allowMultipleFilters') === true && returnMatchMode){
@@ -155,34 +155,34 @@ _forEach(props.columns, column => {
       constraints: [returnMatchMode]
     }
   } else if(returnMatchMode) {
-    filters[column.field] = returnMatchMode
+    filters[column.field] = returnMatchMode;
   }
 })
-const refOptions = ref(options)
-const refFilters = ref(filters)
+const refOptions = ref(options);
+const refFilters = ref(filters);
 
 // Grab list of fields defined as dates
-let dateFields = _filter(props.columns, col => _toUpper(col.dataType) === 'DATE')
-dateFields = _map(dateFields, col => col.field)
+let dateFields = _filter(props.columns, col => _toUpper(col.dataType) === 'DATE');
+dateFields = _map(dateFields, col => col.field);
 
 let computedData = _forEach(props.data, entry => {
   // Clean up date fields to use Date objects
   _forEach(dateFields, field => {
-    let dateEntry = _get(entry, field)
-    if(dateEntry !== null) entry[field] = new Date(dateEntry)
+    let dateEntry = _get(entry, field);
+    if(dateEntry !== null) entry[field] = new Date(dateEntry);
   })
 })
-const refData = ref(computedData)
+const refData = ref(computedData);
 
 // Generate list of options given a column
 function getUniqueOptions(column){
-  const field = _get(column, 'field')
-  let options = []
+  const field = _get(column, 'field');
+  let options = [];
   _forEach(props.data, entry => {
     if(!options.includes(entry[field])){
-      options.push(entry[field])
+      options.push(entry[field]);
     }
-  })
+  });
   return options
 }
 </script>
