@@ -32,6 +32,9 @@
         :sortable="(col.sort !== false)"
         :showFilterMatchModes="!col.useMultiSelect"
       >
+        <template v-if="col.dataType === 'date'" #body="{ data }">
+          {{ getFormattedDate(data[col.field]) }}
+        </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
           <InputText 
             v-if="col.dataType === 'text' && !col.useMultiSelect"
@@ -60,6 +63,7 @@
 </template>
 <script setup>
 import { ref } from 'vue';
+import { FilterMatchMode, FilterOperator } from "primevue/api";
 import SkeletonTable from "@/components/SkeletonTable.vue"
 import _get from 'lodash/get'
 import _map from 'lodash/map'
@@ -69,7 +73,6 @@ import _filter from 'lodash/filter'
 import _toUpper from 'lodash/toUpper'
 import _startCase from 'lodash/startCase'
 import _flatMap from 'lodash/flatMap'
-import { FilterMatchMode, FilterOperator } from "primevue/api";
 import Papa from "papaparse";
 
 /*
@@ -184,5 +187,11 @@ function getUniqueOptions(column){
     }
   });
   return options
+}
+
+function getFormattedDate(date){
+  if(date){
+    return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })
+  } else return ''
 }
 </script>
