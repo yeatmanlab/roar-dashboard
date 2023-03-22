@@ -106,7 +106,7 @@ let selectedRows = [];
 const refSelectedRows = ref(selectedRows);
 
 const exportCSV = async () => {
-  const csv = Papa.unparse(_flatMap(refSelectedRows.value));
+  const csv = Papa.unparse(_flatMap(refSelectedRows.value, prepareData));
   const blob = new Blob([csv]);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob, { type: 'text/plain' });
@@ -117,7 +117,7 @@ const exportCSV = async () => {
 };
 
 const exportFullCSV = async () => {
-  const csv = Papa.unparse(_flatMap(refData.value))
+  const csv = Papa.unparse(_flatMap(refData.value, prepareData))
   const blob = new Blob([csv]);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob, { type: 'text/plain' });
@@ -187,6 +187,17 @@ function getUniqueOptions(column){
     }
   });
   return options
+}
+
+function prepareData(entry){
+  // Make a copy so we don't edit live data
+  let entryCopy = JSON.parse(JSON.stringify(entry))
+  _forEach(dateFields, field => {
+    if(entryCopy[field]){
+      entryCopy[field] = getFormattedDate(entry[field])
+    }
+  })
+  return entryCopy
 }
 
 function getFormattedDate(date){
