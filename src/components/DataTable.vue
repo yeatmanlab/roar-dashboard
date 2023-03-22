@@ -169,7 +169,7 @@ let computedData = _forEach(props.data, entry => {
   // Clean up date fields to use Date objects
   _forEach(dateFields, field => {
     let dateEntry = _get(entry, field)
-    entry[field] = new Date(dateEntry)
+    if(dateEntry !== null) entry[field] = new Date(dateEntry)
   })
 })
 const refData = ref(computedData)
