@@ -179,7 +179,7 @@ const stackedClassificationByGrade = {
   ],
   transform: [
     { calculate:
-        "indexof(['Very Low', 'Low', 'Below Average', 'Average', 'Above Average'], datum.tosrec_classification)",
+        "indexof(['Very Low', 'Low', 'Below Average', 'Average', 'Above Average'], datum.runInfoTest.supportLevel)",
       as: "order",
     }
   ],
@@ -195,7 +195,7 @@ const stackedClassificationByGrade = {
     },
     color: {
       field: "runInfoTest.supportLevel",
-      type: "ordinal",
+      type: "nominal",
       scale: {
         sort: [
           "Very Low",

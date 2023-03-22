@@ -235,15 +235,6 @@ export const useScoreStore = () => {
         }
       },
 
-/*       runInfoCommon: (state) => {
-        const runs = state.scores.map((score) => score.runInfoOrig);
-        if (runs.length === 0) {
-          return null;
-        } else {
-          return getRunInfoCommon(runs);
-        };
-      }, */
-
       ageStats: (state) => {
         const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted)); 
         if (ages.length === 0) {
@@ -289,6 +280,8 @@ export const useScoreStore = () => {
         const tosrecSupport = state.scores.map((score) => score.runInfoTest.supportLevel);
         return { 
           numStudents: state.scores.length,
+          //labTotal:
+          //tosrecTotal:
           tosrecSupport: {
             aboveAverage: tosrecSupport.filter(x => x === "Above Average").length, 
             average: tosrecSupport.filter(x => x === "Average").length,
