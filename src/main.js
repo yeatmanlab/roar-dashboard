@@ -35,6 +35,7 @@ import ToastService from 'primevue/toastservice';
 import Toolbar from "primevue/toolbar";
 import Tooltip from "primevue/tooltip";
 import TreeSelect from "primevue/treeselect";
+import TriStateCheckbox from 'primevue/tristatecheckbox'
 
 // PrimeVue data table imports
 import DataTable from 'primevue/datatable';
@@ -85,6 +86,7 @@ app.component("TabView", TabView);
 app.component("Toast", Toast);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
+app.component("TriStateCheckbox", TriStateCheckbox)
 
 app.component("DataTable", DataTable);
 app.component("Column", Column);

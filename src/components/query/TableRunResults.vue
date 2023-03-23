@@ -56,7 +56,7 @@ const tableColumns = ref([
   {
     "field": "completed",
     "header": "Completed",
-    "useMultiSelect": true,
+    "dataType": "boolean",
   },
   {
     "field": "school",

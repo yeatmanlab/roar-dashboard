@@ -32,6 +32,7 @@
         :sortable="(col.sort !== false)"
         :showFilterMatchModes="!col.useMultiSelect"
         :showFilterOperator="col.allowMultipleFilters === true"
+        :showAddButton="col.allowMultipleFilters === true"
       >
         <template v-if="col.dataType === 'date'" #body="{ data }">
           {{ getFormattedDate(data[col.field]) }}
@@ -57,6 +58,13 @@
             dateFormat="mm/dd/yy" 
             placeholder="mm/dd/yyyy" 
           />
+          <div 
+            v-if="col.dataType === 'boolean' && !col.useMultiSelect" 
+            class="flex flex-row gap-2"
+          >
+            <TriStateCheckbox inputId="booleanFilter" v-model="filterModel.value" style="padding-top: 2px;" />
+            <label for="booleanFilter">{{ col.header + '?' }}</label>
+          </div>
         </template>
       </Column>
     </DataTable>
@@ -129,7 +137,7 @@ const exportFullCSV = async () => {
 };
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'TEXT', 'DATE'];
+const valid_dataTypes = ['NUMERIC', 'TEXT', 'DATE', 'BOOLEAN'];
 let filters = {};
 let options = {};
 _forEach(props.columns, column => {
@@ -140,7 +148,7 @@ _forEach(props.columns, column => {
   const dataType = _toUpper(_get(column, 'dataType'));
   let returnMatchMode = null;
   if(valid_dataTypes.includes(dataType)){
-    if(dataType === 'NUMERIC'){
+    if(dataType === 'NUMERIC' || dataType === 'BOOLEAN'){
       returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS};
     } else if(dataType === 'TEXT'){
       returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH};
