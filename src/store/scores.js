@@ -1,6 +1,11 @@
 import { defineStore } from "pinia";
 import { csvFileToJson, standardDeviation } from "@/helpers";
 import { connectFirestoreEmulator } from "firebase/firestore";
+import { walkBlockDeclarations } from "@vue/compiler-core";
+
+const standardizeTaskId = (taskId) => {
+  return taskId.replace(/^roar-/, "");
+};
 
 const getRunInfoCommon = (mergedRun) => {
   let normedPercentile;
@@ -20,6 +25,16 @@ const getRunInfoCommon = (mergedRun) => {
       break;
 
     case "pa":
+      normedPercentile = 0;
+      return { 
+        parsedGrade: parsedGrade,
+        roarScore: 0,
+        normedPercentile: normedPercentile,
+        //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
+        supportLevel: percentileToSupportClassification("pa", normedPercentile, mergedRun.grade),
+      };
+      break;
+
     case "sre":
     case "vocab":
     default:
@@ -29,7 +44,7 @@ const getRunInfoCommon = (mergedRun) => {
 
 };
 
-const getRunInfoTask =(mergedRun) => {
+const getRunInfoTask = (mergedRun) => {
   switch(mergedRun.taskId) {
     case "swr":
       return processSWRRun(mergedRun);
@@ -237,6 +252,46 @@ export function debugTestFunction () {
   };
 };
 
+const getRunScores = (subScoresForThisRun) => {
+  const taskId = [...new Set(subScoresForThisRun.map((subScore) => subScore.runInfoOrig.taskId))][0]
+  switch(taskId) {
+    case "pa":
+      const paSubScores = subScoresForThisRun.map((subScore) => subScore.runInfoOrig).filter((subScore) => ["FSM", "LSM", "DEL"].includes(subScore.blockId.toUpperCase()))
+      const paScore = { ...paSubScores[0] };
+      ["attempted", "correct", "incorrect"].forEach((scoreType) => {
+        const total = paSubScores.reduce((a, b) => {
+          return a + b[scoreType]
+        }, 0 );
+        paScore[scoreType] = total;
+      })
+      return {
+        ...paScore,
+        blockId: "total",
+      };
+
+    case "swr":
+      // Assume there is only one subscore for SWR
+      return subScoresForThisRun[0]
+
+    case "sre":
+      // TODO: Confirm SRE blockId names
+      const sreSubScores = subScoresForThisRun.filter((subScore) => ["LAB", "TOSREC"].contains(subScore.blockId.toUpperCase()))
+      const sreScore = sreSubScores[0];
+      sreScore.blockId = "total";
+      ["attempted", "correct", "incorrect"].forEach((scoreType) => {
+        sreScore[scoreType] = sreSubScores.reduce((a, b) => a[scoreType] + b[scoreType], 0);
+      })
+      return sreScore;
+
+    case "vocab":
+      console.log("TODO add sre and vocab cases")
+      break;
+
+    default:
+      console.log(taskId, "missing from switch statement");
+  }
+}
+
 export const useScoreStore = () => {
   return defineStore({
     id: "scoreStore",
@@ -273,15 +328,17 @@ export const useScoreStore = () => {
       },
 
       scoresReady: (state) => state.scores.length > 0,
-      scores: (state) => {
+      subScores: (state) => {
         // If identifiers were not uploaded, simply return the appScores
         if (state.identifiers.length === 0) {
           //return { runInfoOrig: state.appScores}; 
           return state.appScores.map((run) => {
+            const taskId = standardizeTaskId(run.taskId);
             return {
               // original, unaltered, run-level info from the databases (no identifiers)
               runInfoOrig: { 
                 ...run,
+                taskId,
               },
             };
           })
@@ -291,19 +348,22 @@ export const useScoreStore = () => {
             const matchingIdentifier = state.identifiers.filter((participant) => 
               participant.pid === run.pid
             );
+            const taskId = standardizeTaskId(run.taskId);
             if (matchingIdentifier.length === 0) {
               //return state.run;
               return {
                 // original, unaltered, run-level info from the databases (no identifiers)
                 runInfoOrig: { 
                   ...run,
-                 },
+                  taskId,
+                },
               };
             } else {
               const mergedRun = {
-                        ...run,
-                        ...matchingIdentifier[0]
-                      };
+                ...run,
+                ...matchingIdentifier[0],
+                taskId,
+              };
               return {
                 // original, unaltered, run-level info and identifiers from the databases
                 runInfoOrig: mergedRun,
@@ -318,105 +378,114 @@ export const useScoreStore = () => {
           })
         }
       },
-
-      ageStats: (state) => {
-        const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted)); 
-        if (ages.length === 0) {
-          return null;
-        }
-
-        const ageYears = ages.map((age) => age.ageYears);
-        const ageMonths = ages.map((age) => age.ageMonths);
-        return {
-          ageMin: Math.min(...ageYears),
-          ageMax: Math.max(...ageYears),
-          ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
-        };
+      scores: (state) => {
+        const uniqueRunIds = [...new Set(state.subScores.map((subScore) => subScore.runInfoOrig.runId))];
+        return uniqueRunIds.map((runId) => {
+          const subScoresForThisRun = state.subScores.filter((subScore) => subScore.runInfoOrig.runId === runId);
+          return {
+            runInfoOrig: getRunScores(subScoresForThisRun),
+          }
+        })
       },
 
-      gradeStats: (state) => {
-        const parsedGrades = state.scores.map((score) => parseGrade(score.runInfoOrig.grade)); 
-        if (parsedGrades.length === 0) {
-          return null;
-        }
-        return {
-          gradeMin: parsedGrades.reduce(function(prev, curr) {
-            return (gradeComparator(curr, prev) === 1)? prev : curr;
-          }),
-          gradeMax: parsedGrades.reduce(function(prev, curr) {
-            return (gradeComparator(curr, prev) === 1)? curr : prev;
-          }),
+      // ageStats: (state) => {
+      //   const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted)); 
+      //   if (ages.length === 0) {
+      //     return null;
+      //   }
 
-        };
-      },
+      //   const ageYears = ages.map((age) => age.ageYears);
+      //   const ageMonths = ages.map((age) => age.ageMonths);
+      //   return {
+      //     ageMin: Math.min(...ageYears),
+      //     ageMax: Math.max(...ageYears),
+      //     ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
+      //   };
+      // },
 
-      swrStats: (state) => { 
-        return { 
-          numStudents: state.scores.length,
-          ...state.ageStats,
-          ...state.gradeStats,
-          ...state.roarScoreStats,
-          support: { ...state.supportStats},
-          automaticity: { ...state.swrAutomaticityStats},
-        };
-      },
+      // gradeStats: (state) => {
+      //   const parsedGrades = state.scores.map((score) => parseGrade(score.runInfoOrig.grade)); 
+      //   if (parsedGrades.length === 0) {
+      //     return null;
+      //   }
+      //   return {
+      //     gradeMin: parsedGrades.reduce(function(prev, curr) {
+      //       return (gradeComparator(curr, prev) === 1)? prev : curr;
+      //     }),
+      //     gradeMax: parsedGrades.reduce(function(prev, curr) {
+      //       return (gradeComparator(curr, prev) === 1)? curr : prev;
+      //     }),
 
-      supportStats: (state) => {
-        let stats = {
-          // set defaults
-          High: "",
-          Medium: "",
-          Low: "",
-        };
-        if (state.identifiers.length === 0) {
-          // TODO_Adam how to test whether match was found, not just file loaded?
-          return stats;
-        }
-        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
-        if (supportArray.length === 0) {
-          return stats;
-        } 
+      //   };
+      // },
 
-        // update values
-        stats.High = countItems(...supportArray, "Average or Above Average");
-        stats.Low = countItems(...supportArray, "Limited");
+      // swrStats: (state) => { 
+      //   return { 
+      //     numStudents: state.scores.length,
+      //     ...state.ageStats,
+      //     ...state.gradeStats,
+      //     ...state.roarScoreStats,
+      //     support: { ...state.supportStats},
+      //     automaticity: { ...state.swrAutomaticityStats},
+      //   };
+      // },
 
-        return stats;
-      },
+      // supportStats: (state) => {
+      //   let stats = {
+      //     // set defaults
+      //     High: "",
+      //     Medium: "",
+      //     Low: "",
+      //   };
+      //   if (state.identifiers.length === 0) {
+      //     // TODO_Adam how to test whether match was found, not just file loaded?
+      //     return stats;
+      //   }
+      //   const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
+      //   if (supportArray.length === 0) {
+      //     return stats;
+      //   } 
 
-      swrAutomaticityStats: (state) => {
-        let stats = {
-          // set defaults
-          High: "",
-          Low: "",
-        };
-        if (state.identifiers.length === 0) {
-          // TODO_Adam how to test whether match was found, not just file loaded?
-          return stats;
-        }
-        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
-        if (supportArray.length === 0) {
-          return stats;
-        } 
+      //   // update values
+      //   stats.High = countItems(...supportArray, "Average or Above Average");
+      //   stats.Low = countItems(...supportArray, "Limited");
 
-        // update values
-        stats.High = countItems(...supportArray, "Average or Above Average");
-        stats.Low = countItems(...supportArray, "Limited");
+      //   return stats;
+      // },
 
-        return stats;
-      },
+      // swrAutomaticityStats: (state) => {
+      //   let stats = {
+      //     // set defaults
+      //     High: "",
+      //     Low: "",
+      //   };
+      //   if (state.identifiers.length === 0) {
+      //     // TODO_Adam how to test whether match was found, not just file loaded?
+      //     return stats;
+      //   }
+      //   const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
+      //   if (supportArray.length === 0) {
+      //     return stats;
+      //   } 
+
+      //   // update values
+      //   stats.High = countItems(...supportArray, "Average or Above Average");
+      //   stats.Low = countItems(...supportArray, "Limited");
+
+      //   return stats;
+      // },
   
 
-      roarScoreStats: (state) => {
-        const roarScoresArray = state.scores.map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
-        return {
-          // Note: all calculations must gracefully handle an array length of 0
-          roarScoreMin: Math.min(...roarScoresArray),
-          roarScoreMax: Math.max(...roarScoresArray),
-          roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b,0) / roarScoresArray.length),
-          roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
-        };
-      },
+      // roarScoreStats: (state) => {
+      //   const roarScoresArray = state.scores.map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
+      //   return {
+      //     // Note: all calculations must gracefully handle an array length of 0
+      //     roarScoreMin: Math.min(...roarScoresArray),
+      //     roarScoreMax: Math.max(...roarScoresArray),
+      //     roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b,0) / roarScoresArray.length),
+      //     roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
+      //   };
+      // },
 
     },
 
