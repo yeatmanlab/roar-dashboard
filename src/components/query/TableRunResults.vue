@@ -16,7 +16,6 @@ import _map from 'lodash/map'
 import _get from 'lodash/get'
 import { useQueryStore } from "@/store/query";
 import SkeletonTable from "@/components/SkeletonTable.vue";
-import RoarDataTable from "@/components/RoarDataTable.vue";
 
 const queryStore = useQueryStore();
 const { percentCompleteRuns } = storeToRefs(queryStore);

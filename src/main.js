@@ -42,6 +42,9 @@ import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     //optional for column grouping
 import Row from 'primevue/row';
 
+// Internal Roar components
+import RoarDataTable from '@/components/RoarDataTable.vue'
+
 import "primevue/resources/themes/tailwind-light/theme.css"; // theme
 import "./assets/styles/theme.css" // theme
 import "primevue/resources/primevue.min.css"; // core css
@@ -87,6 +90,8 @@ app.component("DataTable", DataTable);
 app.component("Column", Column);
 app.component("ColumnGroup", ColumnGroup);
 app.component("Row", Row);
+
+app.component("RoarDataTable", RoarDataTable);
 
 app.directive("tooltip", Tooltip);
 app.directive("focustrap", FocusTrap);
