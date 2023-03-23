@@ -53,7 +53,7 @@
           <Calendar 
             v-if="col.dataType === 'date' && !col.useMultiSelect"
             v-model="filterModel.value" 
-            dateFormat="mm/dd/yy" 
+            dateFormat="mm/dd/yyyy" 
             placeholder="mm/dd/yyyy" 
           />
         </template>
@@ -106,7 +106,7 @@ let selectedRows = [];
 const refSelectedRows = ref(selectedRows);
 
 const exportCSV = async () => {
-  const csv = Papa.unparse(_flatMap(refSelectedRows.value, prepareData));
+  const csv = Papa.unparse(_flatMap(refSelectedRows.value, prepareDates));
   const blob = new Blob([csv]);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob, { type: 'text/plain' });
@@ -117,7 +117,7 @@ const exportCSV = async () => {
 };
 
 const exportFullCSV = async () => {
-  const csv = Papa.unparse(_flatMap(refData.value, prepareData))
+  const csv = Papa.unparse(_flatMap(refData.value, prepareDates))
   const blob = new Blob([csv]);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob, { type: 'text/plain' });
@@ -189,7 +189,7 @@ function getUniqueOptions(column){
   return options
 }
 
-function prepareData(entry){
+function prepareDates(entry){
   // Make a copy so we don't edit live data
   let entryCopy = JSON.parse(JSON.stringify(entry))
   _forEach(dateFields, field => {
