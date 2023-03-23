@@ -31,6 +31,7 @@
         :dataType="col.dataType"
         :sortable="(col.sort !== false)"
         :showFilterMatchModes="!col.useMultiSelect"
+        :showFilterOperator="col.allowMultipleFilters === true"
       >
         <template v-if="col.dataType === 'date'" #body="{ data }">
           {{ getFormattedDate(data[col.field]) }}
@@ -53,7 +54,7 @@
           <Calendar 
             v-if="col.dataType === 'date' && !col.useMultiSelect"
             v-model="filterModel.value" 
-            dateFormat="mm/dd/yyyy" 
+            dateFormat="mm/dd/yy" 
             placeholder="mm/dd/yyyy" 
           />
         </template>
@@ -152,13 +153,11 @@ _forEach(props.columns, column => {
       options[column.field] = getUniqueOptions(column);
     }
   }
-  if(_get(column, 'allowMultipleFilters') === true && returnMatchMode){
+  if(returnMatchMode){
     filters[column.field] = {
       operator: FilterOperator.AND,
       constraints: [returnMatchMode]
     }
-  } else if(returnMatchMode) {
-    filters[column.field] = returnMatchMode;
   }
 })
 const refOptions = ref(options);

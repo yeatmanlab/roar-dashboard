@@ -4,7 +4,7 @@
     <SkeletonTable />
   </div>
   <div v-else style="height: 55vh">
-    <DataTable :data="getComputedData(queryStore.runs)" :columns="tableColumns" />
+    <RoarDataTable :data="getComputedData(queryStore.runs)" :columns="tableColumns" />
   </div>
 </template>
 
@@ -16,7 +16,7 @@ import _map from 'lodash/map'
 import _get from 'lodash/get'
 import { useQueryStore } from "@/store/query";
 import SkeletonTable from "@/components/SkeletonTable.vue";
-import DataTable from "@/components/DataTable.vue";
+import RoarDataTable from "@/components/RoarDataTable.vue";
 
 const queryStore = useQueryStore();
 const { percentCompleteRuns } = storeToRefs(queryStore);
