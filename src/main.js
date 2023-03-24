@@ -35,6 +35,7 @@ import ToastService from 'primevue/toastservice';
 import Toolbar from "primevue/toolbar";
 import Tooltip from "primevue/tooltip";
 import TreeSelect from "primevue/treeselect";
+import TriStateCheckbox from 'primevue/tristatecheckbox'
 
 // PrimeVue data table imports
 import DataTable from 'primevue/datatable';
@@ -42,7 +43,8 @@ import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     //optional for column grouping
 import Row from 'primevue/row';
 
-import { VueShowdownPlugin } from 'vue-showdown';
+// Internal Roar components
+import RoarDataTable from '@/components/RoarDataTable.vue'
 
 import "primevue/resources/themes/tailwind-light/theme.css"; // theme
 import "./assets/styles/theme.css" // theme
@@ -58,18 +60,6 @@ app.use(ToastService);
 app.use(pinia);
 app.use(router);
 app.use(createHead());
-app.use(VueShowdownPlugin, {
-  // set default flavor of showdown
-  flavor: 'github',
-  // set default options of showdown (will override the flavor options)
-  options: {
-    emoji: true,
-    underline: true,
-    omitExtraWLInCodeBlocks: true,
-    simpleLineBreaks: false,
-    backslashEscapesHTMLTags: true,
-  },
-});
 
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
@@ -96,11 +86,14 @@ app.component("TabView", TabView);
 app.component("Toast", Toast);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
+app.component("TriStateCheckbox", TriStateCheckbox)
 
 app.component("DataTable", DataTable);
 app.component("Column", Column);
 app.component("ColumnGroup", ColumnGroup);
 app.component("Row", Row);
+
+app.component("RoarDataTable", RoarDataTable);
 
 app.directive("tooltip", Tooltip);
 app.directive("focustrap", FocusTrap);

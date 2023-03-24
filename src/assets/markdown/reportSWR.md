@@ -44,9 +44,9 @@ As children's reading skills improve, word recognition becomes automatic: Rather
 
 According to these classifications:
 
-- {{ swrStats.automaticity.high }} students displayed 'At or Above Average Automaticity.'
+- {{ swrStats.customStatsSWR.automaticityHigh }} students displayed 'At or Above Average Automaticity.'
 
-- {{ swrStats.automaticity.low }} students displayed 'Limited Automaticity.'
+- {{ swrStats.customStatsSWR.automaticityLow }} students displayed 'Limited Automaticity.'
 
 
 <div id='viz-automaticity-distributions-first-grade'></div>
