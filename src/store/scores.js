@@ -6,6 +6,13 @@ import { walkBlockDeclarations } from "@vue/compiler-core";
 const standardizeTaskId = (taskId) => {
   return taskId.replace(/^roar-/, "");
 };
+const standardizeNames = (run) => {
+  return {
+    first: run['name.first'],
+    middle: run['name.middle'],
+    last: run['name.last']
+  }
+}
 
 const getRunInfoCommon = (mergedRun) => {
   let normedPercentile;
@@ -349,6 +356,7 @@ export const useScoreStore = () => {
               participant.pid === run.pid
             );
             const taskId = standardizeTaskId(run.taskId);
+            const names = standardizeNames(matchingIdentifier[0]);
             if (matchingIdentifier.length === 0) {
               //return state.run;
               return {
@@ -362,6 +370,7 @@ export const useScoreStore = () => {
               const mergedRun = {
                 ...run,
                 ...matchingIdentifier[0],
+                name: names,
                 taskId,
               };
               return {
