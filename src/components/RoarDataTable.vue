@@ -35,7 +35,7 @@
         :showAddButton="col.allowMultipleFilters === true"
       >
         <template v-if="col.dataType === 'date'" #body="{ data }">
-          {{ getFormattedDate(data[col.field]) }}
+          {{ getFormattedDate(_get(data, col.field)) }}
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
           <InputText 
@@ -47,7 +47,7 @@
           <MultiSelect 
             v-if="col.useMultiSelect"
             v-model="filterModel.value" 
-            :options="refOptions[col.field]" 
+            :options="_get(refOptions, col.field)"
             placeholder="Any"
             :showToggleAll="false" 
             class="p-column-filter" 
@@ -75,6 +75,7 @@ import { ref } from 'vue';
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 import SkeletonTable from "@/components/SkeletonTable.vue"
 import _get from 'lodash/get'
+import _set from 'lodash/set'
 import _map from 'lodash/map'
 import _forEach from 'lodash/forEach'
 import _find from 'lodash/find'
@@ -179,7 +180,8 @@ let computedData = _forEach(props.data, entry => {
   // Clean up date fields to use Date objects
   _forEach(dateFields, field => {
     let dateEntry = _get(entry, field);
-    if(dateEntry !== null) entry[field] = new Date(dateEntry);
+    const dateObj = new Date(dateEntry);
+    if(dateEntry !== null) _set(entry, field, dateObj);
   })
 })
 const refData = ref(computedData);
@@ -189,8 +191,8 @@ function getUniqueOptions(column){
   const field = _get(column, 'field');
   let options = [];
   _forEach(props.data, entry => {
-    if(!options.includes(entry[field])){
-      options.push(entry[field]);
+    if(!options.includes(_get(entry, field))){
+      options.push(_get(entry, field));
     }
   });
   return options
