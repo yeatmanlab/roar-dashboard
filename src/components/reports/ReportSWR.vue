@@ -10,7 +10,7 @@
 
 <script setup>
 
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
 import MarkdownSWR from "@/assets/markdown/reportTemp.md";
@@ -19,6 +19,17 @@ import MarkdownSWR from "@/assets/markdown/reportTemp.md";
 const scoreStore = useScoreStore();
 
 console.log(scoreStore);
+
+
+const tableColumns = ref([
+    {
+        "field": "scores.runInfoOrig.name.first", 
+        "header": "First Name", 
+        "allowMultipleFilters": true,
+        "dataType": "text",
+    }
+]);
+
 
 const globalChartConfig = {
   $schema: "https://vega.github.io/schema/vega-lite/v5.json",
@@ -283,11 +294,11 @@ const moveTableElements = () => {
 };
 
 const draw = async () => {
-  await embed("#viz-distribution-by-grade", distributionByGrade);
-  await embed("#viz-normed-percentile-distribution", normedPercentileDistribution);
-  await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
-  await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
-  await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
+  //await embed("#viz-distribution-by-grade", distributionByGrade);
+  //await embed("#viz-normed-percentile-distribution", normedPercentileDistribution);
+  //await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
+  //await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
+  //await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
 };
 
 onMounted(() => {
