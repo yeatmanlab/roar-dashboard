@@ -18,6 +18,10 @@
       showGridlines
       v-model:filters="refFilters"
       filterDisplay="menu"
+      paginator
+      :alwaysShowPaginator="false"
+      :rows="10"
+      :rowsPerPageOptions="[10, 20, 50]"
     >
       <Column 
         selectionMode="multiple" 
