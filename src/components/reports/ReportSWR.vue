@@ -1,24 +1,22 @@
 <template>
   <div v-if="scoreStore.scoresReady">
-    <VueShowdown
-      :vue-template="true"
-      :vue-template-data="{ ...scoreStoreRefs }"
-      :markdown="markdownText"
-    />
+
+    <!-- <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" /> -->
+    <MarkdownSWR />
+
   </div>
   <AppSpinner v-else />
 </template>
 
 <script setup>
-import { onMounted } from "vue";
-import embed from "vega-embed";
-import { useScoreStore, thetaToRoarScore, percentileToSupportClassification } from "@/store/scores";
-import { storeToRefs } from "pinia";
-import markdownText from "@/assets/markdown/reportSWR.md?raw";
-import TableRoarScores from "./TableRoarScores.vue";
+
+import { onMounted } from 'vue';
+import embed from 'vega-embed';
+import { useScoreStore } from "@/store/scores";
+import MarkdownSWR from "@/assets/markdown/reportTemp.md";
+
 
 const scoreStore = useScoreStore();
-const scoreStoreRefs = storeToRefs(scoreStore);
 
 console.log(scoreStore);
 
