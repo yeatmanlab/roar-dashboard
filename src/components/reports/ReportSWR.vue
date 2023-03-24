@@ -2,7 +2,7 @@
   <div v-if="scoreStore.scoresReady">
 
     <!-- <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" /> -->
-    <MarkdownSWR />
+    <MarkdownSWR :scores="scoreStore.scores" :columns="tableColumns" />
 
   </div>
   <AppSpinner v-else />
@@ -22,12 +22,35 @@ console.log(scoreStore);
 
 
 const tableColumns = ref([
-    {
-        "field": "scores.runInfoOrig.name.first", 
-        "header": "First Name", 
-        "allowMultipleFilters": true,
-        "dataType": "text",
-    }
+  {
+    "field": "runInfoOrig.runInfoOrig.name.first", 
+    "header": "First Name", 
+    "allowMultipleFilters": true,
+    "dataType": "text",
+  },
+  {
+    "field": "runInfoOrig.runInfoOrig.name.last", 
+    "header": "Last Name", 
+    "allowMultipleFilters": true,
+    "dataType": "text",
+  },
+  {
+    "field": "runInfoOrig.runInfoOrig.grade", 
+    "header": "Grade", 
+    "allowMultipleFilters": true,
+    "dataType": "text",
+    "useMultiSelect": true
+  },
+  {
+    "field": "runInfoOrig.runInfoOrig.timeStarted", 
+    "header": "Started", 
+    "dataType": "date",
+  },
+  {
+    "field": "runInfoOrig.runInfoOrig.timeFinished", 
+    "header": "Finished", 
+    "dataType": "date",
+  },
 ]);
 
 
