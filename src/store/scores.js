@@ -392,109 +392,110 @@ export const useScoreStore = () => {
         return uniqueRunIds.map((runId) => {
           const subScoresForThisRun = state.subScores.filter((subScore) => subScore.runInfoOrig.runId === runId);
           return {
-            runInfoOrig: getRunScores(subScoresForThisRun),
+            ...getRunScores(subScoresForThisRun),
           }
         })
       },
 
-      // ageStats: (state) => {
-      //   const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted)); 
-      //   if (ages.length === 0) {
-      //     return null;
-      //   }
+      ageStats: (state) => {
+        const ages = state.scores.map((score) => computeAges(score.runInfoOrig.dob, score.runInfoOrig.timeStarted)); 
+        if (ages.length === 0) {
+          return null;
+        }
 
-      //   const ageYears = ages.map((age) => age.ageYears);
-      //   const ageMonths = ages.map((age) => age.ageMonths);
-      //   return {
-      //     ageMin: Math.min(...ageYears),
-      //     ageMax: Math.max(...ageYears),
-      //     ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
-      //   };
-      // },
+        const ageYears = ages.map((age) => age.ageYears);
+        const ageMonths = ages.map((age) => age.ageMonths);
+        return {
+          ageMin: Math.min(...ageYears),
+          ageMax: Math.max(...ageYears),
+          ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
+        };
+      },
 
-      // gradeStats: (state) => {
-      //   const parsedGrades = state.scores.map((score) => parseGrade(score.runInfoOrig.grade)); 
-      //   if (parsedGrades.length === 0) {
-      //     return null;
-      //   }
-      //   return {
-      //     gradeMin: parsedGrades.reduce(function(prev, curr) {
-      //       return (gradeComparator(curr, prev) === 1)? prev : curr;
-      //     }),
-      //     gradeMax: parsedGrades.reduce(function(prev, curr) {
-      //       return (gradeComparator(curr, prev) === 1)? curr : prev;
-      //     }),
+      gradeStats: (state) => {
+        const parsedGrades = state.scores.map((score) => parseGrade(score.runInfoOrig.grade)); 
+        if (parsedGrades.length === 0) {
+          return null;
+        }
+        return {
+          gradeMin: parsedGrades.reduce(function(prev, curr) {
+            return (gradeComparator(curr, prev) === 1)? prev : curr;
+          }),
+          gradeMax: parsedGrades.reduce(function(prev, curr) {
+            return (gradeComparator(curr, prev) === 1)? curr : prev;
+          }),
 
-      //   };
-      // },
+        };
+      },
 
-      // swrStats: (state) => { 
-      //   return { 
-      //     numStudents: state.scores.length,
-      //     ...state.ageStats,
-      //     ...state.gradeStats,
-      //     ...state.roarScoreStats,
-      //     support: { ...state.supportStats},
-      //     automaticity: { ...state.swrAutomaticityStats},
-      //   };
-      // },
+      swrStats: (state) => { 
+        return { 
+          numStudents: state.scores.length,
+          ...state.ageStats,
+          ...state.gradeStats,
+          ...state.roarScoreStats,
+          support: { ...state.supportStats},
+          automaticity: { ...state.swrAutomaticityStats},
+        };
+      },
 
-      // supportStats: (state) => {
-      //   let stats = {
-      //     // set defaults
-      //     High: "",
-      //     Medium: "",
-      //     Low: "",
-      //   };
-      //   if (state.identifiers.length === 0) {
-      //     // TODO_Adam how to test whether match was found, not just file loaded?
-      //     return stats;
-      //   }
-      //   const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
-      //   if (supportArray.length === 0) {
-      //     return stats;
-      //   } 
+      supportStats: (state) => {
+        let stats = {
+          // set defaults
+          High: "",
+          Medium: "",
+          Low: "",
+        };
+        if (state.identifiers.length === 0) {
+          // TODO_Adam how to test whether match was found, not just file loaded?
+          return stats;
+        }
+        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
+        if (supportArray.length === 0) {
+          return stats;
+        } 
 
-      //   // update values
-      //   stats.High = countItems(...supportArray, "Average or Above Average");
-      //   stats.Low = countItems(...supportArray, "Limited");
+        // update values
+        stats.High = supportArray.filter(x => x === "Average or Above Average").length; 
+        stats.Medium = supportArray.filter(x => x === "Some Support Needed").length; 
+        stats.Low = supportArray.filter(x => x === "Extra Support Needed").length; 
 
-      //   return stats;
-      // },
+        return stats;
+      },
 
-      // swrAutomaticityStats: (state) => {
-      //   let stats = {
-      //     // set defaults
-      //     High: "",
-      //     Low: "",
-      //   };
-      //   if (state.identifiers.length === 0) {
-      //     // TODO_Adam how to test whether match was found, not just file loaded?
-      //     return stats;
-      //   }
-      //   const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
-      //   if (supportArray.length === 0) {
-      //     return stats;
-      //   } 
+      swrAutomaticityStats: (state) => {
+        let stats = {
+          // set defaults
+          High: "",
+          Low: "",
+        };
+        if (state.identifiers.length === 0) {
+          // TODO_Adam how to test whether match was found, not just file loaded?
+          return stats;
+        }
+        const supportArray = state.scores.map((run) => run.runInfoCommon.supportLevel);
+        if (supportArray.length === 0) {
+          return stats;
+        } 
 
-      //   // update values
-      //   stats.High = countItems(...supportArray, "Average or Above Average");
-      //   stats.Low = countItems(...supportArray, "Limited");
+        // update values
+        stats.High = supportArray.filter(x => x === "Average or Above Average").length; 
+        stats.Low = supportArray.filter(x => x === "Limited").length; 
 
-      //   return stats;
-      // },
+        return stats;
+      },
   
 
-      // roarScoreStats: (state) => {
-      //   const roarScoresArray = state.scores.map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
-      //   return {
-      //     // Note: all calculations must gracefully handle an array length of 0
-      //     roarScoreMin: Math.min(...roarScoresArray),
-      //     roarScoreMax: Math.max(...roarScoresArray),
-      //     roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b,0) / roarScoresArray.length),
-      //     roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
-      //   };
-      // },
+      roarScoreStats: (state) => {
+        const roarScoresArray = state.scores.map((score) => thetaToRoarScore(score.runInfoOrig.thetaEstimate));
+        return {
+          // Note: all calculations must gracefully handle an array length of 0
+          roarScoreMin: Math.min(...roarScoresArray),
+          roarScoreMax: Math.max(...roarScoresArray),
+          roarScoreMean: Math.round(roarScoresArray.reduce((a, b) => a + b,0) / roarScoresArray.length),
+          roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
+        };
+      },
 
     },
 

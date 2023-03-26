@@ -55,7 +55,7 @@ According to these classifications:
 
 Below is an interactive data table of the de-identified students that can be filtered and downloaded. We will provide a list of identified IDs as part of a secure file transfer, separately from this report.
 
-<!-- <table-student-scores /> -->
+<RoarDataTable :data="scores" :columns="columns" />
 
 ### Notes on Interpreting this Score Report
 
