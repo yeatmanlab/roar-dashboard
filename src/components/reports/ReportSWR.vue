@@ -2,7 +2,7 @@
   <div v-if="scoreStore.scoresReady">
 
     <!-- <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" /> -->
-    <MarkdownSWR :scores="scoreStore.scores" :columns="tableColumns" />
+    <MarkdownSWR :scores="scoreStore.scores" :swrStats="scoreStore.swrStats" :columns="tableColumns" />
 
   </div>
   <AppSpinner v-else />
@@ -13,6 +13,7 @@
 import { onMounted, ref } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
+
 import MarkdownSWR from "@/assets/markdown/reportTemp.md";
 
 
@@ -23,33 +24,43 @@ console.log(scoreStore);
 
 const tableColumns = ref([
   {
-    "field": "runInfoOrig.runInfoOrig.name.first", 
+    "field": "runInfoOrig.name.first", 
     "header": "First Name", 
     "allowMultipleFilters": true,
     "dataType": "text",
   },
   {
-    "field": "runInfoOrig.runInfoOrig.name.last", 
+    "field": "runInfoOrig.name.last", 
     "header": "Last Name", 
     "allowMultipleFilters": true,
     "dataType": "text",
   },
   {
-    "field": "runInfoOrig.runInfoOrig.grade", 
+    "field": "runInfoCommon.parsedGrade", 
     "header": "Grade", 
     "allowMultipleFilters": true,
     "dataType": "text",
     "useMultiSelect": true
   },
   {
-    "field": "runInfoOrig.runInfoOrig.timeStarted", 
-    "header": "Started", 
-    "dataType": "date",
+    "field": "runInfoCommon.roarScore", 
+    "header": "SWR ROAR SCORE", 
+    "dataType": "numeric",
   },
+  // {
+  //   "field": "runInfoCommon.normedPercentile", 
+  //   "header": "Estimated Woodcock-Johnson Percentile", 
+  //   "dataType": "numeric",
+  // },
+    // {
+  //   "field": "runInfoCommon.normedStandardScore", 
+  //   "header": "Estimated Woodcock-Johnson Standard Score", 
+  //   "dataType": "numeric",
+  // },
   {
-    "field": "runInfoOrig.runInfoOrig.timeFinished", 
-    "header": "Finished", 
-    "dataType": "date",
+    "field": "runInfoCommon.supportLevel", 
+    "header": "Support Level", 
+    "dataType": "text",
   },
 ]);
 
@@ -317,11 +328,11 @@ const moveTableElements = () => {
 };
 
 const draw = async () => {
-  //await embed("#viz-distribution-by-grade", distributionByGrade);
-  //await embed("#viz-normed-percentile-distribution", normedPercentileDistribution);
-  //await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
-  //await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
-  //await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
+  await embed("#viz-distribution-by-grade", distributionByGrade);
+  await embed("#viz-normed-percentile-distribution", normedPercentileDistribution);
+  await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
+  await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
+  await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
 };
 
 onMounted(() => {
