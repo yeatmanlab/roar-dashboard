@@ -14,7 +14,7 @@ import { onMounted, ref } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
 
-import MarkdownSWR from "@/assets/markdown/reportTemp.md";
+import MarkdownSWR from "@/assets/markdown/reportSWR.md";
 
 
 const scoreStore = useScoreStore();
