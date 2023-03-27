@@ -13,8 +13,8 @@
       :rowHover="true" 
       :reorderableColumns="true" 
       :resizableColumns="true"
+      :exportFilename="exportFilename"
       v-model:selection="refSelectedRows"
-
       removableSort
       sortMode="multiple"
       showGridlines
@@ -89,12 +89,11 @@ import _filter from 'lodash/filter'
 import _toUpper from 'lodash/toUpper'
 import _startCase from 'lodash/startCase'
 import _flatMap from 'lodash/flatMap'
-import Papa from "papaparse";
 
 /*
 Using the DataTable
 Required Props: columns, data
-Optional Props: allowExport (default: true)
+Optional Props: allowExport (default: true), exportFilename (default: 'datatable-export')
 
 Columns:
 Array of objects consisting of a field and header at minimum.
@@ -115,7 +114,8 @@ Array of objects consisting of a field and header at minimum.
 const props = defineProps({
   columns: {type:Array, required: true},
   data: {type: Array, required: true},
-  allowExport: {type: Boolean, default: true}
+  allowExport: {type: Boolean, default: true},
+  exportFilename: {type: String, default: 'datatable-export'}
 });
 
 let selectedRows = [];
