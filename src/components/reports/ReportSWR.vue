@@ -13,6 +13,7 @@
 import { onMounted, ref } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
+import { graphColorType, supportLevelsType, automaticityLevelsType } from "./reportUtils.js"
 
 import MarkdownSWR from "@/assets/markdown/reportSWR.md";
 
@@ -78,7 +79,8 @@ const distributionByGrade = {
   // ...globalChartConfig,
   description: "ROAR Score Distribution by Grade Level",
   title: { text: "ROAR Score Distribution", anchor: "middle", fontSize: 18 },
-  config: { view: { stroke: "#000000", strokeWidth: 1 } },
+  config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
+
   data: { values: scoreStore.scores},
 
   mark: "bar", 
@@ -162,17 +164,17 @@ const normedPercentileDistribution = {
       field: "runInfoCommon.supportLevel",
       title: "Support",
       sort: [
-        "Extra Support Needed",
-        "Some Support Needed",
-        "Average or Above Average",
+        supportLevelsType.extra,
+        supportLevelsType.some,
+        supportLevelsType.average,
       ],
       scale: {
         domain: [
-          "Extra Support Needed",
-          "Some Support Needed",
-          "Average or Above Average",
+          supportLevelsType.extra,
+          supportLevelsType.some,
+          supportLevelsType.average,
         ],
-        range: ["#cc79a7", "#f0e442", "#0072b2"],
+        range: [graphColorType.mediumPink, graphColorType.mediumYellow, graphColorType.mediumBlue],
       }, 
     },
   },
@@ -214,10 +216,10 @@ const firstGradePercentileDistribution = {
     color: {
       field: "runInfoCommon.supportLevel",
       title: "Automaticity",
-      sort: ["Limited", "Average or Above Average"],
+      sort: [automaticityLevelsType.limited, automaticityLevelsType.average],
       scale: {
-        //domain: ["Limited", "Average or Above Average"],
-        range: ["#342288", "#44aa99"],
+        //domain: [automaticityLevelsType.limited, automaticityLevelsType.average],
+        range: [graphColorType.darkPurple, graphColorType.lightBlueGreen],
       },
     },
   },
@@ -260,11 +262,11 @@ const stackedSupportByGrade = {
 
       scale: {
         domain: [
-          "Extra Support Needed",
-          "Some Support Needed",
-          "Average or Above Average",
+          supportLevelsType.extra,
+          supportLevelsType.some,
+          supportLevelsType.average,
         ],
-        range: ["#cc79a7", "#f0e442", "#0072b2"],
+        range: [graphColorType.mediumPink, graphColorType.mediumYellow, graphColorType.mediumBlue],
       },
       title: "Support",
     },
@@ -310,8 +312,8 @@ const stackedAutomaticityFirstGrade = {
       field: "runInfoCommon.supportLevel",
       type: "nominal",
       scale: {
-        domain: ["Limited", "Average or Above Average"],
-        range: ["#342288", "#44aa99"],
+        domain: [automaticityLevelsType.limited, automaticityLevelsType.average],
+        range: [graphColorType.darkPurple, graphColorType.lightBlueGreen],
       },
       title: "Automaticity",
     },

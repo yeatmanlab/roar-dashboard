@@ -37,6 +37,8 @@ The vertical cut scores represent thresholds for classifying students into three
 
 <div id='viz-stacked-support-by-grade'></div>
 
+<div v-if="swrStats.hasFirstOrK"> 
+
 ### Identifying Automaticity in First Grade
 
 As children's reading skills improve, word recognition becomes automatic: Rather than sounding out words one letter at a time, they develop automaticity in word recognition and can recognize a word at a glance. This ability begins developing around first grade but some children do not begin achieving automaticity until later. In this score report, first grade children are categorized as either having 'limited automaticity' or 'at or above average automaticity.' Students with limited automaticity are likely to benefit from increased instruction and continued monitoring of progress.
@@ -51,6 +53,8 @@ According to these classifications:
 
 
 <div id='viz-automaticity-distributions-first-grade'></div>
+
+</div>
 
 ## Student Score Information
 

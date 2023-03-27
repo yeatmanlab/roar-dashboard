@@ -414,6 +414,12 @@ export const useScoreStore = () => {
 
       gradeStats: (state) => {
         const parsedGrades = state.scores.map((score) => parseGrade(score.runInfoOrig.grade)); 
+        const hasFirstOrK = (parsedGrades.includes("k") || 
+                             parsedGrades.includes("pk") || 
+                             parsedGrades.includes("tk") ||
+                             parsedGrades.includes("jk") ||
+                             parsedGrades.includes("1"));
+
         if (parsedGrades.length === 0) {
           return null;
         }
@@ -424,6 +430,7 @@ export const useScoreStore = () => {
           gradeMax: parsedGrades.reduce(function(prev, curr) {
             return (gradeComparator(curr, prev) === 1)? curr : prev;
           }),
+          hasFirstOrK: hasFirstOrK,
 
         };
       },
