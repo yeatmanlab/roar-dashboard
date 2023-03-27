@@ -11,6 +11,7 @@
 ## Overview
 
 <div id='viz-distribution-by-grade'></div>
+
 This score report presents information from the recent administration of the ROAR assessment.
 
 - {{ swrStats.numStudents }} students in grades {{ swrStats.gradeMin }} to {{ swrStats.gradeMax }} completed the Single Word Recognition task.
@@ -27,11 +28,11 @@ The Woodcock-Johnson Basic Reading Skills Index WJ is a standardized test that w
 <div id='viz-normed-percentile-distribution'></div>
 
 The vertical cut scores represent thresholds for classifying students into three categories: *At or Above Average*, *Some Support Needed*, or * Extra Support Needed*
-- {{ swrStats.supportHigh }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
+- {{ swrStats.support.High }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
 
-- {{ swrStats.supportMedium }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
+- {{ swrStats.support.Medium }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
 
-- {{ swrStats.supportLow }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
+- {{ swrStats.support.Low }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
 
 
 <div id='viz-stacked-support-by-grade'></div>
@@ -44,9 +45,9 @@ As children's reading skills improve, word recognition becomes automatic: Rather
 
 According to these classifications:
 
-- {{ swrStats.customStatsSWR.automaticityHigh }} students displayed 'At or Above Average Automaticity.'
+- {{ swrStats.automaticity.High }} students displayed 'At or Above Average Automaticity.'
 
-- {{ swrStats.customStatsSWR.automaticityLow }} students displayed 'Limited Automaticity.'
+- {{ swrStats.automaticity.Low }} students displayed 'Limited Automaticity.'
 
 
 <div id='viz-automaticity-distributions-first-grade'></div>
@@ -76,3 +77,12 @@ Below is an interactive data table of the de-identified students that can be fil
 ### Invitation to Collaborate
 
 Please reach out to [Jasmine Tran](jasetran@stanford.edu) and [Tonya Murray](tonyamur@stanford.edu) for questions or clarification on this score report and/or recommendations for how to improve future score reports.
+
+
+<script setup>
+const props = defineProps({
+    scores: {type: Object, default: {}},
+    swrStats: {type: Object, default: {}},
+    columns: {type: Array, default: []}
+});
+</script>
