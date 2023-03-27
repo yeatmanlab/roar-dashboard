@@ -4,7 +4,7 @@
     <SkeletonTable />
   </div>
   <div v-else style="height: 55vh">
-    <RoarDataTable :data="getComputedData(queryStore.runs)" :columns="tableColumns" />
+    <RoarDataTable :data="queryStore.runs" :columns="tableColumns" />
   </div>
 </template>
 
@@ -14,6 +14,7 @@ import { storeToRefs } from 'pinia';
 import _forEach from 'lodash/forEach'
 import _map from 'lodash/map'
 import _get from 'lodash/get'
+import _set from 'lodash/set'
 import { useQueryStore } from "@/store/query";
 import SkeletonTable from "@/components/SkeletonTable.vue";
 
@@ -59,27 +60,27 @@ const tableColumns = ref([
     "dataType": "boolean",
   },
   {
-    "field": "school",
+    "field": "school.id",
     "dataType": "text"
   },
   {
-    "field": "district",
+    "field": "district.id",
     "dataType": "text"
   },
   {
-    "field": "variant",
+    "field": "variant.id",
     "dataType": "text"
   },
   {
-    "field": "study",
+    "field": "study.id",
     "dataType": "text"
   },
   {
-    "field": "class",
+    "field": "class.id",
     "dataType": "text"
   },
   {
-    "field": "task",
+    "field": "task.id",
     "header": "Task ID",
     "useMultiSelect": true,
     "dataType": "text"
@@ -97,18 +98,4 @@ const tableColumns = ref([
     "dataType": "date"
   }
 ]);
-
-function getComputedData(runs) {
-  let computedData = _map(runs, run => {
-    //flatten task, district, school, study, varient from object to value
-    if(_get(run, 'task.id') !== undefined) run['task'] = _get(run, 'task.id');
-    if(_get(run, 'district.id') !== undefined) run['district'] = _get(run, 'district.id');
-    if(_get(run, 'school.id') !== undefined) run['school'] = _get(run, 'school.id');
-    if(_get(run, 'study.id') !== undefined) run['study'] = _get(run, 'study.id');
-    if(_get(run, 'variant.id') !== undefined) run['variant'] = _get(run, 'variant.id');
-    if(_get(run, 'class.id') !== undefined) run['class'] = _get(run, 'class.id');
-    return run
-  });
-  return computedData
-}
 </script>
