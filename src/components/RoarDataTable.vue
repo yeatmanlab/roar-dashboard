@@ -4,20 +4,26 @@
   </div>
   <div v-else>
     <div v-if="allowExport" class="flex flex-row w-full gap-2 py-2" style="justify-content: flex-end;">
-      <Button label="Export Selected" :disabled="refSelectedRows.length === 0" @click="exportCSV" />
-      <Button label="Export Whole Table" @click="exportFullCSV" />
+      <Button label="Export Selected" :disabled="refSelectedRows.length === 0" @click="exportCSV(true, $event)" />
+      <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
     </div>
     <DataTable 
+      ref="dataTable"
       :value="refData" 
       :rowHover="true" 
       :reorderableColumns="true" 
       :resizableColumns="true"
+      :exportFilename="exportFilename"
       v-model:selection="refSelectedRows"
       removableSort
       sortMode="multiple"
       showGridlines
       v-model:filters="refFilters"
       filterDisplay="menu"
+      paginator
+      :alwaysShowPaginator="false"
+      :rows="10"
+      :rowsPerPageOptions="[10, 20, 50]"
     >
       <Column 
         selectionMode="multiple" 
@@ -83,12 +89,11 @@ import _filter from 'lodash/filter'
 import _toUpper from 'lodash/toUpper'
 import _startCase from 'lodash/startCase'
 import _flatMap from 'lodash/flatMap'
-import Papa from "papaparse";
 
 /*
 Using the DataTable
 Required Props: columns, data
-Optional Props: allowExport (default: true)
+Optional Props: allowExport (default: true), exportFilename (default: 'datatable-export')
 
 Columns:
 Array of objects consisting of a field and header at minimum.
@@ -109,32 +114,17 @@ Array of objects consisting of a field and header at minimum.
 const props = defineProps({
   columns: {type:Array, required: true},
   data: {type: Array, required: true},
-  allowExport: {type: Boolean, default: true}
+  allowExport: {type: Boolean, default: true},
+  exportFilename: {type: String, default: 'datatable-export'}
 });
 
 let selectedRows = [];
 const refSelectedRows = ref(selectedRows);
 
-const exportCSV = async () => {
-  const csv = Papa.unparse(_flatMap(refSelectedRows.value, prepareDates));
-  const blob = new Blob([csv]);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob, { type: 'text/plain' });
-  a.download = 'runs.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-};
+const dataTable = ref();
 
-const exportFullCSV = async () => {
-  const csv = Papa.unparse(_flatMap(refData.value, prepareDates))
-  const blob = new Blob([csv]);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob, { type: 'text/plain' });
-  a.download = 'runs.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+const exportCSV = (exportSelected) => {
+  dataTable.value.exportCSV({selectionOnly: exportSelected});
 };
 
 // Generate filters and options objects
@@ -176,12 +166,15 @@ const refFilters = ref(filters);
 let dateFields = _filter(props.columns, col => _toUpper(col.dataType) === 'DATE');
 dateFields = _map(dateFields, col => col.field);
 
-let computedData = _forEach(props.data, entry => {
+let computedData = JSON.parse(JSON.stringify(props.data))
+_forEach(computedData, entry => {
   // Clean up date fields to use Date objects
   _forEach(dateFields, field => {
     let dateEntry = _get(entry, field);
-    const dateObj = new Date(dateEntry);
-    if(dateEntry !== null) _set(entry, field, dateObj);
+    if(dateEntry !== null){
+      const dateObj = new Date(dateEntry);
+      _set(entry, field, dateObj);
+    }
   })
 })
 const refData = ref(computedData);
@@ -196,17 +189,6 @@ function getUniqueOptions(column){
     }
   });
   return options
-}
-
-function prepareDates(entry){
-  // Make a copy so we don't edit live data
-  let entryCopy = JSON.parse(JSON.stringify(entry))
-  _forEach(dateFields, field => {
-    if(entryCopy[field]){
-      entryCopy[field] = getFormattedDate(entry[field])
-    }
-  })
-  return entryCopy
 }
 
 function getFormattedDate(date){
