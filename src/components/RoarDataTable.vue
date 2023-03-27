@@ -4,15 +4,17 @@
   </div>
   <div v-else>
     <div v-if="allowExport" class="flex flex-row w-full gap-2 py-2" style="justify-content: flex-end;">
-      <Button label="Export Selected" :disabled="refSelectedRows.length === 0" @click="exportCSV" />
-      <Button label="Export Whole Table" @click="exportFullCSV" />
+      <Button label="Export Selected" :disabled="refSelectedRows.length === 0" @click="exportCSV(true, $event)" />
+      <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
     </div>
     <DataTable 
+      ref="dataTable"
       :value="refData" 
       :rowHover="true" 
       :reorderableColumns="true" 
       :resizableColumns="true"
       v-model:selection="refSelectedRows"
+
       removableSort
       sortMode="multiple"
       showGridlines
@@ -119,26 +121,10 @@ const props = defineProps({
 let selectedRows = [];
 const refSelectedRows = ref(selectedRows);
 
-const exportCSV = async () => {
-  const csv = Papa.unparse(_flatMap(refSelectedRows.value, prepareDates));
-  const blob = new Blob([csv]);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob, { type: 'text/plain' });
-  a.download = 'runs.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-};
+const dataTable = ref();
 
-const exportFullCSV = async () => {
-  const csv = Papa.unparse(_flatMap(refData.value, prepareDates))
-  const blob = new Blob([csv]);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob, { type: 'text/plain' });
-  a.download = 'runs.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+const exportCSV = (exportSelected) => {
+  dataTable.value.exportCSV({selectionOnly: exportSelected});
 };
 
 // Generate filters and options objects
@@ -203,17 +189,6 @@ function getUniqueOptions(column){
     }
   });
   return options
-}
-
-function prepareDates(entry){
-  // Make a copy so we don't edit live data
-  let entryCopy = JSON.parse(JSON.stringify(entry))
-  _forEach(dateFields, field => {
-    if(entryCopy[field]){
-      entryCopy[field] = getFormattedDate(entry[field])
-    }
-  })
-  return entryCopy
 }
 
 function getFormattedDate(date){
