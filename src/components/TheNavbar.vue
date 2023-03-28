@@ -5,8 +5,9 @@
         <img src="../assets/roar-icon.png" height="50" alt="The ROAR logo" />
       </router-link>
       <h1 class="ml-2">ROAR Web Query</h1>
-      <Button icon="pi pi-info-circle" class="p-button-rounded p-button-secondary p-button-text" @click="openInfo"/>
-      <Dialog header="What is ROAR?" v-model:visible="displayInfo" position="topleft" :breakpoints="{'960px': '75vw', '640px': '90vw'}" :style="{width: '50vw'}">
+      <Button icon="pi pi-info-circle" class="p-button-rounded p-button-secondary p-button-text" @click="openInfo" />
+      <Dialog header="What is ROAR?" v-model:visible="displayInfo" position="topleft"
+        :breakpoints="{ '960px': '75vw', '640px': '90vw' }" :style="{ width: '50vw' }">
         <div class="text-left">
           <p>
             The <b>Rapid Online Assessment of Reading (ROAR)</b> is an ongoing
@@ -19,16 +20,16 @@
 
           <p>
             This website serves as a tool to interactively query ROAR assessment
-            data.  If you are an educator, clinician, student, or parent wishing to
-            learn more about the ROAR, please visit the <a
-            href="https://roar.stanford.edu/">ROAR website.</a>
+            data. If you are an educator, clinician, student, or parent wishing to
+            learn more about the ROAR, please visit the <a href="https://roar.stanford.edu/">ROAR website.</a>
           </p>
         </div>
       </Dialog>
     </template>
 
     <template #end>
-      <SplitButton v-if="authStore.isAuthenticated" label="Account" icon="pi pi-user" :model="loggedInItems"></SplitButton>
+      <SplitButton v-if="authStore.isAuthenticated" label="Account" icon="pi pi-user" :model="loggedInItems">
+      </SplitButton>
       <router-link v-else :to="{ name: 'SignIn' }">
         <Button label="Log In" icon="pi pi-sign-in" />
       </router-link>
@@ -62,4 +63,6 @@ const openInfo = () => displayInfo.value = true;
 const closeInfo = () => displayInfo.value = false;
 </script>
 
-<style scoped></style>
+<style scoped>
+
+</style>

@@ -179,6 +179,10 @@ export const csvFileToJson = (fileObject) =>
   });
 
 export const standardDeviation = (arr, usePopulation = false) => {
+  // prevent divide by 0
+  if (arr.length === 0) 
+  return Infinity;
+
   const mean = arr.reduce((acc, val) => acc + val, 0) / arr.length;
   return Math.sqrt(
     arr.reduce((acc, val) => acc.concat((val - mean) ** 2), []).reduce((acc, val) => acc + val, 0) /

@@ -1,10 +1,6 @@
 <template>
   <DataTable :value="skeletonData" responsiveLayout="scroll" :scrollable="true" scrollHeight="flex">
-    <Column
-      v-for="col of Object.keys(skeletonData[0])"
-      :field="col"
-      :key="col"
-    >
+    <Column v-for="col of Object.keys(skeletonData[0])" :field="col" :key="col">
       <template #header>
         <Skeleton></Skeleton>
       </template>
@@ -19,9 +15,9 @@
 import { ref } from 'vue';
 
 const skeletonData = ref([
-  {col0: '', col1: '', col2: '', col3: ''},
-  {col0: '', col1: '', col2: '', col3: ''},
-  {col0: '', col1: '', col2: '', col3: ''},
-  {col0: '', col1: '', col2: '', col3: ''},
+  { col0: '', col1: '', col2: '', col3: '' },
+  { col0: '', col1: '', col2: '', col3: '' },
+  { col0: '', col1: '', col2: '', col3: '' },
+  { col0: '', col1: '', col2: '', col3: '' },
 ]);
 </script>

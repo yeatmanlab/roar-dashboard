@@ -8,19 +8,15 @@
               <i class="pi pi-filter mr-2"></i>
               <span>Query Filters</span>
             </template>
-            <RunQuery />
+            <QueryRuns />
           </AccordionTab>
           <AccordionTab>
             <template #header>
               <i class="pi pi-table mr-2"></i>
-              <Badge
-                v-if="queryStore.runsReady"
-                class="mr-2"
-                :value="queryStore.nRuns"
-              />
+              <Badge v-if="queryStore.runsReady" class="mr-2" :value="queryStore.nRuns" />
               <span>Runs</span>
             </template>
-            <RunResults />
+            <TableRunResults />
           </AccordionTab>
         </Accordion>
         <RequestPermission v-else />
@@ -40,9 +36,9 @@
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/store/auth";
 import { useQueryStore } from "@/store/query";
-import RunQuery from '@/components/RunQuery.vue';
-import RunResults from '@/components/RunResults.vue';
-import RequestPermission from '@/components/RequestPermission.vue';
+import QueryRuns from '@/components/query/QueryRuns.vue';
+import TableRunResults from '@/components/query/TableRunResults.vue';
+import RequestPermission from '@/components/auth/RequestPermission.vue';
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -51,4 +47,5 @@ const { activeTab } = storeToRefs(queryStore);
 </script>
 
 <style scoped>
+
 </style>

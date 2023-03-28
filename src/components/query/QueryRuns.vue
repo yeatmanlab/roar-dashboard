@@ -6,18 +6,12 @@
         <span class="p-inputgroup-addon">
           <i class="pi pi-database"></i>
         </span>
-        <Dropdown
-          inputId="rootdoc"
-          v-model="selectedRootPath"
-          :options="rootPaths"
-          optionLabel="label"
-          optionGroupLabel="label"
-          optionGroupChildren="items"
-        >
+        <Dropdown inputId="rootdoc" v-model="selectedRootPath" :options="rootPaths" optionLabel="label"
+          optionGroupLabel="label" optionGroupChildren="items">
           <template #optiongroup="slotProps">
             <div class="flex align-items-center country-item">
               <i class="pi pi-folder-open mr-2"></i>
-              <div>{{slotProps.option.label}}</div>
+              <div>{{ slotProps.option.label }}</div>
             </div>
           </template>
         </Dropdown>
@@ -32,19 +26,9 @@
         <span class="p-inputgroup-addon">
           <i class="pi pi-angle-right"></i>
         </span>
-        <MultiSelect
-          inputId="tasks"
-          v-model="selectedTasks"
-          :options="queryStore.tasks"
-          optionLabel="id"
-          :loading="!queryStore.tasksReady"
-          :filter="true"
-          filterPlaceholder="Filter tasks"
-          placeholder="Select tasks"
-          :selectionLimit="10"
-          :maxSelectedLabels="4"
-          :virtualScrollerOptions="{ itemSize: 40 }"
-        />
+        <MultiSelect inputId="tasks" v-model="selectedTasks" :options="queryStore.tasks" optionLabel="id"
+          :loading="!queryStore.tasksReady" :filter="true" filterPlaceholder="Filter tasks" placeholder="Select tasks"
+          :selectionLimit="10" :maxSelectedLabels="4" :virtualScrollerOptions="{ itemSize: 40 }" />
       </div>
     </div>
 
@@ -54,21 +38,11 @@
         <span class="p-inputgroup-addon">
           <i class="pi pi-angle-double-right"></i>
         </span>
-        <MultiSelect
-          inputId="variants"
-          v-model="selectedVariants"
-          :options="queryStore.variants"
-          optionLabel="name"
-          optionGroupLabel="task"
-          optionGroupChildren="items"
-          :loading="!queryStore.variantsReady"
-          :filter="true"
+        <MultiSelect inputId="variants" v-model="selectedVariants" :options="queryStore.variants" optionLabel="name"
+          optionGroupLabel="task" optionGroupChildren="items" :loading="!queryStore.variantsReady" :filter="true"
           filterPlaceholder="Filter variants"
           :placeholder="queryStore.variantsReady ? 'Select variants' : 'Choose tasks first to load available variants'"
-          :selectionLimit="10"
-          :maxSelectedLabels="4"
-          :virtualScrollerOptions="{ itemSize: 40 }"
-        />
+          :selectionLimit="10" :maxSelectedLabels="4" :virtualScrollerOptions="{ itemSize: 40 }" />
       </div>
     </div>
 
@@ -80,110 +54,64 @@
 
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
-        <MultiSelect
-          inputId="roaruids"
-          v-model="queryStore.selectedUsers"
-          :options="queryStore.users"
-          optionLabel="roarUid"
-          :loading="!queryStore.usersReady"
-          :filter="true"
-          filterPlaceholder="Filter ROAR UIDs"
-          :maxSelectedLabels="5"
-          :virtualScrollerOptions="{ itemSize: 40 }"
-        />
+        <MultiSelect inputId="roaruids" v-model="queryStore.selectedUsers" :options="queryStore.users"
+          optionLabel="roarUid" :loading="!queryStore.usersReady" :filter="true" filterPlaceholder="Filter ROAR UIDs"
+          :maxSelectedLabels="5" :virtualScrollerOptions="{ itemSize: 40 }" />
         <label for="roaruids">ROAR UID / PID</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
-        <MultiSelect
-          inputId="studies"
-          v-model="queryStore.selectedStudies"
-          :options="queryStore.studies"
-          optionLabel="id"
-          :loading="!queryStore.usersReady"
-          :maxSelectedLabels="4"
-        />
+        <MultiSelect inputId="studies" v-model="queryStore.selectedStudies" :options="queryStore.studies"
+          optionLabel="id" :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
         <label for="studies">Studies</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect
-          inputId="districts"
-          v-model="queryStore.selectedDistricts"
-          :options="queryStore.districts"
-          optionLabel="id"
-          :loading="!queryStore.usersReady"
-          :maxSelectedLabels="4"
-        />
+        <MultiSelect inputId="districts" v-model="queryStore.selectedDistricts" :options="queryStore.districts"
+          optionLabel="id" :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
         <label for="districts">Districts</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect
-          inputId="schools"
-          v-model="queryStore.selectedSchools"
-          :options="queryStore.schools"
-          optionLabel="id"
-          :loading="!queryStore.usersReady"
-          :maxSelectedLabels="4"
-        />
+        <MultiSelect inputId="schools" v-model="queryStore.selectedSchools" :options="queryStore.schools"
+          optionLabel="id" :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
         <label for="schools">Schools</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect
-          inputId="classes"
-          v-model="queryStore.selectedClasses"
-          :options="queryStore.classes"
-          optionLabel="id"
-          :loading="!queryStore.usersReady"
-          :maxSelectedLabels="4"
-        />
+        <MultiSelect inputId="classes" v-model="queryStore.selectedClasses" :options="queryStore.classes"
+          optionLabel="id" :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
         <label for="classes">Classes</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
       <span class="p-float-label">
-        <Calendar
-          inputId="startdate"
-          v-model="queryStore.startDate"
-          dateFormat="mm/dd/yyyy"
-          :showIcon="true"
-        />
+        <Calendar inputId="startdate" v-model="queryStore.startDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
         <label for="startdate">Start date</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
       <span class="p-float-label">
-        <Calendar
-          inputId="enddate"
-          v-model="queryStore.endDate"
-          dateFormat="mm/dd/yyyy"
-          :showIcon="true"
-        />
+        <Calendar inputId="enddate" v-model="queryStore.endDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
         <label for="enddate">End date</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
-      <Button
-        class="right-0"
-        :label="queryStore.selectedUsers.length ? 'Submit query' : 'Select users to enable query'"
-        icon="pi pi-search"
-        @click="queryStore.getRuns"
+      <Button class="right-0" :label="queryStore.selectedUsers.length ? 'Submit query' : 'Select users to enable query'"
+        icon="pi pi-search" @click="queryStore.getRuns"
         :loading="!queryStore.usersReady || queryStore.selectedUsers.length === 0"
-        :disabled="!queryStore.usersReady || queryStore.selectedUsers.length === 0"
-      />
+        :disabled="!queryStore.usersReady || queryStore.selectedUsers.length === 0" />
     </div>
   </div>
 </template>
