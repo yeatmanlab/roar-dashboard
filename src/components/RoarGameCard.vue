@@ -1,5 +1,5 @@
 <template>
-	<Card :id="ID" :data-completed="completed" class="p-card-game m-4">
+	<Card :id="gameId" :data-completed="completed" class="p-card-game m-4">
 		<template #header>
 			<div class="p-card-game-details">
 				<template v-if="completed">
@@ -10,7 +10,7 @@
 				</template>
 				<template v-else>
 					<span>Game x of y</span>	
-					<router-link :to="{ path: 'game/' + ID }"></router-link>
+					<router-link :to="{ path: 'game/' + gameId }"></router-link>
 					<div>Play <i class="pi pi-arrow-circle-right"></i></div>
 				</template>
 			</div>
@@ -30,11 +30,11 @@
 
 <script setup>
 	const props = defineProps({
-		ID: {type: String, required: true},
-  		title: {type:String, required: true},
-  		description: {type: String, required: true},
-  		metadata: {type: Object, default: {}},
-  		imgSrc: {type: String, default: ''},
+		gameId: {type: String, required: true},
+		title: {type:String, required: true},
+		description: {type: String, required: true},
+		metadata: {type: Object, default: {}},
+		imgSrc: {type: String, default: ''},
 		completed: {type: Boolean, default: false, required: true}
 	});
 </script>

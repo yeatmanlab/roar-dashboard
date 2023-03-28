@@ -4,10 +4,12 @@
       <RoarGameCard
         id="card"
         ref="cardList"
+        :gameId="item.id"
         :title="item.title" 
         :description="item.description" 
         :imgSrc="item.imgSrc"
         :metadata="item.metadata" 
+        :completed="item.completed"
       />
     </div>
   </div>
