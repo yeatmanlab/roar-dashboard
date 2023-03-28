@@ -101,11 +101,12 @@ export default {
     const v$ = useVuelidate(rules, state);
 
     const authWithGoogle = () => {
-      if (isMobileBrowser()) {
-        authStore.signInWithGoogleRedirect();
-      } else {
-        authStore.signInWithGooglePopup();
-      }
+      authStore.signInWithGoogleRedirect();
+      // if (isMobileBrowser()) {
+      //   authStore.signInWithGoogleRedirect();
+      // } else {
+      //   authStore.signInWithGooglePopup();
+      // }
     };
 
     const handleFormSubmit = (isFormValid) => {
@@ -116,9 +117,9 @@ export default {
       }
 
       if (props.isRegistering) {
-        authStore.registerWithEmailAndPassword(state.email, state.password);
+        authStore.registerWithEmailAndPassword(state);
       } else {
-        authStore.logInWithEmailAndPassword(state.email, state.password);
+        authStore.logInWithEmailAndPassword(state);
       }
     };
 

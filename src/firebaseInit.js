@@ -9,7 +9,7 @@ import { getAuth } from "firebase/auth";
 import { markRaw } from "vue";
 import firebaseConfig from "./config/firebase";
 
-const firebaseApp = initializeApp(firebaseConfig);
+const firebaseApp = initializeApp(firebaseConfig.app, "legacy-app");
 
 // Use markRaw to wrap the firestore instance for use in components and the
 // pinia store.
@@ -38,7 +38,7 @@ enableIndexedDbPersistence(db).catch((err) => {
 });
 // Subsequent queries will use persistence, if it was enabled successfully
 
-const auth = getAuth();
+const auth = getAuth(firebaseApp);
 const rootDoc = doc(db, "prod", "roar-prod");
 const users = collection(rootDoc, "users");
 const tasks = collection(rootDoc, "tasks");
