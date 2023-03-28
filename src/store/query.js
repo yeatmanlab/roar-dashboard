@@ -6,7 +6,7 @@ import {
   query,
   where,
 } from "@firebase/firestore";
-import { roarfirekit } from "../firebaseInit.js";
+import { db } from "../firebaseInit.js";
 import { formatDate, getOrgs, getUniquePropsFromUsers, userHasSelectedOrgs } from "../helpers/index.js";
 
 export const useQueryStore = () => {
@@ -83,17 +83,17 @@ export const useQueryStore = () => {
     },
     actions: {
       async getRootDocs() {
-        const prodDoc = doc(roarfirekit.app.db, 'prod', 'roar-prod');
+        const prodDoc = doc(db, 'prod', 'roar-prod');
         this.rootDocs = {};
         this.rootDocs[prodDoc.path] = prodDoc;
 
-        const devQuery = query(collection(roarfirekit.app.db, 'dev'));
+        const devQuery = query(collection(db, 'dev'));
         const devSnapshot = await getDocs(devQuery);
         devSnapshot.forEach((doc) => {
           this.rootDocs[doc.ref.path] = doc
         });
 
-        const extQuery = query(collection(roarfirekit.app.db, 'external'));
+        const extQuery = query(collection(db, 'external'));
         const extSnapshot = await getDocs(extQuery);
         extSnapshot.forEach((doc) => {
           this.rootDocs[doc.ref.path] = doc
