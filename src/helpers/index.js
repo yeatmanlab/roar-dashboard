@@ -1,6 +1,4 @@
-import { arrayUnion, query, where, getDocs, updateDoc, doc } from "@firebase/firestore";
-import { RoarUser } from "@bdelab/roar-firekit";
-import { rootDoc, adminCollection } from "../firebaseInit.js";
+import { arrayUnion, query, where, getDocs, updateDoc, doc, collection } from "firebase/firestore";
 import * as Papa from "papaparse";
 
 export const isMobileBrowser = () => {
@@ -18,25 +16,6 @@ export const isMobileBrowser = () => {
   return false;
 };
 
-export const getRolesFromAdminCollection = async (uid) => {
-  const q = query(adminCollection);
-  const querySnapshot = await getDocs(q);
-
-  const roles = {};
-  querySnapshot.forEach((doc) => {
-    roles[doc.id.replace(/s$/, '')] = doc.data().users.includes(uid);
-  });
-  return roles;
-};
-
-export const addUserToRequests = async (uid) => {
-  const requestsRef = doc(adminCollection, 'requests');
-
-  await updateDoc(requestsRef, {
-    users: arrayUnion(uid)
-  });
-};
-
 export const getDocsFromQuery = async (collection, field, value) => {
   const q = query(collection, where(field, "==", value));
   const querySnapshot = await getDocs(q);
@@ -48,16 +27,6 @@ export const getDocsFromQuery = async (collection, field, value) => {
   } else {
     return querySnapshot.docs.map((doc) => doc.data());
   }
-};
-
-export const userToFirestore = async (userEmail, firebaseUid) => {
-  const user = new RoarUser({
-    id: userEmail,
-    firebaseUid,
-  });
-
-  user.setRefs(rootDoc);
-  await user.toFireStore();
 };
 
 /**

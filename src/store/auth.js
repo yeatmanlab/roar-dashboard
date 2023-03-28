@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { useRouter } from 'vue-router';
 import emailjs from 'emailjs-com';
-import { getRolesFromAdminCollection, addUserToRequests } from "../helpers/index";
 import { roarfirekit } from "../firebaseInit";
 
 export const useAuthStore = () => {
@@ -26,7 +25,7 @@ export const useAuthStore = () => {
     },
     actions: {
       async setRoles() {
-        this.roles = await getRolesFromAdminCollection(this.uid);
+        this.roles = await this.roarfirekit.getAdminRoles();
       },
       async registerWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
@@ -115,7 +114,7 @@ export const useAuthStore = () => {
           (error) => { console.log('Error...', error); }
         );
         
-        addUserToRequests(this.uid);
+        await this.roarfirekit.addUserToAdminRequests();
         await this.setRoles();
       },
     },
