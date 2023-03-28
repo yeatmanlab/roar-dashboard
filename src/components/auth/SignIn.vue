@@ -101,12 +101,11 @@ export default {
     const v$ = useVuelidate(rules, state);
 
     const authWithGoogle = () => {
-      authStore.signInWithGoogleRedirect();
-      // if (isMobileBrowser()) {
-      //   authStore.signInWithGoogleRedirect();
-      // } else {
-      //   authStore.signInWithGooglePopup();
-      // }
+      if (isMobileBrowser()) {
+        authStore.signInWithGoogleRedirect();
+      } else {
+        authStore.signInWithGooglePopup();
+      }
     };
 
     const handleFormSubmit = (isFormValid) => {

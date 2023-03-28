@@ -8,6 +8,7 @@ import {
 import { getAuth } from "firebase/auth";
 import { markRaw } from "vue";
 import firebaseConfig from "./config/firebase";
+import { RoarFirekit } from "@bdelab/roar-firekit";
 
 const firebaseApp = initializeApp(firebaseConfig.app, "legacy-app");
 
@@ -43,5 +44,6 @@ const rootDoc = doc(db, "prod", "roar-prod");
 const users = collection(rootDoc, "users");
 const tasks = collection(rootDoc, "tasks");
 const adminCollection = collection(db, "admin");
+const roarfirekit = markRaw(new RoarFirekit({ roarConfig: firebaseConfig }));
 
-export { auth, db, rootDoc, users, tasks, adminCollection };
+export { auth, db, rootDoc, users, tasks, adminCollection, roarfirekit };
