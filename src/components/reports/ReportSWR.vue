@@ -1,9 +1,6 @@
 <template>
   <div v-if="scoreStore.scoresReady">
-
-    <!-- <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" /> -->
     <MarkdownSWR :scores="scoreStore.scores" :swrStats="scoreStore.swrStats" :columns="tableColumns" />
-
   </div>
   <AppSpinner v-else />
 </template>
@@ -14,15 +11,9 @@ import { onMounted, ref } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
 import { graphColorType, supportLevelsType, automaticityLevelsType } from "./reportUtils.js"
-
 import MarkdownSWR from "@/assets/markdown/reportSWR.md";
 
-
 const scoreStore = useScoreStore();
-
-console.log(scoreStore);
-
-
 const tableColumns = ref([
   {
     "field": "runInfoOrig.name.first", 
@@ -48,16 +39,16 @@ const tableColumns = ref([
     "header": "SWR ROAR SCORE", 
     "dataType": "numeric",
   },
-  // {
-  //   "field": "runInfoCommon.normedPercentile", 
-  //   "header": "Estimated Woodcock-Johnson Percentile", 
-  //   "dataType": "numeric",
-  // },
-    // {
-  //   "field": "runInfoCommon.normedStandardScore", 
-  //   "header": "Estimated Woodcock-Johnson Standard Score", 
-  //   "dataType": "numeric",
-  // },
+  {
+    "field": "runInfoCommon.normedPercentile", 
+    "header": "Estimated Woodcock-Johnson Percentile", 
+    "dataType": "numeric",
+  },
+    {
+    "field": "runInfoCommon.normedStandardScore", 
+    "header": "Estimated Woodcock-Johnson Standard Score", 
+    "dataType": "numeric",
+  },
   {
     "field": "runInfoCommon.supportLevel", 
     "header": "Support Level", 

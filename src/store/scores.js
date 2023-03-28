@@ -251,14 +251,6 @@ const gradeComparator = (a, b) => {
   }
 }
 
-export function debugTestFunction () {
-
-  return {
-    field1: 'true',
-    field2: 'false',
-  };
-};
-
 const getRunScores = (subScoresForThisRun) => {
   const taskId = [...new Set(subScoresForThisRun.map((subScore) => subScore.runInfoOrig.taskId))][0]
   switch(taskId) {
