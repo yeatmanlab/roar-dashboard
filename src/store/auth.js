@@ -1,18 +1,10 @@
 import { defineStore } from "pinia";
-import {
-  GoogleAuthProvider,
-  createUserWithEmailAndPassword,
-  getRedirectResult,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signInWithRedirect,
-} from "firebase/auth";
 import { useRouter } from 'vue-router';
 import emailjs from 'emailjs-com';
 import { RoarFirekit } from '@bdelab/roar-firekit';
 import { getRolesFromAdminCollection, addUserToRequests } from "../helpers/index";
 import firebaseConfig from "../config/firebase";
-import { auth } from "../firebaseInit";
+import { auth, roarfirekit } from "../firebaseInit";
 
 export const useAuthStore = () => {
   const router = useRouter();
@@ -22,7 +14,7 @@ export const useAuthStore = () => {
     state: () => {
       return {
         auth: auth,
-        roarfirekit: new RoarFirekit({ roarConfig: firebaseConfig }),
+        roarfirekit: roarfirekit,
         firebaseUser: null,
         uid: null,
         email: null,
@@ -70,9 +62,9 @@ export const useAuthStore = () => {
       async signInWithGooglePopup() {
         this.homepageReady = false;
         return this.roarfirekit.signInWithGooglePopup().then(() => {
-          this.firebaseUser = this.app.user;
-          this.uid = this.app.user.uid;
-          this.email = this.app.user.email;
+          this.firebaseUser = this.roarfirekit.app.user;
+          this.uid = this.roarfirekit.app.user.uid;
+          this.email = this.roarfirekit.app.user.email;
           router.replace({ name: 'Home' });
         }).then(this.setRoles).then(() => {
           this.isAuthenticated = true;
