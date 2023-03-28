@@ -7,10 +7,12 @@ import {
   signInWithPopup,
   signInWithRedirect,
 } from "firebase/auth";
-import { auth } from "../firebaseInit.js";
-import { getRolesFromAdminCollection, addUserToRequests } from "../helpers/index.js";
 import { useRouter } from 'vue-router';
 import emailjs from 'emailjs-com';
+import { RoarFirekit } from '@bdelab/roar-firekit';
+import { getRolesFromAdminCollection, addUserToRequests } from "../helpers/index";
+import firebaseConfig from "../config/firebase";
+import { auth } from "../firebaseInit";
 
 export const useAuthStore = () => {
   const router = useRouter();
@@ -19,6 +21,8 @@ export const useAuthStore = () => {
     id: "authStore",
     state: () => {
       return {
+        auth: auth,
+        roarfirekit: new RoarFirekit({ roarConfig: firebaseConfig }),
         firebaseUser: null,
         uid: null,
         email: null,
@@ -37,10 +41,10 @@ export const useAuthStore = () => {
       },
       async registerWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
-        return createUserWithEmailAndPassword(auth, email, password).then(
-          (userCredential) => {
-            this.user = userCredential.user;
-            this.uid = userCredential.user.uid;
+        return this.roarfirekit.registerWithEmailAndPassword({ email, password }).then(
+          () => {
+            this.user = this.roarfirekit.app.user;
+            this.uid = this.roarfirekit.app.user.uid;
             this.email = email;
             router.replace({ name: 'Home' });
           }
@@ -51,10 +55,10 @@ export const useAuthStore = () => {
       },
       async logInWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
-        return signInWithEmailAndPassword(auth, email, password).then(
-          (userCredential) => {
-            this.user = userCredential.user;
-            this.uid = userCredential.user.uid;
+        return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(
+          () => {
+            this.user = this.roarfirekit.app.user;
+            this.uid = this.roarfirekit.app.user.uid;
             this.email = email;
             router.replace({ name: 'Home' });
           }
@@ -65,54 +69,34 @@ export const useAuthStore = () => {
       },
       async signInWithGooglePopup() {
         this.homepageReady = false;
-        const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider).then((result) => {
-          // This gives you a Google Access Token. You can use it to access the Google API.
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-
-          // The signed-in user info.
-          this.firebaseUser = result.user;
-          this.uid = result.user.uid;
-          this.email = result.user.email;
+        return this.roarfirekit.signInWithGooglePopup().then(() => {
+          this.firebaseUser = this.app.user;
+          this.uid = this.app.user.uid;
+          this.email = this.app.user.email;
           router.replace({ name: 'Home' });
-        }).catch((error) => {
-          const allowedErrors = ['auth/cancelled-popup-request', 'auth/popup-closed-by-user'];
-          if (!allowedErrors.includes(error.code)) {
-            throw error;
-          }
         }).then(this.setRoles).then(() => {
           this.isAuthenticated = true;
           this.homepageReady = true;
         });
       },
       async signInWithGoogleRedirect() {
-        const provider = new GoogleAuthProvider();
-
-        return signInWithRedirect(auth, provider);
+        return this.roarfirekit.initiateGoogleRedirect();
       },
       async initStateFromRedirect() {
-        return getRedirectResult(auth).then((result) => {
-          if (result !== null) {
-            this.homepageReady = false;
-            // This gives you a Google Access Token. You can use it to access Google APIs.
-            // const credential = GoogleAuthProvider.credentialFromResult(result);
-            // const token = credential.accessToken;
-
-            // The signed-in user info.
-            this.firebaseUser = result.user;
-            this.uid = result.user.uid;
-            this.email = result.user.email;
+        const enableCookiesCallback = () => {
+          router.replace({ name: 'EnableCookies' });
+        }
+        this.homepageReady = false;
+        return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+          if (result) {
+            this.firebaseUser = this.roarfirekit.app.user;
+            this.uid = this.roarfirekit.app.user.uid;
+            this.email = this.roarfirekit.app.user.email;
             router.replace({ name: 'Home' });
             return this.setRoles().then(() => {
               this.isAuthenticated = true;
               this.homepageReady = true;
             });
-          }
-        }).catch((error) => {
-          if (error.code == 'auth/web-storage-unsupported') {
-            router.replace({ name: 'EnableCookies' });
-          } else {
-            throw error;
           }
         });
       },
