@@ -1,8 +1,10 @@
 import { defineStore } from "pinia";
 import { useRouter } from 'vue-router';
 import emailjs from 'emailjs-com';
+import { RoarFirekit } from '@bdelab/roar-firekit';
 import { getRolesFromAdminCollection, addUserToRequests } from "../helpers/index";
-import { roarfirekit } from "../firebaseInit";
+import firebaseConfig from "../config/firebase";
+import { auth, roarfirekit } from "../firebaseInit";
 
 export const useAuthStore = () => {
   const router = useRouter();
@@ -11,6 +13,7 @@ export const useAuthStore = () => {
     id: "authStore",
     state: () => {
       return {
+        auth: auth,
         roarfirekit: roarfirekit,
         firebaseUser: null,
         uid: null,
@@ -91,7 +94,7 @@ export const useAuthStore = () => {
       },
       async signOut() {
         this.homepageReady = false;
-        return this.roarfirekit.signOut().then(() => {
+        return auth.signOut().then(() => {
           this.uid = null;
           this.firebaseUser = null;
           this.email = null;

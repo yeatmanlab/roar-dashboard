@@ -1,11 +1,7 @@
 import { arrayUnion, query, where, getDocs, updateDoc, doc } from "@firebase/firestore";
 import { RoarUser } from "@bdelab/roar-firekit";
-import { roarfirekit } from "../firebaseInit.js";
+import { rootDoc, adminCollection } from "../firebaseInit.js";
 import * as Papa from "papaparse";
-
-const db = roarfirekit.app.db;
-const rootDoc = doc(db, "prod", "roar-prod");
-const adminCollection = collection(db, "admin");
 
 export const isMobileBrowser = () => {
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
