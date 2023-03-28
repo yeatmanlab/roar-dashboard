@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import {
   enableIndexedDbPersistence,
   getFirestore,
@@ -8,8 +8,17 @@ import {
 import { getAuth } from "firebase/auth";
 import { markRaw } from "vue";
 import firebaseConfig from "./config/firebase";
+import { RoarFirekit } from '@bdelab/roar-firekit'
 
-const firebaseApp = initializeApp(firebaseConfig);
+console.log('before init legacy')
+
+
+let firebaseApp
+
+if(getApps().length === 0){
+  console.log('starting up legacy')
+  firebaseApp = initializeApp(firebaseConfig.app, 'legacy-app');
+}
 
 // Use markRaw to wrap the firestore instance for use in components and the
 // pinia store.
@@ -38,10 +47,16 @@ enableIndexedDbPersistence(db).catch((err) => {
 });
 // Subsequent queries will use persistence, if it was enabled successfully
 
-const auth = getAuth();
+const auth = getAuth(firebaseApp);
 const rootDoc = doc(db, "prod", "roar-prod");
 const users = collection(rootDoc, "users");
 const tasks = collection(rootDoc, "tasks");
 const adminCollection = collection(db, "admin");
+const existingApps = getApps()
+console.log('existing apps', existingApps)
+console.log('pass in config', firebaseConfig)
+console.log('building new inst RoarFireKit')
+const roarFirekit = new RoarFirekit({ roarConfig: firebaseConfig })
+console.log('after starting instance')
 
-export { auth, db, rootDoc, users, tasks, adminCollection };
+export { auth, db, rootDoc, users, tasks, adminCollection, roarFirekit };

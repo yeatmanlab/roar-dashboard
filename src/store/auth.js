@@ -7,7 +7,7 @@ import {
   signInWithPopup,
   signInWithRedirect,
 } from "firebase/auth";
-import { auth } from "../firebaseInit.js";
+import { auth, roarFirekit } from "../firebaseInit.js";
 import { getRolesFromAdminCollection, addUserToRequests } from "../helpers/index.js";
 import { useRouter } from 'vue-router';
 import emailjs from 'emailjs-com';
@@ -25,6 +25,7 @@ export const useAuthStore = () => {
         isAuthenticated: false,
         roles: null,
         homepageReady: true,
+        roarFirekit: roarFirekit
       };
     },
     getters: {
@@ -65,6 +66,12 @@ export const useAuthStore = () => {
       },
       async signInWithGooglePopup() {
         this.homepageReady = false;
+
+        // this.firebaseUser
+        await this.roarFirekit.signInWithGooglePopup().then(() => {
+          console.log('user', this.roarFirekit.app)
+        })
+
         const provider = new GoogleAuthProvider();
         signInWithPopup(auth, provider).then((result) => {
           // This gives you a Google Access Token. You can use it to access the Google API.
