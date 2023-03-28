@@ -11,6 +11,7 @@
       :loading="queryStore.selectedRuns.length === 0" :disabled="scoreStore.selectedRuns.length === 0"
       @click="exportAllCSV" />
   </div>
+  <!-- TODO: Needs to be replaced with RoarDataTable -->
   <DataTable :value="scoreStore.tableRoarScores" ref="runtable" :rowHover="true" removableSort sortMode="multiple"
     scrollHeight="50vh" :reorderableColumns="true" :resizableColumns="true" columnResizeMode="fit" showGridlines
     :virtualScrollerOptions="{ itemSize: 44 }" :row="10" dataKey="runId" v-model:selection="selectedStudents"
@@ -70,7 +71,6 @@ import { storeToRefs } from 'pinia';
 import Papa from "papaparse";
 import { flattenObj } from '@/helpers';
 import { useScoreStore } from "@/store/scores";
-import SkeletonTable from "@/components/SkeletonTable.vue";
 
 const data = [
   {
