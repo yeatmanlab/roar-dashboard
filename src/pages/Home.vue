@@ -1,48 +1,48 @@
 <template>
-  <div>
-    <div v-if="authStore.homepageReady">
-      <Toast />
-      <FileUpload class="mt-3" mode="basic" name="scorereport[]" :customUpload="true" @uploader="onScoreUpload" accept=".csv" :multiple="false" :auto="true" chooseLabel="Choose a score file" >
-        <!-- <template #empty>
-          <p>Drag and drop the score file here to upload.</p>
-        </template> -->
-      </FileUpload>
-      <FileUpload class="my-3" mode="basic" name="adminreport[]" :customUpload="true" @uploader="onAdminUpload" accept=".csv" :multiple="false" :auto="true" chooseLabel="Choose an identifier file" >
-        <!-- <template #empty>
-          <p>Drag and drop the identifier file here to upload.</p>
-        </template> -->
-      </FileUpload>
-      <Button
-        icon="pi pi-chart-line"
-        label="View Score Report"
-        class="flex-none mb-1 ml-2"
-        :loading="scoreStore.scores.length === 0"
-        :disabled="scoreStore.scores.length === 0"
-        @click="submit"
-      />
-    </div>
-    <AppSpinner v-else />
+  <div class="mt-5 flex flex-row flex-wrap justify-content-center card-container">
+    <Card class="m-4" style="width: 25em">
+      <!-- <template #header>
+        <img src="https://www.primefaces.org/wp-content/uploads/2020/02/primefacesorg-primevue-2020.png"
+          style="height: 15rem" />
+      </template> -->
+      <template #title>
+        Query ROAR Assessment Results
+      </template>
+      <template #content>
+        <p>
+          Click below to interactively query ROAR assessment data. You must be an
+          authenticated user to access this data.
+        </p>
+      </template>
+      <template #footer>
+        <router-link :to="{ name: 'Query' }">
+          <Button icon="pi pi-search" label="Query" />
+        </router-link>
+      </template>
+    </Card>
+    <Card class="m-4" style="width: 25em">
+      <!-- <template #header>
+        <img src="https://www.primefaces.org/wp-content/uploads/2020/02/primefacesorg-primevue-2020.png"
+          style="height: 15rem" />
+      </template> -->
+      <template #title>
+        Generate a Score Report from your own files
+      </template>
+      <template #content>
+        <p>
+          Click below to generate a score report from CSV files on your own computer.
+        </p>
+      </template>
+      <template #footer>
+        <router-link :to="{ name: 'UploadScores' }">
+          <Button icon="pi pi-chart-line" label="Generate Report" />
+        </router-link>
+      </template>
+    </Card>
   </div>
 </template>
 
 <script setup>
-import { useAuthStore } from "@/store/auth";
-import { useScoreStore } from "@/store/scores";
-import { ref } from 'vue';
-import { useToast } from 'primevue/usetoast';
-import { csvFileToJson } from '@/helpers';
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-const authStore = useAuthStore();
-const scoreStore = useScoreStore();
-const toast = useToast();
-const uploadedFile = ref();
-const onScoreUpload = async (event) => {
-  toast.add({ severity: 'info', summary: 'Success', detail: 'Score File Uploaded', life: 3000 });
-  uploadedFile.value = event.files[0];
-  scoreStore.appScores = await csvFileToJson(uploadedFile.value);
-}
 const onAdminUpload = async (event) => {
   toast.add({ severity: 'info', summary: 'Success', detail: 'Identifier File Uploaded', life: 3000 });
   uploadedFile.value = event.files[0];
@@ -54,4 +54,5 @@ const submit = () => {
 </script>
 
 <style scoped>
+
 </style>

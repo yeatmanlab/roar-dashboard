@@ -12,6 +12,7 @@ import AccordionTab from 'primevue/accordiontab';
 import Badge from 'primevue/badge';
 import Button from "primevue/button";
 import Calendar from 'primevue/calendar';
+import Card from "primevue/card";
 import Checkbox from "primevue/checkbox";
 import Chip from "primevue/chip";
 import Dialog from 'primevue/dialog';
@@ -34,12 +35,16 @@ import ToastService from 'primevue/toastservice';
 import Toolbar from "primevue/toolbar";
 import Tooltip from "primevue/tooltip";
 import TreeSelect from "primevue/treeselect";
+import TriStateCheckbox from 'primevue/tristatecheckbox'
 
 // PrimeVue data table imports
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     //optional for column grouping
 import Row from 'primevue/row';
+
+// Internal Roar components
+import RoarDataTable from '@/components/RoarDataTable.vue'
 
 import "primevue/resources/themes/tailwind-light/theme.css"; // theme
 import "./assets/styles/theme.css" // theme
@@ -61,6 +66,7 @@ app.component("AccordionTab", AccordionTab);
 app.component("Badge", Badge);
 app.component("Button", Button);
 app.component("Calendar", Calendar);
+app.component("Card", Card);
 app.component("Checkbox", Checkbox);
 app.component("Chip", Chip);
 app.component("Dialog", Dialog);
@@ -80,11 +86,14 @@ app.component("TabView", TabView);
 app.component("Toast", Toast);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
+app.component("TriStateCheckbox", TriStateCheckbox)
 
 app.component("DataTable", DataTable);
 app.component("Column", Column);
 app.component("ColumnGroup", ColumnGroup);
 app.component("Row", Row);
+
+app.component("RoarDataTable", RoarDataTable);
 
 app.directive("tooltip", Tooltip);
 app.directive("focustrap", FocusTrap);
