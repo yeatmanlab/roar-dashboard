@@ -13,6 +13,7 @@ import Badge from 'primevue/badge';
 import Button from "primevue/button";
 import Calendar from 'primevue/calendar';
 import Card from "primevue/card";
+import Carousel from "primevue/carousel"
 import Checkbox from "primevue/checkbox";
 import Chip from "primevue/chip";
 import Dialog from 'primevue/dialog';
@@ -68,6 +69,7 @@ app.component("Badge", Badge);
 app.component("Button", Button);
 app.component("Calendar", Calendar);
 app.component("Card", Card);
+app.component("Carousel", Carousel);
 app.component("Checkbox", Checkbox);
 app.component("Chip", Chip);
 app.component("Dialog", Dialog);
