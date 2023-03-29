@@ -13,7 +13,7 @@ import Badge from 'primevue/badge';
 import Button from "primevue/button";
 import Calendar from 'primevue/calendar';
 import Card from "primevue/card";
-import Carousel from "primevue/carousel";
+import Carousel from "primevue/carousel"
 import Checkbox from "primevue/checkbox";
 import Chip from "primevue/chip";
 import Dialog from 'primevue/dialog';
