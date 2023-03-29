@@ -1,9 +1,8 @@
 <template>
   <div id="games" ref="gameContainer">
-    <div v-for="(item, index) in items">
+    <template v-for="(item, index) in items">
       <div ref="cardList">
         <RoarGameCard
-          id="card"
           :gameId="item.id"
           :title="item.title" 
           :description="item.description" 
@@ -12,7 +11,7 @@
           :completed="item.completed"
         />
       </div>
-    </div>
+    </template>
   </div>
   <Button @click="scrollLeft">&lt;</Button>
   <Button @click="scrollRight">></Button>
@@ -54,8 +53,8 @@ function scrollRight() {
   scrollToCard(currentCardIndex+1)
 }
 </script>
-<style scoped>
-  #card {
+<style scoped lang="scss">
+  .p-card-game {
     width: 30vw;
     min-width: 350px;
     max-width: 550px;
@@ -65,5 +64,22 @@ function scrollRight() {
     flex-direction: 'row';
     width: 100%;
     overflow: scroll;
+  }
+  
+  [data-completed="true"] {
+    opacity: 0.5;
+    filter: grayscale(1);
+    
+    + [data-completed="false"] {
+      transform: scale(1.05);
+      
+      & ~ [data-completed="false"] {
+        opacity: 0.75;
+        
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
   }
 </style>
