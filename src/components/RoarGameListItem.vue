@@ -155,8 +155,6 @@
 	
 	// Current TO PLAY game
 	.roar-game-list-item[data-completed="true"] + .roar-game-list-item[data-completed="false"] {
-		h2 {
-			font-size: h1;
-		}
+
 	}
 </style>
