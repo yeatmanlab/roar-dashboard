@@ -1,10 +1,10 @@
 <template>
-  <RoarGameCarousel :items="testData" :focusIndex="1" />
+  <RoarGameList :items="testData" :focusIndex="3"/>
 </template>
 
 <script setup>
   import {ref} from "vue"; 
-  import RoarGameCarousel from "../components/RoarGameCarousel.vue";
+  import RoarGameList from "../components/RoarGameList.vue";
   const testData = ref([
     {
       id: "id-1",
@@ -15,7 +15,7 @@
         version: "1.2.3",
         coins: "4"
       },
-      completed: false
+      completed: true
     },
     {
       id: "id-2",
@@ -26,7 +26,7 @@
         version: "1.2.3",
         coins: "32K"
       },
-      completed: false
+      completed: true
     },
     {
       id: "id-3",
