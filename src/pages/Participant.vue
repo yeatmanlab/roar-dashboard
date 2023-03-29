@@ -1,5 +1,5 @@
 <template>
-  <RoarGameCarousel :items="testData" />
+  <RoarGameCarousel :items="testData" :focusIndex="3"/>
 </template>
 
 <script setup>
