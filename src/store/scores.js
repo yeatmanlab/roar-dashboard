@@ -348,7 +348,6 @@ export const useScoreStore = () => {
               participant.pid === run.pid
             );
             const taskId = standardizeTaskId(run.taskId);
-            const names = standardizeNames(matchingIdentifier[0]);
             if (matchingIdentifier.length === 0) {
               //return state.run;
               return {
@@ -359,6 +358,7 @@ export const useScoreStore = () => {
                 },
               };
             } else {
+              const names = standardizeNames(matchingIdentifier[0]);
               const mergedRun = {
                 ...run,
                 ...matchingIdentifier[0],
