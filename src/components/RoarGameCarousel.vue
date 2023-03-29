@@ -14,8 +14,8 @@
       </div>
     </div>
   </div>
-  <Button @click="scrollLeft">&lt;</Button>
-  <Button @click="scrollRight">></Button>
+  <Button @click="scrollLeft" :disabled="!canScrollLeft">&lt;</Button>
+  <Button @click="scrollRight" :disabled="!canScrollRight">></Button>
 </template>
 <script setup>
 import { ref, onMounted } from "vue";
@@ -28,17 +28,20 @@ const props = defineProps({
 const gameContainer = ref(null);
 const cardList = ref(null)
 let currentCardIndex = props.focusIndex - 1;
+let canScrollLeft = ref(true);
+let canScrollRight = ref(true);
 
 onMounted(() => {
-  scrollToCard(props.focusIndex - 1)
+  scrollToCard(props.focusIndex - 1);
+  checkScrollAbility();
 })
 
 function scrollToCard(index){
-  console.log('trying to scroll to card', index)
+  console.log('trying to scroll to game', index+1)
   if(index <= cardList.value.length-1 && index > -1){
     const scrollObject = cardList.value[index]
-    const scrollOffset = scrollObject.offsetLeft
-    console.log('scrollOffset', scrollOffset)
+    // The card's offset - 1/2 screen width + 1/2 the card width
+    const scrollOffset = scrollObject.offsetLeft - (window.innerWidth * 0.5) + (scrollObject.offsetWidth * 0.5)
     gameContainer.value.scrollTo({
       left: scrollOffset,
       behavior: 'smooth'
@@ -47,11 +50,18 @@ function scrollToCard(index){
   }
 }
 
+function checkScrollAbility(){
+  canScrollLeft.value = (currentCardIndex > 0)
+  canScrollRight.value = (currentCardIndex < cardList.value.length - 1)
+}
+
 function scrollLeft() {
   scrollToCard(currentCardIndex-1)
+  checkScrollAbility()
 }
 function scrollRight() {
   scrollToCard(currentCardIndex+1)
+  checkScrollAbility()
 }
 </script>
 <style scoped lang="scss">
@@ -62,9 +72,10 @@ function scrollRight() {
   }
   #games {
     display: inline-flex;
-    flex-direction: 'row';
     width: 100%;
     overflow: scroll;
+    padding-left: 30rem;   // temporary to allow for centering cards
+    // padding-right: 30rem;  // ^
   }
   
   [data-completed="true"] {

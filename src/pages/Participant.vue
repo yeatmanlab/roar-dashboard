@@ -1,5 +1,5 @@
 <template>
-  <RoarGameCarousel :items="testData" :focusIndex="3"/>
+  <RoarGameCarousel :items="testData" :focusIndex="1" />
 </template>
 
 <script setup>
@@ -15,7 +15,7 @@
         version: "1.2.3",
         coins: "4"
       },
-      completed: true
+      completed: false
     },
     {
       id: "id-2",
@@ -26,7 +26,7 @@
         version: "1.2.3",
         coins: "32K"
       },
-      completed: true
+      completed: false
     },
     {
       id: "id-3",
