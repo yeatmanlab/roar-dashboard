@@ -22,6 +22,7 @@ import Dropdown from "primevue/dropdown";
 import FileUpload from 'primevue/fileupload';
 import FocusTrap from "primevue/focustrap";
 import InputText from "primevue/inputtext";
+import InlineMessage from 'primevue/inlinemessage';
 import Message from "primevue/message";
 import MultiSelect from "primevue/multiselect";
 import Panel from "primevue/panel";
@@ -49,7 +50,7 @@ import Row from 'primevue/row';
 import RoarDataTable from '@/components/RoarDataTable.vue'
 
 import "primevue/resources/themes/tailwind-light/theme.css"; // theme
-import "./assets/styles/theme.css" // theme
+// import "./assets/styles/theme.css" // theme
 import "primevue/resources/primevue.min.css"; // core css
 import "primeicons/primeicons.css"; // icons
 import "primeflex/primeflex.scss";
@@ -76,6 +77,7 @@ app.component("Dialog", Dialog);
 app.component("Divider", Divider);
 app.component("Dropdown", Dropdown);
 app.component("FileUpload", FileUpload);
+app.component("InlineMessage", InlineMessage);
 app.component("InputText", InputText);
 app.component("Message", Message);
 app.component("MultiSelect", MultiSelect);
