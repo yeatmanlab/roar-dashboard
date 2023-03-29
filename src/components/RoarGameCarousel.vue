@@ -62,16 +62,26 @@ function scrollLeft() {
   checkScrollAbility()
 }
 function scrollRight() {
+  findClosestIndex()
   scrollToCard(currentCardIndex+1)
   checkScrollAbility()
 }
 
 function findClosestIndex() {
   let lowestOffset = Infinity
-  for(let index = 0; index <= cardList.value.length; index++){
+  let lowestIndex = 0
+  for(let index = 0; index <= cardList.value.length-1; index++){
+    console.log('index', index)
     const currentOffset = cardList.value[index].offsetLeft;
-    lowestOffset = (lowestOffset > currentOffset) ? lowestOffset : currentOffset;
+    console.log('offset', currentOffset)
+    console.log('lowest', lowestOffset)
+    lowestOffset = (lowestOffset > currentOffset) ? currentOffset : lowestOffset;
+    if(lowestOffset > currentOffset){
+      lowestOffset = currentOffset
+      lowestIndex = index
+    }
   }
+  console.log('closest game is game', lowestIndex+1)
 }
 </script>
 <style scoped lang="scss">
