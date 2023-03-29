@@ -1,10 +1,10 @@
 <template>
-  <RoarGameCarousel :items="testData" :focusIndex="3"/>
+  <RoarGameList :items="testData" :focusIndex="3"/>
 </template>
 
 <script setup>
   import {ref} from "vue"; 
-  import RoarGameCarousel from "../components/RoarGameCarousel.vue";
+  import RoarGameList from "../components/RoarGameList.vue";
   const testData = ref([
     {
       id: "id-1",
