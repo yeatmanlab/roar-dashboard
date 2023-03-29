@@ -14,7 +14,7 @@
       </div>
     </div>
   </div>
-  <Button @click="scrollLeft" >&lt;</Button>
+  <Button @click="scrollLeft">&lt;</Button>
   <Button @click="scrollRight">></Button>
 </template>
 <script setup>
@@ -45,10 +45,6 @@ function scrollToCard(index){
     })
     currentCardIndex = index
   }
-}
-
-function getScrollWidth() {
-  return cardList.value[0].scrollWidth;
 }
 
 function scrollLeft() {
