@@ -61,37 +61,6 @@ export const arrayRandom = (array) => {
   return array[randomIndex];
 };
 
-export const getIds = (id, idArray) => {
-  const resultIds = [];
-  if (id) resultIds.push(id);
-  if (idArray && idArray.length) resultIds.push(...idArray);
-
-  return [...new Set(resultIds)];
-};
-
-export const getOrgs = (docData) => {
-  const {
-    districtId,
-    schoolId,
-    schools,
-    classId,
-    classes,
-    studyId,
-    studies,
-  } = docData;
-  const districtIds = getIds(districtId, null)
-  const schoolIds = getIds(schoolId, schools);
-  const classIds = getIds(classId, classes);
-  const studyIds = getIds(studyId, studies);
-
-  return {
-    districtIds,
-    schoolIds,
-    classIds,
-    studyIds,
-  };
-}
-
 export const getUniquePropsFromUsers = (users, prop) => {
   const propArrays = users.map((user) => user[prop]).flat()
   return [...new Set(propArrays)].map((item) => ({id: item}))
