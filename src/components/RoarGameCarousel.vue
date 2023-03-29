@@ -19,6 +19,7 @@
 </template>
 <script setup>
 import { ref, onMounted } from "vue";
+import _forEach from 'lodash/forEach'
 import RoarGameCard from '@/components/RoarGameCard.vue';
 
 const props = defineProps({
@@ -41,7 +42,8 @@ function scrollToCard(index){
   if(index <= cardList.value.length-1 && index > -1){
     const scrollObject = cardList.value[index]
     // The card's offset - 1/2 screen width + 1/2 the card width
-    const scrollOffset = scrollObject.offsetLeft - (window.innerWidth * 0.5) + (scrollObject.offsetWidth * 0.5)
+    // const scrollOffset = scrollObject.offsetLeft - (window.innerWidth * 0.5) + (scrollObject.offsetWidth * 0.5)
+    const scrollOffset = scrollObject.offsetLeft
     gameContainer.value.scrollTo({
       left: scrollOffset,
       behavior: 'smooth'
@@ -63,6 +65,14 @@ function scrollRight() {
   scrollToCard(currentCardIndex+1)
   checkScrollAbility()
 }
+
+function findClosestIndex() {
+  let lowestOffset = Infinity
+  for(let index = 0; index <= cardList.value.length; index++){
+    const currentOffset = cardList.value[index].offsetLeft;
+    lowestOffset = (lowestOffset > currentOffset) ? lowestOffset : currentOffset;
+  }
+}
 </script>
 <style scoped lang="scss">
   .p-card-game {
@@ -74,7 +84,7 @@ function scrollRight() {
     display: inline-flex;
     width: 100%;
     overflow: scroll;
-    padding-left: 30rem;   // temporary to allow for centering cards
+    // padding-left: 30rem;   // temporary to allow for centering cards
     // padding-right: 30rem;  // ^
   }
   
