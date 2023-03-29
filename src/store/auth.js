@@ -10,7 +10,6 @@ export const useAuthStore = () => {
     id: "authStore",
     state: () => {
       return {
-        roarfirekit: roarfirekit,
         firebaseUser: null,
         uid: null,
         email: null,
@@ -25,14 +24,14 @@ export const useAuthStore = () => {
     },
     actions: {
       async setRoles() {
-        this.roles = await this.roarfirekit.getAdminRoles();
+        this.roles = await roarfirekit.getUserAdminRoles();
       },
       async registerWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
-        return this.roarfirekit.registerWithEmailAndPassword({ email, password }).then(
+        return roarfirekit.registerWithEmailAndPassword({ email, password }).then(
           () => {
-            this.user = this.roarfirekit.app.user;
-            this.uid = this.roarfirekit.app.user.uid;
+            this.user = roarfirekit.app.user;
+            this.uid = roarfirekit.app.user.uid;
             this.email = email;
             router.replace({ name: 'Home' });
           }
@@ -43,10 +42,10 @@ export const useAuthStore = () => {
       },
       async logInWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
-        return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(
+        return roarfirekit.logInWithEmailAndPassword({ email, password }).then(
           () => {
-            this.user = this.roarfirekit.app.user;
-            this.uid = this.roarfirekit.app.user.uid;
+            this.user = roarfirekit.app.user;
+            this.uid = roarfirekit.app.user.uid;
             this.email = email;
             router.replace({ name: 'Home' });
           }
@@ -57,10 +56,10 @@ export const useAuthStore = () => {
       },
       async signInWithGooglePopup() {
         this.homepageReady = false;
-        return this.roarfirekit.signInWithGooglePopup().then(() => {
-          this.firebaseUser = this.roarfirekit.app.user;
-          this.uid = this.roarfirekit.app.user.uid;
-          this.email = this.roarfirekit.app.user.email;
+        return roarfirekit.signInWithGooglePopup().then(() => {
+          this.firebaseUser = roarfirekit.app.user;
+          this.uid = roarfirekit.app.user.uid;
+          this.email = roarfirekit.app.user.email;
           router.replace({ name: 'Home' });
         }).then(this.setRoles).then(() => {
           this.isAuthenticated = true;
@@ -68,18 +67,18 @@ export const useAuthStore = () => {
         });
       },
       async signInWithGoogleRedirect() {
-        return this.roarfirekit.initiateGoogleRedirect();
+        return roarfirekit.initiateGoogleRedirect();
       },
       async initStateFromRedirect() {
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
         }
         this.homepageReady = false;
-        return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+        return roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
           if (result) {
-            this.firebaseUser = this.roarfirekit.app.user;
-            this.uid = this.roarfirekit.app.user.uid;
-            this.email = this.roarfirekit.app.user.email;
+            this.firebaseUser = roarfirekit.app.user;
+            this.uid = roarfirekit.app.user.uid;
+            this.email = roarfirekit.app.user.email;
             router.replace({ name: 'Home' });
             return this.setRoles().then(() => {
               this.isAuthenticated = true;
@@ -90,7 +89,7 @@ export const useAuthStore = () => {
       },
       async signOut() {
         this.homepageReady = false;
-        return this.roarfirekit.signOut().then(() => {
+        return roarfirekit.signOut().then(() => {
           this.uid = null;
           this.firebaseUser = null;
           this.email = null;
@@ -114,7 +113,7 @@ export const useAuthStore = () => {
           (error) => { console.log('Error...', error); }
         );
         
-        await this.roarfirekit.addUserToAdminRequests();
+        await roarfirekit.addUserToAdminRequests();
         await this.setRoles();
       },
     },
