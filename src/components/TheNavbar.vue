@@ -64,5 +64,14 @@ const closeInfo = () => displayInfo.value = false;
 </script>
 
 <style scoped>
-
+  .p-toolbar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    z-index: 10;
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
 </style>
