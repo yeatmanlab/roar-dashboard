@@ -2,6 +2,10 @@ import { defineStore } from "pinia";
 import { csvFileToJson, standardDeviation } from "@/helpers";
 import { connectFirestoreEmulator } from "firebase/firestore";
 import { walkBlockDeclarations } from "@vue/compiler-core";
+import _get from 'lodash/get'
+import _set from 'lodash/set'
+import _map from 'lodash/map'
+import _forEach from 'lodash/forEach'
 
 const standardizeTaskId = (taskId) => {
   return taskId.replace(/^roar-/, "");
@@ -291,18 +295,64 @@ const getRunScores = (subScoresForThisRun) => {
   }
 }
 
+const newGetRunScores = (subScoresForThisRun) => {
+  //get the run's task ID
+  const taskId = [...new Set(subScoresForThisRun.map((subScore) => subScore.taskId))][0]
+  switch(taskId) {
+    case "pa":
+      const paSubScores = subScoresForThisRun.map((subScore) => subScore.runInfoOrig).filter((subScore) => ["FSM", "LSM", "DEL"].includes(subScore.blockId.toUpperCase()))
+      const paScore = { ...paSubScores[0] };
+      ["attempted", "correct", "incorrect"].forEach((scoreType) => {
+        const total = paSubScores.reduce((a, b) => {
+          return a + b[scoreType]
+        }, 0 );
+        paScore[scoreType] = total;
+      })
+      return {
+        ...paScore,
+        blockId: "total",
+      };
+
+    case "swr":
+      // Assume there is only one subscore for SWR
+      // console.log('returning this ', subScoresForThisRun[0])
+      return subScoresForThisRun[0]
+
+    case "sre":
+      // TODO: Confirm SRE blockId names
+      const sreSubScores = subScoresForThisRun.filter((subScore) => ["LAB", "TOSREC"].contains(subScore.blockId.toUpperCase()))
+      const sreScore = sreSubScores[0];
+      sreScore.blockId = "total";
+      ["attempted", "correct", "incorrect"].forEach((scoreType) => {
+        sreScore[scoreType] = sreSubScores.reduce((a, b) => a[scoreType] + b[scoreType], 0);
+      })
+      return sreScore;
+
+    case "vocab":
+      console.log("TODO add sre and vocab cases")
+      break;
+
+    default:
+      console.log(taskId, "missing from switch statement");
+  }
+}
+
 export const useScoreStore = () => {
   return defineStore({
     id: "scoreStore",
     state: () => {
       return {
         appScores: [],
+        rawScores: [],
         identifiers: [],
+        rawIdentifiers: [],
         sections: [],
         selectedStudentId: null,
       };
     },
-    getters: { 
+
+    getters: {
+      // #region oldGetters
       taskId: (state) => {
         // TODO: Add error handling to check that there is only one taskId
         return [...new Set(state.appScores.map((row) => row?.taskId))][0];
@@ -313,7 +363,7 @@ export const useScoreStore = () => {
       
         return {
           showDebug: 'false',
-          fromFunction: debugTestFunction(),
+          // fromFunction: debugTestFunction(),
         }
       },
       
@@ -495,10 +545,93 @@ export const useScoreStore = () => {
           roarScoreStandardDev: standardDeviation(roarScoresArray).toFixed(0),
         };
       },
+      // #endregion
 
+      // An array of task ids currently in the dataset
+      uniqueTasks: (state) => {
+        return [...new Set(state.rawScores.map(item => item.taskId))];
+      },
+
+      // Raw rows from csv, representing blocks, organized by task id
+      mergedRaw: (state) => {
+        let returnScore = []
+        _forEach(state.uniqueTasks, option => {
+          returnScore[option] = []
+        })
+        // Merge runs together with identifier
+        if(state.rawIdentifiers.length === 0 || state.rawScores.length === 0){
+          console.log('Either No Identifiers or Scores yet!')
+        } else {
+          let merged = _map(state.rawScores, run => {
+            const matchingIdentifier = state.rawIdentifiers.filter((participant) => 
+              participant.pid === run.pid
+            )
+            const taskId = standardizeTaskId(run.taskId)
+            if(matchingIdentifier.length === 0){
+              returnScore[taskId].push({
+                originalRunInfo: {
+                  taskId,
+                  ...run
+                }
+              })
+            } else {
+              const names = standardizeNames(matchingIdentifier[0])
+              returnScore[taskId].push({
+                taskId,
+                name: names,
+                ...run,
+                ...matchingIdentifier[0]
+              })
+            }
+          })
+        }
+        return returnScore
+      },
+      // Blocks with trimmed info, organized by task id
+      newBlocks: (state) => {
+        let returnBlocks = {}
+        _forEach(state.uniqueTasks, task => {
+          returnBlocks[task] = []
+        })
+        _forEach(state.rawScores, block => {
+          const taskId = _get(block, 'taskId')
+          returnBlocks[taskId].push({
+            taskId: taskId,
+            blockId: _get(block, 'block'),
+            attempted: _get(block, 'attempted'),
+            correct: _get(block, 'correct'),
+            incorrect: _get(block, 'incorrect')
+          })
+        })
+        return returnBlocks
+      },
+
+      // Group blocks into runs, organized by task id
+      newRuns: (state) => {
+        let returnRuns = {}
+        _forEach(state.uniqueTasks, task => {
+          returnRuns[task] = []
+          const uniqueRunIds = [...new Set(state.mergedRaw[task].map((subScore) => subScore.runId))];
+          returnRuns[task] = uniqueRunIds.map((runId) => {
+            const subScoresForThisRun = state.mergedRaw[task].filter((subScore) => subScore.runId === runId);
+            return {
+              ...newGetRunScores(subScoresForThisRun),
+            }
+          })
+        })
+        return returnRuns
+      }
     },
-
+    
     actions: {
+      scoresFromJSON(raw) {
+        console.log('Raw scores:', raw)
+        this.rawScores.push(...raw)
+      },
+      identifiersFromJSON(raw) {
+        console.log('Raw identifiers', raw)
+        this.rawIdentifiers.push(...raw)
+      },
       mergeSectionsWithIdentifiers: async (csvFile) => {
         const sectionsData = await csvFileToJson(csvFile);
         console.log(sectionsData);

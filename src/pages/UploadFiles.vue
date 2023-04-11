@@ -37,11 +37,15 @@ const uploadedFile = ref();
 const onScoreUpload = async (event) => {
   toast.add({ severity: 'info', summary: 'Success', detail: 'Score File Uploaded', life: 3000 });
   uploadedFile.value = event.files[0];
+  let rawJson = await csvFileToJson(uploadedFile.value);
+  scoreStore.scoresFromJSON(rawJson)
   scoreStore.appScores = await csvFileToJson(uploadedFile.value);
 }
 const onAdminUpload = async (event) => {
   toast.add({ severity: 'info', summary: 'Success', detail: 'Identifier File Uploaded', life: 3000 });
   uploadedFile.value = event.files[0];
+  let rawJson = await csvFileToJson(uploadedFile.value)
+  scoreStore.identifiersFromJSON(rawJson)
   scoreStore.identifiers = await csvFileToJson(uploadedFile.value);
 }
 const submit = () => {
