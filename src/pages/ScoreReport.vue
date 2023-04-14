@@ -1,6 +1,6 @@
 <template>
-  <ReportSWR v-if="scoreStore.taskId === 'swr'" />
-  <ReportPA v-else-if="scoreStore.taskId === 'roar-pa'" />
+  <ReportSWR v-if="scoreStore.uniqueTasks.includes('swr')" />
+  <ReportPA v-else-if="scoreStore.uniqueTasks.includes('pa')" />
   <div v-else>
     We have not yet implemented a score report for your taskId of {{ scoreStore.taskId }}.
   </div>

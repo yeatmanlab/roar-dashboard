@@ -14,8 +14,10 @@
           <p>Drag and drop the identifier file here to upload.</p>
         </template> -->
       </FileUpload>
+      {{ Object.keys(scoreStore.newRuns).length }}
+      {{  scoreStore.areScoresReady }}
       <Button icon="pi pi-chart-line" label="View Score Report" class="flex-none mb-1 ml-2"
-        :loading="scoreStore.scores.length === 0" :disabled="scoreStore.scores.length === 0" @click="submit" />
+        :loading="scoreStore.newRuns.length === 0" :disabled="!scoreStore.areScoresReady" @click="submit" />
     </div>
     <AppSpinner v-else />
   </div>
