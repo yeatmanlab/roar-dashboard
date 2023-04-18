@@ -13,7 +13,7 @@ export const standardizeNames = (run) => {
     first: run['name.first'],
     middle: run['name.middle'],
     last: run['name.last']
-  }
+  };
 }
 
 export const getRunInfoCommon = (mergedRun) => {
@@ -65,7 +65,7 @@ export function differenceInMonths(date1, date2) {
 
 export function computeAges(dob, timeStarted) {
   let dateOfBirth = new Date(dob);
-  let dateOfRun = new Date(timeStarted)
+  let dateOfRun = new Date(timeStarted);
 
   let ageMonths = differenceInMonths(dateOfRun, dateOfBirth);
   let ageYears = parseFloat((ageMonths/12).toFixed(1));
@@ -222,7 +222,7 @@ export const getRunScores = (runBlocks) => {
   const taskId = [...new Set(runBlocks.map((block) => block.taskId))][0]
   switch(taskId) {
     case "pa":
-      const paSubScores = runBlocks.filter((block) => ["FSM", "LSM", "DEL"].includes(block.blockId.toUpperCase()))
+      const paSubScores = runBlocks.filter((block) => ["FSM", "LSM", "DEL"].includes(block.blockId.toUpperCase()));
       const paScore = { ...paSubScores[0] };
       ["attempted", "correct", "incorrect"].forEach((scoreType) => {
         const total = paSubScores.reduce((a, b) => {
@@ -343,7 +343,7 @@ export const swrSupportStats = (dataSet) => {
     limitedAutomaticity: null,
     averageAutomaticity: null
   };
-  const supportArray = dataSet.map((run) => run.runInfo.supportLevel);
+  const supportArray = dataSet.map((run) => _get(run, 'runInfo.supportLevel'));
   if (supportArray.length === 0) {
     return stats;
   } 
@@ -365,7 +365,7 @@ export const paSupportStats = (dataSet) => {
     someSupport: null,
     extraSupport: null
   }
-  const supportArray = dataSet.map((run) => run.runInfo.supportLevel)
+  const supportArray = dataSet.map((run) => _get(run, 'runInfo.supportLevel'))
   if(supportArray.length === 0){
     return stats
   }
@@ -384,7 +384,6 @@ export const paSkillCounts = (dataSet) => {
     DEL: null
   }
   const skillArray = dataSet.map((block) => block.blockId)
-  console.log('skillArray', skillArray)
   if(skillArray.length === 0) return stats;
 
   stats.LSM = skillArray.filter(x => x === 'LSM').length
