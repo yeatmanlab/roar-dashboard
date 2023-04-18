@@ -10,9 +10,9 @@ export const useScoreStore = () => {
     id: "scoreStore",
     state: () => {
       return {
-        appScores: [],
+        appScores: [], // TODO: Delete when all paths are moved to new values
         rawScores: [],
-        identifiers: [],
+        identifiers: [], // TODO: Delete when all paths are moved to new values
         rawIdentifiers: [],
         sections: [],
         selectedStudentId: null,
