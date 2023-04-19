@@ -15,7 +15,7 @@
         </template> -->
       </FileUpload>
       <Button icon="pi pi-chart-line" label="View Score Report" class="flex-none mb-1 ml-2"
-        :loading="scoreStore.scores.length === 0" :disabled="scoreStore.scores.length === 0" @click="submit" />
+        :loading="!scoreStore.areScoresReady" :disabled="!scoreStore.areScoresReady" @click="submit" />
     </div>
     <AppSpinner v-else />
   </div>
@@ -37,11 +37,15 @@ const uploadedFile = ref();
 const onScoreUpload = async (event) => {
   toast.add({ severity: 'info', summary: 'Success', detail: 'Score File Uploaded', life: 3000 });
   uploadedFile.value = event.files[0];
+  let rawJson = await csvFileToJson(uploadedFile.value);
+  scoreStore.scoresFromJSON(rawJson)
   scoreStore.appScores = await csvFileToJson(uploadedFile.value);
 }
 const onAdminUpload = async (event) => {
   toast.add({ severity: 'info', summary: 'Success', detail: 'Identifier File Uploaded', life: 3000 });
   uploadedFile.value = event.files[0];
+  let rawJson = await csvFileToJson(uploadedFile.value)
+  scoreStore.identifiersFromJSON(rawJson)
   scoreStore.identifiers = await csvFileToJson(uploadedFile.value);
 }
 const submit = () => {

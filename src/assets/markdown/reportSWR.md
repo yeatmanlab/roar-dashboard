@@ -14,12 +14,12 @@
 
 This score report presents information from the recent administration of the ROAR assessment.
 
-- {{ swrStats.numStudents }} students in grades {{ swrStats.gradeMin }} to {{ swrStats.gradeMax }} completed the Single Word Recognition task.
+- {{ swrStats.numStudents }} students in grades {{ swrStats.grades.gradeMin }} to {{ swrStats.grades.gradeMax }} completed the Single Word Recognition task.
 
-- The average age of the students was {{ swrStats.ageMean }}.
+- The average age of the students was {{ swrStats.ages.ageMean }}.
 
-- The average ROAR score was {{ swrStats.roarScoreMean }} on a scale of 100 - 900 
-- Scores ranged from {{ swrStats.roarScoreMin }} to {{ swrStats.roarScoreMax }}, with a standard deviation of {{ swrStats.roarScoreStandardDev }}.
+- The average ROAR score was {{ swrStats.roarScore.roarScoreMean }} on a scale of 100 - 900 
+- Scores ranged from {{ swrStats.roarScore.roarScoreMin }} to {{ swrStats.roarScore.roarScoreMax }}, with a standard deviation of {{ swrStats.roarScore.roarScoreStandardDev }}.
 
 ## Identifying Students who could Benefit from Support
 

@@ -1,9 +1,6 @@
 <template>
   <div v-if="scoreStore.scoresReady">
-
-    <!-- <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" /> -->
-    <MarkdownSWR :scores="scoreStore.scores" :swrStats="scoreStore.swrStats" :columns="tableColumns" />
-
+    <MarkdownSWR :scores="scoreStore.newRuns.swr" :swrStats="scoreStore.reportStats.swr" :columns="tableColumns" />
   </div>
   <AppSpinner v-else />
 </template>
@@ -14,52 +11,46 @@ import { onMounted, ref } from 'vue';
 import embed from 'vega-embed';
 import { useScoreStore } from "@/store/scores";
 import { graphColorType, supportLevelsType, automaticityLevelsType } from "./reportUtils.js"
-
 import MarkdownSWR from "@/assets/markdown/reportSWR.md";
 
-
 const scoreStore = useScoreStore();
-
-console.log(scoreStore);
-
-
 const tableColumns = ref([
   {
-    "field": "runInfoOrig.name.first", 
+    "field": "name.first", 
     "header": "First Name", 
     "allowMultipleFilters": true,
     "dataType": "text",
   },
   {
-    "field": "runInfoOrig.name.last", 
+    "field": "name.last", 
     "header": "Last Name", 
     "allowMultipleFilters": true,
     "dataType": "text",
   },
   {
-    "field": "runInfoCommon.parsedGrade", 
+    "field": "grade", 
     "header": "Grade", 
     "allowMultipleFilters": true,
     "dataType": "text",
     "useMultiSelect": true
   },
   {
-    "field": "runInfoCommon.roarScore", 
+    "field": "runInfo.roarScore", 
     "header": "SWR ROAR SCORE", 
     "dataType": "numeric",
   },
-  // {
-  //   "field": "runInfoCommon.normedPercentile", 
-  //   "header": "Estimated Woodcock-Johnson Percentile", 
-  //   "dataType": "numeric",
-  // },
-    // {
-  //   "field": "runInfoCommon.normedStandardScore", 
-  //   "header": "Estimated Woodcock-Johnson Standard Score", 
-  //   "dataType": "numeric",
-  // },
   {
-    "field": "runInfoCommon.supportLevel", 
+    "field": "runInfo.normedPercentile", 
+    "header": "Estimated Woodcock-Johnson Percentile", 
+    "dataType": "numeric",
+  },
+    {
+    "field": "runInfo.normedStandardScore", 
+    "header": "Estimated Woodcock-Johnson Standard Score", 
+    "dataType": "numeric",
+  },
+  {
+    "field": "runInfo.supportLevel", 
     "header": "Support Level", 
     "dataType": "text",
   },
@@ -81,7 +72,7 @@ const distributionByGrade = {
   title: { text: "ROAR Score Distribution", anchor: "middle", fontSize: 18 },
   config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
 
-  data: { values: scoreStore.scores},
+  data: { values: scoreStore.newRuns.swr},
 
   mark: "bar", 
   height: 50,
@@ -89,7 +80,7 @@ const distributionByGrade = {
 
   encoding: {
     facet: {
-      field: "runInfoOrig.grade",
+      field: "grade",
       type: "nominal",
       columns: 1,
       title: "By Grade",
@@ -115,7 +106,7 @@ const distributionByGrade = {
     },
 
     color: {
-      field: "runInfoOrig.grade",
+      field: "grade",
       type: "ordinal",
       sort: ["Kindergarten", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       legend: null,
