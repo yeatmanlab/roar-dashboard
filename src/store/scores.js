@@ -49,14 +49,7 @@ export const useScoreStore = () => {
               participant.pid === run.pid
             )
             const taskId = scoreUtils.standardizeTaskId(run.taskId)
-            if(matchingIdentifier.length === 0){
-              returnScore[taskId].push({
-                originalRunInfo: {
-                  taskId,
-                  ...run
-                }
-              })
-            } else {
+            if(matchingIdentifier.length !== 0){
               const names = scoreUtils.standardizeNames(matchingIdentifier[0])
               returnScore[taskId].push({
                 taskId,
@@ -75,16 +68,16 @@ export const useScoreStore = () => {
         let returnBlocks = {}
         _forEach(state.uniqueTasks, task => {
           returnBlocks[task] = []
-        })
-        _forEach(state.rawScores, block => {
-          const taskId = _get(block, 'taskId')
-          const blockId = _get(block, 'block') ?? _get(block, 'blockId')
-          returnBlocks[taskId].push({
-            taskId: taskId,
-            blockId: blockId,
-            attempted: _get(block, 'attempted'),
-            correct: _get(block, 'correct'),
-            incorrect: _get(block, 'incorrect')
+          _forEach(state.mergedRaw[task], block => {
+            const taskId = _get(block, 'taskId')
+            const blockId = _get(block, 'block') ?? _get(block, 'blockId')
+            returnBlocks[taskId].push({
+              taskId: taskId,
+              blockId: blockId,
+              attempted: _get(block, 'attempted'),
+              correct: _get(block, 'correct'),
+              incorrect: _get(block, 'incorrect')
+            })
           })
         })
         return returnBlocks

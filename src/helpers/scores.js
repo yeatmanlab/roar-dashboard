@@ -282,7 +282,10 @@ export const getSchools = (dataSet) => {
 
 // Returns min, max, mean age for given dataset
 export const getAges = (dataSet) => {
-  const ages = _map(dataSet, score => computeAges((score.dob ?? score.birthdate), score.timeStarted))
+  const ages = _map(dataSet, score => computeAges((score.dob ?? score.birthdate), score.timeStarted)).filter(x => {
+    // Filter out entries without ages
+    return x.ageMonths && x.ageYears
+  })
   if (ages.length === 0) {
     return null;
   }
@@ -290,13 +293,13 @@ export const getAges = (dataSet) => {
   return {
     ageMin: Math.min(...ageYears),
     ageMax: Math.max(...ageYears),
-    ageMean: (ageYears.reduce((a, b) => a + b) / ages.length).toFixed(1),
+    ageMean: (ageYears.reduce((a, b) => parseInt(a) + parseInt(b)) / ages.length).toFixed(1),
   };
 }
 
 // Returns max grade, min grade, and whether kindergarden/first is included
 export const getGrades = (dataSet) => {
-  const parsedGrades = dataSet.map((score) => parseGrade(score.grade)); 
+  const parsedGrades = dataSet.map((score) => parseGrade(score.grade)).filter(x => x !== 'NA');
   const hasFirstOrK = (parsedGrades.includes("k") || 
                         parsedGrades.includes("pk") || 
                         parsedGrades.includes("tk") ||
