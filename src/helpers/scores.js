@@ -18,16 +18,19 @@ export const standardizeNames = (run) => {
 
 export const getRunInfoCommon = (mergedRun) => {
   let normedPercentile;
+  let normedStandardScore;
   let parsedGrade = parseGrade(mergedRun.grade);
 
   // note: new fields should be added to all cases
   switch(mergedRun.taskId) {
     case "swr":
-      normedPercentile = woodcockJohnsonLookup(mergedRun.thetaEstimate);
+      normedPercentile = woodcockJohnsonPercentileLookup(mergedRun.thetaEstimate);
+      normedStandardScore = woodcockJohnsonSSLookup(mergedRun.thetaEstimate);
       return { 
         parsedGrade: parsedGrade,
         roarScore: thetaToRoarScore(mergedRun.thetaEstimate),
         normedPercentile: normedPercentile,
+        normedStandardScore: normedStandardScore,
         //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
         supportLevel: percentileToSupportClassification("swr", normedPercentile, mergedRun.grade),
       };
@@ -35,10 +38,12 @@ export const getRunInfoCommon = (mergedRun) => {
 
     case "pa":
       normedPercentile = 0;
+      normedStandardScore = 0;
       return { 
         parsedGrade: parsedGrade,
         roarScore: 0,
         normedPercentile: normedPercentile,
+        normedStandardScore: normedStandardScore,
         //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
         supportLevel: percentileToSupportClassification("pa", normedPercentile, mergedRun.grade),
       };
@@ -131,10 +136,18 @@ export function thetaToSupportSWR (percentile, grade) {
   return support;
 };
 
-export function woodcockJohnsonLookup (thetaEstimate) {
+export function woodcockJohnsonPercentileLookup (thetaEstimate) {
   // TODO_Adam replace this totally fake calculation with a real lookup table based on thetaEstimate and ageMonths
-  console.log("WARNING: fake woodcockJohnsonLookup still in use");
+  console.log("WARNING: fake woodcockJohnsonPercentileLookup still in use");
   return Math.round(100 * (thetaEstimate +4)/8);
+};
+
+export function woodcockJohnsonSSLookup (thetaEstimate) {
+  // TODO_Adam replace this totally fake calculation with a real lookup table based on thetaEstimate and ageMonths
+  console.log("WARNING: fake woodcockJohnsonSSLookup still in use");
+  let percentile = Math.round(100 * (thetaEstimate +4)/8);
+  let standardScore = Math.round(0.6 * (percentile-50) + 100);   // not accurate but gives numbers in the range 70 - 130
+  return(standardScore);
 };
 
 export function percentileToSupportClassification(taskId, percentile, grade=1) {
