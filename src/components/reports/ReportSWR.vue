@@ -325,9 +325,12 @@ const moveTableElements = () => {
 const draw = async () => {
   await embed("#viz-distribution-by-grade", distributionByGrade);
   await embed("#viz-normed-percentile-distribution", normedPercentileDistribution);
-  await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
   await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
-  await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
+
+  if (scoreStore.reportStats.swr.grades.hasFirstOrK == "true") { 
+    await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
+    await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
+  }
 };
 
 onMounted(() => {
