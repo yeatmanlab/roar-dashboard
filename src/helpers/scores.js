@@ -54,18 +54,29 @@ export const getRunInfoCommon = (mergedRun) => {
 };
 
 export function thetaToRoarScore (thetaEstimate) {
+  if(!thetaEstimate) console.warn('Can not calculate roar score with theta estimate of', thetaEstimate, '!')
   return (Math.round(100 * (thetaEstimate + 5)));
 };
 
 export function differenceInMonths(date1, date2) {
+  if(!date1 || !date2){
+    console.warn('Can not find difference in months with values of', date1, 'and', date2)
+  }
   const monthDiff = date1.getMonth() - date2.getMonth();
   const yearDiff = date1.getYear() - date2.getYear();
-  return monthDiff + yearDiff * 12;
+  return Math.abs(monthDiff + yearDiff * 12);
 }
 
 export function computeAges(dob, timeStarted) {
-  let dateOfBirth = new Date(dob);
-  let dateOfRun = new Date(timeStarted);
+  let dateOfBirth;
+  let dateOfRun;
+  try {
+    dateOfBirth = new Date(dob);
+    dateOfRun = new Date(timeStarted);
+  } catch(e) {
+    console.warn('Can not compute ages with date values', dob, 'and', timeStarted)
+    return { ageMonths: null, ageYears: null }
+  }
 
   let ageMonths = differenceInMonths(dateOfRun, dateOfBirth);
   let ageYears = parseFloat((ageMonths/12).toFixed(1));
@@ -123,7 +134,7 @@ export function thetaToSupportSWR (percentile, grade) {
   let support;
 
   // we report automaticity instead of support for grades K/1 
-  if ((grade == "K") || (grade == "1")) {
+  if ((grade.toUpperCase() == "K") || (grade == "1")) {
     support = (percentile < 50) ? "Limited" : "Average or Above Average";
   } else {
     support = (percentile < 25) ? "Extra Support Needed" : (percentile < 50) ? "Some Support Needed": "Average or Above Average";
@@ -142,7 +153,7 @@ export function percentileToSupportClassification(taskId, percentile, grade=1) {
 
   switch(taskId) {
     case "pa":
-      if ((grade == "K") || (grade <= "4")) {
+      if ((grade.toString().toUpperCase() == "K") || (grade <= "4")) {
         support = (percentile < 25) ? "Extra Support Needed" : (percentile < 50) ? "Some Support Needed": "Average or Above Average";
       } else {
         support = (percentile < 15) ? "Extra Support Needed" : (percentile < 30) ? "Some Support Needed": "Average or Above Average";
@@ -264,7 +275,7 @@ export const getSchools = (dataSet) => {
   _forEach(dataSet, block => {
     schools = _union(schools, [_get(block, 'school_name')])
   })
-  return schools
+  return schools.filter(Boolean)
 }
 
 // Returns min, max, mean age for given dataset
@@ -387,7 +398,9 @@ export const paSkillCounts = (dataSet) => {
     DEL: null
   }
   const skillArray = dataSet.map((block) => block.blockId)
-  if(skillArray.length === 0) return stats;
+  if(skillArray.length === 0){
+    return stats;
+  }
 
   stats.LSM = skillArray.filter(x => x === 'LSM').length
   stats.FSM = skillArray.filter(x => x === 'FSM').length
