@@ -27,13 +27,13 @@ const routes = [
     path: "/register",
     name: "Register",
     component: () =>
-      import("../pages/SignInOrRegister.vue"),
+      import("../pages/Register.vue"),
     meta: { requiresGuest: true },
   },
   {
-    path: "/signin",
-    name: "SignIn",
-    component: () => import("../pages/SignInOrRegister.vue"),
+    path: "/login",
+    name: "Login",
+    component: () => import("../pages/SignIn.vue"),
     meta: { requiresGuest: true },
   },
   {
@@ -42,7 +42,7 @@ const routes = [
     async beforeEnter(to, from) {
       const store = useAuthStore();
       await store.signOut();
-      return { name: "SignIn" };
+      return { name: "Login" };
     },
   },
   {
@@ -88,7 +88,7 @@ router.beforeEach(async (to, from) => {
   // await store.dispatch("auth/initAuthentication");
   // store.dispatch("unsubscribeAllSnapshots");
   if (to.meta.requiresAuth && !store.isAuthenticated) {
-    return { name: "SignIn", query: { redirectTo: to.path } };
+    return { name: "Login", query: { redirectTo: to.path } };
   }
   if (to.meta.requiresGuest && store.isAuthenticated) {
     return { name: "Home" };

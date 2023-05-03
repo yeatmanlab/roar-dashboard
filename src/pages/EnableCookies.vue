@@ -5,7 +5,7 @@
     that you selected required third-party cookies to be enabled. Please enable
     third-party cookies and then click below to sign in.
   </Message>
-  <router-link :to="{ name: 'SignIn' }">
+  <router-link :to="{ name: 'Login' }">
     <Button label="Log In" icon="pi pi-sign-in" />
   </router-link>
 </template>

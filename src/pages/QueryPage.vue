@@ -23,7 +23,7 @@
       </div>
       <div v-else class="col-full text-center">
         <p>You are not yet logged in. Click below to log in.</p>
-        <router-link :to="{ name: 'SignIn' }">
+        <router-link :to="{ name: 'Login' }">
           <Button label="Log In" icon="pi pi-sign-in" />
         </router-link>
       </div>
