@@ -1,0 +1,40 @@
+.p-selectbutton .p-button {
+  background: var(--surface-a);
+  border: 1px solid var(--surface-300);
+  color: var(--text-color);
+  transition: none;
+}
+.p-selectbutton .p-button .p-button-icon-left,
+.p-selectbutton .p-button .p-button-icon-right {
+  color: var(--text-color-secondary);
+}
+.p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover {
+  background: var(--surface-c);
+  border-color: var(--surface-300);
+  color: var(--text-color);
+}
+.p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover .p-button-icon-left,
+.p-selectbutton .p-button:not(.p-disabled):not(.p-highlight):hover .p-button-icon-right {
+  color: var(--text-color-secondary);
+}
+.p-selectbutton .p-button.p-highlight {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--surface-a);
+}
+.p-selectbutton .p-button.p-highlight .p-button-icon-left,
+.p-selectbutton .p-button.p-highlight .p-button-icon-right {
+  color: var(--surface-a);
+}
+.p-selectbutton .p-button.p-highlight:hover {
+  background: var(--primary-color-hover);
+  border-color: var(--primary-color-hover);
+  color: var(--surface-a);
+}
+.p-selectbutton .p-button.p-highlight:hover .p-button-icon-left,
+.p-selectbutton .p-button.p-highlight:hover .p-button-icon-right {
+  color: var(--surface-a);
+}
+.p-selectbutton.p-invalid > .p-button {
+  border-color: var(--red-100);
+}
