@@ -1,15 +1,14 @@
 <template>
   <div class="card">
-    <b class="text-center mt-3 mb-1">
+    <!-- <b class="text-center mt-3 mb-1">
       {{ `${isRegistering ? "Register" : "Log in"} with email and password` }}
-    </b>
+    </b> -->
+    <p class="login-title" align="left">{{ `${isRegistering ? 'Register for' : 'Log In to'} ROAR` }}</p>
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
       <div class="field mt-4">
-        <div class="p-float-label p-input-icon-right">
-          <i class="pi pi-envelope" />
+        <div class="p-input-icon-right">
           <InputText :id="`email-${isRegistering ? 'register' : 'login'}`" v-model="v$.email.$model"
-            :class="{ 'p-invalid': v$.email.$invalid && submitted }" aria-describedby="email-error" />
-          <label for="email" :class="{ 'p-error': v$.email.$invalid && submitted }">Email*</label>
+            :class="{ 'p-invalid': v$.email.$invalid && submitted }" aria-describedby="email-error" placeholder="Your username or email" />
         </div>
         <span v-if="v$.email.$error && submitted">
           <span :id="`email-error-${isRegistering ? 'register' : 'login'}`" v-for="(error, index) of v$.email.$errors"
@@ -21,10 +20,15 @@
           (v$.email.$invalid && submitted) || v$.email.$pending.$response
         " class="p-error">{{ v$.email.required.$message.replace("Value", "Email") }}</small>
       </div>
-      <div class="field mt-4">
-        <div class="p-float-label">
+      <!-- <div class="field mt-4">
+        <div>
+          <InputText :id=""
+        </div>
+      </div> -->
+      <div class="field mt-4 mb-5">
+        <div>
           <Password :id="`password-${isRegistering ? 'register' : 'login'}`" v-model="v$.password.$model"
-            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask>
+            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask :feedback="isRegistering" placeholder="Your Password">
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -40,7 +44,6 @@
               </ul>
             </template>
           </Password>
-          <label for="password" :class="{ 'p-error': v$.password.$invalid && submitted }">Password*</label>
         </div>
         <small v-if="
           (v$.password.$invalid && submitted) ||
@@ -49,21 +52,14 @@
   v$.password.required.$message.replace("Value", "Password")
 }}</small>
       </div>
-      <div class="field-checkbox">
+      <div v-if="isRegistering" class="field-checkbox terms-checkbox">
         <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
           v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
         <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and
-          conditions*</label>
+          conditions</label>
       </div>
-      <Button type="submit" label="Submit" class="mt-2" />
+      <Button type="submit" label="Submit" class="submit-button" />
     </form>
-
-    <Divider align="center" type="dashed"> <b>or</b> </Divider>
-
-    <div class="push-top text-center">
-      <Button icon="pi pi-google" @click="authWithGoogle"
-        :label="`${isRegistering ? 'Register' : 'Sign in'} with Google`" />
-    </div>
   </div>
 </template>
 
@@ -139,3 +135,24 @@ export default {
   },
 };
 </script>
+<style scoped>
+.login-title {
+  font-size: 26px;
+}
+.submit-button {
+  margin-top: .5rem;
+  display: flex;
+  background-color: #E5E5E5;
+  color: black;
+  border: none;
+  width: 11.75rem;
+}
+.submit-button:hover {
+  background-color: #b7b5b5;
+  color: black;
+}
+.terms-checkbox {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+</style>
