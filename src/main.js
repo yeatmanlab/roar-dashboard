@@ -49,12 +49,15 @@ import Row from 'primevue/row';
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue'
 
-import "primevue/resources/themes/tailwind-light/theme.css"; // theme
-// import "./assets/styles/theme.css" // theme
-import "primevue/resources/primevue.min.css"; // core css
+// Style assets
+import "primevue/resources/primevue.css"; // primevue css
 import "primeicons/primeicons.css"; // icons
-import "primeflex/primeflex.scss";
+import "primeflex/primeflex.scss"; // primeflex
 
+import "./assets/styles/theme-tailwind.css"; // base theme (pulled from Primevue)
+import "./assets/styles/theme.scss" // ROAR theme
+
+// Begin the app!
 const app = createApp(App);
 const pinia = createPinia()
 
