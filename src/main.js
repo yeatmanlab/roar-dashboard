@@ -15,6 +15,7 @@ import Calendar from 'primevue/calendar';
 import Card from "primevue/card";
 import Carousel from "primevue/carousel"
 import Checkbox from "primevue/checkbox";
+import Chart from 'primevue/chart'
 import Chip from "primevue/chip";
 import Dialog from 'primevue/dialog';
 import Divider from "primevue/divider";
@@ -24,6 +25,7 @@ import FocusTrap from "primevue/focustrap";
 import InputText from "primevue/inputtext";
 import InlineMessage from 'primevue/inlinemessage';
 import Message from "primevue/message";
+import Menu from "primevue/menu"
 import MultiSelect from "primevue/multiselect";
 import Panel from "primevue/panel";
 import Password from "primevue/password";
@@ -72,6 +74,7 @@ app.component("Calendar", Calendar);
 app.component("Card", Card);
 app.component("Carousel", Carousel);
 app.component("Checkbox", Checkbox);
+app.component("Chart", Chart);
 app.component("Chip", Chip);
 app.component("Dialog", Dialog);
 app.component("Divider", Divider);
@@ -80,6 +83,7 @@ app.component("FileUpload", FileUpload);
 app.component("InlineMessage", InlineMessage);
 app.component("InputText", InputText);
 app.component("Message", Message);
+app.component("Menu", Menu);
 app.component("MultiSelect", MultiSelect);
 app.component("Panel", Panel);
 app.component("Password", Password);
