@@ -1,5 +1,5 @@
 <template>
-  <div v-if="scoreStore.scoresReady">
+  <div v-if="scoreStore.areScoresReady">
     <MarkdownSWR :scores="scoreStore.newRuns.swr" :swrStats="scoreStore.reportStats.swr" :columns="tableColumns" />
   </div>
   <AppSpinner v-else />
@@ -61,9 +61,8 @@ const globalChartConfig = {
   $schema: "https://vega.github.io/schema/vega-lite/v5.json",
   // TODO look at the colors in this example: https://vega.github.io/vega-lite/examples/bar_heatlane.html
   description: "default settings to be used for all charts",
-  data: {
-    values: scoreStore.scores,
-  },
+  data: { values: scoreStore.newRuns.swr},
+
 };
 
 const distributionByGrade = {
@@ -114,7 +113,7 @@ const distributionByGrade = {
 
     x: {
       bin: true,
-      field: "runInfoCommon.roarScore",
+      field: "runInfo.roarScore",
       title: "ROAR Score",
       bin: { step: 50 },
     },
@@ -124,6 +123,7 @@ const distributionByGrade = {
          axis: { orient: "right" } },
   },
 };
+
 
 const normedPercentileDistribution = {
   // ...globalChartConfig,
@@ -138,13 +138,13 @@ const normedPercentileDistribution = {
   },
   height: 200,
   width: 600,
-  data: { values: scoreStore.scores },
+  data: { values: scoreStore.newRuns.swr},
   mark: "bar",
   encoding: {
     // thetaEstimate should be changed to percentile
     x: {
       bin: true,
-      field: "runInfoCommon.normedPercentile",
+      field: "runInfo.normedPercentile",
       title: "Percentile (relative to national norms)",
       scale: { domain: [0, 100] },
       bin: { step: 5 },
@@ -152,7 +152,7 @@ const normedPercentileDistribution = {
     },
     y: { aggregate: "count", title: "count of students" },
     color: {
-      field: "runInfoCommon.supportLevel",
+      field: "runInfo.supportLevel",
       title: "Support",
       sort: [
         supportLevelsType.extra,
@@ -185,15 +185,15 @@ const firstGradePercentileDistribution = {
   },
   height: 100,
   width: 600,
-  data: { values: scoreStore.scores },
+  data: { values: scoreStore.newRuns.swr},
   transform: [
-    { filter: "(datum.runInfoOrig.grade == 'Kindergarten') || (datum.runInfoOrig.grade <= 1)" },
+    { filter: "(datum.runInfo.parsedGrade == 'Kindergarten') || (datum.runInfo.parsedGrade <= 1)" },
   ],
   mark: "bar",
   encoding: {
     x: {
       bin: true,
-      field: "runInfoCommon.normedPercentile",
+      field: "runInfo.normedPercentile",
       title: "Percentile (relative to national norms)",
       scale: { domain: [0, 100] },
       bin: { step: 5, minstep: 1, extent: [0, 100] },
@@ -205,7 +205,7 @@ const firstGradePercentileDistribution = {
       axis: { tickMinStep: 1 },
     },
     color: {
-      field: "runInfoCommon.supportLevel",
+      field: "runInfo.supportLevel",
       title: "Automaticity",
       sort: [automaticityLevelsType.limited, automaticityLevelsType.average],
       scale: {
@@ -228,14 +228,14 @@ const stackedSupportByGrade = {
   },
   height: 200,
   width: 600,
-  data: { values: scoreStore.scores },
+  data: { values: scoreStore.newRuns.swr},
   transform: [
     {
       calculate:
-        "indexof(['Extra Support Needed', 'Some Support Needed', 'Average or Above Average'], datum.runInfoCommon.supportLevel)",
+        "indexof(['Extra Support Needed', 'Some Support Needed', 'Average or Above Average'], datum.runInfo.supportLevel)",
       as: "order",
     },
-    { filter: "datum.runInfoOrig.grade >= 2" },
+    { filter: "datum.runInfo.parsedGrade >= 2" },
   ],
   mark: "bar",
   encoding: {
@@ -243,12 +243,12 @@ const stackedSupportByGrade = {
     y: {
       bin: false,
       type: "nominal",
-      field: "runInfoOrig.grade",
+      field: "runInfo.parsedGrade",
       title: "grade",
       axis: { tickBand: "extent", tickMinStep: 1 },
     },
     color: {
-      field: "runInfoCommon.supportLevel",
+      field: "runInfo.supportLevel",
       type: "nominal",
 
       scale: {
@@ -265,6 +265,8 @@ const stackedSupportByGrade = {
   },
 };
 
+
+
 const stackedAutomaticityFirstGrade = {
   description: "Distribution of Automaticity in First Grade",
   title: {
@@ -280,7 +282,7 @@ const stackedAutomaticityFirstGrade = {
   data: { values: scoreStore.scores },
   transform: [
     { calculate: "indexof(['Limited', 'Average or Above Average'], datum.Automaticity)", as: "order",},
-    { filter: "(datum.runInfoOrig.grade == 'Kindergarten') || (datum.runInfoOrig.grade <= 1)" },
+    { filter: "(datum.runInfo.parsedGrade == 'Kindergarten') || (datum.runInfo.parsedGrade <= 1)" },
   ],
   mark: "bar",
   encoding: {
@@ -291,7 +293,7 @@ const stackedAutomaticityFirstGrade = {
     },
     y: {
       bin: false,
-      field: "runInfoOrig.grade",
+      field: "runInfo.parsedGrade",
       title: "grade",
       axis: { 
         tickBand: "extent", 
@@ -300,7 +302,7 @@ const stackedAutomaticityFirstGrade = {
 
     },
     color: {
-      field: "runInfoCommon.supportLevel",
+      field: "runInfo.supportLevel",
       type: "nominal",
       scale: {
         domain: [automaticityLevelsType.limited, automaticityLevelsType.average],
@@ -323,9 +325,12 @@ const moveTableElements = () => {
 const draw = async () => {
   await embed("#viz-distribution-by-grade", distributionByGrade);
   await embed("#viz-normed-percentile-distribution", normedPercentileDistribution);
-  await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
   await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
-  await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
+
+  if (scoreStore.reportStats.swr.grades.hasFirstOrK == "true") { 
+    await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
+    await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
+  }
 };
 
 onMounted(() => {

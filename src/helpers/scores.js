@@ -18,16 +18,19 @@ export const standardizeNames = (run) => {
 
 export const getRunInfoCommon = (mergedRun) => {
   let normedPercentile;
+  let normedStandardScore;
   let parsedGrade = parseGrade(mergedRun.grade);
 
   // note: new fields should be added to all cases
   switch(mergedRun.taskId) {
     case "swr":
-      normedPercentile = woodcockJohnsonLookup(mergedRun.thetaEstimate);
+      normedPercentile = woodcockJohnsonPercentileLookup(mergedRun.thetaEstimate);
+      normedStandardScore = woodcockJohnsonSSLookup(mergedRun.thetaEstimate);
       return { 
         parsedGrade: parsedGrade,
         roarScore: thetaToRoarScore(mergedRun.thetaEstimate),
         normedPercentile: normedPercentile,
+        normedStandardScore: normedStandardScore,
         //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
         supportLevel: percentileToSupportClassification("swr", normedPercentile, mergedRun.grade),
       };
@@ -35,10 +38,12 @@ export const getRunInfoCommon = (mergedRun) => {
 
     case "pa":
       normedPercentile = 0;
+      normedStandardScore = 0;
       return { 
         parsedGrade: parsedGrade,
         roarScore: 0,
         normedPercentile: normedPercentile,
+        normedStandardScore: normedStandardScore,
         //supportLevel: thetaToSupportSWR(run.runInfoOrig.thetaEstimate, run.runInfoOrig.grade),
         supportLevel: percentileToSupportClassification("pa", normedPercentile, mergedRun.grade),
       };
@@ -54,18 +59,29 @@ export const getRunInfoCommon = (mergedRun) => {
 };
 
 export function thetaToRoarScore (thetaEstimate) {
+  if(!thetaEstimate) console.warn('Can not calculate roar score with theta estimate of', thetaEstimate, '!')
   return (Math.round(100 * (thetaEstimate + 5)));
 };
 
 export function differenceInMonths(date1, date2) {
+  if(!date1 || !date2){
+    console.warn('Can not find difference in months with values of', date1, 'and', date2)
+  }
   const monthDiff = date1.getMonth() - date2.getMonth();
   const yearDiff = date1.getYear() - date2.getYear();
-  return monthDiff + yearDiff * 12;
+  return Math.abs(monthDiff + yearDiff * 12);
 }
 
 export function computeAges(dob, timeStarted) {
-  let dateOfBirth = new Date(dob);
-  let dateOfRun = new Date(timeStarted);
+  let dateOfBirth;
+  let dateOfRun;
+  try {
+    dateOfBirth = new Date(dob);
+    dateOfRun = new Date(timeStarted);
+  } catch(e) {
+    console.warn('Can not compute ages with date values', dob, 'and', timeStarted)
+    return { ageMonths: null, ageYears: null }
+  }
 
   let ageMonths = differenceInMonths(dateOfRun, dateOfBirth);
   let ageYears = parseFloat((ageMonths/12).toFixed(1));
@@ -123,7 +139,7 @@ export function thetaToSupportSWR (percentile, grade) {
   let support;
 
   // we report automaticity instead of support for grades K/1 
-  if ((grade == "K") || (grade == "1")) {
+  if ((grade.toUpperCase() == "K") || (grade == "1")) {
     support = (percentile < 50) ? "Limited" : "Average or Above Average";
   } else {
     support = (percentile < 25) ? "Extra Support Needed" : (percentile < 50) ? "Some Support Needed": "Average or Above Average";
@@ -131,10 +147,18 @@ export function thetaToSupportSWR (percentile, grade) {
   return support;
 };
 
-export function woodcockJohnsonLookup (thetaEstimate) {
+export function woodcockJohnsonPercentileLookup (thetaEstimate) {
   // TODO_Adam replace this totally fake calculation with a real lookup table based on thetaEstimate and ageMonths
-  console.log("WARNING: fake woodcockJohnsonLookup still in use");
+  console.log("WARNING: fake woodcockJohnsonPercentileLookup still in use");
   return Math.round(100 * (thetaEstimate +4)/8);
+};
+
+export function woodcockJohnsonSSLookup (thetaEstimate) {
+  // TODO_Adam replace this totally fake calculation with a real lookup table based on thetaEstimate and ageMonths
+  console.log("WARNING: fake woodcockJohnsonSSLookup still in use");
+  let percentile = Math.round(100 * (thetaEstimate +4)/8);
+  let standardScore = Math.round(0.6 * (percentile-50) + 100);   // not accurate but gives numbers in the range 70 - 130
+  return(standardScore);
 };
 
 export function percentileToSupportClassification(taskId, percentile, grade=1) {
@@ -142,7 +166,7 @@ export function percentileToSupportClassification(taskId, percentile, grade=1) {
 
   switch(taskId) {
     case "pa":
-      if ((grade == "K") || (grade <= "4")) {
+      if ((grade.toString().toUpperCase() == "K") || (grade <= "4")) {
         support = (percentile < 25) ? "Extra Support Needed" : (percentile < 50) ? "Some Support Needed": "Average or Above Average";
       } else {
         support = (percentile < 15) ? "Extra Support Needed" : (percentile < 30) ? "Some Support Needed": "Average or Above Average";
@@ -264,7 +288,7 @@ export const getSchools = (dataSet) => {
   _forEach(dataSet, block => {
     schools = _union(schools, [_get(block, 'school_name')])
   })
-  return schools
+  return schools.filter(Boolean)
 }
 
 // Returns min, max, mean age for given dataset
@@ -387,7 +411,9 @@ export const paSkillCounts = (dataSet) => {
     DEL: null
   }
   const skillArray = dataSet.map((block) => block.blockId)
-  if(skillArray.length === 0) return stats;
+  if(skillArray.length === 0){
+    return stats;
+  }
 
   stats.LSM = skillArray.filter(x => x === 'LSM').length
   stats.FSM = skillArray.filter(x => x === 'FSM').length

@@ -57,6 +57,8 @@ export const useScoreStore = () => {
                 ...run,
                 ...matchingIdentifier[0]
               })
+            } else {
+              console.warn('No matching idenifier found for block %s', _get(run, 'pid') )
             }
           })
         }

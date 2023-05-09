@@ -28,16 +28,16 @@ The Woodcock-Johnson Basic Reading Skills Index WJ is a standardized test that w
 <div id='viz-normed-percentile-distribution'></div>
 
 The vertical cut scores represent thresholds for classifying students into three categories: *At or Above Average*, *Some Support Needed*, or * Extra Support Needed*
-- {{ swrStats.support.High }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
+- {{ swrStats.support.averageSupport }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
 
-- {{ swrStats.support.Medium }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
+- {{ swrStats.support.someSupport }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
 
-- {{ swrStats.support.Low }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
+- {{ swrStats.support.extraSupport }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
 
 
 <div id='viz-stacked-support-by-grade'></div>
 
-<div v-if="swrStats.hasFirstOrK"> 
+<div v-if="swrStats.grades.hasFirstOrK"> 
 
 ### Identifying Automaticity in First Grade
 
@@ -47,9 +47,9 @@ As children's reading skills improve, word recognition becomes automatic: Rather
 
 According to these classifications:
 
-- {{ swrStats.automaticity.High }} students displayed 'At or Above Average Automaticity.'
+- {{ swrStats.support.averageAutomaticity }} students displayed 'At or Above Average Automaticity.'
 
-- {{ swrStats.automaticity.Low }} students displayed 'Limited Automaticity.'
+- {{ swrStats.support.limitedAutomaticity }} students displayed 'Limited Automaticity.'
 
 
 <div id='viz-automaticity-distributions-first-grade'></div>
