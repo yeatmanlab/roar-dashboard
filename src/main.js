@@ -121,4 +121,7 @@ Object.entries(appComponentFiles).forEach(([path, m]) => {
   app.component(componentName, m.default);
 });
 
+import { Buffer } from 'buffer'
+globalThis.Buffer = Buffer
+
 app.mount("#app");

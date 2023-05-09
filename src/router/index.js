@@ -46,6 +46,12 @@ const routes = [
     },
   },
   {
+    path: "/auth-clever",
+    name: "AuthClever",
+    component: () => import("../components/auth/AuthClever.vue"),
+    props: route => ({ code: route.query.code })
+  },
+  {
     path: "/participant",
     name: "Participant",
     component: () => import(/* webpackChunkName: "Participant" */ "../pages/Participant.vue"),

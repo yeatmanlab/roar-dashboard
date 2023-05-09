@@ -10,7 +10,7 @@
     <div class="push-top text-center button-container">
       <Button @click="authWithGoogle"
         label="Google" class="signin-button" />
-      <Button @click="authWithGoogle"
+      <Button @click="authWithClever"
         label="Clever" class="signin-button" />
     </div>
   </div>
@@ -18,6 +18,7 @@
 
 <script setup>
 import SignIn from "@/components/auth/SignIn.vue";
+import { cleverSSOUrl } from "@/helpers/auth.js"
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 import { ref } from 'vue';
@@ -32,6 +33,9 @@ const authWithGoogle = () => {
     authStore.signInWithGooglePopup();
   }
 };
+const authWithClever = () => {
+  window.location = cleverSSOUrl()
+}
 </script>
 
 <style scoped>
