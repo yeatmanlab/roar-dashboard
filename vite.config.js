@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 import { ViteFaviconsPlugin } from "vite-plugin-favicon";
 import Vue from "@vitejs/plugin-vue";
 import Markdown from "vite-plugin-vue-markdown";
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,6 +13,7 @@ export default defineConfig({
     }),
     Markdown(),
     ViteFaviconsPlugin("./src/assets/roar-icon.png"),
+    basicSsl(),
   ],
   resolve: {
     alias: {

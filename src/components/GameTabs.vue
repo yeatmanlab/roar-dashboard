@@ -10,7 +10,6 @@
         <div class="flex flex-row">
           <img :src="game.imgSrc" class="image"/>
           <div>
-            <!-- {{ game.description }} -->
             <div class="play-button">
               Play
             </div>
@@ -28,9 +27,6 @@ const props = defineProps({
 <style scoped>
 .image {
   max-width: 50%
-}
-.p-tabview-nav li {
-  color: green;
 }
 .play-button {
   background-color: green;

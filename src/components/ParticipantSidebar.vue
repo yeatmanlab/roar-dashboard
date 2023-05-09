@@ -1,18 +1,15 @@
 <template>
   <div class="sidebar-container">
     <Chart type="doughnut" :data="chartData" :options="chartOptions"/>
-    <div class="flex" style="flex-direction: column">
-      <!-- <span>You have completed</span> -->
+    <div class="flex" style="flex-direction: column; text-align: center;">
       <span style="font-size: 1.75rem">{{ completedGames }}/{{ totalGames }}</span>
       <span>tasks completed!</span>
     </div>
     <div class="sidebar-info">
-      <span>You are part of the <b>Woodside</b> Group</span>
-      <h3>Student Info</h3>
-      <span>
-        age: 8
-        grade: 2
-      </span>
+      <div style="font-weight: bold">Student Info</div>
+      <div>Group: Woodside</div>
+      <div>Age: 8</div>
+      <div>Grade: 3</div>
     </div>
   </div>
 </template>
