@@ -1,0 +1,87 @@
+.p-autocomplete .p-autocomplete-loader {
+  right: var(--inline-spacing-larger);
+}
+.p-autocomplete.p-autocomplete-dd .p-autocomplete-loader {
+  right: 3.75rem;
+}
+.p-autocomplete:not(.p-disabled):hover .p-autocomplete-multiple-container {
+  border-color: var(--surface-300);
+}
+.p-autocomplete:not(.p-disabled).p-focus .p-autocomplete-multiple-container {
+  outline: 0 none;
+  outline-offset: 0;
+  box-shadow: 0 0 0 1px var(--indigo-500);
+  border-color: var(--primary-color);
+}
+.p-autocomplete .p-autocomplete-multiple-container {
+  padding: var(--border-radius) var(--inline-spacing-larger);
+  gap: var(--inline-spacing);
+}
+.p-autocomplete .p-autocomplete-multiple-container .p-autocomplete-input-token {
+  padding: var(--border-radius) 0;
+}
+.p-autocomplete .p-autocomplete-multiple-container .p-autocomplete-input-token input {
+  
+  font-size: 1rem;
+  color: var(--text-color);
+  padding: 0;
+  margin: 0;
+}
+.p-autocomplete .p-autocomplete-multiple-container .p-autocomplete-token {
+  padding: var(--border-radius) var(--inline-spacing-larger);
+  background: var(--surface-d);
+  color: var(--text-color);
+  border-radius: 16px;
+}
+.p-autocomplete .p-autocomplete-multiple-container .p-autocomplete-token .p-autocomplete-token-icon {
+  margin-left: var(--inline-spacing);
+}
+.p-autocomplete .p-autocomplete-multiple-container .p-autocomplete-token.p-focus {
+  background: var(--surface-300);
+  color: var(--text-color);
+}
+.p-autocomplete.p-invalid.p-component > .p-inputtext {
+  border-color: var(--red-100);
+}
+
+.p-autocomplete-panel {
+  background: var(--surface-a);
+  color: var(--text-color);
+  border: 0 none;
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 #0000, 0 0 #0000, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+.p-autocomplete-panel .p-autocomplete-items {
+  padding: 0.25rem 0;
+}
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+  margin: 0;
+  padding: var(--inline-spacing-larger) 1rem;
+  border: 0 none;
+  color: var(--text-color);
+  background: transparent;
+  transition: none;
+  border-radius: 0;
+}
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-highlight {
+  color: var(--indigo-800);
+  background: var(--gray-200);
+}
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-highlight.p-focus {
+  background: var(--surface-200);
+}
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:not(.p-highlight):not(.p-disabled).p-focus {
+  color: var(--surface-900);
+  background: var(--surface-d);
+}
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:not(.p-highlight):not(.p-disabled):hover {
+  color: var(--surface-900);
+  background: var(--surface-c);
+}
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item-group {
+  margin: 0;
+  padding: var(--inline-spacing-larger) 1rem;
+  color: var(--text-color);
+  background: var(--surface-a);
+  font-weight: 600;
+}

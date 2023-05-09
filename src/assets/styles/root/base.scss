@@ -1,0 +1,26 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Placeholder
+::-webkit-input-placeholder {
+  color: var(--text-color-secondary);
+}
+
+:-moz-placeholder {
+  color: var(--text-color-secondary);
+}
+
+::-moz-placeholder {
+  color: var(--text-color-secondary);
+}
+
+:-ms-input-placeholder {
+  color: var(--text-color-secondary);
+}

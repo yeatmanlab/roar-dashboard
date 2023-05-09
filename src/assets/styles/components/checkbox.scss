@@ -1,0 +1,52 @@
+.p-checkbox {
+  width: 16px;
+  height: 16px;
+}
+.p-checkbox .p-checkbox-box {
+  border: 2px solid var(--surface-300);
+  background: var(--surface-a);
+  width: 16px;
+  height: 16px;
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  transition: none;
+}
+.p-checkbox .p-checkbox-box .p-checkbox-icon {
+  transition-duration: 0.2s;
+  color: var(--surface-a);
+  font-size: 10px;
+}
+.p-checkbox .p-checkbox-box.p-highlight {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+}
+.p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box:hover {
+  border-color: var(--surface-300);
+}
+.p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box.p-focus {
+  outline: 0 none;
+  outline-offset: 0;
+  box-shadow: 0 0 0 1px var(--primary-color-hover);
+  border-color: var(--primary-color);
+}
+.p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box.p-highlight:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: var(--surface-a);
+}
+.p-checkbox.p-invalid > .p-checkbox-box {
+  border-color: var(--red-100);
+}
+
+.p-input-filled .p-checkbox .p-checkbox-box {
+  background-color: var(--surface-b);
+}
+.p-input-filled .p-checkbox .p-checkbox-box.p-highlight {
+  background: var(--primary-color);
+}
+.p-input-filled .p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box:hover {
+  background-color: var(--surface-b);
+}
+.p-input-filled .p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box.p-highlight:hover {
+  background: var(--primary-color);
+}
