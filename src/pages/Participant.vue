@@ -94,5 +94,7 @@ const gamesCompleted = ref(numCompleted)
 .tabs-container {
   display: flex;
   flex-direction: row;
+  padding: 2rem;
+  gap: 2rem;
 }
 </style>
