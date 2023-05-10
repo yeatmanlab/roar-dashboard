@@ -1,9 +1,11 @@
 <template>
   <div class="sidebar-container">
-    <Chart type="doughnut" :data="chartData" :options="chartOptions"/>
-    <div class="flex" style="flex-direction: column; text-align: center;">
-      <span style="font-size: 1.75rem">{{ completedGames }}/{{ totalGames }}</span>
-      <span>tasks completed!</span>
+    <div class="sidebar-progress">
+      <Chart type="doughnut" :data="chartData" :options="chartOptions"/>
+      <div>
+        <p class="sidebar-progress-totals">{{ completedGames }}/{{ totalGames }}</p>
+        <p>tasks completed!</p>
+      </div>
     </div>
     <ul class="sidebar-info">
       <li class="sidebar-title"><strong>Student Info</strong></li>
@@ -40,22 +42,24 @@ const chartOptions = ref({
 });
 
 const setChartData = () => {
+  let docStyle = getComputedStyle(document.documentElement);
+  
   return {
     labels: ['Finished', 'Unfinished'],
     datasets: [
       {
         data: [2, 4],
-        backgroundColor: ['green', '#E5E5E5'],
-        hoverBackgroundColor: ['green', '#E5E5E5']
+        backgroundColor: [
+          docStyle.getPropertyValue('--bright-green'), 
+          docStyle.getPropertyValue('--surface-d')
+        ],
+        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
       }
     ]
   };
 };
 </script>
-<style scoped>
-  .p-chart {
-    padding: 1rem;
-  }
+<style scoped lang="scss">
   .sidebar-container {
     margin-bottom: auto;
     width: 200px;
@@ -63,6 +67,27 @@ const setChartData = () => {
     border-radius: 5px;
     height: auto;
   }
+
+  .sidebar-progress {
+    text-align: center;
+    padding-bottom: .5rem;
+    
+    p {
+      margin-block: 0;
+    }
+    
+    .p-chart {
+      padding: 1.25rem;
+      pointer-events: none; /* don't allow pointer events on chart */
+      margin-bottom: .5rem;
+    }
+    
+    .sidebar-progress-totals {
+      font-size: 1.25rem;
+    }
+    
+  }
+  
   .sidebar-info {
     border-bottom-right-radius: 5px;
     border-bottom-left-radius: 5px;
@@ -76,6 +101,7 @@ const setChartData = () => {
     
     .sidebar-title {
       border-bottom: 1px solid var(--surface-d);
+      padding-bottom: .5rem;
       margin-bottom: 1rem;
     }
   }
