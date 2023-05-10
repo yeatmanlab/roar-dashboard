@@ -25,6 +25,10 @@ const props = defineProps({
 })
 </script>
 <style scoped>
+.p-tabview {
+  border-radius: 5px;
+  border: 1px solid var(--surface-d);
+}
 .image {
   max-width: 50%
 }

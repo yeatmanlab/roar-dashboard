@@ -53,19 +53,23 @@ const setChartData = () => {
 };
 </script>
 <style scoped>
+.p-chart {
+  padding: 1rem;
+}
 .sidebar-container {
   /* background-color: grey; */
-  width: 12.5%;
-  padding: 1rem;
-  border-right: 1px solid #E5E5E5;
-  height: calc(100vh - 105px); /* Full height minus the navbar */
+  margin-bottom: auto;
+  width: 200px;
+  border: 1px solid var(--surface-d);
+  border-radius: 5px;
+  height: auto; /* Full height minus the navbar */
 }
 .sidebar-info {
-  border: solid 1px #e5e5e5;
-  border-radius: 10px;
-  background-color: #FCFCFC;
-  padding: .25rem;
-  margin-top: .5rem;
-  /* margin: .25rem; */
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
+  border-top: solid 1px var(--surface-d);
+  background-color: var(--surface-b);
+  padding: 1rem;
+  margin-top: 1rem;
 }
 </style>
