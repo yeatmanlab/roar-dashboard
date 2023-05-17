@@ -6,7 +6,7 @@
         <span>Don't have an account? <router-link :to="{ name: 'Register' }" class="text-btn">Register</router-link></span>
       </div>
     </div>
-    <p>Other ways to Sign In</p>
+    <p style="text-align: center;">Other ways to Sign In</p>
     <div class="push-top text-center button-container">
       <Button @click="authWithGoogle"
         label="Google" class="signin-button" />

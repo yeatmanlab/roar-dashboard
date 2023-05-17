@@ -1,8 +1,5 @@
 <template>
   <div class="card">
-    <!-- <b class="text-center mt-3 mb-1">
-      {{ `${isRegistering ? "Register" : "Log in"} with email and password` }}
-    </b> -->
     <p class="login-title" align="left">{{ `${isRegistering ? 'Register for' : 'Log In to'} ROAR` }}</p>
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
       <div class="field mt-4">
@@ -58,76 +55,55 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { reactive, ref } from "vue";
-import { email, required } from "@vuelidate/validators";
+import { required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 
-export default {
-  props: {
-    isRegistering: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  setup(props) {
-    const authStore = useAuthStore();
+const props = defineProps({
+  isRegistering: {type: Boolean, default: true}
+})
+const authStore = useAuthStore();
 
-    const state = reactive({
-      email: "",
-      password: "",
-      accept: null,
-    });
+const state = reactive({
+  email: "",
+  password: "",
+  accept: null,
+});
 
-    const rules = {
-      email: { required, email },
-      password: { required },
-      accept: { required },
-    };
+const rules = {
+  email: { required },
+  password: { required },
+  accept: { required },
+};
 
-    const submitted = ref(false);
+const submitted = ref(false);
 
-    const v$ = useVuelidate(rules, state);
+const v$ = useVuelidate(rules, state);
 
-    const authWithGoogle = () => {
-      if (isMobileBrowser()) {
-        authStore.signInWithGoogleRedirect();
-      } else {
-        authStore.signInWithGooglePopup();
-      }
-    };
+const authWithGoogle = () => {
+  if (isMobileBrowser()) {
+    authStore.signInWithGoogleRedirect();
+  } else {
+    authStore.signInWithGooglePopup();
+  }
+};
 
-    const handleFormSubmit = (isFormValid) => {
-      submitted.value = true;
+const handleFormSubmit = (isFormValid) => {
+  submitted.value = true;
+  if (!isFormValid) {
+    return;
+  }
+  authStore.logInWithEmailAndPassword(state);
+}
 
-      if (!isFormValid) {
-        return;
-      }
-
-      if (props.isRegistering) {
-        authStore.registerWithEmailAndPassword(state);
-      } else {
-        authStore.logInWithEmailAndPassword(state);
-      }
-    };
-
-    const resetForm = () => {
-      state.email = "";
-      state.password = "";
-      state.accept = null;
-      submitted.value = false;
-    };
-
-    return {
-      state,
-      v$,
-      handleFormSubmit,
-      submitted,
-      authWithGoogle,
-    };
-  },
+const resetForm = () => {
+  state.email = "";
+  state.password = "";
+  state.accept = null;
+  submitted.value = false;
 };
 </script>
 <style scoped>
