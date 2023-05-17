@@ -60,6 +60,7 @@ const authWithClever = () => {
   display: flex;
   gap: 1.125rem;
   justify-content: center;
+  margin-bottom: 6.5rem;
 }
 .signin-button {
   background-color: #E5E5E5;
