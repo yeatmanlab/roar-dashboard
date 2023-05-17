@@ -1,9 +1,9 @@
 <template>
   <div>
-    <div class="login-container mx-auto md:flex-none">
-      <SignIn :isRegistering="true" />
+    <div class="signin-container mx-auto md:flex-none">
+      <Register />
       <div class="contact-text">
-        <span>Already have an account? <router-link :to="{ name: 'Login' }" class="text-btn">Log In</router-link></span>
+        <span>Already have an account? <router-link :to="{ name: 'Login' }" class="text-btn">Sign In</router-link></span>
       </div>
     </div>
     <p>Other ways to Login</p>
@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import SignIn from "@/components/auth/SignIn.vue";
+import Register from "@/components/auth/Register.vue";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 import { ref } from 'vue';
@@ -35,7 +35,7 @@ const authWithGoogle = () => {
 </script>
 
 <style scoped>
-.login-container {
+.signin-container {
   border-style: solid;
   border-width: 1px;
   border-radius: 5px;
