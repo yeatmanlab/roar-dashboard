@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <p class="login-title" align="left">{{ `${isRegistering ? 'Register for' : 'Sign In to'} ROAR` }}</p>
+    <p class="login-title" align="left">Register for ROAR</p>
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
       <!--First / Last Name-->
       <div class="mt-4 name-container">
@@ -17,18 +17,21 @@
       <div class="field mt-4">
         <div class="p-input-icon-right">
           <label for="username">Username or Email <span class="required">*</span></label>
-          <InputText :id="`email-${isRegistering ? 'register' : 'login'}`" v-model="v$.email.$model" name="username"
-            :class="{ 'p-invalid': v$.email.$invalid && submitted }" aria-describedby="email-error" />
+          <InputText
+            v-model="v$.email.$model" 
+            name="username"
+            :class="{ 'p-invalid': v$.email.$invalid && submitted }" 
+            aria-describedby="email-error"
+          />
         </div>
         <span v-if="v$.email.$error && submitted">
-          <span :id="`email-error-${isRegistering ? 'register' : 'login'}`" v-for="(error, index) of v$.email.$errors"
-            :key="index">
+          <span v-for="(error, index) of v$.email.$errors" :key="index">
             <small class="p-error">{{ error.$message }}</small>
           </span>
         </span>
-        <small v-else-if="
-          (v$.email.$invalid && submitted) || v$.email.$pending.$response
-        " class="p-error">{{ v$.email.required.$message.replace("Value", "Email") }}</small>
+        <small v-else-if="(v$.email.$invalid && submitted) || v$.email.$pending.$response" class="p-error">
+          {{ v$.email.required.$message.replace("Value", "Email") }}
+        </small>
       </div>
       <!--Age / DOB-->
       <div class="mt-4 mb-5">
@@ -40,10 +43,10 @@
           </div>
         </div>
         <div v-if="!yearOnlyCheck">
-          <Calendar v-model="v$.dob.$model" modelValue="string" showIcon :class="{ 'p-invalid': v$.dob.$invalid && submitted }"/>
+          <Calendar v-model="v$.dob.$model" view="date" dateFormat="mm/dd/yy" modelValue="string" showIcon :class="{ 'p-invalid': v$.dob.$invalid && submitted }"/>
         </div>
         <div v-else>
-          <Calendar v-model="v$.dob.$model" view="year" dateFormat="yy" modelValue="string" showIcon />
+          <Calendar v-model="v$.dob.$model" view="year" dateFormat="yy" modelValue="string" showIcon :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
         </div>
         <small v-if="(v$.dob.$invalid && submitted) || v$.dob.$pending.$response" class="p-error">{{ v$.dob.required.$message.replace("Value", "Date of Birth") }}</small>
       </div>
@@ -74,8 +77,7 @@
       <div class="field mt-4 mb-5">
         <div>
           <label for="password">Password <span class="required">*</span></label>
-          <Password :id="`password-${isRegistering ? 'register' : 'login'}`" v-model="v$.password.$model" name="password"
-            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask :feedback="isRegistering">
+          <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask feedback>
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -108,7 +110,7 @@
           Passwords must match
         </small>
       </div>
-
+      <!--Accept Checkbox-->
       <div class="field-checkbox terms-checkbox">
         <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
           v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
@@ -122,14 +124,14 @@
 
 <script setup>
 import { computed, reactive, ref } from "vue";
-import { email, required, sameAs } from "@vuelidate/validators";
+import { required, sameAs } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 
 const props = defineProps({
   isRegistering: {type: Boolean, default: true}
-})
+});
 
 const authStore = useAuthStore();
 
@@ -143,12 +145,12 @@ const state = reactive({
   ell: "",
   sex: "",
   grade: ""
-})
-const passwordRef = computed(() => state.password)
+});
+const passwordRef = computed(() => state.password);
 const rules = {
   firstName: {},
   lastName: {},
-  email: { required, email },
+  email: { required },
   password: { required },
   confirmPassword: { required, sameAsPassword: sameAs(passwordRef) }, 
   dob: { required },
@@ -156,7 +158,7 @@ const rules = {
   sex: {},
   grade: { required },
   accept: { required },
-}
+};
 
 const submitted = ref(false);
 
@@ -172,28 +174,33 @@ const authWithGoogle = () => {
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
-
   if (!isFormValid) {
     return;
   }
-
   console.log('to submit:', state)
   // authStore.registerWithEmailAndPassword(state);
 };
 
 const resetForm = () => {
+  state.firstName = "";
+  state.lastName = "";
   state.email = "";
   state.password = "";
-  state.accept = null;
+  state.confirmPassword = "";
+  state.dob = "";
+  state.ell = "";
+  state.sex = "";
+  state.grade = "";
   submitted.value = false;
+  yearOnlyCheck.value = false;
 };
+const yearOnlyCheck = ref(false);
 
+// Dropdown Options
 const eLLOptions = ref([
   {label: 'English as a First Language', value: 'EFL'},
   {label: 'English as a Second Language', value: 'ESL'}
-])
-
-const yearOnlyCheck = ref(false)
+]);
 
 const gradeOptions = ref([
   {label: 'PK', value: 'PK'},
@@ -211,13 +218,13 @@ const gradeOptions = ref([
   {label: '10th', value: '10'},
   {label: '11th', value: '11'},
   {label: '12th', value: '12'},
-])
+]);
 
 const sexOptions = ref([
   {label: 'Male', value: 'male'},
   {label: 'Female', value: 'female'},
   {label: 'Nonbinary / Do not want to specify', value: 'dns'}
-])
+]);
 </script>
 <style scoped>
 .name-container {

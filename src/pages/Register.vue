@@ -6,7 +6,7 @@
         <span>Already have an account? <router-link :to="{ name: 'Login' }" class="text-btn">Sign In</router-link></span>
       </div>
     </div>
-    <p>Other ways to Login</p>
+    <p style="text-align: center;">Other ways to Login</p>
     <div class="push-top text-center button-container">
       <Button @click="authWithGoogle"
         label="Google" class="signin-button" />
@@ -20,9 +20,6 @@
 import Register from "@/components/auth/Register.vue";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
-import { ref } from 'vue';
-
-const isRegistering = ref(false)
 
 const authStore = useAuthStore();
 const authWithGoogle = () => {
