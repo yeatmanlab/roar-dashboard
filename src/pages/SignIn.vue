@@ -1,12 +1,12 @@
 <template>
   <div>
-    <div class="login-container mx-auto md:flex-none">
+    <div class="signin-container mx-auto md:flex-none">
       <SignIn :isRegistering="false" />
       <div class="contact-text">
         <span>Don't have an account? <router-link :to="{ name: 'Register' }" class="text-btn">Register</router-link></span>
       </div>
     </div>
-    <p>Other ways to Login</p>
+    <p>Other ways to Sign In</p>
     <div class="push-top text-center button-container">
       <Button @click="authWithGoogle"
         label="Google" class="signin-button" />
@@ -39,7 +39,7 @@ const authWithClever = () => {
 </script>
 
 <style scoped>
-.login-container {
+.signin-container {
   border-style: solid;
   border-width: 1px;
   border-radius: 5px;

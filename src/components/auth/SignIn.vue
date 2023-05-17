@@ -20,11 +20,6 @@
           (v$.email.$invalid && submitted) || v$.email.$pending.$response
         " class="p-error">{{ v$.email.required.$message.replace("Value", "Email") }}</small>
       </div>
-      <!-- <div class="field mt-4">
-        <div>
-          <InputText :id=""
-        </div>
-      </div> -->
       <div class="field mt-4 mb-5">
         <div>
           <Password :id="`password-${isRegistering ? 'register' : 'login'}`" v-model="v$.password.$model"
