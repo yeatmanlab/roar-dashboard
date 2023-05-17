@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="signin-container mx-auto md:flex-none">
+    <div class="register-container mx-auto md:flex-none">
       <Register />
       <div class="contact-text">
         <span>Already have an account? <router-link :to="{ name: 'Login' }" class="text-btn">Sign In</router-link></span>
@@ -32,7 +32,7 @@ const authWithGoogle = () => {
 </script>
 
 <style scoped>
-.signin-container {
+.register-container {
   border-style: solid;
   border-width: 1px;
   border-radius: 5px;
@@ -53,6 +53,7 @@ const authWithGoogle = () => {
   display: flex;
   gap: 1.125rem;
   justify-content: center;
+  margin-bottom: 6.5rem;
 }
 .signin-button {
   background-color: #E5E5E5;
