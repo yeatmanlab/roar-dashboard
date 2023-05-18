@@ -1,6 +1,6 @@
 <template>
   <div id="games">
-    <TabView v-model:activeIndex="activeGame">
+    <TabView v-model:activeIndex="currentGameIndex">
       <TabPanel v-for="game in games" :key="game.id" :disabled="!game.completed && (currentGameId !== game.id)">
         <template #header>
           <!--Complete Game-->
@@ -42,10 +42,11 @@ const props = defineProps({
   games: {required: true, default: {}}
 })
 const currentGameId = ref('')
-
+const currentGameIndex = ref(0)
 for(let i = 0; i < props.games.length; i+=1) {
   if(!_get(props.games[i], 'completed')){
     currentGameId.value = _get(props.games[i], 'id');
+    currentGameIndex.value = i;
     break;
   }
 }
