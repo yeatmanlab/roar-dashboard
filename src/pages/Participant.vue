@@ -8,7 +8,8 @@
 </template>
 
 <script setup>
-import {ref} from "vue"; 
+import {ref} from "vue";
+// TODO: delete game list and accordian files 
 import RoarGameList from "../components/RoarGameList.vue";
 import GameAccordian from "../components/GameAccordian.vue";
 import GameTabs from "../components/GameTabs.vue";
@@ -88,7 +89,7 @@ const studentInfo = ref({
   group: 'Woodside',
   age: 8,
   grade: 4,
-});
+})
 const numCompleted = _filter(testData.value, game => {
   return _get(game, 'completed')
 }).length

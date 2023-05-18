@@ -1,15 +1,19 @@
 <template>
   <div id="games">
-    <TabView>
-      <TabPanel v-for="game in games" :key="game.id">
+    <TabView v-model:activeIndex="activeGame">
+      <TabPanel v-for="game in games" :key="game.id" :disabled="!game.completed && (currentGameId !== game.id)">
         <template #header>
+          <!--Complete Game-->
           <i v-if="game.completed" class="pi pi-check-circle mr-2" data-game-status="complete" />
-          <i v-else class="pi pi-lock-open mr-2" data-game-status="incomplete" />
+          <!--Current Game-->
+          <i v-else-if="game.id == currentGameId" class="pi pi-circle mr-2" data-game-status="current" />
+          <!--Locked Game-->
+          <i v-else class="pi pi-lock mr-2" data-game-status="incomplete" />
           <span class="tabview-nav-link-label" :data-game-status="`${game.completed ? 'complete' : 'incomplete'}`">{{ game.title }}</span>
         </template>
         <article class="roar-tabview-game">
             <div class="roar-game-content">
-              <h2 class="roar-game-title">{{ game.title }}</h2>
+              <h2 class="roar-game-title" v-tooltip="'test'">{{ game.title }}</h2>
               <div class="roar-game-description"><p>{{game.description}}</p></div>
               <div class="roar-game-meta">
                 <Tag v-for="(items,index) in game.metadata" :value="index + ': ' + items"></Tag>
@@ -32,11 +36,28 @@
   </div>
 </template>
 <script setup>
+import { ref } from 'vue';
+import _get from 'lodash/get'
 const props = defineProps({
   games: {required: true, default: {}}
 })
+const currentGameId = ref('')
+
+for(let i = 0; i < props.games.length; i+=1) {
+  if(!_get(props.games[i], 'completed')){
+    currentGameId.value = _get(props.games[i], 'id');
+    break;
+  }
+}
 </script>
 <style scoped lang="scss">
 
-
+.play-button {
+  background-color: green;
+  color: white;
+  margin: 1rem;
+  padding: 4rem 6rem 4rem 6rem;
+  border-radius: 1rem;
+  font-size: 2rem;
+}
 </style>
