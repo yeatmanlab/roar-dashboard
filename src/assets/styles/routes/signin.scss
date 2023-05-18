@@ -1,18 +1,25 @@
 #signin {
 	background: var(--surface-a);
-	width: auto;
+	width: clamp(500px, 75vw, 720px);
 	height: auto;
-	padding: 1rem 1rem 4rem;
+	padding: 1rem 0rem 0rem;
 	margin-block: auto;
 	border-radius: 5px;
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
+	justify-content: center;
 	gap: 1rem;
 	
 	header {
 		text-align: center;
 		width: 100%;
+		
+		.signin-logo {
+			width: 100%;
+			border-bottom: 1px solid var(--surface-d);
+			padding-block: 1rem;
+		}
 		
 		p {
 			max-width: 30ch;
@@ -20,18 +27,39 @@
 		}
 	}
 	
+	footer {
+		width: 100%;
+		text-align: center;
+		border-top: 1px solid var(--surface-d);
+		margin-top: 2rem;
+		padding-top: 1rem;
+		padding-bottom: 2rem;
+		
+		a {
+			text-decoration: none;
+			color: var(--gray-300);
+			
+			&:hover {
+				color: var(--primary-color);
+			}
+		}
+	}
+	
 	.signin-option-container {
 		min-width: 200px;
-		margin-inline: auto;
+		
+		.signin-option-title {
+			margin-bottom: 2rem;
+		}
 	}
 	
 	.signin-option-userpass {
-		width: calc(50% - 4rem);
-		// margin-right: 0;
+		width: calc(50% - 3rem);
+		padding-right: 1rem;
 	}
 	
 	.signin-option-providers {
-		width: calc(50% - 1rem);
+		width: calc(50% - 2rem);
 		display: flex;
 		flex-direction: column;
 		gap: 0;

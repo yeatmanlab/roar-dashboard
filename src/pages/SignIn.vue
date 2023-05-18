@@ -1,14 +1,16 @@
 <template>
   <section id="signin">
     <header>
+      <div class="signin-logo"><img src="../assets/stanford-roar.svg" height="35" alt="The ROAR Logo" /></div>
       <h1>Sign In to ROAR</h1>
-      <p>To access ROAR games, you must sign in with one of the options below.</p>
+      <p>Access your dashboard using one of the options below.</p>
     </header>
     <section class="signin-option-container signin-option-userpass">
+      <h3 class="signin-option-title">Use your username</h3>
       <SignIn />
     </section>
     <section class="signin-option-container signin-option-providers">
-      <h2>Sign In with</h2>
+      <h3 class="signin-option-title">Use a provider</h3>
       <Button @click="authWithGoogle" label="Sign in with Google" class="signin-button">
         <img src="../assets/provider-google-logo.svg" height="50" alt="The ROAR Logo" class="signin-button-icon"/>
         <span>Sign in with Google</span>
@@ -18,6 +20,9 @@
         <span>Sign in with Clever</span>
       </Button>
     </section>
+    <footer>
+      <a href="#trouble">Having trouble?</a>
+    </footer>
   </section>
 
 </template>
@@ -47,8 +52,9 @@ const authWithClever = () => {
   display: flex;
   align-content: center;
   justify-content: center;
-  height: 100vh;
+  min-height: 100vh;
   width: 100vw;
+  padding-block: 2rem;
 }
 
 .redline,
