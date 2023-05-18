@@ -1,5 +1,4 @@
 <template>
-  <div class="redline" />
   <div class="navbar-container">
     <router-link :to="{ name: 'Home' }">
       <div class="navbar-logo">
@@ -76,31 +75,4 @@ const closeInfo = () => displayInfo.value = false;
 </script>
 
 <style scoped>
-.redline {
-  width: 100%;
-  border-top: 7px solid #A80532;
-}
-.navbar-container { 
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid #E5E5E5;
-  border-bottom: 1px solid #E5E5E5;
-}
-.navbar-logo {
-  margin-top: 1.25rem;
-  margin-left: 2rem;
-  margin-bottom: 1.25rem;
-}
-.login-container {
-  margin-right: 2rem;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-.menu-icon {
-  font-size: 1.5rem;
-  margin-left: 1rem;
-}
 </style>
