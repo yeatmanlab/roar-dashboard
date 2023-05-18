@@ -9,9 +9,9 @@
     </div>
     <ul class="sidebar-info">
       <li class="sidebar-title"><strong>Student Info</strong></li>
-      <li>Group: <span class="sidebar-info-item">Woodside</span></li>
-      <li>Age: <span class="sidebar-info-item">8</span></li>
-      <li>Grade: <span class="sidebar-info-item">3</span></li>
+      <li>Group: <span class="sidebar-info-item">{{ studentInfo.group }}</span></li>
+      <li>Age: <span class="sidebar-info-item">{{ studentInfo.age }}</span></li>
+      <li>Grade: <span class="sidebar-info-item">{{ studentInfo.grade }}</span></li>
     </ul>
   </div>
 </template>
@@ -20,7 +20,8 @@ import { ref, onMounted } from "vue";
 
 const props = defineProps({
   totalGames: {required: true, default: 0},
-  completedGames: {required: true, default: 0}
+  completedGames: {required: true, default: 0},
+  studentInfo: {required: true}
 })
 
 onMounted(() => {

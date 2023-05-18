@@ -2,13 +2,14 @@
   <!-- <RoarGameList :items="testData" :focusIndex="3"/> -->
   <!-- <GameAccordian :games="testData"/> -->
   <div v-if="useTabs" class="tabs-container">
-    <ParticipantSidebar :total-games="gamesTotal" :completed-games="gamesCompleted" />
+    <ParticipantSidebar :total-games="gamesTotal" :completed-games="gamesCompleted" :student-info="studentInfo" />
     <GameTabs :games="testData" />
   </div>
 </template>
 
 <script setup>
-import {ref} from "vue"; 
+import {ref} from "vue";
+// TODO: delete game list and accordian files 
 import RoarGameList from "../components/RoarGameList.vue";
 import GameAccordian from "../components/GameAccordian.vue";
 import GameTabs from "../components/GameTabs.vue";
@@ -84,6 +85,11 @@ const testData = ref([
     completed: false
   },
 ]);
+const studentInfo = ref({
+  group: 'Woodside',
+  age: 8,
+  grade: 4,
+})
 const numCompleted = _filter(testData.value, game => {
   return _get(game, 'completed')
 }).length
