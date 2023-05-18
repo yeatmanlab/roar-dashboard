@@ -1,8 +1,7 @@
 <template>
   <div class="card">
-    <p class="login-title" align="left">Sign In to ROAR</p>
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
-      <div class="field mt-4">
+      <div class="field mt-2">
         <div class="p-input-icon-right">
           <InputText v-model="v$.email.$model"
             :class="{ 'p-invalid': v$.email.$invalid && submitted }" aria-describedby="email-error" placeholder="Your username or email" />
@@ -88,9 +87,6 @@ const resetForm = () => {
 };
 </script>
 <style scoped>
-.login-title {
-  font-size: 26px;
-}
 .submit-button {
   margin-top: .5rem;
   display: flex;
@@ -102,9 +98,5 @@ const resetForm = () => {
 .submit-button:hover {
   background-color: #b7b5b5;
   color: black;
-}
-.terms-checkbox {
-  margin-top: 0;
-  margin-bottom: 0.75rem;
 }
 </style>

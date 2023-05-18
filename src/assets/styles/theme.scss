@@ -2,16 +2,26 @@
 @import "root/typography";
 @import "root/base";
 
-// Components
+// Defaults
 @import "components/defaults";
 @import "components/autocomplete";
-@import "components/datepicker";
+
+// Components
+@import "components/button";
+@import "components/button-statuses";
+@import "components/button-link";
+
+@import "components/carousel";
 @import "components/cascadeselect";
 @import "components/checkbox";
 @import "components/chips";
-
 @import "components/colorpicker";
+
+@import "components/dataview";
+@import "components/datatable";
+@import "components/datepicker";
 @import "components/dropdown";
+
 @import "components/editor";
 
 @import "components/input-group";
@@ -19,24 +29,27 @@
 @import "components/input-text";
 
 @import "components/listbox";
+
 @import "components/multiselect";
+
 @import "components/passwordpanel";
+
 @import "components/radiobutton";
 @import "components/rating";
+
 @import "components/selectbutton";
-
 @import "components/slider";
-@import "components/treeselect";
-@import "components/togglebutton";
-@import "components/button";
-@import "components/button-statuses";
-@import "components/button-link";
-
-@import "components/dataview";
-@import "components/datatable";
-@import "components/carousel";
 @import "components/splitbutton";
 @import "components/speeddial";
 
 @import "components/tabview";
+@import "components/treeselect";
+@import "components/togglebutton";
+
+
+// Custom components
 @import "components/tabview-games";
+@import "components/navbar";
+
+// Routes
+@import "routes/signin";

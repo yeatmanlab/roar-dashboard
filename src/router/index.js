@@ -37,8 +37,8 @@ const routes = [
     component: () => import("../pages/MassUploader.vue")
   },
   {
-    path: "/login",
-    name: "Login",
+    path: "/signin",
+    name: "SignIn",
     component: () => import("../pages/SignIn.vue"),
     meta: { requiresGuest: true },
   },
