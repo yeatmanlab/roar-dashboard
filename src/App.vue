@@ -11,14 +11,14 @@
     <meta name="twitter:title" content="ROAR Web Query">
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
   </AppHead>
-  <the-navbar />
+  <Navbar />
   <router-view />
   <!-- <AppSpinner v-show="!showPage" /> -->
 </template>
 
 <script setup>
 import { onMounted } from 'vue';
-import TheNavbar from "@/components/TheNavbar.vue";
+import Navbar from "@/components/Navbar.vue";
 import { useAuthStore } from "@/store/auth";
 
 onMounted(async () => {
