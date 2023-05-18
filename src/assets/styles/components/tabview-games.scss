@@ -30,6 +30,8 @@
 		position: relative;
 				
 		.roar-game-content {
+			display: flex;
+			flex-direction: column;
 			padding-top: 1rem;
 			width: 45%;
 			> * {
@@ -65,6 +67,7 @@
 			align-items: center;
 			width: 100%;
 			gap: 1rem;
+			margin-top: auto;
 			
 			svg {
 				height: 2rem;
