@@ -7,21 +7,26 @@ const routes = [
     path: "/",
     name: "Home",
     component: () => import("../pages/Home.vue"),
+    meta: { pageTitle: "Dashboard" },
+
   },
   {
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),
+    meta: { pageTitle: "Upload Scores" },
   },
   {
     path: "/query",
     name: "Query",
     component: () => import("../pages/QueryPage.vue"),
+    meta: { pageTitle: "Query" },
   },
   {
     path: "/score-report",
     name: "ScoreReport",
     component: () => import("../pages/ScoreReport.vue"),
+    meta: { pageTitle: "Score Reports" },
   },
   // We don't support individual registration yet
   // {
@@ -35,7 +40,7 @@ const routes = [
     path: "/signin",
     name: "SignIn",
     component: () => import("../pages/SignIn.vue"),
-    meta: { requiresGuest: true },
+    meta: { requiresGuest: true, pageTitle: "Sign In" },
   },
   {
     path: "/logout",
@@ -45,31 +50,39 @@ const routes = [
       await store.signOut();
       return { name: "Login" };
     },
+    meta: { pageTitle: "Sign Out" },
+
   },
   {
     path: "/auth-clever",
     name: "AuthClever",
     component: () => import("../components/auth/AuthClever.vue"),
-    props: route => ({ code: route.query.code })
+    props: route => ({ code: route.query.code }),
+    meta: { pageTitle: "Clever Authentication" },
+
   },
   {
     path: "/participant",
     name: "Participant",
     component: () => import(/* webpackChunkName: "Participant" */ "../pages/Participant.vue"),
+    meta: {pageTitle: "Participant dashboard" }
   },
   {
     path: "/enable-cookies",
     name: "EnableCookies",
     component: () =>
       import("../pages/EnableCookies.vue"),
-    meta: { requiresGuest: true },
+    meta: { requiresGuest: true, pageTitle: "Enable Cookies" },
   },
   {
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () =>
       import("../pages/NotFound.vue"),
+    meta: { pageTitle: "Whoops! 404 Page!" },
   },
+  
+
 ];
 
 const router = createRouter({
