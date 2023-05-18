@@ -50,6 +50,13 @@ const dropdownItems = ref([
     }
   },
   {
+    label: 'Student Upload',
+    icon: 'pi pi-users',
+    command: () => {
+      router.push({name: 'MassUploader'})
+    }
+  },
+  {
     label: 'Query',
     icon: 'pi pi-cloud-download',
     command: () => {
