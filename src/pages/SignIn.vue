@@ -21,13 +21,14 @@
       </Button>
     </section>
     <footer>
+      <!-- TODO: figure out a link for this -->
       <a href="#trouble">Having trouble?</a>
     </footer>
   </section>
-
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import SignIn from "@/components/auth/SignIn.vue";
 import { cleverSSOUrl } from "@/helpers/auth.js"
 import { useAuthStore } from "@/store/auth";
@@ -44,21 +45,11 @@ const authWithGoogle = () => {
 const authWithClever = () => {
   window.location = cleverSSOUrl()
 }
+
+onMounted(() => {
+  document.body.classList.add('page-signin')
+});
 </script>
 
 <style>
-#app {
-  background: var(--primary-color);
-  display: flex;
-  align-content: center;
-  justify-content: center;
-  min-height: 100vh;
-  width: 100vw;
-  padding-block: 2rem;
-}
-
-.redline,
-.navbar-container {
-  display: none !important;
-}
 </style>

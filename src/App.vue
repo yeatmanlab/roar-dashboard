@@ -1,6 +1,6 @@
 <template>
   <AppHead>
-    <title>ROAR Web Query</title>
+    <title>ROAR: {{ $route.meta.pageTitle }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!">
 
     <!-- Social -->
@@ -11,7 +11,7 @@
     <meta name="twitter:title" content="ROAR Web Query">
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
   </AppHead>
-  <Navbar />
+  <Navbar v-if="$route.name !== 'SignIn'" />
   <router-view />
   <!-- <AppSpinner v-show="!showPage" /> -->
 </template>
@@ -25,4 +25,5 @@ onMounted(async () => {
   const authStore = useAuthStore();
   await authStore.initStateFromRedirect();
 });
+
 </script>
