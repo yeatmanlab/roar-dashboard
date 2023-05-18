@@ -1,14 +1,14 @@
 <template>
   <div class="card">
-    <p class="login-title" align="left">{{ `${isRegistering ? 'Register for' : 'Log In to'} ROAR` }}</p>
+    <p class="login-title" align="left">Sign In to ROAR</p>
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
       <div class="field mt-4">
         <div class="p-input-icon-right">
-          <InputText :id="`email-${isRegistering ? 'register' : 'login'}`" v-model="v$.email.$model"
+          <InputText v-model="v$.email.$model"
             :class="{ 'p-invalid': v$.email.$invalid && submitted }" aria-describedby="email-error" placeholder="Your username or email" />
         </div>
         <span v-if="v$.email.$error && submitted">
-          <span :id="`email-error-${isRegistering ? 'register' : 'login'}`" v-for="(error, index) of v$.email.$errors"
+          <span v-for="(error, index) of v$.email.$errors"
             :key="index">
             <small class="p-error">{{ error.$message }}</small>
           </span>
@@ -19,8 +19,8 @@
       </div>
       <div class="field mt-4 mb-5">
         <div>
-          <Password :id="`password-${isRegistering ? 'register' : 'login'}`" v-model="v$.password.$model"
-            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask :feedback="isRegistering" placeholder="Your Password">
+          <Password v-model="v$.password.$model"
+            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask :feedback="false" placeholder="Your Password">
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -37,18 +37,12 @@
             </template>
           </Password>
         </div>
-        <small v-if="
-          (v$.password.$invalid && submitted) ||
-          v$.password.$pending.$response
-        " class="p-error">{{
-  v$.password.required.$message.replace("Value", "Password")
-}}</small>
-      </div>
-      <div v-if="isRegistering" class="field-checkbox terms-checkbox">
-        <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
-          v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
-        <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and
-          conditions</label>
+        <small 
+          v-if="(v$.password.$invalid && submitted) || v$.password.$pending.$response" 
+          class="p-error"
+        >
+          {{ v$.password.required.$message.replace("Value", "Password")}}
+        </small>
       </div>
       <Button type="submit" label="Submit" class="submit-button" />
     </form>
@@ -62,34 +56,21 @@ import { useVuelidate } from "@vuelidate/core";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 
-const props = defineProps({
-  isRegistering: {type: Boolean, default: true}
-})
 const authStore = useAuthStore();
 
 const state = reactive({
   email: "",
   password: "",
-  accept: null,
 });
 
 const rules = {
   email: { required },
   password: { required },
-  accept: { required },
 };
 
 const submitted = ref(false);
 
 const v$ = useVuelidate(rules, state);
-
-const authWithGoogle = () => {
-  if (isMobileBrowser()) {
-    authStore.signInWithGoogleRedirect();
-  } else {
-    authStore.signInWithGooglePopup();
-  }
-};
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;

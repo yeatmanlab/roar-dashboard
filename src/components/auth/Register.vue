@@ -164,14 +164,6 @@ const submitted = ref(false);
 
 const v$ = useVuelidate(rules, state);
 
-const authWithGoogle = () => {
-  if (isMobileBrowser()) {
-    authStore.signInWithGoogleRedirect();
-  } else {
-    authStore.signInWithGooglePopup();
-  }
-};
-
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
   if (!isFormValid) {
