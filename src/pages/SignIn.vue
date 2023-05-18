@@ -1,10 +1,11 @@
 <template>
   <div>
     <div class="signin-container mx-auto md:flex-none">
-      <SignIn :isRegistering="false" />
-      <div class="contact-text">
+      <SignIn style="padding-bottom: 1.625rem;" />
+      <!--We don't support individual registration yet-->
+      <!-- <div class="contact-text">
         <span>Don't have an account? <router-link :to="{ name: 'Register' }" class="text-btn">Register</router-link></span>
-      </div>
+      </div> -->
     </div>
     <p style="text-align: center;">Other ways to Sign In</p>
     <div class="push-top text-center button-container">
@@ -21,9 +22,6 @@ import SignIn from "@/components/auth/SignIn.vue";
 import { cleverSSOUrl } from "@/helpers/auth.js"
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
-import { ref } from 'vue';
-
-const isRegistering = ref(false)
 
 const authStore = useAuthStore();
 const authWithGoogle = () => {
@@ -52,7 +50,6 @@ const authWithClever = () => {
   position: relative;
 }
 .contact-text {
-  padding-top: 2.75rem;
   padding-bottom: 2rem;
   text-align: left;
 }

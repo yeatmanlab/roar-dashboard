@@ -23,13 +23,14 @@ const routes = [
     name: "ScoreReport",
     component: () => import("../pages/ScoreReport.vue"),
   },
-  {
-    path: "/register",
-    name: "Register",
-    component: () =>
-      import("../pages/Register.vue"),
-    meta: { requiresGuest: true },
-  },
+  // We don't support individual registration yet
+  // {
+  //   path: "/register",
+  //   name: "Register",
+  //   component: () =>
+  //     import("../pages/Register.vue"),
+  //   meta: { requiresGuest: true },
+  // },
   {
     path: "/login",
     name: "Login",
