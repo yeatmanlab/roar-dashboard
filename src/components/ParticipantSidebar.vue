@@ -31,7 +31,7 @@ onMounted(() => {
 const chartData = ref();
 const chartOptions = ref({
     cutout: '60%',
-    showToolTips: true,
+    showToolTips: false,
     plugins: {
       legend: {
         display: false
