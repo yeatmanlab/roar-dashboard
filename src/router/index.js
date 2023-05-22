@@ -51,6 +51,11 @@ const routes = [
     component: () => import(/* webpackChunkName: "Participant" */ "../pages/Participant.vue"),
   },
   {
+    path: "/administrator",
+    name: "Administrator",
+    component: () => import(/* webpackChunkName: "Administrator" */ "../pages/Administrator.vue"),
+  },
+  {
     path: "/enable-cookies",
     name: "EnableCookies",
     component: () =>
