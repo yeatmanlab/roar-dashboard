@@ -21,19 +21,49 @@
     </div>
     <!--DataTable with raw Student-->
     <div v-if="isFileUploaded">
-      {{ rawStudentFile }}
+      <div class="info-box">
+        test
+      </div>
+      <DataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" />
     </div>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, toRaw } from 'vue';
+import DataTable from '@/components/RoarDataTable.vue'
 import { csvFileToJson } from '@/helpers';
+import _forEach from 'lodash/forEach'
+import _startCase from 'lodash/startCase'
 const isFileUploaded = ref(false)
 const rawStudentFile = ref({})
+const tableColumns = ref([])
 const onFileUpload = async (event) => {
-  console.log(event)
   rawStudentFile.value = await csvFileToJson(event.files[0])
+  // console.log(rawStudentFile.value)
+  generateColumns(toRaw(rawStudentFile.value))
   isFileUploaded.value = true;
+}
+
+function generateColumns(rawJson){
+  const columnValues = Object.keys(rawJson[0])
+  console.log(rawJson[30]['created'])
+  console.log(typeof rawJson[0]['created'])
+  console.log(rawJson[0]['created'] instanceof Date)
+  // let tableColumns = []
+  _forEach(columnValues, col => {
+    let dataType = (typeof rawJson[0][col])
+    if(dataType === 'object'){
+      if(rawJson[0][col] instanceof Date) dataType = 'date'
+    }
+    tableColumns.value.push({
+      field: col,
+      header: _startCase(col),
+      dataType: dataType
+    })
+  })
+  console.log('columnValues', columnValues)
+  console.log('tableColumns', tableColumns)
+
 }
 </script>
 <style scoped>
@@ -42,5 +72,10 @@ const onFileUpload = async (event) => {
 }
 .extra-height {
   min-height: 33vh;
+}
+.info-box {
+  background-color: var(--surface-b);
+  border-radius: 5px;
+  border: 1px solid var(--surface-d);
 }
 </style>

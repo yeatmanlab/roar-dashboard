@@ -135,6 +135,7 @@ const props = defineProps({
 
 const authStore = useAuthStore();
 
+// TODO: Include middle
 const state = reactive({
   firstName: "",
   lastName: "",
