@@ -46,7 +46,7 @@ const dropdownItems = ref([
     label: authStore.isAuthenticated ? 'Account' : 'Log in',
     icon: authStore.isAuthenticated ? 'pi pi-user' : 'pi pi-sign-in',
     command: () => {
-      authStore.isAuthenticated ? router.push({ name: 'Home' }) : router.push({ name: 'Login' })
+      authStore.isAuthenticated ? router.push({ name: 'Home' }) : router.push({ name: 'SignIn' })
     }
   },
   {
