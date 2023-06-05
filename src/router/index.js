@@ -29,13 +29,13 @@ const routes = [
     meta: { pageTitle: "Score Reports" },
   },
   // We don't support individual registration yet
-  // {
-  //   path: "/register",
-  //   name: "Register",
-  //   component: () =>
-  //     import("../pages/Register.vue"),
-  //   meta: { requiresGuest: true },
-  // },
+  {
+    path: "/register",
+    name: "Register",
+    component: () =>
+      import("../pages/Register.vue"),
+    meta: { requiresGuest: true },
+  },
   {
     path: '/mass-upload',
     name: 'MassUploader',
