@@ -69,8 +69,18 @@ const dropdownItems = ref([
     command: () => {
       router.push({name: 'UploadScores'})
     }
+  },
+  {
+    label: 'Sign Out',
+    icon: 'pi pi-sign-out',
+    command: () => {
+      router.push({name: 'SignOut'})
+    }
   }
 ])
+
+console.log('adminRoles', authStore.getAdminRoles())
+// TODO: If user is an admin, add the appropriate dropdown items
 
 const toggleMenu = (event) => {
   menu.value.toggle(event);

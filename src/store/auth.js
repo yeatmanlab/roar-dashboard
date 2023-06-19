@@ -1,7 +1,10 @@
 import { defineStore } from "pinia";
 import { useRouter } from 'vue-router';
 import emailjs from 'emailjs-com';
-import { roarfirekit } from "../firebaseInit";
+// import { this.roarfirekit } from "../firebaseInit";
+import firebaseConfig from "@/config/firebase";
+import { RoarFirekit } from "@bdelab/roar-firekit";
+import { markRaw } from "vue";
 
 export const useAuthStore = () => {
   const router = useRouter();
@@ -16,88 +19,98 @@ export const useAuthStore = () => {
         isAuthenticated: false,
         roles: null,
         homepageReady: true,
+        roarfirekit: markRaw(new RoarFirekit({ roarConfig: firebaseConfig, enableDbPersistence: false })),
       };
     },
-    getters: {
-      canRead: (state) => Boolean(state.roles?.admin || state.roles?.researcher),
-      hasRequestedAccess: (state) => Boolean(state.roles?.request),
-    },
     actions: {
-      async setRoles() {
-        this.roles = await roarfirekit.getUserAdminRoles();
+      getAdminRoles() {
+        console.log('adminClaims', this.roarfirekit.adminClaims)
+        return this.roarfirekit.adminClaims;
       },
       async registerWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
-        return roarfirekit.registerWithEmailAndPassword({ email, password }).then(
+        return this.roarfirekit.registerWithEmailAndPassword({ email, password }).then(
           () => {
-            this.user = roarfirekit.app.user;
-            this.uid = roarfirekit.app.user.uid;
+            this.user = this.roarfirekit.app.user;
+            this.uid = this.roarfirekit.app.user.uid;
             this.email = email;
             router.replace({ name: 'Home' });
           }
-        ).then(this.setRoles).then(() => {
+        ).then(() => {
           this.isAuthenticated = true;
           this.homepageReady = true;
         });
       },
       async logInWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
-        return roarfirekit.logInWithEmailAndPassword({ email, password }).then(
+        return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(
           () => {
-            this.user = roarfirekit.app.user;
-            this.uid = roarfirekit.app.user.uid;
+            this.user = this.roarfirekit.app.user;
+            this.uid = this.roarfirekit.app.user.uid;
             this.email = email;
             router.replace({ name: 'Home' });
           }
-        ).then(this.setRoles).then(() => {
+        ).then(() => {
           this.isAuthenticated = true;
           this.homepageReady = true;
         });
       },
       async signInWithGooglePopup() {
         this.homepageReady = false;
-        return roarfirekit.signInWithGooglePopup().then(() => {
-          this.firebaseUser = roarfirekit.app.user;
-          this.uid = roarfirekit.app.user.uid;
-          this.email = roarfirekit.app.user.email;
+        console.log('made it to auth store')
+        return this.roarfirekit.signInWithPopup('google').then(() => {
+          console.log('call made, setting up other stuff')
+          this.firebaseUser = this.roarfirekit.app.user;
+          this.uid = this.roarfirekit.app.user.uid;
+          this.email = this.roarfirekit.app.user.email;
+          console.log('auth store', this)
           router.replace({ name: 'Home' });
-        }).then(this.setRoles).then(() => {
+        }).then(() => {
           this.isAuthenticated = true;
           this.homepageReady = true;
         });
       },
       async signInWithGoogleRedirect() {
-        return roarfirekit.initiateGoogleRedirect();
+        return this.roarfirekit.initiateGoogleRedirect();
       },
       async initStateFromRedirect() {
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
         }
         this.homepageReady = false;
-        return roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+        return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
           if (result) {
-            this.firebaseUser = roarfirekit.app.user;
-            this.uid = roarfirekit.app.user.uid;
-            this.email = roarfirekit.app.user.email;
+            this.firebaseUser = this.roarfirekit.app.user;
+            this.uid = this.roarfirekit.app.user.uid;
+            this.email = this.roarfirekit.app.user.email;
             router.replace({ name: 'Home' });
-            return this.setRoles().then(() => {
-              this.isAuthenticated = true;
-              this.homepageReady = true;
-            });
+            this.isAuthenticated = true;
+            this.homepageReady = true;
+            return;
           }
         });
       },
       async signOut() {
-        this.homepageReady = false;
-        return roarfirekit.signOut().then(() => {
-          this.uid = null;
-          this.firebaseUser = null;
-          this.email = null;
-          this.roles = null;
-          this.isAuthenticated = false;
-          this.homepageReady = true;
-        });
+        if(this.isAuthenticated){
+          this.homepageReady = false;
+          return this.roarfirekit.signOut().then(() => {
+            this.uid = null;
+            this.firebaseUser = null;
+            this.email = null;
+            this.roles = null;
+            this.isAuthenticated = false;
+            this.homepageReady = true;
+            this.roarfirekit = this.initNewFirekit()
+          });
+        } else {
+          console.log('Cant log out while not logged in')
+        }
       },
+      initNewFirekit() {
+        return markRaw(new RoarFirekit({ roarConfig: firebaseConfig, enableDbPersistence: false }))
+      },
+      // Used for requesting access when user doesn't have access to page
+      // TODO: punt- thinking about moving to a ticket system instead of this solution.
       async requestAccess() {
         emailjs.init('aTzH_RwYwuqBh_9EU');
         const serviceId = 'service_2lrq22a';
@@ -113,9 +126,12 @@ export const useAuthStore = () => {
           (error) => { console.log('Error...', error); }
         );
         
-        await roarfirekit.addUserToAdminRequests();
+        await this.roarfirekit.addUserToAdminRequests();
         await this.setRoles();
       },
+    },
+    persist: {
+      storage: sessionStorage,
     },
   })();
 };

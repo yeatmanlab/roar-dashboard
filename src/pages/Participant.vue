@@ -16,6 +16,8 @@ import GameTabs from "../components/GameTabs.vue";
 import ParticipantSidebar from "../components/ParticipantSidebar.vue";
 import _filter from 'lodash/filter'
 import _get from 'lodash/get'
+import { useAuthStore } from "@/store/auth";
+const authStore = useAuthStore();
 const useTabs = ref(true);
 const testData = ref([
   {
