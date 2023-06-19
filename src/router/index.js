@@ -46,14 +46,28 @@ const routes = [
     name: "SignIn",
     component: () => import("../pages/SignIn.vue"),
     meta: { requiresGuest: true, pageTitle: "Sign In" },
+    async beforeEnter(to, from) {
+      const store = useAuthStore();
+      console.log('checking your auth status:', store.isAuthenticated)
+      if(store.isAuthenticated){
+        console.log('Dont try the signin page while signed in')
+        await new Promise(r => setTimeout(r, 2000));
+        return { name: "Home" }
+      }
+    }
   },
   {
-    path: "/logout",
+    path: "/signout",
     name: "SignOut",
     async beforeEnter(to, from) {
       const store = useAuthStore();
+      if(!store.isAuthenticated){
+        console.log('routing away from SignOut')
+        return { name: "SignIn" }
+      }
+      console.log('Sign out Function Triggered')
       await store.signOut();
-      return { name: "Login" };
+      return { name: "SignIn" };
     },
     meta: { pageTitle: "Sign Out" },
 

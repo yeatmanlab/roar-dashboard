@@ -4,6 +4,8 @@ import { createHead } from '@vueuse/head'
 import router from '@/router/index.js'
 import App from "@/App.vue";
 
+import piniaPluginPersistedState from "pinia-plugin-persistedstate"
+
 import PrimeVue from "primevue/config";
 
 // PrimeVue components
@@ -62,6 +64,7 @@ import "./assets/styles/theme.scss" // ROAR theme
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia()
+pinia.use(piniaPluginPersistedState);
 
 app.use(PrimeVue, {ripple: true});
 app.use(ToastService);

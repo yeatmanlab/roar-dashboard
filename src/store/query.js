@@ -2,9 +2,11 @@ import { markRaw } from "vue";
 import { defineStore } from "pinia";
 import { getUniquePropsFromUsers } from "../helpers/index.js";
 import { getRootDocs, getRunTrials, getTasks, getUserRuns, getTasksVariants, queryUsers } from "@bdelab/roar-firekit";
-import { roarfirekit } from "../firebaseInit";
+// import { roarfirekit } from "../firebaseInit";
+import { useAuthStore } from "@/store/auth"
 
 export const useQueryStore = () => {
+  const auth = useAuthStore();
   return defineStore({
     id: "queryStore",
     state: () => {
@@ -74,7 +76,7 @@ export const useQueryStore = () => {
     },
     actions: {
       async getRootDocs() {
-        const result = await getRootDocs(roarfirekit);
+        const result = await getRootDocs(auth.roarfirekit);
         this.rootDocs = result.rootDocs;
         this.selectedRootPath = {
           label: result.prodDoc.path.split('/').pop(),
