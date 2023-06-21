@@ -46,27 +46,15 @@ const routes = [
     name: "SignIn",
     component: () => import("../pages/SignIn.vue"),
     meta: { requiresGuest: true, pageTitle: "Sign In" },
-    async beforeEnter(to, from) {
-      const store = useAuthStore();
-      console.log('checking your auth status:', store.isAuthenticated)
-      if(store.isAuthenticated){
-        console.log('Dont try the signin page while signed in')
-        await new Promise(r => setTimeout(r, 2000));
-        return { name: "Home" }
-      }
-    }
   },
   {
     path: "/signout",
     name: "SignOut",
     async beforeEnter(to, from) {
       const store = useAuthStore();
-      if(!store.isAuthenticated){
-        console.log('routing away from SignOut')
-        return { name: "SignIn" }
+      if(store.isUserAuthed()){
+        await store.signOut();
       }
-      console.log('Sign out Function Triggered')
-      await store.signOut();
       return { name: "SignIn" };
     },
     meta: { pageTitle: "Sign Out" },
@@ -115,23 +103,12 @@ const router = createRouter({
   },
 });
 
-router.afterEach(() => {
-  // const store = useAuthStore();
-  // store.dispatch("clearItems", {
-  //   modules: ["categories", "forums", "posts", "threads"],
-  // });
-});
-
 router.beforeEach(async (to, from) => {
   const store = useAuthStore();
-  // await store.dispatch("auth/initAuthentication");
-  // store.dispatch("unsubscribeAllSnapshots");
-  if (to.meta.requiresAuth && !store.isAuthenticated) {
-    return { name: "Login", query: { redirectTo: to.path } };
+  if(!store.isUserAuthed() && to.name !== "SignIn"){
+    console.log("You're not logged in. Routing to SignIn")
+    return { name: "SignIn" }
   }
-  if (to.meta.requiresGuest && store.isAuthenticated) {
-    return { name: "Home" };
-  }
-});
+})
 
 export default router;

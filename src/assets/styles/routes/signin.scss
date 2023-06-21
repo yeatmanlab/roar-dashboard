@@ -1,13 +1,11 @@
-body.page-signin {
-	#app {
-		background: var(--primary-color);
-		display: flex;
-		align-content: center;
-		justify-content: center;
-		min-height: 100vh;
-		width: 100vw;
-		padding-block: 2rem;
-	  }
+#signin-container {
+	background: var(--primary-color);
+	display: flex;
+	align-content: center;
+	justify-content: center;
+	min-height: 100vh;
+	width: 100vw;
+	padding-block: 2rem;
 }
 
 #signin {
@@ -15,7 +13,7 @@ body.page-signin {
 	width: clamp(500px, 75vw, 720px);
 	height: auto;
 	padding: 1rem 0rem 0rem;
-	margin-block: auto;
+	margin-bottom: auto;
 	border-radius: 5px;
 	display: flex;
 	flex-direction: row;

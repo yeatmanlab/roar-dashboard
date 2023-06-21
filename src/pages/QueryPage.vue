@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="authStore.homepageReady">
-      <div v-if="authStore.isAuthenticated">
+      <div v-if="authStore.isUserAuthed()">
         <Accordion v-if="authStore.canRead" v-model:activeIndex="activeTab" class="accordion-custom">
           <AccordionTab v-focustrap>
             <template #header>
