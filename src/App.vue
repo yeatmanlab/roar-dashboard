@@ -11,8 +11,11 @@
     <meta name="twitter:title" content="ROAR Web Query">
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
   </AppHead>
-  <Navbar v-if="$route.name !== 'SignIn'" />
-  <router-view />
+  <div>
+    <Navbar v-if="$route.name !== 'SignIn'" />
+    <router-view />
+  </div>
+  
   <!-- <AppSpinner v-show="!showPage" /> -->
 </template>
 
@@ -23,7 +26,8 @@ import { useAuthStore } from "@/store/auth";
 
 onMounted(async () => {
   const authStore = useAuthStore();
-  await authStore.initStateFromRedirect();
+  authStore.setUser();
+  // await authStore.initStateFromRedirect();
 });
 
 </script>

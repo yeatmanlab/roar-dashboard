@@ -6,11 +6,6 @@
       </div>
     </router-link>
     <div class="login-container">
-      <!-- <SplitButton v-if="authStore.isAuthenticated" label="Account" icon="pi pi-user" :model="loggedInItems">
-      </SplitButton>
-      <router-link v-else :to="{ name: 'Login' }">
-        <Button label="Log In" icon="pi pi-sign-in" />
-      </router-link> -->
       <i class="pi pi-bars menu-icon" @click="toggleMenu" />
       <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" />
     </div>
@@ -43,10 +38,10 @@ const loggedInItems = [
 const menu = ref();
 const dropdownItems = ref([
   {
-    label: authStore.isAuthenticated ? 'Account' : 'Log in',
-    icon: authStore.isAuthenticated ? 'pi pi-user' : 'pi pi-sign-in',
+    label: authStore.isUserAuthed() ? 'Home' : 'Log in',
+    icon: authStore.isUserAuthed() ? 'pi pi-user' : 'pi pi-sign-in',
     command: () => {
-      authStore.isAuthenticated ? router.push({ name: 'Home' }) : router.push({ name: 'SignIn' })
+      authStore.isUserAuthed() ? router.push({ name: 'Home' }) : router.push({ name: 'SignIn' })
     }
   },
   {
@@ -71,6 +66,13 @@ const dropdownItems = ref([
     }
   },
   {
+    label: 'Participant View',
+    icon: 'pi pi-flag',
+    command: () => {
+      router.push({ name: 'Participant'})
+    }
+  },
+  {
     label: 'Sign Out',
     icon: 'pi pi-sign-out',
     command: () => {
@@ -79,8 +81,12 @@ const dropdownItems = ref([
   }
 ])
 
-console.log('adminRoles', authStore.getAdminRoles())
-// TODO: If user is an admin, add the appropriate dropdown items
+// if(authStore.isUserAuthed()){
+//   const myData = await authStore.getMyData()
+//   console.log('myData', myData)
+//   // TODO: If user is an admin, add the appropriate dropdown items
+// }
+
 
 const toggleMenu = (event) => {
   menu.value.toggle(event);
