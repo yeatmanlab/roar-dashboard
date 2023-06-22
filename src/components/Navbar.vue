@@ -36,7 +36,7 @@ const loggedInItems = [
 ];
 
 const menu = ref();
-const dropdownItems = ref([
+let dropdownItems = ref([
   {
     label: authStore.isUserAuthed() ? 'Home' : 'Log in',
     icon: authStore.isUserAuthed() ? 'pi pi-user' : 'pi pi-sign-in',
@@ -44,7 +44,26 @@ const dropdownItems = ref([
       authStore.isUserAuthed() ? router.push({ name: 'Home' }) : router.push({ name: 'SignIn' })
     }
   },
+  // TODO TEMP ==================
   {
+    label: 'Participant View',
+    icon: 'pi pi-flag',
+    command: () => {
+      router.push({ name: 'Participant'})
+    }
+  },
+  // ENDTEMP ====================
+  {
+    label: 'Sign Out',
+    icon: 'pi pi-sign-out',
+    command: () => {
+      router.push({name: 'SignOut'})
+    }
+  }
+])
+
+if(authStore.adminClaims /* check for proper claim */ ){
+  dropdownItems.splice(1, 0, {
     label: 'Student Upload',
     icon: 'pi pi-users',
     command: () => {
@@ -64,28 +83,8 @@ const dropdownItems = ref([
     command: () => {
       router.push({name: 'UploadScores'})
     }
-  },
-  {
-    label: 'Participant View',
-    icon: 'pi pi-flag',
-    command: () => {
-      router.push({ name: 'Participant'})
-    }
-  },
-  {
-    label: 'Sign Out',
-    icon: 'pi pi-sign-out',
-    command: () => {
-      router.push({name: 'SignOut'})
-    }
-  }
-])
-
-// if(authStore.isUserAuthed()){
-//   const myData = await authStore.getMyData()
-//   console.log('myData', myData)
-//   // TODO: If user is an admin, add the appropriate dropdown items
-// }
+  })
+}
 
 
 const toggleMenu = (event) => {

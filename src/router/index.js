@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { findById } from "@/helpers";
 import { useAuthStore } from "@/store/auth";
 
 const routes = [
@@ -105,6 +104,9 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const store = useAuthStore();
+  // console.log('Route Auth Status [route]:', store.isUserAuthed())
+  // console.log('what is the to:', to.name)
+  // console.log('Route guard evaluation:', (!store.isUserAuthed() && to.name !== "SignIn"))
   if(!store.isUserAuthed() && to.name !== "SignIn"){
     console.log("You're not logged in. Routing to SignIn")
     return { name: "SignIn" }
