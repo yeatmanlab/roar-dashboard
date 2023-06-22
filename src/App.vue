@@ -20,12 +20,13 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onBeforeMount } from 'vue';
 import Navbar from "@/components/Navbar.vue";
 import { useAuthStore } from "@/store/auth";
 
-onMounted(async () => {
+onBeforeMount(async () => {
   const authStore = useAuthStore();
+  await authStore.initFirekit();
   authStore.setUser();
   // await authStore.initStateFromRedirect();
 });
