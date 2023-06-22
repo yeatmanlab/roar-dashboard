@@ -1,12 +1,7 @@
 import { defineStore } from "pinia";
 import { useRouter } from 'vue-router';
-import emailjs from 'emailjs-com';
-import { roarfirekit } from "../firebaseInit";
 import { onAuthStateChanged } from "firebase/auth";
-import firebaseConfig from "@/config/firebase";
-import { RoarFirekit } from "@bdelab/roar-firekit";
 import { initNewFirekit } from "../firebaseInit";
-import { markRaw } from "vue";
 
 export const useAuthStore = () => {
   const router = useRouter();
@@ -15,18 +10,25 @@ export const useAuthStore = () => {
     id: "authStore",
     state: () => {
       return {
-        adminFirebaseUser: null,
-        appFirebaseUser: null,
+        firebaseUser: {
+          adminFirebaseUser: null,
+          appFirebaseUser: null,
+        },
         roles: null,
         homepageReady: true,
-        roarfirekit: initNewFirekit(),
+        roarfirekit: null,
       };
     },
     getters: {
-      uid: (state) => { return state.adminFirebaseUser?.uid },
-      email: (state) => { return state.adminFirebaseUser?.email },
-      isUserAuthedAdmin: (state) => { return Boolean(state.adminFirebaseUser) },
-      isUserAuthedApp: (state) => { return Boolean(state.appFirebaseUser) }
+      uid: (state) => { return state.firebaseUseradminFirebaseUser?.uid },
+      email: (state) => { return state.firebaseUser.adminFirebaseUser?.email },
+      isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
+      isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
+      isFirekitInit: (state) => { return Boolean(state.roarfirekit) },
+      // User Information Getters
+      adminClaims: (state) => { return state.roarfirekit?.adminClaims },
+      currentAssignments: (state) => { return state.roarfirekit?.currentAssignments },
+      userData: (state) => { return state.roarfirekit?.userData }
     },
     actions: {
       isUserAuthed() {
@@ -34,71 +36,70 @@ export const useAuthStore = () => {
         return Boolean(this.isUserAuthedAdmin && this.isUserAuthedApp)
       },
       getAdminRoles() {
-        console.log('adminClaims', this.roarfirekit.adminClaims)
-        return this.roarfirekit.adminClaims;
+        console.log('adminClaims', this.roarfirekit?.adminClaims)
+        return this.roarfirekit?.adminClaims;
       },
       setUser() {
-        onAuthStateChanged(this.roarfirekit.admin.auth, async (user) => {
+        onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if(user){
-            console.log('(Admin) onAuthState Observer: user signed in:', user)
-            this.adminFirebaseUser = user;
+            // console.log('(Admin) onAuthState Observer: user signed in:', user)
+            this.firebaseUser.adminFirebaseUser = user;
           } else {
-            console.log('(Admin) onAuthState Observer: user not logged in or created yet')
-            this.adminFirebaseUser = null
+            // console.log('(Admin) onAuthState Observer: user not logged in or created yet')
+            this.firebaseUser.adminFirebaseUser = null;
           }
         })
-        onAuthStateChanged(this.roarfirekit.app.auth, async (user) => {
+        onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if(user){
-            console.log('(App) onAuthState Observer: user signed in:', user)
-            this.appFirebaseUser = user;
+            // console.log('(App) onAuthState Observer: user signed in:', user)
+            this.firebaseUser.appFirebaseUser = user;
           } else {
-            console.log('(App) onAuthState Observer: user not logged in or created yet')
-            this.appFirebaseUser = null
+            // console.log('(App) onAuthState Observer: user not logged in or created yet')
+            this.firebaseUser.appFirebaseUser = null;
           }
         })
+      },
+      async initFirekit() {
+        this.roarfirekit = await initNewFirekit();
       },
       async registerWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
         return this.roarfirekit.registerWithEmailAndPassword({ email, password }).then(
           () => {
-            this.user = this.roarfirekit.app.user;
-            this.uid = this.roarfirekit.app.user.uid;
+            this.user = this.roarfirekit?.app.user;
+            this.uid = this.roarfirekit?.app.user.uid;
             this.email = email;
             router.replace({ name: 'Home' });
           }
         ).then(() => {
-          // this.isAuthenticated = true;
           this.homepageReady = true;
         });
       },
       async logInWithEmailAndPassword({ email, password }) {
         this.homepageReady = false;
-        return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(
-          () => {
-            this.user = this.roarfirekit.app.user;
-            this.uid = this.roarfirekit.app.user.uid;
-            this.email = email;
-            router.replace({ name: 'Home' });
-          }
-        ).then(() => {
-          // this.isAuthenticated = true;
-          this.homepageReady = true;
-        });
+        if(this.isFirekitInit){
+          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(
+            () => {
+              this.user = this.roarfirekit.app.user;
+              this.uid = this.roarfirekit.app.user.uid;
+              this.email = email;
+              router.replace({ name: 'Home' });
+            }
+          ).then(() => {
+            this.homepageReady = true;
+          });
+        }
+        
       },
       async signInWithGooglePopup() {
         this.homepageReady = false;
-        console.log('made it to auth store')
-        return this.roarfirekit.signInWithPopup('google').then(() => {
-          console.log('call made, setting up other stuff')
-          // this.firebaseUser = roarfirekit.app.user;
-          // this.uid = roarfirekit.app.user.uid;
-          // this.email = roarfirekit.app.user.email;
-          console.log('auth store', this)
-          router.replace({ name: 'Home' });
-        }).then(() => {
-          // this.isAuthenticated = true;
-          this.homepageReady = true;
-        });
+        if(this.isFirekitInit){
+          return this.roarfirekit.signInWithPopup('google').then(() => {
+            router.replace({ name: 'Home' });
+          }).then(() => {
+            this.homepageReady = true;
+          });
+        }
       },
       async signInWithGoogleRedirect() {
         return roarfirekit.initiateGoogleRedirect();
@@ -108,27 +109,21 @@ export const useAuthStore = () => {
           router.replace({ name: 'EnableCookies' });
         }
         this.homepageReady = false;
-        return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
-          if (result) {
-            // this.firebaseUser = roarfirekit.app.user;
-            // this.uid = roarfirekit.app.user.uid;
-            // this.email = roarfirekit.app.user.email;
-            router.replace({ name: 'Home' });
-            // this.isAuthenticated = true;
-            this.homepageReady = true;
-            return;
-          }
-        });
+        if(this.isFirekitInit){
+          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+            if (result) {
+              router.replace({ name: 'Home' });
+              this.homepageReady = true;
+              return;
+            }
+          });
+        }
       },
       async signOut() {
-        if(this.isUserAuthed()){
+        if(this.isUserAuthed() && this.isFirekitInit){
           this.homepageReady = false;
           return this.roarfirekit.signOut().then(() => {
-            // this.uid = null;
-            // this.firebaseUser = null;
-            // this.email = null;
             this.roles = null;
-            // this.isAuthenticated = false;
             this.homepageReady = true;
             // roarfirekit = this.initNewFirekit()
           });
@@ -136,11 +131,6 @@ export const useAuthStore = () => {
           console.log('Cant log out while not logged in')
         }
       },
-      async getMyData() {
-        const userData = await this.roarfirekit.getMyData()
-        console.log('inside getMyData()', userData)
-        return userData
-      }
       // Used for requesting access when user doesn't have access to page
       // TODO: punt- thinking about moving to a ticket system instead of this solution.
       // async requestAccess() {
