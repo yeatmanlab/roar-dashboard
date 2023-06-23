@@ -1,30 +1,24 @@
+import { markRaw } from "vue";
 import { defineStore } from "pinia";
-import {
-  collection,
-  doc,
-  getDocs,
-  query,
-  where,
-} from "@firebase/firestore";
-import { db } from "../firebaseInit.js";
-import { formatDate, getOrgs, getUniquePropsFromUsers, userHasSelectedOrgs } from "../helpers/index.js";
+import { getUniquePropsFromUsers } from "../helpers/index.js";
+import { getRootDocs, getRunTrials, getTasks, getUserRuns, getTasksVariants, queryUsers } from "@bdelab/roar-firekit";
+// import { roarfirekit } from "../firebaseInit";
+import { useAuthStore } from "@/store/auth"
 
 export const useQueryStore = () => {
+  const auth = useAuthStore();
   return defineStore({
     id: "queryStore",
     state: () => {
       return {
         activeTab: 0,
         allVariants: [],
-        classes: [],
-        districts: [],
         endDate: null,
         percentCompleteRuns: 0,
         percentCompleteTrials: 0,
         rootDocs: {},
         runs: [],
         runsReady: false,
-        schools: [],
         selectedClasses: [],
         selectedDistricts: [],
         selectedRootPath: null,
@@ -36,7 +30,6 @@ export const useQueryStore = () => {
         selectedUsers: [],
         selectedVariants: [],
         startDate: null,
-        studies: [],
         tasks: [],
         tasksReady: false,
         trialColumns: [],
@@ -83,115 +76,27 @@ export const useQueryStore = () => {
     },
     actions: {
       async getRootDocs() {
-        const prodDoc = doc(db, 'prod', 'roar-prod');
-        this.rootDocs = {};
-        this.rootDocs[prodDoc.path] = prodDoc;
-
-        const devQuery = query(collection(db, 'dev'));
-        const devSnapshot = await getDocs(devQuery);
-        devSnapshot.forEach((doc) => {
-          this.rootDocs[doc.ref.path] = doc
-        });
-
-        const extQuery = query(collection(db, 'external'));
-        const extSnapshot = await getDocs(extQuery);
-        extSnapshot.forEach((doc) => {
-          this.rootDocs[doc.ref.path] = doc
-        });
-
+        const result = await getRootDocs(auth.roarfirekit);
+        this.rootDocs = result.rootDocs;
         this.selectedRootPath = {
-          label: prodDoc.path.split('/').pop(),
-          value: prodDoc.path,
+          label: result.prodDoc.path.split('/').pop(),
+          value: result.prodDoc.path,
         };
       },
       async getTasks() {
         this.tasksReady = false;
-        const taskQuery = query(collection(this.selectedRootDoc, 'tasks'));
-        const tasksSnapshot = await getDocs(taskQuery);
-        const tasks = [];
-
-        tasksSnapshot.forEach((doc) => {
-          tasks.push({
-            id: doc.id,
-            name: doc.data().name,
-          })
-        })
-
-        this.tasks = tasks;
+        this.tasks = await getTasks(this.selectedRootDoc)
         this.tasksReady = true;
       },
       async getVariants() {
         this.variantsReady = false;
-        const variants = [];
-
-        for (const task of this.tasks) {
-          const variantQuery = query(collection(
-            this.selectedRootDoc, 'tasks', task.id, 'variants',
-          ));
-          const variantsSnapshot = await getDocs(variantQuery);
-
-          const items = []
-          variantsSnapshot.forEach((doc) => {
-            if (doc.id !== 'empty') {
-              items.push({
-                id: doc.id,
-                name: doc.data().name,
-                nameId: `${doc.data().name}-${doc.id}`
-              });
-            }
-          });
-
-          variants.push({
-            task: task.id,
-            items,
-          });
-        }
-
-        this.allVariants = variants;
+        this.allVariants = await getTasksVariants(this.selectedRootDoc);
         this.variantsReady = true;
       },
       async getUsers() {
         this.usersReady = false;
-        const users = [];
-
-        if (this.selectedTaskIds.length > 0) {
-          let userQuery;
-          if (this.selectedVariantIds.length > 0) {
-            userQuery = query(
-              collection(this.selectedRootDoc, 'users'),
-              where('variants', 'array-contains-any', this.selectedVariantIds),
-            );
-          } else {
-            userQuery = query(
-              collection(this.selectedRootDoc, 'users'),
-              where('tasks', 'array-contains-any', this.selectedTaskIds),
-            );
-          }
-
-          const usersSnapshot = await getDocs(userQuery);
-          usersSnapshot.forEach((doc) => {
-            const {
-              districtIds,
-              schoolIds,
-              studyIds,
-              classIds,
-            } = getOrgs(doc.data());
-
-            users.push({
-              roarUid: doc.id,
-              districts: districtIds,
-              schools: schoolIds,
-              studies: studyIds,
-              classes: classIds,
-            })
-          });
-
-          this.users = users;
-          this.usersReady = true;
-        } else {
-          this.users = [];
-          this.usersReady = false;
-        }
+        this.users = markRaw(await queryUsers(this.selectedRootDoc, this.selectedTaskIds, this.selectedVariantIds));
+        this.usersReady = true;
       },
       async getRuns() {
         this.activeTab = 1;
@@ -203,66 +108,14 @@ export const useQueryStore = () => {
         this.runs = [];
 
         for (const user of this.selectedUsers) {
-          const {
-            roarUid,
-            districtIds,
-            schoolIds,
-            classIds,
-            studyIds,
-          } = user
-
-          const filterOrgs = [
-            userHasSelectedOrgs(districtIds, this.selectedDistricts),
-            userHasSelectedOrgs(schoolIds, this.selectedSchools),
-            userHasSelectedOrgs(classIds, this.selectedClasses),
-            userHasSelectedOrgs(studyIds, this.selectedStudies),
-          ];
-          const isUserSelected = filterOrgs.every((element) => element === true);
-
-          if (isUserSelected) {
-            let runsQuery;
-            if (this.selectedVariantIds.length > 0) {
-              runsQuery = query(
-                collection(this.selectedRootDoc, 'users', roarUid, 'runs'),
-                where('variantId', 'in', this.selectedVariantIds),
-              );
-            } else {
-              runsQuery = query(
-                collection(this.selectedRootDoc, 'users', roarUid, 'runs'),
-                where('taskId', 'in', this.selectedTaskIds),
-              );
-            }
-
-            const runsSnapshot = await getDocs(runsQuery);
-            runsSnapshot.forEach((doc) => {
-              const runData = doc.data();
-              runData.timeStarted = formatDate(runData.timeStarted?.toDate()) || null;
-              runData.timeFinished = formatDate(runData.timeFinished?.toDate()) || null;
-              runData.task = { id: runData.taskId };
-              runData.variant = { id: runData.variantId };
-              runData.district = { id: runData.districtId };
-              runData.school = { id: runData.schoolId };
-              runData.class = { id: runData.classId };
-              runData.study = { id: runData.studyId };
-
-              delete runData.taskRef;
-              delete runData.variantRef;
-              delete runData.taskId;
-              delete runData.variantId;
-              delete runData.districtId;
-              delete runData.schoolId;
-              delete runData.classId;
-              delete runData.studyId;
-
-              const thisRun = {
-                roarUid: roarUid,
-                runId: doc.id,
-                ...runData
-              }
-              this.runs.push(thisRun);
-            });
+          const filters = {
+            districts: this.selectedDistricts,
+            schools: this.selectedSchools,
+            classes: this.selectedClasses,
+            studies: this.selectedStudies
           }
-
+          const usersRuns = await getUserRuns(this.selectedRootDoc, user, filters, this.selectedTaskIds, this.selectedVariantIds);
+          this.runs.push(...usersRuns);
           this.percentCompleteRuns = Math.min(100, this.percentCompleteRuns + percentIncrement);
         }
 
@@ -280,30 +133,9 @@ export const useQueryStore = () => {
         const trialColumns = [];
 
         for (const run of this.selectedRuns) {
-          const trialsQuery = query(
-            collection(this.selectedRootDoc, 'users', run.roarUid, 'runs', run.runId, 'trials'),
-          );
-
-          const trialsSnapshot = await getDocs(trialsQuery);
-          trialsSnapshot.forEach((doc) => {
-            const trialData = doc.data();
-            trialData.timeStarted = formatDate(trialData.timeStarted?.toDate()) || null;
-            trialData.timeFinished = formatDate(trialData.timeFinished?.toDate()) || null;
-            trialData.task = { id: trialData.taskId };
-            trialData.variant = { id: trialData.variantId };
-            trialData.district = { id: trialData.districtId };
-            trialData.school = { id: trialData.schoolId };
-            trialData.class = { id: trialData.classId };
-            trialData.study = { id: trialData.studyId };
-
-            const thisTrial = {
-              roarUid: run.roarUid,
-              runId: run.runId,
-              ...trialData
-            }
-            this.trials.push(thisTrial);
-            trialColumns.push(...Object.keys(thisTrial));
-          });
+          const runTrials = await getRunTrials(this.selectedRootDoc, run);
+          this.trials.push(...runTrials);
+          trialColumns.push(runTrials.map((trial) => Object.keys(trial)).flat())
 
           this.trialColumns = [...new Set(trialColumns)].map((key) => ({
             field: key, header: key,
