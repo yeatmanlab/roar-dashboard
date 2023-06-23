@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 import { ViteFaviconsPlugin } from "vite-plugin-favicon";
 import Vue from "@vitejs/plugin-vue";
 import Markdown from "vite-plugin-vue-markdown";
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,11 +13,15 @@ export default defineConfig({
     }),
     Markdown(),
     ViteFaviconsPlugin("./src/assets/roar-icon.png"),
+    basicSsl(),
   ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       vue: 'vue/dist/vue.esm-bundler.js',
     },
+  },
+  optimizeDeps: {
+    include: ['@bdelab/roar-firekit'],
   },
 });

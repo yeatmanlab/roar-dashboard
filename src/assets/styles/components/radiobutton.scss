@@ -1,0 +1,56 @@
+.p-radiobutton {
+  width: 16px;
+  height: 16px;
+}
+.p-radiobutton .p-radiobutton-box {
+  border: 2px solid var(--surface-300);
+  background: var(--surface-a);
+  width: 16px;
+  height: 16px;
+  color: var(--text-color);
+  border-radius: 50%;
+  transition: none;
+}
+.p-radiobutton .p-radiobutton-box:not(.p-disabled):not(.p-highlight):hover {
+  border-color: var(--surface-300);
+}
+.p-radiobutton .p-radiobutton-box:not(.p-disabled).p-focus {
+  outline: 0 none;
+  outline-offset: 0;
+  box-shadow: 0 0 0 1px var(--indigo-500);
+  border-color: var(--primary-color);
+}
+.p-radiobutton .p-radiobutton-box .p-radiobutton-icon {
+  width: 6px;
+  height: 6px;
+  transition-duration: 0.2s;
+  background-color: var(--surface-a);
+}
+.p-radiobutton .p-radiobutton-box.p-highlight {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+}
+.p-radiobutton .p-radiobutton-box.p-highlight:not(.p-disabled):hover {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: var(--surface-a);
+}
+.p-radiobutton.p-invalid > .p-radiobutton-box {
+  border-color: var(--red-100);
+}
+.p-radiobutton:focus {
+  outline: 0 none;
+}
+
+.p-input-filled .p-radiobutton .p-radiobutton-box {
+  background-color: var(--surface-b);
+}
+.p-input-filled .p-radiobutton .p-radiobutton-box:not(.p-disabled):hover {
+  background-color: var(--surface-b);
+}
+.p-input-filled .p-radiobutton .p-radiobutton-box.p-highlight {
+  background: var(--primary-color);
+}
+.p-input-filled .p-radiobutton .p-radiobutton-box.p-highlight:not(.p-disabled):hover {
+  background: var(--primary-color);
+}
