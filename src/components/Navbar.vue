@@ -38,21 +38,12 @@ const loggedInItems = [
 const menu = ref();
 let dropdownItems = ref([
   {
-    label: authStore.isUserAuthed() ? 'Home' : 'Log in',
-    icon: authStore.isUserAuthed() ? 'pi pi-user' : 'pi pi-sign-in',
+    label: authStore.isAuthenticated ? 'Home' : 'Log in',
+    icon: authStore.isAuthenticated ? 'pi pi-user' : 'pi pi-sign-in',
     command: () => {
-      authStore.isUserAuthed() ? router.push({ name: 'Home' }) : router.push({ name: 'SignIn' })
+      authStore.isAuthenticated ? router.push({ name: 'Home' }) : router.push({ name: 'SignIn' })
     }
   },
-  // TODO TEMP ==================
-  {
-    label: 'Participant View',
-    icon: 'pi pi-flag',
-    command: () => {
-      router.push({ name: 'Participant'})
-    }
-  },
-  // ENDTEMP ====================
   {
     label: 'Sign Out',
     icon: 'pi pi-sign-out',
@@ -62,28 +53,30 @@ let dropdownItems = ref([
   }
 ])
 
-if(authStore.adminClaims /* check for proper claim */ ){
-  dropdownItems.splice(1, 0, {
-    label: 'Student Upload',
-    icon: 'pi pi-users',
-    command: () => {
-      router.push({name: 'MassUploader'})
-    }
-  },
-  {
-    label: 'Query',
-    icon: 'pi pi-cloud-download',
-    command: () => {
-      router.push({name: 'Query'})
-    }
-  },
-  {
-    label: 'Score Report',
-    icon: 'pi pi-upload',
-    command: () => {
-      router.push({name: 'UploadScores'})
-    }
-  })
+if(authStore.isAuthenticated){
+  if(authStore.userData.userType === "admin" ){
+    dropdownItems.value.splice(1, 0, {
+      label: 'Student Upload',
+      icon: 'pi pi-users',
+      command: () => {
+        router.push({name: 'MassUploader'})
+      }
+    },
+    {
+      label: 'Query',
+      icon: 'pi pi-cloud-download',
+      command: () => {
+        router.push({name: 'Query'})
+      }
+    },
+    {
+      label: 'Score Report',
+      icon: 'pi pi-upload',
+      command: () => {
+        router.push({name: 'UploadScores'})
+      }
+    })
+  }
 }
 
 

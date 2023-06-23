@@ -1,10 +1,6 @@
 <template>
   <div class="mt-5 flex flex-row flex-wrap justify-content-center card-container">
     <Card class="m-4" style="width: 25em">
-      <!-- <template #header>
-        <img src="https://www.primefaces.org/wp-content/uploads/2020/02/primefacesorg-primevue-2020.png"
-          style="height: 15rem" />
-      </template> -->
       <template #title>
         Query ROAR Assessment Results
       </template>
@@ -21,10 +17,6 @@
       </template>
     </Card>
     <Card class="m-4" style="width: 25em">
-      <!-- <template #header>
-        <img src="https://www.primefaces.org/wp-content/uploads/2020/02/primefacesorg-primevue-2020.png"
-          style="height: 15rem" />
-      </template> -->
       <template #title>
         Generate a Score Report from your own files
       </template>
