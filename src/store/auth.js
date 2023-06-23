@@ -20,10 +20,11 @@ export const useAuthStore = () => {
       };
     },
     getters: {
-      uid: (state) => { return state.firebaseUseradminFirebaseUser?.uid },
+      uid: (state) => { return state.firebaseUser.adminFirebaseUser?.uid },
       email: (state) => { return state.firebaseUser.adminFirebaseUser?.email },
       isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
+      isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser))},
       isFirekitInit: (state) => { return Boolean(state.roarfirekit) },
       // User Information Getters
       adminClaims: (state) => { return state.roarfirekit?.adminClaims },
@@ -31,10 +32,6 @@ export const useAuthStore = () => {
       userData: (state) => { return state.roarfirekit?.userData }
     },
     actions: {
-      isUserAuthed() {
-        console.log('Final Auth Status:', Boolean(this.isUserAuthedAdmin && this.isUserAuthedApp))
-        return Boolean(this.isUserAuthedAdmin && this.isUserAuthedApp)
-      },
       getAdminRoles() {
         console.log('adminClaims', this.roarfirekit?.adminClaims)
         return this.roarfirekit?.adminClaims;
@@ -120,7 +117,7 @@ export const useAuthStore = () => {
         }
       },
       async signOut() {
-        if(this.isUserAuthed() && this.isFirekitInit){
+        if(this.isAuthenticated && this.isFirekitInit){
           this.homepageReady = false;
           return this.roarfirekit.signOut().then(() => {
             this.roles = null;

@@ -1,7 +1,5 @@
 <template>
-  <!-- <RoarGameList :items="testData" :focusIndex="3"/> -->
-  <!-- <GameAccordian :games="testData"/> -->
-  <div v-if="useTabs" class="tabs-container">
+  <div class="tabs-container">
     <ParticipantSidebar :total-games="gamesTotal" :completed-games="gamesCompleted" :student-info="studentInfo" />
     <GameTabs :games="testData" />
   </div>
@@ -9,16 +7,12 @@
 
 <script setup>
 import {ref} from "vue";
-// TODO: delete game list and accordian files 
-import RoarGameList from "../components/RoarGameList.vue";
-import GameAccordian from "../components/GameAccordian.vue";
 import GameTabs from "../components/GameTabs.vue";
 import ParticipantSidebar from "../components/ParticipantSidebar.vue";
 import _filter from 'lodash/filter'
 import _get from 'lodash/get'
 import { useAuthStore } from "@/store/auth";
 const authStore = useAuthStore();
-const useTabs = ref(true);
 const testData = ref([
   {
     id: "id-1",
