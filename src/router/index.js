@@ -5,7 +5,16 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: () => import("../pages/Home.vue"),
+    component: () => {
+      const authStore = useAuthStore();
+      const userType = authStore.userData?.userType;
+      if (userType === "admin") return import("../pages/Participant.vue"); // TODO: THIS NEEDS TO BE CHANGED TO ADMIN VIEW BEFORE RELEASE.
+      else if (userType === "educator") return import("../pages/Home.vue");
+      else if (userType === "student") return import("../pages/Participant.vue");
+      else if (userType === "caregiver") return import("../pages/Home.vue");
+      else if (userType === "guest") return import("../pages/Home.vue");
+      else return import("../pages/Home.vue");
+    },
     meta: { pageTitle: "Dashboard" },
 
   },
@@ -51,7 +60,7 @@ const routes = [
     name: "SignOut",
     async beforeEnter(to, from) {
       const store = useAuthStore();
-      if(store.isUserAuthed()){
+      if(store.isAuthenticated){
         await store.signOut();
       }
       return { name: "SignIn" };
@@ -68,12 +77,6 @@ const routes = [
 
   },
   {
-    path: "/participant",
-    name: "Participant",
-    component: () => import(/* webpackChunkName: "Participant" */ "../pages/Participant.vue"),
-    meta: {pageTitle: "Participant dashboard" }
-  },
-  {
     path: "/enable-cookies",
     name: "EnableCookies",
     component: () =>
@@ -87,8 +90,6 @@ const routes = [
       import("../pages/NotFound.vue"),
     meta: { pageTitle: "Whoops! 404 Page!" },
   },
-  
-
 ];
 
 const router = createRouter({
@@ -104,10 +105,7 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const store = useAuthStore();
-  // console.log('Route Auth Status [route]:', store.isUserAuthed())
-  // console.log('what is the to:', to.name)
-  // console.log('Route guard evaluation:', (!store.isUserAuthed() && to.name !== "SignIn"))
-  if(!store.isUserAuthed() && to.name !== "SignIn"){
+  if(!store.isAuthenticated && to.name !== "SignIn"){
     console.log("You're not logged in. Routing to SignIn")
     return { name: "SignIn" }
   }
