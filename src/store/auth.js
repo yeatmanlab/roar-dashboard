@@ -16,7 +16,6 @@ export const useAuthStore = () => {
           appFirebaseUser: null,
         },
         roles: null,
-        homepageReady: true,
         roarfirekit: null,
         hasUserData: false
       };
@@ -24,7 +23,6 @@ export const useAuthStore = () => {
     getters: {
       uid: (state) => { return state.firebaseUser.adminFirebaseUser?.uid },
       email: (state) => { return state.firebaseUser.adminFirebaseUser?.email },
-      userType: (state) => { return state.roarfirekit.userData.userType },
       isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser))},
@@ -42,11 +40,8 @@ export const useAuthStore = () => {
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if(user){
-            console.log('(Admin) onAuthState Observer: user signed in:', user)
+            // console.log('(Admin) onAuthState Observer: user signed in:', user)
             this.firebaseUser.adminFirebaseUser = user;
-            if(this.roarfirekit, 'userData') {
-              // this.hasUserData = true;
-            }
           } else {
             // console.log('(Admin) onAuthState Observer: user not logged in or created yet')
             this.firebaseUser.adminFirebaseUser = null;
@@ -56,8 +51,6 @@ export const useAuthStore = () => {
           if(user){
             // console.log('(App) onAuthState Observer: user signed in:', user)
             this.firebaseUser.appFirebaseUser = user;
-            if(this.roarfirekit, 'userData') {
-            }
           } else {
             // console.log('(App) onAuthState Observer: user not logged in or created yet')
             this.firebaseUser.appFirebaseUser = null;
@@ -68,7 +61,6 @@ export const useAuthStore = () => {
         this.roarfirekit = await initNewFirekit();
       },
       async registerWithEmailAndPassword({ email, password }) {
-        this.homepageReady = false;
         return this.roarfirekit.registerWithEmailAndPassword({ email, password }).then(
           () => {
             this.user = this.roarfirekit?.app.user;
@@ -77,11 +69,9 @@ export const useAuthStore = () => {
             router.replace({ name: 'Home' });
           }
         ).then(() => {
-          this.homepageReady = true;
         });
       },
       async logInWithEmailAndPassword({ email, password }) {
-        this.homepageReady = false;
         if(this.isFirekitInit){
           return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(
             () => {
@@ -91,13 +81,11 @@ export const useAuthStore = () => {
               router.replace({ name: 'Home' });
             }
           ).then(() => {
-            this.homepageReady = true;
           });
         }
         
       },
       async signInWithGooglePopup() {
-        this.homepageReady = false;
         if(this.isFirekitInit){
           return this.roarfirekit.signInWithPopup('google').then(() => {
 
@@ -108,7 +96,6 @@ export const useAuthStore = () => {
             }
             // router.replace({ name: 'Home' });
           }).then(() => {
-            this.homepageReady = true;
           });
         }
       },
@@ -119,12 +106,10 @@ export const useAuthStore = () => {
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
         }
-        this.homepageReady = false;
         if(this.isFirekitInit){
           return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
             if (result) {
               router.replace({ name: 'Home' });
-              this.homepageReady = true;
               return;
             }
           });
@@ -132,10 +117,8 @@ export const useAuthStore = () => {
       },
       async signOut() {
         if(this.isAuthenticated && this.isFirekitInit){
-          this.homepageReady = false;
           return this.roarfirekit.signOut().then(() => {
             this.roles = null;
-            this.homepageReady = true;
             // roarfirekit = this.initNewFirekit()
           });
         } else {
