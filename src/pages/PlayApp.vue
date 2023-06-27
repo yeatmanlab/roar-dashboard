@@ -8,9 +8,9 @@ import { useAuthStore } from "@/store/auth";
 import { onMounted } from 'vue';
 
 onMounted(async () => {
-const authStore = useAuthStore();
-const appKit = await authStore.roarfirekit.startAssessment();
-// const hda = new HotDogApp(appKit, {});
+  const authStore = useAuthStore();
+  const appKit = await authStore.roarfirekit.startAssessment("4GnqGp4KV8dVNmitVQG8", "roar-repackage");
+  const hda = new HotDogApp(appKit, {});
   hda.run();
 })
 
