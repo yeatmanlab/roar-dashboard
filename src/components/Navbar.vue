@@ -1,5 +1,5 @@
 <template>
-  <div class="navbar-container">
+  <header id="site-header" class="navbar-container">
     <router-link :to="{ name: 'Home' }">
       <div class="navbar-logo">
         <img src="../assets/stanford-roar.svg" height="50" alt="The ROAR Logo" />
@@ -9,7 +9,7 @@
       <i class="pi pi-bars menu-icon" @click="toggleMenu" />
       <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" />
     </div>
-  </div>
+  </header>
 </template>
 
 <script setup>
