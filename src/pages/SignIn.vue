@@ -45,7 +45,7 @@ const spinner = ref(false)
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { roarfirekit, hasUserData } = storeToRefs(authStore)
+const { hasUserData } = storeToRefs(authStore)
 
 const authWithGoogle = () => {
   if(isMobileBrowser()) {
@@ -58,9 +58,6 @@ const authWithGoogle = () => {
 const authWithClever = () => {
   window.location = cleverSSOUrl()
 }
-const computedData = computed(() => {
-  return _get(roarfirekit, 'userData', null)
-})
 
 watch(hasUserData, (newValue, oldValue) => {
   console.log('userHasData changed, checking if it is true')
