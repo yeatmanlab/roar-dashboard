@@ -6,13 +6,16 @@
 </template>
 
 <script setup>
-import {ref} from "vue";
+import { ref } from "vue";
 import GameTabs from "../components/GameTabs.vue";
 import ParticipantSidebar from "../components/ParticipantSidebar.vue";
 import _filter from 'lodash/filter'
 import _get from 'lodash/get'
 import { useAuthStore } from "@/store/auth";
+import { storeToRefs } from 'pinia';
 const authStore = useAuthStore();
+
+const { roarfirekit } = storeToRefs(authStore);
 const testData = ref([
   {
     id: "id-1",
@@ -83,8 +86,8 @@ const testData = ref([
 ]);
 const studentInfo = ref({
   group: 'Woodside',
-  age: 8,
-  grade: 4,
+  age: "7",
+  grade: _get(roarfirekit, 'userData.studentData.grade'),
 })
 const numCompleted = _filter(testData.value, game => {
   return _get(game, 'completed')
