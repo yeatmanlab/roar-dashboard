@@ -45,7 +45,7 @@ const spinner = ref(false)
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { hasUserData } = storeToRefs(authStore)
+const { hasUserData } = storeToRefs(authStore);
 
 const authWithGoogle = () => {
   if(isMobileBrowser()) {
