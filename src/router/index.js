@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/store/auth";
+import _get from "lodash/get";
 
 const routes = [
   {
@@ -7,7 +8,11 @@ const routes = [
     name: "Home",
     component: () => {
       const authStore = useAuthStore();
-      const userType = authStore.userData?.userType;
+      console.log('isAuthed', authStore.isAuthenticated)
+      console.log('authStore', authStore.roarfirekit)
+      console.log('is firekit init', authStore.isFirekitInit)
+      const userType = _get(authStore, 'roarfirekit.userData.userType');
+      console.log('userType from router', userType);
       if (userType === "admin") return import("../pages/Participant.vue"); // TODO: THIS NEEDS TO BE CHANGED TO ADMIN VIEW BEFORE RELEASE.
       else if (userType === "educator") return import("../pages/Home.vue");
       else if (userType === "student") return import("../pages/Participant.vue");

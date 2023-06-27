@@ -24,29 +24,51 @@
       <footer>
         <!-- TODO: figure out a link for this -->
         <a href="#trouble">Having trouble?</a>
+        <AppSpinner v-if="spinner" />
       </footer>
     </section>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import SignIn from "@/components/auth/SignIn.vue";
 import { cleverSSOUrl } from "@/helpers/auth.js"
 import { useAuthStore } from "@/store/auth";
+import { useRouter } from 'vue-router';
 import { isMobileBrowser } from "@/helpers";
+import AppSpinner from '../components/AppSpinner.vue';
+import _get from 'lodash/get'
+import { storeToRefs } from 'pinia';
 
+const spinner = ref(false)
 const authStore = useAuthStore();
+const router = useRouter();
+
+const { roarfirekit, hasUserData } = storeToRefs(authStore)
+
 const authWithGoogle = () => {
   if(isMobileBrowser()) {
     authStore.signInWithGoogleRedirect();
   } else {
-    authStore.signInWithGooglePopup();
+    authStore.signInWithGooglePopup();    
+    spinner.value = true;
   }
 };
 const authWithClever = () => {
   window.location = cleverSSOUrl()
 }
+const computedData = computed(() => {
+  return _get(roarfirekit, 'userData', null)
+})
+
+watch(hasUserData, (newValue, oldValue) => {
+  console.log('userHasData changed, checking if it is true')
+  if(newValue === true){
+    console.log('it was true, routing')
+    router.push({ name: "Home" })
+  }
+}) 
 
 onMounted(() => {
   document.body.classList.add('page-signin')

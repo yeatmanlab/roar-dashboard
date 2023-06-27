@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { useRouter } from 'vue-router';
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
+import _get from "lodash/get";
 
 export const useAuthStore = () => {
   const router = useRouter();
@@ -17,11 +18,13 @@ export const useAuthStore = () => {
         roles: null,
         homepageReady: true,
         roarfirekit: null,
+        hasUserData: false
       };
     },
     getters: {
       uid: (state) => { return state.firebaseUser.adminFirebaseUser?.uid },
       email: (state) => { return state.firebaseUser.adminFirebaseUser?.email },
+      userType: (state) => { return state.roarfirekit.userData.userType },
       isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser))},
@@ -39,8 +42,11 @@ export const useAuthStore = () => {
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if(user){
-            // console.log('(Admin) onAuthState Observer: user signed in:', user)
+            console.log('(Admin) onAuthState Observer: user signed in:', user)
             this.firebaseUser.adminFirebaseUser = user;
+            if(this.roarfirekit, 'userData') {
+              // this.hasUserData = true;
+            }
           } else {
             // console.log('(Admin) onAuthState Observer: user not logged in or created yet')
             this.firebaseUser.adminFirebaseUser = null;
@@ -50,6 +56,8 @@ export const useAuthStore = () => {
           if(user){
             // console.log('(App) onAuthState Observer: user signed in:', user)
             this.firebaseUser.appFirebaseUser = user;
+            if(this.roarfirekit, 'userData') {
+            }
           } else {
             // console.log('(App) onAuthState Observer: user not logged in or created yet')
             this.firebaseUser.appFirebaseUser = null;
@@ -92,7 +100,13 @@ export const useAuthStore = () => {
         this.homepageReady = false;
         if(this.isFirekitInit){
           return this.roarfirekit.signInWithPopup('google').then(() => {
-            router.replace({ name: 'Home' });
+
+            console.log('wait to return')
+            console.log('user', this.roarfirekit.userData)
+            if(this.roarfirekit.userData){
+              this.hasUserData = true
+            }
+            // router.replace({ name: 'Home' });
           }).then(() => {
             this.homepageReady = true;
           });
