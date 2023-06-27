@@ -1,4 +1,5 @@
 <template>
+  <ParticipantList></ParticipantList>
   <div class="mt-5 flex flex-row flex-wrap justify-content-center card-container">
     <Card class="m-4" style="width: 25em">
       <!-- <template #header>
@@ -43,6 +44,8 @@
 </template>
 
 <script setup>
+import ParticipantList from '@/components/admin/ParticipantList.vue';
+
 const onAdminUpload = async (event) => {
   toast.add({ severity: 'info', summary: 'Success', detail: 'Identifier File Uploaded', life: 3000 });
   uploadedFile.value = event.files[0];
