@@ -1,6 +1,7 @@
 @import "root/variables";
 @import "root/typography";
 @import "root/base";
+@import "root/main";
 
 // Defaults
 @import "components/defaults";
@@ -45,7 +46,6 @@
 @import "components/tabview";
 @import "components/treeselect";
 @import "components/togglebutton";
-
 
 // Custom components
 @import "components/tabview-games";
