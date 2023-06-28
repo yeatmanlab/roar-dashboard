@@ -116,10 +116,13 @@ export const useAuthStore = () => {
         }
       },
       async signOut() {
+        console.log('sign out process')
         if(this.isAuthenticated && this.isFirekitInit){
+          console.log('calling roarfirekit signout')
           return this.roarfirekit.signOut().then(() => {
             this.roles = null;
-            // roarfirekit = this.initNewFirekit()
+            console.log('left roarfirekit')
+            // this.roarfirekit = initNewFirekit()
           });
         } else {
           console.log('Cant log out while not logged in')
