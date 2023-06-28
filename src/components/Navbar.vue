@@ -17,10 +17,11 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from "@/store/auth";
+import _get from 'lodash/get'
 
 const router = useRouter()
 const authStore = useAuthStore();
-const { email } = storeToRefs(authStore);
+const { email, roarfirekit } = storeToRefs(authStore);
 
 const loggedInItems = [
   {
@@ -53,30 +54,28 @@ let dropdownItems = ref([
   }
 ])
 
-if(authStore.isAuthenticated){
-  if(authStore.userData.userType === "admin" ){
-    dropdownItems.value.splice(1, 0, {
-      label: 'Student Upload',
-      icon: 'pi pi-users',
-      command: () => {
-        router.push({name: 'MassUploader'})
-      }
-    },
-    {
-      label: 'Query',
-      icon: 'pi pi-cloud-download',
-      command: () => {
-        router.push({name: 'Query'})
-      }
-    },
-    {
-      label: 'Score Report',
-      icon: 'pi pi-upload',
-      command: () => {
-        router.push({name: 'UploadScores'})
-      }
-    })
-  }
+if(authStore.isAuthenticated && _get(authStore, 'roarfirekit.userData.userType') === "admin"){
+  dropdownItems.value.splice(1, 0, {
+    label: 'Student Upload',
+    icon: 'pi pi-users',
+    command: () => {
+      router.push({name: 'MassUploader'})
+    }
+  },
+  {
+    label: 'Query',
+    icon: 'pi pi-cloud-download',
+    command: () => {
+      router.push({name: 'Query'})
+    }
+  },
+  {
+    label: 'Score Report',
+    icon: 'pi pi-upload',
+    command: () => {
+      router.push({name: 'UploadScores'})
+    }
+  })
 }
 
 
