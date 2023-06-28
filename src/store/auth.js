@@ -121,7 +121,7 @@ export const useAuthStore = () => {
           console.log('calling roarfirekit signout')
           return this.roarfirekit.signOut().then(() => {
             this.roles = null;
-            console.log('left roarfirekit')
+            this.hasUserData = false;
             // this.roarfirekit = initNewFirekit()
           });
         } else {
