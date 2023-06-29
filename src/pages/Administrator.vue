@@ -4,7 +4,7 @@
       :to="cardData.buttonLink"
       v-for="(cardData, index) in cardsData"
       :key="index" class="card-wrapper">
-      <Card style="width: 25em">
+      <Card style="width: 25em" class="card-title">
         <template #title>
           <div class="card-title">
             {{ cardData.title }}
@@ -21,7 +21,6 @@
       </Card>
     </router-link>
   </div>
-  
 </template>
 
 <script setup>
@@ -41,10 +40,10 @@
       buttonLink: "/query-admin",
     },
     {
-      title: "Start an administration",
+      title: "Create an administration",
       content: "Text here about the actions this provides",
       buttonText: "Go",
-      buttonLink: "/start-admin",
+      buttonLink: "/create-admin",
     }
   ]);
 </script>
