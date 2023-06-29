@@ -1,11 +1,12 @@
 <template>
   <div class="card" id="rectangle">
-    <h3 id="heading">Create a new administration</h3>
-    <p id="content">Use this form to create a new administration.</p>
+    <span id="heading">Create a new administration</span>
+    <p id="section-heading">Use this form to create a new administration.</p>
     <hr>
     <div class="formgrid grid">
-        <div>
-            <h4>Details</h4>
+        <div class="col-12">
+          <div style="width: fit-content;">
+            <p id="section-heading">Details</p>
             <div class="grid">
               <div class="col-4">
                 <input
@@ -17,19 +18,20 @@
               </div>
               
               <div class="col-4">
-                <Calendar v-model="startDate" placeholder="Start date" showIcon/>
+                <Calendar v-model="startDate" placeholder="Start date"/>
               </div>
               
               <div class="col-4">
-                <Calendar v-model="endDate" placeholder="End date" showIcon />
+                <Calendar v-model="endDate" placeholder="End date" />
               </div>
             </div>
-            
+          </div>
         </div>
-        <div class="field col-12">
-            <h4>Participants</h4>
+        <div id="section" class="col-12">
+          <div style="width: fit-content;">
+            <p id="section-heading">Participants</p>
             
-            <p>Select participants by varying levels of granularity.</p>
+            <p id="section-content" style="margin-bottom: 20px">Select participants by varying levels of granularity.</p>
             
             <div class="grid">
               <div class="col-4">
@@ -63,7 +65,7 @@
               </div>              
             </div>
             
-            <p>Or select specific participants by their ROAR ID</p>
+            <p id="section-content">Or select specific participants by their ROAR ID</p>
             <Dropdown
               v-model="selectedParticipant"
               :options="participants"
@@ -71,33 +73,35 @@
               placeholder="Select participants"
               class="w-full md:w-14rem"
             />
-            
+          </div>
         </div>
     </div>
 
-    <h4>Assessments</h4>
-    <PickList
-      v-model="products"
-      :showSourceControls="false"
-      :showTargetControls="false"
-      listStyle="height:342px"
-      dataKey="id"
-      :stripedRows="true">
+    <div id="section" class="col-12">
+      <p id="section-heading">Assessments</p>
+      <PickList
+        v-model="products"
+        :showSourceControls="false"
+        :showTargetControls="false"
+        listStyle="height:342px"
+        dataKey="id"
+        :stripedRows="true">
           <template #sourceheader> Available </template>
           <template #targetheader> Selected </template>
           <template #item="slotProps">
               <div class="flex flex-wrap p-2 align-items-center gap-3">
                   <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.image" :alt="slotProps.item.name" />
                   <div class="flex-1 flex flex-column gap-2">
-                      <span class="font-bold">{{ slotProps.item.name }}</span>
+                      <span class="font-bold" style="margin-left: 10px">{{ slotProps.item.name }}</span>
                       <div class="flex align-items-center gap-2">
-                          <i class="pi pi-tag text-sm"></i>
-                          <span>{{ slotProps.item.variant }}</span>
+                          <i class="pi pi-tag text-sm" style="margin-left: 10px"></i>
+                          <span style="margin-left: 10px">{{ slotProps.item.variant }}</span>
                       </div>
                   </div>
               </div>
           </template>
       </PickList>
+    </div>
   </div>
 </template>
 
@@ -176,34 +180,90 @@
 
 <style scoped>
 #rectangle{
-  width: 100%;
-  height: 100%;
-  background: #E5E5E5;
+  background: #FCFCFC;
   border-radius: 5px;
+  border-style: solid;
   border-width: 1px;
+  border-color: #E5E5E5;
+  margin: 68px 28px;
+  padding-top: 28px;
+  padding-left: 30px;
+  text-align: left;
 }
 
-.card {
-  float: left;
-  width: 300px;
-  border: 3px solid #73AD21;
-  padding: 10px;
-  text-align: left;
+hr {
+  margin-top: 32px;
+  margin-left: -30px;
 }
 
 #heading {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
+  color: #000000;
   font-size: 26px;
   line-height: 32.68px;
 }
 
-#content {
+#section-heading {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
   font-size: 18px;
   line-height: 25.09px;
   color: #525252;
+}
+
+#administration-name {
+  height: 100%;
+  border-radius: 5px;
+  border-width: 1px;
+  border-color: #E5E5E5;
+}
+
+#section {
+  margin-top: 22px;
+}
+
+#section-content {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 19.52px;
+  color: #525252;
+  margin: 10px 0px;
+}
+
+.p-dropdown	{
+  width: 800px;
+  /* background: red;
+  border-color: blue;
+  border-width: 30px; */
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 400;
+  font-size: 50px;
+  line-height: 20.11px;
+  color: green;
+}
+
+.p-dropdown-label > .p-inputtext, .p-dropdown-trigger, .p-dropdown-panel	{
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20.11px;
+  color: green;
+}
+
+::placeholder {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 20.11px;
+  color: #C4C4C4;
+}
+
+.p-picklist-buttons	 {
+  /* display: none; */
+  color: green;
+  width: 100px;
 }
 
 </style>
