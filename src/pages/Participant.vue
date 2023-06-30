@@ -13,6 +13,9 @@ import _filter from 'lodash/filter'
 import _get from 'lodash/get'
 import { useAuthStore } from "@/store/auth";
 const authStore = useAuthStore();
+const assignedAssignments = ref(_get(authStore, 'currentAssignments.assigned'))
+const completedAssignments = ref(_get(authStore, 'currentAssignments.completed'))
+const startedAssignments = ref(_get(authStore, 'currentAssignments.started'))
 const testData = ref([
   {
     id: "id-1",
@@ -82,7 +85,7 @@ const testData = ref([
   },
 ]);
 const studentInfo = ref({
-  group: 'Woodside',
+  group: 'TestGroup',
   age: 8,
   grade: 4,
 })

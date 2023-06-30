@@ -9,10 +9,12 @@ import { onMounted } from 'vue';
 
 onMounted(async () => {
   console.log('Hello PlayApp')
-  // const authStore = useAuthStore();
-  // const appKit = await authStore.roarfirekit.startAssessment("4GnqGp4KV8dVNmitVQG8", "roar-repackage");
-  // const hda = new HotDogApp(appKit, { registered: true });
-  // hda.run();
+  const authStore = useAuthStore();
+  const appKit = await authStore.roarfirekit.startAssessment("4GnqGp4KV8dVNmitVQG8", "roar-repackage");
+  console.log('reached endpoint', appKit)
+  const hda = new HotDogApp(appKit, { registered: true }, 'jspsych-target');
+  console.log('hda:', hda)
+  hda.run();
 })
 
 </script>
