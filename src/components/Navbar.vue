@@ -17,6 +17,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from "@/store/auth";
+import _get from 'lodash/get'
 
 const router = useRouter()
 const authStore = useAuthStore();
@@ -54,7 +55,7 @@ let dropdownItems = ref([
 ])
 
 if(authStore.isAuthenticated){
-  if(authStore.userData.userType === "admin" ){
+  if(_get(authStore, 'userData.userType') === "admin" ){
     dropdownItems.value.splice(1, 0, {
       label: 'Student Upload',
       icon: 'pi pi-users',
