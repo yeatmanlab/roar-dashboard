@@ -24,6 +24,12 @@ const routes = [
 
   },
   {
+    path: "/game/:gameId",
+    name: "PlayApp",
+    component: () => import("../pages/PlayApp.vue"),
+    meta: { pageTitle: "PlayApp" }
+  },
+  {
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),

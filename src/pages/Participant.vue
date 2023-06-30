@@ -16,6 +16,9 @@ import { storeToRefs } from 'pinia';
 const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
+const assignedAssignments = ref(_get(authStore, 'currentAssignments.assigned'))
+const completedAssignments = ref(_get(authStore, 'currentAssignments.completed'))
+const startedAssignments = ref(_get(authStore, 'currentAssignments.started'))
 const testData = ref([
   {
     id: "id-1",
