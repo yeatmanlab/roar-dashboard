@@ -181,55 +181,55 @@
 <style scoped>
 #rectangle{
   background: #FCFCFC;
-  border-radius: 5px;
+  border-radius: 0.3125rem;
   border-style: solid;
-  border-width: 1px;
+  border-width: 0.0625rem;
   border-color: #E5E5E5;
-  margin: 68px 28px;
-  padding-top: 28px;
-  padding-left: 30px;
+  margin: 4.25rem 1.75rem;
+  padding-top: 1.75rem;
+  padding-left: 1.875rem;
   text-align: left;
 }
 
 hr {
-  margin-top: 32px;
-  margin-left: -30px;
+  margin-top: 2rem;
+  margin-left: -1.875rem;
 }
 
 #heading {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
   color: #000000;
-  font-size: 26px;
-  line-height: 32.68px;
+  font-size: 1.625rem;
+  line-height: 2.0425rem;
 }
 
 #section-heading {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
-  font-size: 18px;
-  line-height: 25.09px;
+  font-size: 1.125rem;
+  line-height: 1.5681rem;
   color: #525252;
 }
 
 #administration-name {
   height: 100%;
-  border-radius: 5px;
-  border-width: 1px;
-  border-color: #E5E5E5;
+  /* border-radius: 0.3125rem;
+  border-width: 0.0625rem;
+  border-color: #E5E5E5; */
 }
 
 #section {
-  margin-top: 22px;
+  margin-top: 1.375rem;
 }
 
 #section-content {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
-  font-size: 14px;
-  line-height: 19.52px;
+  font-size: 0.875rem;
+  line-height: 1.22rem;
   color: #525252;
-  margin: 10px 0px;
+  margin: 0.625rem 0rem;
 }
 
 .p-dropdown	{
@@ -242,31 +242,31 @@ hr {
   border-width: 30px; */
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
-  font-size: 50px;
-  line-height: 20.11px;
+  font-size: 3.125rem;
+  line-height: 1.2569rem;
   color: green;
 }
 
 .p-dropdown-label > .p-inputtext, .p-dropdown-trigger, .p-dropdown-panel	{
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
-  font-size: 16px;
-  line-height: 20.11px;
+  font-size: 0.0625rem;
+  line-height: 1.2569rem;
   color: green;
 }
 
 ::placeholder {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
-  font-size: 16px;
-  line-height: 20.11px;
+  font-size: 0.0625rem;
+  line-height: 1.2569rem;
   color: #C4C4C4;
 }
 
 .p-picklist-buttons	 {
   display: none !important;
   color: green;
-  width: 100px;
+  width: 6.25rem;
 }
 
 </style>
