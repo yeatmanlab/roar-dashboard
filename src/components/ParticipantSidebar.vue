@@ -9,7 +9,6 @@
     </div>
     <ul class="sidebar-info">
       <li class="sidebar-title"><strong>Student Info</strong></li>
-      <li>Group: <span class="sidebar-info-item">{{ studentInfo.group }}</span></li>
       <li>Age: <span class="sidebar-info-item">{{ studentInfo.age }}</span></li>
       <li>Grade: <span class="sidebar-info-item">{{ studentInfo.grade }}</span></li>
     </ul>
