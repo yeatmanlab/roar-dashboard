@@ -181,7 +181,7 @@
 
 </script> 
 
-<style scoped>
+<style lang="scss">
 #rectangle{
   background: #FCFCFC;
   border-radius: 0.3125rem;
@@ -193,86 +193,84 @@
   padding-left: 1.875rem;
   text-align: left;
   overflow: hidden;
-}
 
-hr {
-  margin-top: 2rem;
-  margin-left: -1.875rem;
-}
+  hr {
+    margin-top: 2rem;
+    margin-left: -1.875rem;
+  }
+  
+  #heading {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    color: #000000;
+    font-size: 1.625rem;
+    line-height: 2.0425rem;
+  }
+  
+  #section-heading {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    font-size: 1.125rem;
+    line-height: 1.5681rem;
+    color: #525252;
+  }
+  
+  #administration-name {
+    height: 100%;
+    border-radius: 0.3125rem;
+    border-width: 0.0625rem;
+    border-color: #E5E5E5;
+  }
+  
+  #section {
+    margin-top: 1.375rem;
+  }
+  
+  #section-content {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.22rem;
+    color: #525252;
+    margin: 0.625rem 0rem;
+  }
+  
+  .p-dropdown	{
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    font-size: 3.125rem;
+    line-height: 1.2569rem;
+    color: green;
+  }
+  
+  .p-dropdown-label > .p-inputtext, .p-dropdown-trigger, .p-dropdown-panel {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    font-size: 0.0625rem;
+    line-height: 1.2569rem;
+    color: green;
+  }
+  
+  ::placeholder {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    font-size: 0.0625rem;
+    line-height: 1.2569rem;
+    color: #C4C4C4;
+  }
+  
+  .p-button	{
+    width: 11.5625rem;
+    height: 2.25rem;
+    border-radius: 3.9375rem;
+    margin: 1.5rem 0rem;
+    margin-right: 1.375rem;
+    float: right;
+  }
+  
+  .p-picklist .p-picklist-buttons .p-button {
+    display: none;
+  }
 
-#heading {
-  font-family: 'Source Sans Pro', sans-serif;
-  font-weight: 400;
-  color: #000000;
-  font-size: 1.625rem;
-  line-height: 2.0425rem;
 }
-
-#section-heading {
-  font-family: 'Source Sans Pro', sans-serif;
-  font-weight: 400;
-  font-size: 1.125rem;
-  line-height: 1.5681rem;
-  color: #525252;
-}
-
-#administration-name {
-  height: 100%;
-  border-radius: 0.3125rem;
-  border-width: 0.0625rem;
-  border-color: #E5E5E5;
-}
-
-#section {
-  margin-top: 1.375rem;
-}
-
-#section-content {
-  font-family: 'Source Sans Pro', sans-serif;
-  font-weight: 400;
-  font-size: 0.875rem;
-  line-height: 1.22rem;
-  color: #525252;
-  margin: 0.625rem 0rem;
-}
-
-.p-dropdown	{
-  font-family: 'Source Sans Pro', sans-serif;
-  font-weight: 400;
-  font-size: 3.125rem;
-  line-height: 1.2569rem;
-  color: green;
-}
-
-.p-dropdown-label > .p-inputtext, .p-dropdown-trigger, .p-dropdown-panel {
-  font-family: 'Source Sans Pro', sans-serif;
-  font-weight: 400;
-  font-size: 0.0625rem;
-  line-height: 1.2569rem;
-  color: green;
-}
-
-::placeholder {
-  font-family: 'Source Sans Pro', sans-serif;
-  font-weight: 400;
-  font-size: 0.0625rem;
-  line-height: 1.2569rem;
-  color: #C4C4C4;
-}
-
-.p-picklist-buttons {
-  display: none !important;
-  color: green;
-  width: 6.25rem;
-}
-
-.p-button	{
-  width: 11.5625rem;
-  height: 2.25rem;
-  border-radius: 3.9375rem;
-  margin: 1.5rem 0rem;
-  margin-right: 1.375rem;
-  float: right;
-}
-
 </style>
