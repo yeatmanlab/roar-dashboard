@@ -1,11 +1,11 @@
 import { defineStore } from "pinia";
-import { useRouter } from 'vue-router';
+// import { useRouter } from 'vue-router';
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
 import _get from "lodash/get";
 
 export const useAuthStore = () => {
-  const router = useRouter();
+  // const router = useRouter();
   return defineStore({
     // id is required so that Pinia can connect the store to the devtools
     id: "authStore",
@@ -66,7 +66,7 @@ export const useAuthStore = () => {
             this.user = this.roarfirekit?.app.user;
             this.uid = this.roarfirekit?.app.user.uid;
             this.email = email;
-            router.replace({ name: 'Home' });
+            // router.replace({ name: 'Home' });
           }
         ).then(() => {
         });
@@ -78,7 +78,7 @@ export const useAuthStore = () => {
               this.user = this.roarfirekit.app.user;
               this.uid = this.roarfirekit.app.user.uid;
               this.email = email;
-              router.replace({ name: 'Home' });
+              // router.replace({ name: 'Home' });
             }
           ).then(() => {
           });
@@ -104,12 +104,12 @@ export const useAuthStore = () => {
       },
       async initStateFromRedirect() {
         const enableCookiesCallback = () => {
-          router.replace({ name: 'EnableCookies' });
+          // router.replace({ name: 'EnableCookies' });
         }
         if(this.isFirekitInit){
           return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
             if (result) {
-              router.replace({ name: 'Home' });
+              // router.replace({ name: 'Home' });
               return;
             }
           });

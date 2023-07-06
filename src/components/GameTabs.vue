@@ -1,22 +1,22 @@
 <template>
-  <div id="games">
+  <!-- <div id="games">
     <TabView v-model:activeIndex="currentGameIndex">
-      <TabPanel v-for="game in games" :key="game.id" :disabled="!game.completed && (currentGameId !== game.id)">
-        <template #header>
+      <TabPanel v-for="game in games" :key="game.taskId" :disabled="!game.completed && (currentGameId !== game.taskId)">
+        <template #header>-->
           <!--Complete Game-->
-          <i v-if="game.completed" class="pi pi-check-circle mr-2" data-game-status="complete" />
+          <!-- <i v-if="game.completed" class="pi pi-check-circle mr-2" data-game-status="complete" /> -->
           <!--Current Game-->
-          <i v-else-if="game.id == currentGameId" class="pi pi-circle mr-2" data-game-status="current" />
-          <!--Locked Game-->
+          <!-- <i v-else-if="game.taskId == currentGameId" class="pi pi-circle mr-2" data-game-status="current" /> -->
+          <!--Locked Game--><!--
           <i v-else class="pi pi-lock mr-2" data-game-status="incomplete" />
-          <span class="tabview-nav-link-label" :data-game-status="`${game.completed ? 'complete' : 'incomplete'}`">{{ game.title }}</span>
+          <span class="tabview-nav-link-label" :data-game-status="`${game.completed ? 'complete' : 'incomplete'}`">{{ game.name }}</span>
         </template>
         <article class="roar-tabview-game">
             <div class="roar-game-content">
-              <h2 class="roar-game-title" v-tooltip="'test'">{{ game.title }}</h2>
+              <h2 class="roar-game-title" v-tooltip="'test'">{{ game.name }}</h2>
               <div class="roar-game-description"><p>{{game.description}}</p></div>
               <div class="roar-game-meta">
-                <Tag v-for="(items,index) in game.metadata" :value="index + ': ' + items"></Tag>
+                <Tag v-for="(items,index) in game.meta" :value="index + ': ' + items"></Tag>
               </div>
               <div class="roar-game-footer">
                 <i class="pi"><svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -27,12 +27,15 @@
               </div>
             </div>
             <div class="roar-game-image">
-              <img :src="game.imgSrc"/>
+              <img src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
             </div>
-            <router-link :to="{ path: 'game/' + game.id }"></router-link>
+            <router-link :to="{ path: 'game/' + game.taskId }"></router-link>
         </article>
       </TabPanel>
     </TabView>
+  </div> -->
+  <div v-for="game in games">
+    {{ game }}
   </div>
 </template>
 <script setup>
@@ -43,9 +46,11 @@ const props = defineProps({
 })
 const currentGameId = ref('')
 const currentGameIndex = ref(0)
+console.log('games', props.games)
+
 for(let i = 0; i < props.games.length; i+=1) {
   if(!_get(props.games[i], 'completed')){
-    currentGameId.value = _get(props.games[i], 'id');
+    currentGameId.value = _get(props.games[i], 'taskId');
     currentGameIndex.value = i;
     break;
   }
