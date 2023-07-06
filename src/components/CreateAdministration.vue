@@ -31,7 +31,7 @@
           <div style="width: fit-content;">
             <p id="section-heading">Participants</p>
             
-            <p id="section-content" style="margin-bottom: 20px">Select participants by varying levels of granularity.</p>
+            <p id="section-content" style="margin-bottom: 1.25rem">Select participants by varying levels of granularity.</p>
             
             <div class="grid">
               <div class="col-4">
@@ -83,7 +83,7 @@
         v-model="products"
         :showSourceControls="false"
         :showTargetControls="false"
-        listStyle="height:342px"
+        listStyle="height: 21.375rem"
         dataKey="id"
         :stripedRows="true">
           <template #sourceheader> Available </template>
@@ -92,16 +92,19 @@
               <div class="flex flex-wrap p-2 align-items-center gap-3">
                   <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.image" :alt="slotProps.item.name" />
                   <div class="flex-1 flex flex-column gap-2">
-                      <span class="font-bold" style="margin-left: 10px">{{ slotProps.item.name }}</span>
+                      <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.name }}</span>
                       <div class="flex align-items-center gap-2">
-                          <i class="pi pi-tag text-sm" style="margin-left: 10px"></i>
-                          <span style="margin-left: 10px">{{ slotProps.item.variant }}</span>
+                          <i class="pi pi-tag text-sm" style="margin-left: 0.625rem"></i>
+                          <span style="margin-left: 0.625rem">{{ slotProps.item.variant }}</span>
                       </div>
                   </div>
               </div>
           </template>
       </PickList>
+      
     </div>
+    <hr>
+    <Button label="Create" rounded />
   </div>
 </template>
 
@@ -129,7 +132,7 @@
       { name: 'Class 2' },
       { name: 'Class 3' }
   ]);
-  // TODO: check if we should change the text to participant(s) from participants
+  
   const selectedParticipant = ref();
   const participants = ref([
       { name: 'Participant 1' },
@@ -189,6 +192,7 @@
   padding-top: 1.75rem;
   padding-left: 1.875rem;
   text-align: left;
+  overflow: hidden;
 }
 
 hr {
@@ -214,9 +218,9 @@ hr {
 
 #administration-name {
   height: 100%;
-  /* border-radius: 0.3125rem;
+  border-radius: 0.3125rem;
   border-width: 0.0625rem;
-  border-color: #E5E5E5; */
+  border-color: #E5E5E5;
 }
 
 #section {
@@ -233,13 +237,6 @@ hr {
 }
 
 .p-dropdown	{
-  /* width: 800px !important; */
-  /* height: 300px; 
-  TODO: convert pixel values to rem values or percentage values
-  */
-  /* background: red;
-  border-color: blue;
-  border-width: 30px; */
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
   font-size: 3.125rem;
@@ -247,7 +244,7 @@ hr {
   color: green;
 }
 
-.p-dropdown-label > .p-inputtext, .p-dropdown-trigger, .p-dropdown-panel	{
+.p-dropdown-label > .p-inputtext, .p-dropdown-trigger, .p-dropdown-panel {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
   font-size: 0.0625rem;
@@ -263,10 +260,19 @@ hr {
   color: #C4C4C4;
 }
 
-.p-picklist-buttons	 {
+.p-picklist-buttons {
   display: none !important;
   color: green;
   width: 6.25rem;
+}
+
+.p-button	{
+  width: 11.5625rem;
+  height: 2.25rem;
+  border-radius: 3.9375rem;
+  margin: 1.5rem 0rem;
+  margin-right: 1.375rem;
+  float: right;
 }
 
 </style>
