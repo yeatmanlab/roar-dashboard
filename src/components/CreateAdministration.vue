@@ -233,7 +233,10 @@ hr {
 }
 
 .p-dropdown	{
-  width: 800px;
+  /* width: 800px !important; */
+  /* height: 300px; 
+  TODO: convert pixel values to rem values or percentage values
+  */
   /* background: red;
   border-color: blue;
   border-width: 30px; */
@@ -261,7 +264,7 @@ hr {
 }
 
 .p-picklist-buttons	 {
-  /* display: none; */
+  display: none !important;
   color: green;
   width: 100px;
 }
