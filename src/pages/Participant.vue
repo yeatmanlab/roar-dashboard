@@ -1,13 +1,17 @@
 <template>
-  <div class="tabs-container">
-    <ParticipantSidebar :total-games="gamesTotal" :completed-games="gamesCompleted" :student-info="studentInfo" />
+  <div>
     <AppSpinner v-if="loadingGames" />
-    <GameTabs v-else :games="assessments" />
+    <div v-else class="tabs-container">
+      <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
+      <GameTabs :games="assessments" />
+    </div>
+    
+    
   </div>
 </template>
 
 <script setup>
-import { toValue, onBeforeMount, onMounted, ref, watch } from "vue";
+import { toRaw, onBeforeMount, onMounted, ref, watch } from "vue";
 import GameTabs from "../components/GameTabs.vue";
 import ParticipantSidebar from "../components/ParticipantSidebar.vue";
 import _filter from 'lodash/filter'
@@ -16,13 +20,15 @@ import _get from 'lodash/get'
 import { useAuthStore } from "@/store/auth";
 import { storeToRefs } from 'pinia';
 import AppSpinner from "../components/AppSpinner.vue";
-import { connectFirestoreEmulator } from "firebase/firestore";
-// const authStore = useAuthStore();
+
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const loadingGames = ref(true)
 
+const loadingGames = ref(true)
 let assessments = ref([]);
+let totalGames = ref(0);
+let completeGames = ref(0);
+
 const testData = ref([
   {
     id: "id-1",
@@ -108,33 +114,21 @@ const studentInfo = ref({
 const numCompleted = _filter(testData.value, game => {
   return _get(game, 'completed')
 }).length
-const gamesTotal = ref(testData.value.length)
-const gamesCompleted = ref(numCompleted)
+// const gamesTotal = ref(testData.value.length)
+// const gamesCompleted = ref(numCompleted)
 
 onBeforeMount(async () => {
-  const assignedAssignments = _get(authStore, 'currentAssignments.assigned')
-  console.log('assignedAssignments', assignedAssignments)
-  const assignmentInfo = await roarfirekit.value.getAssignments(assignedAssignments)
-  console.log('assignmentInfo', assignmentInfo)
-  // console.log('head of assignment info', _head(assignmentInfo))
-  // console.log('getting assessments', _head(assignmentInfo).assessments)
-  // console.log('is Array?', Array.isArray(_get(_head(assignmentInfo), 'assessments')))
-  console.log('regular array', [1,2,3])
-  // console.log('assessments', _get(_head(assignmentInfo), 'assessments'))
-  // console.log('about to push to assessments:', _get(_head(assignmentInfo), 'assessments'))
-  console.log('length', _get(_head(assignmentInfo), 'assessments').length)
-  const assessmentInfo = _get(_head(assignmentInfo), 'assessments')
-  console.log('assessments (should be array)', assessmentInfo)
-  // console.log('first element', assessmentInfo[0])
-  assessments.value = assessmentInfo
-  // console.log('after (ref)', assessments)
-  // console.log('after (val)', assessments.value)
-  // const startedAssignments = _get(authStore, 'currentAssignments.started')
+  const assignedAssignments = toRaw(authStore.assignedAssignments);
+  const assignmentInfo = await authStore.getAssignments(assignedAssignments);
+  const assessmentInfo = _get(_head(assignmentInfo), 'assessments');
+  assessments.value = assessmentInfo;
+
+  const completedTasks = _filter(assessmentInfo, (task) => task.completedOn)
+  console.log('completed', completedTasks.length)
+  totalGames.value = assessmentInfo.length;
+  completeGames.value = completedTasks.length;
 })
 watch(assessments, (newValue, oldValue) => {
-  console.log('oldVal', oldValue)
-  console.log('new val', newValue)
-  console.log('assessments watcher', assessments)
   loadingGames.value = false
 })
 </script>

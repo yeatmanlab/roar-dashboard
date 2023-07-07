@@ -24,7 +24,11 @@ const props = defineProps({
 })
 
 onMounted(() => {
-    chartData.value = setChartData();
+  const completed = props.completedGames;
+  const incomplete = (props.totalGames - props.completedGames);
+  console.log('completed', completed)
+  console.log('incomplete', incomplete)
+  chartData.value = setChartData(completed, incomplete);
 });
 
 const chartData = ref();
@@ -41,14 +45,14 @@ const chartOptions = ref({
     }
 });
 
-const setChartData = () => {
+const setChartData = (completed, incomplete) => {
   let docStyle = getComputedStyle(document.documentElement);
   
   return {
     labels: ['Finished', 'Unfinished'],
     datasets: [
       {
-        data: [2, 4],
+        data: [completed, incomplete],
         backgroundColor: [
           docStyle.getPropertyValue('--bright-green'), 
           docStyle.getPropertyValue('--surface-d')

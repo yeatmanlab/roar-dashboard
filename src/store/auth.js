@@ -23,16 +23,22 @@ export const useAuthStore = () => {
     getters: {
       uid: (state) => { return state.firebaseUser.adminFirebaseUser?.uid },
       email: (state) => { return state.firebaseUser.adminFirebaseUser?.email },
+      userType: (state) => { return state.roarfirekit.userData.userType },
       isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser))},
       isFirekitInit: (state) => { return Boolean(state.roarfirekit) },
       // User Information Getters
       adminClaims: (state) => { return state.roarfirekit?.adminClaims },
-      currentAssignments: (state) => { return state.roarfirekit?.currentAssignments },
+      assignedAssignments: (state) => { return state.roarfirekit.currentAssignments.assigned },
       userData: (state) => { return state.roarfirekit?.userData }
     },
     actions: {
+      async getAssignments(assignments) {
+        const reply = await this.roarfirekit.getAssignments(assignments)
+        console.log('inside gA action', reply)
+        return reply
+      },
       getAdminRoles() {
         console.log('adminClaims', this.roarfirekit?.adminClaims)
         return this.roarfirekit?.adminClaims;
