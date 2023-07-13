@@ -1,6 +1,6 @@
 <template>
   <AppHead>
-    <title>ROAR Web Query</title>
+    <title>ROAR: {{ $route.meta.pageTitle }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!">
 
     <!-- Social -->
@@ -11,28 +11,24 @@
     <meta name="twitter:title" content="ROAR Web Query">
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
   </AppHead>
-  <the-navbar />
-  <router-view />
+  <div>
+    <Navbar v-if="$route.name !== 'SignIn'" />
+    <router-view />
+  </div>
+  
   <!-- <AppSpinner v-show="!showPage" /> -->
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
-import TheNavbar from "@/components/TheNavbar.vue";
+import { onBeforeMount } from 'vue';
+import Navbar from "@/components/Navbar.vue";
 import { useAuthStore } from "@/store/auth";
 
-onMounted(async () => {
+onBeforeMount(async () => {
   const authStore = useAuthStore();
-  await authStore.initStateFromRedirect();
+  await authStore.initFirekit();
+  authStore.setUser();
+  // await authStore.initStateFromRedirect();
 });
-</script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-</style>
+</script>
