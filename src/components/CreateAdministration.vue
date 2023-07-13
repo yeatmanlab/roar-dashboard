@@ -235,27 +235,13 @@
     margin: 0.625rem 0rem;
   }
   
-  .p-dropdown	{
+  .p-dropdown-label	{
     font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 3.125rem;
-    line-height: 1.2569rem;
-    color: green;
-  }
-  
-  .p-dropdown-label > .p-inputtext, .p-dropdown-trigger, .p-dropdown-panel {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 0.0625rem;
-    line-height: 1.2569rem;
-    color: green;
+    color: #C4C4C4;
   }
   
   ::placeholder {
     font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 0.0625rem;
-    line-height: 1.2569rem;
     color: #C4C4C4;
   }
   
