@@ -128,7 +128,7 @@ const exportCSV = (exportSelected) => {
 };
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'TEXT', 'DATE', 'BOOLEAN'];
+const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN'];
 let filters = {};
 let options = {};
 _forEach(props.columns, column => {
@@ -139,9 +139,9 @@ _forEach(props.columns, column => {
   const dataType = _toUpper(_get(column, 'dataType'));
   let returnMatchMode = null;
   if(valid_dataTypes.includes(dataType)){
-    if(dataType === 'NUMERIC' || dataType === 'BOOLEAN'){
+    if(dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN'){
       returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS};
-    } else if(dataType === 'TEXT'){
+    } else if(dataType === 'TEXT' || dataType === 'STRING'){
       returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH};
     } else if(dataType === 'DATE'){
       returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS};

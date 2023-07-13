@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="authStore.homepageReady">
-      <div v-if="authStore.isAuthenticated">
+      <div v-if="authStore.isUserAuthed()">
         <Accordion v-if="authStore.canRead" v-model:activeIndex="activeTab" class="accordion-custom">
           <AccordionTab v-focustrap>
             <template #header>
@@ -23,7 +23,7 @@
       </div>
       <div v-else class="col-full text-center">
         <p>You are not yet logged in. Click below to log in.</p>
-        <router-link :to="{ name: 'SignIn' }">
+        <router-link :to="{ name: 'Login' }">
           <Button label="Log In" icon="pi pi-sign-in" />
         </router-link>
       </div>

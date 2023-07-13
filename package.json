@@ -3,19 +3,21 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bdelab/roar-firekit": "^1.2.0",
+    "@bdelab/roar-firekit": "^3.0.17",
     "@vuelidate/core": "^2.0.0-alpha.40",
     "@vuelidate/validators": "^2.0.0-alpha.28",
     "@vueuse/head": "^1.0.13",
+    "buffer": "^6.0.3",
     "chart.js": "^4.3.0",
     "d3": "^7.4.4",
     "emailjs-com": "^3.2.0",
     "firebase": "^9.14.0",
+    "jose": "^4.14.4",
     "list": "^2.0.19",
     "lodash": "^4.17.21",
     "papaparse": "^5.3.2",
@@ -31,6 +33,7 @@
     "vue-router": "^4.1.6"
   },
   "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^1.0.1",
     "@vitejs/plugin-vue": "^4.0.0",
     "sass": "^1.50.1",
     "vite": "^4.1.4",

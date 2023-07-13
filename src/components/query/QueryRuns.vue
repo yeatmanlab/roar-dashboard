@@ -63,8 +63,8 @@
 
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="studies" v-model="queryStore.selectedStudies" :options="queryStore.studies"
-          optionLabel="id" :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
+        <MultiSelect inputId="studies" v-model="queryStore.selectedStudies" :options="queryStore.studies" optionLabel="id"
+          :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
         <label for="studies">Studies</label>
       </span>
     </div>
@@ -79,16 +79,16 @@
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="schools" v-model="queryStore.selectedSchools" :options="queryStore.schools"
-          optionLabel="id" :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
+        <MultiSelect inputId="schools" v-model="queryStore.selectedSchools" :options="queryStore.schools" optionLabel="id"
+          :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
         <label for="schools">Schools</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="classes" v-model="queryStore.selectedClasses" :options="queryStore.classes"
-          optionLabel="id" :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
+        <MultiSelect inputId="classes" v-model="queryStore.selectedClasses" :options="queryStore.classes" optionLabel="id"
+          :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
         <label for="classes">Classes</label>
       </span>
     </div>
@@ -135,9 +135,7 @@ export default {
       selectedVariants
     } = storeToRefs(queryStore);
 
-    watch(selectedRootPath, () => {
-      return queryStore.getTasks().then(queryStore.getVariants)
-    });
+    watch(selectedRootPath, () => queryStore.getTasks().then(queryStore.getVariants));
     watch([selectedRootPath, selectedTasks, selectedVariants], queryStore.getUsers);
 
     return {
