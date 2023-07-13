@@ -74,6 +74,16 @@ const routes = [
     meta: {pageTitle: "Participant dashboard" }
   },
   {
+    path: "/administrator",
+    name: "Administrator",
+    component: () => import(/* webpackChunkName: "Administrator" */ "../pages/Administrator.vue"),
+  },
+  {
+    path: "/create-admin",
+    name: "CreateAdministration",
+    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
+  },
+  {
     path: "/enable-cookies",
     name: "EnableCookies",
     component: () =>

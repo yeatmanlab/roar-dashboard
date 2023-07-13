@@ -31,6 +31,7 @@ import Menu from "primevue/menu"
 import MultiSelect from "primevue/multiselect";
 import Panel from "primevue/panel";
 import Password from "primevue/password";
+import PickList from 'primevue/picklist';
 import ProgressBar from 'primevue/progressbar';
 import Skeleton from "primevue/skeleton";
 import SplitButton from "primevue/splitbutton";
@@ -93,6 +94,7 @@ app.component("Menu", Menu);
 app.component("MultiSelect", MultiSelect);
 app.component("Panel", Panel);
 app.component("Password", Password);
+app.component("PickList", PickList);
 app.component("ProgressBar", ProgressBar);
 app.component("Skeleton", Skeleton);
 app.component("SplitButton", SplitButton);
