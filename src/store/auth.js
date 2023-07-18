@@ -1,15 +1,10 @@
 import { defineStore } from "pinia";
-// import { useRouter } from 'vue-router';
 import { onAuthStateChanged } from "firebase/auth";
-import { toRaw } from 'vue';
-import { RoarFirekit } from "@bdelab/roar-firekit";
-import { hydrateFirekit, initNewFirekit } from "../firebaseInit";
+import { initNewFirekit } from "../firebaseInit";
 
 import _get from "lodash/get";
-// import { declarePersistable, serialize, deserialize } from 'serialijse';
 
 export const useAuthStore = () => {
-  // const router = useRouter();
   return defineStore('authStore', {
     // id is required so that Pinia can connect the store to the devtools
     id: "authStore",
@@ -21,7 +16,6 @@ export const useAuthStore = () => {
         },
         roles: null,
         roarfirekit: null,
-        localFirekitInit: false,
         hasUserData: false,
         firekitUserData: null,
         firekitAssignments: {
@@ -38,11 +32,6 @@ export const useAuthStore = () => {
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser))},
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
       firekitHasFunctions: (state) => { return (typeof state.roarfirekit['getAssignments'])},
-      localFirekitInitGetter: (state) => { 
-        console.log('[Getter] localFirekitInit:', state.localFirekitInit)
-        // console.log('[Getter] hasFunctions:', typeof state.roarfirekit['getAssignments'])
-        return (state.localFirekitInit) 
-      },
       // User Information Getters
       adminClaims: (state) => { return state.roarfirekit?.adminClaims },
       assignedAssignments: (state) => { return state.roarfirekit.currentAssignments?.assigned },
@@ -50,7 +39,6 @@ export const useAuthStore = () => {
     },
     actions: {
       async getAssignments(assignments) {
-        console.log('inside authStore calling getAssignments', this.roarfirekit)
         try{
           const reply = await this.roarfirekit.getAssignments(assignments)
           this.firekitAssignments = reply
@@ -66,7 +54,6 @@ export const useAuthStore = () => {
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if(user){
-            console.log('Firebase User Set Up! (Admin)')
             this.localFirekitInit = true
             this.firebaseUser.adminFirebaseUser = user;
           } else {
@@ -75,7 +62,6 @@ export const useAuthStore = () => {
         })
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if(user){
-            console.log('Firebase User set up! (App)')
             this.firebaseUser.appFirebaseUser = user;
           } else {
             this.firebaseUser.appFirebaseUser = null;
@@ -83,15 +69,9 @@ export const useAuthStore = () => {
         })
       },
       async initFirekit() {
-        // if(this.roarfirekit === null){
-          this.roarfirekit = await initNewFirekit().then((firekit) => {
-            console.log('setting up this.firekit with', firekit)
-            return firekit
-          });
-        // } else {
-        //   console.log('firekit already initalized, skipping!')
-        //   console.log('current firekit', this.roarfirekit)
-        // }
+        this.roarfirekit = await initNewFirekit().then((firekit) => {
+          return firekit
+        });
       },
       async registerWithEmailAndPassword({ email, password }) {
         return this.roarfirekit.registerWithEmailAndPassword({ email, password }).then(
