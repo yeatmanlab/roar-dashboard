@@ -9,10 +9,11 @@ const routes = [
     component: () => {
       const authStore = useAuthStore();
       console.log('isAuthed', authStore.isAuthenticated)
-      console.log('authStore', authStore.roarfirekit)
+      console.log('authStore', authStore)
+      console.log('authStores firekit', authStore.roarfirekit)
       console.log('is firekit init', authStore.isFirekitInit)
-      // const userType = _get(authStore, 'roarfirekit.userData.userType');
-      const userType = authStore.userType;
+      const userType = _get(authStore, 'firekitUserData.userType');
+      // const userType = authStore.userType;
       console.log('userType from router', userType);
       if (userType === "admin") return import("../pages/Participant.vue"); // TODO: THIS NEEDS TO BE CHANGED TO ADMIN VIEW BEFORE RELEASE.
       else if (userType === "educator") return import("../pages/Home.vue");
