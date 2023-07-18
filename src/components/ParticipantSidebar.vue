@@ -9,7 +9,6 @@
     </div>
     <ul class="sidebar-info">
       <li class="sidebar-title"><strong>Student Info</strong></li>
-      <li>Age: <span class="sidebar-info-item">{{ studentInfo.age }}</span></li>
       <li>Grade: <span class="sidebar-info-item">{{ studentInfo.grade }}</span></li>
     </ul>
   </div>
@@ -26,8 +25,6 @@ const props = defineProps({
 onMounted(() => {
   const completed = props.completedGames;
   const incomplete = (props.totalGames - props.completedGames);
-  console.log('completed', completed)
-  console.log('incomplete', incomplete)
   chartData.value = setChartData(completed, incomplete);
 });
 

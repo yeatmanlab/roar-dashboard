@@ -28,7 +28,6 @@ onBeforeMount(async () => {
   const authStore = useAuthStore();
   await authStore.initFirekit();
   authStore.setUser();
-  // await authStore.initStateFromRedirect();
 });
 
 </script>
