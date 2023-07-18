@@ -1,12 +1,12 @@
 <template>
   <div id="games">
-    <TabView v-model:activeIndex="currentGameIndex">
-      <TabPanel v-for="game in games" :key="game.taskData.taskId" :disabled="!game.completedOn && (currentGameId !== game.taskData.taskId)">
+    <TabView v-model:activeIndex="selectedIndex">
+      <TabPanel v-for="game in games" :key="game.taskData.taskId" :disabled="!game.completedOn && (currentGameId !== game.taskId)">
         <template #header>
           <!--Complete Game-->
           <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
           <!--Current Game-->
-          <i v-else-if="game.taskData.taskId == currentGameId" class="pi pi-circle mr-2" data-game-status="current" />
+          <i v-else-if="game.taskId == currentGameId" class="pi pi-circle mr-2" data-game-status="current" />
           <!--Locked Game-->
           <i v-else class="pi pi-lock mr-2" data-game-status="incomplete" />
           <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{ game.taskData.name }}</span>
@@ -29,14 +29,14 @@
             <div class="roar-game-image">
               <img src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
             </div>
-            <router-link :to="{ path: 'game/' + game.taskData.taskId }"></router-link>
+            <router-link :to="{ path: 'game/' + game.taskId }"></router-link>
         </article>
       </TabPanel>
     </TabView>
   </div>
 </template>
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, toRaw } from 'vue';
 import _get from 'lodash/get'
 import _find from 'lodash/find'
 import _findIndex from 'lodash/findIndex'
@@ -44,14 +44,17 @@ const props = defineProps({
   games: {required: true, default: []}
 })
 
+const selectedIndex = ref(0);
+
 const currentGameId = computed(() => {
   return _get(_find(props.games, (game) => { return (game.completedOn === undefined) }), 'taskId')
 })
 
 const currentGameIndex = computed(() => {
-  console.log('current gId', currentGameId)
   return _findIndex(props.games, (game) => { return (game.taskId === currentGameId.value) })
 })
+
+selectedIndex.value = currentGameIndex.value
 </script>
 <style scoped lang="scss">
 
