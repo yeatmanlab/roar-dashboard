@@ -2,7 +2,6 @@
   <div>
     <div v-if="!noGamesAvailable">
       <AppSpinner v-if="loadingGames" />
-      <Button v-if="loadingGames" @click="setUpAssignments()">Load Data</Button>
       <div v-else class="tabs-container">
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
         <GameTabs :games="assessments" />
@@ -32,7 +31,7 @@ import { storeToRefs } from 'pinia';
 import AppSpinner from "../components/AppSpinner.vue";
 
 const authStore = useAuthStore();
-const { isFirekitInit, roarfirekit, userData, firekitUserData } = storeToRefs(authStore);
+const { isFirekitInit, userData, firekitUserData } = storeToRefs(authStore);
 
 const loadingGames = ref(true)
 const noGamesAvailable = ref(false)
@@ -40,18 +39,13 @@ let assessments = ref([]);
 let totalGames = ref(0);
 let completeGames = ref(0);
 
-console.log('==== Entered Participant ====')
-
 // Set up studentInfo for sidebar
 const studentInfo = ref({
   grade: _get(userData.value, 'studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
 })
 
 async function setUpAssignments() {
-  console.log('entering setUpAssignments')
-  console.log('authStore at this time', authStore)
   const assignedAssignments = toRaw(authStore.assignedAssignments);
-  console.log(assignedAssignments)
   let assignmentInfo = []
     try {
       if(assignedAssignments.length > 0){
