@@ -8,7 +8,7 @@
       </header>
       <section class="signin-option-container signin-option-userpass">
         <h3 class="signin-option-title">Use your username</h3>
-        <SignIn />
+        <SignIn @submit="authWithEmail"/>
       </section>
       <section class="signin-option-container signin-option-providers">
         <h3 class="signin-option-title">Use a provider</h3>
@@ -31,7 +31,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, ref, watch, toRaw } from 'vue';
 import SignIn from "@/components/auth/SignIn.vue";
 import { cleverSSOUrl } from "@/helpers/auth.js"
 import { useAuthStore } from "@/store/auth";
@@ -59,10 +59,13 @@ const authWithClever = () => {
   window.location = cleverSSOUrl()
 }
 
+const authWithEmail = (state) => {
+  authStore.logInWithEmailAndPassword(toRaw(state))
+  spinner.value = true;
+}
+
 watch(hasUserData, (newValue, oldValue) => {
-  console.log('userHasData changed, checking if it is true')
   if(newValue === true){
-    console.log('it was true, routing')
     router.push({ name: "Home" })
   }
 }) 
