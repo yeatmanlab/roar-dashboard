@@ -49,26 +49,21 @@
 </template>
 
 <script setup>
-import { reactive, ref } from "vue";
+import { reactive, ref, defineEmits } from "vue";
 import { required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
-import { useAuthStore } from "@/store/auth";
-import { isMobileBrowser } from "@/helpers";
 
-const authStore = useAuthStore();
+const emit = defineEmits(['submit'])
 
 const state = reactive({
   email: "",
   password: "",
 });
-
 const rules = {
   email: { required },
   password: { required },
 };
-
 const submitted = ref(false);
-
 const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = (isFormValid) => {
@@ -76,7 +71,7 @@ const handleFormSubmit = (isFormValid) => {
   if (!isFormValid) {
     return;
   }
-  authStore.logInWithEmailAndPassword(state);
+  emit('submit', state)
 }
 
 const resetForm = () => {

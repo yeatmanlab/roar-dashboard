@@ -86,15 +86,12 @@ export const useAuthStore = () => {
       },
       async logInWithEmailAndPassword({ email, password }) {
         if(this.isFirekitInit){
-          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(
-            () => {
-              this.user = this.roarfirekit.app.user;
-              this.uid = this.roarfirekit.app.user.uid;
-              this.email = email;
-              // router.replace({ name: 'Home' });
+          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {
+            if(this.roarfirekit.userData){
+              this.hasUserData = true;
+              this.firekitUserData = this.roarfirekit.userData;
             }
-          ).then(() => {
-          });
+          })
         }
         
       },
