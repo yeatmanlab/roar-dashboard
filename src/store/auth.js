@@ -29,9 +29,8 @@ export const useAuthStore = () => {
       userType: (state) => { return state.roarfirekit.userData.userType },
       isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
-      isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser))},
+      isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser)) },
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
-      firekitHasFunctions: (state) => { return (typeof state.roarfirekit['getAssignments'])},
       // User Information Getters
       adminClaims: (state) => { return state.roarfirekit?.adminClaims },
       assignedAssignments: (state) => { return state.roarfirekit.currentAssignments?.assigned },
