@@ -53,7 +53,7 @@ import { reactive, ref, defineEmits } from "vue";
 import { required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit']);
 
 const state = reactive({
   email: "",
@@ -71,7 +71,7 @@ const handleFormSubmit = (isFormValid) => {
   if (!isFormValid) {
     return;
   }
-  emit('submit', state)
+  emit('submit', state);
 }
 
 const resetForm = () => {

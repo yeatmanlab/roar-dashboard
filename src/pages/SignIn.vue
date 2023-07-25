@@ -1,6 +1,6 @@
 <template>
   <div id="signin-container">
-    <section id="signin">
+    <section id="signin" :style="spinner ? 'opacity: 50%' : ''">
       <header>
         <div class="signin-logo"><img src="../assets/stanford-roar.svg" height="35" alt="The ROAR Logo" /></div>
         <h1>Sign In to ROAR</h1>
@@ -56,11 +56,19 @@ const authWithGoogle = () => {
   }
 };
 const authWithClever = () => {
-  window.location = cleverSSOUrl()
+  // window.location = cleverSSOUrl()
+  authStore.signInWithCleverPopup();
+}
+
+function validateEmail(email) {
+  return ref.test('/^\S+@\S+\.\S+$/')
 }
 
 const authWithEmail = (state) => {
-  authStore.logInWithEmailAndPassword(toRaw(state))
+  // If username is supplied instead of email
+  // turn it into our internal auth email
+
+  authStore.logInWithEmailAndPassword(toRaw(state));
   spinner.value = true;
 }
 
