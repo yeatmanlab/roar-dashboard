@@ -73,7 +73,8 @@ export const useAuthStore = () => {
         });
       },
       async registerWithEmailAndPassword({ email, password }) {
-        return this.roarfirekit.registerWithEmailAndPassword({ email, password }).then(
+        console.log('calling register with', email, password)
+        return this.roarfirekit.createStudentWithEmailPassword(email, password, {}).then(
           () => {
             this.user = this.roarfirekit?.app.user;
             this.uid = this.roarfirekit?.app.user.uid;
@@ -104,8 +105,24 @@ export const useAuthStore = () => {
           })
         }
       },
+      async signInWithCleverPopup() {
+        console.log('triggered clever popup')
+        if(this.isFirekitInit){
+          return this.roarfirekit.signInWithPopup('clever').then(() => {
+            console.log('log in with clever response:')
+            if(this.roarfirekit.userData){
+              this.hasUserData = true
+              this.firekitUserData = this.roarfirekit.userData
+            }
+          })
+        }
+      },
       async signInWithGoogleRedirect() {
-        return roarfirekit.initiateGoogleRedirect();
+        return this.roarfirekit.initiateRedirect("google");
+      },
+      async signInWithCleverRedirect() {
+        console.log('calling rfk redirect with clever')
+        return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
         const enableCookiesCallback = () => {
