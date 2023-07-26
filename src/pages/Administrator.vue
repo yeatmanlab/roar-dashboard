@@ -21,10 +21,21 @@
       </Card>
     </router-link>
   </div>
+  
+  <CardAdministration 
+    :id="admin.id"
+    :title="admin.title" 
+    :stats="admin.stats" 
+    :dates="admin.dates"
+    :assignees="admin.assignees"
+    :assessments="admin.assessments"
+    ></CardAdministration>
+  
 </template>
 
 <script setup>
   import { ref } from "vue";
+  import CardAdministration from "@/components/CardAdministration.vue";
 
   const cardsData = ref([
     {
@@ -46,6 +57,20 @@
       buttonLink: "/create-admin",
     }
   ]);
+  
+  const admin = ref(
+      {
+         id: 234,
+         title: 'Administration Title',
+         stats: {'total':100, 'started': 54, 'completed': 26},
+         dates: {'start': 12345, 'end': 123456},
+         assignees: ['Class1', 'Class2'],
+         assessments: ['SRE', 'PWA', 'SWA']
+       }
+    
+  );
+
+
 </script>
 
 <style scoped>
