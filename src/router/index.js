@@ -2,6 +2,15 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import _get from "lodash/get";
 
+function removeQueryParams(to) {
+  if (Object.keys(to.query).length)
+    return { path: to.path, query: {}, hash: to.hash }
+}
+
+function removeHash(to) {
+  if (to.hash) return { path: to.path, query: to.query, hash: '' }
+}
+
 const routes = [
   {
     path: "/",
@@ -84,10 +93,10 @@ const routes = [
   {
     path: "/auth-clever",
     name: "AuthClever",
+    beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import("../components/auth/AuthClever.vue"),
     props: route => ({ code: route.query.code }),
     meta: { pageTitle: "Clever Authentication" },
-
   },
   {
     path: "/enable-cookies",
@@ -116,12 +125,13 @@ const router = createRouter({
   },
 });
 
-// router.beforeEach(async (to, from) => {
-//   const store = useAuthStore();
-//   if(!store.isAuthenticated && to.name !== "SignIn" && to.name !== "AuthClever"){
-//     console.log("You're not logged in. Routing to SignIn")
-//     return { name: "SignIn" }
-//   }
-// })
+router.beforeEach(async (to, from) => {
+  const store = useAuthStore();
+  if (!to.path.includes("__/auth/handler")
+    && (!store.isAuthenticated && to.name !== "SignIn" && to.name !== "AuthClever")) {
+    console.log("You're not logged in. Routing to SignIn")
+    return { name: "SignIn" }
+  }
+})
 
 export default router;
