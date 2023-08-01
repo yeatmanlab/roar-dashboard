@@ -20,7 +20,8 @@ export const useAuthStore = () => {
         firekitUserData: null,
         firekitAssignments: {
           assigned: null
-        }
+        },
+        cleverOAuthRequested: false,
       };
     },
     getters: {
@@ -89,7 +90,9 @@ export const useAuthStore = () => {
         
       },
       async signInWithGooglePopup() {
+        console.log("triggered google popup")
         if(this.isFirekitInit){
+          console.log("firekit is initialized")
           return this.roarfirekit.signInWithPopup('google').then(() => {
             if(this.roarfirekit.userData){
               this.hasUserData = true
@@ -101,6 +104,7 @@ export const useAuthStore = () => {
       async signInWithCleverPopup() {
         console.log('triggered clever popup')
         if(this.isFirekitInit){
+          console.log("firekit is initialized")
           return this.roarfirekit.signInWithPopup('clever').then(() => {
             console.log('log in with clever response:')
             if(this.roarfirekit.userData){
@@ -119,13 +123,13 @@ export const useAuthStore = () => {
       },
       async initStateFromRedirect() {
         const enableCookiesCallback = () => {
-          // router.replace({ name: 'EnableCookies' });
+          router.replace({ name: 'EnableCookies' });
         }
         if(this.isFirekitInit){
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
-            if (result) {
-              // router.replace({ name: 'Home' });
-              return;
+          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then(() => {
+            if(this.roarfirekit.userData){
+              this.hasUserData = true
+              this.firekitUserData = this.roarfirekit.userData
             }
           });
         }

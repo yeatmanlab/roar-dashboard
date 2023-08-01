@@ -15,7 +15,7 @@
     <Navbar v-if="$route.name !== 'SignIn'" />
     <router-view />
   </div>
-  
+
   <!-- <AppSpinner v-show="!showPage" /> -->
 </template>
 
@@ -28,6 +28,7 @@ onBeforeMount(async () => {
   const authStore = useAuthStore();
   await authStore.initFirekit();
   authStore.setUser();
+  await authStore.initStateFromRedirect();
 });
 
 </script>
