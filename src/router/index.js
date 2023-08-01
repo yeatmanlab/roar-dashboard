@@ -116,12 +116,12 @@ const router = createRouter({
   },
 });
 
-// router.beforeEach(async (to, from) => {
-//   const store = useAuthStore();
-//   if(!store.isAuthenticated && to.name !== "SignIn" && to.name !== "AuthClever"){
-//     console.log("You're not logged in. Routing to SignIn")
-//     return { name: "SignIn" }
-//   }
-// })
+router.beforeEach(async (to, from) => {
+  const store = useAuthStore();
+  if(!store.isAuthenticated && to.name !== "SignIn" && to.name !== "AuthClever"){
+    console.log("You're not logged in. Routing to SignIn")
+    return { name: "SignIn" }
+  }
+})
 
 export default router;

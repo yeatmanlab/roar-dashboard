@@ -1,12 +1,15 @@
 <template>
   <div class="page-container">
+    <Button @click="registerStudent">
+      Register test student
+    </Button>
     <!--Upload file section-->
     <div v-if="!isFileUploaded">
       <div class="info-box">
         We need the following information for each student to register: 
         <ul>
           <li>email (required)</li>
-          <li>age (date of birth OR year of birth OR age in months) (required)</li>
+          <li>date of birth (required)</li>
           <li>grade (required)</li>
           <li>password</li>
         </ul>
@@ -35,7 +38,7 @@
         Please identify what the columns describe. Please note, the only REQUIRED fields are:
         <ul>
           <li>email</li>
-          <li>age (date of birth OR year of birth OR age in months)</li>
+          <li>date of birth</li>
           <li>grade</li>
           <li>password</li>
         </ul>
@@ -87,6 +90,8 @@ import { csvFileToJson } from '@/helpers';
 import _forEach from 'lodash/forEach'
 import _startCase from 'lodash/startCase'
 import _includes from 'lodash/includes'
+import { useAuthStore } from '@/store/auth'
+const authStore = useAuthStore();
 const isFileUploaded = ref(false)
 const rawStudentFile = ref({})
 const tableColumns = ref([])
@@ -99,7 +104,7 @@ const dropdown_options = ref([
   {label: 'Student Email', value: 'email'},
   {label: 'Student Age (Months)', value: 'age_months'},
   {label: 'Student Age (Years)', value: 'age_years'},
-  {label: 'Student Date of Birth', value: 'age_date'},
+  {label: 'Student Date of Birth', value: 'dob'},
   {label: 'English Language Level', value: 'ell'},
   {label: 'Grade', value: 'grade'},
   {label: 'Password', value: 'password'}
@@ -113,6 +118,17 @@ const onFileUpload = async (event) => {
 
   // console.log(toRaw(rawStudentFile.value))
   // console.log(Object.keys(toRaw(rawStudentFile.value)[0]))
+}
+
+function registerStudent() {
+  authStore.registerWithEmailAndPassword({
+    email: "register-test16@roar-auth.com",
+    password: "test-pass16",
+    userData: {
+      dob: "1/2/2009",
+      gender: "male"
+    }
+  })
 }
 
 function generateColumns(rawJson){
@@ -152,7 +168,7 @@ function submitStudents(rawJson){
     // Username / email needs to be filled in
     console.log('username/password not filled in')
   }
-  if(!_includes(modelValues, 'age_date') && !_includes(modelValues, 'age_years') && !_includes(modelValues, 'age_months')){
+  if(!_includes(modelValues, 'dob')){
     // Date needs to be filled in
     console.log('age not filled in')
   }
