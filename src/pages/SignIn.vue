@@ -1,6 +1,6 @@
 <template>
-  <div id="signin-container">
-    <section id="signin" :style="spinner ? 'opacity: 50%' : ''">
+  <div id="signin-container" :style="spinner ? 'opacity: 50%' : ''">
+    <section id="signin">
       <header>
         <div class="signin-logo"><img src="../assets/stanford-roar.svg" height="35" alt="The ROAR Logo" /></div>
         <h1>Sign In to ROAR</h1>

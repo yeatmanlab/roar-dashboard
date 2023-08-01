@@ -72,19 +72,12 @@ export const useAuthStore = () => {
           return firekit
         });
       },
-      async registerWithEmailAndPassword({ email, password }) {
-        console.log('calling register with', email, password)
-        return this.roarfirekit.createStudentWithEmailPassword(email, password, {}).then(
-          () => {
-            this.user = this.roarfirekit?.app.user;
-            this.uid = this.roarfirekit?.app.user.uid;
-            this.email = email;
-            // router.replace({ name: 'Home' });
-          }
-        ).then(() => {
-        });
+      async registerWithEmailAndPassword({ email, password, userData }) {
+        console.log('calling register with', email, password, userData)
+        return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
       async logInWithEmailAndPassword({ email, password }) {
+        console.log('inside logged in')
         if(this.isFirekitInit){
           return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {
             if(this.roarfirekit.userData){
