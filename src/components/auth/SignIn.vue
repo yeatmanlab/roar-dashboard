@@ -19,7 +19,7 @@
       <div class="field mt-4 mb-5">
         <div>
           <Password v-model="v$.password.$model"
-            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask :feedback="false" placeholder="Your Password">
+            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Your Password">
             <template #header>
               <h6>Pick a password</h6>
             </template>
