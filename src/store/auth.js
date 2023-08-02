@@ -21,6 +21,7 @@ export const useAuthStore = () => {
         firekitAssignments: {
           assigned: null
         },
+        firekitAssignmentIds: null,
         cleverOAuthRequested: false,
       };
     },
@@ -42,6 +43,7 @@ export const useAuthStore = () => {
         try{
           const reply = await this.roarfirekit.getAssignments(assignments)
           this.firekitAssignments = reply
+          this.firekitAssignmentIds = assignments;
           return reply
         } catch(e) {
           return this.firekitAssignments.assigned
@@ -78,7 +80,6 @@ export const useAuthStore = () => {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
       async logInWithEmailAndPassword({ email, password }) {
-        console.log('inside logged in')
         if(this.isFirekitInit){
           return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {
             if(this.roarfirekit.userData){
