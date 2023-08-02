@@ -12,7 +12,7 @@
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
   </AppHead>
   <div>
-    <Navbar v-if="$route.name !== 'SignIn'" />
+    <Navbar v-if="$route.name !== 'SignIn' && $route.name !== 'PlayApp'" />
     <router-view />
   </div>
 

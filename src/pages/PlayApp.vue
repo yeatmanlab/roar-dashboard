@@ -1,52 +1,77 @@
 <template>
-  <div class="col-full text-center">
+  <div v-if="gameStarted" id="jspsych-target" class="game-target" />
+  <div v-else class="col-full text-center">
     <h1>Preparing your game!</h1>
     <AppSpinner />
   </div>
-  <div id="jspsych-target" />
 </template>
 <script setup>
-import { HotDogApp } from 'roar-repackage';
-import RoarSWR from '@bdelab/roar-swr'; // TODO: make this a dynamic import
+import RoarSWR from '@bdelab/roar-swr';
 import RoarPA from '@bdelab/roar-pa';
 import RoarSRE from '@bdelab/roar-sre';
 import { useAuthStore } from "@/store/auth";
-import { onMounted, toRaw } from 'vue';
+import { toRaw, onMounted, ref, watch } from 'vue';
 import AppSpinner from '../components/AppSpinner.vue';
-import assets from '../assets/tasks/swr.json';
 import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import _head from 'lodash/head';
 
 const router = useRouter();
 const currentGameId = (router.currentRoute).value.params.gameId;
+const gameStarted = ref(false);
+const authStore = useAuthStore();
+const { isFirekitInit } = storeToRefs(authStore);
 
-
-// TODO: have this in a roarfirekit ready watcher
 onMounted(async () => {
-  // console.log('importing', `@bdelab/roar-${currentGameId}`)
-  // const RoarAppImport = await import(`@bdelab/roar-${currentGameId}`).then((roarApp) => {
-  //   console.log('inside import statement:', roarApp)
-  // });
-  console.log('Hello PlayApp')
-  const authStore = useAuthStore();
-  console.log('about to get appKit')
-  console.log('assessment ID', authStore.assignedAssignments)
-  // TODO: get assessment ID dynamically
-  const appKit = await authStore.roarfirekit.startAssessment("4GnqGp4KV8dVNmitVQG8", "sre")
-  console.log('appKit is', appKit)
+  if(isFirekitInit.value) {
+    await startTask();
+  }
+})
 
-  console.log('appKit assessmentPid', appKit._userInfo.assessmentPid)
-  console.log('variant params', appKit._taskInfo.variantParams)
+watch(isFirekitInit, async (newValue, oldValue) => {
+  await startTask();
+})
+
+async function startTask() { 
+  const currentAssignment = _head(toRaw(authStore.firekitAssignmentIds))
+  const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, currentGameId)
 
   const userParams = {
     pid: appKit._userInfo.assessmentPid,
-    labId: "yeatmanlab", 
+    labId: "yeatmanlab",
   }
 
   const gameParams = appKit._taskInfo.variantParams
 
-  // TODO: shouldn't have to change after dynamic import
-  const roarApp = new RoarSRE(appKit, gameParams, userParams);
-  await roarApp.run();
-})
+  let roarApp = null;
+  switch(currentGameId) {
+    case "swr":
+      roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
+      break;
+    case "pa":
+      roarApp = new RoarPA(appKit, gameParams, userParams, 'jspsych-target');
+      break;
+    case "sre":
+      roarApp = new RoarSRE(appKit, gameParams, userParams, 'jspsych-target');
+      break;
+  }
+
+  gameStarted.value = true;
+  await roarApp.run().then(() => {
+    // Handle any post-game actions.
+    router.replace({ name: "Home" });
+  });
+}
 
 </script>
+<style scoped> 
+.game-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+.game-target:focus {
+  outline: none;
+}
+</style>
