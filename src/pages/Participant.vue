@@ -52,8 +52,12 @@ async function setUpAssignments() {
         assignmentInfo = await authStore.getAssignments(assignedAssignments);
       }
     } catch(e) {
-      // Could not grab data from live roarfirekit, user cached firekit. 
-      assignmentInfo = authStore.firekitAssignments
+      // Could not grab data from live roarfirekit, user cached firekit.
+      if(authStore.firekitAssignments){
+        assignmentInfo = authStore.firekitAssignments
+      } else {
+        noGamesAvailable.value = true;
+      }
     }
     if(assignmentInfo.length > 0){
       const assessmentInfo = _get(_head(assignmentInfo), 'assessments');
