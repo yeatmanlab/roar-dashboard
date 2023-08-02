@@ -57,8 +57,9 @@ async function startTask() {
   }
 
   gameStarted.value = true;
-  await roarApp.run().then(() => {
+  await roarApp.run().then(async () => {
     // Handle any post-game actions.
+    await authStore.roarfirekit.completeAssessment(currentAssignment, currentGameId)
     router.replace({ name: "Home" });
   });
 }
