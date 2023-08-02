@@ -76,7 +76,6 @@ export const useAuthStore = () => {
         });
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
-        console.log('calling register with', email, password, userData)
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
       async logInWithEmailAndPassword({ email, password }) {
@@ -91,9 +90,7 @@ export const useAuthStore = () => {
         
       },
       async signInWithGooglePopup() {
-        console.log("triggered google popup")
         if(this.isFirekitInit){
-          console.log("firekit is initialized")
           return this.roarfirekit.signInWithPopup('google').then(() => {
             if(this.roarfirekit.userData){
               this.hasUserData = true
@@ -103,11 +100,8 @@ export const useAuthStore = () => {
         }
       },
       async signInWithCleverPopup() {
-        console.log('triggered clever popup')
         if(this.isFirekitInit){
-          console.log("firekit is initialized")
           return this.roarfirekit.signInWithPopup('clever').then(() => {
-            console.log('log in with clever response:')
             if(this.roarfirekit.userData){
               this.hasUserData = true
               this.firekitUserData = this.roarfirekit.userData
@@ -119,7 +113,6 @@ export const useAuthStore = () => {
         return this.roarfirekit.initiateRedirect("google");
       },
       async signInWithCleverRedirect() {
-        console.log('calling rfk redirect with clever')
         return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
