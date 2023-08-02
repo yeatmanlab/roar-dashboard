@@ -27,6 +27,9 @@ export default defineConfig({
       vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
+  build: {
+    cssCodeSplit: false
+  },
   optimizeDeps: {
     include: ['@bdelab/roar-firekit'],
   },

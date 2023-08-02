@@ -70,11 +70,12 @@ const setChartData = (completed, incomplete) => {
   }
 
   .sidebar-progress {
-    text-align: center;
+    // text-align: center;
     padding-bottom: .5rem;
     
     p {
       margin-block: 0;
+      text-align: center;
     }
     
     .p-chart {
