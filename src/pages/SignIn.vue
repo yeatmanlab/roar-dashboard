@@ -50,8 +50,8 @@ const authWithGoogle = () => {
   if (isMobileBrowser()) {
     authStore.signInWithGoogleRedirect();
   } else {
-    authStore.signInWithGoogleRedirect();
-    // authStore.signInWithGooglePopup();
+    // authStore.signInWithGoogleRedirect();
+    authStore.signInWithGooglePopup();
     spinner.value = true;
   }
 };
@@ -72,8 +72,12 @@ function validateEmail(email) {
 const authWithEmail = (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
+  let creds = toRaw(state);
+  if(!creds.email.includes("@")){
+    creds.email = `${creds.email}@roar-auth.com`
+  }
 
-  authStore.logInWithEmailAndPassword(toRaw(state));
+  authStore.logInWithEmailAndPassword(creds);
   spinner.value = true;
 }
 
