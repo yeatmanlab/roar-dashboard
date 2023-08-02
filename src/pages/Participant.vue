@@ -10,7 +10,7 @@
     <div v-else>
       <div class="col-full text-center">
         <h1>You have no assigments!</h1>
-        <p>Please contact your administrator to get added to an assignment.</p>
+        <p class="text-center">Please contact your administrator to get added to an assignment.</p>
         <router-link :to="{ name: 'SignOut' }">
           <Button label="Sign out" icon="pi pi-sign-out" />
         </router-link>
