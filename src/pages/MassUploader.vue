@@ -1,8 +1,5 @@
 <template>
   <div class="page-container">
-    <Button @click="registerStudent">
-      Register test student
-    </Button>
     <!--Upload file section-->
     <div v-if="!isFileUploaded">
       <div class="info-box">
@@ -85,11 +82,12 @@
 </template>
 <script setup>
 import { ref, toRaw } from 'vue';
-// import RoarDataTable from '@/components/RoarDataTable.vue'
 import { csvFileToJson } from '@/helpers';
 import _forEach from 'lodash/forEach'
 import _startCase from 'lodash/startCase'
 import _includes from 'lodash/includes'
+import _get from 'lodash/get';
+import _set from 'lodash/set'
 import { useAuthStore } from '@/store/auth'
 const authStore = useAuthStore();
 const isFileUploaded = ref(false)
@@ -102,8 +100,6 @@ const dropdown_options = ref([
   {label: 'Student Last Name', value: 'lastName'},
   {label: 'Student Username', value: 'username'},
   {label: 'Student Email', value: 'email'},
-  {label: 'Student Age (Months)', value: 'age_months'},
-  {label: 'Student Age (Years)', value: 'age_years'},
   {label: 'Student Date of Birth', value: 'dob'},
   {label: 'English Language Level', value: 'ell'},
   {label: 'Grade', value: 'grade'},
@@ -120,23 +116,8 @@ const onFileUpload = async (event) => {
   // console.log(Object.keys(toRaw(rawStudentFile.value)[0]))
 }
 
-function registerStudent() {
-  authStore.registerWithEmailAndPassword({
-    email: "register-test16@roar-auth.com",
-    password: "test-pass16",
-    userData: {
-      dob: "1/2/2009",
-      gender: "male"
-    }
-  })
-}
-
 function generateColumns(rawJson){
   const columnValues = Object.keys(rawJson[0])
-  console.log(rawJson[30]['created'])
-  console.log(typeof rawJson[0]['created'])
-  console.log(rawJson[0]['created'] instanceof Date)
-  // let tableColumns = []
   _forEach(columnValues, col => {
     let dataType = (typeof rawJson[0][col])
     if(dataType === 'object'){
@@ -149,20 +130,14 @@ function generateColumns(rawJson){
     })
     dropdown_model.value[col] = ''
   })
-  console.log('columnValues', columnValues)
-  console.log('tableColumns', tableColumns)
 }
 
 function getKeyByValue(object, value) {
-  console.log(`getting key ${value} from`, object)
   return Object.keys(object).find(key => object[key] === value);
 }
 
 function submitStudents(rawJson){
-  console.log('start student submit')
   const modelValues = Object.values(dropdown_model.value)
-  console.log('modelValues', modelValues)
-
   // Check that all required values are filled in
   if(!_includes(modelValues, 'email') && !_includes(modelValues, 'username')){
     // Username / email needs to be filled in
@@ -183,13 +158,36 @@ function submitStudents(rawJson){
   let submitObject = []
   _forEach(rawStudentFile.value, student => {
     let studentObj = {}
-    _forEach(['username', 'password'], col => {
+    _forEach(modelValues, col => {
       const columnMap = getKeyByValue(dropdown_model.value, col)
       studentObj[col] = student[columnMap]
     })
     submitObject.push(studentObj)
   })
   console.log('Submit Object', submitObject)
+  _forEach(submitObject, user => {
+    // Handle Email Registration
+    if(_get(user, 'email')){
+      const { email, password, firstName, middleName, lastName, ...userData } = user;
+      let sendObject = {
+        email, 
+        password,
+        userData
+      }
+      if(firstName) _set(sendObject, 'userData.name.first', firstName)
+      if(middleName) _set(sendObject, 'userData.name.middle', middleName)
+      if(lastName) _set(sendObject, 'userData.name.last', lastName)
+      console.log('Registering Student with:', sendObject)
+      try {
+        authStore.registerWithEmailAndPassword(sendObject)
+      } catch(e) {
+        // TODO: 
+        console.log('Error - ', e)
+      }
+    } else {
+      // Handle Username Registration
+    }
+  })
 }
 </script>
 <style scoped>
