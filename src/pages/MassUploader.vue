@@ -179,6 +179,7 @@ function submitStudents(rawJson){
       if(lastName) _set(sendObject, 'userData.name.last', lastName)
       console.log('Registering Student with:', sendObject)
       try {
+        // Use a .catch() chain here!!
         authStore.registerWithEmailAndPassword(sendObject)
       } catch(e) {
         // TODO: 

@@ -4,22 +4,14 @@
       <div class="field mt-2">
         <div class="p-input-icon-right">
           <InputText v-model="v$.email.$model"
-            :class="{ 'p-invalid': v$.email.$invalid && submitted }" aria-describedby="email-error" placeholder="Your username or email" />
+            :class="{ 'p-invalid': invalid }" aria-describedby="email-error" placeholder="Your username or email" />
         </div>
-        <span v-if="v$.email.$error && submitted">
-          <span v-for="(error, index) of v$.email.$errors"
-            :key="index">
-            <small class="p-error">{{ error.$message }}</small>
-          </span>
-        </span>
-        <small v-else-if="
-          (v$.email.$invalid && submitted) || v$.email.$pending.$response
-        " class="p-error">{{ v$.email.required.$message.replace("Value", "Email") }}</small>
+        <small v-if="invalid" class="p-error">Incorrect username/email or password</small>
       </div>
       <div class="field mt-4 mb-5">
         <div>
           <Password v-model="v$.password.$model"
-            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Your Password">
+            :class="{ 'p-invalid': invalid }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Your Password">
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -36,12 +28,6 @@
             </template>
           </Password>
         </div>
-        <small 
-          v-if="(v$.password.$invalid && submitted) || v$.password.$pending.$response" 
-          class="p-error"
-        >
-          {{ v$.password.required.$message.replace("Value", "Password")}}
-        </small>
       </div>
       <Button type="submit" label="Submit" class="submit-button" />
     </form>
@@ -49,11 +35,14 @@
 </template>
 
 <script setup>
-import { reactive, ref, defineEmits } from "vue";
+import { reactive, ref, defineEmits, defineProps } from "vue";
 import { required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 
 const emit = defineEmits(['submit']);
+const props = defineProps({
+  invalid: { required: false, default: false },
+})
 
 const state = reactive({
   email: "",
