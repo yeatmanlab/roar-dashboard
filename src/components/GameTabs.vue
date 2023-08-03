@@ -27,7 +27,9 @@
               </div>
             </div>
             <div class="roar-game-image">
-              <img src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
+              <img v-if="game.taskData.image" :src="game.taskData.image">
+              <!-- TODO: Get real backup image -->
+              <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
             </div>
             <router-link :to="{ path: 'game/' + game.taskId }"></router-link>
         </article>
