@@ -8,7 +8,7 @@
       </header>
       <section class="signin-option-container signin-option-userpass">
         <h3 class="signin-option-title">Use your username</h3>
-        <SignIn @submit="authWithEmail" />
+        <SignIn @submit="authWithEmail" :invalid="incorrect" />
       </section>
       <section class="signin-option-container signin-option-providers">
         <h3 class="signin-option-title">Use a provider</h3>
@@ -40,7 +40,8 @@ import AppSpinner from '../components/AppSpinner.vue';
 import _get from 'lodash/get'
 import { storeToRefs } from 'pinia';
 
-const spinner = ref(false)
+const spinner = ref(false);
+const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 
@@ -51,7 +52,10 @@ const authWithGoogle = () => {
     authStore.signInWithGoogleRedirect();
   } else {
     // authStore.signInWithGoogleRedirect();
-    authStore.signInWithGooglePopup();
+    authStore.signInWithGooglePopup().catch(() => {
+      spinner.value = false;
+    });
+    
     spinner.value = true;
   }
 };
@@ -72,13 +76,18 @@ function validateEmail(email) {
 const authWithEmail = (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
+  incorrect.value = false;
   let creds = toRaw(state);
   if(!creds.email.includes("@")){
     creds.email = `${creds.email}@roar-auth.com`
   }
 
-  authStore.logInWithEmailAndPassword(creds);
-  spinner.value = true;
+  authStore.logInWithEmailAndPassword(creds).then(() => {
+    spinner.value = true;
+  }).catch((e) => {
+    incorrect.value = true;
+    return;
+  });
 }
 
 watch(hasUserData, (newValue, oldValue) => {
