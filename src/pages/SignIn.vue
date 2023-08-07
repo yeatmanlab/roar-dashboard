@@ -1,5 +1,8 @@
 <template>
-  <div id="signin-container" :style="spinner ? 'opacity: 50%' : ''">
+  <div class="loading-blur" v-if="spinner">
+    <AppSpinner />
+  </div>
+  <div id="signin-container">
     <section id="signin">
       <header>
         <div class="signin-logo"><img src="../assets/stanford-roar.svg" height="35" alt="The ROAR Logo" /></div>
@@ -7,7 +10,7 @@
         <p>Access your dashboard using one of the options below.</p>
       </header>
       <section class="signin-option-container signin-option-userpass">
-        <h3 class="signin-option-title">Use your username</h3>
+        <h3 class="signin-option-title">Use your username or email</h3>
         <SignIn @submit="authWithEmail" :invalid="incorrect" />
       </section>
       <section class="signin-option-container signin-option-providers">
@@ -24,7 +27,6 @@
       <footer>
         <!-- TODO: figure out a link for this -->
         <a href="#trouble">Having trouble?</a>
-        <AppSpinner v-if="spinner" />
       </footer>
     </section>
   </div>
@@ -105,4 +107,15 @@ onMounted(() => {
 });
 </script>
 
-<style></style>
+<style scoped>
+.loading-blur {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background-color: rgba(0,0,0,0.5);
+  padding-top: 21vh;
+}
+</style>
