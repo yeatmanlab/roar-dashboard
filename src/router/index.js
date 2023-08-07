@@ -34,11 +34,29 @@ const routes = [
     meta: { pageTitle: "Dashboard" },
 
   },
+  // {
+  //   path: "/game/:gameId",
+  //   name: "PlayApp",
+  //   component: () => import("../pages/PlayApp.vue"),
+  //   meta: { pageTitle: "PlayApp" }
+  // },
   {
-    path: "/game/:gameId",
-    name: "PlayApp",
-    component: () => import("../pages/PlayApp.vue"),
-    meta: { pageTitle: "PlayApp" }
+    path: "/game/swr",
+    name: "SWR",
+    component: () => import("../components/tasks/SWR.vue"),
+    meta: { pageTitle: "SWR" }
+  },
+  {
+    path: "/game/pa",
+    name: "PA",
+    component: () => import("../components/tasks/PA.vue"),
+    meta: { pageTitle: "PA" }
+  },
+  {
+    path: "/game/sre",
+    name: "SRE",
+    component: () => import("../components/tasks/SRE.vue"),
+    meta: { pageTitle: "SRE" }
   },
   {
     path: "/upload-scores",
