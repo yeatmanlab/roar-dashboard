@@ -5,26 +5,31 @@
   <div id="signin-container">
     <section id="signin">
       <header>
-        <div class="signin-logo"><img src="../assets/stanford-roar.svg" height="35" alt="The ROAR Logo" /></div>
-        <h1>Sign In to ROAR</h1>
-        <p>Access your dashboard using one of the options below.</p>
+        <div class="signin-logo">
+          <ROARLogoShort />
+        </div>
       </header>
-      <section class="signin-option-container signin-option-userpass">
-        <h3 class="signin-option-title">Use your username or email</h3>
-        <SignIn @submit="authWithEmail" :invalid="incorrect" />
+      <h1>Welcome to ROAR!</h1>
+      <section class="signin-options">
+        <section class="signin-option-container signin-option-userpass">
+          <h4 class="signin-option-title">Log in to access your dashboard</h4>
+          <SignIn @submit="authWithEmail" :invalid="incorrect" />
+        </section>
+        <section class="signin-option-container signin-option-providers">
+          <h4 class="signin-option-title">Log in with:</h4>
+          <div>
+          <Button @click="authWithGoogle" label="Sign in with Google" class="signin-button">
+            <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
+            <span>Google</span>
+          </Button>
+          <Button @click="authWithClever" class="signin-button">
+            <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
+            <span>Clever</span>
+          </Button>
+          </div>
+        </section>
       </section>
-      <section class="signin-option-container signin-option-providers">
-        <h3 class="signin-option-title">Use a provider</h3>
-        <Button @click="authWithGoogle" label="Sign in with Google" class="signin-button">
-          <img src="../assets/provider-google-logo.svg" height="50" alt="The ROAR Logo" class="signin-button-icon" />
-          <span>Sign in with Google</span>
-        </Button>
-        <Button @click="authWithClever" class="signin-button">
-          <img src="../assets/provider-clever-logo.svg" height="50" alt="The ROAR Logo" class="signin-button-icon" />
-          <span>Sign in with Clever</span>
-        </Button>
-      </section>
-      <footer>
+      <footer style="display: none"> 
         <!-- TODO: figure out a link for this -->
         <a href="#trouble">Having trouble?</a>
       </footer>
@@ -35,6 +40,7 @@
 <script setup>
 import { onMounted, ref, watch, toRaw } from 'vue';
 import SignIn from "@/components/auth/SignIn.vue";
+import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from 'vue-router';
 import { isMobileBrowser } from "@/helpers";
