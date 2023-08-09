@@ -6,8 +6,8 @@
       </div>
     </router-link>
     <div class="login-container">
-      <i class="pi pi-bars menu-icon" @click="toggleMenu" />
-      <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" />
+      <!-- <i class="pi pi-bars menu-icon" @click="toggleMenu" /> -->
+      <!-- <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
       <router-link :to="{ name: 'SignOut' }" class="signout-button">
         <Button>Sign Out</Button>
       </router-link>
@@ -95,7 +95,4 @@ import ROARLogo from "@/assets/RoarLogo.vue";
 </script>
 
 <style scoped>
-.signout-button {
-  margin-left: 1rem;
-}
 </style>
