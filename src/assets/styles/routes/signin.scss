@@ -10,10 +10,10 @@
 
 #signin {
 	background: var(--surface-a);
-	width: clamp(500px, 75vw, 720px);
+	width: clamp(500px, 75vw, 620px);
 	height: auto;
-	padding: 1rem 0rem 0rem;
-	margin-bottom: auto;
+	padding: 1rem 0rem 2rem;
+	margin-block: auto;
 	border-radius: 5px;
 	display: flex;
 	flex-direction: row;
@@ -21,20 +21,40 @@
 	justify-content: center;
 	gap: 1rem;
 	
+	h1 {
+		font-size: clamp(2rem, 20vw, 2rem);
+		color: var(--primary-color);
+		margin-bottom: 0;
+		margin-top: 1rem;
+	}
+
 	header {
 		text-align: center;
+		display: flex;
+		// justify-content: space-around;
+		text-align: center;
+		flex-direction: column;
+		
 		width: 100%;
-		
+		border-bottom: 1px solid var(--surface-d);
+		// border-bottom: 10px solid var(--surface-d);
+		padding-block: 2rem;
+
+
 		.signin-logo {
-			width: 100%;
-			border-bottom: 1px solid var(--surface-d);
-			padding-block: 1rem;
+			// width: 100%;
+			
+			svg {
+				height: 111px;
+				width: auto;
+				
+				* {
+					fill: var(--primary-color);
+				}
+			}
+			
 		}
-		
-		p {
-			max-width: 30ch;
-			margin-inline: auto;
-		}
+				
 	}
 	
 	footer {
@@ -55,30 +75,67 @@
 		}
 	}
 	
-	.signin-option-container {
-		min-width: 200px;
+	// Sign In Options
+	.signin-options {
+		width: 100%;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		padding-inline: 2rem;
+	}
+		
+	.signin-option-userpass {
+		width: 100%;
+		text-align: center;
+		margin-bottom: 2rem;
 		
 		.signin-option-title {
-			margin-bottom: 2rem;
+			margin-bottom: 1.5rem;
+			margin-top: 0rem;
 		}
-	}
-	
-	.signin-option-userpass {
-		width: calc(50% - 3rem);
-		padding-right: 1rem;
+		
+		form {
+			margin-inline: auto;
+			max-width: 50ch;
+			button {
+				margin-inline: auto;
+			}
+		}
+
 	}
 	
 	.signin-option-providers {
-		width: calc(50% - 2rem);
+		width: 100%;
+		margin-left: auto;
 		display: flex;
-		flex-direction: column;
-		gap: 0;
-		border-left: 1px solid var(--surface-d);
-		padding-left: 2rem;
+		text-align: left;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 1rem;
+		justify-content: center;
+		align-items: center;
+		padding-top: 2rem;
+		margin-block: 0rem;
+		border-top: 1px solid var(--surface-d);
+		opacity: .5;
+		transition: opacity .5s;
+		
+		&:hover {
+			opacity: 1;
+		}
+		
+		.signin-option-title {
+			// width: 100%;
+			text-align: center;
+			margin-bottom: auto;
+			margin-top: auto;
+		}
 		
 		.signin-button {
-			margin-bottom: 1rem;
+			margin-inline: 0.25rem;
 		}
+		
 	}
 }
 
@@ -88,9 +145,16 @@
 	border-radius: 5rem;
 	color: var(--text-color);
 	padding-inline: 1rem;
+	// width: 100%;
 	
 	img {
-		margin-right: 1rem;
+		width: 20px;
+		height: auto;
+	}
+	
+	span {
+		margin-left: 1ch;
+		margin-right: .5ch;
 	}
 	
 	&:enabled:hover {
