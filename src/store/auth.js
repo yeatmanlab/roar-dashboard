@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
+import { watch } from "vue";
 
 import _get from "lodash/get";
 
@@ -33,6 +34,7 @@ export const useAuthStore = () => {
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser)) },
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
+      isFirekitUserData: (state) => { return Boolean(_get(state.roarfirekit, 'userData')) },
       // User Information Getters
       adminClaims: (state) => { return state.roarfirekit?.adminClaims },
       assignedAssignments: (state) => { return state.roarfirekit.currentAssignments?.assigned },
@@ -55,19 +57,27 @@ export const useAuthStore = () => {
       },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
+          console.log('[authStore] onAuthStateChanged detected for admin')
           if(user){
-            this.localFirekitInit = true
+            console.log('[authStore] onAuthState changed: user detected')
             this.firebaseUser.adminFirebaseUser = user;
           } else {
+            console.log('[authStore] user not detected.')
             this.firebaseUser.adminFirebaseUser = null;
           }
         })
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
+          console.log('[authStore] onAuthStateChanged detected for app')
           if(user){
+            console.log('[authStore] onAuthState changed: user detected')
             this.firebaseUser.appFirebaseUser = user;
           } else {
+            console.log('[authStore] user not detected.')
             this.firebaseUser.appFirebaseUser = null;
           }
+        })
+        watch(this.roarfirekit.userData, (oldVal, newVal) => {
+          console.log('userData Watcher fired!')
         })
       },
       async initFirekit() {
@@ -79,20 +89,30 @@ export const useAuthStore = () => {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
       async logInWithEmailAndPassword({ email, password }) {
+        console.log('[authStore] inside logInWithEmailAndPassword with', { email, password })
         if(this.isFirekitInit){
+          console.log('[authStore] verified initialized, calling rfk function')
           return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {
+            console.log('[authStore] in authStore .then() block')
             if(this.roarfirekit.userData){
+              console.log('[authStore] userData detected in .then() block')
               this.hasUserData = true;
               this.firekitUserData = this.roarfirekit.userData;
+            } else {
+              console.log('[authStore] No user data yet.')
             }
           })
         }
         
       },
       async signInWithGooglePopup() {
+        console.log('[authStore] inside signInWithPopup')
         if(this.isFirekitInit){
+          console.log('[authStore] confirmed firekit init, calling rfk signInWithPopup')
           return this.roarfirekit.signInWithPopup('google').then(() => {
+            console.log('[authStore] in authStore .then() block')
             if(this.roarfirekit.userData){
+              console.log('[authStore] userData detected in .then() block')
               this.hasUserData = true
               this.firekitUserData = this.roarfirekit.userData
             }
@@ -131,8 +151,11 @@ export const useAuthStore = () => {
       async signOut() {
         if(this.isAuthenticated && this.isFirekitInit){
           return this.roarfirekit.signOut().then(() => {
+            console.log('[authStore] sign out .then() block')
             this.roles = null;
             this.hasUserData = false;
+            this.firekitAssignmentIds = [];
+            this.firekitAssignments = [];
             // this.roarfirekit = initNewFirekit()
           });
         } else {

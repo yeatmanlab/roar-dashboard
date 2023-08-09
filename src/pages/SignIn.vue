@@ -53,13 +53,14 @@ const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { hasUserData } = storeToRefs(authStore);
+const { hasUserData, roarfirekit } = storeToRefs(authStore);
 
 const authWithGoogle = () => {
   if (isMobileBrowser()) {
     authStore.signInWithGoogleRedirect();
   } else {
     // authStore.signInWithGoogleRedirect();
+    console.log('[signIn] calling authStore function')
     authStore.signInWithGooglePopup().catch(() => {
       spinner.value = false;
     });
@@ -90,9 +91,12 @@ const authWithEmail = (state) => {
     creds.email = `${creds.email}@roar-auth.com`
   }
 
+  console.log('logging in with', creds)
+  spinner.value = true;
   authStore.logInWithEmailAndPassword(creds).then(() => {
-    spinner.value = true;
+    console.log('[signIn] in logInWithEmailPassword .then() block')
   }).catch((e) => {
+    spinner.value = false;
     incorrect.value = true;
     return;
   });
@@ -103,6 +107,19 @@ watch(hasUserData, (newValue, oldValue) => {
     router.push({ name: "Home" })
   }
 })
+watch(roarfirekit, (newValue, oldValue) => {
+  // console.log('[!!!!!][signin] roarfirekit watcher triggered on signin')
+  // console.log('[^ above] new value is', newValue)
+  console.log('[RFK WATCHER] new val detected:', newValue)
+  console.log('[^] from:', oldValue)
+  console.log('getting value', { ...toRaw(newValue) })
+  console.log('User data inside of watcher', { ..._get(toRaw(roarfirekit), 'userData') })
+  // console.log('userData?', _get(toRaw(newValue), 'userData'))
+  // if(_get(toRaw(newValue), 'userData')){
+    // console.log('[^^] Userdata detected in new value:', _get(toRaw(newValue), 'userData'))
+    // router.push({ name: "Home" })
+  // }
+}, { deep: true })
 
 onMounted(() => {
   document.body.classList.add('page-signin')
