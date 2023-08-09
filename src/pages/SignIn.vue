@@ -3,7 +3,7 @@
     <section id="signin">
       <header>
         <div class="signin-logo">
-          <ROARLogo />
+          <ROARLogoShort />
         </div>
       </header>
       <h1>Welcome to ROAR!</h1>
@@ -38,7 +38,7 @@
 <script setup>
 import { onMounted, ref, watch, toRaw } from 'vue';
 import SignIn from "@/components/auth/SignIn.vue";
-import ROARLogo from "@/assets/RoarLogo.vue";
+import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from 'vue-router';
 import { isMobileBrowser } from "@/helpers";
