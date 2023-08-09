@@ -2,12 +2,12 @@
   <div class="navbar-container">
     <router-link :to="{ name: 'Home' }">
       <div class="navbar-logo">
-        <img src="../assets/stanford-roar.svg" height="50" alt="The ROAR Logo" />
+        <ROARLogo/>
       </div>
     </router-link>
     <div class="login-container">
-      <i class="pi pi-bars menu-icon" @click="toggleMenu" />
-      <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" />
+      <!-- <i class="pi pi-bars menu-icon" @click="toggleMenu" /> -->
+      <!-- <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
       <router-link :to="{ name: 'SignOut' }" class="signout-button">
         <Button>Sign Out</Button>
       </router-link>
@@ -89,10 +89,10 @@ const toggleMenu = (event) => {
 const displayInfo = ref(false);
 const openInfo = () => displayInfo.value = true;
 const closeInfo = () => displayInfo.value = false;
+
+import ROARLogo from "@/assets/RoarLogo.vue";
+
 </script>
 
 <style scoped>
-.signout-button {
-  margin-left: 1rem;
-}
 </style>

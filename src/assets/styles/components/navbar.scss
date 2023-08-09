@@ -11,6 +11,15 @@
 		margin-top: 1.25rem;
 		margin-left: 2rem;
 		margin-bottom: 1.25rem;
+		
+		svg {
+			height: 65px;
+			width: auto;
+			
+			* {
+				fill: var(--primary-color);
+			}
+		}
 	}
 	.login-container {
 		margin-right: 2rem;
