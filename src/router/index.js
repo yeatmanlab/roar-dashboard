@@ -119,11 +119,13 @@ const routes = [
     path: "/administrator",
     name: "Administrator",
     component: () => import(/* webpackChunkName: "Administrator" */ "../pages/Administrator.vue"),
+    meta: {pageTitle: "Administrator"}
   },
   {
     path: "/create-admin",
     name: "CreateAdministration",
     component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
+    meta: {pageTitle: "Create an administration"}
   },
   {
     path: "/administration/:id",
