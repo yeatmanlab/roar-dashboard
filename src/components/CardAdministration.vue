@@ -1,11 +1,7 @@
 <template>
 	
-	<div :data-administration="id" class="card card-administration">
-		
-		<div class="card-admin-chart">
-			<Chart type="doughnut" :data="chartData" :options="chartOptions"/>
-		</div>
-			
+	<div :data-administration="id" class="p-card card-administration">
+					
 		<div class="card-admin-body">
 			<h2 class="card-admin-title">{{title}}</h2>
 			<div class="card-admin-details">
@@ -30,14 +26,20 @@
 					</button>
 				</router-link>
 			</div>
+			
 		</div>
-
+		
+		<div class="data-administration-class-list">
+			<DataViewClass id="123456" :stats="stats" />
+		</div>
+		
 	</div>
 
 </template>
 
 <script setup>
 	import { ref, onMounted } from "vue";
+	import DataViewClass from "@/components/DataViewClass.vue";
 	
 	const props = defineProps({
 		id: Number,
@@ -47,48 +49,11 @@
 		assignees: Array, 
 		assessments: Array,
 	});
-
 	
 	onMounted(() => {
-		const started 		= props.stats.completed;
-  		const completed 	= props.stats.started;
-		const total 		= (props.stats.total - started - completed);
-  		chartData.value 	= setChartData(total, started, completed);
+		const stats 		= props.stats;
+		const classID 		= '2345';
 	});
-	
-	const chartData = ref();
-	const chartOptions = ref({
-		cutout: '60%',
-		showToolTips: true,
-		plugins: {
-	  		legend: {
-				display: false
-	  		},
-	  		tooltip: {
-				enabled: true
-	  		}
-		}
-	});
-	
-	const setChartData = (total, started, completed) => {
-  		let docStyle = getComputedStyle(document.documentElement);
-  		
-  		return {
-			labels: ['Not Started', 'Started', 'Completed'],
-			datasets: [
-	  		{
-				data: [total, started, completed],
-				backgroundColor: [
-		  			docStyle.getPropertyValue('--surface-d'),
-					docStyle.getPropertyValue('--yellow-100'),
-					docStyle.getPropertyValue('--bright-green'),
-		  			
-				],
-				// hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
-	  		}
-			]
-  		};
-	};
 
 </script>
 
@@ -100,16 +65,15 @@
 		border: 1px solid var(--surface-d);
 		border-radius: var(--border-radius);
 		display: inline-flex;
-		flex-direction: row;
+		flex-direction: column;
 		gap: 2rem;
-		padding-block: 1rem;
+		padding: 1rem;
 		
 		.card-admin-chart {
 			padding: 1rem;	
 		}
 		
 		.card-admin-body {
-			padding-top: 2rem;
 			flex: 1 1 auto;
 			display: inline-flex;
 			flex-direction: row;
