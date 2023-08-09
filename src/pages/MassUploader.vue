@@ -178,18 +178,21 @@ function submitStudents(rawJson){
       if(middleName) _set(sendObject, 'userData.name.middle', middleName)
       if(lastName) _set(sendObject, 'userData.name.last', lastName)
       console.log('Registering Student with:', sendObject)
-      try {
-        // Use a .catch() chain here!!
-        authStore.registerWithEmailAndPassword(sendObject)
-      } catch(e) {
-        // TODO: 
-        console.log('Error - ', e)
-      }
+
+      authStore.registerWithEmailAndPassword(sendObject).catch((e) => {
+        console.log('[Mass Uploader] Error caught in user creation: ', e)
+      })
     } else {
       // Handle Username Registration
     }
   })
 }
+
+// Event listener for the 'beforeunload' event
+window.addEventListener('beforeunload', (e) => {
+  console.log('handler for beforeunload')
+  e.preventDefault();
+});
 </script>
 <style scoped>
 .page-container {
