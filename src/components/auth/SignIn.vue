@@ -4,14 +4,14 @@
       <div class="field mt-2">
         <div class="p-input-icon-right">
           <InputText v-model="v$.email.$model"
-            :class="{ 'p-invalid': invalid }" aria-describedby="email-error" placeholder="Your username or email" />
+            :class="{ 'p-invalid': invalid }" aria-describedby="email-error" placeholder="Username or email" />
         </div>
         <small v-if="invalid" class="p-error">Incorrect username/email or password</small>
       </div>
       <div class="field mt-4 mb-5">
         <div>
           <Password v-model="v$.password.$model"
-            :class="{ 'p-invalid': invalid }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Your Password">
+            :class="{ 'p-invalid': invalid }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Password">
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -29,7 +29,7 @@
           </Password>
         </div>
       </div>
-      <Button type="submit" label="Submit" class="submit-button" />
+      <Button type="submit" label="Go! &rarr;" class="submit-button" />
     </form>
   </div>
 </template>
