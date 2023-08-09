@@ -2,7 +2,7 @@
   <div class="navbar-container">
     <router-link :to="{ name: 'Home' }">
       <div class="navbar-logo">
-        <img src="../assets/stanford-roar.svg" height="50" alt="The ROAR Logo" />
+        <ROARLogo/>
       </div>
     </router-link>
     <div class="login-container">
@@ -89,6 +89,9 @@ const toggleMenu = (event) => {
 const displayInfo = ref(false);
 const openInfo = () => displayInfo.value = true;
 const closeInfo = () => displayInfo.value = false;
+
+import ROARLogo from "@/assets/RoarLogo.vue";
+
 </script>
 
 <style scoped>
