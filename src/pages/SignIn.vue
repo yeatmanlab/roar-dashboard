@@ -53,8 +53,6 @@ const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { hasUserData } = storeToRefs(authStore);
-
 authStore.$subscribe((mutation, state) => {
   if (state.roarfirekit.userData) {
     router.push({ name: "Home" });
@@ -78,8 +76,8 @@ const authWithClever = () => {
   if (isMobileBrowser()) {
     authStore.signInWithCleverRedirect();
   } else {
-    authStore.signInWithCleverRedirect();
-    // authStore.signInWithCleverPopup();
+    // authStore.signInWithCleverRedirect();
+    authStore.signInWithCleverPopup();
     spinner.value = true;
   }
 }
@@ -104,12 +102,6 @@ const authWithEmail = (state) => {
     return;
   });
 }
-
-watch(hasUserData, (newValue, oldValue) => {
-  if (newValue === true) {
-    router.push({ name: "Home" })
-  }
-})
 
 onMounted(() => {
   document.body.classList.add('page-signin')
