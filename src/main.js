@@ -19,6 +19,7 @@ import Carousel from "primevue/carousel"
 import Checkbox from "primevue/checkbox";
 import Chart from 'primevue/chart'
 import Chip from "primevue/chip";
+import DataView from 'primevue/dataview';
 import Dialog from 'primevue/dialog';
 import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
@@ -83,6 +84,7 @@ app.component("Carousel", Carousel);
 app.component("Checkbox", Checkbox);
 app.component("Chart", Chart);
 app.component("Chip", Chip);
+app.component("DataView", DataView);
 app.component("Dialog", Dialog);
 app.component("Divider", Divider);
 app.component("Dropdown", Dropdown);
