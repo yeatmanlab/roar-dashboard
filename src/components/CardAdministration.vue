@@ -1,7 +1,11 @@
 <template>
 	
 	<div :data-administration="id" class="p-card card-administration">
-					
+		
+		<div class="card-admin-chart">
+			<Chart type="doughnut" :data="chartData" :options="chartOptions"/>
+		</div>
+
 		<div class="card-admin-body">
 			<h2 class="card-admin-title">{{title}}</h2>
 			<div class="card-admin-details">
@@ -27,12 +31,13 @@
 				</router-link>
 			</div>
 			
+			<div class="card-admin-class-list">
+				<DataViewClass id="123456" :stats="stats" />
+			</div>
+
+			
 		</div>
-		
-		<div class="data-administration-class-list">
-			<DataViewClass id="123456" :stats="stats" />
-		</div>
-		
+				
 	</div>
 
 </template>
@@ -53,7 +58,46 @@
 	onMounted(() => {
 		const stats 		= props.stats;
 		const classID 		= '2345';
+		const started 		= props.stats.completed;
+		const completed 	= props.stats.started;
+		const total 		= (props.stats.total - started - completed);
+		chartData.value 	= setChartData(total, started, completed);
 	});
+	
+	const chartData = ref();
+	const chartOptions = ref({
+		cutout: '60%',
+		showToolTips: true,
+		plugins: {
+			  legend: {
+				display: false
+			  },
+			  tooltip: {
+				enabled: true
+			  }
+		}
+	});
+	
+	const setChartData = (total, started, completed) => {
+		  let docStyle = getComputedStyle(document.documentElement);
+		  
+		  return {
+			labels: ['Not Started', 'Started', 'Completed'],
+			datasets: [
+			  {
+				data: [total, started, completed],
+				backgroundColor: [
+					  docStyle.getPropertyValue('--surface-d'),
+					docStyle.getPropertyValue('--yellow-100'),
+					docStyle.getPropertyValue('--bright-green'),
+					  
+				],
+				// hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
+			  }
+			]
+		  };
+	};
+
 
 </script>
 
@@ -64,13 +108,14 @@
 		background: var(--surface-b);
 		border: 1px solid var(--surface-d);
 		border-radius: var(--border-radius);
-		display: inline-flex;
-		flex-direction: column;
+		display: flex;
+		flex-direction: row;
 		gap: 2rem;
 		padding: 1rem;
 		
 		.card-admin-chart {
 			padding: 1rem;	
+			width: 23ch;
 		}
 		
 		.card-admin-body {
@@ -100,6 +145,11 @@
 		.card-admin-link {
 			margin-top: 2rem;
 			width: 100%;
+		}
+		
+		.card-admin-class-list {
+			width: 100%;
+			margin-top: 2rem;
 		}
 	}
 	
