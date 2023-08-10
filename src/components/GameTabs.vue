@@ -1,14 +1,14 @@
 <template>
   <div id="games">
     <TabView v-model:activeIndex="selectedIndex">
-      <TabPanel v-for="game in games" :key="game.taskData.taskId" :disabled="!game.completedOn && (currentGameId !== game.taskId)">
+      <TabPanel v-for="game in games" :key="game.taskData.taskId" :disabled="sequential && !game.completedOn && (currentGameId !== game.taskId)">
         <template #header>
           <!--Complete Game-->
           <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
           <!--Current Game-->
-          <i v-else-if="game.taskId == currentGameId" class="pi pi-circle mr-2" data-game-status="current" />
+          <i v-else-if="game.taskId == currentGameId || !sequential" class="pi pi-circle mr-2" data-game-status="current" />
           <!--Locked Game-->
-          <i v-else class="pi pi-lock mr-2" data-game-status="incomplete" />
+          <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
           <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{ game.taskData.name }}</span>
         </template>
         <article class="roar-tabview-game">
@@ -47,6 +47,8 @@ const props = defineProps({
 })
 
 const selectedIndex = ref(0);
+// TODO: Grab this from the db instead of hard-coding
+const sequential = ref(false);
 
 const currentGameId = computed(() => {
   return _get(_find(props.games, (game) => { return (game.completedOn === undefined) }), 'taskId')
