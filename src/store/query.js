@@ -1,12 +1,10 @@
-import { markRaw } from "vue";
 import { defineStore } from "pinia";
 import { getUniquePropsFromUsers } from "../helpers/index.js";
-import { getRootDocs, getRunTrials, getTasks, getUserRuns, getTasksVariants, queryUsers } from "@bdelab/roar-firekit";
-// import { roarfirekit } from "../firebaseInit";
+import { getRunTrials, getTasks, getUserRuns, getTasksVariants, queryUsers } from "@bdelab/roar-firekit";
 import { useAuthStore } from "@/store/auth"
 
 export const useQueryStore = () => {
-  const auth = useAuthStore();
+  const authStore = useAuthStore();
   return defineStore({
     id: "queryStore",
     state: () => {
@@ -41,23 +39,6 @@ export const useQueryStore = () => {
       };
     },
     getters: {
-      rootPaths: (state) => {
-        const paths = Object.keys(state.rootDocs);
-        const groups = [...new Set(paths.map((path) => path.split('/')[0]))];
-
-        const rootPathOptions = groups.map((group) => {
-          return {
-            label: group,
-            items: paths.filter((path) => path.startsWith(group)).map((path) => ({
-              label: path.split('/')[1],
-              value: path
-            }))
-          };
-        });
-
-        return rootPathOptions;
-      },
-      selectedRootDoc: (state) => state.rootDocs[state.selectedRootPath?.value],
       selectedTaskIds: (state) => state.selectedTasks.map((task) => task.id),
       selectedVariantIds: (state) => state.selectedVariants.map((variant) => variant.id),
       variants: (state) => state.allVariants.filter((taskGroup) => state.selectedTaskIds.includes(taskGroup.task)),
@@ -75,28 +56,25 @@ export const useQueryStore = () => {
       runStudies: (state) => [...new Set(state.runs.map((run) => run.study.id))].map((id) => ({ id })),
     },
     actions: {
-      async getRootDocs() {
-        const result = await getRootDocs(auth.roarfirekit);
-        this.rootDocs = result.rootDocs;
-        this.selectedRootPath = {
-          label: result.prodDoc.path.split('/').pop(),
-          value: result.prodDoc.path,
-        };
-      },
-      async getTasks() {
+      async getTasks(requireRegistered = true) {
         this.tasksReady = false;
-        this.tasks = await getTasks(this.selectedRootDoc)
-        this.tasksReady = true;
+        const appDb = authStore.roarfirekit?.app?.db;
+        if (appDb) {
+          this.tasks = await getTasks(appDb, requireRegistered)
+          this.tasksReady = true;
+        } else {
+          this.tasks = []
+        }
       },
-      async getVariants() {
+      async getVariants(requireRegistered = true) {
         this.variantsReady = false;
-        this.allVariants = await getTasksVariants(this.selectedRootDoc);
-        this.variantsReady = true;
-      },
-      async getUsers() {
-        this.usersReady = false;
-        this.users = markRaw(await queryUsers(this.selectedRootDoc, this.selectedTaskIds, this.selectedVariantIds));
-        this.usersReady = true;
+        const appDb = authStore.roarfirekit?.app?.db;
+        if (appDb) {
+          this.allVariants = await getTasksVariants(appDb, requireRegistered);
+          this.variantsReady = true;
+        } else {
+          this.allVariants = [];
+        }
       },
       async getRuns() {
         this.activeTab = 1;
