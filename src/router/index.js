@@ -1,3 +1,4 @@
+import { storeToRefs } from "pinia";
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import _get from "lodash/get";
@@ -17,13 +18,11 @@ const routes = [
     name: "Home",
     component: () => {
       const authStore = useAuthStore();
-      console.log('isAuthed', authStore.isAuthenticated)
-      console.log('authStore', authStore)
-      console.log('authStores firekit', authStore.roarfirekit)
-      console.log('is firekit init', authStore.isFirekitInit)
-      const userType = _get(authStore, 'firekitUserData.userType');
-      // const userType = authStore.userType;
-      console.log('userType from router', userType);
+      const { roarfirekit, firekitUserData } = storeToRefs(authStore);
+      let userType = _get(roarfirekit.value, 'userData.userType');
+      if (!userType) {
+        userType = firekitUserData.value?.userType || "guest";
+      }
       if (userType === "admin") return import("../pages/Participant.vue"); // TODO: THIS NEEDS TO BE CHANGED TO ADMIN VIEW BEFORE RELEASE.
       else if (userType === "educator") return import("../pages/Home.vue");
       else if (userType === "student") return import("../pages/Participant.vue");
