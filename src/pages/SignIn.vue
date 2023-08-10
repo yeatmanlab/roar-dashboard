@@ -18,18 +18,18 @@
         <section class="signin-option-container signin-option-providers">
           <h4 class="signin-option-title">Log in with:</h4>
           <div>
-          <Button @click="authWithGoogle" label="Sign in with Google" class="signin-button">
-            <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
-            <span>Google</span>
-          </Button>
-          <Button @click="authWithClever" class="signin-button">
-            <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
-            <span>Clever</span>
-          </Button>
+            <Button @click="authWithGoogle" label="Sign in with Google" class="signin-button">
+              <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
+              <span>Google</span>
+            </Button>
+            <Button @click="authWithClever" class="signin-button">
+              <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
+              <span>Clever</span>
+            </Button>
           </div>
         </section>
       </section>
-      <footer style="display: none"> 
+      <footer style="display: none">
         <!-- TODO: figure out a link for this -->
         <a href="#trouble">Having trouble?</a>
       </footer>
@@ -55,6 +55,12 @@ const router = useRouter();
 
 const { hasUserData } = storeToRefs(authStore);
 
+authStore.$subscribe((mutation, state) => {
+  if (state.roarfirekit.userData) {
+    router.push({ name: "Home" });
+  }
+});
+
 const authWithGoogle = () => {
   if (isMobileBrowser()) {
     authStore.signInWithGoogleRedirect();
@@ -63,10 +69,11 @@ const authWithGoogle = () => {
     authStore.signInWithGooglePopup().catch(() => {
       spinner.value = false;
     });
-    
+
     spinner.value = true;
   }
 };
+
 const authWithClever = () => {
   if (isMobileBrowser()) {
     authStore.signInWithCleverRedirect();
@@ -86,7 +93,7 @@ const authWithEmail = (state) => {
   // turn it into our internal auth email
   incorrect.value = false;
   let creds = toRaw(state);
-  if(!creds.email.includes("@")){
+  if (!creds.email.includes("@")) {
     creds.email = `${creds.email}@roar-auth.com`
   }
 
@@ -121,7 +128,7 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   z-index: 10;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   padding-top: 21vh;
 }
 </style>
