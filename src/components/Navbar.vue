@@ -2,7 +2,7 @@
   <div class="navbar-container">
     <router-link :to="{ name: 'Home' }">
       <div class="navbar-logo">
-        <ROARLogo/>
+        <ROARLogo />
       </div>
     </router-link>
     <div class="login-container">
@@ -52,33 +52,33 @@ let dropdownItems = ref([
     label: 'Sign Out',
     icon: 'pi pi-sign-out',
     command: () => {
-      router.push({name: 'SignOut'})
+      router.push({ name: 'SignOut' })
     }
   }
 ])
 
-if(authStore.isAuthenticated && _get(authStore, 'roarfirekit.userData.userType') === "admin"){
+if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') === "admin") {
   dropdownItems.value.splice(1, 0, {
     label: 'Student Upload',
     icon: 'pi pi-users',
     command: () => {
-      router.push({name: 'MassUploader'})
+      router.push({ name: 'MassUploader' })
     }
   },
-  {
-    label: 'Query',
-    icon: 'pi pi-cloud-download',
-    command: () => {
-      router.push({name: 'Query'})
-    }
-  },
-  {
-    label: 'Score Report',
-    icon: 'pi pi-upload',
-    command: () => {
-      router.push({name: 'UploadScores'})
-    }
-  })
+    {
+      label: 'Query',
+      icon: 'pi pi-cloud-download',
+      command: () => {
+        router.push({ name: 'Query' })
+      }
+    },
+    {
+      label: 'Score Report',
+      icon: 'pi pi-upload',
+      command: () => {
+        router.push({ name: 'UploadScores' })
+      }
+    })
 }
 
 
@@ -94,5 +94,4 @@ import ROARLogo from "@/assets/RoarLogo.vue";
 
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

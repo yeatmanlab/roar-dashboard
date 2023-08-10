@@ -1,3 +1,4 @@
+import { computed } from "vue";
 import { defineStore } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
@@ -28,15 +29,10 @@ export const useAuthStore = () => {
     getters: {
       uid: (state) => { return state.firebaseUser.adminFirebaseUser?.uid },
       email: (state) => { return state.firebaseUser.adminFirebaseUser?.email },
-      userType: (state) => { return state.roarfirekit.userData.userType },
       isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser)) },
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
-      // User Information Getters
-      adminClaims: (state) => { return state.roarfirekit?.adminClaims },
-      assignedAssignments: (state) => { return state.roarfirekit.currentAssignments?.assigned },
-      userData: (state) => { return state.roarfirekit?.userData }
     },
     actions: {
       async getAssignments(assignments) {
@@ -49,9 +45,6 @@ export const useAuthStore = () => {
           return this.firekitAssignments.assigned
         }
         
-      },
-      getAdminRoles() {
-        return this.roarfirekit?.adminClaims;
       },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {

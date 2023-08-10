@@ -3,7 +3,7 @@
     "default": "gse-roar-admin"
   },
   "targets": {
-    "gse-yeatmanlab": {
+    "gse-roar-admin": {
       "hosting": {
         "dashboard": [
           "gse-roar-admin"
