@@ -107,19 +107,19 @@ watch(hasUserData, (newValue, oldValue) => {
     router.push({ name: "Home" })
   }
 })
-watch(roarfirekit, (newValue, oldValue) => {
+// watch(roarfirekit, (newValue, oldValue) => {
   // console.log('[!!!!!][signin] roarfirekit watcher triggered on signin')
   // console.log('[^ above] new value is', newValue)
-  console.log('[RFK WATCHER] new val detected:', newValue)
-  console.log('[^] from:', oldValue)
-  console.log('getting value', { ...toRaw(newValue) })
-  console.log('User data inside of watcher', { ..._get(toRaw(roarfirekit), 'userData') })
+  // console.log('[RFK WATCHER] new val detected:', newValue)
+  // console.log('[^] from:', oldValue)
+  // console.log('getting value', { ...toRaw(newValue) })
+  // console.log('User data inside of watcher', { ..._get(toRaw(roarfirekit), 'userData') })
   // console.log('userData?', _get(toRaw(newValue), 'userData'))
   // if(_get(toRaw(newValue), 'userData')){
     // console.log('[^^] Userdata detected in new value:', _get(toRaw(newValue), 'userData'))
     // router.push({ name: "Home" })
   // }
-}, { deep: true })
+// }, { deep: true })
 
 onMounted(() => {
   document.body.classList.add('page-signin')

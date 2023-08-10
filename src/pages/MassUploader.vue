@@ -103,7 +103,8 @@ const dropdown_options = ref([
   {label: 'Student Date of Birth', value: 'dob'},
   {label: 'English Language Level', value: 'ell'},
   {label: 'Grade', value: 'grade'},
-  {label: 'Password', value: 'password'}
+  {label: 'Password', value: 'password'},
+  {label: 'Study ID', value: 'study'}
 ])
 const dataTable = ref();
 const onFileUpload = async (event) => {
@@ -172,7 +173,8 @@ function submitStudents(rawJson){
       let sendObject = {
         email, 
         password,
-        userData
+        userData,
+        // study: 'diMfdoqL2fUK2MqOH7Zy'
       }
       if(firstName) _set(sendObject, 'userData.name.first', firstName)
       if(middleName) _set(sendObject, 'userData.name.middle', middleName)

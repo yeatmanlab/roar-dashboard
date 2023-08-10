@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
-import { watch } from "vue";
+import { toRaw, watch } from "vue";
 
 import _get from "lodash/get";
 
@@ -55,6 +55,18 @@ export const useAuthStore = () => {
       getAdminRoles() {
         return this.roarfirekit?.adminClaims;
       },
+      watchUserData() {
+        console.log('inside watchUserData function')
+        watch(this.roarfirekit, (newVal, oldVal) => {
+          console.log('[!!!!] triggered watcher', newVal)
+          console.log('firekit:', toRaw(newVal))
+          console.log('has userData?', _get(toRaw(newVal), 'userData'))
+          if(_get(toRaw(newVal), 'userData')){
+            console.log('SET FROM WATCHER: hasUserData true')
+            this.hasUserData = true;
+          }
+        }, { deep: true })
+      },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           console.log('[authStore] onAuthStateChanged detected for admin')
@@ -70,14 +82,13 @@ export const useAuthStore = () => {
           console.log('[authStore] onAuthStateChanged detected for app')
           if(user){
             console.log('[authStore] onAuthState changed: user detected')
+            console.log('setting up watcher for user data')
+            this.watchUserData()
             this.firebaseUser.appFirebaseUser = user;
           } else {
             console.log('[authStore] user not detected.')
             this.firebaseUser.appFirebaseUser = null;
           }
-        })
-        watch(this.roarfirekit.userData, (oldVal, newVal) => {
-          console.log('userData Watcher fired!')
         })
       },
       async initFirekit() {
