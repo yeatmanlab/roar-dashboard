@@ -31,7 +31,7 @@ import { storeToRefs } from 'pinia';
 import AppSpinner from "../components/AppSpinner.vue";
 
 const authStore = useAuthStore();
-const { isFirekitInit, userData, firekitUserData } = storeToRefs(authStore);
+const { isFirekitInit, firekitUserData, roarfirekit } = storeToRefs(authStore);
 
 const loadingGames = ref(true)
 const noGamesAvailable = ref(false)
@@ -41,40 +41,50 @@ let completeGames = ref(0);
 
 // Set up studentInfo for sidebar
 const studentInfo = ref({
-  grade: _get(userData.value, 'studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
+  grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
 })
 
 async function setUpAssignments() {
-  const assignedAssignments = toRaw(authStore.assignedAssignments);
-  let assignmentInfo = []
-    try {
-      if(assignedAssignments.length > 0){
-        assignmentInfo = await authStore.getAssignments(assignedAssignments);
-      }
-    } catch(e) {
-      // Could not grab data from live roarfirekit, user cached firekit.
-      if(authStore.firekitAssignments){
-        assignmentInfo = authStore.firekitAssignments
-      } else {
-        noGamesAvailable.value = true;
-      }
+  const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
+  console.log("assignedAssignments from storeToRefs: ", assignedAssignments);
+  let assignmentInfo = [];
+  try {
+    console.log("trying to get assignmentInfo from roarfirekit.");
+    // This if statement is important to prevent overwriting the session storage cache.
+    if (assignedAssignments.length > 0) {
+      console.log("roarfirekit has assigned assignments.", assignedAssignments);
+      assignmentInfo = await authStore.getAssignments(assignedAssignments);
     }
-    if(assignmentInfo.length > 0){
-      const assessmentInfo = _get(_head(assignmentInfo), 'assessments');
-      assessments.value = assessmentInfo;
-
-      const completedTasks = _filter(assessmentInfo, (task) => task.completedOn)
-      totalGames.value = assessmentInfo.length;
-      completeGames.value = completedTasks.length;
+  } catch (e) {
+    console.log("in catch block of authStore.getAssignments()");
+    // Could not grab data from live roarfirekit, user cached firekit.
+    if (authStore.firekitAssignments) {
+      console.log("roarfirekit has cached firekit assignments.");
+      assignmentInfo = authStore.firekitAssignments
+      console.log("assignmentInfo from authStore.firekitAssignments: ", assignmentInfo);
     } else {
-      noGamesAvailable.value = true
+      console.log("roarfirekit has no cached firekit assignments.");
+      noGamesAvailable.value = true;
     }
-    
+  }
+  if (assignmentInfo.length > 0) {
+    console.log("got through try/catch and assignmentInfo has length")
+    const assessmentInfo = _get(_head(assignmentInfo), 'assessments');
+    assessments.value = assessmentInfo;
+
+    const completedTasks = _filter(assessmentInfo, (task) => task.completedOn)
+    totalGames.value = assessmentInfo.length;
+    completeGames.value = completedTasks.length;
+  } else {
+    console.log("got through try/catch and assignmentInfo has length == 0")
+    noGamesAvailable.value = true
+  }
+
 
 }
 
 onMounted(async () => {
-  if(isFirekitInit.value){
+  if (isFirekitInit.value) {
     await setUpAssignments();
   } else {
     console.log('[onMounted] firekit isnt ready!')
@@ -94,10 +104,10 @@ watch(assessments, (newValue, oldValue) => {
   padding: 2rem;
   gap: 2rem;
 }
+
 @media screen and (max-width: 1100px) {
   .tabs-container {
     flex-direction: column;
   }
 }
-
 </style>
