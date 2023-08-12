@@ -6,59 +6,82 @@
     <div class="formgrid grid">
       <div class="col-12">
         <div style="width: fit-content;">
-          <p id="section-heading">Details</p>
-          <div class="grid">
-            <div class="col-4">
-              <input id="administration-name" type="text" placeholder="Administration name"
-                class="text-base text-color surface-overlay p-2 border-1 border-solid surface-border border-round appearance-none outline-none focus:border-primary w-full">
+          <div class="grid mt-5">
+            <div class="col-6">
+              <span class="p-float-label">
+                <InputText id="administration-name" v-model="administrationName" />
+                <label for="administration-name">Administration Name</label>
+              </span>
             </div>
 
-            <div class="col-4">
-              <Calendar v-model="startDate" placeholder="Start date" />
-            </div>
-
-            <div class="col-4">
-              <Calendar v-model="endDate" placeholder="End date" />
+            <div class="col-6">
+              <span class="p-float-label">
+                <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
+                  selectionMode="range" :manualInput="false" showButtonBar />
+                <label for="dates">Dates</label>
+              </span>
             </div>
           </div>
         </div>
       </div>
-      <div id="section" class="col-12">
+      <div class="col-12 mt-5">
         <div style="width: fit-content;">
-          <p id="section-heading">Participants</p>
+          <p id="section-heading">Assign participants by organization</p>
 
-          <p id="section-content" style="margin-bottom: 1.25rem">Select participants by varying levels of granularity.</p>
-
-          <div class="grid">
-            <div class="col-4" v-if="districts.length > 0">
-              <MultiSelect v-model="selectedDistrict" :options="districts" optionLabel="name"
-                placeholder="Select district(s)" class="w-full md:w-14rem" />
+          <div class="grid mt-5">
+            <div class="col-4 mb-5" v-if="districts.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="districts" />
+                <label for="districts">Districts</label>
+              </span>
             </div>
 
-            <div class="col-4" v-if="schools.length > 0">
-              <MultiSelect v-model="selectedSchool" :options="schools" optionLabel="name" placeholder="Select school(s)"
-                class="w-full md:w-14rem" />
+            <div class="col-4 mb-5" v-if="schools.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="schools" />
+                <label for="schools">Schools</label>
+              </span>
             </div>
 
-            <div class="col-4" v-if="classes.length > 0">
-              <MultiSelect v-model="selectedClass" :options="classes" optionLabel="name" placeholder="Select class(es)"
-                class="w-full md:w-14rem" />
+            <div class="col-4 mb-5" v-if="classes.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="classes" />
+                <label for="classes">Classes</label>
+              </span>
+            </div>
+
+            <div class="col-4 mb-5" v-if="studies.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="studies" />
+                <label for="studies">Studies</label>
+              </span>
+            </div>
+
+            <div class="col-4 mb-5" v-if="families.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedFamily" :options="families" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="families" />
+                <label for="families">Families</label>
+              </span>
             </div>
           </div>
-
-          <!-- <div v-if="false">
-            <p id="section-content">Or select specific participants by their ROAR ID</p>
-            <MultiSelect v-model="selectedParticipant" :options="participants" optionLabel="name"
-              placeholder="Select participants" class="w-full md:w-14rem" />
-          </div> -->
         </div>
       </div>
     </div>
 
-    <div id="section" class="col-12">
-      <p id="section-heading">Assessments</p>
-      <PickList v-model="assessments" :showSourceControls="false" :showTargetControls="false"
-        listStyle="height: 21.375rem" dataKey="id" :stripedRows="true">
+    <div class="col-12 mb-3">
+      <p id="section-heading">Select Assessments</p>
+      <PickList v-model="assessments" :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id"
+        :stripedRows="true" :pt="{
+          moveAllToTargetButton: { root: { class: 'hide' } },
+          moveAllToSourceButton: { root: { class: 'hide' } },
+          targetMoveTopButton: { root: { class: 'hide' } },
+          targetMoveBottomButton: { root: { class: 'hide' } },
+        }">
         <template #sourceheader>Available</template>
         <template #targetheader>Selected</template>
         <template #item="slotProps">
@@ -75,10 +98,13 @@
           </div>
         </template>
       </PickList>
-
     </div>
-    <hr>
-    <Button label="Create" rounded @click="getVariants" />
+
+    <div class="col-12 mb-3">
+      <ToggleButton v-model="sequential" />
+
+      <Button label="Create" rounded @click="getVariants" />
+    </div>
   </div>
 </template>
 
@@ -89,29 +115,25 @@ import _get from "lodash/get";
 import { useAuthStore } from "@/store/auth"
 import { useQueryStore } from "@/store/query";
 
+const minStartDate = ref(new Date());
+
+const dates = ref();
+
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
 const { adminClaims } = storeToRefs(authStore);
 
-const startDate = ref();
-const endDate = ref();
-
 const elementToName = (el) => ({ name: el });
 const districts = adminClaims.value.districts.map(elementToName);
 const schools = adminClaims.value.schools.map(elementToName);
 const classes = adminClaims.value.classes.map(elementToName);
+const studies = [{ name: 'a' }, { name: 'b' }, { name: 'c' }];
+const families = [{ name: 'd' }, { name: 'e' }, { name: 'f' }];
 
 const selectedDistrict = ref();
 const selectedSchool = ref();
 const selectedClass = ref();
-
-// const selectedParticipant = ref();
-// const participants = ref([
-//   { name: 'Participant 1' },
-//   { name: 'Participant 2' },
-//   { name: 'Participant 3' }
-// ]);
 
 const assessments = ref(null);
 
@@ -120,7 +142,7 @@ const getVariants = () => {
 }
 
 onMounted(() => {
-  queryStore.getVariants();
+  queryStore.getVariants(false);
   return assessments.value = [
     [
       {
@@ -223,16 +245,16 @@ onMounted(() => {
     color: #C4C4C4;
   }
 
-  .p-button {
-    width: 11.5625rem;
-    height: 2.25rem;
-    border-radius: 3.9375rem;
-    margin: 1.5rem 0rem;
-    margin-right: 1.375rem;
-    float: right;
-  }
+  // .p-button {
+  //   width: 11.5625rem;
+  //   height: 2.25rem;
+  //   border-radius: 3.9375rem;
+  //   margin: 1.5rem 0rem;
+  //   margin-right: 1.375rem;
+  //   float: right;
+  // }
 
-  .p-picklist .p-picklist-buttons .p-button {
+  .hide {
     display: none;
   }
 
