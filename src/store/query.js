@@ -1,10 +1,12 @@
-import { defineStore } from "pinia";
+import { Firestore } from "firebase/firestore";
+import { defineStore, storeToRefs } from "pinia";
 import { getUniquePropsFromUsers } from "../helpers/index.js";
-import { getRunTrials, getTasks, getUserRuns, getTasksVariants, queryUsers } from "@bdelab/roar-firekit";
+import { getRunTrials, getTasks, getUserRuns, getTasksVariants } from "@bdelab/roar-firekit";
 import { useAuthStore } from "@/store/auth"
 
 export const useQueryStore = () => {
   const authStore = useAuthStore();
+  const { roarfirekit } = storeToRefs(authStore);
   return defineStore({
     id: "queryStore",
     state: () => {
@@ -58,23 +60,23 @@ export const useQueryStore = () => {
     actions: {
       async getTasks(requireRegistered = true) {
         this.tasksReady = false;
-        const appDb = authStore.roarfirekit?.app?.db;
-        if (appDb) {
-          this.tasks = await getTasks(appDb, requireRegistered)
-          this.tasksReady = true;
+        if (roarfirekit.value?.app?.db) {
+          this.tasks = await roarfirekit.value.getTasks(requireRegistered)
         } else {
           this.tasks = []
         }
+        this.tasksReady = true;
       },
       async getVariants(requireRegistered = true) {
         this.variantsReady = false;
-        const appDb = authStore.roarfirekit?.app?.db;
-        if (appDb) {
-          this.allVariants = await getTasksVariants(appDb, requireRegistered);
-          this.variantsReady = true;
+        if (roarfirekit.value?.app?.db) {
+          console.log("getting variants", roarfirekit.value);
+          this.allVariants = await roarfirekit.value.getTasksVariants(requireRegistered);
         } else {
+          console.log("Setting all variants to empty array")
           this.allVariants = [];
         }
+        this.variantsReady = true;
       },
       async getRuns() {
         this.activeTab = 1;
