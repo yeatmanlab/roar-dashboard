@@ -13,11 +13,12 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import _head from 'lodash/head';
+import _get from 'lodash/get';
 
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
-const { isFirekitInit } = storeToRefs(authStore);
+const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
 
 onMounted(async () => {
   if(isFirekitInit.value) {
@@ -32,12 +33,11 @@ watch(isFirekitInit, async (newValue, oldValue) => {
 async function startTask() { 
   const currentAssignment = _head(toRaw(authStore.firekitAssignmentIds))
   const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, "sre")
+  console.log('appKit is defined as', appKit)
 
   const userParams = {
-    pid: appKit._userInfo.assessmentPid,
-    labId: "yeatmanlab",
+    grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade')
   }
-
   const gameParams = appKit._taskInfo.variantParams
   const roarApp = new RoarSRE(appKit, gameParams, userParams, 'jspsych-target');
 
