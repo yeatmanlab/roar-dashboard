@@ -111,6 +111,7 @@ import _includes from 'lodash/includes'
 import _get from 'lodash/get';
 import _set from 'lodash/set';
 import _isEmpty from 'lodash/isEmpty';
+import _compact from 'lodash/compact';
 import { useAuthStore } from '@/store/auth'
 import RoarDataTable from '../components/RoarDataTable.vue';
 
@@ -186,7 +187,7 @@ function getKeyByValue(object, value) {
 
 function submitStudents(rawJson){
   errorMessage.value = "";
-  const modelValues = Object.values(dropdown_model.value)
+  const modelValues = _compact(Object.values(dropdown_model.value))
   // Check that all required values are filled in
   if(!_includes(modelValues, 'email') && !_includes(modelValues, 'username')){
     // Username / email needs to be filled in
