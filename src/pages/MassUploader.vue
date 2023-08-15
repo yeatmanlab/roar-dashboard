@@ -41,6 +41,10 @@
         </ul>
         Not all columns must be used, however a column has to be selected for each required field.
       </div>
+      <div v-if="errorMessage" class="error-box">
+      {{ errorMessage }}
+    </div>
+      <!-- Can't use RoarDataTable to accomodate header dropdowns -->
       <DataTable 
         ref="dataTable" 
         :value="rawStudentFile"
@@ -61,8 +65,10 @@
               <Dropdown 
                 v-model="dropdown_model[col.field]" 
                 :options="dropdown_options" 
-                optionLabel="label" 
-                optionValue="value" 
+                optionLabel="label"
+                optionValue="value"
+                optionGroupLabel="label"
+                optionGroupChildren="items"
                 placeholder="What does this column describe?" 
               />
             </div>
@@ -75,8 +81,24 @@
           Start Registration
         </Button>
       </div>
-      
-      
+      <!-- Datatable of error students -->
+      <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
+      <DataTable
+        v-if="showErrorTable"
+        :value="errorUsers"
+        showGridlines
+        :rowHover="true"
+        :resizableColumns="true"
+        paginator
+        :alwaysShowPaginator="false"
+        :rows="10"
+      >
+        <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+          <template #header>
+            {{ col.header }}
+          </template>
+        </Column>
+      </DataTable>
     </div>
   </div>
 </template>
@@ -87,49 +109,75 @@ import _forEach from 'lodash/forEach'
 import _startCase from 'lodash/startCase'
 import _includes from 'lodash/includes'
 import _get from 'lodash/get';
-import _set from 'lodash/set'
+import _set from 'lodash/set';
+import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth'
+import RoarDataTable from '../components/RoarDataTable.vue';
+
 const authStore = useAuthStore();
 const isFileUploaded = ref(false)
 const rawStudentFile = ref({})
+
+// Primary Table & Dropdown refs
+const dataTable = ref();
 const tableColumns = ref([])
 const dropdown_model = ref({})
 const dropdown_options = ref([
-  {label: 'Student First Name', value: 'firstName'},
-  {label: 'Student Middle Name', value: 'middleName'},
-  {label: 'Student Last Name', value: 'lastName'},
-  {label: 'Student Username', value: 'username'},
-  {label: 'Student Email', value: 'email'},
-  {label: 'Student Date of Birth', value: 'dob'},
-  {label: 'English Language Level', value: 'ell'},
-  {label: 'Grade', value: 'grade'},
-  {label: 'Password', value: 'password'}
+  {
+    label: 'Required',
+    items: [
+      {label: 'Student Username', value: 'username'},
+      {label: 'Student Email', value: 'email'},
+      {label: 'Grade', value: 'grade'},
+      {label: 'Password', value: 'password'},
+      {label: 'Student Date of Birth', value: 'dob'},
+    ]
+  },
+  {
+    label: 'Optional',
+    items: [
+      {label: 'Student First Name', value: 'first'},
+      {label: 'Student Middle Name', value: 'middle'},
+      {label: 'Student Last Name', value: 'last'},
+      {label: 'English Language Level', value: 'ell'},
+    ]
+  },
 ])
-const dataTable = ref();
+
+// Error Users Table refs
+const errorUsers = ref([]);
+const errorUserColumns = ref([]);
+const errorMessage = ref("");
+const showErrorTable = ref(false);
+
 const onFileUpload = async (event) => {
   rawStudentFile.value = await csvFileToJson(event.files[0])
-  // console.log(rawStudentFile.value)
-  generateColumns(toRaw(rawStudentFile.value))
+  tableColumns.value = generateColumns(toRaw(rawStudentFile.value[0]))
+  populateDropdown(tableColumns.value)
   isFileUploaded.value = true;
+}
 
-  // console.log(toRaw(rawStudentFile.value))
-  // console.log(Object.keys(toRaw(rawStudentFile.value)[0]))
+function populateDropdown(columns) {
+  _forEach(columns, col => {
+    dropdown_model.value[col.field] = ''
+  })
 }
 
 function generateColumns(rawJson){
-  const columnValues = Object.keys(rawJson[0])
+  let columns = [];
+  const columnValues = Object.keys(rawJson)
   _forEach(columnValues, col => {
-    let dataType = (typeof rawJson[0][col])
+    let dataType = (typeof rawJson[col])
     if(dataType === 'object'){
-      if(rawJson[0][col] instanceof Date) dataType = 'date'
+      if(rawJson[col] instanceof Date) dataType = 'date'
     }
-    tableColumns.value.push({
+    columns.push({
       field: col,
       header: _startCase(col),
       dataType: dataType
     })
-    dropdown_model.value[col] = ''
   })
+  return columns
 }
 
 function getKeyByValue(object, value) {
@@ -137,23 +185,28 @@ function getKeyByValue(object, value) {
 }
 
 function submitStudents(rawJson){
+  errorMessage.value = "";
   const modelValues = Object.values(dropdown_model.value)
   // Check that all required values are filled in
   if(!_includes(modelValues, 'email') && !_includes(modelValues, 'username')){
     // Username / email needs to be filled in
-    console.log('username/password not filled in')
+    errorMessage.value = "Please select a column to be user's username or email."
+    return;
   }
   if(!_includes(modelValues, 'dob')){
     // Date needs to be filled in
-    console.log('age not filled in')
+    errorMessage.value = "Please select a column to be user's date of birth."
+    return;
   }
   if(!_includes(modelValues, 'grade')){
     // Grade needs to be filled in
-    console.log('grade not filled in')
+    errorMessage.value = "Please select a column to be user's grade."
+    return;
   }
   if(!_includes(modelValues, 'password')){
     // Password needs to be filled in 
-    console.log('password not filled in')
+    errorMessage.value = "Please select a column to be user's password."
+    return;
   }
   let submitObject = []
   _forEach(rawStudentFile.value, student => {
@@ -167,25 +220,31 @@ function submitStudents(rawJson){
   console.log('Submit Object', submitObject)
   _forEach(submitObject, user => {
     // Handle Email Registration
-    if(_get(user, 'email')){
-      const { email, password, firstName, middleName, lastName, ...userData } = user;
-      let sendObject = {
-        email, 
-        password,
-        userData
-      }
-      if(firstName) _set(sendObject, 'userData.name.first', firstName)
-      if(middleName) _set(sendObject, 'userData.name.middle', middleName)
-      if(lastName) _set(sendObject, 'userData.name.last', lastName)
-      console.log('Registering Student with:', sendObject)
-
-      authStore.registerWithEmailAndPassword(sendObject).catch((e) => {
-        console.log('[Mass Uploader] Error caught in user creation: ', e)
-      })
-    } else {
-      // Handle Username Registration
+    const { email, username, password, firstName, middleName, lastName, ...userData } = user;
+    const computedEmail = email || `${username}@roar-auth.com`
+    let sendObject = {
+      email: computedEmail, 
+      password,
+      userData
     }
+    if(firstName) _set(sendObject, 'userData.name.first', firstName)
+    if(middleName) _set(sendObject, 'userData.name.middle', middleName)
+    if(lastName) _set(sendObject, 'userData.name.last', lastName)
+    console.log('Registering Student with:', sendObject)
+
+    authStore.registerWithEmailAndPassword(sendObject).then(() => {
+      console.log('sucessful user creation')
+    }).catch((e) => {
+      // console.log('[Mass Uploader] Error caught in user creation: ', e)
+      console.log('error was with', user)
+      if(_isEmpty(errorUserColumns.value)){
+        errorUserColumns.value = generateColumns(user)
+        showErrorTable.value = true
+      }
+      errorUsers.value.push(user)
+    })
   })
+  console.log('Error Users:', errorUsers)
 }
 
 // Event listener for the 'beforeunload' event
@@ -208,6 +267,16 @@ window.addEventListener('beforeunload', (e) => {
   background-color: var(--surface-b);
   border-radius: 5px;
   border: 1px solid var(--surface-d);
+}
+.error-box {
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  background-color: var(--red-300);
+  border-radius: 5px;
+  border: 1px solid var(--red-600);
+  color: var(--red-600);
+  font-weight: bold;
 }
 .col-header {
   display: flex;
