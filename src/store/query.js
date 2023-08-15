@@ -58,6 +58,13 @@ export const useQueryStore = () => {
       runStudies: (state) => [...new Set(state.runs.map((run) => run.study.id))].map((id) => ({ id })),
     },
     actions: {
+      async getOrgs(orgType) {
+        if (roarfirekit.value?.app?.db) {
+          return roarfirekit.value.getOrgs(orgType);
+        } else {
+          return []
+        }
+      },
       async getTasks(requireRegistered = true) {
         this.tasksReady = false;
         if (roarfirekit.value?.app?.db) {
