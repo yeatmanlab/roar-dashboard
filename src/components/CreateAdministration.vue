@@ -31,7 +31,7 @@
           <div class="grid mt-5">
             <div class="col-4 mb-5" v-if="districts.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
                   inputId="districts" />
                 <label for="districts">Districts</label>
               </span>
@@ -39,7 +39,7 @@
 
             <div class="col-4 mb-5" v-if="schools.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
                   inputId="schools" />
                 <label for="schools">Schools</label>
               </span>
@@ -47,7 +47,7 @@
 
             <div class="col-4 mb-5" v-if="classes.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
                   inputId="classes" />
                 <label for="classes">Classes</label>
               </span>
@@ -55,7 +55,7 @@
 
             <div class="col-4 mb-5" v-if="studies.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="selectedStudies" :options="studies" optionLabel="name" class="w-full md:w-14rem"
                   inputId="studies" />
                 <label for="studies">Studies</label>
               </span>
@@ -63,7 +63,7 @@
 
             <div class="col-4 mb-5" v-if="families.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedFamily" :options="families" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
                   inputId="families" />
                 <label for="families">Families</label>
               </span>
@@ -103,17 +103,19 @@
     <div class="col-12 mb-3">
       <ToggleButton v-model="sequential" />
 
-      <Button label="Create" rounded @click="getVariants" />
+      <Button label="Create" rounded @click="initFormFields" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import _get from "lodash/get";
-import { useAuthStore } from "@/store/auth"
+import _isEmpty from "lodash/isEmpty";
+import _union from "lodash/union";
 import { useQueryStore } from "@/store/query";
+import { useAuthStore } from "@/store/auth";
 
 const minStartDate = ref(new Date());
 
@@ -122,63 +124,52 @@ const dates = ref();
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
-const { adminClaims } = storeToRefs(authStore);
+const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
 
-const elementToName = (el) => ({ name: el });
-const districts = adminClaims.value.districts.map(elementToName);
-const schools = adminClaims.value.schools.map(elementToName);
-const classes = adminClaims.value.classes.map(elementToName);
-const studies = [{ name: 'a' }, { name: 'b' }, { name: 'c' }];
-const families = [{ name: 'd' }, { name: 'e' }, { name: 'f' }];
+const districts = ref([]);
+const schools = ref([]);
+const classes = ref([]);
+const studies = ref([]);
+const families = ref([]);
 
-const selectedDistrict = ref();
-const selectedSchool = ref();
-const selectedClass = ref();
+const selectedDistricts = ref();
+const selectedSchools = ref();
+const selectedClasses = ref();
+const selectedStudies = ref();
+const selectedFamilies = ref();
 
-const assessments = ref(null);
+const superAdmin = ref(roarfirekit.value._superAdmin);
+const adminOrgs = ref(roarfirekit.value._adminOrgs);
 
-const getVariants = () => {
-  queryStore.getVariants();
+const { allVariants: assessments } = storeToRefs(queryStore);
+
+const initFormFields = async () => {
+  const requireRegisteredTasks = !roarfirekit.value.superAdmin
+
+  queryStore.getVariants(requireRegisteredTasks);
+  districts.value = await queryStore.getOrgs("districts");
+  schools.value = await queryStore.getOrgs("schools");
+  classes.value = await queryStore.getOrgs("classes");
+  studies.value = await queryStore.getOrgs("studies");
+  families.value = await queryStore.getOrgs("families");
 }
 
-onMounted(() => {
-  queryStore.getVariants(false);
-  return assessments.value = [
-    [
-      {
-        name: 'SWR',
-        variant: 'default',
-        image: '/src/assets/swr-icon.jpeg'
-      },
-      {
-        name: 'SWR',
-        variant: 'variant 1',
-        image: '/src/assets/swr-icon.jpeg'
-      },
-      {
-        name: 'SWR',
-        variant: 'variant 2',
-        image: '/src/assets/swr-icon.jpeg'
-      },
-      {
-        name: 'SRE',
-        variant: 'default',
-        image: '/src/assets/sre-icon.jpeg'
-      },
-      {
-        name: 'SRE',
-        variant: 'variant 1',
-        image: '/src/assets/sre-icon.jpeg'
-      },
-      {
-        name: 'SRE',
-        variant: 'variant 2',
-        image: '/src/assets/sre-icon.jpeg'
-      },
-    ], []
-  ];
+onMounted(async () => {
+  if (isFirekitInit.value && roarfirekit.value.isAdmin()) {
+    initFormFields();
+  }
 });
 
+watch([isFirekitInit, superAdmin, adminOrgs], ([newFirekitInit, newSuperAdmin, newAdminOrgs]) => {
+  console.log(newFirekitInit, newSuperAdmin, newAdminOrgs.value);
+  if (newSuperAdmin !== undefined && newAdminOrgs !== undefined) {
+    const isAdmin = newSuperAdmin || _isEmpty(_union(...Object.values(newAdminOrgs.value)));
+    console.log("isAdmin", isAdmin);
+    if (newFirekitInit && isAdmin) {
+      initFormFields();
+    }
+  }
+});
 </script> 
 
 <style lang="scss">
