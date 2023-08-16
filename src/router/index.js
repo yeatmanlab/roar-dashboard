@@ -1,13 +1,61 @@
+import { storeToRefs } from "pinia";
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/store/auth";
+import _get from "lodash/get";
+
+function removeQueryParams(to) {
+  if (Object.keys(to.query).length)
+    return { path: to.path, query: {}, hash: to.hash }
+}
+
+function removeHash(to) {
+  if (to.hash) return { path: to.path, query: to.query, hash: '' }
+}
 
 const routes = [
   {
     path: "/",
     name: "Home",
-    component: () => import("../pages/Home.vue"),
+    component: () => {
+      const authStore = useAuthStore();
+      const { roarfirekit, firekitUserData } = storeToRefs(authStore);
+      let userType = _get(roarfirekit.value, 'userData.userType');
+      if (!userType) {
+        userType = firekitUserData.value?.userType || "guest";
+      }
+      if (userType === "admin") return import("../pages/Participant.vue"); // TODO: THIS NEEDS TO BE CHANGED TO ADMIN VIEW BEFORE RELEASE.
+      else if (userType === "educator") return import("../pages/Home.vue");
+      else if (userType === "student") return import("../pages/Participant.vue");
+      else if (userType === "caregiver") return import("../pages/Home.vue");
+      else if (userType === "guest") return import("../pages/Home.vue");
+      else return import("../pages/Home.vue");
+    },
     meta: { pageTitle: "Dashboard" },
 
+  },
+  // {
+  //   path: "/game/:gameId",
+  //   name: "PlayApp",
+  //   component: () => import("../pages/PlayApp.vue"),
+  //   meta: { pageTitle: "PlayApp" }
+  // },
+  {
+    path: "/game/swr",
+    name: "SWR",
+    component: () => import("../components/tasks/SWR.vue"),
+    meta: { pageTitle: "SWR" }
+  },
+  {
+    path: "/game/pa",
+    name: "PA",
+    component: () => import("../components/tasks/PA.vue"),
+    meta: { pageTitle: "PA" }
+  },
+  {
+    path: "/game/sre",
+    name: "SRE",
+    component: () => import("../components/tasks/SRE.vue"),
+    meta: { pageTitle: "SRE" }
   },
   {
     path: "/upload-scores",
@@ -51,7 +99,7 @@ const routes = [
     name: "SignOut",
     async beforeEnter(to, from) {
       const store = useAuthStore();
-      if(store.isUserAuthed()){
+      if(store.isAuthenticated){
         await store.signOut();
       }
       return { name: "SignIn" };
@@ -62,27 +110,35 @@ const routes = [
   {
     path: "/auth-clever",
     name: "AuthClever",
+    beforeRouteLeave: [removeQueryParams, removeHash],
     component: () => import("../components/auth/AuthClever.vue"),
     props: route => ({ code: route.query.code }),
     meta: { pageTitle: "Clever Authentication" },
-
-  },
-  {
-    path: "/participant",
-    name: "Participant",
-    component: () => import(/* webpackChunkName: "Participant" */ "../pages/Participant.vue"),
-    meta: {pageTitle: "Participant dashboard" }
   },
   {
     path: "/administrator",
     name: "Administrator",
     component: () => import(/* webpackChunkName: "Administrator" */ "../pages/Administrator.vue"),
+    meta: {pageTitle: "Administrator"}
   },
   {
     path: "/create-admin",
     name: "CreateAdministration",
     component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
+    meta: {pageTitle: "Create an administration"}
   },
+  { 
+    path: "/create-org",
+    name: "CreateOrg",
+    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrg.vue"),
+    meta: {pageTitle: "Create an organization"}
+  },
+  {
+    path: "/administration/:id",
+    name: "ViewAdministration",
+    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../pages/Administration.vue"),
+  },
+
   {
     path: "/enable-cookies",
     name: "EnableCookies",
@@ -97,8 +153,6 @@ const routes = [
       import("../pages/NotFound.vue"),
     meta: { pageTitle: "Whoops! 404 Page!" },
   },
-  
-
 ];
 
 const router = createRouter({
@@ -114,10 +168,8 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const store = useAuthStore();
-  // console.log('Route Auth Status [route]:', store.isUserAuthed())
-  // console.log('what is the to:', to.name)
-  // console.log('Route guard evaluation:', (!store.isUserAuthed() && to.name !== "SignIn"))
-  if(!store.isUserAuthed() && to.name !== "SignIn"){
+  if (!to.path.includes("__/auth/handler")
+    && (!store.isAuthenticated && to.name !== "SignIn" && to.name !== "AuthClever")) {
     console.log("You're not logged in. Routing to SignIn")
     return { name: "SignIn" }
   }

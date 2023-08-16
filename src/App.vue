@@ -12,10 +12,10 @@
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
   </AppHead>
   <div>
-    <Navbar v-if="$route.name !== 'SignIn'" />
+    <Navbar v-if="!navbarBlacklist.includes($route.name)" />
     <router-view />
   </div>
-  
+
   <!-- <AppSpinner v-show="!showPage" /> -->
 </template>
 
@@ -23,6 +23,15 @@
 import { onBeforeMount } from 'vue';
 import Navbar from "@/components/Navbar.vue";
 import { useAuthStore } from "@/store/auth";
+import { ref } from 'vue';
+
+const navbarBlacklist = ref([
+  "SignIn",
+  "PlayApp",
+  "SWR",
+  "SRE",
+  "PA"
+]);
 
 onBeforeMount(async () => {
   const authStore = useAuthStore();

@@ -1,22 +1,22 @@
 <template>
   <div id="games">
-    <TabView v-model:activeIndex="currentGameIndex">
-      <TabPanel v-for="game in games" :key="game.id" :disabled="!game.completed && (currentGameId !== game.id)">
+    <TabView v-model:activeIndex="selectedIndex">
+      <TabPanel v-for="game in games" :key="game.taskData.taskId" :disabled="sequential && !game.completedOn && (currentGameId !== game.taskId)">
         <template #header>
           <!--Complete Game-->
-          <i v-if="game.completed" class="pi pi-check-circle mr-2" data-game-status="complete" />
+          <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
           <!--Current Game-->
-          <i v-else-if="game.id == currentGameId" class="pi pi-circle mr-2" data-game-status="current" />
+          <i v-else-if="game.taskId == currentGameId || !sequential" class="pi pi-circle mr-2" data-game-status="current" />
           <!--Locked Game-->
-          <i v-else class="pi pi-lock mr-2" data-game-status="incomplete" />
-          <span class="tabview-nav-link-label" :data-game-status="`${game.completed ? 'complete' : 'incomplete'}`">{{ game.title }}</span>
+          <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
+          <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{ game.taskData.name }}</span>
         </template>
         <article class="roar-tabview-game">
             <div class="roar-game-content">
-              <h2 class="roar-game-title" v-tooltip="'test'">{{ game.title }}</h2>
-              <div class="roar-game-description"><p>{{game.description}}</p></div>
+              <h2 class="roar-game-title" v-tooltip="'test'">{{ game.taskData.name }}</h2>
+              <div class="roar-game-description"><p>{{game.taskData.description}}</p></div>
               <div class="roar-game-meta">
-                <Tag v-for="(items,index) in game.metadata" :value="index + ': ' + items"></Tag>
+                <Tag v-for="(items,index) in game.taskData.meta" :value="index + ': ' + items"></Tag>
               </div>
               <div class="roar-game-footer">
                 <i class="pi"><svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -27,29 +27,38 @@
               </div>
             </div>
             <div class="roar-game-image">
-              <img :src="game.imgSrc"/>
+              <img v-if="game.taskData.image" :src="game.taskData.image">
+              <!-- TODO: Get real backup image -->
+              <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
             </div>
-            <router-link :to="{ path: 'game/' + game.id }"></router-link>
+            <router-link :to="{ path: 'game/' + game.taskId }"></router-link>
         </article>
       </TabPanel>
     </TabView>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { computed, ref, toRaw } from 'vue';
 import _get from 'lodash/get'
+import _find from 'lodash/find'
+import _findIndex from 'lodash/findIndex'
 const props = defineProps({
-  games: {required: true, default: {}}
+  games: {required: true, default: []}
 })
-const currentGameId = ref('')
-const currentGameIndex = ref(0)
-for(let i = 0; i < props.games.length; i+=1) {
-  if(!_get(props.games[i], 'completed')){
-    currentGameId.value = _get(props.games[i], 'id');
-    currentGameIndex.value = i;
-    break;
-  }
-}
+
+const selectedIndex = ref(0);
+// TODO: Grab this from the db instead of hard-coding
+const sequential = ref(false);
+
+const currentGameId = computed(() => {
+  return _get(_find(props.games, (game) => { return (game.completedOn === undefined) }), 'taskId')
+})
+
+const currentGameIndex = computed(() => {
+  return _findIndex(props.games, (game) => { return (game.taskId === currentGameId.value) })
+})
+
+selectedIndex.value = currentGameIndex.value
 </script>
 <style scoped lang="scss">
 

@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "gse-yeatmanlab"
+    "default": "gse-roar-admin"
   },
   "targets": {
-    "gse-yeatmanlab": {
+    "gse-roar-admin": {
       "hosting": {
-        "platform": [
-          "roar-platform"
+        "dashboard": [
+          "gse-roar-admin"
         ]
       }
     }

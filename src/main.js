@@ -19,6 +19,7 @@ import Carousel from "primevue/carousel"
 import Checkbox from "primevue/checkbox";
 import Chart from 'primevue/chart'
 import Chip from "primevue/chip";
+import DataView from 'primevue/dataview';
 import Dialog from 'primevue/dialog';
 import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
@@ -29,6 +30,7 @@ import InlineMessage from 'primevue/inlinemessage';
 import Message from "primevue/message";
 import Menu from "primevue/menu"
 import MultiSelect from "primevue/multiselect";
+import OverlayPanel from "primevue/overlaypanel";
 import Panel from "primevue/panel";
 import Password from "primevue/password";
 import PickList from 'primevue/picklist';
@@ -42,6 +44,7 @@ import Toast from 'primevue/toast';
 import ToastService from 'primevue/toastservice';
 import Toolbar from "primevue/toolbar";
 import Tooltip from "primevue/tooltip";
+import ToggleButton from "primevue/togglebutton";
 import TreeSelect from "primevue/treeselect";
 import TriStateCheckbox from 'primevue/tristatecheckbox'
 
@@ -83,6 +86,7 @@ app.component("Carousel", Carousel);
 app.component("Checkbox", Checkbox);
 app.component("Chart", Chart);
 app.component("Chip", Chip);
+app.component("DataView", DataView);
 app.component("Dialog", Dialog);
 app.component("Divider", Divider);
 app.component("Dropdown", Dropdown);
@@ -92,6 +96,7 @@ app.component("InputText", InputText);
 app.component("Message", Message);
 app.component("Menu", Menu);
 app.component("MultiSelect", MultiSelect);
+app.component("OverlayPanel", OverlayPanel);
 app.component("Panel", Panel);
 app.component("Password", Password);
 app.component("PickList", PickList);
@@ -102,6 +107,7 @@ app.component("TabPanel", TabPanel);
 app.component("TabView", TabView);
 app.component("Tag", Tag);
 app.component("Toast", Toast);
+app.component("ToggleButton", ToggleButton);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
 app.component("TriStateCheckbox", TriStateCheckbox)
