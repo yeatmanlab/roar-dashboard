@@ -77,10 +77,8 @@ export const useQueryStore = () => {
       async getVariants(requireRegistered = true) {
         this.variantsReady = false;
         if (roarfirekit.value?.app?.db) {
-          console.log("getting variants", roarfirekit.value);
-          this.allVariants = await roarfirekit.value.getTasksVariants(requireRegistered);
+          this.allVariants = await roarfirekit.value.getVariants(requireRegistered);
         } else {
-          console.log("Setting all variants to empty array")
           this.allVariants = [];
         }
         this.variantsReady = true;
