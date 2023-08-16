@@ -29,7 +29,7 @@
       </div>
       <div class="col-12 mt-5">
         <div style="width: fit-content;">
-          <p id="section-heading">Assign participants by organization</p>
+          <p id="section-heading">Assign this administration to organizations</p>
 
           <div class="orgs-container">
             <div class="org-dropdown" v-if="districts.length > 0">
@@ -100,12 +100,11 @@
             </div>
             <Button type="button" rounded size="small" icon="pi pi-info" @click="toggle($event, slotProps.item.id)" />
             <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
-              {{ JSON.stringify(slotProps.item.variant.params) }}
-              <!-- Put this in a datatable -->
-              <!-- <DataTable :value="slotProps.item.variant.params">
+              <DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
+                :value="toEntryObjects(slotProps.item.variant.params)">
                 <Column field="key" header="Parameter" style="width: 50%"></Column>
                 <Column field="value" header="Value" style="width: 50%"></Column>
-              </DataTable> -->
+              </DataTable>
             </OverlayPanel>
           </div>
         </template>
@@ -130,12 +129,17 @@ import { storeToRefs } from "pinia";
 import _fromPairs from "lodash/fromPairs";
 import _get from "lodash/get";
 import _isEmpty from "lodash/isEmpty";
+import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "./AppSpinner.vue";
 
 let paramPanelRefs = {};
+
+const toEntryObjects = (inputObj) => {
+  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+}
 
 const toggle = (event, id) => {
   console.log("Toggling " + id)
@@ -175,14 +179,17 @@ const backupImage = "/src/assets/swr-icon.jpeg";
 
 const initFormFields = async () => {
   unsubscribe();
-  // TODO: Optimize this with Promise.all or some such
   const requireRegisteredTasks = !roarfirekit.value.superAdmin
-  await queryStore.getVariants(requireRegisteredTasks);
-  districts.value = await queryStore.getOrgs("districts");
-  schools.value = await queryStore.getOrgs("schools");
-  classes.value = await queryStore.getOrgs("classes");
-  studies.value = await queryStore.getOrgs("studies");
-  families.value = await queryStore.getOrgs("families");
+
+  const variantsPromise = queryStore.getVariants(requireRegisteredTasks);
+  const districtsPromise = queryStore.getOrgs("districts");
+  const schoolsPromise = queryStore.getOrgs("schools");
+  const classesPromise = queryStore.getOrgs("classes");
+  const studiesPromise = queryStore.getOrgs("students");
+  const familiesPromise = queryStore.getOrgs("families");
+  let otherPromises = [];
+
+  [districts.value, schools.value, classes.value, studies.value, families.value, ...otherPromises] = await Promise.all([districtsPromise, schoolsPromise, classesPromise, studiesPromise, familiesPromise, variantsPromise]);
   assessments.value = [allVariants.value, []];
   paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
   formReady.value = true;

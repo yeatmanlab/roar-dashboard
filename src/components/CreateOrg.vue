@@ -57,26 +57,24 @@
       </div>
 
       <div class="col-12 mt-2" v-if="parentOrgType">
-        <div style="width: fit-content;">
+        <div style="width: fit-content;" v-if="parentOrgs.length > 1">
           <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType }}.</p>
 
           <div class="grid mt-5">
-            <div class="col-4 mb-5" v-if="parentOrgType === 'district'">
+            <div class="col-4 mb-5">
               <span class="p-float-label">
-                <Dropdown v-model="district" inputId="district" :options="districts" showClear optionLabel="name"
-                  placeholder="Select a district" class="w-full md:w-14rem" />
-                <label for="district">District</label>
-              </span>
-            </div>
-
-            <div class="col-4 mb-5" v-if="parentOrgType === 'school'">
-              <span class="p-float-label">
-                <Dropdown v-model="school" inputId="school" :options="schools" showClear optionLabel="name"
-                  placeholder="Select a school" class="w-full md:w-14rem" />
-                <label for="school">School</label>
+                <Dropdown v-model="parentOrg" inputId="district" :options="parentOrgs" showClear optionLabel="name"
+                  :placeholder="`Select a ${parentOrgType}`" class="w-full md:w-14rem" />
+                <label for="district">{{ _capitalize(parentOrgType) }}</label>
               </span>
             </div>
           </div>
+        </div>
+
+        <div style="width: fit-content;" v-if="parentOrgs.length === 1">
+          <p id="section-heading">
+            This {{ orgTypeLabel.toLowerCase() }} will be created in {{ parentOrgType }} {{ parentOrgs[0].name }}.
+          </p>
         </div>
       </div>
     </div>
@@ -145,9 +143,16 @@ const { roarfirekit } = storeToRefs(authStore);
 
 const districts = ref([]);
 const schools = ref([]);
+const parentOrgs = computed(() => {
+  if (orgType.value?.singular === "school") {
+    return districts.value;
+  } else if (orgType.value?.singular === "class") {
+    return schools.value;
+  }
+  return [];
+})
 
-const district = ref();
-const school = ref();
+const parentOrg = ref();
 
 const submit = () => {
   let orgData = {
@@ -155,10 +160,10 @@ const submit = () => {
     abbreviation: orgInitials.value,
   };
 
-  if (school.value) {
-    orgData.schoolId = school.value.id;
-  } else if (district.value) {
-    orgData.districtId = district.value.id;
+  if (parentOrgType.value === "school") {
+    orgData.schoolId = parentOrg.value.id;
+  } else if (parentOrgType.value === "district") {
+    orgData.districtId = parentOrg.value.id;
   }
 
   if (grade.value) orgData.grade = grade.value.value;
