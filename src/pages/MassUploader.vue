@@ -200,6 +200,7 @@ const dropdown_options = ref([
       {label: 'Hispanic Ethinicity', value: 'hispanic_ethnicity'},
       {label: 'Race', value: 'race'},
       {label: 'Home Language', value: 'home_language'},
+      {label: 'Pid', value: 'pid'},
     ]
   },
 ])
@@ -350,6 +351,7 @@ function submitStudents(rawJson){
     if(selectedStudy.value){
       _set(sendObject, 'userData.study', selectedStudy.value.id)
     }
+    console.log('user sendObject', sendObject)
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
     }).catch((e) => {
