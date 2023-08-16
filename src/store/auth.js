@@ -15,7 +15,7 @@ export const useAuthStore = () => {
           adminFirebaseUser: null,
           appFirebaseUser: null,
         },
-        roles: null,
+        adminOrgs: null,
         roarfirekit: null,
         hasUserData: false,
         firekitUserData: null,
@@ -33,6 +33,7 @@ export const useAuthStore = () => {
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser)) },
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
+      isAdmin: (state) => { return state.roarfirekit?.initialized ?? state.roarfirekit?.isAdmin() },
     },
     actions: {
       async getAssignments(assignments) {
@@ -124,7 +125,7 @@ export const useAuthStore = () => {
       async signOut() {
         if(this.isAuthenticated && this.isFirekitInit){
           return this.roarfirekit.signOut().then(() => {
-            this.roles = null;
+            this.adminOrgs = null;
             this.hasUserData = false;
             // this.roarfirekit = initNewFirekit()
           });
