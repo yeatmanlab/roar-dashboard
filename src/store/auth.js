@@ -1,4 +1,3 @@
-import { computed } from "vue";
 import { defineStore } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
@@ -157,7 +156,12 @@ export const useAuthStore = () => {
     // persist: true
     persist: {
       storage: sessionStorage,
-      debug: true
+      debug: false,
+      afterRestore: async (ctx) => {
+        if (ctx.store.roarfirekit) {
+          ctx.store.roarfirekit = await initNewFirekit();
+        }
+      }
     },
   })();
 };
