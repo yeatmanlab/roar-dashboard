@@ -54,6 +54,7 @@
         paginator
         :alwaysShowPaginator="false"
         :rows="10"
+        class="datatable"
       >
         <Column 
           v-for="col of tableColumns" 
@@ -92,6 +93,7 @@
         paginator
         :alwaysShowPaginator="false"
         :rows="10"
+        class="datatable"
       >
         <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
           <template #header>
@@ -112,7 +114,9 @@ import _get from 'lodash/get';
 import _set from 'lodash/set';
 import _isEmpty from 'lodash/isEmpty';
 import _compact from 'lodash/compact';
-import { useAuthStore } from '@/store/auth'
+import _cloneDeep from 'lodash/cloneDeep';
+import _omit from 'lodash/omit';
+import { useAuthStore } from '@/store/auth';
 import RoarDataTable from '../components/RoarDataTable.vue';
 
 const authStore = useAuthStore();
@@ -137,6 +141,7 @@ const dropdown_options = ref([
   {
     label: 'Optional',
     items: [
+      {label: 'Race', value: 'race'},
       {label: 'Student First Name', value: 'first'},
       {label: 'Student Middle Name', value: 'middle'},
       {label: 'Student Last Name', value: 'last'},
@@ -212,9 +217,21 @@ function submitStudents(rawJson){
   let submitObject = []
   _forEach(rawStudentFile.value, student => {
     let studentObj = {}
+    let dropdownMap = _cloneDeep(dropdown_model.value)
     _forEach(modelValues, col => {
-      const columnMap = getKeyByValue(dropdown_model.value, col)
-      studentObj[col] = student[columnMap]
+      const columnMap = getKeyByValue(dropdownMap, col)
+      // Special fields will accept multiple columns, and concat the values in each column
+      if(['race'].includes(col)){
+        if(!studentObj[col] && student[columnMap]){
+          studentObj[col] = [student[columnMap]]
+          dropdownMap = _omit(dropdownMap, columnMap)
+        } else if(student[columnMap]) {
+          studentObj[col].push(student[columnMap])
+          dropdownMap = _omit(dropdownMap, columnMap)
+        }
+      } else {
+        studentObj[col] = student[columnMap]
+      }
     })
     submitObject.push(studentObj)
   })
@@ -231,13 +248,10 @@ function submitStudents(rawJson){
     if(firstName) _set(sendObject, 'userData.name.first', firstName)
     if(middleName) _set(sendObject, 'userData.name.middle', middleName)
     if(lastName) _set(sendObject, 'userData.name.last', lastName)
-    console.log('Registering Student with:', sendObject)
 
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
     }).catch((e) => {
-      // console.log('[Mass Uploader] Error caught in user creation: ', e)
-      console.log('error was with', user)
       if(_isEmpty(errorUserColumns.value)){
         errorUserColumns.value = generateColumns(user)
         showErrorTable.value = true
@@ -245,7 +259,6 @@ function submitStudents(rawJson){
       errorUsers.value.push(user)
     })
   })
-  console.log('Error Users:', errorUsers)
 }
 
 // Event listener for the 'beforeunload' event
@@ -290,5 +303,9 @@ window.addEventListener('beforeunload', (e) => {
 }
 .error {
   color: red;
+}
+.datatable {
+  border: 1px solid var(--surface-d);
+  border-radius: 5px;
 }
 </style>
