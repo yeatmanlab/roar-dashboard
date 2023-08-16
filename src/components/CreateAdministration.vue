@@ -1,5 +1,5 @@
 <template>
-  <div class="card" id="rectangle">
+  <div class="card" id="rectangle" v-if="formReady">
     <span id="heading">Create a new administration</span>
     <p id="section-heading">Use this form to create a new administration.</p>
     <hr>
@@ -17,7 +17,7 @@
             <div class="col-6">
               <span class="p-float-label">
                 <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
-                  selectionMode="range" :manualInput="false" showButtonBar />
+                  selectionMode="range" :manualInput="false" showIcon showButtonBar />
                 <label for="dates">Dates</label>
               </span>
             </div>
@@ -86,15 +86,24 @@
         <template #targetheader>Selected</template>
         <template #item="slotProps">
           <div class="flex flex-wrap p-2 align-items-center gap-3">
-            <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.image"
-              :alt="slotProps.item.name" />
+            <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.task.image || backupImage"
+              :alt="slotProps.item.task.name" />
             <div class="flex-1 flex flex-column gap-2">
-              <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.name }}</span>
+              <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.task.name }}</span>
               <div class="flex align-items-center gap-2">
                 <i class="pi pi-tag text-sm" style="margin-left: 0.625rem"></i>
-                <span style="margin-left: 0.625rem">{{ slotProps.item.variant }}</span>
+                <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
               </div>
             </div>
+            <Button type="button" rounded size="small" icon="pi pi-info" @click="toggle($event, slotProps.item.id)" />
+            <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
+              {{ JSON.stringify(slotProps.item.variant.params) }}
+              <!-- Put this in a datatable -->
+              <!-- <DataTable :value="slotProps.item.variant.params">
+                <Column field="key" header="Parameter" style="width: 50%"></Column>
+                <Column field="value" header="Value" style="width: 50%"></Column>
+              </DataTable> -->
+            </OverlayPanel>
           </div>
         </template>
       </PickList>
@@ -103,20 +112,33 @@
     <div class="col-12 mb-3">
       <ToggleButton v-model="sequential" />
 
-      <Button label="Create" rounded @click="initFormFields" />
+      <Button label="Create" @click="initFormFields" />
     </div>
   </div>
+  <AppSpinner v-else />
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref } from "vue";
 import { storeToRefs } from "pinia";
+import _fromPairs from "lodash/fromPairs";
 import _get from "lodash/get";
 import _isEmpty from "lodash/isEmpty";
 import _union from "lodash/union";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
+import AppSpinner from "./AppSpinner.vue";
 
+let paramPanelRefs = {};
+
+const toggle = (event, id) => {
+  console.log("Toggling " + id)
+  paramPanelRefs[id].value.toggle(event)
+}
+
+const formReady = ref(false);
+
+const administrationName = ref("");
 const minStartDate = ref(new Date());
 
 const dates = ref();
@@ -124,7 +146,7 @@ const dates = ref();
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
-const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const districts = ref([]);
 const schools = ref([]);
@@ -138,36 +160,31 @@ const selectedClasses = ref();
 const selectedStudies = ref();
 const selectedFamilies = ref();
 
-const superAdmin = ref(roarfirekit.value._superAdmin);
-const adminOrgs = ref(roarfirekit.value._adminOrgs);
+const sequential = ref(true);
 
-const { allVariants: assessments } = storeToRefs(queryStore);
+const { allVariants } = storeToRefs(queryStore);
+const assessments = ref([[], []])
+
+const backupImage = "/src/assets/swr-icon.jpeg";
 
 const initFormFields = async () => {
+  unsubscribe();
+  // TODO: Optimize this with Promise.all or some such
   const requireRegisteredTasks = !roarfirekit.value.superAdmin
-
-  queryStore.getVariants(requireRegisteredTasks);
+  await queryStore.getVariants(requireRegisteredTasks);
   districts.value = await queryStore.getOrgs("districts");
   schools.value = await queryStore.getOrgs("schools");
   classes.value = await queryStore.getOrgs("classes");
   studies.value = await queryStore.getOrgs("studies");
   families.value = await queryStore.getOrgs("families");
+  assessments.value = [allVariants.value, []];
+  paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
+  formReady.value = true;
 }
 
-onMounted(async () => {
-  if (isFirekitInit.value && roarfirekit.value.isAdmin()) {
-    initFormFields();
-  }
-});
-
-watch([isFirekitInit, superAdmin, adminOrgs], ([newFirekitInit, newSuperAdmin, newAdminOrgs]) => {
-  console.log(newFirekitInit, newSuperAdmin, newAdminOrgs.value);
-  if (newSuperAdmin !== undefined && newAdminOrgs !== undefined) {
-    const isAdmin = newSuperAdmin || _isEmpty(_union(...Object.values(newAdminOrgs.value)));
-    console.log("isAdmin", isAdmin);
-    if (newFirekitInit && isAdmin) {
-      initFormFields();
-    }
+const unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
+    await initFormFields();
   }
 });
 </script> 

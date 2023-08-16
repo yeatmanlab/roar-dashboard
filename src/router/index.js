@@ -127,6 +127,12 @@ const routes = [
     component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
     meta: {pageTitle: "Create an administration"}
   },
+  { 
+    path: "/create-org",
+    name: "CreateOrg",
+    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrg.vue"),
+    meta: {pageTitle: "Create an organization"}
+  },
   {
     path: "/administration/:id",
     name: "ViewAdministration",
