@@ -41,6 +41,49 @@
         </ul>
         Not all columns must be used, however a column has to be selected for each required field.
       </div>
+
+      <!-- Selecting Orgs -->
+      <div v-if="formReady" class="col-12 mt-5">
+        <div style="width: fit-content;">
+          <p id="section-heading">Assign participants by organization</p>
+
+          <div class="grid mt-5">
+            <div class="col-4 mb-5" v-if="districts.length > 0">
+              <span class="p-float-label">
+                <Dropdown v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="districts" showClear />
+                <label for="districts">Districts</label>
+              </span>
+            </div>
+
+            <div class="col-4 mb-5" v-if="schools.length > 0">
+              <span class="p-float-label">
+                <Dropdown v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="schools" showClear />
+                <label for="schools">Schools</label>
+              </span>
+            </div>
+
+            <div class="col-4 mb-5" v-if="classes.length > 0">
+              <span class="p-float-label">
+                <Dropdown v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="classes" showClear />
+                <label for="classes">Classes</label>
+              </span>
+            </div>
+
+            <div class="col-4 mb-5" v-if="studies.length > 0">
+              <span class="p-float-label">
+                <Dropdown v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="studies" showClear />
+                <label for="studies">Studies</label>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <AppSpinner v-else />
+
       <div v-if="errorMessage" class="error-box">
       {{ errorMessage }}
     </div>
@@ -105,7 +148,7 @@
   </div>
 </template>
 <script setup>
-import { ref, toRaw } from 'vue';
+import { ref, toRaw, onMounted, watch } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _forEach from 'lodash/forEach'
 import _startCase from 'lodash/startCase'
@@ -117,9 +160,14 @@ import _compact from 'lodash/compact';
 import _cloneDeep from 'lodash/cloneDeep';
 import _omit from 'lodash/omit';
 import { useAuthStore } from '@/store/auth';
+import { useQueryStore } from '@/store/query';
 import RoarDataTable from '../components/RoarDataTable.vue';
+import { storeToRefs } from 'pinia';
+import AppSpinner from '../components/AppSpinner.vue';
 
 const authStore = useAuthStore();
+const queryStore = useQueryStore();
+const { roarfirekit, isFirekitInit } = storeToRefs(authStore);
 const isFileUploaded = ref(false)
 const rawStudentFile = ref({})
 
@@ -162,6 +210,41 @@ const errorUserColumns = ref([]);
 const errorMessage = ref("");
 const showErrorTable = ref(false);
 
+// Selecting Orgs
+const formReady = ref(false);
+const districts = ref([]);
+const schools = ref([]);
+const classes = ref([]);
+const studies = ref([]);
+
+const selectedDistrict = ref();
+const selectedSchool = ref();
+const selectedClass = ref();
+const selectedStudy = ref();
+
+const superAdmin = ref(roarfirekit.value._superAdmin);
+const adminOrgs = ref(roarfirekit.value._adminOrgs);
+
+// Functions supporting Selecting Orgs
+const initFormFields = async () => {
+  console.log('inside init form fields')
+  unsubscribe();
+  // TODO: Optimize this with Promise.all or some such
+  districts.value = await queryStore.getOrgs("districts");
+  schools.value = await queryStore.getOrgs("schools");
+  classes.value = await queryStore.getOrgs("classes");
+  studies.value = await queryStore.getOrgs("studies");
+  formReady.value = true;
+}
+
+const unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  console.log('inside subscribe function')
+  if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
+    await initFormFields();
+  }
+});
+
+// Functions supporting the uploader
 const onFileUpload = async (event) => {
   rawStudentFile.value = await csvFileToJson(event.files[0])
   tableColumns.value = generateColumns(toRaw(rawStudentFile.value[0]))
@@ -255,6 +338,18 @@ function submitStudents(rawJson){
     if(middleName) _set(sendObject, 'userData.name.middle', middleName)
     if(lastName) _set(sendObject, 'userData.name.last', lastName)
 
+    if(selectedDistrict.value){
+      _set(sendObject, 'userData.district', selectedDistrict.value.id)
+    }
+    if(selectedSchool.value){
+      _set(sendObject, 'userData.school', selectedSchool.value.id)
+    }
+    if(selectedClass.value){
+      _set(sendObject, 'userData.class', selectedClass.value.id)
+    }
+    if(selectedStudy.value){
+      _set(sendObject, 'userData.study', selectedStudy.value.id)
+    }
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
     }).catch((e) => {
@@ -313,5 +408,70 @@ window.addEventListener('beforeunload', (e) => {
 .datatable {
   border: 1px solid var(--surface-d);
   border-radius: 5px;
+}
+
+
+#rectangle {
+  background: #FCFCFC;
+  border-radius: 0.3125rem;
+  border-style: solid;
+  border-width: 0.0625rem;
+  border-color: #E5E5E5;
+  margin: 4.25rem 1.75rem;
+  padding-top: 1.75rem;
+  padding-left: 1.875rem;
+  text-align: left;
+  overflow: hidden;
+
+  hr {
+    margin-top: 2rem;
+    margin-left: -1.875rem;
+  }
+
+  #heading {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    color: #000000;
+    font-size: 1.625rem;
+    line-height: 2.0425rem;
+  }
+
+  #section-heading {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    font-size: 1.125rem;
+    line-height: 1.5681rem;
+    color: #525252;
+  }
+
+  #administration-name {
+    height: 100%;
+    border-radius: 0.3125rem;
+    border-width: 0.0625rem;
+    border-color: #E5E5E5;
+  }
+
+  #section {
+    margin-top: 1.375rem;
+  }
+
+  #section-content {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 400;
+    font-size: 0.875rem;
+    line-height: 1.22rem;
+    color: #525252;
+    margin: 0.625rem 0rem;
+  }
+
+  .p-dropdown-label {
+    font-family: 'Source Sans Pro', sans-serif;
+    color: #C4C4C4;
+  }
+
+  ::placeholder {
+    font-family: 'Source Sans Pro', sans-serif;
+    color: #C4C4C4;
+  }
 }
 </style>
