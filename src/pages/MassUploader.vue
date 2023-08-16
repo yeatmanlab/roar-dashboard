@@ -141,11 +141,17 @@ const dropdown_options = ref([
   {
     label: 'Optional',
     items: [
+      {label: 'First Name', value: 'first'},
+      {label: 'Middle Name', value: 'middle'},
+      {label: 'Last Name', value: 'last'},
+      {label: 'State ID', value: 'state_id'},
+      {label: 'Gender', value: 'gender'},
+      {label: 'English Language Level', value: 'ell_status'},
+      {label: 'Free-Reduced Lunch', value: 'frl_status'},
+      {label: 'IEP Status', value: 'iep_status'},
+      {label: 'Hispanic Ethinicity', value: 'hispanic_ethnicity'},
       {label: 'Race', value: 'race'},
-      {label: 'Student First Name', value: 'first'},
-      {label: 'Student Middle Name', value: 'middle'},
-      {label: 'Student Last Name', value: 'last'},
-      {label: 'English Language Level', value: 'ell'},
+      {label: 'Home Language', value: 'home_language'},
     ]
   },
 ])
