@@ -1,5 +1,8 @@
 <template>
   <div class="page-container">
+    <router-link :to="{ name: 'Home' }">
+      <Button style="margin-bottom: 1rem;" icon="pi pi-angle-left" label="Return to Dashboard" />
+    </router-link>
     <!--Upload file section-->
     <div v-if="!isFileUploaded">
       <div class="info-box">
@@ -41,9 +44,50 @@
         </ul>
         Not all columns must be used, however a column has to be selected for each required field.
       </div>
+
+      <!-- Selecting Orgs -->
+      <div v-if="formReady">
+        <h3>Select organizations to apply to all users</h3>
+        <div class="orgs-container">
+          <div class="org-dropdown" v-if="districts.length > 0">
+            <span class="p-float-label">
+              <Dropdown v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                inputId="districts" showClear />
+              <label for="districts">Districts</label>
+            </span>
+          </div>
+
+          <div class="org-dropdown" v-if="schools.length > 0">
+            <span class="p-float-label">
+              <Dropdown v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                inputId="schools" showClear />
+              <label for="schools">Schools</label>
+            </span>
+          </div>
+
+          <div class="org-dropdown" v-if="classes.length > 0">
+            <span class="p-float-label">
+              <Dropdown v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                inputId="classes" showClear />
+              <label for="classes">Classes</label>
+            </span>
+          </div>
+
+          <div class="org-dropdown" v-if="studies.length > 0">
+            <span class="p-float-label">
+              <Dropdown v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+                inputId="studies" showClear />
+              <label for="studies">Studies</label>
+            </span>
+          </div>
+        </div>
+      </div>
+      <AppSpinner v-else />
+
+      <h3>Define what each column describes</h3>
       <div v-if="errorMessage" class="error-box">
-      {{ errorMessage }}
-    </div>
+        {{ errorMessage }}
+      </div>
       <!-- Can't use RoarDataTable to accomodate header dropdowns -->
       <DataTable 
         ref="dataTable" 
@@ -77,35 +121,43 @@
         </Column>
       </DataTable>
       <div class="submit-container">
-        
         <Button @click="submitStudents">
           Start Registration
         </Button>
       </div>
       <!-- Datatable of error students -->
-      <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-      <DataTable
-        v-if="showErrorTable"
-        :value="errorUsers"
-        showGridlines
-        :rowHover="true"
-        :resizableColumns="true"
-        paginator
-        :alwaysShowPaginator="false"
-        :rows="10"
-        class="datatable"
-      >
-        <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
-          <template #header>
-            {{ col.header }}
-          </template>
-        </Column>
-      </DataTable>
-    </div>
+      <div v-if="showErrorTable" class="error-container">
+        <div class="error-header">
+          <h3>Error Users</h3>
+          <Button @click="downloadErrorTable($event)">
+            Download Table
+          </Button>
+        </div>
+        <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
+        <DataTable
+          ref="errorTable"
+          :value="errorUsers"
+          showGridlines
+          exportFilename="error-datatable-export"
+          :rowHover="true"
+          :resizableColumns="true"
+          paginator
+          :alwaysShowPaginator="false"
+          :rows="10"
+          class="datatable"
+        >
+          <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+            <template #header>
+              {{ col.header }}
+            </template>
+          </Column>
+        </DataTable>
+      </div>
+      </div>
   </div>
 </template>
 <script setup>
-import { ref, toRaw } from 'vue';
+import { ref, toRaw, onMounted, watch } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _forEach from 'lodash/forEach'
 import _startCase from 'lodash/startCase'
@@ -117,9 +169,14 @@ import _compact from 'lodash/compact';
 import _cloneDeep from 'lodash/cloneDeep';
 import _omit from 'lodash/omit';
 import { useAuthStore } from '@/store/auth';
+import { useQueryStore } from '@/store/query';
 import RoarDataTable from '../components/RoarDataTable.vue';
+import { storeToRefs } from 'pinia';
+import AppSpinner from '../components/AppSpinner.vue';
 
 const authStore = useAuthStore();
+const queryStore = useQueryStore();
+const { roarfirekit, isFirekitInit } = storeToRefs(authStore);
 const isFileUploaded = ref(false)
 const rawStudentFile = ref({})
 
@@ -152,16 +209,53 @@ const dropdown_options = ref([
       {label: 'Hispanic Ethinicity', value: 'hispanic_ethnicity'},
       {label: 'Race', value: 'race'},
       {label: 'Home Language', value: 'home_language'},
+      {label: 'Pid', value: 'pid'},
     ]
   },
 ])
 
 // Error Users Table refs
+const errorTable = ref();
 const errorUsers = ref([]);
 const errorUserColumns = ref([]);
 const errorMessage = ref("");
 const showErrorTable = ref(false);
 
+// Selecting Orgs
+const formReady = ref(false);
+const districts = ref([]);
+const schools = ref([]);
+const classes = ref([]);
+const studies = ref([]);
+
+const selectedDistrict = ref();
+const selectedSchool = ref();
+const selectedClass = ref();
+const selectedStudy = ref();
+
+const superAdmin = ref(roarfirekit.value._superAdmin);
+const adminOrgs = ref(roarfirekit.value._adminOrgs);
+
+// Functions supporting Selecting Orgs
+const initFormFields = async () => {
+  console.log('inside init form fields')
+  unsubscribe();
+  // TODO: Optimize this with Promise.all or some such
+  districts.value = await queryStore.getOrgs("districts");
+  schools.value = await queryStore.getOrgs("schools");
+  classes.value = await queryStore.getOrgs("classes");
+  studies.value = await queryStore.getOrgs("studies");
+  formReady.value = true;
+}
+
+const unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  console.log('inside subscribe function')
+  if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
+    await initFormFields();
+  }
+});
+
+// Functions supporting the uploader
 const onFileUpload = async (event) => {
   rawStudentFile.value = await csvFileToJson(event.files[0])
   tableColumns.value = generateColumns(toRaw(rawStudentFile.value[0]))
@@ -255,6 +349,19 @@ function submitStudents(rawJson){
     if(middleName) _set(sendObject, 'userData.name.middle', middleName)
     if(lastName) _set(sendObject, 'userData.name.last', lastName)
 
+    if(selectedDistrict.value){
+      _set(sendObject, 'userData.district', selectedDistrict.value.id)
+    }
+    if(selectedSchool.value){
+      _set(sendObject, 'userData.school', selectedSchool.value.id)
+    }
+    if(selectedClass.value){
+      _set(sendObject, 'userData.class', selectedClass.value.id)
+    }
+    if(selectedStudy.value){
+      _set(sendObject, 'userData.study', selectedStudy.value.id)
+    }
+    console.log('user sendObject', sendObject)
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
     }).catch((e) => {
@@ -265,6 +372,11 @@ function submitStudents(rawJson){
       errorUsers.value.push(user)
     })
   })
+}
+
+// Functions supporting error table
+function downloadErrorTable() {
+  errorTable.value.exportCSV()
 }
 
 // Event listener for the 'beforeunload' event
@@ -306,6 +418,7 @@ window.addEventListener('beforeunload', (e) => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  margin-top: 1rem;
 }
 .error {
   color: red;
@@ -313,5 +426,28 @@ window.addEventListener('beforeunload', (e) => {
 .datatable {
   border: 1px solid var(--surface-d);
   border-radius: 5px;
+}
+
+.error-container {
+  margin-top: 1rem;
+}
+.error-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+}
+
+.orgs-container { 
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: -1rem;
+  margin-bottom: 1rem;
+}
+
+.org-dropdown {
+  margin-right: 3rem;
+  margin-top: 2rem;
 }
 </style>

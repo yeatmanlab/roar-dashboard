@@ -1,4 +1,7 @@
 <template>
+  <router-link :to="{ name: 'Home' }" class="return-button">
+    <Button icon="pi pi-angle-left" label="Return to Dashboard" />
+  </router-link>
   <div class="card" id="rectangle" v-if="formReady">
     <span id="heading">Create a new administration</span>
     <p id="section-heading">Use this form to create a new administration.</p>
@@ -28,8 +31,8 @@
         <div style="width: fit-content;">
           <p id="section-heading">Assign participants by organization</p>
 
-          <div class="grid mt-5">
-            <div class="col-4 mb-5" v-if="districts.length > 0">
+          <div class="orgs-container">
+            <div class="org-dropdown" v-if="districts.length > 0">
               <span class="p-float-label">
                 <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
                   inputId="districts" />
@@ -37,7 +40,7 @@
               </span>
             </div>
 
-            <div class="col-4 mb-5" v-if="schools.length > 0">
+            <div class="org-dropdown" v-if="schools.length > 0">
               <span class="p-float-label">
                 <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
                   inputId="schools" />
@@ -45,7 +48,7 @@
               </span>
             </div>
 
-            <div class="col-4 mb-5" v-if="classes.length > 0">
+            <div class="org-dropdown" v-if="classes.length > 0">
               <span class="p-float-label">
                 <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
                   inputId="classes" />
@@ -53,7 +56,7 @@
               </span>
             </div>
 
-            <div class="col-4 mb-5" v-if="studies.length > 0">
+            <div class="org-dropdown" v-if="studies.length > 0">
               <span class="p-float-label">
                 <MultiSelect v-model="selectedStudies" :options="studies" optionLabel="name" class="w-full md:w-14rem"
                   inputId="studies" />
@@ -61,7 +64,7 @@
               </span>
             </div>
 
-            <div class="col-4 mb-5" v-if="families.length > 0">
+            <div class="org-dropdown" v-if="families.length > 0">
               <span class="p-float-label">
                 <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
                   inputId="families" />
@@ -115,7 +118,10 @@
       <Button label="Create" @click="initFormFields" />
     </div>
   </div>
-  <AppSpinner v-else />
+  <div v-else class="loading-container">
+    <AppSpinner style="margin-bottom: 1rem;" />
+    <span>Loading Administration Data</span>
+  </div>
 </template>
 
 <script setup>
@@ -190,13 +196,35 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 </script> 
 
 <style lang="scss">
+.return-button {
+  display: block;
+  margin: 1rem 1.75rem;
+}
+.loading-container {
+  width: 100%;
+  text-align: center;
+}
+
+.orgs-container { 
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: -1rem;
+  margin-bottom: 1rem;
+}
+
+.org-dropdown {
+  margin-right: 3rem;
+  margin-top: 2rem;
+}
+
 #rectangle {
   background: #FCFCFC;
   border-radius: 0.3125rem;
   border-style: solid;
   border-width: 0.0625rem;
   border-color: #E5E5E5;
-  margin: 4.25rem 1.75rem;
+  margin: 0 1.75rem;
   padding-top: 1.75rem;
   padding-left: 1.875rem;
   text-align: left;
