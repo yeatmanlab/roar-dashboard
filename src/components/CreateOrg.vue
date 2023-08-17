@@ -1,6 +1,6 @@
 <template>
-  <router-link :to="{ name: 'Home' }">
-    <Button class="return-button" icon="pi pi-angle-left" label="Return to Dashboard" />
+  <router-link :to="{ name: 'Home' }" class="return-button">
+    <Button icon="pi pi-angle-left" label="Return to Dashboard" />
   </router-link>
   <div class="card" id="rectangle">
     <span id="heading">Create a new organization</span>
@@ -182,6 +182,7 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 <style lang="scss">
 .return-button {
+  display: block;
   margin: 1rem 1.75rem;
 }
 #rectangle {
