@@ -1,7 +1,5 @@
 <template>
-	
 	<div :data-administration="id" class="p-card card-administration">
-		
 		<div class="card-admin-chart">
 			<Chart type="doughnut" :data="chartData" :options="chartOptions"/>
 		</div>
