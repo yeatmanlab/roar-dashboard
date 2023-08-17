@@ -16,20 +16,7 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: () => {
-      const authStore = useAuthStore();
-      const { roarfirekit, firekitUserData } = storeToRefs(authStore);
-      let userType = _get(roarfirekit.value, 'userData.userType');
-      if (!userType) {
-        userType = firekitUserData.value?.userType || "guest";
-      }
-      if (userType === "admin") return import("../pages/Participant.vue"); // TODO: THIS NEEDS TO BE CHANGED TO ADMIN VIEW BEFORE RELEASE.
-      else if (userType === "educator") return import("../pages/Home.vue");
-      else if (userType === "student") return import("../pages/Participant.vue");
-      else if (userType === "caregiver") return import("../pages/Home.vue");
-      else if (userType === "guest") return import("../pages/Home.vue");
-      else return import("../pages/Home.vue");
-    },
+    component: () => import("../pages/Home.vue"),
     meta: { pageTitle: "Dashboard" },
 
   },
