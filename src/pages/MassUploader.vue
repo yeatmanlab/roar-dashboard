@@ -198,6 +198,7 @@ const dropdown_options = ref([
   {
     label: 'Optional',
     items: [
+      {label: 'Ignore this column', value: 'ignore'},
       {label: 'First Name', value: 'first'},
       {label: 'Middle Name', value: 'middle'},
       {label: 'Last Name', value: 'last'},
@@ -320,8 +321,11 @@ function submitStudents(rawJson){
     let dropdownMap = _cloneDeep(dropdown_model.value)
     _forEach(modelValues, col => {
       const columnMap = getKeyByValue(dropdownMap, col)
+      if(['ignore'].includes(col)){
+        return;
+      }
       // Special fields will accept multiple columns, and concat the values in each column
-      if(['race'].includes(col)){
+      if(['race', 'home_language'].includes(col)){
         if(!studentObj[col] && student[columnMap]){
           studentObj[col] = [student[columnMap]]
           dropdownMap = _omit(dropdownMap, columnMap)
