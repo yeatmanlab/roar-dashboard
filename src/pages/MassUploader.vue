@@ -43,50 +43,48 @@
       </div>
 
       <!-- Selecting Orgs -->
-      <div v-if="formReady" class="col-12 mt-5">
-        <div style="width: fit-content;">
-          <p id="section-heading">Assign participants by organization</p>
+      <div v-if="formReady">
+        <h3>Select organizations to apply to all users</h3>
+        <div class="orgs-container">
+          <div class="org-dropdown" v-if="districts.length > 0">
+            <span class="p-float-label">
+              <Dropdown v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                inputId="districts" showClear />
+              <label for="districts">Districts</label>
+            </span>
+          </div>
 
-          <div class="grid mt-5">
-            <div class="col-4 mb-5" v-if="districts.length > 0">
-              <span class="p-float-label">
-                <Dropdown v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="districts" showClear />
-                <label for="districts">Districts</label>
-              </span>
-            </div>
+          <div class="org-dropdown" v-if="schools.length > 0">
+            <span class="p-float-label">
+              <Dropdown v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                inputId="schools" showClear />
+              <label for="schools">Schools</label>
+            </span>
+          </div>
 
-            <div class="col-4 mb-5" v-if="schools.length > 0">
-              <span class="p-float-label">
-                <Dropdown v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="schools" showClear />
-                <label for="schools">Schools</label>
-              </span>
-            </div>
+          <div class="org-dropdown" v-if="classes.length > 0">
+            <span class="p-float-label">
+              <Dropdown v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                inputId="classes" showClear />
+              <label for="classes">Classes</label>
+            </span>
+          </div>
 
-            <div class="col-4 mb-5" v-if="classes.length > 0">
-              <span class="p-float-label">
-                <Dropdown v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="classes" showClear />
-                <label for="classes">Classes</label>
-              </span>
-            </div>
-
-            <div class="col-4 mb-5" v-if="studies.length > 0">
-              <span class="p-float-label">
-                <Dropdown v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="studies" showClear />
-                <label for="studies">Studies</label>
-              </span>
-            </div>
+          <div class="org-dropdown" v-if="studies.length > 0">
+            <span class="p-float-label">
+              <Dropdown v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+                inputId="studies" showClear />
+              <label for="studies">Studies</label>
+            </span>
           </div>
         </div>
       </div>
       <AppSpinner v-else />
 
+      <h3>Define what each column describes</h3>
       <div v-if="errorMessage" class="error-box">
-      {{ errorMessage }}
-    </div>
+        {{ errorMessage }}
+      </div>
       <!-- Can't use RoarDataTable to accomodate header dropdowns -->
       <DataTable 
         ref="dataTable" 
@@ -120,31 +118,39 @@
         </Column>
       </DataTable>
       <div class="submit-container">
-        
         <Button @click="submitStudents">
           Start Registration
         </Button>
       </div>
       <!-- Datatable of error students -->
-      <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-      <DataTable
-        v-if="showErrorTable"
-        :value="errorUsers"
-        showGridlines
-        :rowHover="true"
-        :resizableColumns="true"
-        paginator
-        :alwaysShowPaginator="false"
-        :rows="10"
-        class="datatable"
-      >
-        <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
-          <template #header>
-            {{ col.header }}
-          </template>
-        </Column>
-      </DataTable>
-    </div>
+      <div v-if="showErrorTable" class="error-container">
+        <div class="error-header">
+          <h3>Error Users</h3>
+          <Button @click="downloadErrorTable($event)">
+            Download Table
+          </Button>
+        </div>
+        <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
+        <DataTable
+          ref="errorTable"
+          :value="errorUsers"
+          showGridlines
+          exportFilename="error-datatable-export"
+          :rowHover="true"
+          :resizableColumns="true"
+          paginator
+          :alwaysShowPaginator="false"
+          :rows="10"
+          class="datatable"
+        >
+          <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+            <template #header>
+              {{ col.header }}
+            </template>
+          </Column>
+        </DataTable>
+      </div>
+      </div>
   </div>
 </template>
 <script setup>
@@ -206,6 +212,7 @@ const dropdown_options = ref([
 ])
 
 // Error Users Table refs
+const errorTable = ref();
 const errorUsers = ref([]);
 const errorUserColumns = ref([]);
 const errorMessage = ref("");
@@ -364,6 +371,11 @@ function submitStudents(rawJson){
   })
 }
 
+// Functions supporting error table
+function downloadErrorTable() {
+  errorTable.value.exportCSV()
+}
+
 // Event listener for the 'beforeunload' event
 window.addEventListener('beforeunload', (e) => {
   console.log('handler for beforeunload')
@@ -403,6 +415,7 @@ window.addEventListener('beforeunload', (e) => {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  margin-top: 1rem;
 }
 .error {
   color: red;
@@ -412,68 +425,26 @@ window.addEventListener('beforeunload', (e) => {
   border-radius: 5px;
 }
 
+.error-container {
+  margin-top: 1rem;
+}
+.error-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+}
 
-#rectangle {
-  background: #FCFCFC;
-  border-radius: 0.3125rem;
-  border-style: solid;
-  border-width: 0.0625rem;
-  border-color: #E5E5E5;
-  margin: 4.25rem 1.75rem;
-  padding-top: 1.75rem;
-  padding-left: 1.875rem;
-  text-align: left;
-  overflow: hidden;
+.orgs-container { 
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: -1rem;
+  margin-bottom: 1rem;
+}
 
-  hr {
-    margin-top: 2rem;
-    margin-left: -1.875rem;
-  }
-
-  #heading {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    color: #000000;
-    font-size: 1.625rem;
-    line-height: 2.0425rem;
-  }
-
-  #section-heading {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 1.125rem;
-    line-height: 1.5681rem;
-    color: #525252;
-  }
-
-  #administration-name {
-    height: 100%;
-    border-radius: 0.3125rem;
-    border-width: 0.0625rem;
-    border-color: #E5E5E5;
-  }
-
-  #section {
-    margin-top: 1.375rem;
-  }
-
-  #section-content {
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 400;
-    font-size: 0.875rem;
-    line-height: 1.22rem;
-    color: #525252;
-    margin: 0.625rem 0rem;
-  }
-
-  .p-dropdown-label {
-    font-family: 'Source Sans Pro', sans-serif;
-    color: #C4C4C4;
-  }
-
-  ::placeholder {
-    font-family: 'Source Sans Pro', sans-serif;
-    color: #C4C4C4;
-  }
+.org-dropdown {
+  margin-right: 3rem;
+  margin-top: 2rem;
 }
 </style>
