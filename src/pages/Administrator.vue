@@ -1,22 +1,24 @@
 <template>
-  <div style="display: flex; flex-direction: row">
-    <router-link :to="cardData.buttonLink" v-for="(cardData, index) in cardsData" :key="index" class="card-wrapper">
-      <Card style="width: 25em" class="card-title">
-        <template #title>
-          <div class="card-title">
-            {{ cardData.title }}
-          </div>
-        </template>
-        <template #content>
-          {{ cardData.content }}
-        </template>
-        <template #footer>
-          <div class="card-button">
-            <Button :label="cardData.buttonText" />
-          </div>
-        </template>
-      </Card>
-    </router-link>
+  <div style="display: flex">
+    <div class="card-container">
+      <router-link :to="cardData.buttonLink" v-for="(cardData, index) in cardsData" :key="index" class="card-wrapper">
+        <Card class="card-title">
+          <template #title>
+            <div class="card-title">
+              {{ cardData.title }}
+            </div>
+          </template>
+          <template #content>
+            {{ cardData.content }}
+          </template>
+          <template #footer>
+            <div class="card-button">
+              <Button :label="cardData.buttonText" />
+            </div>
+          </template>
+        </Card>
+      </router-link>
+    </div>
   </div>
 
   <CardAdministration :id="admin.id" :title="admin.title" :stats="admin.stats" :dates="admin.dates"
@@ -38,7 +40,7 @@ const cardsData = ref([
     title: "Register users",
     content: "Create new student account by uploading a CSV file.",
     buttonText: "Go",
-    buttonLink: "/query-admin",
+    buttonLink: "/mass-upload",
   },
   {
     title: "Create an administration",
@@ -64,15 +66,23 @@ const admin = ref(
 </script>
 
 <style scoped>
+.card-container {
+  display: flex;
+  flex-direction: row;
+  margin: 2rem 1rem 2rem 1rem;
+  flex: 1;
+  gap: 1rem;
+}
 .card-wrapper {
-  margin-bottom: 1rem;
-  margin-right: 1rem;
+  /* margin-right: 1rem; */
+  width: 100%;
   text-decoration: none;
   color: inherit;
 }
 
 .card-title {
   text-align: left;
+  height: 100%;
 }
 
 .card-button {

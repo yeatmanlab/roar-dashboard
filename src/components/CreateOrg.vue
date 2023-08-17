@@ -1,4 +1,7 @@
 <template>
+  <router-link :to="{ name: 'Home' }" class="return-button">
+    <Button icon="pi pi-angle-left" label="Return to Dashboard" />
+  </router-link>
   <div class="card" id="rectangle">
     <span id="heading">Create a new organization</span>
     <p id="section-heading">Use this form to create a new organization.</p>
@@ -178,13 +181,17 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 </script> 
 
 <style lang="scss">
+.return-button {
+  display: block;
+  margin: 1rem 1.75rem;
+}
 #rectangle {
   background: #FCFCFC;
   border-radius: 0.3125rem;
   border-style: solid;
   border-width: 0.0625rem;
   border-color: #E5E5E5;
-  margin: 4.25rem 1.75rem;
+  margin: 0 1.75rem;
   padding-top: 1.75rem;
   padding-left: 1.875rem;
   text-align: left;

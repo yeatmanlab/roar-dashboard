@@ -22,6 +22,7 @@ export const useAuthStore = () => {
           assigned: null
         },
         firekitAssignmentIds: null,
+        firekitIsAdmin: false,
         cleverOAuthRequested: false,
       };
     },
@@ -32,9 +33,15 @@ export const useAuthStore = () => {
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser)) },
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
-      isAdmin: (state) => { return state.roarfirekit?.initialized ?? state.roarfirekit?.isAdmin() },
     },
     actions: {
+      isUserAdmin() {
+        if(this.isFirekitInit) {
+          this.firekitIsAdmin = this.roarfirekit.isAdmin();
+          console.log('set firekitIsAdmin to', this.firekitIsAdmin)
+        }
+        return this.firekitIsAdmin;
+      },
       async getAssignments(assignments) {
         try{
           const reply = await this.roarfirekit.getAssignments(assignments)
@@ -126,6 +133,8 @@ export const useAuthStore = () => {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
             this.hasUserData = false;
+            console.log('setting firekitIsAdmin to false')
+            this.firekitIsAdmin = false;
             // this.roarfirekit = initNewFirekit()
           });
         } else {
