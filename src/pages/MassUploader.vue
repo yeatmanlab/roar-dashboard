@@ -1,5 +1,8 @@
 <template>
   <div class="page-container">
+    <router-link :to="{ name: 'Home' }">
+      <Button style="margin-bottom: 1rem;" icon="pi pi-angle-left" label="Return to Dashboard" />
+    </router-link>
     <!--Upload file section-->
     <div v-if="!isFileUploaded">
       <div class="info-box">

@@ -1,4 +1,7 @@
 <template>
+  <router-link :to="{ name: 'Home' }">
+    <Button class="return-button" icon="pi pi-angle-left" label="Return to Dashboard" />
+  </router-link>
   <div class="card" id="rectangle" v-if="formReady">
     <span id="heading">Create a new administration</span>
     <p id="section-heading">Use this form to create a new administration.</p>
@@ -115,7 +118,10 @@
       <Button label="Create" @click="initFormFields" />
     </div>
   </div>
-  <AppSpinner v-else />
+  <div v-else class="loading-container">
+    <AppSpinner style="margin-bottom: 1rem;" />
+    <span>Loading Administration Data</span>
+  </div>
 </template>
 
 <script setup>
@@ -190,13 +196,20 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 </script> 
 
 <style lang="scss">
+.return-button {
+  margin: 1rem 1.75rem;
+}
+.loading-container {
+  width: 100%;
+  text-align: center;
+}
 #rectangle {
   background: #FCFCFC;
   border-radius: 0.3125rem;
   border-style: solid;
   border-width: 0.0625rem;
   border-color: #E5E5E5;
-  margin: 4.25rem 1.75rem;
+  margin: 0 1.75rem;
   padding-top: 1.75rem;
   padding-left: 1.875rem;
   text-align: left;
