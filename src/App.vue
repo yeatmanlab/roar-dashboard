@@ -12,6 +12,7 @@
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
   </AppHead>
   <div>
+    <Toast />
     <Navbar v-if="!navbarBlacklist.includes($route.name)" />
     <router-view />
   </div>

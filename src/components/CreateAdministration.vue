@@ -6,78 +6,78 @@
     <span id="heading">Create a new administration</span>
     <p id="section-heading">Use this form to create a new administration.</p>
     <hr>
-    <div class="formgrid grid">
-      <div class="col-12">
-        <div style="width: fit-content;">
-          <div class="grid mt-5">
-            <div class="col-6">
-              <span class="p-float-label">
-                <InputText id="administration-name" v-model="administrationName" />
-                <label for="administration-name">Administration Name</label>
-              </span>
-            </div>
-
-            <div class="col-6">
-              <span class="p-float-label">
-                <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
-                  selectionMode="range" :manualInput="false" showIcon showButtonBar />
-                <label for="dates">Dates</label>
-              </span>
-            </div>
-          </div>
-        </div>
+    <div class="formgrid grid mt-5">
+      <div class="field col">
+        <span class="p-float-label">
+          <InputText id="administration-name" v-model="administrationName" />
+          <label for="administration-name">Administration Name</label>
+        </span>
       </div>
-      <div class="col-12 mt-5">
-        <div style="width: fit-content;">
-          <p id="section-heading">Assign participants by organization</p>
 
-          <div class="orgs-container">
-            <div class="org-dropdown" v-if="districts.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="districts" />
-                <label for="districts">Districts</label>
-              </span>
-            </div>
+      <div class="field col">
+        <span class="p-float-label">
+          <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
+            :manualInput="false" showIcon showButtonBar />
+          <label for="dates">Dates</label>
+        </span>
+      </div>
+    </div>
 
-            <div class="org-dropdown" v-if="schools.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="schools" />
-                <label for="schools">Schools</label>
-              </span>
-            </div>
+    <div style="width: fit-content;">
+      <p id="section-heading">Assign this administration to organizations</p>
+    </div>
+    <div class="formgrid grid mt-5 mb-5">
+      <div class="field col" v-if="districts.length > 0">
+        <span class="p-float-label">
+          <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+            inputId="districts" />
+          <label for="districts">Districts</label>
+        </span>
+      </div>
 
-            <div class="org-dropdown" v-if="classes.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="classes" />
-                <label for="classes">Classes</label>
-              </span>
-            </div>
+      <div class="field col" v-if="schools.length > 0">
+        <span class="p-float-label">
+          <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+            inputId="schools" />
+          <label for="schools">Schools</label>
+        </span>
+      </div>
 
-            <div class="org-dropdown" v-if="studies.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedStudies" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="studies" />
-                <label for="studies">Studies</label>
-              </span>
-            </div>
+      <div class="field col" v-if="classes.length > 0">
+        <span class="p-float-label">
+          <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+            inputId="classes" />
+          <label for="classes">Classes</label>
+        </span>
+      </div>
 
-            <div class="org-dropdown" v-if="families.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="families" />
-                <label for="families">Families</label>
-              </span>
-            </div>
-          </div>
-        </div>
+      <div class="field col" v-if="studies.length > 0">
+        <span class="p-float-label">
+          <MultiSelect v-model="selectedStudies" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+            inputId="studies" />
+          <label for="studies">Studies</label>
+        </span>
+      </div>
+
+      <div class="field col" v-if="families.length > 0">
+        <span class="p-float-label">
+          <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
+            inputId="families" />
+          <label for="families">Families</label>
+        </span>
       </div>
     </div>
 
     <div class="col-12 mb-3">
-      <p id="section-heading">Select Assessments</p>
+      <div class="flex flex-row justify-content-between align-items-center flex-wrap mb-3">
+        <p id="section-heading">Select Assessments</p>
+        <div class="flex flex-row align-items-center justify-content-end gap-3">
+          <!-- <label for="sequential">Require sequential?</label> -->
+          <span>Require sequential?</span>
+          <SelectButton v-model="sequential" :options="sequentialOptions" optionLabel="label" optionValue="value" />
+        </div>
+      </div>
+
       <PickList v-model="assessments" :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id"
         :stripedRows="true" :pt="{
           moveAllToTargetButton: { root: { class: 'hide' } },
@@ -100,12 +100,11 @@
             </div>
             <Button type="button" rounded size="small" icon="pi pi-info" @click="toggle($event, slotProps.item.id)" />
             <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
-              {{ JSON.stringify(slotProps.item.variant.params) }}
-              <!-- Put this in a datatable -->
-              <!-- <DataTable :value="slotProps.item.variant.params">
+              <DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
+                :value="toEntryObjects(slotProps.item.variant.params)">
                 <Column field="key" header="Parameter" style="width: 50%"></Column>
                 <Column field="value" header="Value" style="width: 50%"></Column>
-              </DataTable> -->
+              </DataTable>
             </OverlayPanel>
           </div>
         </template>
@@ -113,9 +112,7 @@
     </div>
 
     <div class="col-12 mb-3">
-      <ToggleButton v-model="sequential" />
-
-      <Button label="Create" @click="initFormFields" />
+      <Button label="Create Administration" @click="submit" />
     </div>
   </div>
   <div v-else class="loading-container">
@@ -125,17 +122,27 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, toRaw } from "vue";
+import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
+import { useToast } from "primevue/usetoast";
 import _fromPairs from "lodash/fromPairs";
 import _get from "lodash/get";
 import _isEmpty from "lodash/isEmpty";
+import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "./AppSpinner.vue";
 
+const router = useRouter();
+const toast = useToast();
+
 let paramPanelRefs = {};
+
+const toEntryObjects = (inputObj) => {
+  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+}
 
 const toggle = (event, id) => {
   console.log("Toggling " + id)
@@ -160,12 +167,13 @@ const classes = ref([]);
 const studies = ref([]);
 const families = ref([]);
 
-const selectedDistricts = ref();
-const selectedSchools = ref();
-const selectedClasses = ref();
-const selectedStudies = ref();
-const selectedFamilies = ref();
+const selectedDistricts = ref([]);
+const selectedSchools = ref([]);
+const selectedClasses = ref([]);
+const selectedStudies = ref([]);
+const selectedFamilies = ref([]);
 
+const sequentialOptions = ref([{ label: "Yes", value: true }, { label: "No", value: false }]);
 const sequential = ref(true);
 
 const { allVariants } = storeToRefs(queryStore);
@@ -175,24 +183,64 @@ const backupImage = "/src/assets/swr-icon.jpeg";
 
 const initFormFields = async () => {
   unsubscribe();
-  // TODO: Optimize this with Promise.all or some such
   const requireRegisteredTasks = !roarfirekit.value.superAdmin
-  await queryStore.getVariants(requireRegisteredTasks);
-  districts.value = await queryStore.getOrgs("districts");
-  schools.value = await queryStore.getOrgs("schools");
-  classes.value = await queryStore.getOrgs("classes");
-  studies.value = await queryStore.getOrgs("studies");
-  families.value = await queryStore.getOrgs("families");
+
+  const promises = [
+    queryStore.getOrgs("districts"),
+    queryStore.getOrgs("schools"),
+    queryStore.getOrgs("classes"),
+    queryStore.getOrgs("studies"),
+    queryStore.getOrgs("families"),
+    queryStore.getVariants(requireRegisteredTasks),
+  ]
+
+  const [_districts, _schools, _classes, _studies, _families, ..._rest] = await Promise.all(promises);
+
+  districts.value = _districts;
+  schools.value = _schools;
+  classes.value = _classes;
+  studies.value = _studies;
+  families.value = _families;
+
   assessments.value = [allVariants.value, []];
   paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
   formReady.value = true;
 }
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
+  if (state.roarfirekit.getOrgs && state.roarfirekit.createAdministration && state.roarfirekit.isAdmin()) {
     await initFormFields();
   }
 });
+
+const submit = async () => {
+  const submittedAssessments = assessments.value[1].map((assessment) => ({
+    taskId: assessment.task.id,
+    params: toRaw(assessment.variant.params),
+  }));
+  const orgs = {
+    districts: selectedDistricts.value,
+    schools: selectedSchools.value,
+    classes: selectedClasses.value,
+    studies: selectedStudies.value,
+    families: selectedFamilies.value,
+  }
+
+  const args = {
+    name: administrationName.value,
+    assessments: submittedAssessments,
+    dateOpen: dates.value[0],
+    dateClose: dates.value[1],
+    sequential: sequential.value,
+    orgs: orgs,
+  }
+
+  await roarfirekit.value.createAdministration(args).then(() => {
+    toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+
+    router.push({ name: "Home" });
+  });
+}
 </script> 
 
 <style lang="scss">
@@ -200,12 +248,13 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
   display: block;
   margin: 1rem 1.75rem;
 }
+
 .loading-container {
   width: 100%;
   text-align: center;
 }
 
-.orgs-container { 
+.orgs-container {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -293,6 +342,5 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
   .hide {
     display: none;
   }
-
 }
 </style>
