@@ -6,9 +6,9 @@
     <section class="main-body">
       <Panel header="Create a new organization">
         Use this form to create a new organization.
-        
+
         <Divider />
-        
+
         <div class="grid grid-flow-col auto-cols-max mt-4">
           <div class="col-12 mb-4">
             <span class="p-float-label">
@@ -17,21 +17,21 @@
               <label for="org-type">Org Type</label>
             </span>
           </div>
-          
+
           <div class="col-3">
             <span class="p-float-label">
               <InputText id="org-name" v-model="orgName" class="w-full" />
               <label for="org-name">{{ orgTypeLabel }} Name</label>
             </span>
           </div>
-          
+
           <div class="col-3">
             <span class="p-float-label">
               <InputText id="org-initial" v-model="orgInitials" class="w-full" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
             </span>
           </div>
-          
+
           <div class="col-3" v-if="parentOrgType === 'school'">
             <span class="p-float-label">
               <Dropdown v-model="grade" inputId="grade" :options="grades" showClear optionLabel="name"
@@ -40,52 +40,57 @@
             </span>
 
           </div>
-          
-          
+
+
           <div class="col-12 mt-2" v-if="parentOrgType">
             <div v-if="parentOrgs.length > 1">
-              <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType }}.</p>
+              <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType.singular }}.</p>
               <span class="p-float-label">
-                <Dropdown v-model="parentOrg" inputId="district" :options="parentOrgs" showClear optionLabel="name"
-                  :placeholder="`Select a ${parentOrgType}`" class="w-full md:w-14rem" />
-                <label for="district">{{ _capitalize(parentOrgType) }}</label>
+                <Dropdown v-model="parentOrg" inputId="parent-org" :options="parentOrgs" showClear optionLabel="name"
+                  :placeholder="`Select a ${parentOrgType.singular}`" class="w-full md:w-14rem" />
+                <label for="parent-org">{{ _capitalize(parentOrgType.singular) }}</label>
               </span>
             </div>
-          
-            <div v-if="parentOrgs.length === 1">
+
+            <div v-else-if="parentOrgs.length === 1">
               <p id="section-heading">
                 This {{ orgTypeLabel.toLowerCase() }} will be created in {{ parentOrgType }} {{ parentOrgs[0].name }}.
               </p>
             </div>
+
+            <div v-else class="loading-container">
+              <AppSpinner style="margin-bottom: 1rem;" />
+              <span>Loading {{ parentOrgType.plural }}</span>
+            </div>
           </div>
-          
+
         </div>
-        
+
         <Divider />
 
         <div class="grid">
           <div class="col-12">
-            <Button :label="`Create ${orgTypeLabel}`" @click="submit" :disabled="orgTypeLabel == 'Org' ? '' : disabled"/>
+            <Button :label="`Create ${orgTypeLabel}`" @click="submit" :disabled="orgTypeLabel == 'Org' ? '' : disabled" />
           </div>
         </div>
-        
+
       </Panel>
-      
+
     </section>
   </main>
-
-  
 </template>
 
 <script setup>
 import { computed, ref } from "vue";
+import { useRouter } from 'vue-router';
+import { useToast } from "primevue/usetoast";
 import { storeToRefs } from "pinia";
 import _capitalize from "lodash/capitalize";
 import _get from "lodash/get";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
-
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+
 const sidebarActions = ref([
   {
     title: "Back to Dashboard",
@@ -122,9 +127,9 @@ const orgTypeLabel = computed(() => {
 
 const parentOrgType = computed(() => {
   if (orgType.value?.singular === "school") {
-    return "district";
+    return { plural: "districts", singular: "district" };
   } else if (orgType.value?.singular === "class") {
-    return "school";
+    return { plural: "school", singular: "school" };
   }
 })
 
@@ -149,12 +154,15 @@ const grades = [
   { name: 'Grade 12', value: 12 },
 ];
 
+const router = useRouter();
+const toast = useToast();
 const queryStore = useQueryStore();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const { adminOrgs } = storeToRefs(queryStore);
 
-const districts = ref([]);
-const schools = ref([]);
+const districts = ref(adminOrgs.value.districts || []);
+const schools = ref(adminOrgs.value.schools || []);
 const parentOrgs = computed(() => {
   if (orgType.value?.singular === "school") {
     return districts.value;
@@ -166,35 +174,42 @@ const parentOrgs = computed(() => {
 
 const parentOrg = ref();
 
-const submit = () => {
+const submit = async () => {
   let orgData = {
     name: orgName.value,
     abbreviation: orgInitials.value,
   };
 
-  if (parentOrgType.value === "school") {
+  if (parentOrgType.value?.singular === "school") {
     orgData.schoolId = parentOrg.value.id;
-  } else if (parentOrgType.value === "district") {
+  } else if (parentOrgType.value?.singular === "district") {
     orgData.districtId = parentOrg.value.id;
   }
 
   if (grade.value) orgData.grade = grade.value.value;
 
-  roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData)
+  await roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData).then(() => {
+    toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
+
+    router.push({ name: 'ListOrgs' })
+  })
 };
 
+let unsubscribe;
+
 const getOrgs = async () => {
-  unsubscribe();
+  if (unsubscribe) unsubscribe();
   districts.value = await queryStore.getOrgs("districts");
   schools.value = await queryStore.getOrgs("schools");
 }
 
-const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-    await getOrgs();
-  }
-});
-
+if (districts.value.length === 0 || schools.value.length === 0) {
+  unsubscribe = authStore.$subscribe(async (mutation, state) => {
+    if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
+      await getOrgs();
+    }
+  });
+}
 </script> 
 
 <style lang="scss">
@@ -202,6 +217,7 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
   display: block;
   margin: 1rem 1.75rem;
 }
+
 #rectangle {
   background: #FCFCFC;
   border-radius: 0.3125rem;

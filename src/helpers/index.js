@@ -1,4 +1,7 @@
 import { arrayUnion, query, where, getDocs, updateDoc, doc, collection } from "firebase/firestore";
+import _fromPairs from "lodash/fromPairs";
+import _intersection from "lodash/intersection";
+import _toPairs from "lodash/toPairs";
 import * as Papa from "papaparse";
 
 export const isMobileBrowser = () => {
@@ -127,3 +130,16 @@ export const standardDeviation = (arr, usePopulation = false) => {
       (arr.length - (usePopulation ? 0 : 1))
   );
 };
+
+export const filterAdminOrgs = (adminOrgs, filters) => {
+  const filteredOrgPairs = _toPairs(adminOrgs).map(([orgType, orgs]) => [
+    orgType,
+    orgs.filter((org) => filters[orgType]?.includes(org.id))
+  ]);
+
+  return _fromPairs(filteredOrgPairs);
+}
+
+export const removeEmptyOrgs = (orgs) => {
+  return _fromPairs(_toPairs(orgs).filter(([orgType, orgs]) => orgs.length > 0));
+}
