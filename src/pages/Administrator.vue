@@ -1,7 +1,7 @@
 <template>
   <main class="container main">
     <aside class="main-sidebar">
-      <AdministratorSidebar :userinfo="userinfo" />
+      <AdministratorSidebar :userinfo="userinfo" :actions="cardsData" />
     </aside>
     
     <section class="main-body">
