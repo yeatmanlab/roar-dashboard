@@ -1,17 +1,19 @@
 <template>
   <header id="site-header" class="navbar-container">
-    <router-link :to="{ name: 'Home' }">
-      <div class="navbar-logo">
-        <ROARLogo />
-      </div>
-    </router-link>
-    <div class="login-container">
-      <!-- <i class="pi pi-bars menu-icon" @click="toggleMenu" /> -->
-      <!-- <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
-      <router-link :to="{ name: 'SignOut' }" class="signout-button">
-        <Button>Sign Out</Button>
+    <nav class="container">
+      <router-link :to="{ name: 'Home' }">
+        <div class="navbar-logo">
+          <ROARLogo />
+        </div>
       </router-link>
-    </div>
+      <div class="login-container">
+        <!-- <i class="pi pi-bars menu-icon" @click="toggleMenu" /> -->
+        <!-- <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
+        <router-link :to="{ name: 'SignOut' }" class="signout-button">
+          <Button>Sign Out</Button>
+        </router-link>
+      </div>
+    </nav>
   </header>
 </template>
 
