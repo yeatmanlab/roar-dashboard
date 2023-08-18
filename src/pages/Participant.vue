@@ -6,6 +6,8 @@
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
         <GameTabs :games="assessments" />
       </div>
+      <ConsentModal v-if="showConsent" :consent-text="confirmText" consent-type="Assent"/>
+      <Button @click="showConsent = true" label="Show Consent Form" />
     </div>
     <div v-else>
       <div class="col-full text-center">
@@ -29,6 +31,10 @@ import _get from 'lodash/get'
 import { useAuthStore } from "@/store/auth";
 import { storeToRefs } from 'pinia';
 import AppSpinner from "../components/AppSpinner.vue";
+import ConsentModal from "../components/ConsentModal.vue";
+
+const showConsent = ref(false);
+const confirmText = ref("");
 
 const authStore = useAuthStore();
 const { isFirekitInit, firekitUserData, roarfirekit } = storeToRefs(authStore);
@@ -45,6 +51,9 @@ const studentInfo = ref({
 })
 
 async function setUpAssignments() {
+  // Check for consent
+  confirmText.value = await authStore.getLegalDoc('assent');
+  // confirmText.value = _get(assentDoc, 'formText');
   const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
   console.log("assignedAssignments from storeToRefs: ", assignedAssignments);
   let assignmentInfo = [];
