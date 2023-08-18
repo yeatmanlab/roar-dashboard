@@ -51,11 +51,11 @@
         </span>
       </div>
 
-      <div class="field col" v-if="studies.length > 0">
+      <div class="field col" v-if="groups.length > 0">
         <span class="p-float-label">
-          <MultiSelect v-model="selectedStudies" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-            inputId="studies" />
-          <label for="studies">Studies</label>
+          <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
+            inputId="groups" />
+          <label for="groups">Groups</label>
         </span>
       </div>
 
@@ -164,13 +164,13 @@ const { roarfirekit } = storeToRefs(authStore);
 const districts = ref([]);
 const schools = ref([]);
 const classes = ref([]);
-const studies = ref([]);
+const groups = ref([]);
 const families = ref([]);
 
 const selectedDistricts = ref([]);
 const selectedSchools = ref([]);
 const selectedClasses = ref([]);
-const selectedStudies = ref([]);
+const selectedGroups = ref([]);
 const selectedFamilies = ref([]);
 
 const sequentialOptions = ref([{ label: "Yes", value: true }, { label: "No", value: false }]);
@@ -189,17 +189,17 @@ const initFormFields = async () => {
     queryStore.getOrgs("districts"),
     queryStore.getOrgs("schools"),
     queryStore.getOrgs("classes"),
-    queryStore.getOrgs("studies"),
+    queryStore.getOrgs("groups"),
     queryStore.getOrgs("families"),
     queryStore.getVariants(requireRegisteredTasks),
   ]
 
-  const [_districts, _schools, _classes, _studies, _families, ..._rest] = await Promise.all(promises);
+  const [_districts, _schools, _classes, _groups, _families, ..._rest] = await Promise.all(promises);
 
   districts.value = _districts;
   schools.value = _schools;
   classes.value = _classes;
-  studies.value = _studies;
+  groups.value = _groups;
   families.value = _families;
 
   assessments.value = [allVariants.value, []];
@@ -222,7 +222,7 @@ const submit = async () => {
     districts: selectedDistricts.value,
     schools: selectedSchools.value,
     classes: selectedClasses.value,
-    studies: selectedStudies.value,
+    groups: selectedGroups.value,
     families: selectedFamilies.value,
   }
 
