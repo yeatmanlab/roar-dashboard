@@ -358,7 +358,11 @@ function submitStudents(rawJson){
   })
 }
 
+
+// Support functions for submitStudents process
 function addErrorUser(user, error) {
+  // If there are no error users yet, generate the
+  //  columns before displaying the table.
   if(_isEmpty(errorUserColumns.value)){
     errorUserColumns.value = generateColumns(user)
     errorUserColumns.value.unshift({
@@ -368,24 +372,28 @@ function addErrorUser(user, error) {
     })
     showErrorTable.value = true
   }
+  // Concat the userObject with the error reason.
   errorUsers.value.push({
     ...user,
     error
   })
 }
 
+// Find the district id given the name. undefined if missing.
 function getDistrictId(districtName){
   return _get(_find(districts, (district) => {
     return district.name === districtName;
   }), 'id')
 }
 
+// Find the school id given the name. undefined if missing.
 function getSchoolId(schoolName){
   return _get(_find(schools, (school) => {
     return school.name === schoolName;
   }), 'id')
 }
 
+// Find the class id given the name. undefined if missing.
 function getClassId(classId){
   return _get(_find(classes, (c) => {
     return c.id === classId;
