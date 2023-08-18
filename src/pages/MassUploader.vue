@@ -177,7 +177,7 @@ const dropdown_options = ref([
       {label: 'District', value: 'district'},
       {label: 'School', value: 'school'},
       {label: 'Class', value: 'uClass'}, // 'class' is a javascript keyword.
-      {label: 'Study', value: 'study'}
+      {label: 'Group', value: 'group'}
     ]
   }
 ])
@@ -193,7 +193,7 @@ const showErrorTable = ref(false);
 let districts = [];
 let schools = [];
 let classes = [];
-let studies = [];
+let groups = [];
 
 // Functions supporting Selecting Orgs
 const initFormFields = async () => {
@@ -203,11 +203,10 @@ const initFormFields = async () => {
   districts = await queryStore.getOrgs("districts");
   schools = await queryStore.getOrgs("schools");
   classes = await queryStore.getOrgs("classes");
-  studies = await queryStore.getOrgs("studies");
+  groups = await queryStore.getOrgs("groups");
 }
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  console.log('inside subscribe function')
   if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
     await initFormFields();
   }
@@ -296,10 +295,9 @@ function submitStudents(rawJson){
     })
     submitObject.push(studentObj)
   })
-  console.log('Submit Object', submitObject)
   _forEach(submitObject, user => {
     // Handle Email Registration
-    const { email, username, password, firstName, middleName, lastName, district, school, uClass, study, ...userData } = user;
+    const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
     const computedEmail = email || `${username}@roar-auth.com`
     let sendObject = {
       email: computedEmail, 
@@ -349,20 +347,19 @@ function submitStudents(rawJson){
       }
     }
 
-    // If study is a given column, check if the name is
+    // If group is a given column, check if the name is
     //   associated with a valid id. If so, add the id to
     //   the sendObject. If not, reject user
-    if(study){
-      const id = getStudyId(study);
+    if(group){
+      const id = getGroupId(group);
       if(id){
-        _set(sendObject, 'userData.study', id)
+        _set(sendObject, 'userData.group', id)
       } else {
-        addErrorUser(user, `Error: Study '${study}' is invalid.`)
+        addErrorUser(user, `Error: Group '${group}' is invalid.`)
         return;
       }
     }
 
-    console.log('user sendObject', sendObject)
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
     }).catch((e) => {
@@ -413,10 +410,10 @@ function getClassId(className){
   }), 'id')
 }
 
-// Find the study id given the name. undefined if missing.
-function getStudyId(studyName){
-  return _get(_find(studies, (study) => {
-    return study.id === studyName;
+// Find the group id given the name. undefined if missing.
+function getGroupId(groupName){
+  return _get(_find(groups, (group) => {
+    return group.id === groupName;
   }), 'id')
 }
 
