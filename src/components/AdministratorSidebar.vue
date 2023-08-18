@@ -1,17 +1,17 @@
 <template>
   <div class="sidebar-container">
-	<ul class="sidebar-info">
+	<ul v-if="userInfo" class="sidebar-info">
 	  <li class="sidebar-title"><strong>Your Info</strong></li>
-	  <li>District: {district}</li>
+	  <li>District: {{userInfo.district}}</li>
 	  <li>School: {school}</li>
 	  <li>Class: {class}</li>
 	</ul>
 	
-	<ul v-if="actions" class="sidebar-info">
+	<ul v-if="actions" class="sidebar-actions">
 	  <li class="sidebar-title"><strong>Actions</strong></li>
 	  <li v-for="(action, index) in actions">
 		<router-link :to="action.buttonLink" :key="index">
-			<Button rounded>{{action.title}}</Button>
+			<Button :label="action.title" rounded :icon="action.icon" />
 		</router-link>
 	  </li>
 	</ul>
@@ -22,7 +22,7 @@
 import { ref, onMounted } from "vue";
 
 const props = defineProps({
-  userInfo: {required: true},
+  userInfo: {required: false},
   actions: {required: false}
 })
 

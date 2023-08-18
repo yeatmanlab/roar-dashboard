@@ -1,88 +1,80 @@
 <template>
-  <router-link :to="{ name: 'Home' }" class="return-button">
-    <Button icon="pi pi-angle-left" label="Return to Dashboard" />
-  </router-link>
-  <div class="card" id="rectangle">
-    <span id="heading">Create a new organization</span>
-    <p id="section-heading">Use this form to create a new organization.</p>
-    <hr>
-    <div class="formgrid grid mb-3">
-      <div class="col-12">
-        <div style="width: fit-content;">
-          <div class="grid mt-5">
-            <div class="col-6">
-              <span class="p-float-label">
-                <Dropdown v-model="orgType" inputId="org-type" :options="orgTypes" showClear optionLabel="singular"
-                  placeholder="Select an org type" class="w-full md:w-14rem" />
-                <label for="org-type">Org Type</label>
-              </span>
-            </div>
+  <main class="container main">
+    <aside class="main-sidebar">
+      <AdministratorSidebar :actions="sidebarActions" />
+    </aside>
+    <section class="main-body">
+      <Panel header="Create a new organization">
+        Use this form to create a new organization.
+        
+        <Divider />
+        
+        <div class="grid grid-flow-col auto-cols-max mt-4">
+          <div class="col-12 mb-4">
+            <span class="p-float-label">
+              <Dropdown v-model="orgType" inputId="org-type" :options="orgTypes" showClear optionLabel="singular"
+                placeholder="Select an org type" class="w-full md:w-30rem" />
+              <label for="org-type">Org Type</label>
+            </span>
           </div>
-        </div>
-      </div>
-      <div class="col-12">
-        <div style="width: fit-content;">
-          <div class="grid mt-5">
-            <div class="col-6">
-              <span class="p-float-label">
-                <InputText id="org-name" v-model="orgName" />
-                <label for="org-name">{{ orgTypeLabel }} Name</label>
-              </span>
-            </div>
-
-            <div class="col-6">
-              <span class="p-float-label">
-                <InputText id="org-initial" v-model="orgInitials" />
-                <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
-              </span>
-            </div>
+          
+          <div class="col-3">
+            <span class="p-float-label">
+              <InputText id="org-name" v-model="orgName" class="w-full" />
+              <label for="org-name">{{ orgTypeLabel }} Name</label>
+            </span>
           </div>
-        </div>
-      </div>
-
-      <div class="col-12 mt-5" v-if="parentOrgType === 'school'">
-        <div style="width: fit-content;">
-          <p id="section-heading">Select the grade level for this class</p>
-
-          <div class="grid mt-5">
-            <div class="col-4 mb-5">
-              <span class="p-float-label">
-                <Dropdown v-model="grade" inputId="grade" :options="grades" showClear optionLabel="name"
-                  placeholder="Select a grade" class="w-full md:w-14rem" />
-                <label for="grade">Grade</label>
-              </span>
-            </div>
+          
+          <div class="col-3">
+            <span class="p-float-label">
+              <InputText id="org-initial" v-model="orgInitials" class="w-full" />
+              <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
+            </span>
           </div>
-        </div>
-      </div>
+          
+          <div class="col-3" v-if="parentOrgType === 'school'">
+            <span class="p-float-label">
+              <Dropdown v-model="grade" inputId="grade" :options="grades" showClear optionLabel="name"
+                placeholder="Select a grade" class="w-full" />
+              <label for="grade">Grade</label>
+            </span>
 
-      <div class="col-12 mt-2" v-if="parentOrgType">
-        <div style="width: fit-content;" v-if="parentOrgs.length > 1">
-          <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType }}.</p>
-
-          <div class="grid mt-5">
-            <div class="col-4 mb-5">
+          </div>
+          
+          
+          <div class="col-12 mt-2" v-if="parentOrgType">
+            <div v-if="parentOrgs.length > 1">
+              <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType }}.</p>
               <span class="p-float-label">
                 <Dropdown v-model="parentOrg" inputId="district" :options="parentOrgs" showClear optionLabel="name"
                   :placeholder="`Select a ${parentOrgType}`" class="w-full md:w-14rem" />
                 <label for="district">{{ _capitalize(parentOrgType) }}</label>
               </span>
             </div>
+          
+            <div v-if="parentOrgs.length === 1">
+              <p id="section-heading">
+                This {{ orgTypeLabel.toLowerCase() }} will be created in {{ parentOrgType }} {{ parentOrgs[0].name }}.
+              </p>
+            </div>
+          </div>
+          
+        </div>
+        
+        <Divider />
+
+        <div class="grid">
+          <div class="col-12">
+            <Button :label="`Create ${orgTypeLabel}`" @click="submit" :disabled="orgTypeLabel == 'Org' ? '' : disabled"/>
           </div>
         </div>
+        
+      </Panel>
+      
+    </section>
+  </main>
 
-        <div style="width: fit-content;" v-if="parentOrgs.length === 1">
-          <p id="section-heading">
-            This {{ orgTypeLabel.toLowerCase() }} will be created in {{ parentOrgType }} {{ parentOrgs[0].name }}.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 mb-3">
-      <Button :label="`Create ${orgTypeLabel}`" @click="submit" />
-    </div>
-  </div>
+  
 </template>
 
 <script setup>
@@ -92,6 +84,26 @@ import _capitalize from "lodash/capitalize";
 import _get from "lodash/get";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
+
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+const sidebarActions = ref([
+  {
+    title: "Back to Dashboard",
+    icon: "pi pi-arrow-left",
+    buttonLink: "/administrator",
+  },
+  {
+    title: "Register users",
+    icon: "pi pi-users",
+    buttonLink: "/mass-upload",
+  },
+  {
+    title: "Create an organization",
+    icon: "pi pi-database",
+    buttonLink: "/create-org",
+  }
+]);
+
 
 const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district' },

@@ -1,124 +1,129 @@
 <template>
-  <router-link :to="{ name: 'Home' }" class="return-button">
-    <Button icon="pi pi-angle-left" label="Return to Dashboard" />
-  </router-link>
-  <div class="card" id="rectangle" v-if="formReady">
-    <span id="heading">Create a new administration</span>
-    <p id="section-heading">Use this form to create a new administration.</p>
-    <hr>
-    <div class="formgrid grid mt-5">
-      <div class="field col">
-        <span class="p-float-label">
-          <InputText id="administration-name" v-model="administrationName" />
-          <label for="administration-name">Administration Name</label>
-        </span>
-      </div>
-
-      <div class="field col">
-        <span class="p-float-label">
-          <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
-            :manualInput="false" showIcon showButtonBar />
-          <label for="dates">Dates</label>
-        </span>
-      </div>
-    </div>
-
-    <div style="width: fit-content;">
-      <p id="section-heading">Assign this administration to organizations</p>
-    </div>
-    <div class="formgrid grid mt-5 mb-5">
-      <div class="field col" v-if="districts.length > 0">
-        <span class="p-float-label">
-          <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-            inputId="districts" />
-          <label for="districts">Districts</label>
-        </span>
-      </div>
-
-      <div class="field col" v-if="schools.length > 0">
-        <span class="p-float-label">
-          <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-            inputId="schools" />
-          <label for="schools">Schools</label>
-        </span>
-      </div>
-
-      <div class="field col" v-if="classes.length > 0">
-        <span class="p-float-label">
-          <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-            inputId="classes" />
-          <label for="classes">Classes</label>
-        </span>
-      </div>
-
-      <div class="field col" v-if="studies.length > 0">
-        <span class="p-float-label">
-          <MultiSelect v-model="selectedStudies" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-            inputId="studies" />
-          <label for="studies">Studies</label>
-        </span>
-      </div>
-
-      <div class="field col" v-if="families.length > 0">
-        <span class="p-float-label">
-          <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
-            inputId="families" />
-          <label for="families">Families</label>
-        </span>
-      </div>
-    </div>
-
-    <div class="col-12 mb-3">
-      <div class="flex flex-row justify-content-between align-items-center flex-wrap mb-3">
-        <p id="section-heading">Select Assessments</p>
-        <div class="flex flex-row align-items-center justify-content-end gap-3">
-          <!-- <label for="sequential">Require sequential?</label> -->
-          <span>Require sequential?</span>
-          <SelectButton v-model="sequential" :options="sequentialOptions" optionLabel="label" optionValue="value" />
+  <main class="container main">
+    <aside class="main-sidebar">
+      <AdministratorSidebar :actions="sidebarActions" />
+    </aside>
+    <section class="main-body">
+      <div class="card" id="rectangle" v-if="formReady">
+        <span id="heading">Create a new administration</span>
+        <p id="section-heading">Use this form to create a new administration.</p>
+        <hr>
+        <div class="formgrid grid mt-5">
+          <div class="field col">
+            <span class="p-float-label">
+              <InputText id="administration-name" v-model="administrationName" />
+              <label for="administration-name">Administration Name</label>
+            </span>
+          </div>
+      
+          <div class="field col">
+            <span class="p-float-label">
+              <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
+                :manualInput="false" showIcon showButtonBar />
+              <label for="dates">Dates</label>
+            </span>
+          </div>
+        </div>
+      
+        <div style="width: fit-content;">
+          <p id="section-heading">Assign this administration to organizations</p>
+        </div>
+        <div class="formgrid grid mt-5 mb-5">
+          <div class="field col" v-if="districts.length > 0">
+            <span class="p-float-label">
+              <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                inputId="districts" />
+              <label for="districts">Districts</label>
+            </span>
+          </div>
+      
+          <div class="field col" v-if="schools.length > 0">
+            <span class="p-float-label">
+              <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                inputId="schools" />
+              <label for="schools">Schools</label>
+            </span>
+          </div>
+      
+          <div class="field col" v-if="classes.length > 0">
+            <span class="p-float-label">
+              <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                inputId="classes" />
+              <label for="classes">Classes</label>
+            </span>
+          </div>
+      
+          <div class="field col" v-if="studies.length > 0">
+            <span class="p-float-label">
+              <MultiSelect v-model="selectedStudies" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+                inputId="studies" />
+              <label for="studies">Studies</label>
+            </span>
+          </div>
+      
+          <div class="field col" v-if="families.length > 0">
+            <span class="p-float-label">
+              <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
+                inputId="families" />
+              <label for="families">Families</label>
+            </span>
+          </div>
+        </div>
+      
+        <div class="col-12 mb-3">
+          <div class="flex flex-row justify-content-between align-items-center flex-wrap mb-3">
+            <p id="section-heading">Select Assessments</p>
+            <div class="flex flex-row align-items-center justify-content-end gap-3">
+              <!-- <label for="sequential">Require sequential?</label> -->
+              <span>Require sequential?</span>
+              <SelectButton v-model="sequential" :options="sequentialOptions" optionLabel="label" optionValue="value" />
+            </div>
+          </div>
+      
+          <PickList v-model="assessments" :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id"
+            :stripedRows="true" :pt="{
+              moveAllToTargetButton: { root: { class: 'hide' } },
+              moveAllToSourceButton: { root: { class: 'hide' } },
+              targetMoveTopButton: { root: { class: 'hide' } },
+              targetMoveBottomButton: { root: { class: 'hide' } },
+            }">
+            <template #sourceheader>Available</template>
+            <template #targetheader>Selected</template>
+            <template #item="slotProps">
+              <div class="flex flex-wrap p-2 align-items-center gap-3">
+                <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.task.image || backupImage"
+                  :alt="slotProps.item.task.name" />
+                <div class="flex-1 flex flex-column gap-2">
+                  <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.task.name }}</span>
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-tag text-sm" style="margin-left: 0.625rem"></i>
+                    <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
+                  </div>
+                </div>
+                <Button type="button" rounded size="small" icon="pi pi-info" @click="toggle($event, slotProps.item.id)" />
+                <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
+                  <DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
+                    :value="toEntryObjects(slotProps.item.variant.params)">
+                    <Column field="key" header="Parameter" style="width: 50%"></Column>
+                    <Column field="value" header="Value" style="width: 50%"></Column>
+                  </DataTable>
+                </OverlayPanel>
+              </div>
+            </template>
+          </PickList>
+        </div>
+      
+        <div class="col-12 mb-3">
+          <Button label="Create Administration" @click="submit" />
         </div>
       </div>
+      <div v-else class="loading-container">
+        <AppSpinner style="margin-bottom: 1rem;" />
+        <span>Loading Administration Data</span>
+      </div>
+    </section>
+  </main>
 
-      <PickList v-model="assessments" :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id"
-        :stripedRows="true" :pt="{
-          moveAllToTargetButton: { root: { class: 'hide' } },
-          moveAllToSourceButton: { root: { class: 'hide' } },
-          targetMoveTopButton: { root: { class: 'hide' } },
-          targetMoveBottomButton: { root: { class: 'hide' } },
-        }">
-        <template #sourceheader>Available</template>
-        <template #targetheader>Selected</template>
-        <template #item="slotProps">
-          <div class="flex flex-wrap p-2 align-items-center gap-3">
-            <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.task.image || backupImage"
-              :alt="slotProps.item.task.name" />
-            <div class="flex-1 flex flex-column gap-2">
-              <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.task.name }}</span>
-              <div class="flex align-items-center gap-2">
-                <i class="pi pi-tag text-sm" style="margin-left: 0.625rem"></i>
-                <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
-              </div>
-            </div>
-            <Button type="button" rounded size="small" icon="pi pi-info" @click="toggle($event, slotProps.item.id)" />
-            <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
-              <DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
-                :value="toEntryObjects(slotProps.item.variant.params)">
-                <Column field="key" header="Parameter" style="width: 50%"></Column>
-                <Column field="value" header="Value" style="width: 50%"></Column>
-              </DataTable>
-            </OverlayPanel>
-          </div>
-        </template>
-      </PickList>
-    </div>
-
-    <div class="col-12 mb-3">
-      <Button label="Create Administration" @click="submit" />
-    </div>
-  </div>
-  <div v-else class="loading-container">
-    <AppSpinner style="margin-bottom: 1rem;" />
-    <span>Loading Administration Data</span>
-  </div>
 </template>
 
 <script setup>
@@ -134,6 +139,26 @@ import _union from "lodash/union";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "./AppSpinner.vue";
+
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+const sidebarActions = ref([
+  {
+    title: "Back to Dashboard",
+    icon: "pi pi-arrow-left",
+    buttonLink: "/administrator",
+  },
+  {
+    title: "Register users",
+    icon: "pi pi-users",
+    buttonLink: "/mass-upload",
+  },
+  {
+    title: "Create an organization",
+    icon: "pi pi-database",
+    buttonLink: "/create-org",
+  }
+]);
+
 
 const router = useRouter();
 const toast = useToast();
