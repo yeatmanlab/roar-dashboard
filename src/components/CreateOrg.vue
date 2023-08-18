@@ -97,7 +97,7 @@ const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district' },
   { firestoreCollection: 'schools', singular: 'school' },
   { firestoreCollection: 'classes', singular: 'class' },
-  { firestoreCollection: 'studies', singular: 'study' },
+  { firestoreCollection: 'groups', singular: 'group' },
   { firestoreCollection: 'families', singular: 'family' },
 ];
 const orgType = ref();
