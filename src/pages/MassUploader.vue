@@ -299,7 +299,7 @@ function submitStudents(rawJson){
   console.log('Submit Object', submitObject)
   _forEach(submitObject, user => {
     // Handle Email Registration
-    const { email, username, password, firstName, middleName, lastName, district, school, uClass, ...userData } = user;
+    const { email, username, password, firstName, middleName, lastName, district, school, uClass, study, ...userData } = user;
     const computedEmail = email || `${username}@roar-auth.com`
     let sendObject = {
       email: computedEmail, 
@@ -349,6 +349,19 @@ function submitStudents(rawJson){
       }
     }
 
+    // If study is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    if(study){
+      const id = getStudyId(study);
+      if(id){
+        _set(sendObject, 'userData.study', id)
+      } else {
+        addErrorUser(user, `Error: Study '${study}' is invalid.`)
+        return;
+      }
+    }
+
     console.log('user sendObject', sendObject)
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
@@ -394,9 +407,16 @@ function getSchoolId(schoolName){
 }
 
 // Find the class id given the name. undefined if missing.
-function getClassId(classId){
+function getClassId(className){
   return _get(_find(classes, (c) => {
-    return c.id === classId;
+    return c.name === className;
+  }), 'id')
+}
+
+// Find the study id given the name. undefined if missing.
+function getStudyId(studyName){
+  return _get(_find(studies, (study) => {
+    return study.id === studyName;
   }), 'id')
 }
 
