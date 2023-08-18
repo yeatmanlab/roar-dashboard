@@ -1,11 +1,11 @@
 import { defineStore } from "pinia";
-import { useRouter } from 'vue-router';
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
 
+import _get from "lodash/get";
+
 export const useAuthStore = () => {
-  const router = useRouter();
-  return defineStore({
+  return defineStore('authStore', {
     // id is required so that Pinia can connect the store to the devtools
     id: "authStore",
     state: () => {
@@ -14,118 +14,128 @@ export const useAuthStore = () => {
           adminFirebaseUser: null,
           appFirebaseUser: null,
         },
-        roles: null,
-        homepageReady: true,
+        adminOrgs: null,
         roarfirekit: null,
+        hasUserData: false,
+        firekitUserData: null,
+        firekitAssignments: {
+          assigned: null
+        },
+        firekitAssignmentIds: null,
+        firekitIsAdmin: false,
+        cleverOAuthRequested: false,
       };
     },
     getters: {
-      uid: (state) => { return state.firebaseUseradminFirebaseUser?.uid },
+      uid: (state) => { return state.firebaseUser.adminFirebaseUser?.uid },
       email: (state) => { return state.firebaseUser.adminFirebaseUser?.email },
       isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
-      isFirekitInit: (state) => { return Boolean(state.roarfirekit) },
-      // User Information Getters
-      adminClaims: (state) => { return state.roarfirekit?.adminClaims },
-      currentAssignments: (state) => { return state.roarfirekit?.currentAssignments },
-      userData: (state) => { return state.roarfirekit?.userData }
+      isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser)) },
+      isFirekitInit: (state) => { return state.roarfirekit?.initialized },
     },
     actions: {
-      isUserAuthed() {
-        console.log('Final Auth Status:', Boolean(this.isUserAuthedAdmin && this.isUserAuthedApp))
-        return Boolean(this.isUserAuthedAdmin && this.isUserAuthedApp)
+      isUserAdmin() {
+        if(this.isFirekitInit) {
+          this.firekitIsAdmin = this.roarfirekit.isAdmin();
+          console.log('set firekitIsAdmin to', this.firekitIsAdmin)
+        }
+        return this.firekitIsAdmin;
       },
-      getAdminRoles() {
-        console.log('adminClaims', this.roarfirekit?.adminClaims)
-        return this.roarfirekit?.adminClaims;
+      async getAssignments(assignments) {
+        try{
+          const reply = await this.roarfirekit.getAssignments(assignments)
+          this.firekitAssignments = reply
+          this.firekitAssignmentIds = assignments;
+          return reply
+        } catch(e) {
+          return this.firekitAssignments.assigned
+        }
+        
       },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if(user){
-            // console.log('(Admin) onAuthState Observer: user signed in:', user)
+            this.localFirekitInit = true
             this.firebaseUser.adminFirebaseUser = user;
           } else {
-            // console.log('(Admin) onAuthState Observer: user not logged in or created yet')
             this.firebaseUser.adminFirebaseUser = null;
           }
         })
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if(user){
-            // console.log('(App) onAuthState Observer: user signed in:', user)
             this.firebaseUser.appFirebaseUser = user;
           } else {
-            // console.log('(App) onAuthState Observer: user not logged in or created yet')
             this.firebaseUser.appFirebaseUser = null;
           }
         })
       },
       async initFirekit() {
-        this.roarfirekit = await initNewFirekit();
-      },
-      async registerWithEmailAndPassword({ email, password }) {
-        this.homepageReady = false;
-        return this.roarfirekit.registerWithEmailAndPassword({ email, password }).then(
-          () => {
-            this.user = this.roarfirekit?.app.user;
-            this.uid = this.roarfirekit?.app.user.uid;
-            this.email = email;
-            router.replace({ name: 'Home' });
-          }
-        ).then(() => {
-          this.homepageReady = true;
+        this.roarfirekit = await initNewFirekit().then((firekit) => {
+          return firekit
         });
       },
+      async registerWithEmailAndPassword({ email, password, userData }) {
+        return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
+      },
       async logInWithEmailAndPassword({ email, password }) {
-        this.homepageReady = false;
         if(this.isFirekitInit){
-          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(
-            () => {
-              this.user = this.roarfirekit.app.user;
-              this.uid = this.roarfirekit.app.user.uid;
-              this.email = email;
-              router.replace({ name: 'Home' });
+          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {
+            if(this.roarfirekit.userData){
+              this.hasUserData = true;
+              this.firekitUserData = this.roarfirekit.userData;
             }
-          ).then(() => {
-            this.homepageReady = true;
-          });
+          })
         }
         
       },
       async signInWithGooglePopup() {
-        this.homepageReady = false;
         if(this.isFirekitInit){
           return this.roarfirekit.signInWithPopup('google').then(() => {
-            router.replace({ name: 'Home' });
-          }).then(() => {
-            this.homepageReady = true;
-          });
+            if(this.roarfirekit.userData){
+              this.hasUserData = true
+              this.firekitUserData = this.roarfirekit.userData
+            }
+          })
+        }
+      },
+      async signInWithCleverPopup() {
+        if(this.isFirekitInit){
+          return this.roarfirekit.signInWithPopup('clever').then(() => {
+            if(this.roarfirekit.userData){
+              this.hasUserData = true
+              this.firekitUserData = this.roarfirekit.userData
+            }
+          })
         }
       },
       async signInWithGoogleRedirect() {
-        return roarfirekit.initiateGoogleRedirect();
+        return this.roarfirekit.initiateRedirect("google");
+      },
+      async signInWithCleverRedirect() {
+        return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
         }
-        this.homepageReady = false;
         if(this.isFirekitInit){
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
-            if (result) {
-              router.replace({ name: 'Home' });
-              this.homepageReady = true;
-              return;
+          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then(() => {
+            if(this.roarfirekit.userData){
+              this.hasUserData = true
+              this.firekitUserData = this.roarfirekit.userData
             }
           });
         }
       },
       async signOut() {
-        if(this.isUserAuthed() && this.isFirekitInit){
-          this.homepageReady = false;
+        if(this.isAuthenticated && this.isFirekitInit){
           return this.roarfirekit.signOut().then(() => {
-            this.roles = null;
-            this.homepageReady = true;
-            // roarfirekit = this.initNewFirekit()
+            this.adminOrgs = null;
+            this.hasUserData = false;
+            console.log('setting firekitIsAdmin to false')
+            this.firekitIsAdmin = false;
+            // this.roarfirekit = initNewFirekit()
           });
         } else {
           console.log('Cant log out while not logged in')
@@ -155,6 +165,12 @@ export const useAuthStore = () => {
     // persist: true
     persist: {
       storage: sessionStorage,
+      debug: false,
+      afterRestore: async (ctx) => {
+        if (ctx.store.roarfirekit) {
+          ctx.store.roarfirekit = await initNewFirekit();
+        }
+      }
     },
   })();
 };

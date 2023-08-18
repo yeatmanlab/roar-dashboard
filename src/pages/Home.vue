@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <ParticipantList></ParticipantList>
   <div class="mt-5 flex flex-row flex-wrap justify-content-center card-container">
     <Card class="m-4" style="width: 25em">
@@ -54,8 +55,18 @@ const onAdminUpload = async (event) => {
 const submit = () => {
   router.push({ name: "ScoreReport" });
 }
+=======
+  <Participant v-if="!isAdminRef"/>
+  <Administrator v-else-if="isAdminRef" />
+</template>
+
+<script setup>
+import { ref } from "vue";
+import { useAuthStore } from '@/store/auth';
+import Participant from "./Participant.vue";
+import Administrator from "./Administrator.vue";
+const authStore = useAuthStore();
+const isAdmin = authStore.isUserAdmin();
+const isAdminRef = ref(isAdmin)
+>>>>>>> main
 </script>
-
-<style scoped>
-
-</style>
