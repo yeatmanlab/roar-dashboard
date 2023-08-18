@@ -72,7 +72,7 @@ const tableColumns = ref([
     "dataType": "text"
   },
   {
-    "field": "study.id",
+    "field": "group.id",
     "dataType": "text"
   },
   {
