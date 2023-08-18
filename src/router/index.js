@@ -168,7 +168,7 @@ router.beforeEach(async (to, from) => {
     && (!store.isAuthenticated && to.name !== "SignIn" && to.name !== "AuthClever")) {
     return { name: "SignIn" }
   }
-  // Check if user is an admin. If not, 
+  // Check if user is an admin. If not, prevent routing to page
   if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin()) {
     return { name: "Home" }
   }
