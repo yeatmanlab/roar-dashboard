@@ -21,6 +21,7 @@ import Chart from 'primevue/chart'
 import Chip from "primevue/chip";
 import ConfirmPopup from "primevue/confirmpopup";
 import ConfirmationService from 'primevue/confirmationservice';
+import ConfirmDialog from "primevue/confirmdialog";
 import DataView from 'primevue/dataview';
 import Dialog from 'primevue/dialog';
 import Divider from "primevue/divider";
@@ -52,6 +53,9 @@ import ToggleButton from "primevue/togglebutton";
 import TreeSelect from "primevue/treeselect";
 import TreeTable from "primevue/treetable";
 import TriStateCheckbox from 'primevue/tristatecheckbox'
+
+// PrimeVue confirmation service import
+import ConfirmationService from 'primevue/confirmationservice';
 
 // PrimeVue data table imports
 import DataTable from 'primevue/datatable';
@@ -93,6 +97,7 @@ app.component("Checkbox", Checkbox);
 app.component("Chart", Chart);
 app.component("Chip", Chip);
 app.component("ConfirmPopup", ConfirmPopup);
+app.component("ConfirmDialog", ConfirmDialog);
 app.component("DataView", DataView);
 app.component("Dialog", Dialog);
 app.component("Divider", Divider);
@@ -121,6 +126,8 @@ app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
 app.component("TreeTable", TreeTable);
 app.component("TriStateCheckbox", TriStateCheckbox)
+
+app.use(ConfirmationService);
 
 app.component("DataTable", DataTable);
 app.component("Column", Column);

@@ -82,6 +82,10 @@ export const useAuthStore = () => {
           return firekit
         });
       },
+      async getLegalDoc(docName) {
+        console.log('about to call firekit with', docName)
+        return await this.roarfirekit.getLegalDoc(docName);
+      },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
