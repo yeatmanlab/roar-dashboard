@@ -3,7 +3,7 @@
     <aside class="main-sidebar">
       <AdministratorSidebar :userInfo="userInfo" />
     </aside>
-    
+
     <section class="main-body">
       <div class="card-container">
         <router-link :to="cardData.buttonLink" v-for="(cardData, index) in cardsData" :key="index" class="card-wrapper">
@@ -24,25 +24,40 @@
           </Card>
         </router-link>
       </div>
-      
-      <CardAdministration :id="admin.id" :title="admin.title" :stats="admin.stats" :dates="admin.dates"
-      :assignees="admin.assignees" :assessments="admin.assessments"></CardAdministration>
-    </section>
 
+      <div v-if="administrations.length" v-for="(a, index) in administrations" :key="index">
+        <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
+          :assessments="a.assessments"></CardAdministration>
+      </div>
+    </section>
   </main>
 </template>
 
 <script setup>
 import { ref } from "vue";
+import { storeToRefs } from "pinia";
 import CardAdministration from "@/components/CardAdministration.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import { useAuthStore } from "@/store/auth";
+import { useQueryStore } from "@/store/query";
+
+const authStore = useAuthStore();
+const queryStore = useQueryStore();
+
+const { administrations } = storeToRefs(queryStore);
 
 const cardsData = ref([
   {
     title: "Create an organization",
     content: "Create a new district, school, class, or group.",
     buttonText: "Go",
-    buttonLink: "/create-org",
+    buttonLink: "/create-orgs",
+  },
+  {
+    title: "List organizations",
+    content: "List all organizations that you have access to.",
+    buttonText: "Go",
+    buttonLink: "/list-orgs",
   },
   {
     title: "Register users",
@@ -74,8 +89,19 @@ const admin = ref(
     assignees: ['Class1', 'Class2'],
     assessments: ['SRE', 'PWA', 'SWA']
   }
-
 );
+
+const getAdminDocs = async () => {
+  unsubscribe();
+  queryStore.getAdminOrgs();
+  queryStore.getMyAdministrations();
+}
+
+const unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.getOrgs && state.roarfirekit.getMyAdministrations && state.roarfirekit.isAdmin()) {
+    await getAdminDocs();
+  }
+});
 </script>
 
 <style scoped>
@@ -102,5 +128,10 @@ const admin = ref(
 .card-button {
   display: flex;
   justify-content: flex-end;
+}
+
+.loading-container {
+  width: 100%;
+  text-align: center;
 }
 </style>

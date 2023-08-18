@@ -68,7 +68,6 @@ const routes = [
     name: "Register",
     component: () =>
       import("../pages/Register.vue"),
-    meta: { requiresGuest: true },
   },
   {
     path: '/mass-upload',
@@ -80,7 +79,7 @@ const routes = [
     path: "/signin",
     name: "SignIn",
     component: () => import("../pages/SignIn.vue"),
-    meta: { requiresGuest: true, pageTitle: "Sign In" },
+    meta: { pageTitle: "Sign In" },
   },
   {
     path: "/signout",
@@ -116,10 +115,16 @@ const routes = [
     meta: {pageTitle: "Create an administration", requireAdmin: true}
   },
   { 
-    path: "/create-org",
-    name: "CreateOrg",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrg.vue"),
-    meta: {pageTitle: "Create an organization", requireAdmin: true}
+    path: "/create-orgs",
+    name: "CreateOrgs",
+    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrgs.vue"),
+    meta: {pageTitle: "Create organizations", requireAdmin: true}
+  },
+  { 
+    path: "/list-orgs",
+    name: "ListOrgs",
+    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/ListOrgs.vue"),
+    meta: {pageTitle: "List organizations", requireAdmin: true}
   },
   {
     path: "/administration/:id",
@@ -139,7 +144,7 @@ const routes = [
     name: "EnableCookies",
     component: () =>
       import("../pages/EnableCookies.vue"),
-    meta: { requiresGuest: true, pageTitle: "Enable Cookies" },
+    meta: { pageTitle: "Enable Cookies" },
   },
   {
     path: "/:pathMatch(.*)*",

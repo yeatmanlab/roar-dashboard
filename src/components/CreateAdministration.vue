@@ -5,8 +5,13 @@
     </aside>
     <section class="main-body">
       <div class="card" id="rectangle" v-if="formReady">
-        <span id="heading">Create a new administration</span>
-        <p id="section-heading">Use this form to create a new administration.</p>
+        <div class="flex flex-row justify-content-between align-items-start">
+          <div>
+            <span id="heading">Create a new administration</span>
+            <p id="section-heading">Use this form to create a new administration.</p>
+          </div>
+          <Button class="mr-4" icon="pi pi-refresh" severity="secondary" aria-label="Refresh" @click="initFormFields" />
+        </div>
         <hr>
         <div class="formgrid grid mt-5">
           <div class="field col">
@@ -15,7 +20,7 @@
               <label for="administration-name">Administration Name</label>
             </span>
           </div>
-      
+
           <div class="field col">
             <span class="p-float-label">
               <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
@@ -24,11 +29,11 @@
             </span>
           </div>
         </div>
-      
+
         <div style="width: fit-content;">
           <p id="section-heading">Assign this administration to organizations</p>
         </div>
-        <div class="formgrid grid mt-5 mb-5">
+        <div class="formgrid grid mt-5 mb-5" v-if="orgsReady">
           <div class="field col" v-if="districts.length > 0">
             <span class="p-float-label">
               <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
@@ -36,7 +41,7 @@
               <label for="districts">Districts</label>
             </span>
           </div>
-      
+
           <div class="field col" v-if="schools.length > 0">
             <span class="p-float-label">
               <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
@@ -44,7 +49,7 @@
               <label for="schools">Schools</label>
             </span>
           </div>
-      
+
           <div class="field col" v-if="classes.length > 0">
             <span class="p-float-label">
               <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
@@ -52,15 +57,15 @@
               <label for="classes">Classes</label>
             </span>
           </div>
-      
+
           <div class="field col" v-if="groups.length > 0">
             <span class="p-float-label">
-              <MultiSelect v-model="selectedGroups" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+              <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
                 inputId="groups" />
-              <label for="groups">Studies</label>
+              <label for="groups">Groups</label>
             </span>
           </div>
-      
+
           <div class="field col" v-if="families.length > 0">
             <span class="p-float-label">
               <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
@@ -69,19 +74,23 @@
             </span>
           </div>
         </div>
-      
+        <div v-else class="loading-container">
+          <AppSpinner style="margin-bottom: 1rem;" />
+          <span>Loading Organizations</span>
+        </div>
+
         <div class="col-12 mb-3">
           <div class="flex flex-row justify-content-between align-items-center flex-wrap mb-3">
             <p id="section-heading">Select Assessments</p>
             <div class="flex flex-row align-items-center justify-content-end gap-3">
               <!-- <label for="sequential">Require sequential?</label> -->
               <span>Require sequential?</span>
-              <SelectButton v-model="sequential" :options="sequentialOptions" optionLabel="label" optionValue="value" />
+              <InputSwitch v-model="sequential" />
             </div>
           </div>
-      
-          <PickList v-model="assessments" :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id"
-            :stripedRows="true" :pt="{
+
+          <PickList v-if="assessments[0].length || assessments[1].length" v-model="assessments"
+            :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id" :stripedRows="true" :pt="{
               moveAllToTargetButton: { root: { class: 'hide' } },
               moveAllToSourceButton: { root: { class: 'hide' } },
               targetMoveTopButton: { root: { class: 'hide' } },
@@ -111,8 +120,12 @@
               </div>
             </template>
           </PickList>
+          <div v-else class="loading-container">
+            <AppSpinner style="margin-bottom: 1rem;" />
+            <span>Loading Assessments</span>
+          </div>
         </div>
-      
+
         <div class="col-12 mb-3">
           <Button label="Create Administration" @click="submit" />
         </div>
@@ -123,7 +136,6 @@
       </div>
     </section>
   </main>
-
 </template>
 
 <script setup>
@@ -174,7 +186,7 @@ const toggle = (event, id) => {
   paramPanelRefs[id].value.toggle(event)
 }
 
-const formReady = ref(false);
+const orgsReady = ref(false);
 
 const administrationName = ref("");
 const minStartDate = ref(new Date());
@@ -198,7 +210,6 @@ const selectedClasses = ref([]);
 const selectedGroups = ref([]);
 const selectedFamilies = ref([]);
 
-const sequentialOptions = ref([{ label: "Yes", value: true }, { label: "No", value: false }]);
 const sequential = ref(true);
 
 const { allVariants } = storeToRefs(queryStore);
@@ -207,6 +218,9 @@ const assessments = ref([[], []])
 const backupImage = "/src/assets/swr-icon.jpeg";
 
 const initFormFields = async () => {
+  orgsReady.value = false;
+  assessments.value = [[], []];
+
   unsubscribe();
   const requireRegisteredTasks = !roarfirekit.value.superAdmin
 
@@ -216,20 +230,21 @@ const initFormFields = async () => {
     queryStore.getOrgs("classes"),
     queryStore.getOrgs("groups"),
     queryStore.getOrgs("families"),
-    queryStore.getVariants(requireRegisteredTasks),
   ]
 
-  const [_districts, _schools, _classes, _groups, _families, ..._rest] = await Promise.all(promises);
+  const [_districts, _schools, _classes, _groups, _families] = await Promise.all(promises);
 
   districts.value = _districts;
   schools.value = _schools;
   classes.value = _classes;
   groups.value = _groups;
   families.value = _families;
+  orgsReady.value = true;
 
-  assessments.value = [allVariants.value, []];
-  paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
-  formReady.value = true;
+  queryStore.getVariants(requireRegisteredTasks).then(() => {
+    assessments.value = [allVariants.value, []];
+    paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
+  });
 }
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {

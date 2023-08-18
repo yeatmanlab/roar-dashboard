@@ -25,6 +25,7 @@ import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
 import FileUpload from 'primevue/fileupload';
 import FocusTrap from "primevue/focustrap";
+import InputSwitch from "primevue/inputswitch";
 import InputText from "primevue/inputtext";
 import InlineMessage from 'primevue/inlinemessage';
 import Message from "primevue/message";
@@ -47,6 +48,7 @@ import Toolbar from "primevue/toolbar";
 import Tooltip from "primevue/tooltip";
 import ToggleButton from "primevue/togglebutton";
 import TreeSelect from "primevue/treeselect";
+import TreeTable from "primevue/treetable";
 import TriStateCheckbox from 'primevue/tristatecheckbox'
 
 // PrimeVue data table imports
@@ -93,6 +95,7 @@ app.component("Divider", Divider);
 app.component("Dropdown", Dropdown);
 app.component("FileUpload", FileUpload);
 app.component("InlineMessage", InlineMessage);
+app.component("InputSwitch", InputSwitch);
 app.component("InputText", InputText);
 app.component("Message", Message);
 app.component("Menu", Menu);
@@ -112,6 +115,7 @@ app.component("Toast", Toast);
 app.component("ToggleButton", ToggleButton);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
+app.component("TreeTable", TreeTable);
 app.component("TriStateCheckbox", TriStateCheckbox)
 
 app.component("DataTable", DataTable);
