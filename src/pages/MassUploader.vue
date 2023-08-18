@@ -45,45 +45,6 @@
         Not all columns must be used, however a column has to be selected for each required field.
       </div>
 
-      <!-- Selecting Orgs -->
-      <div v-if="formReady">
-        <h3>Select organizations to apply to all users</h3>
-        <div class="orgs-container">
-          <div class="org-dropdown" v-if="districts.length > 0">
-            <span class="p-float-label">
-              <Dropdown v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                inputId="districts" showClear />
-              <label for="districts">Districts</label>
-            </span>
-          </div>
-
-          <div class="org-dropdown" v-if="schools.length > 0">
-            <span class="p-float-label">
-              <Dropdown v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                inputId="schools" showClear />
-              <label for="schools">Schools</label>
-            </span>
-          </div>
-
-          <div class="org-dropdown" v-if="classes.length > 0">
-            <span class="p-float-label">
-              <Dropdown v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                inputId="classes" showClear />
-              <label for="classes">Classes</label>
-            </span>
-          </div>
-
-          <div class="org-dropdown" v-if="studies.length > 0">
-            <span class="p-float-label">
-              <Dropdown v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-                inputId="studies" showClear />
-              <label for="studies">Studies</label>
-            </span>
-          </div>
-        </div>
-      </div>
-      <AppSpinner v-else />
-
       <h3>Define what each column describes</h3>
       <div v-if="errorMessage" class="error-box">
         {{ errorMessage }}
@@ -168,6 +129,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _compact from 'lodash/compact';
 import _cloneDeep from 'lodash/cloneDeep';
 import _omit from 'lodash/omit';
+import _find from 'lodash/find';
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
 import RoarDataTable from '../components/RoarDataTable.vue';
@@ -213,6 +175,15 @@ const dropdown_options = ref([
       {label: 'Pid', value: 'pid'},
     ]
   },
+  {
+    label: 'Organizations',
+    items: [
+      {label: 'District', value: 'district'},
+      {label: 'School', value: 'school'},
+      {label: 'Class', value: 'uClass'}, // 'class' is a javascript keyword.
+      {label: 'Study', value: 'study'}
+    ]
+  }
 ])
 
 // Error Users Table refs
@@ -223,30 +194,30 @@ const errorMessage = ref("");
 const showErrorTable = ref(false);
 
 // Selecting Orgs
-const formReady = ref(false);
-const districts = ref([]);
-const schools = ref([]);
-const classes = ref([]);
-const studies = ref([]);
+// const formReady = ref(false);
+let districts = [];
+let schools = [];
+let classes = [];
+let studies = [];
 
-const selectedDistrict = ref();
-const selectedSchool = ref();
-const selectedClass = ref();
-const selectedStudy = ref();
+// const selectedDistrict = ref();
+// const selectedSchool = ref();
+// const selectedClass = ref();
+// const selectedStudy = ref();
 
-const superAdmin = ref(roarfirekit.value._superAdmin);
-const adminOrgs = ref(roarfirekit.value._adminOrgs);
+// const superAdmin = ref(roarfirekit.value._superAdmin);
+// const adminOrgs = ref(roarfirekit.value._adminOrgs);
 
 // Functions supporting Selecting Orgs
 const initFormFields = async () => {
   console.log('inside init form fields')
   unsubscribe();
   // TODO: Optimize this with Promise.all or some such
-  districts.value = await queryStore.getOrgs("districts");
-  schools.value = await queryStore.getOrgs("schools");
-  classes.value = await queryStore.getOrgs("classes");
-  studies.value = await queryStore.getOrgs("studies");
-  formReady.value = true;
+  districts = await queryStore.getOrgs("districts");
+  schools = await queryStore.getOrgs("schools");
+  classes = await queryStore.getOrgs("classes");
+  studies = await queryStore.getOrgs("studies");
+  // formReady.value = true;
 }
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {
@@ -255,6 +226,32 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
     await initFormFields();
   }
 });
+
+function isDistrictValid(districtName) {
+  const foundId = _find(districts, (district) => {
+    return district.name === districtName
+  })
+  console.log('foundDistrict', foundId)
+  if(foundId) {
+    return foundId.id;
+  } else {
+    errorMessage.value = `District '${districtName}' is not recognized.`
+    return null;
+  }
+}
+
+function isSchoolValid(schoolName) {
+  console.log('all schools', schools)
+  const foundId = _find(schools, (school) => {
+    return school.name === schoolName
+  })
+  if(foundId) {
+    console.log('found school:', foundId)
+    return foundId.id;
+  } else {
+    errorMessage.value = `School '${schoolName}' is not recognized.`
+  }
+}
 
 // Functions supporting the uploader
 const onFileUpload = async (event) => {
@@ -342,7 +339,7 @@ function submitStudents(rawJson){
   console.log('Submit Object', submitObject)
   _forEach(submitObject, user => {
     // Handle Email Registration
-    const { email, username, password, firstName, middleName, lastName, ...userData } = user;
+    const { email, username, password, firstName, middleName, lastName, district, school, uClass, ...userData } = user;
     const computedEmail = email || `${username}@roar-auth.com`
     let sendObject = {
       email: computedEmail, 
@@ -353,29 +350,88 @@ function submitStudents(rawJson){
     if(middleName) _set(sendObject, 'userData.name.middle', middleName)
     if(lastName) _set(sendObject, 'userData.name.last', lastName)
 
-    if(selectedDistrict.value){
-      _set(sendObject, 'userData.district', selectedDistrict.value.id)
+    // If district is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    if(district){
+      const id = getDistrictId(district);
+      if(id){
+        _set(sendObject, 'userData.district', id)
+      } else {
+        addErrorUser(user, `Error: District '${district}' is invalid`)
+        return;
+      }
     }
-    if(selectedSchool.value){
-      _set(sendObject, 'userData.school', selectedSchool.value.id)
+
+    // If school is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    if(school){
+      const id = getSchoolId(school);
+      if(id){
+        _set(sendObject, 'userData.school', id)
+      } else {
+        addErrorUser(user, `Error: School '${school}' is invalid.`)
+        return;
+      }
     }
-    if(selectedClass.value){
-      _set(sendObject, 'userData.class', selectedClass.value.id)
+
+    // If class is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    if(uClass){
+      const id = getClassId(uClass);
+      if(id){
+        _set(sendObject, 'userData.class', id)
+      } else {
+        addErrorUser(user, `Error: Class '${uClass}' is invalid.`)
+        return;
+      }
     }
-    if(selectedStudy.value){
-      _set(sendObject, 'userData.study', selectedStudy.value.id)
-    }
+
     console.log('user sendObject', sendObject)
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
     }).catch((e) => {
-      if(_isEmpty(errorUserColumns.value)){
-        errorUserColumns.value = generateColumns(user)
-        showErrorTable.value = true
-      }
-      errorUsers.value.push(user)
+      addErrorUser(user, e)
     })
   })
+}
+
+function addErrorUser(user, error) {
+  if(_isEmpty(errorUserColumns.value)){
+    errorUserColumns.value = generateColumns(user)
+    errorUserColumns.value.unshift({
+      dataType: 'string',
+      field: 'error',
+      header: 'Cause of Error',
+    })
+    showErrorTable.value = true
+  }
+  errorUsers.value.push({
+    ...user,
+    error
+  })
+}
+
+function getDistrictId(districtName){
+  return _get(_find(districts, (district) => {
+    return district.name === districtName;
+  }), 'id')
+}
+
+function getSchoolId(schoolName){
+  return _get(_find(schools, (school) => {
+    return school.name === schoolName;
+  }), 'id')
+}
+
+function getClassId(classId){
+  console.log('searching for', classId)
+  console.log('All classes:', classes)
+  return _get(_find(classes, (c) => {
+    return c.id === classId;
+  }), 'id')
 }
 
 // Functions supporting error table
@@ -384,10 +440,10 @@ function downloadErrorTable() {
 }
 
 // Event listener for the 'beforeunload' event
-window.addEventListener('beforeunload', (e) => {
-  console.log('handler for beforeunload')
-  e.preventDefault();
-});
+// window.addEventListener('beforeunload', (e) => {
+//   console.log('handler for beforeunload')
+//   e.preventDefault();
+// });
 </script>
 <style scoped>
 .page-container {
