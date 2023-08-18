@@ -1,7 +1,7 @@
 <template>
   <main class="container main">
     <aside class="main-sidebar">
-      <AdministratorSidebar :userinfo="userinfo" :actions="cardsData" />
+      <AdministratorSidebar :userInfo="userInfo" />
     </aside>
     
     <section class="main-body">
@@ -57,6 +57,13 @@ const cardsData = ref([
     buttonLink: "/create-admin",
   }
 ]);
+
+const userInfo = ref(
+  {
+    name: "Admin name",
+    district: "District Name"
+  }
+)
 
 const admin = ref(
   {

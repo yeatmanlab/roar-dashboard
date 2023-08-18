@@ -6,8 +6,9 @@
 	gap: 1rem;
 }
 
-.sidebar-info {
-	border: 1px solid var(--surface-c);
+.sidebar-info,
+.sidebar-actions {
+	border: 1px solid var(--surface-d);
 	border-radius: 5px;
 	background-color: var(--surface-b);
 	padding: 1rem;
@@ -19,9 +20,13 @@
 	gap: .25rem;
 	
 	.sidebar-title {
-		border-bottom: 1px solid var(--surface-c);
-		padding-bottom: .5rem;
+		border-bottom: 1px solid var(--surface-d);
+		padding-bottom: 1rem;
 		margin-bottom: 1rem;
 	}
 
+}
+
+.sidebar-actions {
+	gap: 1rem;
 }

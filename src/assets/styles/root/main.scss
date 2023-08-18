@@ -6,9 +6,8 @@ main.main {
 	margin-inline: auto;
 	
 	.main-sidebar {
-		flex: 1 1 auto;
-		min-width: 20ch;
-		max-width: 40ch;
+		flex: 30ch 30ch auto;
+		width: 30ch;
 	}
 	
 	.main-body {
