@@ -118,7 +118,7 @@
   </div>
 </template>
 <script setup>
-import { ref, toRaw, onMounted, watch } from 'vue';
+import { ref, toRaw } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _forEach from 'lodash/forEach'
 import _startCase from 'lodash/startCase'
@@ -132,13 +132,9 @@ import _omit from 'lodash/omit';
 import _find from 'lodash/find';
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
-import RoarDataTable from '../components/RoarDataTable.vue';
-import { storeToRefs } from 'pinia';
-import AppSpinner from '../components/AppSpinner.vue';
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
-const { roarfirekit, isFirekitInit } = storeToRefs(authStore);
 const isFileUploaded = ref(false)
 const rawStudentFile = ref({})
 
@@ -194,19 +190,10 @@ const errorMessage = ref("");
 const showErrorTable = ref(false);
 
 // Selecting Orgs
-// const formReady = ref(false);
 let districts = [];
 let schools = [];
 let classes = [];
 let studies = [];
-
-// const selectedDistrict = ref();
-// const selectedSchool = ref();
-// const selectedClass = ref();
-// const selectedStudy = ref();
-
-// const superAdmin = ref(roarfirekit.value._superAdmin);
-// const adminOrgs = ref(roarfirekit.value._adminOrgs);
 
 // Functions supporting Selecting Orgs
 const initFormFields = async () => {
@@ -217,7 +204,6 @@ const initFormFields = async () => {
   schools = await queryStore.getOrgs("schools");
   classes = await queryStore.getOrgs("classes");
   studies = await queryStore.getOrgs("studies");
-  // formReady.value = true;
 }
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {
@@ -226,32 +212,6 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
     await initFormFields();
   }
 });
-
-function isDistrictValid(districtName) {
-  const foundId = _find(districts, (district) => {
-    return district.name === districtName
-  })
-  console.log('foundDistrict', foundId)
-  if(foundId) {
-    return foundId.id;
-  } else {
-    errorMessage.value = `District '${districtName}' is not recognized.`
-    return null;
-  }
-}
-
-function isSchoolValid(schoolName) {
-  console.log('all schools', schools)
-  const foundId = _find(schools, (school) => {
-    return school.name === schoolName
-  })
-  if(foundId) {
-    console.log('found school:', foundId)
-    return foundId.id;
-  } else {
-    errorMessage.value = `School '${schoolName}' is not recognized.`
-  }
-}
 
 // Functions supporting the uploader
 const onFileUpload = async (event) => {
@@ -427,8 +387,6 @@ function getSchoolId(schoolName){
 }
 
 function getClassId(classId){
-  console.log('searching for', classId)
-  console.log('All classes:', classes)
   return _get(_find(classes, (c) => {
     return c.id === classId;
   }), 'id')
