@@ -73,11 +73,11 @@
             </span>
           </div>
 
-          <div class="org-dropdown" v-if="studies.length > 0">
+          <div class="org-dropdown" v-if="groups.length > 0">
             <span class="p-float-label">
-              <Dropdown v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-                inputId="studies" showClear />
-              <label for="studies">Studies</label>
+              <Dropdown v-model="selectedGroup" :options="groups" optionLabel="name" class="w-full md:w-14rem"
+                inputId="groups" showClear />
+              <label for="groups">Groups</label>
             </span>
           </div>
         </div>
@@ -226,12 +226,12 @@ const formReady = ref(false);
 const districts = ref([]);
 const schools = ref([]);
 const classes = ref([]);
-const studies = ref([]);
+const groups = ref([]);
 
 const selectedDistrict = ref();
 const selectedSchool = ref();
 const selectedClass = ref();
-const selectedStudy = ref();
+const selectedGroup = ref();
 
 const superAdmin = ref(roarfirekit.value._superAdmin);
 const adminOrgs = ref(roarfirekit.value._adminOrgs);
@@ -244,7 +244,7 @@ const initFormFields = async () => {
   districts.value = await queryStore.getOrgs("districts");
   schools.value = await queryStore.getOrgs("schools");
   classes.value = await queryStore.getOrgs("classes");
-  studies.value = await queryStore.getOrgs("studies");
+  groups.value = await queryStore.getOrgs("groups");
   formReady.value = true;
 }
 
@@ -358,8 +358,8 @@ function submitStudents(rawJson){
     if(selectedClass.value){
       _set(sendObject, 'userData.class', selectedClass.value.id)
     }
-    if(selectedStudy.value){
-      _set(sendObject, 'userData.study', selectedStudy.value.id)
+    if(selectedGroup.value){
+      _set(sendObject, 'userData.group', selectedGroup.value.id)
     }
     console.log('user sendObject', sendObject)
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
