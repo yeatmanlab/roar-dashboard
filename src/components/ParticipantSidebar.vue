@@ -9,8 +9,6 @@
     </div>
     <ul class="sidebar-info">
       <li class="sidebar-title"><strong>Student Info</strong></li>
-      <li>Group: <span class="sidebar-info-item">{{ studentInfo.group }}</span></li>
-      <li>Age: <span class="sidebar-info-item">{{ studentInfo.age }}</span></li>
       <li>Grade: <span class="sidebar-info-item">{{ studentInfo.grade }}</span></li>
     </ul>
   </div>
@@ -25,7 +23,9 @@ const props = defineProps({
 })
 
 onMounted(() => {
-    chartData.value = setChartData();
+  const completed = props.completedGames;
+  const incomplete = (props.totalGames - props.completedGames);
+  chartData.value = setChartData(completed, incomplete);
 });
 
 const chartData = ref();
@@ -42,14 +42,14 @@ const chartOptions = ref({
     }
 });
 
-const setChartData = () => {
+const setChartData = (completed, incomplete) => {
   let docStyle = getComputedStyle(document.documentElement);
   
   return {
     labels: ['Finished', 'Unfinished'],
     datasets: [
       {
-        data: [2, 4],
+        data: [completed, incomplete],
         backgroundColor: [
           docStyle.getPropertyValue('--bright-green'), 
           docStyle.getPropertyValue('--surface-d')
@@ -70,11 +70,12 @@ const setChartData = () => {
   }
 
   .sidebar-progress {
-    text-align: center;
+    // text-align: center;
     padding-bottom: .5rem;
     
     p {
       margin-block: 0;
+      text-align: center;
     }
     
     .p-chart {
