@@ -1,33 +1,41 @@
 <template>
-  <div style="display: flex">
-    <div class="card-container">
-      <router-link :to="cardData.buttonLink" v-for="(cardData, index) in cardsData" :key="index" class="card-wrapper">
-        <Card class="card-title">
-          <template #title>
-            <div class="card-title">
-              {{ cardData.title }}
-            </div>
-          </template>
-          <template #content>
-            {{ cardData.content }}
-          </template>
-          <template #footer>
-            <div class="card-button">
-              <Button :label="cardData.buttonText" />
-            </div>
-          </template>
-        </Card>
-      </router-link>
-    </div>
-  </div>
+  <main class="container main">
+    <aside class="main-sidebar">
+      <AdministratorSidebar :userinfo="userinfo" />
+    </aside>
+    
+    <section class="main-body">
+      <div class="card-container">
+        <router-link :to="cardData.buttonLink" v-for="(cardData, index) in cardsData" :key="index" class="card-wrapper">
+          <Card class="card-title">
+            <template #title>
+              <div class="card-title">
+                {{ cardData.title }}
+              </div>
+            </template>
+            <template #content>
+              {{ cardData.content }}
+            </template>
+            <template #footer>
+              <div class="card-button">
+                <Button :label="cardData.buttonText" />
+              </div>
+            </template>
+          </Card>
+        </router-link>
+      </div>
+      
+      <CardAdministration :id="admin.id" :title="admin.title" :stats="admin.stats" :dates="admin.dates"
+      :assignees="admin.assignees" :assessments="admin.assessments"></CardAdministration>
+    </section>
 
-  <CardAdministration :id="admin.id" :title="admin.title" :stats="admin.stats" :dates="admin.dates"
-    :assignees="admin.assignees" :assessments="admin.assessments"></CardAdministration>
+  </main>
 </template>
 
 <script setup>
 import { ref } from "vue";
 import CardAdministration from "@/components/CardAdministration.vue";
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 
 const cardsData = ref([
   {
@@ -69,7 +77,7 @@ const admin = ref(
 .card-container {
   display: flex;
   flex-direction: row;
-  margin: 2rem 1rem 2rem 1rem;
+  margin: 0 0 2rem;
   flex: 1;
   gap: 1rem;
 }

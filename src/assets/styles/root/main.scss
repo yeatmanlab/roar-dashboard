@@ -1,7 +1,17 @@
-#main {
+main.main {
 	width: 100vw;
-	max-width: 1920px;
-	padding: 2rem;
+	padding-block: 2rem;
+	gap: 2rem;
 	display: flex;
 	margin-inline: auto;
+	
+	.main-sidebar {
+		flex: 1 1 auto;
+		min-width: 20ch;
+		max-width: 40ch;
+	}
+	
+	.main-body {
+		flex: 1 1 auto;
+	}
 }

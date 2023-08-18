@@ -1,6 +1,7 @@
 @import "root/variables";
 @import "root/typography";
 @import "root/base";
+@import "root/container";
 @import "root/main";
 
 // Defaults
@@ -50,6 +51,7 @@
 // Custom components
 @import "components/tabview-games";
 @import "components/navbar";
+@import "components/sidebar";
 
 // Routes
 @import "routes/signin";

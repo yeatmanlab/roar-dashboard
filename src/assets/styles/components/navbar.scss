@@ -1,15 +1,17 @@
 .navbar-container { 
 	width: 100%;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
 	background: var(--surface-a);
 	border-top: 7px solid var(--primary-color);
 	border-bottom: 1px solid var(--surface-d);
 
+	nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
 	.navbar-logo {
 		margin-top: 1.25rem;
-		margin-left: 2rem;
 		margin-bottom: 1.25rem;
 		
 		svg {
@@ -22,7 +24,6 @@
 		}
 	}
 	.login-container {
-		margin-right: 2rem;
 		display: flex;
 		flex-direction: row;
 		align-items: center;
