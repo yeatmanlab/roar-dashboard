@@ -127,3 +127,8 @@ export const standardDeviation = (arr, usePopulation = false) => {
       (arr.length - (usePopulation ? 0 : 1))
   );
 };
+
+// Custom validators
+export const hasLowerCase = (value) => /[a-z]/.test(value)
+export const hasUpperCase = (value) => /[A-Z]/.test(value)
+export const hasNumber = (value) => /[0-9]/.test(value)

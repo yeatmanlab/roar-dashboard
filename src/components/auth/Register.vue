@@ -1,16 +1,41 @@
 <template>
+  <div>
+    <div class="card stepper">
+        <Steps :model="stepRoutes" :readonly="true" aria-label="Form Steps" />
+    </div>
+  </div>
   <div class="card">
     <p class="login-title" align="left">Register for ROAR</p>
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
+      <!-- Activation Code -->
+      <div class="field mt-4">
+        <div class="p-input-icon-right">
+          <label for="activationCode">Activation code <span class="required">*</span></label>
+          <InputText
+            v-model="v$.activationCode.$model" 
+            name="activationCode"
+            :class="{ 'p-invalid': v$.activationCode.$invalid && submitted }" 
+            aria-describedby="activation-code-error"
+          />
+        </div>
+        <span v-if="v$.activationCode.$error && submitted">
+          <span v-for="(error, index) of v$.activationCode.$errors" :key="index">
+            <small class="p-error">{{ error.$message }}</small>
+          </span>
+        </span>
+        <small v-else-if="(v$.activationCode.$invalid && submitted) || v$.activationCode.$pending.$response" class="p-error">
+          {{ v$.activationCode.required.$message.replace("Value", "Activation Code") }}
+        </small>
+      </div>
       <!--First / Last Name-->
       <div class="mt-4 name-container">
         <div>
-          <label for="firstName">First Name</label>
-          <InputText name="firstName"/>
+          <label for="firstName">First Name <span class="required">*</span></label>
+          <InputText name="firstName" v-model="v$.firstName.$model"/>
         </div>
         <div>
-          <label for="lastName">Last Name</label>
-          <InputText name="lastName" />
+          <label for="lastName">Last Name <span class="required">*</span></label>
+          <InputText name="lastName" v-model="v$.lastName.$model"/>
         </div>  
       </div>
       <!--Username / Email-->
@@ -34,7 +59,7 @@
         </small>
       </div>
       <!--Age / DOB-->
-      <div class="mt-4 mb-5">
+      <!-- <div class="mt-4 mb-5">
         <div class="flex justify-content-between">
           <label>Date of Birth <span class="required">*</span></label>
           <div class="flex align-items-center">
@@ -49,9 +74,9 @@
           <Calendar v-model="v$.dob.$model" view="year" dateFormat="yy" modelValue="string" showIcon :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
         </div>
         <small v-if="(v$.dob.$invalid && submitted) || v$.dob.$pending.$response" class="p-error">{{ v$.dob.required.$message.replace("Value", "Date of Birth") }}</small>
-      </div>
+      </div> -->
       <!--Grade-->
-      <div class="mt-4 mb-5">
+      <!-- <div class="mt-4 mb-5">
         <label for="grade">Grade <span class="required">*</span></label>
         <Dropdown 
           v-model="v$.grade.$model" 
@@ -62,17 +87,17 @@
           :class="{ 'p-invalid': v$.grade.$invalid && submitted }"
         />
         <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{ v$.grade.required.$message.replace("Value", "Grade") }}</small>
-      </div>
+      </div> -->
       <!--English Language Level-->
-      <div class="mt-4 mb-5">
+      <!-- <div class="mt-4 mb-5">
         <label for="ell">English Language Level</label>
         <Dropdown v-model="v$.ell.$model" :options="eLLOptions" optionLabel="label" optionValue="value" name="ell"/>
-      </div>
+      </div> -->
       <!--Sex-->
-      <div class="mt-4 mb-5">
+      <!-- <div class="mt-4 mb-5">
         <label for="sex">Gender</label>
         <Dropdown :options="sexOptions" optionLabel="label" optionValue="value" v-model="v$.sex.$model" name="sex" />
-      </div>
+      </div> -->
       <!--Password-->
       <div class="field mt-4 mb-5">
         <div>
@@ -89,7 +114,7 @@
                 <li>At least one lowercase</li>
                 <li>At least one uppercase</li>
                 <li>At least one numeric</li>
-                <li>Minimum 8 characters</li>
+                <li>Minimum 6 characters</li>
               </ul>
             </template>
           </Password>
@@ -114,8 +139,7 @@
       <div class="field-checkbox terms-checkbox">
         <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
           v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
-        <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and
-          conditions</label>
+        <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and conditions <span class="required">*</span></label>
       </div>
       <Button type="submit" label="Submit" class="submit-button" />
     </form>
@@ -123,9 +147,11 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from "vue";
-import { required, sameAs } from "@vuelidate/validators";
+import { computed, reactive, ref, toRaw, watch } from "vue";
+import { required, sameAs, minLength } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
+import { hasNumber, hasLowerCase, hasUpperCase } from '../../helpers/index'
+import Steps from 'primevue/steps';
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 
@@ -133,93 +159,121 @@ const props = defineProps({
   isRegistering: {type: Boolean, default: true}
 });
 
-const authStore = useAuthStore();
+
+const stepRoutes = ref([
+  {
+      label: 'Parent Registration',
+      to: "/register"
+  },
+  {
+      label: 'Student Registration',
+      // changes this
+      to: "/registerStudent",
+  },
+]);
+
+// const authStore = useAuthStore();
 
 // TODO: Include middle
 const state = reactive({
+  activationCode: "",
   firstName: "",
   lastName: "",
   email: "",
   password: "",
   confirmPassword: "",
-  dob: "",
-  ell: "",
-  sex: "",
-  grade: ""
+  accept: false,
+  // dob: "",
+  // ell: "",
+  // sex: "",
+  // grade: ""
 });
 const passwordRef = computed(() => state.password);
 const rules = {
-  firstName: {},
-  lastName: {},
+  activationCode: { required },
+  firstName: { required },
+  lastName: { required },
   email: { required },
-  password: { required },
+  password: { 
+    required,
+    minLength: minLength(6),
+    hasLowerCase,
+    hasUpperCase,
+    hasNumber,
+  },
   confirmPassword: { required, sameAsPassword: sameAs(passwordRef) }, 
-  dob: { required },
-  ell: {},
-  sex: {},
-  grade: { required },
   accept: { required },
 };
+
+// watch(() => state.accept, (newValue) => {
+//   console.log(toRaw(newValue));
+// });
 
 const submitted = ref(false);
 
 const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = (isFormValid) => {
-  submitted.value = true;
+  submitted.value = true
+  console.log(toRaw(state))
   if (!isFormValid) {
+    console.log('form is invalid')
     return;
   }
   console.log('to submit:', state)
   // authStore.registerWithEmailAndPassword(state);
 };
 
-const resetForm = () => {
-  state.firstName = "";
-  state.lastName = "";
-  state.email = "";
-  state.password = "";
-  state.confirmPassword = "";
-  state.dob = "";
-  state.ell = "";
-  state.sex = "";
-  state.grade = "";
-  submitted.value = false;
-  yearOnlyCheck.value = false;
-};
-const yearOnlyCheck = ref(false);
+// const resetForm = () => {
+//   state.firstName = "";
+//   state.lastName = "";
+//   state.email = "";
+//   state.password = "";
+//   state.confirmPassword = "";
+//   state.dob = "";
+//   state.ell = "";
+//   state.sex = "";
+//   state.grade = "";
+//   submitted.value = false;
+//   yearOnlyCheck.value = false;
+// };
+// const yearOnlyCheck = ref(false);
 
 // Dropdown Options
-const eLLOptions = ref([
-  {label: 'English as a First Language', value: 'EFL'},
-  {label: 'English as a Second Language', value: 'ESL'}
-]);
+// const eLLOptions = ref([
+//   {label: 'English as a First Language', value: 'EFL'},
+//   {label: 'English as a Second Language', value: 'ESL'}
+// ]);
 
-const gradeOptions = ref([
-  {label: 'PK', value: 'PK'},
-  {label: 'TK', value: 'TK'},
-  {label: 'K', value: 'K'},
-  {label: '1st', value: '1'},
-  {label: '2nd', value: '2'},
-  {label: '3rd', value: '3'},
-  {label: '4th', value: '4'},
-  {label: '5th', value: '5'},
-  {label: '6th', value: '6'},
-  {label: '7th', value: '7'},
-  {label: '8th', value: '8'},
-  {label: '9th', value: '9'},
-  {label: '10th', value: '10'},
-  {label: '11th', value: '11'},
-  {label: '12th', value: '12'},
-]);
+// const gradeOptions = ref([
+//   {label: 'PK', value: 'PK'},
+//   {label: 'TK', value: 'TK'},
+//   {label: 'K', value: 'K'},
+//   {label: '1st', value: '1'},
+//   {label: '2nd', value: '2'},
+//   {label: '3rd', value: '3'},
+//   {label: '4th', value: '4'},
+//   {label: '5th', value: '5'},
+//   {label: '6th', value: '6'},
+//   {label: '7th', value: '7'},
+//   {label: '8th', value: '8'},
+//   {label: '9th', value: '9'},
+//   {label: '10th', value: '10'},
+//   {label: '11th', value: '11'},
+//   {label: '12th', value: '12'},
+// ]);
 
-const sexOptions = ref([
-  {label: 'Male', value: 'male'},
-  {label: 'Female', value: 'female'},
-  {label: 'Nonbinary / Do not want to specify', value: 'dns'}
-]);
+// const sexOptions = ref([
+//   {label: 'Male', value: 'male'},
+//   {label: 'Female', value: 'female'},
+//   {label: 'Nonbinary / Do not want to specify', value: 'dns'}
+// ]);
 </script>
 <style scoped>
+.stepper {
+  margin: 2rem 0rem;
+}
+
 .name-container {
   display: flex;
   flex-direction: row;
@@ -232,7 +286,9 @@ const sexOptions = ref([
   font-size: 26px;
 }
 .submit-button {
+  margin: auto;
   margin-top: .5rem;
+  margin-bottom: .5rem;
   display: flex;
   background-color: #E5E5E5;
   color: black;
