@@ -2,16 +2,6 @@
   <div>
     <div class="register-container mx-auto md:flex-none">
       <Register />
-      <div class="contact-text">
-        <span>Already have an account? <router-link :to="{ name: 'Login' }" class="text-btn">Sign In</router-link></span>
-      </div>
-    </div>
-    <p style="text-align: center;">Other ways to Login</p>
-    <div class="push-top text-center button-container">
-      <Button @click="authWithGoogle"
-        label="Google" class="signin-button" />
-      <Button @click="authWithGoogle"
-        label="Clever" class="signin-button" />
     </div>
   </div>
 </template>
@@ -21,14 +11,14 @@ import Register from "@/components/auth/Register.vue";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 
-const authStore = useAuthStore();
-const authWithGoogle = () => {
-  if(isMobileBrowser()) {
-    authStore.signInWithGoogleRedirect();
-  } else {
-    authStore.signInWithGooglePopup();
-  }
-};
+// const authStore = useAuthStore();
+// const authWithGoogle = () => {
+//   if(isMobileBrowser()) {
+//     authStore.signInWithGoogleRedirect();
+//   } else {
+//     authStore.signInWithGooglePopup();
+//   }
+// };
 </script>
 
 <style scoped>
@@ -44,34 +34,12 @@ const authWithGoogle = () => {
   margin-top: 6.5rem;
   position: relative;
 }
-.contact-text {
-  padding-top: 2.75rem;
-  padding-bottom: 2rem;
-  text-align: left;
-}
-.button-container {
-  display: flex;
-  gap: 1.125rem;
-  justify-content: center;
-  margin-bottom: 6.5rem;
-}
-.signin-button {
-  background-color: #E5E5E5;
-  border-color: #C4C4C4;
-  color: black;
-  width: 8rem;
-}
-.signin-button:hover {
-  background-color: #b7b5b5;
-  border-color: black;
-  color: black;
-}
-.text-btn {
+/* .text-btn {
   border: none;
   background-color: inherit;
   cursor: pointer;
   display: inline-block;
   font-size: 16px;
   color: #2c3e50;
-}
+} */
 </style>
