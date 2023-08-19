@@ -16,7 +16,7 @@
       <Column field="name" header="Name" expander></Column>
       <Column field="orgType" header="Type"></Column>
       <Column field="abbreviation" header="Abbreviation"></Column>
-      <Column field="grade" header="Grade"></Column>
+      <Column field="grade" header="Grade" style="width: 7rem"></Column>
     </TreeTable>
   </div>
 </template>
