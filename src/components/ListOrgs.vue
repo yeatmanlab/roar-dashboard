@@ -12,7 +12,7 @@
 
     <hr>
 
-    <TreeTable :value="hierarchicalAdminOrgs">
+    <TreeTable :value="hierarchicalAdminOrgs" :paginator="true" :rows="5" :rowsPerPageOptions="[5, 10, 25]">
       <Column field="name" header="Name" expander></Column>
       <Column field="orgType" header="Type"></Column>
       <Column field="abbreviation" header="Abbreviation"></Column>

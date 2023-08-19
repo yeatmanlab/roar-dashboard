@@ -1,7 +1,7 @@
 <template>
-	<div :data-administration="id" class="p-card card-administration">
+	<div class="p-card card-administration">
 		<div class="card-admin-chart">
-			<Chart type="doughnut" :data="chartData" :options="chartOptions" />
+			<Chart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
 		</div>
 
 		<div class="card-admin-body">
@@ -33,18 +33,29 @@
 
 			<TreeTable v-if="isAssigned" :value="hierarchicalAssignedOrgs">
 				<Column field="name" header="Name" expander></Column>
-				<!-- <Column field="orgType" header="Type"></Column>
-				<Column field="abbreviation" header="Abbreviation"></Column>
-				<Column field="grade" header="Grade"></Column> -->
+				<Column field="id" header="Completion">
+					<template #body="{ node }">
+						<Chart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
+					</template>
+				</Column>
+				<Column field="id" header="" style="width: 6rem">
+					<template #body="{ node }">
+						<router-link
+							:to="{ name: 'ViewAdministration', params: { id: id, orgId: node.data.id, orgType: node.data.orgType } }"
+							v-slot="{ href, route, navigate }">
+							<Button v-tooltip.top="'See completion details'" icon="pi pi-info-circle" severity="secondary" text rounded
+								aria-label="Completion details" size="large" @click="" />
+						</router-link>
+					</template>
+				</Column>
 			</TreeTable>
 		</div>
 	</div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
-import DataViewClass from "@/components/DataViewClass.vue";
 import { useQueryStore } from "@/store/query";
 import { filterAdminOrgs, removeEmptyOrgs } from "@/helpers";
 import _capitalize from "lodash/capitalize";
@@ -70,8 +81,11 @@ const displayOrgs = removeEmptyOrgs(assignedOrgs);
 const isAssigned = !_isEmpty(Object.values(displayOrgs));
 const hierarchicalAssignedOrgs = isAssigned ? queryStore.getTreeTableOrgs(assignedOrgs) : null;
 
-const chartData = ref();
-const chartOptions = ref({
+const doughnutChartData = ref();
+const doughnutChartOptions = ref();
+const barChartOptions = ref();
+
+const setDoughnutChartOptions = () => ({
 	cutout: '60%',
 	showToolTips: true,
 	plugins: {
@@ -84,20 +98,22 @@ const chartOptions = ref({
 	}
 });
 
-const setChartData = () => {
-	let docStyle = getComputedStyle(document.documentElement);
-	const { assigned, started, completed } = props.stats.total;
+const setDoughnutChartData = () => {
+	const docStyle = getComputedStyle(document.documentElement);
+	let { assigned, started, completed } = props.stats.total;
+
+	assigned -= (started + completed);
+	started -= completed;
 
 	return {
-		labels: ['Assigned', 'Started', 'Completed'],
+		labels: ['Completed', 'Started', 'Assigned'],
 		datasets: [
 			{
-				data: [assigned, started, completed],
+				data: [completed, started, assigned],
 				backgroundColor: [
-					docStyle.getPropertyValue('--surface-d'),
-					docStyle.getPropertyValue('--yellow-100'),
 					docStyle.getPropertyValue('--bright-green'),
-
+					docStyle.getPropertyValue('--yellow-100'),
+					docStyle.getPropertyValue('--surface-d'),
 				],
 				// hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
 			}
@@ -105,7 +121,126 @@ const setChartData = () => {
 	};
 };
 
-chartData.value = setChartData();
+const getBorderRadii = (left, middle, right) => {
+	const defaultRadius = { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
+	const borderRadii = { left: { ...defaultRadius }, middle: { ...defaultRadius }, right: { ...defaultRadius } };
+	if (left > 0) {
+		borderRadii.left.topLeft = Number.MAX_VALUE;
+		borderRadii.left.bottomLeft = Number.MAX_VALUE;
+	} else if (middle > 0) {
+		borderRadii.middle.topLeft = Number.MAX_VALUE;
+		borderRadii.middle.bottomLeft = Number.MAX_VALUE;
+	} else {
+		borderRadii.right.topLeft = Number.MAX_VALUE;
+		borderRadii.right.bottomLeft = Number.MAX_VALUE;
+	}
+
+	if (right > 0) {
+		borderRadii.right.topRight = Number.MAX_VALUE;
+		borderRadii.right.bottomRight = Number.MAX_VALUE;
+	} else if (middle > 0) {
+		borderRadii.middle.topRight = Number.MAX_VALUE;
+		borderRadii.middle.bottomRight = Number.MAX_VALUE;
+	} else {
+		borderRadii.left.topRight = Number.MAX_VALUE;
+		borderRadii.left.bottomRight = Number.MAX_VALUE;
+	}
+
+	return borderRadii;
+}
+
+const setBarChartData = (orgId) => {
+	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId];
+	const documentStyle = getComputedStyle(document.documentElement);
+
+	assigned -= (started + completed);
+	started -= completed;
+
+	const borderRadii = getBorderRadii(completed, started, assigned);
+	const borderWidth = 0;
+
+	const chartData = {
+		labels: [''],
+		datasets: [
+			{
+				type: 'bar',
+				label: 'Completed',
+				backgroundColor: documentStyle.getPropertyValue('--bright-green'),
+				data: [completed],
+				borderWidth: borderWidth,
+				borderSkipped: false,
+				borderRadius: borderRadii.left,
+			},
+			{
+				type: 'bar',
+				label: 'Started',
+				backgroundColor: documentStyle.getPropertyValue('--yellow-100'),
+				data: [started],
+				borderWidth: borderWidth,
+				borderSkipped: false,
+				borderRadius: borderRadii.middle,
+			},
+			{
+				type: 'bar',
+				label: 'Assigned',
+				backgroundColor: documentStyle.getPropertyValue('--surface-d'),
+				data: [assigned],
+				borderWidth: borderWidth,
+				borderSkipped: false,
+				borderRadius: borderRadii.right,
+			},
+		],
+	};
+
+	return chartData;
+};
+
+const setBarChartOptions = () => {
+	return {
+		indexAxis: 'y',
+		maintainAspectRatio: false,
+		aspectRatio: 9,
+		plugins: {
+			tooltips: {
+				mode: 'index',
+				intersect: false,
+			},
+			legend: false,
+		},
+		scales: {
+			x: {
+				stacked: true,
+				ticks: {
+					display: false,
+				},
+				grid: {
+					display: false,
+				},
+				border: {
+					display: false,
+				}
+			},
+			y: {
+				stacked: true,
+				ticks: {
+					display: false,
+				},
+				grid: {
+					display: false,
+				},
+				border: {
+					display: false,
+				},
+			},
+		},
+	};
+};
+
+onMounted(() => {
+	doughnutChartData.value = setDoughnutChartData();
+	doughnutChartOptions.value = setDoughnutChartOptions();
+	barChartOptions.value = setBarChartOptions();
+})
 </script>
 
 <style lang="scss">
