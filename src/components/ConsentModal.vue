@@ -9,7 +9,7 @@
   </ConfirmDialog>
 </template>
 <script setup>
-import { computed, defineProps, onMounted } from 'vue';
+import { computed, defineProps, defineEmits, onMounted } from 'vue';
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
 import { marked } from 'marked';
@@ -19,6 +19,7 @@ const props = defineProps({
   consentText: {require: true, default: 'Text Here'},
   consentType: {require: true, default: 'Consent'},
 })
+const emit = defineEmits(['accepted']);
 
 const confirm = useConfirm();
 const toast = useToast();
@@ -35,6 +36,7 @@ onMounted(() => {
     acceptLabel: 'Continue',
     acceptIcon: 'pi pi-check',
     accept: () => {
+      emit('accepted');
       toast.add({ severity: 'info', summary: 'Confirmed', detail: `${props.consentType} status updated.`, life: 3000 });
     },
   });
