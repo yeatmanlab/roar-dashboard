@@ -20,25 +20,6 @@
           </div>
         </div>
       </div>
-      <div class="col-12">
-        <div style="width: fit-content;">
-          <div class="grid mt-5">
-            <div class="col-6">
-              <span class="p-float-label">
-                <InputText id="org-name" v-model="orgName" />
-                <label for="org-name">{{ orgTypeLabel }} Name</label>
-              </span>
-            </div>
-
-            <div class="col-6">
-              <span class="p-float-label">
-                <InputText id="org-initial" v-model="orgInitials" />
-                <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div class="col-12 mt-5" v-if="parentOrgType === 'school'">
         <div style="width: fit-content;">
@@ -79,6 +60,28 @@
       </div>
     </div>
 
+    <div class="col-12">
+      <div style="width: fit-content;">
+        <div class="grid mt-5">
+          <div class="col-6">
+            <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please name your admin</small>
+            <span class="p-float-label">
+              <InputText id="org-name" v-model="orgName" />
+              <label for="org-name">{{ orgTypeLabel }} Name</label>
+            </span>
+          </div>
+
+          <div class="col-6">
+            <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please name your admin</small>
+            <span class="p-float-label">
+              <InputText id="org-initial" v-model="orgInitials" />
+              <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="col-12 mb-3">
       <Button :label="`Create ${orgTypeLabel}`" @click="submit" />
     </div>
@@ -86,12 +89,27 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, reactive } from "vue";
 import { storeToRefs } from "pinia";
 import _capitalize from "lodash/capitalize";
 import _get from "lodash/get";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
+import { useVuelidate } from "@vuelidate/core";
+import { required } from "@vuelidate/validators";
+
+const state = reactive({
+  orgName: "",
+  orgInitials: "",
+})
+
+const rules = {
+  orgName: { required },
+  orgInitials: { required }
+}
+
+const v$ = useVuelidate(rules, state);
+const submitted = ref(false);
 
 const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district' },
@@ -154,21 +172,27 @@ const parentOrgs = computed(() => {
 
 const parentOrg = ref();
 
-const submit = () => {
-  let orgData = {
-    name: orgName.value,
-    abbreviation: orgInitials.value,
-  };
+const submit = async () => {
+  submitted.value = true;
+  const isFormValid = await v$.value.$validate()
+  if(isFormValid){
+    let orgData = {
+      name: orgName.value,
+      abbreviation: orgInitials.value,
+    };
 
-  if (parentOrgType.value === "school") {
-    orgData.schoolId = parentOrg.value.id;
-  } else if (parentOrgType.value === "district") {
-    orgData.districtId = parentOrg.value.id;
+    if (parentOrgType.value === "school") {
+      orgData.schoolId = parentOrg.value.id;
+    } else if (parentOrgType.value === "district") {
+      orgData.districtId = parentOrg.value.id;
+    }
+
+    if (grade.value) orgData.grade = grade.value.value;
+
+    roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData)
+  } else {
+    console.log('Form isnt valid!')
   }
-
-  if (grade.value) orgData.grade = grade.value.value;
-
-  roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData)
 };
 
 const getOrgs = async () => {
