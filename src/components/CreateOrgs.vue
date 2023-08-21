@@ -38,7 +38,6 @@
                 placeholder="Select a grade" class="w-full" />
               <label for="grade">Grade</label>
             </span>
-
           </div>
 
 
@@ -70,7 +69,8 @@
 
         <div class="grid">
           <div class="col-12">
-            <Button :label="`Create ${orgTypeLabel}`" @click="submit" :disabled="orgTypeLabel == 'Org' ? '' : disabled" />
+            <ConfirmPopup></ConfirmPopup>
+            <Button :label="`Create ${orgTypeLabel}`" @click="preSubmit" :disabled="orgTypeLabel === 'Org'" />
           </div>
         </div>
 
@@ -84,6 +84,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from 'vue-router';
 import { useToast } from "primevue/usetoast";
+import { useConfirm } from "primevue/useconfirm";
 import { storeToRefs } from "pinia";
 import _capitalize from "lodash/capitalize";
 import _get from "lodash/get";
@@ -108,7 +109,6 @@ const sidebarActions = ref([
     buttonLink: "/create-org",
   }
 ]);
-
 
 const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district' },
@@ -155,6 +155,7 @@ const grades = [
 ];
 
 const router = useRouter();
+const confirm = useConfirm();
 const toast = useToast();
 const queryStore = useQueryStore();
 const authStore = useAuthStore();
@@ -174,23 +175,44 @@ const parentOrgs = computed(() => {
 
 const parentOrg = ref();
 
-const submit = async () => {
+const preSubmit = (event) => {
+  if (parentOrgType.value && !parentOrg.value) {
+    confirm.require({
+      target: event.currentTarget,
+      message: `You created a ${orgType.value?.singular} without a parent ${parentOrgType.value?.singular}. Are you sure you want to do this?`,
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        submit();
+      },
+      reject: () => {
+        return;
+      }
+    });
+  } else {
+    submit();
+  }
+}
+
+const submit = async (event) => {
   let orgData = {
     name: orgName.value,
     abbreviation: orgInitials.value,
   };
 
   if (parentOrgType.value?.singular === "school") {
-    orgData.schoolId = parentOrg.value.id;
+    if (parentOrg.value?.id) {
+      orgData.schoolId = parentOrg.value.id;
+    }
   } else if (parentOrgType.value?.singular === "district") {
-    orgData.districtId = parentOrg.value.id;
+    if (parentOrg.value?.id) {
+      orgData.districtId = parentOrg.value.id;
+    }
   }
 
   if (grade.value) orgData.grade = grade.value.value;
 
   await roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData).then(() => {
     toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-
     router.push({ name: 'ListOrgs' })
   })
 };

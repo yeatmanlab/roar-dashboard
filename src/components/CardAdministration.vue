@@ -74,6 +74,8 @@ const props = defineProps({
 	assessments: Array,
 });
 
+console.log(props);
+
 const assessmentIds = props.assessments.map(assessment => assessment.taskId.toUpperCase());
 
 const assignedOrgs = filterAdminOrgs(adminOrgs.value, props.assignees);
@@ -100,7 +102,7 @@ const setDoughnutChartOptions = () => ({
 
 const setDoughnutChartData = () => {
 	const docStyle = getComputedStyle(document.documentElement);
-	let { assigned, started, completed } = props.stats.total.assignment;
+	let { assigned = 0, started = 0, completed = 0 } = props.stats.total.assignment;
 
 	assigned -= (started + completed);
 	started -= completed;
@@ -150,6 +152,7 @@ const getBorderRadii = (left, middle, right) => {
 }
 
 const setBarChartData = (orgId) => {
+	console.log("In setBarChartData", { orgId, stats: props.stats[orgId] });
 	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId].assignment;
 	const documentStyle = getComputedStyle(document.documentElement);
 

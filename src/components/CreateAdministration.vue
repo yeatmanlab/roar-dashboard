@@ -163,7 +163,7 @@ const sidebarActions = ref([
   {
     title: "Create an organization",
     icon: "pi pi-database",
-    buttonLink: "/create-org",
+    buttonLink: "/create-orgs",
   }
 ]);
 
