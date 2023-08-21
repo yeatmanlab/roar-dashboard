@@ -62,12 +62,4 @@ selectedIndex.value = currentGameIndex.value
 </script>
 <style scoped lang="scss">
 
-.play-button {
-  background-color: green;
-  color: white;
-  margin: 1rem;
-  padding: 4rem 6rem 4rem 6rem;
-  border-radius: 1rem;
-  font-size: 2rem;
-}
 </style>
