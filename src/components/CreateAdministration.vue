@@ -11,6 +11,7 @@
         <span class="p-float-label">
           <InputText id="administration-name" v-model="state.administrationName" />
           <label for="administration-name">Administration Name</label>
+          <small v-if="v$.administrationName.$invalid && submitted" class="p-error">Please name your admin</small>
         </span>
       </div>
 
@@ -19,6 +20,7 @@
           <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
             :manualInput="false" showIcon showButtonBar />
           <label for="dates">Dates</label>
+          <small v-if="v$.dates.$invalid && submitted" class="p-error">Please select dates for your admin</small>
         </span>
       </div>
     </div>
@@ -26,6 +28,7 @@
     <div style="width: fit-content;">
       <p id="section-heading">Assign this administration to organizations</p>
     </div>
+    <div v-if="orgError" class="p-error">{{ orgError }}</div>
     <div class="formgrid grid mt-5 mb-5">
       <div class="field col" v-if="districts.length > 0">
         <span class="p-float-label">
@@ -73,11 +76,13 @@
         <p id="section-heading">Select Assessments</p>
         <div class="flex flex-row align-items-center justify-content-end gap-3">
           <!-- <label for="sequential">Require sequential?</label> -->
+          <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
           <span>Require sequential?</span>
           <SelectButton v-model="state.sequential" :options="sequentialOptions" optionLabel="label" optionValue="value" />
         </div>
       </div>
 
+      <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
       <PickList v-model="assessments" :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id"
         :stripedRows="true" :pt="{
           moveAllToTargetButton: { root: { class: 'hide' } },
@@ -132,16 +137,13 @@ import _isEmpty from "lodash/isEmpty";
 import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
 import _uniqBy from "lodash/uniqBy";
+import _forEach from "lodash/forEach"
+import _filter from "lodash/filter"
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "./AppSpinner.vue";
 import { useVuelidate } from "@vuelidate/core";
-import { required } from "@vuelidate/validators";
-
-const rules = {
-  administrationName: { required },
-  dates: { required }
-}
+import { required, requiredIf, requiredUnless } from "@vuelidate/validators";
 
 const state = reactive({
   administrationName: "",
@@ -153,7 +155,17 @@ const state = reactive({
   groups: [],
   families: []
 })
+
+const rules = {
+  administrationName: { required },
+  dates: { required },
+  sequential: { required }
+}
+
 const v$ = useVuelidate(rules, state);
+const pickListError = ref('');
+const orgError = ref('');
+const submitted = ref(false);
 
 const router = useRouter();
 const toast = useToast();
@@ -171,10 +183,8 @@ const toggle = (event, id) => {
 
 const formReady = ref(false);
 
-// const administrationName = ref("");
 const minStartDate = ref(new Date());
 
-// const dates = ref();
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -187,14 +197,8 @@ const classes = ref([]);
 const groups = ref([]);
 const families = ref([]);
 
-// const selectedDistricts = ref([]);
-// const selectedSchools = ref([]);
-// const selectedClasses = ref([]);
-// const selectedGroups = ref([]);
-// const selectedFamilies = ref([]);
 
 const sequentialOptions = ref([{ label: "Yes", value: true }, { label: "No", value: false }]);
-// const sequential = ref(true);
 
 const { allVariants } = storeToRefs(queryStore);
 const assessments = ref([[], []])
@@ -205,6 +209,11 @@ const checkForUniqueTasks = (assignments) => {
   if(_isEmpty(assignments)) return false;
   const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId)
   return (uniqueTasks.length === assignments.length)
+}
+
+const checkForRequiredOrgs = (orgs) => {
+  const filtered = _filter(orgs, org => !_isEmpty(org))
+  return Boolean(filtered.length)
 }
 
 const initFormFields = async () => {
@@ -240,6 +249,8 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 const submit = async () => {
+  pickListError.value = ''
+  submitted.value = true;
   const isFormValid = await v$.value.$validate()
   if(isFormValid){
     const submittedAssessments = assessments.value[1].map((assessment) => ({
@@ -247,33 +258,38 @@ const submit = async () => {
       params: toRaw(assessment.variant.params),
     }));
     const tasksUnique = checkForUniqueTasks(submittedAssessments)
-    if(tasksUnique){
+    if(tasksUnique && !_isEmpty(submittedAssessments)){
       const orgs = {
         districts: toRaw(state).districts,
         schools: toRaw(state).schools,
-        classes: toRaw(state),classes,
+        classes: toRaw(state).classes,
         groups: toRaw(state).groups,
         families: toRaw(state).families,
       }
+      const orgsValid = checkForRequiredOrgs(orgs);
+      if(orgsValid){
+        const args = {
+          name: toRaw(state).administrationName,
+          assessments: submittedAssessments,
+          dateOpen: toRaw(state).dates[0],
+          dateClose: toRaw(state).dates[1],
+          sequential: toRaw(state).sequential,
+          orgs: orgs,
+        }
 
-      const args = {
-        name: toRaw(state).administrationName,
-        assessments: submittedAssessments,
-        dateOpen: toRaw(state).dates[0],
-        dateClose: toRaw(state).dates[1],
-        sequential: toRaw(state).sequential,
-        orgs: orgs,
+        console.log('would have submitted', args)
+
+        await roarfirekit.value.createAdministration(args).then(() => {
+          toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+
+          router.push({ name: "Home" });
+        });
+      } else {
+        console.log('need at least one org')
+        orgError.value = 'At least one organization needs to be selected.'
       }
-
-      console.log('would have submitted', args)
-
-      // await roarfirekit.value.createAdministration(args).then(() => {
-      //   toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
-
-      //   router.push({ name: "Home" });
-      // });
     } else {
-      console.log('Tasks are not unique')
+      pickListError.value = 'Task selections must not be empty and must be unique.'
     }
   } else {
     console.log('form is invalid')
