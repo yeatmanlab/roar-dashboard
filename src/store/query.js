@@ -24,7 +24,7 @@ export const useQueryStore = () => {
         selectedRootPath: null,
         selectedRuns: [],
         selectedSchools: [],
-        selectedStudies: [],
+        selectedGroups: [],
         selectedTasks: [],
         selectedTrials: [],
         selectedUsers: [],
@@ -47,7 +47,7 @@ export const useQueryStore = () => {
       districts: (state) => getUniquePropsFromUsers(state.users, "districts"),
       schools: (state) => getUniquePropsFromUsers(state.users, "schools"),
       classes: (state) => getUniquePropsFromUsers(state.users, "classes"),
-      studies: (state) => getUniquePropsFromUsers(state.users, "studies"),
+      groups: (state) => getUniquePropsFromUsers(state.users, "groups"),
       nRuns: (state) => state.runs.length,
       nTrials: (state) => state.trials.length,
       runTasks: (state) => [...new Set(state.runs.map((run) => run.task.id))].map((id) => ({ id })),
@@ -55,7 +55,7 @@ export const useQueryStore = () => {
       runDistricts: (state) => [...new Set(state.runs.map((run) => run.district.id))].map((id) => ({ id })),
       runSchools: (state) => [...new Set(state.runs.map((run) => run.school.id))].map((id) => ({ id })),
       runClasses: (state) => [...new Set(state.runs.map((run) => run.class.id))].map((id) => ({ id })),
-      runStudies: (state) => [...new Set(state.runs.map((run) => run.study.id))].map((id) => ({ id })),
+      runGroups: (state) => [...new Set(state.runs.map((run) => run.group.id))].map((id) => ({ id })),
     },
     actions: {
       async getOrgs(orgType) {
@@ -97,7 +97,7 @@ export const useQueryStore = () => {
             districts: this.selectedDistricts,
             schools: this.selectedSchools,
             classes: this.selectedClasses,
-            studies: this.selectedStudies
+            groups: this.selectedGroups
           }
           const usersRuns = await getUserRuns(this.selectedRootDoc, user, filters, this.selectedTaskIds, this.selectedVariantIds);
           this.runs.push(...usersRuns);

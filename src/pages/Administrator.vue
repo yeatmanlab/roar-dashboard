@@ -40,7 +40,7 @@ import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 const cardsData = ref([
   {
     title: "Create an organization",
-    content: "Create a new district, school, class, or study.",
+    content: "Create a new district, school, class, or group.",
     buttonText: "Go",
     buttonLink: "/create-org",
   },
@@ -76,8 +76,6 @@ const admin = ref(
   }
 
 );
-
-
 </script>
 
 <style scoped>
@@ -88,6 +86,7 @@ const admin = ref(
   flex: 1;
   gap: 1rem;
 }
+
 .card-wrapper {
   /* margin-right: 1rem; */
   width: 100%;
