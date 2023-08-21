@@ -66,8 +66,11 @@ const routes = [
   {
     path: "/register",
     name: "Register",
-    component: () =>
-      import("../pages/Register.vue"),
+    components: { 
+      default: () => import('../pages/Register.vue'),
+      registerParent: () => import("../components/auth/Register.vue"),
+      registerStudent: () => import("../components/auth/RegisterStudent.vue")
+    },
     meta: { requiresGuest: true },
   },
   {
@@ -163,9 +166,8 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const store = useAuthStore();
-  // Check if user is signed in. If not, go to signin
-  if (!to.path.includes("__/auth/handler")
-    && (!store.isAuthenticated && to.name !== "SignIn" && to.name !== "AuthClever")) {
+  if (!to.path.includes("__/auth/handler") && (!store.isAuthenticated && !["SignIn", "AuthClever", "Register"].includes(to.name))) {
+    console.log("You're not logged in. Routing to SignIn")
     return { name: "SignIn" }
   }
   // Check if user is an admin. If not, prevent routing to page
