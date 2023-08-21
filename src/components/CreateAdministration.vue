@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <div class="card" id="rectangle" v-if="formReady">
+      <div class="card" id="rectangle">
         <div class="flex flex-row justify-content-between align-items-start">
           <div>
             <span id="heading">Create a new administration</span>
@@ -130,10 +130,6 @@
           <Button label="Create Administration" @click="submit" />
         </div>
       </div>
-      <div v-else class="loading-container">
-        <AppSpinner style="margin-bottom: 1rem;" />
-        <span>Loading Administration Data</span>
-      </div>
     </section>
   </main>
 </template>
@@ -232,6 +228,8 @@ const initFormFields = async () => {
     queryStore.getOrgs("families"),
   ]
 
+  console.log("org promises", promises)
+
   const [_districts, _schools, _classes, _groups, _families] = await Promise.all(promises);
 
   districts.value = _districts;
@@ -249,6 +247,7 @@ const initFormFields = async () => {
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.getOrgs && state.roarfirekit.createAdministration && state.roarfirekit.isAdmin()) {
+    console.log("Initializing form fields")
     await initFormFields();
   }
 });
@@ -259,11 +258,11 @@ const submit = async () => {
     params: toRaw(assessment.variant.params),
   }));
   const orgs = {
-    districts: selectedDistricts.value,
-    schools: selectedSchools.value,
-    classes: selectedClasses.value,
-    groups: selectedGroups.value,
-    families: selectedFamilies.value,
+    districts: selectedDistricts.value.map((org) => org.id),
+    schools: selectedSchools.value.map((org) => org.id),
+    classes: selectedClasses.value.map((org) => org.id),
+    groups: selectedGroups.value.map((org) => org.id),
+    families: selectedFamilies.value.map((org) => org.id),
   }
 
   const args = {
