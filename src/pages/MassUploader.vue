@@ -36,18 +36,19 @@
       <!--DataTable with raw Student-->
       <div v-if="isFileUploaded">
         <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
-        <div class="info-box">
-          Please identify what the columns describe. Please note, the only REQUIRED fields are:
+        <Panel header="Assigning participant data" class="mb-4">
+          <p>Use the dropdowns below to properly assign each column. </p>
+          <p>Columns that are not assigned will not be imported. But please note that a column has to be assigned for each of the required fields:</p>
           <ul>
             <li>email</li>
             <li>date of birth</li>
             <li>grade</li>
             <li>password</li>
           </ul>
-          Not all columns must be used, however a column has to be selected for each required field.
-        </div>
+          
+          <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
+        </Panel>
       
-        <h3>Define what each column describes</h3>
         <div v-if="errorMessage" class="error-box">
           {{ errorMessage }}
         </div>
