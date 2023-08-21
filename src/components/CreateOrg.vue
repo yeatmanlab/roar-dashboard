@@ -64,7 +64,7 @@
       <div style="width: fit-content;">
         <div class="grid mt-5">
           <div class="col-6">
-            <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please name your admin</small>
+            <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             <span class="p-float-label">
               <InputText id="org-name" v-model="orgName" />
               <label for="org-name">{{ orgTypeLabel }} Name</label>
@@ -72,7 +72,7 @@
           </div>
 
           <div class="col-6">
-            <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please name your admin</small>
+            <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
             <span class="p-float-label">
               <InputText id="org-initial" v-model="orgInitials" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
