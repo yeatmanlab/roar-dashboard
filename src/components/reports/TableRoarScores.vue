@@ -158,7 +158,7 @@ const filters = ref({
   district: { value: null, matchMode: FilterMatchMode.IN },
   school: { value: null, matchMode: FilterMatchMode.IN },
   class: { value: null, matchMode: FilterMatchMode.IN },
-  study: { value: null, matchMode: FilterMatchMode.IN },
+  group: { value: null, matchMode: FilterMatchMode.IN },
   timeStarted: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.DATE_IS }],
