@@ -40,7 +40,7 @@ const sidebarActions = ref([
   {
     title: "Create an administration",
     icon: "",
-    buttonLink: "/create-admin",
+    buttonLink: "/create-administration",
   },
   {
     title: "List organizations",
