@@ -47,45 +47,6 @@
           Not all columns must be used, however a column has to be selected for each required field.
         </div>
       
-        <!-- Selecting Orgs -->
-        <div v-if="formReady">
-          <h3>Select organizations to apply to all users</h3>
-          <div class="orgs-container">
-            <div class="org-dropdown" v-if="districts.length > 0">
-              <span class="p-float-label">
-                <Dropdown v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="districts" showClear />
-                <label for="districts">Districts</label>
-              </span>
-            </div>
-      
-            <div class="org-dropdown" v-if="schools.length > 0">
-              <span class="p-float-label">
-                <Dropdown v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="schools" showClear />
-                <label for="schools">Schools</label>
-              </span>
-            </div>
-      
-            <div class="org-dropdown" v-if="classes.length > 0">
-              <span class="p-float-label">
-                <Dropdown v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="classes" showClear />
-                <label for="classes">Classes</label>
-              </span>
-            </div>
-      
-            <div class="org-dropdown" v-if="studies.length > 0">
-              <span class="p-float-label">
-                <Dropdown v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="studies" showClear />
-                <label for="studies">Studies</label>
-              </span>
-            </div>
-          </div>
-        </div>
-        <AppSpinner v-else />
-      
         <h3>Define what each column describes</h3>
         <div v-if="errorMessage" class="error-box">
           {{ errorMessage }}
