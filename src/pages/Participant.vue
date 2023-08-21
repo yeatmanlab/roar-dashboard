@@ -6,8 +6,6 @@
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
         <GameTabs :games="assessments" />
       </div>
-      <ConsentModal v-if="showConsent" :consent-text="confirmText" consent-type="Assent" @accepted="updateConsent"/>
-      <Button @click="showConsent = true" label="Show Consent Form" />
     </div>
     <div v-else>
       <div class="col-full text-center">
@@ -31,11 +29,6 @@ import _get from 'lodash/get'
 import { useAuthStore } from "@/store/auth";
 import { storeToRefs } from 'pinia';
 import AppSpinner from "../components/AppSpinner.vue";
-import ConsentModal from "../components/ConsentModal.vue";
-
-const showConsent = ref(false);
-const confirmText = ref("");
-const consentVersion = ref("");
 
 const authStore = useAuthStore();
 const { isFirekitInit, firekitUserData, roarfirekit } = storeToRefs(authStore);
@@ -51,21 +44,7 @@ const studentInfo = ref({
   grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
 })
 
-async function updateConsent() {
-  console.log('consent status update', consentVersion.value)
-  authStore.updateConsentStatus(consentVersion.value)
-}
-
 async function setUpAssignments() {
-  // Check for consent
-  const consentStatus = _get(roarfirekit.value, 'userData.consent') || _get(firekitUserData.value, 'consent')
-  const consentDoc = await authStore.getLegalDoc('assent');
-  consentVersion.value = consentDoc.version
-  if(!_get(toRaw(consentStatus), consentDoc.version)){
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
-  }
-  // confirmText.value = _get(assentDoc, 'formText');
   const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
   console.log("assignedAssignments from storeToRefs: ", assignedAssignments);
   let assignmentInfo = [];
