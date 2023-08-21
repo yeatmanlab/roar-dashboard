@@ -53,11 +53,11 @@
             </span>
           </div>
       
-          <div class="field col" v-if="studies.length > 0">
+          <div class="field col" v-if="groups.length > 0">
             <span class="p-float-label">
-              <MultiSelect v-model="selectedStudies" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-                inputId="studies" />
-              <label for="studies">Studies</label>
+              <MultiSelect v-model="selectedGroups" :options="studies" optionLabel="name" class="w-full md:w-14rem"
+                inputId="groups" />
+              <label for="groups">Studies</label>
             </span>
           </div>
       
