@@ -9,14 +9,14 @@
     <div class="formgrid grid mt-5">
       <div class="field col">
         <span class="p-float-label">
-          <InputText id="administration-name" v-model="administrationName" />
+          <InputText id="administration-name" v-model="state.administrationName" />
           <label for="administration-name">Administration Name</label>
         </span>
       </div>
 
       <div class="field col">
         <span class="p-float-label">
-          <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
+          <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
             :manualInput="false" showIcon showButtonBar />
           <label for="dates">Dates</label>
         </span>
@@ -29,7 +29,7 @@
     <div class="formgrid grid mt-5 mb-5">
       <div class="field col" v-if="districts.length > 0">
         <span class="p-float-label">
-          <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+          <MultiSelect v-model="state.districts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
             inputId="districts" />
           <label for="districts">Districts</label>
         </span>
@@ -37,7 +37,7 @@
 
       <div class="field col" v-if="schools.length > 0">
         <span class="p-float-label">
-          <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+          <MultiSelect v-model="state.schools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
             inputId="schools" />
           <label for="schools">Schools</label>
         </span>
@@ -45,7 +45,7 @@
 
       <div class="field col" v-if="classes.length > 0">
         <span class="p-float-label">
-          <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+          <MultiSelect v-model="state.classes" :options="classes" optionLabel="name" class="w-full md:w-14rem"
             inputId="classes" />
           <label for="classes">Classes</label>
         </span>
@@ -53,7 +53,7 @@
 
       <div class="field col" v-if="groups.length > 0">
         <span class="p-float-label">
-          <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
+          <MultiSelect v-model="state.groups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
             inputId="groups" />
           <label for="groups">Groups</label>
         </span>
@@ -61,7 +61,7 @@
 
       <div class="field col" v-if="families.length > 0">
         <span class="p-float-label">
-          <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
+          <MultiSelect v-model="state.families" :options="families" optionLabel="name" class="w-full md:w-14rem"
             inputId="families" />
           <label for="families">Families</label>
         </span>
@@ -74,7 +74,7 @@
         <div class="flex flex-row align-items-center justify-content-end gap-3">
           <!-- <label for="sequential">Require sequential?</label> -->
           <span>Require sequential?</span>
-          <SelectButton v-model="sequential" :options="sequentialOptions" optionLabel="label" optionValue="value" />
+          <SelectButton v-model="state.sequential" :options="sequentialOptions" optionLabel="label" optionValue="value" />
         </div>
       </div>
 
@@ -122,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, toRaw } from "vue";
+import { ref, toRaw, reactive } from "vue";
 import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
 import { useToast } from "primevue/usetoast";
@@ -131,9 +131,29 @@ import _get from "lodash/get";
 import _isEmpty from "lodash/isEmpty";
 import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
+import _uniqBy from "lodash/uniqBy";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "./AppSpinner.vue";
+import { useVuelidate } from "@vuelidate/core";
+import { required } from "@vuelidate/validators";
+
+const rules = {
+  administrationName: { required },
+  dates: { required }
+}
+
+const state = reactive({
+  administrationName: "",
+  dates: [],
+  sequential: true,
+  districts: [],
+  schools: [],
+  classes: [],
+  groups: [],
+  families: []
+})
+const v$ = useVuelidate(rules, state);
 
 const router = useRouter();
 const toast = useToast();
@@ -151,10 +171,10 @@ const toggle = (event, id) => {
 
 const formReady = ref(false);
 
-const administrationName = ref("");
+// const administrationName = ref("");
 const minStartDate = ref(new Date());
 
-const dates = ref();
+// const dates = ref();
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -167,19 +187,25 @@ const classes = ref([]);
 const groups = ref([]);
 const families = ref([]);
 
-const selectedDistricts = ref([]);
-const selectedSchools = ref([]);
-const selectedClasses = ref([]);
-const selectedGroups = ref([]);
-const selectedFamilies = ref([]);
+// const selectedDistricts = ref([]);
+// const selectedSchools = ref([]);
+// const selectedClasses = ref([]);
+// const selectedGroups = ref([]);
+// const selectedFamilies = ref([]);
 
 const sequentialOptions = ref([{ label: "Yes", value: true }, { label: "No", value: false }]);
-const sequential = ref(true);
+// const sequential = ref(true);
 
 const { allVariants } = storeToRefs(queryStore);
 const assessments = ref([[], []])
 
 const backupImage = "/src/assets/swr-icon.jpeg";
+
+const checkForUniqueTasks = (assignments) => {
+  if(_isEmpty(assignments)) return false;
+  const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId)
+  return (uniqueTasks.length === assignments.length)
+}
 
 const initFormFields = async () => {
   unsubscribe();
@@ -214,32 +240,44 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 const submit = async () => {
-  const submittedAssessments = assessments.value[1].map((assessment) => ({
-    taskId: assessment.task.id,
-    params: toRaw(assessment.variant.params),
-  }));
-  const orgs = {
-    districts: selectedDistricts.value,
-    schools: selectedSchools.value,
-    classes: selectedClasses.value,
-    groups: selectedGroups.value,
-    families: selectedFamilies.value,
+  const isFormValid = await v$.value.$validate()
+  if(isFormValid){
+    const submittedAssessments = assessments.value[1].map((assessment) => ({
+      taskId: assessment.task.id,
+      params: toRaw(assessment.variant.params),
+    }));
+    const tasksUnique = checkForUniqueTasks(submittedAssessments)
+    if(tasksUnique){
+      const orgs = {
+        districts: toRaw(state).districts,
+        schools: toRaw(state).schools,
+        classes: toRaw(state),classes,
+        groups: toRaw(state).groups,
+        families: toRaw(state).families,
+      }
+
+      const args = {
+        name: toRaw(state).administrationName,
+        assessments: submittedAssessments,
+        dateOpen: toRaw(state).dates[0],
+        dateClose: toRaw(state).dates[1],
+        sequential: toRaw(state).sequential,
+        orgs: orgs,
+      }
+
+      console.log('would have submitted', args)
+
+      // await roarfirekit.value.createAdministration(args).then(() => {
+      //   toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+
+      //   router.push({ name: "Home" });
+      // });
+    } else {
+      console.log('Tasks are not unique')
+    }
+  } else {
+    console.log('form is invalid')
   }
-
-  const args = {
-    name: administrationName.value,
-    assessments: submittedAssessments,
-    dateOpen: dates.value[0],
-    dateClose: dates.value[1],
-    sequential: sequential.value,
-    orgs: orgs,
-  }
-
-  await roarfirekit.value.createAdministration(args).then(() => {
-    toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
-
-    router.push({ name: "Home" });
-  });
 }
 </script> 
 
