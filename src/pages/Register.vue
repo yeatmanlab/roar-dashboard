@@ -1,24 +1,61 @@
 <template>
-  <div>
+  <div class="step-container">
+    <div class="card stepper">
+      <Steps :model="items" :readonly="true" :activeIndex="activeIndex" @change="onStepChange" aria-label="Form Steps" />
+    </div>
+  </div>
+
+  <div class="register-container mx-auto md:flex-none">
+    <div v-if="activeIndex === 0">
+      <router-view name="registerParent">
+        <Register />
+      </router-view>
+    </div>
+    <div v-else="activeIndex === 1">
+      <router-view name="registerStudent">
+        <RegisterStudent />
+      </router-view>
+    </div>
+  </div>
+
+  <button @click="prevStep">Previous</button>
+  <button @click="nextStep">Next</button>
+
+
+  <!-- <div>
     <div class="register-container mx-auto md:flex-none">
       <Register />
     </div>
-  </div>
+  </div> -->
 </template>
 
 <script setup>
-import Register from "@/components/auth/Register.vue";
-import { useAuthStore } from "@/store/auth";
-import { isMobileBrowser } from "@/helpers";
+import Register from "../components/auth/Register.vue";
+import RegisterStudent from "../components/auth/RegisterStudent.vue";
+import { ref } from 'vue';
+import Steps from 'primevue/steps';
 
-// const authStore = useAuthStore();
-// const authWithGoogle = () => {
-//   if(isMobileBrowser()) {
-//     authStore.signInWithGoogleRedirect();
-//   } else {
-//     authStore.signInWithGooglePopup();
-//   }
-// };
+const activeIndex = ref(0); // Current active step
+    const items = ref([
+      { label: 'Step 1' },
+      { label: 'Step 2' },
+    ]);
+
+    function onStepChange(event) {
+      activeIndex.value = event.index;
+    }
+
+    function prevStep() {
+      if (activeIndex.value > 0) {
+        activeIndex.value--;
+      }
+    }
+
+    function nextStep() {
+      if (activeIndex.value < items.value.length - 1) {
+        activeIndex.value++;
+      }
+    }
 </script>
 
 <style scoped>
@@ -34,12 +71,9 @@ import { isMobileBrowser } from "@/helpers";
   margin-top: 6.5rem;
   position: relative;
 }
-/* .text-btn {
-  border: none;
-  background-color: inherit;
-  cursor: pointer;
-  display: inline-block;
-  font-size: 16px;
-  color: #2c3e50;
-} */
+
+.step-container {
+  width: 40%;
+  margin: auto;
+}
 </style>
