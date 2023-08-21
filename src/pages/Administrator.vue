@@ -1,30 +1,10 @@
 <template>
   <main class="container main">
     <aside class="main-sidebar">
-      <AdministratorSidebar :userInfo="userInfo" />
+      <AdministratorSidebar :userInfo="userInfo" :actions="sidebarActions" />
     </aside>
 
     <section class="main-body">
-      <div class="card-container">
-        <router-link :to="cardData.buttonLink" v-for="(cardData, index) in cardsData" :key="index" class="card-wrapper">
-          <Card class="card-title">
-            <template #title>
-              <div class="card-title">
-                {{ cardData.title }}
-              </div>
-            </template>
-            <template #content>
-              {{ cardData.content }}
-            </template>
-            <template #footer>
-              <div class="card-button">
-                <Button :label="cardData.buttonText" />
-              </div>
-            </template>
-          </Card>
-        </router-link>
-      </div>
-
       <div v-if="administrations.length" v-for="(a, index) in administrations" :key="index">
         <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
           :assessments="a.assessments"></CardAdministration>
@@ -46,31 +26,27 @@ const queryStore = useQueryStore();
 
 const { administrations } = storeToRefs(queryStore);
 
-const cardsData = ref([
-  {
-    title: "Create an organization",
-    content: "Create a new district, school, class, or group.",
-    buttonText: "Go",
-    buttonLink: "/create-orgs",
-  },
-  {
-    title: "List organizations",
-    content: "List all organizations that you have access to.",
-    buttonText: "Go",
-    buttonLink: "/list-orgs",
-  },
+const sidebarActions = ref([
   {
     title: "Register users",
-    content: "Create new student account by uploading a CSV file.",
-    buttonText: "Go",
+    icon: "pi pi-users",
     buttonLink: "/mass-upload",
   },
   {
+    title: "Create an organization",
+    icon: "pi pi-database",
+    buttonLink: "/create-orgs",
+  },
+  {
     title: "Create an administration",
-    content: "Create a new ROAR administration and assign it to organizations.",
-    buttonText: "Go",
+    icon: "",
     buttonLink: "/create-admin",
-  }
+  },
+  {
+    title: "List organizations",
+    icon: "",
+    buttonLink: "/list-orgs",
+  },
 ]);
 
 const userInfo = ref(
