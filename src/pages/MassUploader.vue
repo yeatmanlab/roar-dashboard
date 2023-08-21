@@ -1,105 +1,62 @@
 <template>
-  <div class="page-container">
-    <router-link :to="{ name: 'Home' }">
-      <Button style="margin-bottom: 1rem;" icon="pi pi-angle-left" label="Return to Dashboard" />
-    </router-link>
-    <!--Upload file section-->
-    <div v-if="!isFileUploaded">
-      <div class="info-box">
-        We need the following information for each student to register: 
-        <ul>
-          <li>email (required)</li>
-          <li>date of birth (required)</li>
-          <li>grade (required)</li>
-          <li>password</li>
-        </ul>
-        Upload or drag-and-drop a student list below to begin!
-      </div>
-      <FileUpload 
-        name="massUploader[]"
-        customUpload
-        @uploader="onFileUpload($event)"
-        accept=".csv"
-        auto
-        :showUploadButton="false"
-        :showCancelButton="false"
-      >
-        <template #empty>
-          <div class="extra-height">
-            <p>Drag and drop files to here to upload.</p>
-          </div>
-        </template>
-      </FileUpload>
-    </div>
-    <!--DataTable with raw Student-->
-    <div v-if="isFileUploaded">
-      <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
-      <div class="info-box">
-        Please identify what the columns describe. Please note, the only REQUIRED fields are:
-        <ul>
-          <li>email</li>
-          <li>date of birth</li>
-          <li>grade</li>
-          <li>password</li>
-        </ul>
-        Not all columns must be used, however a column has to be selected for each required field.
-      </div>
-
-      <h3>Define what each column describes</h3>
-      <div v-if="errorMessage" class="error-box">
-        {{ errorMessage }}
-      </div>
-      <!-- Can't use RoarDataTable to accomodate header dropdowns -->
-      <DataTable 
-        ref="dataTable" 
-        :value="rawStudentFile"
-        showGridlines
-        :rowHover="true"
-        :resizableColumns="true"
-        paginator
-        :alwaysShowPaginator="false"
-        :rows="10"
-        class="datatable"
-      >
-        <Column 
-          v-for="col of tableColumns" 
-          :key="col.field" 
-          :field="col.field"
+  <main class="container main">
+    <aside class="main-sidebar">
+      <AdministratorSidebar :actions="sidebarActions" />
+    </aside>
+    <section class="main-body">
+      <!--Upload file section-->
+      <div v-if="!isFileUploaded">
+        <Panel header="Add Participants">
+          We need the following information for each student to register: 
+          <ul>
+            <li>email (required)</li>
+            <li>date of birth (required)</li>
+            <li>grade (required)</li>
+            <li>password</li>
+          </ul>
+          Upload or drag-and-drop a student list below to begin!
+        </Panel>
+        <Divider />
+        <FileUpload 
+          name="massUploader[]"
+          customUpload
+          @uploader="onFileUpload($event)"
+          accept=".csv"
+          auto
+          :showUploadButton="false"
+          :showCancelButton="false"
         >
-          <template #header>
-            <div class="col-header">
-              <Dropdown 
-                v-model="dropdown_model[col.field]" 
-                :options="dropdown_options" 
-                optionLabel="label"
-                optionValue="value"
-                optionGroupLabel="label"
-                optionGroupChildren="items"
-                placeholder="What does this column describe?" 
-              />
+          <template #empty>
+            <div class="extra-height">
+              <p>Drag and drop files to here to upload.</p>
             </div>
           </template>
-        </Column>
-      </DataTable>
-      <div class="submit-container">
-        <Button @click="submitStudents">
-          Start Registration
-        </Button>
+        </FileUpload>
       </div>
-      <!-- Datatable of error students -->
-      <div v-if="showErrorTable" class="error-container">
-        <div class="error-header">
-          <h3>Error Users</h3>
-          <Button @click="downloadErrorTable($event)">
-            Download Table
-          </Button>
+      <!--DataTable with raw Student-->
+      <div v-if="isFileUploaded">
+        <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
+        <Panel header="Assigning participant data" class="mb-4">
+          <p>Use the dropdowns below to properly assign each column. </p>
+          <p>Columns that are not assigned will not be imported. But please note that a column has to be assigned for each of the required fields:</p>
+          <ul>
+            <li>email</li>
+            <li>date of birth</li>
+            <li>grade</li>
+            <li>password</li>
+          </ul>
+          
+          <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
+        </Panel>
+      
+        <div v-if="errorMessage" class="error-box">
+          {{ errorMessage }}
         </div>
-        <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-        <DataTable
-          ref="errorTable"
-          :value="errorUsers"
+        <!-- Can't use RoarDataTable to accomodate header dropdowns -->
+        <DataTable 
+          ref="dataTable" 
+          :value="rawStudentFile"
           showGridlines
-          exportFilename="error-datatable-export"
           :rowHover="true"
           :resizableColumns="true"
           paginator
@@ -107,15 +64,64 @@
           :rows="10"
           class="datatable"
         >
-          <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+          <Column 
+            v-for="col of tableColumns" 
+            :key="col.field" 
+            :field="col.field"
+          >
             <template #header>
-              {{ col.header }}
+              <div class="col-header">
+                <Dropdown 
+                  v-model="dropdown_model[col.field]" 
+                  :options="dropdown_options" 
+                  optionLabel="label"
+                  optionValue="value"
+                  optionGroupLabel="label"
+                  optionGroupChildren="items"
+                  placeholder="What does this column describe?" 
+                />
+              </div>
             </template>
           </Column>
         </DataTable>
-      </div>
-      </div>
-  </div>
+        <div class="submit-container">
+          <Button @click="submitStudents">
+            Start Registration
+          </Button>
+        </div>
+        <!-- Datatable of error students -->
+        <div v-if="showErrorTable" class="error-container">
+          <div class="error-header">
+            <h3>Error Users</h3>
+            <Button @click="downloadErrorTable($event)">
+              Download Table
+            </Button>
+          </div>
+          <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
+          <DataTable
+            ref="errorTable"
+            :value="errorUsers"
+            showGridlines
+            exportFilename="error-datatable-export"
+            :rowHover="true"
+            :resizableColumns="true"
+            paginator
+            :alwaysShowPaginator="false"
+            :rows="10"
+            class="datatable"
+          >
+            <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+              <template #header>
+                {{ col.header }}
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+        </div>
+
+    </section>
+    
+  </main>
 </template>
 <script setup>
 import { ref, toRaw } from 'vue';
@@ -132,11 +138,36 @@ import _omit from 'lodash/omit';
 import _find from 'lodash/find';
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
+import RoarDataTable from '../components/RoarDataTable.vue';
+import { storeToRefs } from 'pinia';
+import AppSpinner from '../components/AppSpinner.vue';
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
-const isFileUploaded = ref(false)
-const rawStudentFile = ref({})
+const { roarfirekit, isFirekitInit } = storeToRefs(authStore);
+const isFileUploaded = ref(false);
+const rawStudentFile = ref({});
+
+
+const sidebarActions = ref([
+  {
+    title: "Back to Dashboard",
+    icon: "pi pi-arrow-left",
+    buttonLink: "/administrator",
+  },
+  {
+    title: "Create an organization",
+    icon: "pi pi-database",
+    buttonLink: "/create-org",
+  },
+  {
+    title: "Create an administration",
+    icon: "pi pi-question-circle",
+    buttonLink: "/create-admin",
+  }
+]);
+
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
@@ -429,9 +460,6 @@ function downloadErrorTable() {
 // });
 </script>
 <style scoped>
-.page-container {
-  padding: 2rem;
-}
 .extra-height {
   min-height: 33vh;
 }
