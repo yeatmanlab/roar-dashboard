@@ -84,12 +84,11 @@ export const useAuthStore = () => {
         });
       },
       async getLegalDoc(docName) {
-        console.log('about to call firekit with', docName)
         return await this.roarfirekit.getLegalDoc(docName);
       },
-      async updateConsentStatus(consentVersion) {
-        _set(this.firekitUserData.consent, consentVersion, new Date(Date.now()))
-        this.roarfirekit.updateConsentStatus(consentVersion);
+      async updateConsentStatus(docName, consentVersion) {
+        _set(this.firekitUserData, `legal.${docName}.${consentVersion}`, new Date())
+        this.roarfirekit.updateConsentStatus(docName, consentVersion);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
