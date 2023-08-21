@@ -80,17 +80,6 @@ const userInfo = ref(
   }
 )
 
-const admin = ref(
-  {
-    id: 234,
-    title: 'Administration Title',
-    stats: { 'total': 100, 'started': 54, 'completed': 26 },
-    dates: { 'start': 12345, 'end': 123456 },
-    assignees: ['Class1', 'Class2'],
-    assessments: ['SRE', 'PWA', 'SWA']
-  }
-);
-
 const getAdminDocs = async () => {
   unsubscribe();
   queryStore.getAdminOrgs();

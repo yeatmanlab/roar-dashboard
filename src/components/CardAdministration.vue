@@ -1,6 +1,6 @@
 <template>
 	<div class="p-card card-administration">
-		<div class="card-admin-chart">
+		<div v-if="stats" class="card-admin-chart">
 			<Chart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
 		</div>
 
@@ -33,7 +33,7 @@
 
 			<TreeTable v-if="isAssigned" :value="hierarchicalAssignedOrgs">
 				<Column field="name" header="Name" expander></Column>
-				<Column field="id" header="Completion">
+				<Column v-if="stats" field="id" header="Completion">
 					<template #body="{ node }">
 						<Chart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
 					</template>
@@ -100,7 +100,7 @@ const setDoughnutChartOptions = () => ({
 
 const setDoughnutChartData = () => {
 	const docStyle = getComputedStyle(document.documentElement);
-	let { assigned, started, completed } = props.stats.total;
+	let { assigned, started, completed } = props.stats.total.assignment;
 
 	assigned -= (started + completed);
 	started -= completed;
@@ -150,7 +150,7 @@ const getBorderRadii = (left, middle, right) => {
 }
 
 const setBarChartData = (orgId) => {
-	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId];
+	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId].assignment;
 	const documentStyle = getComputedStyle(document.documentElement);
 
 	assigned -= (started + completed);
@@ -237,9 +237,11 @@ const setBarChartOptions = () => {
 };
 
 onMounted(() => {
-	doughnutChartData.value = setDoughnutChartData();
-	doughnutChartOptions.value = setDoughnutChartOptions();
-	barChartOptions.value = setBarChartOptions();
+	if (props.stats) {
+		doughnutChartData.value = setDoughnutChartData();
+		doughnutChartOptions.value = setDoughnutChartOptions();
+		barChartOptions.value = setBarChartOptions();
+	}
 })
 </script>
 
