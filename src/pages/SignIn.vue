@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, toRaw } from 'vue';
+import { onMounted, ref, watch, toRaw, onBeforeUnmount } from 'vue';
 import SignIn from "@/components/auth/SignIn.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
@@ -110,6 +110,9 @@ onMounted(() => {
     authWithClever();
   }
 });
+onBeforeUnmount(() => {
+  document.body.classList.remove('page-signin')
+})
 </script>
 
 <style scoped>
