@@ -8,6 +8,7 @@
     </template>
   </ConfirmDialog>
 </template>
+
 <script setup>
 import { computed, defineProps, defineEmits, onMounted } from 'vue';
 import { useConfirm } from "primevue/useconfirm";
@@ -16,8 +17,8 @@ import { marked } from 'marked';
 
 console.log('inside consentModal')
 const props = defineProps({
-  consentText: {require: true, default: 'Text Here'},
-  consentType: {require: true, default: 'Consent'},
+  consentText: { require: true, default: 'Text Here' },
+  consentType: { require: true, default: 'Consent' },
 })
 const consentHeader = {
   tos: "Terms of Service",
@@ -47,7 +48,8 @@ onMounted(() => {
   });
 })
 </script>
-<style>
+
+<style scoped>
 .scrolling-box {
   width: 50vw;
   height: 50vh;
@@ -58,9 +60,11 @@ onMounted(() => {
   border: 2px solid var(--surface-d);
   border-radius: 5px;
 }
+
 .p-confirm-dialog-reject {
   display: none !important;
 }
+
 .p-dialog-header-close {
   display: none !important;
 }

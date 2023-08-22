@@ -4,91 +4,98 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <div class="card" id="rectangle">
-        <div class="flex flex-row justify-content-between align-items-start">
-          <div>
-            <span id="heading">Create a new administration</span>
-            <p id="section-heading">Use this form to create a new administration.</p>
-          </div>
-          <Button class="mr-4" icon="pi pi-refresh" severity="secondary" aria-label="Refresh" @click="initFormFields" />
-        </div>
-        <hr>
+      <Panel header="Create a new administration">
+        Use this form to create a new administration and assign it to organizations.
+
+        <Divider />
+
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
-              <InputText id="administration-name" v-model="administrationName" />
+              <InputText id="administration-name" v-model="state.administrationName" />
               <label for="administration-name">Administration Name</label>
+              <small v-if="v$.administrationName.$invalid && submitted" class="p-error">Please name your
+                administration</small>
             </span>
           </div>
 
           <div class="field col">
             <span class="p-float-label">
-              <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
-                :manualInput="false" showIcon showButtonBar />
+              <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
+                selectionMode="range" :manualInput="false" showIcon showButtonBar />
               <label for="dates">Dates</label>
+              <small v-if="v$.dates.$invalid && submitted" class="p-error">Please select dates for your admin</small>
             </span>
           </div>
         </div>
 
-        <div style="width: fit-content;">
-          <p id="section-heading">Assign this administration to organizations</p>
-        </div>
-        <div class="formgrid grid mt-5 mb-5" v-if="orgsReady">
-          <div class="field col" v-if="districts.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                inputId="districts" />
-              <label for="districts">Districts</label>
-            </span>
-          </div>
+        <Panel header="Assign this administration to organizations">
+          <template #icons>
+            <button class="p-panel-header-icon p-link mr-2" @click="refreshOrgs">
+              <span :class="spinIcon.orgs"></span>
+            </button>
+          </template>
+          <div v-if="orgError" class="p-error">{{ orgError }}</div>
+          <div class="formgrid grid mt-5 mb-5" v-if="orgsReady">
+            <div class="field col" v-if="districts.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="state.districts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="districts" />
+                <label for="districts">Districts</label>
+              </span>
+            </div>
 
-          <div class="field col" v-if="schools.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                inputId="schools" />
-              <label for="schools">Schools</label>
-            </span>
-          </div>
+            <div class="field col" v-if="schools.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="state.schools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="schools" />
+                <label for="schools">Schools</label>
+              </span>
+            </div>
 
-          <div class="field col" v-if="classes.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                inputId="classes" />
-              <label for="classes">Classes</label>
-            </span>
-          </div>
+            <div class="field col" v-if="classes.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="state.classes" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="classes" />
+                <label for="classes">Classes</label>
+              </span>
+            </div>
 
-          <div class="field col" v-if="groups.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
-                inputId="groups" />
-              <label for="groups">Groups</label>
-            </span>
-          </div>
+            <div class="field col" v-if="groups.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="state.groups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="groups" />
+                <label for="groups">Groups</label>
+              </span>
+            </div>
 
-          <div class="field col" v-if="families.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
-                inputId="families" />
-              <label for="families">Families</label>
-            </span>
-          </div>
-        </div>
-        <div v-else class="loading-container">
-          <AppSpinner style="margin-bottom: 1rem;" />
-          <span>Loading Organizations</span>
-        </div>
-
-        <div class="col-12 mb-3">
-          <div class="flex flex-row justify-content-between align-items-center flex-wrap mb-3">
-            <p id="section-heading">Select Assessments</p>
-            <div class="flex flex-row align-items-center justify-content-end gap-3">
-              <!-- <label for="sequential">Require sequential?</label> -->
-              <span>Require sequential?</span>
-              <InputSwitch v-model="sequential" />
+            <div class="field col" v-if="families.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="state.families" :options="families" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="families" />
+                <label for="families">Families</label>
+              </span>
             </div>
           </div>
+          <div v-else class="loading-container">
+            <AppSpinner style="margin-bottom: 1rem;" />
+            <span>Loading Organizations</span>
+          </div>
+        </Panel>
 
+        <Panel class="mt-3" header="Assign this administration to organizations">
+          <template #icons>
+            <div class="flex flex-row align-items-center justify-content-end">
+              <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
+              <span>Require sequential?</span>
+              <InputSwitch class="ml-2" v-model="state.sequential" />
+              <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments">
+                <span :class="spinIcon.assessments"></span>
+              </button>
+            </div>
+          </template>
+
+          <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
           <PickList v-if="assessments[0].length || assessments[1].length" v-model="assessments"
             :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id" :stripedRows="true" :pt="{
               moveAllToTargetButton: { root: { class: 'hide' } },
@@ -124,52 +131,71 @@
             <AppSpinner style="margin-bottom: 1rem;" />
             <span>Loading Assessments</span>
           </div>
-        </div>
+        </Panel>
 
         <div class="col-12 mb-3">
           <Button label="Create Administration" @click="submit" />
         </div>
-      </div>
+      </Panel>
     </section>
   </main>
 </template>
 
 <script setup>
-import { ref, toRaw } from "vue";
+import { computed, onMounted, reactive, ref, toRaw } from "vue";
 import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
 import { useToast } from "primevue/usetoast";
+import _filter from "lodash/filter"
+import _forEach from "lodash/forEach"
 import _fromPairs from "lodash/fromPairs";
 import _get from "lodash/get";
 import _isEmpty from "lodash/isEmpty";
 import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
+import _uniqBy from "lodash/uniqBy";
+import { useVuelidate } from "@vuelidate/core";
+import { required, requiredIf, requiredUnless } from "@vuelidate/validators";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
-import AppSpinner from "./AppSpinner.vue";
-
+import AppSpinner from "@/components/AppSpinner.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-const sidebarActions = ref([
-  {
-    title: "Back to Dashboard",
-    icon: "pi pi-arrow-left",
-    buttonLink: "/administrator",
-  },
-  {
-    title: "Register users",
-    icon: "pi pi-users",
-    buttonLink: "/mass-upload",
-  },
-  {
-    title: "Create an organization",
-    icon: "pi pi-database",
-    buttonLink: "/create-orgs",
-  }
-]);
 
+import { getSidebarActions } from "../router/sidebarActions";
 
 const router = useRouter();
 const toast = useToast();
+
+const refreshing = reactive({
+  orgs: false,
+  assessments: false,
+});
+
+const spinIcon = computed(() => ({
+  orgs: refreshing.orgs ? "pi pi-spin pi-spinner" : "pi pi-refresh",
+  assessments: refreshing.assessments ? "pi pi-spin pi-spinner" : "pi pi-refresh",
+}));
+
+const state = reactive({
+  administrationName: "",
+  dates: [],
+  sequential: true,
+  districts: [],
+  schools: [],
+  classes: [],
+  groups: [],
+  families: []
+})
+
+const rules = {
+  administrationName: { required },
+  dates: { required },
+  sequential: { required }
+}
+const v$ = useVuelidate(rules, state);
+const pickListError = ref('');
+const orgError = ref('');
+const submitted = ref(false);
 
 let paramPanelRefs = {};
 
@@ -184,41 +210,44 @@ const toggle = (event, id) => {
 
 const orgsReady = ref(false);
 
-const administrationName = ref("");
 const minStartDate = ref(new Date());
-
-const dates = ref();
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+
 const { roarfirekit } = storeToRefs(authStore);
+const { adminOrgs } = storeToRefs(queryStore);
 
-const districts = ref([]);
-const schools = ref([]);
-const classes = ref([]);
-const groups = ref([]);
-const families = ref([]);
-
-const selectedDistricts = ref([]);
-const selectedSchools = ref([]);
-const selectedClasses = ref([]);
-const selectedGroups = ref([]);
-const selectedFamilies = ref([]);
-
-const sequential = ref(true);
+const districts = ref(adminOrgs.value.districts || []);
+const schools = ref(adminOrgs.value.schools || []);
+const classes = ref(adminOrgs.value.classes || []);
+const groups = ref(adminOrgs.value.groups || []);
+const families = ref(adminOrgs.value.families || []);
 
 const { allVariants } = storeToRefs(queryStore);
 const assessments = ref([[], []])
 
 const backupImage = "/src/assets/swr-icon.jpeg";
 
-const initFormFields = async () => {
-  orgsReady.value = false;
-  assessments.value = [[], []];
+const checkForUniqueTasks = (assignments) => {
+  if (_isEmpty(assignments)) return false;
+  const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId)
+  return (uniqueTasks.length === assignments.length)
+}
+const checkForRequiredOrgs = (orgs) => {
+  const filtered = _filter(orgs, org => !_isEmpty(org))
+  return Boolean(filtered.length)
+}
 
-  unsubscribe();
-  const requireRegisteredTasks = !roarfirekit.value.superAdmin
+let unsubscribeOrgs;
+let unsubscribeAssessments;
+
+const refreshOrgs = async () => {
+  refreshing.orgs = true;
+  orgsReady.value = false;
+  if (unsubscribeOrgs) unsubscribeOrgs();
 
   const promises = [
     queryStore.getOrgs("districts"),
@@ -228,8 +257,6 @@ const initFormFields = async () => {
     queryStore.getOrgs("families"),
   ]
 
-  console.log("org promises", promises)
-
   const [_districts, _schools, _classes, _groups, _families] = await Promise.all(promises);
 
   districts.value = _districts;
@@ -238,48 +265,95 @@ const initFormFields = async () => {
   groups.value = _groups;
   families.value = _families;
   orgsReady.value = true;
+  refreshing.orgs = false;
+};
 
+const refreshAssessments = async () => {
+  refreshing.assessments = true;
+  if (unsubscribeAssessments) unsubscribeAssessments();
+  assessments.value = [[], []];
+
+  const requireRegisteredTasks = !roarfirekit.value.superAdmin
   queryStore.getVariants(requireRegisteredTasks).then(() => {
     assessments.value = [allVariants.value, []];
     paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
+    refreshing.assessments = false;
   });
 }
 
-const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getOrgs && state.roarfirekit.createAdministration && state.roarfirekit.isAdmin()) {
-    console.log("Initializing form fields")
-    await initFormFields();
-  }
-});
+if (
+  districts.value.length === 0
+  || schools.value.length === 0
+  || classes.value.length === 0
+  || groups.value.length === 0
+  || families.value.length === 0
+) {
+  unsubscribeOrgs = authStore.$subscribe(async (mutation, state) => {
+    if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
+      await refreshOrgs();
+    }
+  });
+} else {
+  orgsReady.value = true;
+}
+
+if (allVariants.value.length === 0) {
+  unsubscribeAssessments = authStore.$subscribe(async (mutation, state) => {
+    if (state.roarfirekit.getVariants && state.roarfirekit.isAdmin()) {
+      await refreshAssessments();
+    }
+  });
+} else {
+  assessments.value = [allVariants.value, []];
+}
 
 const submit = async () => {
-  const submittedAssessments = assessments.value[1].map((assessment) => ({
-    taskId: assessment.task.id,
-    params: toRaw(assessment.variant.params),
-  }));
-  const orgs = {
-    districts: selectedDistricts.value.map((org) => org.id),
-    schools: selectedSchools.value.map((org) => org.id),
-    classes: selectedClasses.value.map((org) => org.id),
-    groups: selectedGroups.value.map((org) => org.id),
-    families: selectedFamilies.value.map((org) => org.id),
+  pickListError.value = ''
+  submitted.value = true;
+  const isFormValid = await v$.value.$validate()
+  if (isFormValid) {
+    const submittedAssessments = assessments.value[1].map((assessment) => ({
+      taskId: assessment.task.id,
+      params: toRaw(assessment.variant.params),
+    }));
+
+    const tasksUnique = checkForUniqueTasks(submittedAssessments)
+    if (tasksUnique && !_isEmpty(submittedAssessments)) {
+      const orgs = {
+        districts: toRaw(state.districts).map((org) => org.id),
+        schools: toRaw(state.schools).map((org) => org.id),
+        classes: toRaw(state.classes).map((org) => org.id),
+        groups: toRaw(state.groups).map((org) => org.id),
+        families: toRaw(state.families).map((org) => org.id),
+      }
+
+      const orgsValid = checkForRequiredOrgs(orgs);
+      if (orgsValid) {
+        const args = {
+          name: toRaw(state).administrationName,
+          assessments: submittedAssessments,
+          dateOpen: toRaw(state).dates[0],
+          dateClose: toRaw(state).dates[1],
+          sequential: toRaw(state).sequential,
+          orgs: orgs,
+        }
+
+        await roarfirekit.value.createAdministration(args).then(() => {
+          toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+
+          router.push({ name: "Home" });
+        });
+      } else {
+        console.log('need at least one org')
+        orgError.value = 'At least one organization needs to be selected.'
+      }
+    } else {
+      pickListError.value = 'Task selections must not be empty and must be unique.'
+    }
+  } else {
+    console.log('form is invalid')
   }
-
-  const args = {
-    name: administrationName.value,
-    assessments: submittedAssessments,
-    dateOpen: dates.value[0],
-    dateClose: dates.value[1],
-    sequential: sequential.value,
-    orgs: orgs,
-  }
-
-  await roarfirekit.value.createAdministration(args).then(() => {
-    toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
-
-    router.push({ name: "Home" });
-  });
-}
+};
 </script> 
 
 <style lang="scss">
