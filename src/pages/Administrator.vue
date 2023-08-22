@@ -47,7 +47,7 @@ const queryStore = useQueryStore();
 const { administrations } = storeToRefs(queryStore);
 const administrationsReady = ref(administrations.value.length);
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), false));
 
 const userInfo = ref(
   {
