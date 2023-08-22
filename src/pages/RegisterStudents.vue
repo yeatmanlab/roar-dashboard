@@ -386,14 +386,14 @@ function getSchoolId(schoolName) {
 function getClassId(className) {
   return _pick(_find(classes, (c) => {
     return c.name === className;
-  }), ['id', 'abbreviation']))
+  }), ['id', 'abbreviation'])
 }
 
 // Find the group id given the name. undefined if missing.
 function getGroupId(groupName) {
   return _pick(_find(groups, (group) => {
-    return group.id === groupName;
-  }), ['id', 'abbreviation']))
+    return group.name === groupName;
+  }), ['id', 'abbreviation'])
 }
 
 // Functions supporting error table
