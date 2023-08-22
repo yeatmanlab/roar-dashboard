@@ -70,9 +70,9 @@ const routes = [
       import("../pages/Register.vue"),
   },
   {
-    path: '/mass-upload',
-    name: 'MassUploader',
-    component: () => import("../pages/MassUploader.vue"),
+    path: '/register-users',
+    name: 'RegisterUsers',
+    component: () => import("../pages/RegisterUsers.vue"),
     meta: {pageTitle: "Register Students", requireAdmin: true}
   },
   {

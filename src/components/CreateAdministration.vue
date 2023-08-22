@@ -158,7 +158,7 @@ const sidebarActions = ref([
   {
     title: "Register users",
     icon: "pi pi-users",
-    buttonLink: "/mass-upload",
+    buttonLink: "/register-users",
   },
   {
     title: "Create an organization",
