@@ -370,30 +370,30 @@ function addErrorUser(user, error) {
 
 // Find the district id given the name. undefined if missing.
 function getDistrictId(districtName) {
-  return _get(_find(districts, (district) => {
+  return _pick(_find(districts, (district) => {
     return district.name === districtName;
-  }), 'id')
+  }), ['id', 'abbreviation'])
 }
 
 // Find the school id given the name. undefined if missing.
 function getSchoolId(schoolName) {
-  return _get(_find(schools, (school) => {
+  return _pick(_find(schools, (school) => {
     return school.name === schoolName;
-  }), 'id')
+  }), ['id', 'abbreviation'])
 }
 
 // Find the class id given the name. undefined if missing.
 function getClassId(className) {
-  return _get(_find(classes, (c) => {
+  return _pick(_find(classes, (c) => {
     return c.name === className;
-  }), 'id')
+  }), ['id', 'abbreviation']))
 }
 
 // Find the group id given the name. undefined if missing.
 function getGroupId(groupName) {
-  return _get(_find(groups, (group) => {
+  return _pick(_find(groups, (group) => {
     return group.id === groupName;
-  }), 'id')
+  }), ['id', 'abbreviation']))
 }
 
 // Functions supporting error table
