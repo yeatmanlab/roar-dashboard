@@ -1,14 +1,33 @@
 <template>
   <div>
-    <Button label="Remind" @click="remove"/>
-    <Button label="Get Report" @click="remove"/>
-    <Button label="Delete" @click="remove"/>
+    <Button label="Remind" @click="remove" />
+    <Button label="Get Report" @click="remove" />
+    <Button label="Delete" @click="remove" />
     <RoarDataTable :data="data" :columns="columns" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { Vue2ProvideUnheadPlugin } from '@vueuse/head';
+import { defineProps, ref } from 'vue';
+
+// We will use a route like
+// /administration/:id/:orgType/:orgId
+
+// e.g., /administration/123/class/456
+
+const props = defineProps({
+  id: Number,
+  orgType: String,
+  orgId: String,
+});
+
+// Orgs are districts, schools, classes, groups, families.
+// Insert logic to build columns dynamically
+// The logic here should be that if there is only one org of any type, then display that org name above the table.
+// But if there are multiple orgs of any type, then display a column for that org type.
+// If an orgType is provided, then filter results to only that org type.
+
 const data = ref([
   { pid: "PID_1245", assigned: 1691469008099, completed: 1691469018099 },
   { pid: "PID_1013", assigned: 1691469013099, completed: 1691469018099 },
@@ -20,12 +39,12 @@ const data = ref([
 let selectedData = ref([]);
 
 const columns = ref([
-  { field: "pid", header: "PID", dataType: "text"},
-  { field: "assigned", header: "Assigned", dataType: "text"},
-  { field: "completed", header: "Completed", dataType: "text"},
+  { field: "pid", header: "PID", dataType: "text" },
+  { field: "assigned", header: "Assigned", dataType: "text" },
+  { field: "completed", header: "Completed", dataType: "text" },
 ]);
 
-for (let i = 5; i < 500 ; i++) {
+for (let i = 5; i < 500; i++) {
   const minDate = new Date(2023, 0, 1);
   const maxDate = new Date();
   const days = Math.floor(Math.random() * 30);

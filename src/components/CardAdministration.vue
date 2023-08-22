@@ -1,161 +1,310 @@
 <template>
-	<div :data-administration="id" class="p-card card-administration">
-		<div class="card-admin-chart">
-			<Chart type="doughnut" :data="chartData" :options="chartOptions"/>
+	<div class="p-card card-administration">
+		<div v-if="stats" class="card-admin-chart">
+			<Chart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
 		</div>
 
 		<div class="card-admin-body">
-			<h2 class="card-admin-title">{{title}}</h2>
+			<h2 class="card-admin-title">{{ title }}</h2>
 			<div class="card-admin-details">
-				<p><strong>{{dates.start}}—{{dates.end}}</strong></p>
-				<p><strong>Assigned to: </strong> 
-					<span v-for="assignee in assignees" class="card-inline-list-item">
-					  {{ assignee }}
+				<p><strong>{{ dates.start.toLocaleDateString() }} — {{ dates.end.toLocaleDateString() }}</strong></p>
+				<p><strong>Assigned to: </strong>
+					<span v-for="orgType in Object.keys(displayOrgs)" class="card-inline-list-item">
+						<span v-if="displayOrgs[orgType].length">
+							{{ _capitalize(orgType) }}:
+							<span v-for="assignee in displayOrgs[orgType]" class="card-inline-list-item">
+								{{ assignee.name }}
+							</span>
+						</span>
 					</span>
 				</p>
 			</div>
 			<div class="card-admin-assessments">
 				<p><strong>Assessments</strong></p>
-				<p><span v-for="assessment in assessments" class="card-inline-list-item">{{ assessment }}</span></p>
-			</div>			
+				<p><span v-for="assessmentId in assessmentIds" class="card-inline-list-item">{{ assessmentId }}</span></p>
+			</div>
 			<div class="card-admin-link">
-				<router-link
-				  :to="{ name: 'ViewAdministration', params: { id: id } }"
-				  v-slot="{href, route, navigate}"
-				  >
+				<router-link :to="{ name: 'ViewAdministration', params: { id: id } }" v-slot="{ href, route, navigate }">
 					<button :href="href" @click="navigate" class='p-button p-button-secondary p-button-outlined'>
-					  View all details
+						View all details
 					</button>
 				</router-link>
 			</div>
-			
-			<div class="card-admin-class-list">
-				<DataViewClass id="123456" :stats="stats" />
-			</div>
 
-			
+			<TreeTable v-if="isAssigned" :value="hierarchicalAssignedOrgs">
+				<Column field="name" header="Name" expander></Column>
+				<Column v-if="stats" field="id" header="Completion">
+					<template #body="{ node }">
+						<Chart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
+					</template>
+				</Column>
+				<Column field="id" header="" style="width: 6rem">
+					<template #body="{ node }">
+						<router-link
+							:to="{ name: 'ViewAdministration', params: { id: id, orgId: node.data.id, orgType: node.data.orgType } }"
+							v-slot="{ href, route, navigate }">
+							<Button v-tooltip.top="'See completion details'" icon="pi pi-info-circle" severity="secondary" text rounded
+								aria-label="Completion details" size="large" @click="" />
+						</router-link>
+					</template>
+				</Column>
+			</TreeTable>
 		</div>
-				
 	</div>
-
 </template>
 
 <script setup>
-	import { ref, onMounted } from "vue";
-	import DataViewClass from "@/components/DataViewClass.vue";
-	
-	const props = defineProps({
-		id: Number,
-		title: String, 
-		stats: Object,
-		dates: Object,
-		assignees: Array, 
-		assessments: Array,
-	});
-	
-	onMounted(() => {
-		const stats 		= props.stats;
-		const classID 		= '2345';
-		const started 		= props.stats.completed;
-		const completed 	= props.stats.started;
-		const total 		= (props.stats.total - started - completed);
-		chartData.value 	= setChartData(total, started, completed);
-	});
-	
-	const chartData = ref();
-	const chartOptions = ref({
-		cutout: '60%',
-		showToolTips: true,
-		plugins: {
-			  legend: {
-				display: false
-			  },
-			  tooltip: {
-				enabled: true
-			  }
+import { onMounted, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useQueryStore } from "@/store/query";
+import { filterAdminOrgs, removeEmptyOrgs } from "@/helpers";
+import _capitalize from "lodash/capitalize";
+import _isEmpty from "lodash/isEmpty";
+import _toPairs from "lodash/toPairs";
+
+const queryStore = useQueryStore();
+const { adminOrgs } = storeToRefs(queryStore);
+
+const props = defineProps({
+	id: String,
+	title: String,
+	stats: Object,
+	dates: Object,
+	assignees: Object,
+	assessments: Array,
+});
+
+console.log(props);
+
+const assessmentIds = props.assessments.map(assessment => assessment.taskId.toUpperCase());
+
+const assignedOrgs = filterAdminOrgs(adminOrgs.value, props.assignees);
+const displayOrgs = removeEmptyOrgs(assignedOrgs);
+const isAssigned = !_isEmpty(Object.values(displayOrgs));
+const hierarchicalAssignedOrgs = isAssigned ? queryStore.getTreeTableOrgs(assignedOrgs) : null;
+
+const doughnutChartData = ref();
+const doughnutChartOptions = ref();
+const barChartOptions = ref();
+
+const setDoughnutChartOptions = () => ({
+	cutout: '60%',
+	showToolTips: true,
+	plugins: {
+		legend: {
+			display: false
+		},
+		tooltip: {
+			enabled: true
 		}
-	});
-	
-	const setChartData = (total, started, completed) => {
-		  let docStyle = getComputedStyle(document.documentElement);
-		  
-		  return {
-			labels: ['Not Started', 'Started', 'Completed'],
-			datasets: [
-			  {
-				data: [total, started, completed],
+	}
+});
+
+const setDoughnutChartData = () => {
+	const docStyle = getComputedStyle(document.documentElement);
+	let { assigned = 0, started = 0, completed = 0 } = props.stats.total.assignment;
+
+	assigned -= (started + completed);
+	started -= completed;
+
+	return {
+		labels: ['Completed', 'Started', 'Assigned'],
+		datasets: [
+			{
+				data: [completed, started, assigned],
 				backgroundColor: [
-					  docStyle.getPropertyValue('--surface-d'),
-					docStyle.getPropertyValue('--yellow-100'),
 					docStyle.getPropertyValue('--bright-green'),
-					  
+					docStyle.getPropertyValue('--yellow-100'),
+					docStyle.getPropertyValue('--surface-d'),
 				],
 				// hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
-			  }
-			]
-		  };
+			}
+		]
+	};
+};
+
+const getBorderRadii = (left, middle, right) => {
+	const defaultRadius = { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 };
+	const borderRadii = { left: { ...defaultRadius }, middle: { ...defaultRadius }, right: { ...defaultRadius } };
+	if (left > 0) {
+		borderRadii.left.topLeft = Number.MAX_VALUE;
+		borderRadii.left.bottomLeft = Number.MAX_VALUE;
+	} else if (middle > 0) {
+		borderRadii.middle.topLeft = Number.MAX_VALUE;
+		borderRadii.middle.bottomLeft = Number.MAX_VALUE;
+	} else {
+		borderRadii.right.topLeft = Number.MAX_VALUE;
+		borderRadii.right.bottomLeft = Number.MAX_VALUE;
+	}
+
+	if (right > 0) {
+		borderRadii.right.topRight = Number.MAX_VALUE;
+		borderRadii.right.bottomRight = Number.MAX_VALUE;
+	} else if (middle > 0) {
+		borderRadii.middle.topRight = Number.MAX_VALUE;
+		borderRadii.middle.bottomRight = Number.MAX_VALUE;
+	} else {
+		borderRadii.left.topRight = Number.MAX_VALUE;
+		borderRadii.left.bottomRight = Number.MAX_VALUE;
+	}
+
+	return borderRadii;
+}
+
+const setBarChartData = (orgId) => {
+	console.log("In setBarChartData", { orgId, stats: props.stats[orgId] });
+	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId].assignment;
+	const documentStyle = getComputedStyle(document.documentElement);
+
+	assigned -= (started + completed);
+	started -= completed;
+
+	const borderRadii = getBorderRadii(completed, started, assigned);
+	const borderWidth = 0;
+
+	const chartData = {
+		labels: [''],
+		datasets: [
+			{
+				type: 'bar',
+				label: 'Completed',
+				backgroundColor: documentStyle.getPropertyValue('--bright-green'),
+				data: [completed],
+				borderWidth: borderWidth,
+				borderSkipped: false,
+				borderRadius: borderRadii.left,
+			},
+			{
+				type: 'bar',
+				label: 'Started',
+				backgroundColor: documentStyle.getPropertyValue('--yellow-100'),
+				data: [started],
+				borderWidth: borderWidth,
+				borderSkipped: false,
+				borderRadius: borderRadii.middle,
+			},
+			{
+				type: 'bar',
+				label: 'Assigned',
+				backgroundColor: documentStyle.getPropertyValue('--surface-d'),
+				data: [assigned],
+				borderWidth: borderWidth,
+				borderSkipped: false,
+				borderRadius: borderRadii.right,
+			},
+		],
 	};
 
+	return chartData;
+};
 
+const setBarChartOptions = () => {
+	return {
+		indexAxis: 'y',
+		maintainAspectRatio: false,
+		aspectRatio: 9,
+		plugins: {
+			tooltips: {
+				mode: 'index',
+				intersect: false,
+			},
+			legend: false,
+		},
+		scales: {
+			x: {
+				stacked: true,
+				ticks: {
+					display: false,
+				},
+				grid: {
+					display: false,
+				},
+				border: {
+					display: false,
+				}
+			},
+			y: {
+				stacked: true,
+				ticks: {
+					display: false,
+				},
+				grid: {
+					display: false,
+				},
+				border: {
+					display: false,
+				},
+			},
+		},
+	};
+};
+
+onMounted(() => {
+	if (props.stats) {
+		doughnutChartData.value = setDoughnutChartData();
+		doughnutChartOptions.value = setDoughnutChartOptions();
+		barChartOptions.value = setBarChartOptions();
+	}
+})
 </script>
 
 <style lang="scss">
-	.card-administration {
-		text-align: left;
-		width: 100%;
-		background: var(--surface-b);
-		border: 1px solid var(--surface-d);
-		border-radius: var(--border-radius);
-		display: flex;
-		flex-direction: row;
-		gap: 2rem;
+.card-administration {
+	text-align: left;
+	width: 100%;
+	background: var(--surface-b);
+	border: 1px solid var(--surface-d);
+	border-radius: var(--border-radius);
+	display: flex;
+	flex-direction: row;
+	gap: 2rem;
+	padding: 1rem;
+
+	.card-admin-chart {
 		padding: 1rem;
-		
-		.card-admin-chart {
-			padding: 1rem;	
-			width: 23ch;
-		}
-		
-		.card-admin-body {
-			flex: 1 1 auto;
-			display: inline-flex;
-			flex-direction: row;
-			flex-wrap: wrap;
-			align-content: start;
-			
-			p {
-				margin-block: .5rem;
-			}
-		}
-		
-		.card-admin-title {
-			font-weight: bold;
-			width: 100%;
-			padding-bottom: .5rem;
-			border-bottom: 1px solid var(--surface-d);
-			flex: 1 1 100%;
-		}
-		
-		.card-admin-details {
-			width: 45%;
-		}
-				
-		.card-admin-link {
-			margin-top: 2rem;
-			width: 100%;
-		}
-		
-		.card-admin-class-list {
-			width: 100%;
-			margin-top: 2rem;
+		width: 23ch;
+	}
+
+	.card-admin-body {
+		flex: 1 1 auto;
+		display: inline-flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-content: start;
+
+		p {
+			margin-block: .5rem;
 		}
 	}
-	
-	.card-inline-list-item {
-		position: relative;
-		
-		&:not(:last-child):after {
-			content: ", "; 
-		}
+
+	.card-admin-title {
+		font-weight: bold;
+		width: 100%;
+		padding-bottom: .5rem;
+		border-bottom: 1px solid var(--surface-d);
+		flex: 1 1 100%;
 	}
+
+	.card-admin-details {
+		width: 45%;
+	}
+
+	.card-admin-link {
+		margin-top: 2rem;
+		width: 100%;
+	}
+
+	.card-admin-class-list {
+		width: 100%;
+		margin-top: 2rem;
+	}
+}
+
+.card-inline-list-item {
+	position: relative;
+
+	&:not(:last-child):after {
+		content: ", ";
+	}
+}
 </style>
