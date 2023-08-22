@@ -8,7 +8,7 @@ export const sidebarActionOptions = [
   {
     title: "Register students",
     icon: "pi pi-users",
-    buttonLink: { name: "MassUploader" },
+    buttonLink: { name: "RegisterStudents" },
     requiresSuperAdmin: false,
   },
   {
@@ -31,7 +31,7 @@ export const sidebarActionOptions = [
   },
   {
     title: "Create an assignment",
-    icon: "pi pi-plus-circle",
+    icon: "pi pi-question-circle",
     buttonLink: { name: "CreateAdministration" },
     requiresSuperAdmin: true,
   },
