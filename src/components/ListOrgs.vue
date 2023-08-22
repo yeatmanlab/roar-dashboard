@@ -1,48 +1,63 @@
 <template>
-  <router-link :to="{ name: 'Home' }" class="return-button">
-    <Button icon="pi pi-angle-left" label="Return to Dashboard" />
-  </router-link>
-  <div class="card mb-4" id="rectangle">
-    <div class="flex flex-row justify-content-between align-items-start">
-      <div>
-        <span id="heading">Your organizations</span>
-      </div>
-      <Button class="mr-4" icon="pi pi-refresh" severity="secondary" aria-label="Refresh" @click="getOrgs" />
-    </div>
+  <main class="container main">
+    <aside class="main-sidebar">
+      <AdministratorSidebar :actions="sidebarActions" />
+    </aside>
+    <section class="main-body">
+      <Panel header="Your organizations">
+        <template #icons>
+          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
+            <span :class="spinIcon"></span>
+          </button>
+        </template>
 
-    <hr>
-
-    <TreeTable :value="hierarchicalAdminOrgs" :paginator="true" :rows="5" :rowsPerPageOptions="[5, 10, 25]">
-      <Column field="name" header="Name" expander></Column>
-      <Column field="orgType" header="Type"></Column>
-      <Column field="abbreviation" header="Abbreviation"></Column>
-      <Column field="grade" header="Grade" style="width: 7rem"></Column>
-    </TreeTable>
-  </div>
+        <TreeTable :value="hierarchicalAdminOrgs" :paginator="true" :rows="5" :rowsPerPageOptions="[5, 10, 25]">
+          <Column field="name" header="Name" expander></Column>
+          <Column field="orgType" header="Type"></Column>
+          <Column field="abbreviation" header="Abbreviation"></Column>
+          <Column field="grade" header="Grade" style="width: 7rem"></Column>
+        </TreeTable>
+      </Panel>
+    </section>
+  </main>
 </template>
 
 <script setup>
+import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import _isEmpty from "lodash/isEmpty";
 import _union from "lodash/union";
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import { getSidebarActions } from "../router/sidebarActions";
 
 const queryStore = useQueryStore();
 const authStore = useAuthStore();
 const { adminOrgs, hierarchicalAdminOrgs } = storeToRefs(queryStore);
 
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+
+const refreshing = ref(false);
+const spinIcon = computed(() => {
+  if (refreshing.value) return "pi pi-spin pi-spinner";
+  return "pi pi-refresh";
+});
+
 let unsubscribe;
 
-const getOrgs = async () => {
+const refresh = async () => {
+  refreshing.value = true;
   if (unsubscribe) unsubscribe();
-  queryStore.getAdminOrgs();
+  queryStore.getAdminOrgs().then(() => {
+    refreshing.value = false;
+  });
 }
 
 if (_isEmpty(_union(...Object.values(adminOrgs.value)))) {
   unsubscribe = authStore.$subscribe(async (mutation, state) => {
     if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-      await getOrgs();
+      await refresh();
     }
   });
 }
