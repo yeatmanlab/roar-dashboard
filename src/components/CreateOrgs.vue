@@ -48,7 +48,7 @@
           <div class="col-12 md:col-6 lg:col-3">
             <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             <span class="p-float-label">
-              <InputText id="org-name" v-model="orgName" class="w-full" />
+              <InputText id="org-name" v-model="state.orgName" class="w-full" />
               <label for="org-name">{{ orgTypeLabel }} Name</label>
             </span>
           </div>
@@ -56,7 +56,7 @@
           <div class="col-12 md:col-6 lg:col-3">
             <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
             <span class="p-float-label">
-              <InputText id="org-initial" v-model="orgInitials" class="w-full" />
+              <InputText id="org-initial" v-model="state.orgInitials" class="w-full" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
             </span>
           </div>
@@ -139,8 +139,6 @@ const parentOrgType = computed(() => {
   }
 })
 
-const orgName = ref();
-const orgInitials = ref();
 const grade = ref();
 const grades = [
   { name: 'Pre-K', value: 'PK' },
@@ -205,8 +203,8 @@ const submit = async (event) => {
   const isFormValid = await v$.value.$validate()
   if (isFormValid) {
     let orgData = {
-      name: orgName.value,
-      abbreviation: orgInitials.value,
+      name: state.orgName,
+      abbreviation: state.orgInitials,
     };
 
     if (parentOrgType.value?.singular === "school") {
