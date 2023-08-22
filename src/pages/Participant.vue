@@ -4,7 +4,7 @@
       <AppSpinner v-if="loadingGames" />
       <div v-else class="tabs-container">
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-        <GameTabs :games="assessments" />
+        <GameTabs :games="assessments" :sequential="isSequential" />
       </div>
     </div>
     <div v-else>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, toRaw } from "vue";
 import GameTabs from "../components/GameTabs.vue";
 import ParticipantSidebar from "../components/ParticipantSidebar.vue";
 import _filter from 'lodash/filter'
@@ -36,6 +36,7 @@ const { isFirekitInit, firekitUserData, roarfirekit } = storeToRefs(authStore);
 const loadingGames = ref(true)
 const noGamesAvailable = ref(false)
 let assessments = ref([]);
+let isSequential = ref(true)
 let totalGames = ref(0);
 let completeGames = ref(0);
 
@@ -48,12 +49,14 @@ async function setUpAssignments() {
   const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
   console.log("assignedAssignments from storeToRefs: ", assignedAssignments);
   let assignmentInfo = [];
+  let allAdminInfo = [];
   try {
     console.log("trying to get assignmentInfo from roarfirekit.");
     // This if statement is important to prevent overwriting the session storage cache.
     if (assignedAssignments.length > 0) {
       console.log("roarfirekit has assigned assignments.", assignedAssignments);
       assignmentInfo = await authStore.getAssignments(assignedAssignments);
+      allAdminInfo = await authStore.getAdministration(assignedAssignments);
     }
   } catch (e) {
     console.log("in catch block of authStore.getAssignments()");
@@ -61,6 +64,7 @@ async function setUpAssignments() {
     if (authStore.firekitAssignments) {
       console.log("roarfirekit has cached firekit assignments.");
       assignmentInfo = authStore.firekitAssignments
+      allAdminInfo = authStore.firekitAdminInfo
       console.log("assignmentInfo from authStore.firekitAssignments: ", assignmentInfo);
     } else {
       console.log("roarfirekit has no cached firekit assignments.");
@@ -71,6 +75,9 @@ async function setUpAssignments() {
     console.log("got through try/catch and assignmentInfo has length")
     const assessmentInfo = _get(_head(assignmentInfo), 'assessments');
     assessments.value = assessmentInfo;
+
+    const adminInfo = _head(toRaw(allAdminInfo))
+    isSequential.value = _get(adminInfo, 'sequential')
 
     const completedTasks = _filter(assessmentInfo, (task) => task.completedOn)
     totalGames.value = assessmentInfo.length;

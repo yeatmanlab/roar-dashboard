@@ -43,12 +43,11 @@ import _get from 'lodash/get'
 import _find from 'lodash/find'
 import _findIndex from 'lodash/findIndex'
 const props = defineProps({
-  games: {required: true, default: []}
+  games: {required: true, default: []},
+  sequential: {required: false, default: true}
 })
 
 const selectedIndex = ref(0);
-// TODO: Grab this from the db instead of hard-coding
-const sequential = ref(false);
 
 const currentGameId = computed(() => {
   return _get(_find(props.games, (game) => { return (game.completedOn === undefined) }), 'taskId')

@@ -21,6 +21,7 @@ export const useAuthStore = () => {
         firekitAssignments: {
           assigned: null
         },
+        firekitAdminInfo: null,
         firekitAssignmentIds: null,
         firekitIsAdmin: false,
         firekitIsSuperAdmin: false,
@@ -59,6 +60,15 @@ export const useAuthStore = () => {
           return this.firekitAssignments.assigned
         }
         
+      },
+      async getAdministration(administration) {
+        try {
+          const reply = await this.roarfirekit.getAdministrations(administration)
+          this.firekitAdminInfo = reply
+          return this.firekitAdminInfo
+        } catch(e) {
+          return this.firekitAdminInfo
+        }
       },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
