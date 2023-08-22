@@ -26,6 +26,7 @@ export const useAuthStore = () => {
         firekitIsAdmin: false,
         firekitIsSuperAdmin: false,
         cleverOAuthRequested: false,
+        emailForSignInLink: null,
       };
     },
     getters: {
@@ -40,7 +41,6 @@ export const useAuthStore = () => {
       isUserAdmin() {
         if(this.isFirekitInit) {
           this.firekitIsAdmin = this.roarfirekit.isAdmin();
-          console.log('set firekitIsAdmin to', this.firekitIsAdmin)
         }
         return this.firekitIsAdmin;
       },
@@ -102,7 +102,25 @@ export const useAuthStore = () => {
             }
           })
         }
-        
+      },
+      async initiateLoginWithEmailLink({ email }) {
+        if (this.isFirekitInit) {
+          const redirectUrl = `${window.location.origin}/auth-email-link`;
+          return this.roarfirekit.initiateLoginWithEmailLink({ email, redirectUrl }).then(() => {
+            window.localStorage.setItem('emailForSignIn', email);
+          });
+        }
+      },
+      async signInWithEmailLink({ email, emailLink }) {
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithEmailLink({ email, emailLink }).then(() => {
+            if(this.roarfirekit.userData){
+              this.hasUserData = true
+              this.firekitUserData = this.roarfirekit.userData
+            }
+            window.localStorage.removeItem('emailForSignIn');
+          });
+        }
       },
       async signInWithGooglePopup() {
         if(this.isFirekitInit){

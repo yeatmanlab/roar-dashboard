@@ -70,9 +70,9 @@ const routes = [
       import("../pages/Register.vue"),
   },
   {
-    path: '/mass-upload',
-    name: 'MassUploader',
-    component: () => import("../pages/MassUploader.vue"),
+    path: '/register-students',
+    name: 'RegisterStudents',
+    component: () => import("../pages/RegisterStudents.vue"),
     meta: {pageTitle: "Register Students", requireAdmin: true}
   },
   {
@@ -103,16 +103,35 @@ const routes = [
     meta: { pageTitle: "Clever Authentication" },
   },
   {
+    path: "/auth-email-link",
+    name: "AuthEmailLink",
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import("../components/auth/AuthEmailLink.vue"),
+    meta: { pageTitle: "Email Link Authentication" },
+  },
+  {
+    path: "/auth-email-sent",
+    name: "AuthEmailSent",
+    component: () => import("../components/auth/AuthEmailSent.vue"),
+    meta: { pageTitle: "Authentication Email Sent" },
+  },
+  {
     path: "/administrator",
     name: "Administrator",
     component: () => import("../pages/Administrator.vue"),
     meta: {pageTitle: "Administrator", requireAdmin: true}
   },
   {
-    path: "/create-admin",
+    path: "/create-administration",
     name: "CreateAdministration",
     component: () => import("../components/CreateAdministration.vue"),
     meta: {pageTitle: "Create an administration", requireAdmin: true, requireSuperAdmin: true}
+  },
+  {
+    path: "/create-administrator",
+    name: "CreateAdministrator",
+    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministrator.vue"),
+    meta: {pageTitle: "Create an administrator account", requireAdmin: true}
   },
   { 
     path: "/create-orgs",
@@ -161,9 +180,17 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const store = useAuthStore();
+
+  const allowedUnauthenticatedRoutes = [
+    "SignIn",
+    "AuthClever",
+    "AuthEmailLink",
+    "AuthEmailSent",
+  ];
+
   // Check if user is signed in. If not, go to signin
   if (!to.path.includes("__/auth/handler")
-    && (!store.isAuthenticated && to.name !== "SignIn" && to.name !== "AuthClever")) {
+    && (!store.isAuthenticated && !allowedUnauthenticatedRoutes.includes(to.name))) {
     return { name: "SignIn" }
   }
   // Check if user is an admin. If not, prevent routing to page
