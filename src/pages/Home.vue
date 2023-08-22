@@ -1,7 +1,7 @@
 <template>
   <Participant v-if="!isAdminRef"/>
   <Administrator v-else-if="isAdminRef" />
-  <ConsentModal v-if="showConsent" :consent-text="confirmText" consent-type="Assent" @accepted="updateConsent"/>
+  <ConsentModal v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent"/>
 </template>
 
 <script setup>
@@ -17,7 +17,7 @@ const { isFirekitInit, roarfirekit, firekitUserData } = storeToRefs(authStore)
 const isAdmin = authStore.isUserAdmin();
 const isAdminRef = ref(isAdmin)
 
-const consentType = ref(isAdmin ? 'consent' : 'assent')
+const consentType = ref(isAdmin ? 'tos' : 'assent')
 const showConsent = ref(false);
 const confirmText = ref("");
 const consentVersion = ref("");

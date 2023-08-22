@@ -19,6 +19,11 @@ const props = defineProps({
   consentText: {require: true, default: 'Text Here'},
   consentType: {require: true, default: 'Consent'},
 })
+const consentHeader = {
+  tos: "Terms of Service",
+  consent: "Consent",
+  assent: "Assent"
+}
 const emit = defineEmits(['accepted']);
 
 const confirm = useConfirm();
@@ -31,13 +36,13 @@ const markdownToHtml = computed(() => {
 onMounted(() => {
   confirm.require({
     group: 'templating',
-    header: `${props.consentType} Form`,
+    header: `${consentHeader[props.consentType]} Form`,
     icon: 'pi pi-question-circle',
     acceptLabel: 'Continue',
     acceptIcon: 'pi pi-check',
     accept: () => {
       emit('accepted');
-      toast.add({ severity: 'info', summary: 'Confirmed', detail: `${props.consentType} status updated.`, life: 3000 });
+      toast.add({ severity: 'info', summary: 'Confirmed', detail: `${consentHeader[props.consentType]} status updated.`, life: 3000 });
     },
   });
 })
