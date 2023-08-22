@@ -105,7 +105,7 @@
             You must agree to the terms and conditions
         </small>
       </div>
-      <Button type="submit" label="Next" class="submit-button" />
+      <Button type="submit" label="Submit" class="submit-button" />
     </form>
   </div>
 </template>
@@ -114,20 +114,20 @@
 import { computed, reactive, ref, toRaw, watch } from "vue";
 import { required, sameAs, minLength, } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 
+const router = useRouter()
 
 const props = defineProps({
   isRegistering: {type: Boolean, default: true}
 });
 
-// TODO: Include middle
 const state = reactive({
   activationCode: "",
   firstName: "",
   lastName: "",
-  usernameOrEmail: "",
   password: "",
   confirmPassword: "",
   accept: [],
@@ -174,6 +174,8 @@ const handleFormSubmit = (isFormValid) => {
   }
 
   resetForm()
+
+  router.push('/register/student')
   // authStore.registerWithEmailAndPassword(state);
 };
 

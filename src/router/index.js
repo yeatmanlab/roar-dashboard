@@ -66,11 +66,19 @@ const routes = [
   {
     path: "/register",
     name: "Register",
-    components: { 
-      default: () => import('../pages/Register.vue'),
-      registerParent: () => import("../components/auth/Register.vue"),
-      registerStudent: () => import("../components/auth/RegisterStudent.vue")
-    },
+    component: () => import('../pages/Register.vue'),
+    children: [
+      {
+          name: 'registerParent',
+          path: '',
+          component: () => import('../components/auth/RegisterParent.vue'),
+      },
+      {
+          name: 'registerStudent',
+          path: 'student',
+          component: () => import('../components/auth/RegisterStudent.vue')
+      },
+    ],
     meta: { requiresGuest: true },
   },
   {

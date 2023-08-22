@@ -77,6 +77,7 @@ app.use(pinia);
 app.use(router);
 app.use(createHead());
 
+app.component("AutoComplete", AutoComplete)
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
 app.component("Badge", Badge);
@@ -135,6 +136,7 @@ Object.entries(appComponentFiles).forEach(([path, m]) => {
 });
 
 import { Buffer } from 'buffer'
+import AutoComplete from "primevue/autocomplete";
 globalThis.Buffer = Buffer
 
 app.mount("#app");
