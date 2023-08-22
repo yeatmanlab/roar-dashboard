@@ -444,7 +444,7 @@ function getClassId(className){
 // Find the group id given the name. undefined if missing.
 function getGroupId(groupName){
   return _get(_find(groups, (group) => {
-    return group.id === groupName;
+    return group.name === groupName;
   }), 'id')
 }
 
