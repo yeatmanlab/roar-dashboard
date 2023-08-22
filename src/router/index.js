@@ -68,7 +68,6 @@ const routes = [
     name: "Register",
     component: () =>
       import("../pages/Register.vue"),
-    meta: { requiresGuest: true },
   },
   {
     path: '/mass-upload',
@@ -80,7 +79,7 @@ const routes = [
     path: "/signin",
     name: "SignIn",
     component: () => import("../pages/SignIn.vue"),
-    meta: { requiresGuest: true, pageTitle: "Sign In" },
+    meta: { pageTitle: "Sign In" },
   },
   {
     path: "/signout",
@@ -106,40 +105,39 @@ const routes = [
   {
     path: "/administrator",
     name: "Administrator",
-    component: () => import(/* webpackChunkName: "Administrator" */ "../pages/Administrator.vue"),
+    component: () => import("../pages/Administrator.vue"),
     meta: {pageTitle: "Administrator", requireAdmin: true}
   },
   {
     path: "/create-admin",
     name: "CreateAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
+    component: () => import("../components/CreateAdministration.vue"),
     meta: {pageTitle: "Create an administration", requireAdmin: true, requireSuperAdmin: true}
   },
   { 
-    path: "/create-org",
-    name: "CreateOrg",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrg.vue"),
+    path: "/create-orgs",
+    name: "CreateOrgs",
+    component: () => import("../components/CreateOrgs.vue"),
     meta: {pageTitle: "Create an organization", requireAdmin: true, requireSuperAdmin: true}
   },
+  { 
+    path: "/list-orgs",
+    name: "ListOrgs",
+    component: () => import("../components/ListOrgs.vue"),
+    meta: {pageTitle: "List organizations", requireAdmin: true}
+  },
   {
     path: "/administration/:id",
     name: "ViewAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../pages/Administration.vue"),
+    component: () => import("../pages/Administration.vue"),
     meta: {pageTitle: "View Administration", requireAdmin: true}
   },
-
-  {
-    path: "/administration/:id",
-    name: "ViewAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../pages/Administration.vue"),
-  },
-
   {
     path: "/enable-cookies",
     name: "EnableCookies",
     component: () =>
       import("../pages/EnableCookies.vue"),
-    meta: { requiresGuest: true, pageTitle: "Enable Cookies" },
+    meta: { pageTitle: "Enable Cookies" },
   },
   {
     path: "/:pathMatch(.*)*",
