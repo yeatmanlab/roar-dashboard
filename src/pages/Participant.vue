@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, toRaw } from "vue";
 import GameTabs from "../components/GameTabs.vue";
 import ParticipantSidebar from "../components/ParticipantSidebar.vue";
 import _filter from 'lodash/filter'

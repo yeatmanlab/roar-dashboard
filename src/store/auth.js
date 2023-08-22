@@ -3,6 +3,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
 
 import _get from "lodash/get";
+import _set from "lodash/set";
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -81,6 +82,13 @@ export const useAuthStore = () => {
         this.roarfirekit = await initNewFirekit().then((firekit) => {
           return firekit
         });
+      },
+      async getLegalDoc(docName) {
+        return await this.roarfirekit.getLegalDoc(docName);
+      },
+      async updateConsentStatus(docName, consentVersion) {
+        _set(this.firekitUserData, `legal.${docName}.${consentVersion}`, new Date())
+        this.roarfirekit.updateConsentStatus(docName, consentVersion);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
