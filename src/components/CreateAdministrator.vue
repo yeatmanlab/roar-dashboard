@@ -101,7 +101,9 @@ import _cloneDeep from "lodash/cloneDeep";
 import _union from "lodash/union";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
-import AppSpinner from "./AppSpinner.vue";
+import AppSpinner from "@/components/AppSpinner.vue";
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import { getSidebarActions } from "../router/sidebarActions";
 
 const router = useRouter();
 const toast = useToast();
@@ -115,6 +117,8 @@ const email = ref();
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
+
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
 const { roarfirekit } = storeToRefs(authStore);
 

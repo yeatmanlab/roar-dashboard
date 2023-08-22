@@ -146,27 +146,10 @@ import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
-import AppSpinner from "./AppSpinner.vue";
-
+import AppSpinner from "@/components/AppSpinner.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-const sidebarActions = ref([
-  {
-    title: "Back to Dashboard",
-    icon: "pi pi-arrow-left",
-    buttonLink: "/administrator",
-  },
-  {
-    title: "Register users",
-    icon: "pi pi-users",
-    buttonLink: "/mass-upload",
-  },
-  {
-    title: "Create an organization",
-    icon: "pi pi-database",
-    buttonLink: "/create-orgs",
-  }
-]);
 
+import { getSidebarActions } from "../router/sidebarActions";
 
 const router = useRouter();
 const toast = useToast();
@@ -191,6 +174,8 @@ const dates = ref();
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
+
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
 const { roarfirekit } = storeToRefs(authStore);
 
