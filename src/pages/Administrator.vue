@@ -29,8 +29,7 @@ const { administrations } = storeToRefs(queryStore);
 const sidebarActions = ref([
   {
     title: "Register users",
-    content: "Create new student account by uploading a CSV file.",
-    buttonText: "Go",
+    icon: "pi pi-users",
     buttonLink: "/register-users",
   },
   {
