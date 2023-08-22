@@ -59,7 +59,7 @@ onMounted(() => {
   border-radius: 5px;
 }
 .p-confirm-dialog-reject {
-  display: none;
+  display: none !important;
 }
 .p-dialog-header-close {
   display: none !important;
