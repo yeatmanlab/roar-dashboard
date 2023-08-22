@@ -3,51 +3,51 @@
     <aside class="main-sidebar">
       <AdministratorSidebar :userInfo="userInfo" :actions="sidebarActions" />
     </aside>
-
     <section class="main-body">
-      <div v-if="administrations.length" v-for="(a, index) in administrations" :key="index">
-        <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
-          :assessments="a.assessments"></CardAdministration>
-      </div>
+      <Panel header="Your administrations">
+        <template #icons>
+          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
+            <span :class="spinIcon"></span>
+          </button>
+        </template>
+
+        <div v-if="administrationsReady">
+          <div v-if="administrations.length" v-for="(a, index) in administrations" :key="index">
+            <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
+              :assessments="a.assessments"></CardAdministration>
+          </div>
+        </div>
+        <div v-else class="loading-container">
+          <AppSpinner style="margin-bottom: 1rem;" />
+          <span>Loading Administrations</span>
+        </div>
+      </Panel>
     </section>
   </main>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import CardAdministration from "@/components/CardAdministration.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { useAuthStore } from "@/store/auth";
 import { useQueryStore } from "@/store/query";
+import { getSidebarActions } from "../router/sidebarActions";
+
+const refreshing = ref(false);
+const spinIcon = computed(() => {
+  if (refreshing.value) return "pi pi-spin pi-spinner";
+  return "pi pi-refresh";
+});
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
 const { administrations } = storeToRefs(queryStore);
+const administrationsReady = ref(administrations.value.length);
 
-const sidebarActions = ref([
-  {
-    title: "Register users",
-    icon: "pi pi-users",
-    buttonLink: "/mass-upload",
-  },
-  {
-    title: "Create an organization",
-    icon: "pi pi-database",
-    buttonLink: "/create-orgs",
-  },
-  {
-    title: "Create an administration",
-    icon: "",
-    buttonLink: "/create-admin",
-  },
-  {
-    title: "List organizations",
-    icon: "",
-    buttonLink: "/list-orgs",
-  },
-]);
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), false));
 
 const userInfo = ref(
   {
@@ -56,15 +56,20 @@ const userInfo = ref(
   }
 )
 
-const getAdminDocs = async () => {
+const refresh = async () => {
   unsubscribe();
-  queryStore.getAdminOrgs();
-  queryStore.getMyAdministrations();
+  refreshing.value = true;
+  const orgsPromise = queryStore.getAdminOrgs();
+  const adminsitrationsPromise = queryStore.getMyAdministrations();
+  await Promise.all([orgsPromise, adminsitrationsPromise]).then(() => {
+    administrationsReady.value = true;
+    refreshing.value = false;
+  });
 }
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.getOrgs && state.roarfirekit.getMyAdministrations && state.roarfirekit.isAdmin()) {
-    await getAdminDocs();
+    await refresh();
   }
 });
 </script>

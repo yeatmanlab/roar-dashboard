@@ -5,12 +5,17 @@
     </aside>
     <section class="main-body">
       <Panel header="Create a new organization">
+        <template #icons>
+          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
+            <span :class="spinIcon"></span>
+          </button>
+        </template>
         Use this form to create a new organization.
 
         <Divider />
 
-        <div class="grid grid-flow-col auto-cols-max mt-4">
-          <div class="col-12 mb-4">
+        <div class="grid mt-4">
+          <div class="col-12 mb-2">
             <span class="p-float-label">
               <Dropdown v-model="orgType" inputId="org-type" :options="orgTypes" showClear optionLabel="singular"
                 placeholder="Select an org type" class="w-full md:w-30rem" />
@@ -18,33 +23,10 @@
             </span>
           </div>
 
-          <div class="col-3">
-            <span class="p-float-label">
-              <InputText id="org-name" v-model="orgName" class="w-full" />
-              <label for="org-name">{{ orgTypeLabel }} Name</label>
-            </span>
-          </div>
-
-          <div class="col-3">
-            <span class="p-float-label">
-              <InputText id="org-initial" v-model="orgInitials" class="w-full" />
-              <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
-            </span>
-          </div>
-
-          <div class="col-3" v-if="parentOrgType === 'school'">
-            <span class="p-float-label">
-              <Dropdown v-model="grade" inputId="grade" :options="grades" showClear optionLabel="name"
-                placeholder="Select a grade" class="w-full" />
-              <label for="grade">Grade</label>
-            </span>
-          </div>
-
-
-          <div class="col-12 mt-2" v-if="parentOrgType">
+          <div class="col-12" v-if="parentOrgType">
             <div v-if="parentOrgs.length > 1">
               <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType.singular }}.</p>
-              <span class="p-float-label">
+              <span class="p-float-label my-4">
                 <Dropdown v-model="parentOrg" inputId="parent-org" :options="parentOrgs" showClear optionLabel="name"
                   :placeholder="`Select a ${parentOrgType.singular}`" class="w-full md:w-14rem" />
                 <label for="parent-org">{{ _capitalize(parentOrgType.singular) }}</label>
@@ -63,6 +45,29 @@
             </div>
           </div>
 
+          <div class="col-12 md:col-6 lg:col-3">
+            <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
+            <span class="p-float-label">
+              <InputText id="org-name" v-model="state.orgName" class="w-full" />
+              <label for="org-name">{{ orgTypeLabel }} Name</label>
+            </span>
+          </div>
+
+          <div class="col-12 md:col-6 lg:col-3">
+            <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
+            <span class="p-float-label">
+              <InputText id="org-initial" v-model="state.orgInitials" class="w-full" />
+              <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
+            </span>
+          </div>
+
+          <div class="col-12 md:col-6 lg:col-3" v-if="parentOrgType?.singular === 'school'">
+            <span class="p-float-label">
+              <Dropdown v-model="grade" inputId="grade" :options="grades" showClear optionLabel="name"
+                placeholder="Select a grade" class="w-full" />
+              <label for="grade">Grade</label>
+            </span>
+          </div>
         </div>
 
         <Divider />
@@ -75,40 +80,41 @@
         </div>
 
       </Panel>
-
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { useRouter } from 'vue-router';
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
 import { storeToRefs } from "pinia";
 import _capitalize from "lodash/capitalize";
 import _get from "lodash/get";
+import { useVuelidate } from "@vuelidate/core";
+import { required } from "@vuelidate/validators";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import { getSidebarActions } from "../router/sidebarActions";
 
-const sidebarActions = ref([
-  {
-    title: "Back to Dashboard",
-    icon: "pi pi-arrow-left",
-    buttonLink: "/administrator",
-  },
-  {
-    title: "Register users",
-    icon: "pi pi-users",
-    buttonLink: "/mass-upload",
-  },
-  {
-    title: "Create an organization",
-    icon: "pi pi-database",
-    buttonLink: "/create-org",
-  }
-]);
+const state = reactive({
+  orgName: "",
+  orgInitials: "",
+})
+const rules = {
+  orgName: { required },
+  orgInitials: { required }
+}
+const v$ = useVuelidate(rules, state);
+const submitted = ref(false);
+
+const refreshing = ref(false);
+const spinIcon = computed(() => {
+  if (refreshing.value) return "pi pi-spin pi-spinner";
+  return "pi pi-refresh";
+});
 
 const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district' },
@@ -133,8 +139,6 @@ const parentOrgType = computed(() => {
   }
 })
 
-const orgName = ref();
-const orgInitials = ref();
 const grade = ref();
 const grades = [
   { name: 'Pre-K', value: 'PK' },
@@ -161,6 +165,7 @@ const queryStore = useQueryStore();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { adminOrgs } = storeToRefs(queryStore);
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
 const districts = ref(adminOrgs.value.districts || []);
 const schools = ref(adminOrgs.value.schools || []);
@@ -194,41 +199,49 @@ const preSubmit = (event) => {
 }
 
 const submit = async (event) => {
-  let orgData = {
-    name: orgName.value,
-    abbreviation: orgInitials.value,
-  };
+  submitted.value = true;
+  const isFormValid = await v$.value.$validate()
+  if (isFormValid) {
+    let orgData = {
+      name: state.orgName,
+      abbreviation: state.orgInitials,
+    };
 
-  if (parentOrgType.value?.singular === "school") {
-    if (parentOrg.value?.id) {
-      orgData.schoolId = parentOrg.value.id;
+    if (parentOrgType.value?.singular === "school") {
+      if (parentOrg.value?.id) {
+        orgData.schoolId = parentOrg.value.id;
+      }
+    } else if (parentOrgType.value?.singular === "district") {
+      if (parentOrg.value?.id) {
+        orgData.districtId = parentOrg.value.id;
+      }
     }
-  } else if (parentOrgType.value?.singular === "district") {
-    if (parentOrg.value?.id) {
-      orgData.districtId = parentOrg.value.id;
-    }
+
+    if (grade.value) orgData.grade = grade.value.value;
+
+    await roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData).then(() => {
+      toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
+      router.push({ name: 'ListOrgs' });
+    })
+  } else {
+    console.log("Form is invalid");
   }
-
-  if (grade.value) orgData.grade = grade.value.value;
-
-  await roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData).then(() => {
-    toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-    router.push({ name: 'ListOrgs' })
-  })
 };
 
 let unsubscribe;
 
-const getOrgs = async () => {
+const refresh = async () => {
   if (unsubscribe) unsubscribe();
+  refreshing.value = true;
   districts.value = await queryStore.getOrgs("districts");
   schools.value = await queryStore.getOrgs("schools");
+  refreshing.value = false;
 }
 
 if (districts.value.length === 0 || schools.value.length === 0) {
   unsubscribe = authStore.$subscribe(async (mutation, state) => {
     if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-      await getOrgs();
+      await refresh();
     }
   });
 }
