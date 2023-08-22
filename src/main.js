@@ -20,7 +20,6 @@ import Checkbox from "primevue/checkbox";
 import Chart from 'primevue/chart'
 import Chip from "primevue/chip";
 import ConfirmPopup from "primevue/confirmpopup";
-import ConfirmationService from 'primevue/confirmationservice';
 import ConfirmDialog from "primevue/confirmdialog";
 import DataView from 'primevue/dataview';
 import Dialog from 'primevue/dialog';
