@@ -41,7 +41,6 @@ export const useAuthStore = () => {
       isUserAdmin() {
         if(this.isFirekitInit) {
           this.firekitIsAdmin = this.roarfirekit.isAdmin();
-          console.log('set firekitIsAdmin to', this.firekitIsAdmin)
         }
         return this.firekitIsAdmin;
       },

@@ -4,15 +4,11 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <div class="card" id="rectangle">
-        <div class="flex flex-row justify-content-between align-items-start">
-          <div>
-            <span id="heading">Create a new administration</span>
-            <p id="section-heading">Use this form to create a new administration.</p>
-          </div>
-          <Button class="mr-4" icon="pi pi-refresh" severity="secondary" aria-label="Refresh" @click="initFormFields" />
-        </div>
-        <hr>
+      <Panel header="Create a new administration">
+        Use this form to create a new administration and assign it to organizations.
+
+        <Divider />
+
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
@@ -30,64 +26,69 @@
           </div>
         </div>
 
-        <div style="width: fit-content;">
-          <p id="section-heading">Assign this administration to organizations</p>
-        </div>
-        <div class="formgrid grid mt-5 mb-5" v-if="orgsReady">
-          <div class="field col" v-if="districts.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                inputId="districts" />
-              <label for="districts">Districts</label>
-            </span>
-          </div>
+        <Panel header="Assign this administration to organizations">
+          <template #icons>
+            <button class="p-panel-header-icon p-link mr-2" @click="refreshOrgs">
+              <span :class="spinIcon.orgs"></span>
+            </button>
+          </template>
+          <div class="formgrid grid mt-5 mb-5" v-if="orgsReady">
+            <div class="field col" v-if="districts.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="districts" />
+                <label for="districts">Districts</label>
+              </span>
+            </div>
 
-          <div class="field col" v-if="schools.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                inputId="schools" />
-              <label for="schools">Schools</label>
-            </span>
-          </div>
+            <div class="field col" v-if="schools.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="schools" />
+                <label for="schools">Schools</label>
+              </span>
+            </div>
 
-          <div class="field col" v-if="classes.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                inputId="classes" />
-              <label for="classes">Classes</label>
-            </span>
-          </div>
+            <div class="field col" v-if="classes.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="classes" />
+                <label for="classes">Classes</label>
+              </span>
+            </div>
 
-          <div class="field col" v-if="groups.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
-                inputId="groups" />
-              <label for="groups">Groups</label>
-            </span>
-          </div>
+            <div class="field col" v-if="groups.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="groups" />
+                <label for="groups">Groups</label>
+              </span>
+            </div>
 
-          <div class="field col" v-if="families.length > 0">
-            <span class="p-float-label">
-              <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
-                inputId="families" />
-              <label for="families">Families</label>
-            </span>
-          </div>
-        </div>
-        <div v-else class="loading-container">
-          <AppSpinner style="margin-bottom: 1rem;" />
-          <span>Loading Organizations</span>
-        </div>
-
-        <div class="col-12 mb-3">
-          <div class="flex flex-row justify-content-between align-items-center flex-wrap mb-3">
-            <p id="section-heading">Select Assessments</p>
-            <div class="flex flex-row align-items-center justify-content-end gap-3">
-              <!-- <label for="sequential">Require sequential?</label> -->
-              <span>Require sequential?</span>
-              <InputSwitch v-model="sequential" />
+            <div class="field col" v-if="families.length > 0">
+              <span class="p-float-label">
+                <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
+                  inputId="families" />
+                <label for="families">Families</label>
+              </span>
             </div>
           </div>
+          <div v-else class="loading-container">
+            <AppSpinner style="margin-bottom: 1rem;" />
+            <span>Loading Organizations</span>
+          </div>
+        </Panel>
+
+        <Panel class="mt-3" header="Assign this administration to organizations">
+          <template #icons>
+            <div class="flex flex-row align-items-center justify-content-end">
+              <span>Require sequential?</span>
+              <InputSwitch class="ml-2" v-model="sequential" />
+              <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments">
+                <span :class="spinIcon.assessments"></span>
+              </button>
+            </div>
+          </template>
 
           <PickList v-if="assessments[0].length || assessments[1].length" v-model="assessments"
             :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id" :stripedRows="true" :pt="{
@@ -124,18 +125,18 @@
             <AppSpinner style="margin-bottom: 1rem;" />
             <span>Loading Assessments</span>
           </div>
-        </div>
+        </Panel>
 
         <div class="col-12 mb-3">
           <Button label="Create Administration" @click="submit" />
         </div>
-      </div>
+      </Panel>
     </section>
   </main>
 </template>
 
 <script setup>
-import { ref, toRaw } from "vue";
+import { computed, onMounted, reactive, ref, toRaw } from "vue";
 import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
 import { useToast } from "primevue/usetoast";
@@ -153,6 +154,16 @@ import { getSidebarActions } from "../router/sidebarActions";
 
 const router = useRouter();
 const toast = useToast();
+
+const refreshing = reactive({
+  orgs: false,
+  assessments: false,
+});
+
+const spinIcon = computed(() => ({
+  orgs: refreshing.orgs ? "pi pi-spin pi-spinner" : "pi pi-refresh",
+  assessments: refreshing.assessments ? "pi pi-spin pi-spinner" : "pi pi-refresh",
+}));
 
 let paramPanelRefs = {};
 
@@ -198,12 +209,13 @@ const assessments = ref([[], []])
 
 const backupImage = "/src/assets/swr-icon.jpeg";
 
-const initFormFields = async () => {
-  orgsReady.value = false;
-  assessments.value = [[], []];
+let unsubscribeOrgs;
+let unsubscribeAssessments;
 
-  unsubscribe();
-  const requireRegisteredTasks = !roarfirekit.value.superAdmin
+const refreshOrgs = async () => {
+  refreshing.orgs = true;
+  orgsReady.value = false;
+  if (unsubscribeOrgs) unsubscribeOrgs();
 
   const promises = [
     queryStore.getOrgs("districts"),
@@ -213,8 +225,6 @@ const initFormFields = async () => {
     queryStore.getOrgs("families"),
   ]
 
-  console.log("org promises", promises)
-
   const [_districts, _schools, _classes, _groups, _families] = await Promise.all(promises);
 
   districts.value = _districts;
@@ -223,19 +233,55 @@ const initFormFields = async () => {
   groups.value = _groups;
   families.value = _families;
   orgsReady.value = true;
+  refreshing.orgs = false;
+};
 
+const refreshAssessments = async () => {
+  refreshing.assessments = true;
+  if (unsubscribeAssessments) unsubscribeAssessments();
+  assessments.value = [[], []];
+
+  const requireRegisteredTasks = !roarfirekit.value.superAdmin
   queryStore.getVariants(requireRegisteredTasks).then(() => {
     assessments.value = [allVariants.value, []];
     paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
+    refreshing.assessments = false;
   });
 }
 
-const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getOrgs && state.roarfirekit.createAdministration && state.roarfirekit.isAdmin()) {
-    console.log("Initializing form fields")
-    await initFormFields();
+onMounted(() => {
+  if (
+    districts.value.length === 0
+    || schools.value.length === 0
+    || classes.value.length === 0
+    || groups.value.length === 0
+    || families.value.length === 0
+  ) {
+    console.log("Setting up subscription for orgs")
+    unsubscribeOrgs = authStore.$subscribe(async (mutation, state) => {
+      console.log("state change for orgs")
+      if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
+        console.log("refreshing orgs")
+        await refreshOrgs();
+      }
+    });
+  } else {
+    orgsReady.value = true;
   }
-});
+
+  if (allVariants.value.length === 0) {
+    console.log("Setting up subscription for assessments")
+    unsubscribeAssessments = authStore.$subscribe(async (mutation, state) => {
+      console.log("state change for assessments")
+      if (state.roarfirekit.getVariants && state.roarfirekit.isAdmin()) {
+        console.log("refreshing assessments")
+        await refreshAssessments();
+      }
+    });
+  } else {
+    assessments.value = [allVariants.value, []];
+  }
+})
 
 const submit = async () => {
   const submittedAssessments = assessments.value[1].map((assessment) => ({

@@ -5,6 +5,11 @@
     </aside>
     <section class="main-body">
       <Panel header="Create a new organization">
+        <template #icons>
+          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
+            <span :class="spinIcon"></span>
+          </button>
+        </template>
         Use this form to create a new organization.
 
         <Divider />
@@ -40,7 +45,6 @@
             </span>
           </div>
 
-
           <div class="col-12 mt-2" v-if="parentOrgType">
             <div v-if="parentOrgs.length > 1">
               <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType.singular }}.</p>
@@ -75,7 +79,6 @@
         </div>
 
       </Panel>
-
     </section>
   </main>
 </template>
@@ -91,24 +94,13 @@ import _get from "lodash/get";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import { getSidebarActions } from "../router/sidebarActions";
 
-const sidebarActions = ref([
-  {
-    title: "Back to Dashboard",
-    icon: "pi pi-arrow-left",
-    buttonLink: "/administrator",
-  },
-  {
-    title: "Register users",
-    icon: "pi pi-users",
-    buttonLink: "/mass-upload",
-  },
-  {
-    title: "Create an organization",
-    icon: "pi pi-database",
-    buttonLink: "/create-org",
-  }
-]);
+const refreshing = ref(false);
+const spinIcon = computed(() => {
+  if (refreshing.value) return "pi pi-spin pi-spinner";
+  return "pi pi-refresh";
+});
 
 const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district' },
@@ -161,6 +153,7 @@ const queryStore = useQueryStore();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { adminOrgs } = storeToRefs(queryStore);
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
 const districts = ref(adminOrgs.value.districts || []);
 const schools = ref(adminOrgs.value.schools || []);
@@ -219,16 +212,18 @@ const submit = async (event) => {
 
 let unsubscribe;
 
-const getOrgs = async () => {
+const refresh = async () => {
   if (unsubscribe) unsubscribe();
+  refreshing.value = true;
   districts.value = await queryStore.getOrgs("districts");
   schools.value = await queryStore.getOrgs("schools");
+  refreshing.value = false;
 }
 
 if (districts.value.length === 0 || schools.value.length === 0) {
   unsubscribe = authStore.$subscribe(async (mutation, state) => {
     if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-      await getOrgs();
+      await refresh();
     }
   });
 }
