@@ -48,13 +48,13 @@ const routes = [
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),
-    meta: { pageTitle: "Upload Scores", requireAdmin: true },
+    meta: { pageTitle: "Upload Scores", requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: "/query",
     name: "Query",
     component: () => import("../pages/QueryPage.vue"),
-    meta: { pageTitle: "Query", requireAdmin: true },
+    meta: { pageTitle: "Query", requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: "/score-report",
@@ -105,40 +105,33 @@ const routes = [
   {
     path: "/administrator",
     name: "Administrator",
-    component: () => import(/* webpackChunkName: "Administrator" */ "../pages/Administrator.vue"),
+    component: () => import("../pages/Administrator.vue"),
     meta: {pageTitle: "Administrator", requireAdmin: true}
   },
   {
     path: "/create-admin",
     name: "CreateAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
-    meta: {pageTitle: "Create an administration", requireAdmin: true}
+    component: () => import("../components/CreateAdministration.vue"),
+    meta: {pageTitle: "Create an administration", requireAdmin: true, requireSuperAdmin: true}
   },
   { 
     path: "/create-orgs",
     name: "CreateOrgs",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrgs.vue"),
-    meta: {pageTitle: "Create organizations", requireAdmin: true}
+    component: () => import("../components/CreateOrgs.vue"),
+    meta: {pageTitle: "Create an organization", requireAdmin: true, requireSuperAdmin: true}
   },
   { 
     path: "/list-orgs",
     name: "ListOrgs",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/ListOrgs.vue"),
+    component: () => import("../components/ListOrgs.vue"),
     meta: {pageTitle: "List organizations", requireAdmin: true}
   },
   {
     path: "/administration/:id",
     name: "ViewAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../pages/Administration.vue"),
+    component: () => import("../pages/Administration.vue"),
     meta: {pageTitle: "View Administration", requireAdmin: true}
   },
-
-  {
-    path: "/administration/:id",
-    name: "ViewAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../pages/Administration.vue"),
-  },
-
   {
     path: "/enable-cookies",
     name: "EnableCookies",
@@ -175,6 +168,11 @@ router.beforeEach(async (to, from) => {
   }
   // Check if user is an admin. If not, prevent routing to page
   if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin()) {
+    return { name: "Home" }
+  }
+
+  // Check if user is a super admin. If not, prevent routing to page
+  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin()) {
     return { name: "Home" }
   }
 })
