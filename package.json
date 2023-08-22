@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bdelab/roar-firekit": "^3.9.0",
+    "@bdelab/roar-firekit": "^3.10.0",
     "@bdelab/roar-pa": "^1.0.7",
     "@bdelab/roar-sre": "^1.0.8",
     "@bdelab/roar-swr": "^1.0.9",
@@ -22,6 +22,7 @@
     "jose": "^4.14.4",
     "list": "^2.0.19",
     "lodash": "^4.17.21",
+    "marked": "^7.0.3",
     "papaparse": "^5.3.2",
     "pinia": "^2.0.33",
     "pinia-plugin-persistedstate": "^3.1.0",
