@@ -64,7 +64,7 @@ if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') ==
     label: 'Student Upload',
     icon: 'pi pi-users',
     command: () => {
-      router.push({ name: 'MassUploader' })
+      router.push({ name: 'RegisterStudents' })
     }
   },
     {
