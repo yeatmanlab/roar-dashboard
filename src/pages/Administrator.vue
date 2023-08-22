@@ -20,34 +20,14 @@ import CardAdministration from "@/components/CardAdministration.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { useAuthStore } from "@/store/auth";
 import { useQueryStore } from "@/store/query";
+import { getSidebarActions } from "../router/sidebarActions";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
 const { administrations } = storeToRefs(queryStore);
 
-const sidebarActions = ref([
-  {
-    title: "Register users",
-    icon: "pi pi-users",
-    buttonLink: "/mass-upload",
-  },
-  {
-    title: "Create an organization",
-    icon: "pi pi-database",
-    buttonLink: "/create-orgs",
-  },
-  {
-    title: "Create an administration",
-    icon: "",
-    buttonLink: "/create-administration",
-  },
-  {
-    title: "List organizations",
-    icon: "",
-    buttonLink: "/list-orgs",
-  },
-]);
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
 const userInfo = ref(
   {
