@@ -12,16 +12,19 @@
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
-              <InputText id="administration-name" v-model="administrationName" />
+              <InputText id="administration-name" v-model="state.administrationName" />
               <label for="administration-name">Administration Name</label>
+              <small v-if="v$.administrationName.$invalid && submitted" class="p-error">Please name your
+                administration</small>
             </span>
           </div>
 
           <div class="field col">
             <span class="p-float-label">
-              <Calendar v-model="dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2" selectionMode="range"
-                :manualInput="false" showIcon showButtonBar />
+              <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
+                selectionMode="range" :manualInput="false" showIcon showButtonBar />
               <label for="dates">Dates</label>
+              <small v-if="v$.dates.$invalid && submitted" class="p-error">Please select dates for your admin</small>
             </span>
           </div>
         </div>
@@ -32,10 +35,11 @@
               <span :class="spinIcon.orgs"></span>
             </button>
           </template>
+          <div v-if="orgError" class="p-error">{{ orgError }}</div>
           <div class="formgrid grid mt-5 mb-5" v-if="orgsReady">
             <div class="field col" v-if="districts.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="state.districts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
                   inputId="districts" />
                 <label for="districts">Districts</label>
               </span>
@@ -43,7 +47,7 @@
 
             <div class="field col" v-if="schools.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="state.schools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
                   inputId="schools" />
                 <label for="schools">Schools</label>
               </span>
@@ -51,7 +55,7 @@
 
             <div class="field col" v-if="classes.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="state.classes" :options="classes" optionLabel="name" class="w-full md:w-14rem"
                   inputId="classes" />
                 <label for="classes">Classes</label>
               </span>
@@ -59,7 +63,7 @@
 
             <div class="field col" v-if="groups.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="state.groups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
                   inputId="groups" />
                 <label for="groups">Groups</label>
               </span>
@@ -67,7 +71,7 @@
 
             <div class="field col" v-if="families.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="state.families" :options="families" optionLabel="name" class="w-full md:w-14rem"
                   inputId="families" />
                 <label for="families">Families</label>
               </span>
@@ -82,14 +86,16 @@
         <Panel class="mt-3" header="Assign this administration to organizations">
           <template #icons>
             <div class="flex flex-row align-items-center justify-content-end">
+              <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
               <span>Require sequential?</span>
-              <InputSwitch class="ml-2" v-model="sequential" />
+              <InputSwitch class="ml-2" v-model="state.sequential" />
               <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments">
                 <span :class="spinIcon.assessments"></span>
               </button>
             </div>
           </template>
 
+          <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
           <PickList v-if="assessments[0].length || assessments[1].length" v-model="assessments"
             :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id" :stripedRows="true" :pt="{
               moveAllToTargetButton: { root: { class: 'hide' } },
@@ -140,11 +146,16 @@ import { computed, onMounted, reactive, ref, toRaw } from "vue";
 import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
 import { useToast } from "primevue/usetoast";
+import _filter from "lodash/filter"
+import _forEach from "lodash/forEach"
 import _fromPairs from "lodash/fromPairs";
 import _get from "lodash/get";
 import _isEmpty from "lodash/isEmpty";
 import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
+import _uniqBy from "lodash/uniqBy";
+import { useVuelidate } from "@vuelidate/core";
+import { required, requiredIf, requiredUnless } from "@vuelidate/validators";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "@/components/AppSpinner.vue";
@@ -165,6 +176,27 @@ const spinIcon = computed(() => ({
   assessments: refreshing.assessments ? "pi pi-spin pi-spinner" : "pi pi-refresh",
 }));
 
+const state = reactive({
+  administrationName: "",
+  dates: [],
+  sequential: true,
+  districts: [],
+  schools: [],
+  classes: [],
+  groups: [],
+  families: []
+})
+
+const rules = {
+  administrationName: { required },
+  dates: { required },
+  sequential: { required }
+}
+const v$ = useVuelidate(rules, state);
+const pickListError = ref('');
+const orgError = ref('');
+const submitted = ref(false);
+
 let paramPanelRefs = {};
 
 const toEntryObjects = (inputObj) => {
@@ -178,10 +210,7 @@ const toggle = (event, id) => {
 
 const orgsReady = ref(false);
 
-const administrationName = ref("");
 const minStartDate = ref(new Date());
-
-const dates = ref();
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -189,25 +218,28 @@ const queryStore = useQueryStore();
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
 const { roarfirekit } = storeToRefs(authStore);
+const { adminOrgs } = storeToRefs(queryStore);
 
-const districts = ref([]);
-const schools = ref([]);
-const classes = ref([]);
-const groups = ref([]);
-const families = ref([]);
-
-const selectedDistricts = ref([]);
-const selectedSchools = ref([]);
-const selectedClasses = ref([]);
-const selectedGroups = ref([]);
-const selectedFamilies = ref([]);
-
-const sequential = ref(true);
+const districts = ref(adminOrgs.value.districts || []);
+const schools = ref(adminOrgs.value.schools || []);
+const classes = ref(adminOrgs.value.classes || []);
+const groups = ref(adminOrgs.value.groups || []);
+const families = ref(adminOrgs.value.families || []);
 
 const { allVariants } = storeToRefs(queryStore);
 const assessments = ref([[], []])
 
 const backupImage = "/src/assets/swr-icon.jpeg";
+
+const checkForUniqueTasks = (assignments) => {
+  if (_isEmpty(assignments)) return false;
+  const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId)
+  return (uniqueTasks.length === assignments.length)
+}
+const checkForRequiredOrgs = (orgs) => {
+  const filtered = _filter(orgs, org => !_isEmpty(org))
+  return Boolean(filtered.length)
+}
 
 let unsubscribeOrgs;
 let unsubscribeAssessments;
@@ -249,68 +281,79 @@ const refreshAssessments = async () => {
   });
 }
 
-onMounted(() => {
-  if (
-    districts.value.length === 0
-    || schools.value.length === 0
-    || classes.value.length === 0
-    || groups.value.length === 0
-    || families.value.length === 0
-  ) {
-    console.log("Setting up subscription for orgs")
-    unsubscribeOrgs = authStore.$subscribe(async (mutation, state) => {
-      console.log("state change for orgs")
-      if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-        console.log("refreshing orgs")
-        await refreshOrgs();
-      }
-    });
-  } else {
-    orgsReady.value = true;
-  }
+if (
+  districts.value.length === 0
+  || schools.value.length === 0
+  || classes.value.length === 0
+  || groups.value.length === 0
+  || families.value.length === 0
+) {
+  unsubscribeOrgs = authStore.$subscribe(async (mutation, state) => {
+    if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
+      await refreshOrgs();
+    }
+  });
+} else {
+  orgsReady.value = true;
+}
 
-  if (allVariants.value.length === 0) {
-    console.log("Setting up subscription for assessments")
-    unsubscribeAssessments = authStore.$subscribe(async (mutation, state) => {
-      console.log("state change for assessments")
-      if (state.roarfirekit.getVariants && state.roarfirekit.isAdmin()) {
-        console.log("refreshing assessments")
-        await refreshAssessments();
-      }
-    });
-  } else {
-    assessments.value = [allVariants.value, []];
-  }
-})
+if (allVariants.value.length === 0) {
+  unsubscribeAssessments = authStore.$subscribe(async (mutation, state) => {
+    if (state.roarfirekit.getVariants && state.roarfirekit.isAdmin()) {
+      await refreshAssessments();
+    }
+  });
+} else {
+  assessments.value = [allVariants.value, []];
+}
 
 const submit = async () => {
-  const submittedAssessments = assessments.value[1].map((assessment) => ({
-    taskId: assessment.task.id,
-    params: toRaw(assessment.variant.params),
-  }));
-  const orgs = {
-    districts: selectedDistricts.value.map((org) => org.id),
-    schools: selectedSchools.value.map((org) => org.id),
-    classes: selectedClasses.value.map((org) => org.id),
-    groups: selectedGroups.value.map((org) => org.id),
-    families: selectedFamilies.value.map((org) => org.id),
+  pickListError.value = ''
+  submitted.value = true;
+  const isFormValid = await v$.value.$validate()
+  if (isFormValid) {
+    const submittedAssessments = assessments.value[1].map((assessment) => ({
+      taskId: assessment.task.id,
+      params: toRaw(assessment.variant.params),
+    }));
+
+    const tasksUnique = checkForUniqueTasks(submittedAssessments)
+    if (tasksUnique && !_isEmpty(submittedAssessments)) {
+      const orgs = {
+        districts: toRaw(state.districts).map((org) => org.id),
+        schools: toRaw(state.schools).map((org) => org.id),
+        classes: toRaw(state.classes).map((org) => org.id),
+        groups: toRaw(state.groups).map((org) => org.id),
+        families: toRaw(state.families).map((org) => org.id),
+      }
+
+      const orgsValid = checkForRequiredOrgs(orgs);
+      if (orgsValid) {
+        const args = {
+          name: toRaw(state).administrationName,
+          assessments: submittedAssessments,
+          dateOpen: toRaw(state).dates[0],
+          dateClose: toRaw(state).dates[1],
+          sequential: toRaw(state).sequential,
+          orgs: orgs,
+        }
+
+        await roarfirekit.value.createAdministration(args).then(() => {
+          toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+
+          router.push({ name: "Home" });
+        });
+      } else {
+        console.log('need at least one org')
+        orgError.value = 'At least one organization needs to be selected.'
+      }
+    } else {
+      pickListError.value = 'Task selections must not be empty and must be unique.'
+    }
+  } else {
+    console.log('form is invalid')
   }
-
-  const args = {
-    name: administrationName.value,
-    assessments: submittedAssessments,
-    dateOpen: dates.value[0],
-    dateClose: dates.value[1],
-    sequential: sequential.value,
-    orgs: orgs,
-  }
-
-  await roarfirekit.value.createAdministration(args).then(() => {
-    toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
-
-    router.push({ name: "Home" });
-  });
-}
+};
 </script> 
 
 <style lang="scss">
