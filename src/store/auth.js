@@ -23,6 +23,7 @@ export const useAuthStore = () => {
         },
         firekitAssignmentIds: null,
         firekitIsAdmin: false,
+        firekitIsSuperAdmin: false,
         cleverOAuthRequested: false,
       };
     },
@@ -41,6 +42,12 @@ export const useAuthStore = () => {
           console.log('set firekitIsAdmin to', this.firekitIsAdmin)
         }
         return this.firekitIsAdmin;
+      },
+      isUserSuperAdmin() {
+        if(this.isFirekitInit) {
+          this.firekitIsSuperAdmin = _get(this.roarfirekit, '_superAdmin');
+        }
+        return this.firekitIsSuperAdmin;
       },
       async getAssignments(assignments) {
         try{
