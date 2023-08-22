@@ -48,13 +48,13 @@ const routes = [
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),
-    meta: { pageTitle: "Upload Scores", requireAdmin: true },
+    meta: { pageTitle: "Upload Scores", requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: "/query",
     name: "Query",
     component: () => import("../pages/QueryPage.vue"),
-    meta: { pageTitle: "Query", requireAdmin: true },
+    meta: { pageTitle: "Query", requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: "/score-report",
@@ -113,13 +113,13 @@ const routes = [
     path: "/create-admin",
     name: "CreateAdministration",
     component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
-    meta: {pageTitle: "Create an administration", requireAdmin: true}
+    meta: {pageTitle: "Create an administration", requireAdmin: true, requireSuperAdmin: true}
   },
   { 
     path: "/create-org",
     name: "CreateOrg",
     component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrg.vue"),
-    meta: {pageTitle: "Create an organization", requireAdmin: true}
+    meta: {pageTitle: "Create an organization", requireAdmin: true, requireSuperAdmin: true}
   },
   {
     path: "/administration/:id",
@@ -170,6 +170,11 @@ router.beforeEach(async (to, from) => {
   }
   // Check if user is an admin. If not, prevent routing to page
   if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin()) {
+    return { name: "Home" }
+  }
+
+  // Check if user is a super admin. If not, prevent routing to page
+  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin()) {
     return { name: "Home" }
   }
 })
