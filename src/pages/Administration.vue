@@ -1,69 +1,25 @@
 <template>
-  <div>
-    <Button label="Remind" @click="remove" />
-    <Button label="Get Report" @click="remove" />
-    <Button label="Delete" @click="remove" />
+  <div class="card" id="rectangle" v-if="formReady">
     <RoarDataTable :data="data" :columns="columns" />
+  </div>
+  <div v-else class="loading-container">
+    <AppSpinner style="margin-bottom: 1rem;" />
+    <span>Loading Administration Data</span>
   </div>
 </template>
 
 <script setup>
-import { Vue2ProvideUnheadPlugin } from '@vueuse/head';
-import { defineProps, ref } from 'vue';
-
-// We will use a route like
-// /administration/:id/:orgType/:orgId
-
-// e.g., /administration/123/class/456
-
-const props = defineProps({
-  id: Number,
-  orgType: String,
-  orgId: String,
-});
-
-// Orgs are districts, schools, classes, groups, families.
-// Insert logic to build columns dynamically
-// The logic here should be that if there is only one org of any type, then display that org name above the table.
-// But if there are multiple orgs of any type, then display a column for that org type.
-// If an orgType is provided, then filter results to only that org type.
-
-const data = ref([
-  { pid: "PID_1245", assigned: 1691469008099, completed: 1691469018099 },
-  { pid: "PID_1013", assigned: 1691469013099, completed: 1691469018099 },
-  { pid: "PID_1259", assigned: 1691469018000, completed: 1691469018099 },
-  { pid: "PID_1111", assigned: 1691468018099, completed: 1691469018099 },
-  { pid: "PID_1467", assigned: 1691469918099, completed: 1691469018099 },
-]);
+import { ref } from 'vue';
 
 let selectedData = ref([]);
 
 const columns = ref([
+  { field: "student", header: "Student", dataType: "text" },
   { field: "pid", header: "PID", dataType: "text" },
-  { field: "assigned", header: "Assigned", dataType: "text" },
-  { field: "completed", header: "Completed", dataType: "text" },
+  { field: "status.swr.value", header: "SWR", dataType: "text", chip: true, severityField: "status.swr.severity", iconField: "status.swr.icon" },
+  { field: "status.sre.value", header: "SRE", dataType: "text", chip: true, severityField: "status.sre.severity", iconField: "status.sre.icon" },
+  { field: "status.pa.value", header: "PA", dataType: "text", chip: true, severityField: "status.pa.severity", iconField: "status.pa.icon" },
 ]);
-
-for (let i = 5; i < 500; i++) {
-  const minDate = new Date(2023, 0, 1);
-  const maxDate = new Date();
-  const days = Math.floor(Math.random() * 30);
-  const pid = Math.floor(Math.random() * (9999 - 1000) + 1000);
-  const assigned = new Date(minDate.getTime() + Math.random() * (maxDate.getTime() - minDate.getTime()));
-  const completed = new Date(assigned.getTime() + days * 24 * 60 * 60 * 1000);
-  const row = {
-    pid: "PID_" + pid.toString(),
-    assigned: assigned.getTime(),
-    completed: completed.getTime(),
-  };
-  data.value.push(row);
-}
-
-for (let i = 0; i < data.value.length; i++) {
-  for (const col of ['assigned', 'completed']) {
-    data.value[i][col] = new Date(data.value[i][col]).toDateString();
-  }
-}
 </script>
 
 <style>
