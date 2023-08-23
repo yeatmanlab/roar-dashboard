@@ -99,14 +99,15 @@
       <!--Accept Checkbox-->
       <section class="form-section">
         <div class="field-checkbox terms-checkbox">
-          <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
-            v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
-          <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and conditions <span class="required">*</span></label>
+          <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" binary :disabled="showConsent"
+            v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" @change="getConsent"/>
+          <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and conditions<span class="required">*</span></label>
         </div>
         <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
             You must agree to the terms and conditions
         </small>
       </section>
+      <ConsentModal v-if="showConsent" :consent-text="consentText" consent-type="consent" @accepted="handleConsentAccept" />
       <div class="form-submit">
         <Button type="submit" label="Submit" class="submit-button" />
       </div>
@@ -121,8 +122,11 @@ import { useVuelidate } from "@vuelidate/core";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
+import ConsentModal from "../ConsentModal.vue";
+import _get from 'lodash/get'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const props = defineProps({
   isRegistering: {type: Boolean, default: true}
@@ -134,7 +138,7 @@ const state = reactive({
   lastName: "",
   password: "",
   confirmPassword: "",
-  accept: [],
+  accept: false,
 });
 const passwordRef = computed(() => state.password);
 
@@ -145,10 +149,6 @@ const isUsernameOrEmail = (value) => {
   const emailRegex = /^(?!.*@.*@)[a-zA-Z0-9]+([._]?[a-zA-Z0-9]+)*(@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,7})+)?$/;
   return emailRegex.test(value);
 } 
-
-const isChecked = (value) => {
-  return value.includes('Accept');
-};
 
 const rules = {
   activationCode: { required },
@@ -163,7 +163,7 @@ const rules = {
     minLength: minLength(6),
   },
   confirmPassword: { required, sameAsPassword: sameAs(passwordRef) }, 
-  accept: { sameAs: isChecked },
+  accept: { sameAs: sameAs(true) },
 };
 
 
@@ -191,6 +191,22 @@ const resetForm = () => {
   state.confirmPassword = "";
   submitted.value = false;
 };
+
+const showConsent = ref(false);
+const consentText = ref("");
+let consentVersion = "";
+
+async function handleConsentAccept() {
+  state.accept = true;
+  // Need to create 'legal' object to send into the user submit object.
+}
+
+async function getConsent() {
+  const consentDoc = await authStore.getLegalDoc("consent");
+  consentText.value = consentDoc.text;
+  consentVersion = consentDoc.version;
+  showConsent.value = true
+}
 
 </script>
 
