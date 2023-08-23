@@ -91,16 +91,24 @@ const authWithEmail = (state) => {
   // turn it into our internal auth email
   incorrect.value = false;
   let creds = toRaw(state);
-  if (!creds.email.includes("@")) {
-    creds.email = `${creds.email}@roar-auth.com`
-  }
+  if (creds.useLink) {
+    console.log("creds", creds);
+    authStore.initiateLoginWithEmailLink({ email: creds.email }).then(() => {
+      console.log("routing to AuthEmailSent");
+      router.push({ name: "AuthEmailSent" })
+    });
+  } else {
+    if (!creds.email.includes("@")) {
+      creds.email = `${creds.email}@roar-auth.com`
+    }
 
-  authStore.logInWithEmailAndPassword(creds).then(() => {
-    spinner.value = true;
-  }).catch((e) => {
-    incorrect.value = true;
-    return;
-  });
+    authStore.logInWithEmailAndPassword(creds).then(() => {
+      spinner.value = true;
+    }).catch((e) => {
+      incorrect.value = true;
+      return;
+    });
+  }
 }
 
 onMounted(() => {

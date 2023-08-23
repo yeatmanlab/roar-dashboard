@@ -3,6 +3,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
 
 import _get from "lodash/get";
+import _set from "lodash/set";
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -23,7 +24,9 @@ export const useAuthStore = () => {
         },
         firekitAssignmentIds: null,
         firekitIsAdmin: false,
+        firekitIsSuperAdmin: false,
         cleverOAuthRequested: false,
+        emailForSignInLink: null,
       };
     },
     getters: {
@@ -38,9 +41,14 @@ export const useAuthStore = () => {
       isUserAdmin() {
         if(this.isFirekitInit) {
           this.firekitIsAdmin = this.roarfirekit.isAdmin();
-          console.log('set firekitIsAdmin to', this.firekitIsAdmin)
         }
         return this.firekitIsAdmin;
+      },
+      isUserSuperAdmin() {
+        if(this.isFirekitInit) {
+          this.firekitIsSuperAdmin = _get(this.roarfirekit, '_superAdmin');
+        }
+        return this.firekitIsSuperAdmin;
       },
       async getAssignments(assignments) {
         try{
@@ -75,6 +83,13 @@ export const useAuthStore = () => {
           return firekit
         });
       },
+      async getLegalDoc(docName) {
+        return await this.roarfirekit.getLegalDoc(docName);
+      },
+      async updateConsentStatus(docName, consentVersion) {
+        _set(this.firekitUserData, `legal.${docName}.${consentVersion}`, new Date())
+        this.roarfirekit.updateConsentStatus(docName, consentVersion);
+      },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
@@ -87,7 +102,25 @@ export const useAuthStore = () => {
             }
           })
         }
-        
+      },
+      async initiateLoginWithEmailLink({ email }) {
+        if (this.isFirekitInit) {
+          const redirectUrl = `${window.location.origin}/auth-email-link`;
+          return this.roarfirekit.initiateLoginWithEmailLink({ email, redirectUrl }).then(() => {
+            window.localStorage.setItem('emailForSignIn', email);
+          });
+        }
+      },
+      async signInWithEmailLink({ email, emailLink }) {
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithEmailLink({ email, emailLink }).then(() => {
+            if(this.roarfirekit.userData){
+              this.hasUserData = true
+              this.firekitUserData = this.roarfirekit.userData
+            }
+            window.localStorage.removeItem('emailForSignIn');
+          });
+        }
       },
       async signInWithGooglePopup() {
         if(this.isFirekitInit){

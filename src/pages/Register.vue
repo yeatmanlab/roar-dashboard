@@ -39,12 +39,6 @@
     <button @click="nextStep">Next</button>
   </div>
 
-
-  <!-- <div>
-    <div class="register-container mx-auto md:flex-none">
-      <Register />
-    </div>
-  </div> -->
 </template>
 
 <script setup>

@@ -1,62 +1,53 @@
 <template>
   <main class="container main">
     <aside class="main-sidebar">
-      <AdministratorSidebar :userInfo="userInfo" />
+      <AdministratorSidebar :userInfo="userInfo" :actions="sidebarActions" />
     </aside>
-    
     <section class="main-body">
-      <div class="card-container">
-        <router-link :to="cardData.buttonLink" v-for="(cardData, index) in cardsData" :key="index" class="card-wrapper">
-          <Card class="card-title">
-            <template #title>
-              <div class="card-title">
-                {{ cardData.title }}
-              </div>
-            </template>
-            <template #content>
-              {{ cardData.content }}
-            </template>
-            <template #footer>
-              <div class="card-button">
-                <Button :label="cardData.buttonText" />
-              </div>
-            </template>
-          </Card>
-        </router-link>
-      </div>
-      
-      <CardAdministration :id="admin.id" :title="admin.title" :stats="admin.stats" :dates="admin.dates"
-      :assignees="admin.assignees" :assessments="admin.assessments"></CardAdministration>
-    </section>
+      <Panel header="Your administrations">
+        <template #icons>
+          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
+            <span :class="spinIcon"></span>
+          </button>
+        </template>
 
+        <div v-if="administrationsReady">
+          <div v-if="administrations.length" v-for="(a, index) in administrations" :key="index">
+            <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
+              :assessments="a.assessments"></CardAdministration>
+          </div>
+        </div>
+        <div v-else class="loading-container">
+          <AppSpinner style="margin-bottom: 1rem;" />
+          <span>Loading Administrations</span>
+        </div>
+      </Panel>
+    </section>
   </main>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import { storeToRefs } from "pinia";
 import CardAdministration from "@/components/CardAdministration.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import { useAuthStore } from "@/store/auth";
+import { useQueryStore } from "@/store/query";
+import { getSidebarActions } from "../router/sidebarActions";
 
-const cardsData = ref([
-  {
-    title: "Create an organization",
-    content: "Create a new district, school, class, or group.",
-    buttonText: "Go",
-    buttonLink: "/create-org",
-  },
-  {
-    title: "Register users",
-    content: "Create new student account by uploading a CSV file.",
-    buttonText: "Go",
-    buttonLink: "/mass-upload",
-  },
-  {
-    title: "Create an administration",
-    content: "Create a new ROAR administration and assign it to organizations.",
-    buttonText: "Go",
-    buttonLink: "/create-admin",
-  }
-]);
+const refreshing = ref(false);
+const spinIcon = computed(() => {
+  if (refreshing.value) return "pi pi-spin pi-spinner";
+  return "pi pi-refresh";
+});
+
+const authStore = useAuthStore();
+const queryStore = useQueryStore();
+
+const { administrations } = storeToRefs(queryStore);
+const administrationsReady = ref(administrations.value.length);
+
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), false));
 
 const userInfo = ref(
   {
@@ -65,17 +56,22 @@ const userInfo = ref(
   }
 )
 
-const admin = ref(
-  {
-    id: 234,
-    title: 'Administration Title',
-    stats: { 'total': 100, 'started': 54, 'completed': 26 },
-    dates: { 'start': 12345, 'end': 123456 },
-    assignees: ['Class1', 'Class2'],
-    assessments: ['SRE', 'PWA', 'SWA']
-  }
+const refresh = async () => {
+  unsubscribe();
+  refreshing.value = true;
+  const orgsPromise = queryStore.getAdminOrgs();
+  const adminsitrationsPromise = queryStore.getMyAdministrations();
+  await Promise.all([orgsPromise, adminsitrationsPromise]).then(() => {
+    administrationsReady.value = true;
+    refreshing.value = false;
+  });
+}
 
-);
+const unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.getOrgs && state.roarfirekit.getMyAdministrations && state.roarfirekit.isAdmin()) {
+    await refresh();
+  }
+});
 </script>
 
 <style scoped>
@@ -102,5 +98,10 @@ const admin = ref(
 .card-button {
   display: flex;
   justify-content: flex-end;
+}
+
+.loading-container {
+  width: 100%;
+  text-align: center;
 }
 </style>

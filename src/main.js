@@ -19,12 +19,15 @@ import Carousel from "primevue/carousel"
 import Checkbox from "primevue/checkbox";
 import Chart from 'primevue/chart'
 import Chip from "primevue/chip";
+import ConfirmPopup from "primevue/confirmpopup";
+import ConfirmDialog from "primevue/confirmdialog";
 import DataView from 'primevue/dataview';
 import Dialog from 'primevue/dialog';
 import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
 import FileUpload from 'primevue/fileupload';
 import FocusTrap from "primevue/focustrap";
+import InputSwitch from "primevue/inputswitch";
 import InputText from "primevue/inputtext";
 import InlineMessage from 'primevue/inlinemessage';
 import Message from "primevue/message";
@@ -47,7 +50,11 @@ import Toolbar from "primevue/toolbar";
 import Tooltip from "primevue/tooltip";
 import ToggleButton from "primevue/togglebutton";
 import TreeSelect from "primevue/treeselect";
+import TreeTable from "primevue/treetable";
 import TriStateCheckbox from 'primevue/tristatecheckbox'
+
+// PrimeVue confirmation service import
+import ConfirmationService from 'primevue/confirmationservice';
 
 // PrimeVue data table imports
 import DataTable from 'primevue/datatable';
@@ -73,6 +80,7 @@ pinia.use(piniaPluginPersistedState);
 
 app.use(PrimeVue, {ripple: true});
 app.use(ToastService);
+app.use(ConfirmationService);
 app.use(pinia);
 app.use(router);
 app.use(createHead());
@@ -88,12 +96,15 @@ app.component("Carousel", Carousel);
 app.component("Checkbox", Checkbox);
 app.component("Chart", Chart);
 app.component("Chip", Chip);
+app.component("ConfirmPopup", ConfirmPopup);
+app.component("ConfirmDialog", ConfirmDialog);
 app.component("DataView", DataView);
 app.component("Dialog", Dialog);
 app.component("Divider", Divider);
 app.component("Dropdown", Dropdown);
 app.component("FileUpload", FileUpload);
 app.component("InlineMessage", InlineMessage);
+app.component("InputSwitch", InputSwitch);
 app.component("InputText", InputText);
 app.component("Message", Message);
 app.component("Menu", Menu);
@@ -113,7 +124,10 @@ app.component("Toast", Toast);
 app.component("ToggleButton", ToggleButton);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
+app.component("TreeTable", TreeTable);
 app.component("TriStateCheckbox", TriStateCheckbox)
+
+app.use(ConfirmationService);
 
 app.component("DataTable", DataTable);
 app.component("Column", Column);

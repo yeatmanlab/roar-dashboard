@@ -48,13 +48,13 @@ const routes = [
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),
-    meta: { pageTitle: "Upload Scores", requireAdmin: true },
+    meta: { pageTitle: "Upload Scores", requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: "/query",
     name: "Query",
     component: () => import("../pages/QueryPage.vue"),
-    meta: { pageTitle: "Query", requireAdmin: true },
+    meta: { pageTitle: "Query", requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: "/score-report",
@@ -82,16 +82,16 @@ const routes = [
     meta: { requiresGuest: true },
   },
   {
-    path: '/mass-upload',
-    name: 'MassUploader',
-    component: () => import("../pages/MassUploader.vue"),
+    path: '/register-students',
+    name: 'RegisterStudents',
+    component: () => import("../pages/RegisterStudents.vue"),
     meta: {pageTitle: "Register Students", requireAdmin: true}
   },
   {
     path: "/signin",
     name: "SignIn",
     component: () => import("../pages/SignIn.vue"),
-    meta: { requiresGuest: true, pageTitle: "Sign In" },
+    meta: { pageTitle: "Sign In" },
   },
   {
     path: "/signout",
@@ -115,42 +115,60 @@ const routes = [
     meta: { pageTitle: "Clever Authentication" },
   },
   {
+    path: "/auth-email-link",
+    name: "AuthEmailLink",
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import("../components/auth/AuthEmailLink.vue"),
+    meta: { pageTitle: "Email Link Authentication" },
+  },
+  {
+    path: "/auth-email-sent",
+    name: "AuthEmailSent",
+    component: () => import("../components/auth/AuthEmailSent.vue"),
+    meta: { pageTitle: "Authentication Email Sent" },
+  },
+  {
     path: "/administrator",
     name: "Administrator",
-    component: () => import(/* webpackChunkName: "Administrator" */ "../pages/Administrator.vue"),
+    component: () => import("../pages/Administrator.vue"),
     meta: {pageTitle: "Administrator", requireAdmin: true}
   },
   {
-    path: "/create-admin",
+    path: "/create-administration",
     name: "CreateAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
-    meta: {pageTitle: "Create an administration", requireAdmin: true}
+    component: () => import("../components/CreateAdministration.vue"),
+    meta: {pageTitle: "Create an administration", requireAdmin: true, requireSuperAdmin: true}
+  },
+  {
+    path: "/create-administrator",
+    name: "CreateAdministrator",
+    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministrator.vue"),
+    meta: {pageTitle: "Create an administrator account", requireAdmin: true}
   },
   { 
-    path: "/create-org",
-    name: "CreateOrg",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrg.vue"),
-    meta: {pageTitle: "Create an organization", requireAdmin: true}
+    path: "/create-orgs",
+    name: "CreateOrgs",
+    component: () => import("../components/CreateOrgs.vue"),
+    meta: {pageTitle: "Create an organization", requireAdmin: true, requireSuperAdmin: true}
+  },
+  { 
+    path: "/list-orgs",
+    name: "ListOrgs",
+    component: () => import("../components/ListOrgs.vue"),
+    meta: {pageTitle: "List organizations", requireAdmin: true}
   },
   {
     path: "/administration/:id",
     name: "ViewAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../pages/Administration.vue"),
+    component: () => import("../pages/Administration.vue"),
     meta: {pageTitle: "View Administration", requireAdmin: true}
   },
-
-  {
-    path: "/administration/:id",
-    name: "ViewAdministration",
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ "../pages/Administration.vue"),
-  },
-
   {
     path: "/enable-cookies",
     name: "EnableCookies",
     component: () =>
       import("../pages/EnableCookies.vue"),
-    meta: { requiresGuest: true, pageTitle: "Enable Cookies" },
+    meta: { pageTitle: "Enable Cookies" },
   },
   {
     path: "/:pathMatch(.*)*",
@@ -174,12 +192,27 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const store = useAuthStore();
-  if (!to.path.includes("__/auth/handler") && (!store.isAuthenticated && !["SignIn", "AuthClever", "Register"].includes(to.name))) {
-    console.log("You're not logged in. Routing to SignIn")
+
+  const allowedUnauthenticatedRoutes = [
+    "SignIn",
+    "AuthClever",
+    "AuthEmailLink",
+    "AuthEmailSent",
+  ];
+
+  // Check if user is signed in. If not, go to signin
+  if (!to.path.includes("__/auth/handler")
+    && (!store.isAuthenticated && !allowedUnauthenticatedRoutes.includes(to.name))) {
+
     return { name: "SignIn" }
   }
   // Check if user is an admin. If not, prevent routing to page
   if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin()) {
+    return { name: "Home" }
+  }
+
+  // Check if user is a super admin. If not, prevent routing to page
+  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin()) {
     return { name: "Home" }
   }
 })
