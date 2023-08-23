@@ -40,8 +40,20 @@
         :showFilterOperator="col.allowMultipleFilters === true"
         :showAddButton="col.allowMultipleFilters === true"
       >
-        <template v-if="col.dataType === 'date'" #body="{ data }">
-          {{ getFormattedDate(_get(data, col.field)) }}
+        <template #body="{ data }">
+          <div v-if="col.chip">
+            <Tag
+              :severity="_get(data, col.severityField)"
+              :value="_get(data, col.field)"
+              :icon="_get(data, col.iconField)"
+            />
+          </div>
+          <div v-else-if="col.dataType === 'date'">
+            {{ getFormattedDate(_get(data, col.field)) }}
+          </div>
+          <div v-else>
+            {{ _get(data, col.field) }}
+          </div>
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
           <InputText 
