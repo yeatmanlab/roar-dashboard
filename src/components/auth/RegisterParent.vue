@@ -1,15 +1,15 @@
 <template>
-    <!-- <h4 class="register-title">Register for ROAR</h4> -->
+  <div class="card">
+    <p class="login-title" align="left">Register for ROAR</p>
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
       <!-- Activation Code -->
-      <section class="form-section">
-        <div class="form-fields">
+      <div class="field mt-4">
+        <div class="p-input-icon-right">
           <label for="activationCode">Activation code <span class="required">*</span></label>
           <InputText
             v-model="v$.activationCode.$model"
             name="activationCode"
             :class="{ 'p-invalid': v$.activationCode.$invalid && submitted }" 
-            placeholder="Username or email"
             aria-describedby="activation-code-error"
           />
         </div>
@@ -21,9 +21,9 @@
         <small v-else-if="(v$.activationCode.$invalid && submitted) || v$.activationCode.$pending.$response" class="p-error">
           {{ v$.activationCode.required.$message.replace("Value", "Activation Code") }}
         </small>
-      </section>
+      </div>
       <!--First / Last Name-->
-      <section class="form-section">
+      <div class="mt-4 name-container">
         <div>
           <label for="firstName">First Name <span class="required">*</span></label>
           <InputText name="firstName" v-model="v$.firstName.$model" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
@@ -48,9 +48,9 @@
             {{ v$.lastName.required.$message.replace("Value", "Last Name") }}
           </small>
         </div>  
-      </section>
+      </div>
       <!--Username / Email-->
-      <section class="form-section">
+      <div class="field mt-4">
         <div class="p-input-icon-right">
           <label for="usernameOrEmail">Username or Email <span class="required">*</span></label>
           <InputText
@@ -66,10 +66,9 @@
         <small v-else-if="(v$.usernameOrEmail.$invalid && submitted) || v$.usernameOrEmail.$pending.$response" class="p-error">
           {{ v$.usernameOrEmail.required.$message.replace("Value", "Username or Email") }}
         </small>
-      </section>
+      </div>
       <!--Password-->
-      <section class="form-section">
-        <div>
+      <div class="field mt-4 mb-5">
         <div>
           <label for="password">Password <span class="required">*</span></label>
           <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></Password>
@@ -82,9 +81,9 @@
         <small v-else-if="(v$.password.$invalid && submitted) || v$.password.$pending.$response" class="p-error">
           {{ v$.password.required.$message.replace("Value", "Password") }}
         </small>
-        </div>
-        <div>
-        <!--Confirm Password-->
+      </div>
+      <!--Confirm Password-->
+      <div class="field mt-4 mb-5">
         <div>
           <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
           <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model" name="confirmPassword"
@@ -94,10 +93,9 @@
         <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
           Passwords must match
         </small>
-        </div>
-      </section>
+      </div>
       <!--Accept Checkbox-->
-      <section class="form-section">
+      <div class="mt-4 mb-5">
         <div class="field-checkbox terms-checkbox">
           <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
             v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
@@ -106,32 +104,30 @@
         <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
             You must agree to the terms and conditions
         </small>
-      </section>
-      <section class="form-submit">
-        <Button type="submit" label="Next" class="submit-button" />
-      </section>
+      </div>
+      <Button type="submit" label="Submit" class="submit-button" />
     </form>
-  
+  </div>
 </template>
 
 <script setup>
 import { computed, reactive, ref, toRaw, watch } from "vue";
 import { required, sameAs, minLength, } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
+import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 
+const router = useRouter()
 
 const props = defineProps({
   isRegistering: {type: Boolean, default: true}
 });
 
-// TODO: Include middle
 const state = reactive({
   activationCode: "",
   firstName: "",
   lastName: "",
-  usernameOrEmail: "",
   password: "",
   confirmPassword: "",
   accept: [],
@@ -178,6 +174,8 @@ const handleFormSubmit = (isFormValid) => {
   }
 
   resetForm()
+
+  router.push('/register/student')
   // authStore.registerWithEmailAndPassword(state);
 };
 
@@ -193,21 +191,21 @@ const resetForm = () => {
 </script>
 
 <style scoped>
-/* .stepper {
+.stepper {
   margin: 2rem 0rem;
-} */
+}
 
-/* .name-container {
+.name-container {
   display: flex;
   flex-direction: row;
   gap: 1rem;
-} */
-/* .required {
+}
+.required {
   color: red;
 }
 .login-title {
   font-size: 26px;
-} */
+}
 .submit-button {
   margin: auto;
   margin-top: .5rem;

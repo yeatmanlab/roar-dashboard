@@ -48,13 +48,13 @@ const routes = [
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),
-    meta: { pageTitle: "Upload Scores" },
+    meta: { pageTitle: "Upload Scores", requireAdmin: true },
   },
   {
     path: "/query",
     name: "Query",
     component: () => import("../pages/QueryPage.vue"),
-    meta: { pageTitle: "Query" },
+    meta: { pageTitle: "Query", requireAdmin: true },
   },
   {
     path: "/score-report",
@@ -66,17 +66,26 @@ const routes = [
   {
     path: "/register",
     name: "Register",
-    components: { 
-      default: () => import('../pages/Register.vue'),
-      registerParent: () => import("../components/auth/Register.vue"),
-      registerStudent: () => import("../components/auth/RegisterStudent.vue")
-    },
+    component: () => import('../pages/Register.vue'),
+    children: [
+      {
+          name: 'registerParent',
+          path: '',
+          component: () => import('../components/auth/RegisterParent.vue'),
+      },
+      {
+          name: 'registerStudent',
+          path: 'student',
+          component: () => import('../components/auth/RegisterStudent.vue')
+      },
+    ],
     meta: { requiresGuest: true },
   },
   {
     path: '/mass-upload',
     name: 'MassUploader',
-    component: () => import("../pages/MassUploader.vue")
+    component: () => import("../pages/MassUploader.vue"),
+    meta: {pageTitle: "Register Students", requireAdmin: true}
   },
   {
     path: "/signin",
@@ -109,24 +118,25 @@ const routes = [
     path: "/administrator",
     name: "Administrator",
     component: () => import(/* webpackChunkName: "Administrator" */ "../pages/Administrator.vue"),
-    meta: {pageTitle: "Administrator"}
+    meta: {pageTitle: "Administrator", requireAdmin: true}
   },
   {
     path: "/create-admin",
     name: "CreateAdministration",
     component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateAdministration.vue"),
-    meta: {pageTitle: "Create an administration"}
+    meta: {pageTitle: "Create an administration", requireAdmin: true}
   },
   { 
     path: "/create-org",
     name: "CreateOrg",
     component: () => import(/* webpackChunkName: "CreateAdministration" */ "../components/CreateOrg.vue"),
-    meta: {pageTitle: "Create an organization"}
+    meta: {pageTitle: "Create an organization", requireAdmin: true}
   },
   {
     path: "/administration/:id",
     name: "ViewAdministration",
     component: () => import(/* webpackChunkName: "CreateAdministration" */ "../pages/Administration.vue"),
+    meta: {pageTitle: "View Administration", requireAdmin: true}
   },
 
   {
@@ -167,6 +177,10 @@ router.beforeEach(async (to, from) => {
   if (!to.path.includes("__/auth/handler") && (!store.isAuthenticated && !["SignIn", "AuthClever", "Register"].includes(to.name))) {
     console.log("You're not logged in. Routing to SignIn")
     return { name: "SignIn" }
+  }
+  // Check if user is an admin. If not, prevent routing to page
+  if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin()) {
+    return { name: "Home" }
   }
 })
 

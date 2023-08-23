@@ -78,21 +78,13 @@ const activeIndex = ref(0); // Current active step
 </script>
 
 <style scoped>
-/* .register-container {
-  border-style: solid;
-  border-width: 1px;
-  border-radius: 5px;
-  border-color: #E5E5E5;
-  background-color: #FCFCFC;
-  width: 26.875rem;
-  padding-right: 1.5rem;
-  padding-left: 1.5rem;
-  margin-top: 6.5rem;
-  position: relative;
-} */
-
 .step-container {
   width: 40%;
   margin: auto;
+}
+
+.step-container {
+  width: 26.875rem;
+  margin-top: 3rem;
 }
 </style>

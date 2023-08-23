@@ -1,144 +1,62 @@
 <template>
-  <div class="page-container">
-    <router-link :to="{ name: 'Home' }">
-      <Button style="margin-bottom: 1rem;" icon="pi pi-angle-left" label="Return to Dashboard" />
-    </router-link>
-    <!--Upload file section-->
-    <div v-if="!isFileUploaded">
-      <div class="info-box">
-        We need the following information for each student to register: 
-        <ul>
-          <li>email (required)</li>
-          <li>date of birth (required)</li>
-          <li>grade (required)</li>
-          <li>password</li>
-        </ul>
-        Upload or drag-and-drop a student list below to begin!
-      </div>
-      <FileUpload 
-        name="massUploader[]"
-        customUpload
-        @uploader="onFileUpload($event)"
-        accept=".csv"
-        auto
-        :showUploadButton="false"
-        :showCancelButton="false"
-      >
-        <template #empty>
-          <div class="extra-height">
-            <p>Drag and drop files to here to upload.</p>
-          </div>
-        </template>
-      </FileUpload>
-    </div>
-    <!--DataTable with raw Student-->
-    <div v-if="isFileUploaded">
-      <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
-      <div class="info-box">
-        Please identify what the columns describe. Please note, the only REQUIRED fields are:
-        <ul>
-          <li>email</li>
-          <li>date of birth</li>
-          <li>grade</li>
-          <li>password</li>
-        </ul>
-        Not all columns must be used, however a column has to be selected for each required field.
-      </div>
-
-      <!-- Selecting Orgs -->
-      <div v-if="formReady">
-        <h3>Select organizations to apply to all users</h3>
-        <div class="orgs-container">
-          <div class="org-dropdown" v-if="districts.length > 0">
-            <span class="p-float-label">
-              <Dropdown v-model="selectedDistrict" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                inputId="districts" showClear />
-              <label for="districts">Districts</label>
-            </span>
-          </div>
-
-          <div class="org-dropdown" v-if="schools.length > 0">
-            <span class="p-float-label">
-              <Dropdown v-model="selectedSchool" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                inputId="schools" showClear />
-              <label for="schools">Schools</label>
-            </span>
-          </div>
-
-          <div class="org-dropdown" v-if="classes.length > 0">
-            <span class="p-float-label">
-              <Dropdown v-model="selectedClass" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                inputId="classes" showClear />
-              <label for="classes">Classes</label>
-            </span>
-          </div>
-
-          <div class="org-dropdown" v-if="studies.length > 0">
-            <span class="p-float-label">
-              <Dropdown v-model="selectedStudy" :options="studies" optionLabel="name" class="w-full md:w-14rem"
-                inputId="studies" showClear />
-              <label for="studies">Studies</label>
-            </span>
-          </div>
-        </div>
-      </div>
-      <AppSpinner v-else />
-
-      <h3>Define what each column describes</h3>
-      <div v-if="errorMessage" class="error-box">
-        {{ errorMessage }}
-      </div>
-      <!-- Can't use RoarDataTable to accomodate header dropdowns -->
-      <DataTable 
-        ref="dataTable" 
-        :value="rawStudentFile"
-        showGridlines
-        :rowHover="true"
-        :resizableColumns="true"
-        paginator
-        :alwaysShowPaginator="false"
-        :rows="10"
-        class="datatable"
-      >
-        <Column 
-          v-for="col of tableColumns" 
-          :key="col.field" 
-          :field="col.field"
+  <main class="container main">
+    <aside class="main-sidebar">
+      <AdministratorSidebar :actions="sidebarActions" />
+    </aside>
+    <section class="main-body">
+      <!--Upload file section-->
+      <div v-if="!isFileUploaded">
+        <Panel header="Add Participants">
+          We need the following information for each student to register: 
+          <ul>
+            <li>email (required)</li>
+            <li>date of birth (required)</li>
+            <li>grade (required)</li>
+            <li>password</li>
+          </ul>
+          Upload or drag-and-drop a student list below to begin!
+        </Panel>
+        <Divider />
+        <FileUpload 
+          name="massUploader[]"
+          customUpload
+          @uploader="onFileUpload($event)"
+          accept=".csv"
+          auto
+          :showUploadButton="false"
+          :showCancelButton="false"
         >
-          <template #header>
-            <div class="col-header">
-              <Dropdown 
-                v-model="dropdown_model[col.field]" 
-                :options="dropdown_options" 
-                optionLabel="label"
-                optionValue="value"
-                optionGroupLabel="label"
-                optionGroupChildren="items"
-                placeholder="What does this column describe?" 
-              />
+          <template #empty>
+            <div class="extra-height">
+              <p>Drag and drop files to here to upload.</p>
             </div>
           </template>
-        </Column>
-      </DataTable>
-      <div class="submit-container">
-        <Button @click="submitStudents">
-          Start Registration
-        </Button>
+        </FileUpload>
       </div>
-      <!-- Datatable of error students -->
-      <div v-if="showErrorTable" class="error-container">
-        <div class="error-header">
-          <h3>Error Users</h3>
-          <Button @click="downloadErrorTable($event)">
-            Download Table
-          </Button>
+      <!--DataTable with raw Student-->
+      <div v-if="isFileUploaded">
+        <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
+        <Panel header="Assigning participant data" class="mb-4">
+          <p>Use the dropdowns below to properly assign each column. </p>
+          <p>Columns that are not assigned will not be imported. But please note that a column has to be assigned for each of the required fields:</p>
+          <ul>
+            <li>email</li>
+            <li>date of birth</li>
+            <li>grade</li>
+            <li>password</li>
+          </ul>
+          
+          <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
+        </Panel>
+      
+        <div v-if="errorMessage" class="error-box">
+          {{ errorMessage }}
         </div>
-        <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-        <DataTable
-          ref="errorTable"
-          :value="errorUsers"
+        <!-- Can't use RoarDataTable to accomodate header dropdowns -->
+        <DataTable 
+          ref="dataTable" 
+          :value="rawStudentFile"
           showGridlines
-          exportFilename="error-datatable-export"
           :rowHover="true"
           :resizableColumns="true"
           paginator
@@ -146,18 +64,67 @@
           :rows="10"
           class="datatable"
         >
-          <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+          <Column 
+            v-for="col of tableColumns" 
+            :key="col.field" 
+            :field="col.field"
+          >
             <template #header>
-              {{ col.header }}
+              <div class="col-header">
+                <Dropdown 
+                  v-model="dropdown_model[col.field]" 
+                  :options="dropdown_options" 
+                  optionLabel="label"
+                  optionValue="value"
+                  optionGroupLabel="label"
+                  optionGroupChildren="items"
+                  placeholder="What does this column describe?" 
+                />
+              </div>
             </template>
           </Column>
         </DataTable>
-      </div>
-      </div>
-  </div>
+        <div class="submit-container">
+          <Button @click="submitStudents">
+            Start Registration
+          </Button>
+        </div>
+        <!-- Datatable of error students -->
+        <div v-if="showErrorTable" class="error-container">
+          <div class="error-header">
+            <h3>Error Users</h3>
+            <Button @click="downloadErrorTable($event)">
+              Download Table
+            </Button>
+          </div>
+          <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
+          <DataTable
+            ref="errorTable"
+            :value="errorUsers"
+            showGridlines
+            exportFilename="error-datatable-export"
+            :rowHover="true"
+            :resizableColumns="true"
+            paginator
+            :alwaysShowPaginator="false"
+            :rows="10"
+            class="datatable"
+          >
+            <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+              <template #header>
+                {{ col.header }}
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+        </div>
+
+    </section>
+    
+  </main>
 </template>
 <script setup>
-import { ref, toRaw, onMounted, watch } from 'vue';
+import { ref, toRaw } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _forEach from 'lodash/forEach'
 import _startCase from 'lodash/startCase'
@@ -168,17 +135,39 @@ import _isEmpty from 'lodash/isEmpty';
 import _compact from 'lodash/compact';
 import _cloneDeep from 'lodash/cloneDeep';
 import _omit from 'lodash/omit';
+import _find from 'lodash/find';
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
 import RoarDataTable from '../components/RoarDataTable.vue';
 import { storeToRefs } from 'pinia';
 import AppSpinner from '../components/AppSpinner.vue';
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 const { roarfirekit, isFirekitInit } = storeToRefs(authStore);
-const isFileUploaded = ref(false)
-const rawStudentFile = ref({})
+const isFileUploaded = ref(false);
+const rawStudentFile = ref({});
+
+
+const sidebarActions = ref([
+  {
+    title: "Back to Dashboard",
+    icon: "pi pi-arrow-left",
+    buttonLink: "/administrator",
+  },
+  {
+    title: "Create an organization",
+    icon: "pi pi-database",
+    buttonLink: "/create-org",
+  },
+  {
+    title: "Create an administration",
+    icon: "pi pi-question-circle",
+    buttonLink: "/create-admin",
+  }
+]);
+
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
@@ -198,6 +187,7 @@ const dropdown_options = ref([
   {
     label: 'Optional',
     items: [
+      {label: 'Ignore this column', value: 'ignore'},
       {label: 'First Name', value: 'first'},
       {label: 'Middle Name', value: 'middle'},
       {label: 'Last Name', value: 'last'},
@@ -212,6 +202,15 @@ const dropdown_options = ref([
       {label: 'Pid', value: 'pid'},
     ]
   },
+  {
+    label: 'Organizations',
+    items: [
+      {label: 'District', value: 'district'},
+      {label: 'School', value: 'school'},
+      {label: 'Class', value: 'uClass'}, // 'class' is a javascript keyword.
+      {label: 'Group', value: 'group'}
+    ]
+  }
 ])
 
 // Error Users Table refs
@@ -222,34 +221,23 @@ const errorMessage = ref("");
 const showErrorTable = ref(false);
 
 // Selecting Orgs
-const formReady = ref(false);
-const districts = ref([]);
-const schools = ref([]);
-const classes = ref([]);
-const studies = ref([]);
-
-const selectedDistrict = ref();
-const selectedSchool = ref();
-const selectedClass = ref();
-const selectedStudy = ref();
-
-const superAdmin = ref(roarfirekit.value._superAdmin);
-const adminOrgs = ref(roarfirekit.value._adminOrgs);
+let districts = [];
+let schools = [];
+let classes = [];
+let groups = [];
 
 // Functions supporting Selecting Orgs
 const initFormFields = async () => {
   console.log('inside init form fields')
   unsubscribe();
   // TODO: Optimize this with Promise.all or some such
-  districts.value = await queryStore.getOrgs("districts");
-  schools.value = await queryStore.getOrgs("schools");
-  classes.value = await queryStore.getOrgs("classes");
-  studies.value = await queryStore.getOrgs("studies");
-  formReady.value = true;
+  districts = await queryStore.getOrgs("districts");
+  schools = await queryStore.getOrgs("schools");
+  classes = await queryStore.getOrgs("classes");
+  groups = await queryStore.getOrgs("groups");
 }
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  console.log('inside subscribe function')
   if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
     await initFormFields();
   }
@@ -320,8 +308,11 @@ function submitStudents(rawJson){
     let dropdownMap = _cloneDeep(dropdown_model.value)
     _forEach(modelValues, col => {
       const columnMap = getKeyByValue(dropdownMap, col)
+      if(['ignore'].includes(col)){
+        return;
+      }
       // Special fields will accept multiple columns, and concat the values in each column
-      if(['race'].includes(col)){
+      if(['race', 'home_language'].includes(col)){
         if(!studentObj[col] && student[columnMap]){
           studentObj[col] = [student[columnMap]]
           dropdownMap = _omit(dropdownMap, columnMap)
@@ -335,10 +326,9 @@ function submitStudents(rawJson){
     })
     submitObject.push(studentObj)
   })
-  console.log('Submit Object', submitObject)
   _forEach(submitObject, user => {
     // Handle Email Registration
-    const { email, username, password, firstName, middleName, lastName, ...userData } = user;
+    const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
     const computedEmail = email || `${username}@roar-auth.com`
     let sendObject = {
       email: computedEmail, 
@@ -349,29 +339,113 @@ function submitStudents(rawJson){
     if(middleName) _set(sendObject, 'userData.name.middle', middleName)
     if(lastName) _set(sendObject, 'userData.name.last', lastName)
 
-    if(selectedDistrict.value){
-      _set(sendObject, 'userData.district', selectedDistrict.value.id)
+    // If district is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    if(district){
+      const id = getDistrictId(district);
+      if(id){
+        _set(sendObject, 'userData.district', id)
+      } else {
+        addErrorUser(user, `Error: District '${district}' is invalid`)
+        return;
+      }
     }
-    if(selectedSchool.value){
-      _set(sendObject, 'userData.school', selectedSchool.value.id)
+
+    // If school is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    if(school){
+      const id = getSchoolId(school);
+      if(id){
+        _set(sendObject, 'userData.school', id)
+      } else {
+        addErrorUser(user, `Error: School '${school}' is invalid.`)
+        return;
+      }
     }
-    if(selectedClass.value){
-      _set(sendObject, 'userData.class', selectedClass.value.id)
+
+    // If class is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    if(uClass){
+      const id = getClassId(uClass);
+      if(id){
+        _set(sendObject, 'userData.class', id)
+      } else {
+        addErrorUser(user, `Error: Class '${uClass}' is invalid.`)
+        return;
+      }
     }
-    if(selectedStudy.value){
-      _set(sendObject, 'userData.study', selectedStudy.value.id)
+
+    // If group is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    if(group){
+      const id = getGroupId(group);
+      if(id){
+        _set(sendObject, 'userData.group', id)
+      } else {
+        addErrorUser(user, `Error: Group '${group}' is invalid.`)
+        return;
+      }
     }
-    console.log('user sendObject', sendObject)
+
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
     }).catch((e) => {
-      if(_isEmpty(errorUserColumns.value)){
-        errorUserColumns.value = generateColumns(user)
-        showErrorTable.value = true
-      }
-      errorUsers.value.push(user)
+      addErrorUser(user, e)
     })
   })
+}
+
+
+// Support functions for submitStudents process
+function addErrorUser(user, error) {
+  // If there are no error users yet, generate the
+  //  columns before displaying the table.
+  if(_isEmpty(errorUserColumns.value)){
+    errorUserColumns.value = generateColumns(user)
+    errorUserColumns.value.unshift({
+      dataType: 'string',
+      field: 'error',
+      header: 'Cause of Error',
+    })
+    showErrorTable.value = true
+  }
+  // Concat the userObject with the error reason.
+  errorUsers.value.push({
+    ...user,
+    error
+  })
+}
+
+// Find the district id given the name. undefined if missing.
+function getDistrictId(districtName){
+  return _get(_find(districts, (district) => {
+    return district.name === districtName;
+  }), 'id')
+}
+
+// Find the school id given the name. undefined if missing.
+function getSchoolId(schoolName){
+  return _get(_find(schools, (school) => {
+    return school.name === schoolName;
+  }), 'id')
+}
+
+// Find the class id given the name. undefined if missing.
+function getClassId(className){
+  return _get(_find(classes, (c) => {
+    return c.name === className;
+  }), 'id')
+}
+
+// Find the group id given the name. undefined if missing.
+function getGroupId(groupName){
+  return _get(_find(groups, (group) => {
+    return group.id === groupName;
+  }), 'id')
 }
 
 // Functions supporting error table
@@ -380,15 +454,12 @@ function downloadErrorTable() {
 }
 
 // Event listener for the 'beforeunload' event
-window.addEventListener('beforeunload', (e) => {
-  console.log('handler for beforeunload')
-  e.preventDefault();
-});
+// window.addEventListener('beforeunload', (e) => {
+//   console.log('handler for beforeunload')
+//   e.preventDefault();
+// });
 </script>
 <style scoped>
-.page-container {
-  padding: 2rem;
-}
 .extra-height {
   min-height: 33vh;
 }

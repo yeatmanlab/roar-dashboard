@@ -63,9 +63,9 @@
 
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="studies" v-model="queryStore.selectedStudies" :options="queryStore.studies" optionLabel="id"
+        <MultiSelect inputId="groups" v-model="queryStore.selectedGroups" :options="queryStore.groups" optionLabel="id"
           :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
-        <label for="studies">Studies</label>
+        <label for="groups">Groups</label>
       </span>
     </div>
 

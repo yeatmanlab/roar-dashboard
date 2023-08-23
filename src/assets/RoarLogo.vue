@@ -179,6 +179,9 @@ export default {
 </script>
 
 <style scoped>
+	#ROARLogo-Text_Full {
+		display: none;
+	}
 	.st0{
 		fill:#FFFFFF;
 	}
