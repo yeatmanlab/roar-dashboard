@@ -91,21 +91,20 @@
 <script setup>
 import { ref, toRaw } from 'vue';
 import { csvFileToJson } from '@/helpers';
-import _forEach from 'lodash/forEach'
-import _startCase from 'lodash/startCase'
-import _includes from 'lodash/includes'
-import _get from 'lodash/get';
-import _set from 'lodash/set';
-import _isEmpty from 'lodash/isEmpty';
-import _compact from 'lodash/compact';
 import _cloneDeep from 'lodash/cloneDeep';
-import _omit from 'lodash/omit';
+import _compact from 'lodash/compact';
 import _find from 'lodash/find';
+import _forEach from 'lodash/forEach'
+import _includes from 'lodash/includes'
+import _isEmpty from 'lodash/isEmpty';
+import _omit from 'lodash/omit';
+import _pick from 'lodash/pick';
+import _set from 'lodash/set';
+import _startCase from 'lodash/startCase'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
 // import RoarDataTable from '../components/RoarDataTable.vue';
 import { storeToRefs } from 'pinia';
-import AppSpinner from '@/components/AppSpinner.vue';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 
@@ -370,30 +369,30 @@ function addErrorUser(user, error) {
 
 // Find the district id given the name. undefined if missing.
 function getDistrictId(districtName) {
-  return _get(_find(districts, (district) => {
+  return _pick(_find(districts, (district) => {
     return district.name === districtName;
-  }), 'id')
+  }), ['id', 'abbreviation'])
 }
 
 // Find the school id given the name. undefined if missing.
 function getSchoolId(schoolName) {
-  return _get(_find(schools, (school) => {
+  return _pick(_find(schools, (school) => {
     return school.name === schoolName;
-  }), 'id')
+  }), ['id', 'abbreviation'])
 }
 
 // Find the class id given the name. undefined if missing.
 function getClassId(className) {
-  return _get(_find(classes, (c) => {
+  return _pick(_find(classes, (c) => {
     return c.name === className;
-  }), 'id')
+  }), ['id', 'abbreviation'])
 }
 
 // Find the group id given the name. undefined if missing.
 function getGroupId(groupName) {
-  return _get(_find(groups, (group) => {
+  return _pick(_find(groups, (group) => {
     return group.name === groupName;
-  }), 'id')
+  }), ['id', 'abbreviation'])
 }
 
 // Functions supporting error table
