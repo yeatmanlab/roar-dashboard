@@ -28,6 +28,7 @@ import { ref } from 'vue';
 
 const navbarBlacklist = ref([
   "SignIn",
+  "Register",
   "PlayApp",
   "SWR",
   "SRE",

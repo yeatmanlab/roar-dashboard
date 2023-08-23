@@ -1,25 +1,43 @@
 <template>
-  <div class="step-container">
-    <div class="card stepper">
-      <Steps :model="items" :readonly="true" :activeIndex="activeIndex" @change="onStepChange" aria-label="Form Steps" />
-    </div>
+  
+  <div id="register-container">
+    <!-- <div class="step-container">
+      <div class="card stepper">
+        <Steps :model="items" :readonly="true" :activeIndex="activeIndex" @change="onStepChange" aria-label="Form Steps" />
+      </div>
+    </div> -->
+    
+    <section id="register">
+      <header>
+        <div class="signin-logo">
+          <ROARLogoShort />
+        </div>
+      </header>
+      <div>
+        <div v-if="activeIndex === 0">
+          <router-view name="registerParent">
+            <div class="register-title">
+              <h1 align="center">Register for ROAR</h1>
+              <p align="center">Enter your information to create an account.</p>
+            </div>
+            <Register />
+          </router-view>
+        </div>
+        <div v-else="activeIndex === 1">
+          <router-view name="registerStudent">
+            <div class="register-title">
+              <h1 align="center">Register your child</h1>
+              <p align="center">Enter your child's information to create their ROAR account.</p>
+            </div>
+            <RegisterStudent />
+          </router-view>
+        </div>
+      </div>
+    </section>
+    
+    <!-- <button @click="prevStep">Previous</button> -->
+    <!-- <button @click="nextStep">Next</button> -->
   </div>
-
-  <div class="register-container mx-auto md:flex-none">
-    <div v-if="activeIndex === 0">
-      <router-view name="registerParent">
-        <Register />
-      </router-view>
-    </div>
-    <div v-else="activeIndex === 1">
-      <router-view name="registerStudent">
-        <RegisterStudent />
-      </router-view>
-    </div>
-  </div>
-
-  <button @click="prevStep">Previous</button>
-  <button @click="nextStep">Next</button>
 
 
   <!-- <div>
@@ -32,6 +50,7 @@
 <script setup>
 import Register from "../components/auth/Register.vue";
 import RegisterStudent from "../components/auth/RegisterStudent.vue";
+import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { ref } from 'vue';
 import Steps from 'primevue/steps';
 
@@ -59,7 +78,7 @@ const activeIndex = ref(0); // Current active step
 </script>
 
 <style scoped>
-.register-container {
+/* .register-container {
   border-style: solid;
   border-width: 1px;
   border-radius: 5px;
@@ -70,7 +89,7 @@ const activeIndex = ref(0); // Current active step
   padding-left: 1.5rem;
   margin-top: 6.5rem;
   position: relative;
-}
+} */
 
 .step-container {
   width: 40%;

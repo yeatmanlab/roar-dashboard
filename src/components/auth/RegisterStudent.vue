@@ -1,6 +1,6 @@
 <template>
     <div class="card">
-      <p class="login-title" align="left">Register for ROAR</p>
+      <!-- <p class="login-title" align="left">Register for ROAR</p> -->
       <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
         <!--First / Last Name-->
         <div class="mt-4 name-container">

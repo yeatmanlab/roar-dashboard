@@ -1,0 +1,46 @@
+#register-container {
+	@extend #signin-container;
+	
+	.register-title {
+		text-align:center;
+		margin-bottom: 2rem;
+	}
+}
+
+#register {
+	@extend #signin;
+	
+	form {
+		width: 100%;
+		padding-inline: 2rem;
+	}
+	
+	.form-section {
+		margin-block: 1rem;
+		display: flex;
+		flex-wrap: wrap;
+		column-gap: 2rem;
+		
+		label {
+			margin-block: .5rem;
+			display: inline-block;
+		}
+		
+		> div {
+			width: calc(50% - 1rem);
+			margin-bottom: .5rem;
+			
+			&:only-of-type {
+				width: 100%;
+			}
+		}
+		
+		small {
+			width: 100%;
+		}
+	}
+	
+	.form-submit {
+		margin-top: 2rem;
+	}
+}
