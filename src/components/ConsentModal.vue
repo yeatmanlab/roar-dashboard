@@ -1,6 +1,6 @@
 <template>
   <Toast />
-  <ConfirmDialog group="templating">
+  <ConfirmDialog group="templating" class="confirm">
     <template #message="slotProps">
       <div class="scrolling-box">
         <div v-html="markdownToHtml"></div>
@@ -49,7 +49,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style>
 .scrolling-box {
   width: 50vw;
   height: 50vh;
@@ -60,12 +60,11 @@ onMounted(() => {
   border: 2px solid var(--surface-d);
   border-radius: 5px;
 }
-
-.p-confirm-dialog-reject {
+.confirm .p-confirm-dialog-reject {
   display: none !important;
 }
 
-.p-dialog-header-close {
+.confirm .p-dialog-header-close {
   display: none !important;
 }
 </style>
