@@ -1,9 +1,9 @@
 <template>
   <div class="card">
-    <p class="login-title" align="left">Register for ROAR</p>
+    <!-- <p class="login-title" align="left">Register for ROAR</p> -->
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
       <!-- Activation Code -->
-      <div class="field mt-4">
+      <section class="form-section">
         <div class="p-input-icon-right">
           <label for="activationCode">Activation code <span class="required">*</span></label>
           <InputText
@@ -21,9 +21,9 @@
         <small v-else-if="(v$.activationCode.$invalid && submitted) || v$.activationCode.$pending.$response" class="p-error">
           {{ v$.activationCode.required.$message.replace("Value", "Activation Code") }}
         </small>
-      </div>
+      </section>
       <!--First / Last Name-->
-      <div class="mt-4 name-container">
+      <section class="form-section">
         <div>
           <label for="firstName">First Name <span class="required">*</span></label>
           <InputText name="firstName" v-model="v$.firstName.$model" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
@@ -48,9 +48,9 @@
             {{ v$.lastName.required.$message.replace("Value", "Last Name") }}
           </small>
         </div>  
-      </div>
+      </section>
       <!--Username / Email-->
-      <div class="field mt-4">
+      <section class="form-section">
         <div class="p-input-icon-right">
           <label for="usernameOrEmail">Username or Email <span class="required">*</span></label>
           <InputText
@@ -66,36 +66,38 @@
         <small v-else-if="(v$.usernameOrEmail.$invalid && submitted) || v$.usernameOrEmail.$pending.$response" class="p-error">
           {{ v$.usernameOrEmail.required.$message.replace("Value", "Username or Email") }}
         </small>
-      </div>
+      </section>
       <!--Password-->
-      <div class="field mt-4 mb-5">
+      <section class="form-section">
         <div>
-          <label for="password">Password <span class="required">*</span></label>
-          <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></Password>
-        </div>
-        <span v-if="v$.password.$error && submitted">
-          <span v-for="(error, index) of v$.password.$errors" :key="index">
-            <small class="p-error">{{ error.$message }}</small>
+          <div>
+            <label for="password">Password <span class="required">*</span></label>
+            <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></Password>
+          </div>
+          <span v-if="v$.password.$error && submitted">
+            <span v-for="(error, index) of v$.password.$errors" :key="index">
+              <small class="p-error">{{ error.$message }}</small>
+            </span>
           </span>
-        </span>
-        <small v-else-if="(v$.password.$invalid && submitted) || v$.password.$pending.$response" class="p-error">
-          {{ v$.password.required.$message.replace("Value", "Password") }}
-        </small>
-      </div>
-      <!--Confirm Password-->
-      <div class="field mt-4 mb-5">
-        <div>
-          <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-          <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model" name="confirmPassword"
-            :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false">
-          </Password>
+          <small v-else-if="(v$.password.$invalid && submitted) || v$.password.$pending.$response" class="p-error">
+            {{ v$.password.required.$message.replace("Value", "Password") }}
+          </small>
         </div>
-        <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
-          Passwords must match
-        </small>
-      </div>
+        <!--Confirm Password-->
+        <div>
+          <div>
+            <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+            <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model" name="confirmPassword"
+              :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false">
+            </Password>
+          </div>
+          <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
+            Passwords must match
+          </small>
+        </div>
+      </section>
       <!--Accept Checkbox-->
-      <div class="mt-4 mb-5">
+      <section class="form-section">
         <div class="field-checkbox terms-checkbox">
           <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
             v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
@@ -104,8 +106,10 @@
         <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
             You must agree to the terms and conditions
         </small>
+      </section>
+      <div class="form-submit">
+        <Button type="submit" label="Submit" class="submit-button" />
       </div>
-      <Button type="submit" label="Submit" class="submit-button" />
     </form>
   </div>
 </template>
@@ -191,21 +195,6 @@ const resetForm = () => {
 </script>
 
 <style scoped>
-.stepper {
-  margin: 2rem 0rem;
-}
-
-.name-container {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-}
-.required {
-  color: red;
-}
-.login-title {
-  font-size: 26px;
-}
 .submit-button {
   margin: auto;
   margin-top: .5rem;

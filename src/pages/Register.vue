@@ -35,8 +35,8 @@
       </div>
     </section>
     
-    <!-- <button @click="prevStep">Previous</button> -->
-    <!-- <button @click="nextStep">Next</button> -->
+    <button @click="prevStep">Previous</button>
+    <button @click="nextStep">Next</button>
   </div>
 
 
@@ -48,10 +48,10 @@
 </template>
 
 <script setup>
-import Register from "../components/auth/Register.vue";
+import Register from "../components/auth/RegisterParent.vue";
 import RegisterStudent from "../components/auth/RegisterStudent.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
-import { ref } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import Steps from 'primevue/steps';
 
 const activeIndex = ref(0); // Current active step
@@ -75,6 +75,15 @@ const activeIndex = ref(0); // Current active step
         activeIndex.value++;
       }
     }
+    
+onMounted(() => {
+  document.body.classList.add('page-register')
+});
+
+onBeforeUnmount(() => {
+  document.body.classList.remove('page-register')
+});
+
 </script>
 
 <style scoped>
