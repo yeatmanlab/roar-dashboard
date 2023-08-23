@@ -8,7 +8,7 @@
 <script setup>
 import RoarPA from '@bdelab/roar-pa';
 import AppSpinner from '../AppSpinner.vue';
-import { toRaw, onBeforeUnmount, onMounted, watch, ref } from 'vue';
+import { toRaw, onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
@@ -52,17 +52,6 @@ async function startTask() {
     router.replace({ name: "Home" });
   });
 }
-function handleReload(e) {
-  console.log('Reload detcted!')
-  router.push({ name: "Home" })
-  setTimeout(() => {  console.log("World!"); }, 5000);
-}
-onMounted(() => {
-  window.addEventListener('beforeunload', handleReload)
-})
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', handleReload)
-})
 </script>
 <style scoped> 
 .game-target {
