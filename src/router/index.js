@@ -195,6 +195,7 @@ router.beforeEach(async (to, from) => {
 
   const allowedUnauthenticatedRoutes = [
     "SignIn",
+    "Register",
     "AuthClever",
     "AuthEmailLink",
     "AuthEmailSent",
