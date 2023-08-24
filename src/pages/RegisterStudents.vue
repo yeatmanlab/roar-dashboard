@@ -267,6 +267,7 @@ function submitStudents(rawJson) {
     return;
   }
   let submitObject = []
+  // Construct list of student objects, handle special columns
   _forEach(rawStudentFile.value, student => {
     let studentObj = {}
     let dropdownMap = _cloneDeep(dropdown_model.value)
@@ -290,6 +291,7 @@ function submitStudents(rawJson) {
     })
     submitObject.push(studentObj)
   })
+  // Check for duplicate username / emails 
   let authField;
   if(_includes(modelValues, 'username')) authField = 'username';
   else authField = 'email';
@@ -299,6 +301,7 @@ function submitStudents(rawJson) {
     activeSubmit.value = false;
     return;
   }
+  // Begin submit process
   const totalUsers = submitObject.length;
   _forEach(submitObject, user => {
     // Handle Email Registration
