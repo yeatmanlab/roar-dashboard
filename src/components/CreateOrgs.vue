@@ -326,10 +326,10 @@ const submit = async (event) => {
     if (state.tags.length > 0) orgData.tags = state.tags;
 
     if (orgType.value?.singular === "class") {
-      orgData.schoolId = toRaw(state.parentOrg).map((org) => org.id);
+      orgData.schoolId = toRaw(state.parentOrg).id;
     } else if (orgType.value?.singular === "school") {
       if (state.parentOrg) {
-        orgData.districtId = toRaw(state.parentOrg).map((org) => org.id);
+        orgData.districtId = toRaw(state.parentOrg).id;
       } else {
         const districtData = { ...orgData };
         // The NCES school ID is composed of the 7 digit district ID followed by
