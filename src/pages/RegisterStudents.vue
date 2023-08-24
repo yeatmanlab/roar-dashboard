@@ -98,6 +98,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _omit from 'lodash/omit';
 import _pick from 'lodash/pick';
 import _set from 'lodash/set';
+import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
@@ -231,6 +232,11 @@ function getKeyByValue(object, value) {
   return Object.keys(object).find(key => object[key] === value);
 }
 
+function checkUniqueStudents(students, field) {
+  const uniqueStudents = _uniqBy(students, (student) => student[field])
+  return (students.length === uniqueStudents.length)
+}
+
 function submitStudents(rawJson) {
   errorMessage.value = "";
   activeSubmit.value = true;
@@ -284,6 +290,15 @@ function submitStudents(rawJson) {
     })
     submitObject.push(studentObj)
   })
+  let authField;
+  if(_includes(modelValues, 'username')) authField = 'username';
+  else authField = 'email';
+  const areUnique = checkUniqueStudents(submitObject, authField);
+  if(!areUnique) {
+    errorMessage.value = `One or more of the ${authField}s in this CSV are not unique.`
+    activeSubmit.value = false;
+    return;
+  }
   const totalUsers = submitObject.length;
   _forEach(submitObject, user => {
     // Handle Email Registration
