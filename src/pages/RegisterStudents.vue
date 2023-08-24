@@ -60,9 +60,7 @@
           </Column>
         </DataTable>
         <div class="submit-container">
-          <Button @click="submitStudents">
-            Start Registration
-          </Button>
+          <Button @click="submitStudents" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''" :disabled="activeSubmit" />
         </div>
         <!-- Datatable of error students -->
         <div v-if="showErrorTable" class="error-container">
@@ -103,14 +101,18 @@ import _set from 'lodash/set';
 import _startCase from 'lodash/startCase'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
+import { useRouter } from 'vue-router';
 // import RoarDataTable from '../components/RoarDataTable.vue';
 import { storeToRefs } from 'pinia';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
+import { useToast } from "primevue/usetoast";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
+const router = useRouter();
 const { roarfirekit, isFirekitInit } = storeToRefs(authStore);
+const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 
@@ -167,6 +169,9 @@ const errorUserColumns = ref([]);
 const errorMessage = ref("");
 const showErrorTable = ref(false);
 
+const activeSubmit = ref(false);
+let processedUsers = 0;
+
 // Selecting Orgs
 let districts = [];
 let schools = [];
@@ -196,6 +201,7 @@ const onFileUpload = async (event) => {
   tableColumns.value = generateColumns(toRaw(rawStudentFile.value[0]))
   populateDropdown(tableColumns.value)
   isFileUploaded.value = true;
+  toast.add({ severity: 'success', summary: 'Success', detail: 'File Successfully Uploaded', life: 3000 });
 }
 
 function populateDropdown(columns) {
@@ -227,26 +233,31 @@ function getKeyByValue(object, value) {
 
 function submitStudents(rawJson) {
   errorMessage.value = "";
+  activeSubmit.value = true;
   const modelValues = _compact(Object.values(dropdown_model.value))
   // Check that all required values are filled in
   if (!_includes(modelValues, 'email') && !_includes(modelValues, 'username')) {
     // Username / email needs to be filled in
     errorMessage.value = "Please select a column to be user's username or email."
+    activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'dob')) {
     // Date needs to be filled in
     errorMessage.value = "Please select a column to be user's date of birth."
+    activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'grade')) {
     // Grade needs to be filled in
     errorMessage.value = "Please select a column to be user's grade."
+    activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'password')) {
     // Password needs to be filled in 
     errorMessage.value = "Please select a column to be user's password."
+    activeSubmit.value = false;
     return;
   }
   let submitObject = []
@@ -273,6 +284,7 @@ function submitStudents(rawJson) {
     })
     submitObject.push(studentObj)
   })
+  const totalUsers = submitObject.length;
   _forEach(submitObject, user => {
     // Handle Email Registration
     const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
@@ -291,7 +303,7 @@ function submitStudents(rawJson) {
     //   the sendObject. If not, reject user
     if (district) {
       const id = getDistrictId(district);
-      if (id) {
+      if (!_isEmpty(id)) {
         _set(sendObject, 'userData.district', id)
       } else {
         addErrorUser(user, `Error: District '${district}' is invalid`)
@@ -304,7 +316,7 @@ function submitStudents(rawJson) {
     //   the sendObject. If not, reject user
     if (school) {
       const id = getSchoolId(school);
-      if (id) {
+      if (!_isEmpty(id)) {
         _set(sendObject, 'userData.school', id)
       } else {
         addErrorUser(user, `Error: School '${school}' is invalid.`)
@@ -317,7 +329,7 @@ function submitStudents(rawJson) {
     //   the sendObject. If not, reject user
     if (uClass) {
       const id = getClassId(uClass);
-      if (id) {
+      if (!_isEmpty(id)) {
         _set(sendObject, 'userData.class', id)
       } else {
         addErrorUser(user, `Error: Class '${uClass}' is invalid.`)
@@ -330,7 +342,7 @@ function submitStudents(rawJson) {
     //   the sendObject. If not, reject user
     if (group) {
       const id = getGroupId(group);
-      if (id) {
+      if (!_isEmpty(id)) {
         _set(sendObject, 'userData.group', id)
       } else {
         addErrorUser(user, `Error: Group '${group}' is invalid.`)
@@ -340,8 +352,22 @@ function submitStudents(rawJson) {
 
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
       console.log('sucessful user creation')
+      toast.add({ severity: 'success', summary: 'User Creation Success', detail: `${sendObject.email} was sucessfully created.`, life: 9000 });
+      processedUsers = processedUsers + 1;
+      if(processedUsers >= totalUsers){
+        activeSubmit.value = false;
+        if(errorUsers.value.length === 0) {
+          // Processing is finished, and there are no error users.
+          router.push({ name: "Home" })
+        }
+      }
     }).catch((e) => {
+      toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
+      processedUsers = processedUsers + 1;
       addErrorUser(user, e)
+      if(processedUsers >= totalUsers){
+        activeSubmit.value = false;
+      }
     })
   })
 }
