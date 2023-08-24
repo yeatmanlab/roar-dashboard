@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@bdelab/roar-firekit": "^3.10.4",
-    "@bdelab/roar-pa": "^1.0.7",
-    "@bdelab/roar-sre": "^1.0.8",
-    "@bdelab/roar-swr": "^1.0.9",
+    "@bdelab/roar-pa": "^1.0.9",
+    "@bdelab/roar-sre": "^1.0.10",
+    "@bdelab/roar-swr": "^1.0.11",
     "@vuelidate/core": "^2.0.0-alpha.40",
     "@vuelidate/validators": "^2.0.0-alpha.28",
     "@vueuse/head": "^1.0.13",
