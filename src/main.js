@@ -67,6 +67,8 @@ import Row from 'primevue/row';
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue'
 
+import VueGoogleMaps from 'vue-google-maps-community-fork'
+
 // Style assets
 import "primevue/resources/primevue.css"; // primevue css
 import "primeicons/primeicons.css"; // icons
@@ -85,6 +87,12 @@ app.use(ToastService);
 app.use(ConfirmationService);
 app.use(pinia);
 app.use(router);
+app.use(VueGoogleMaps, {
+  load: {
+    key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
+    libraries: 'places',
+  },
+})
 app.use(createHead());
 
 app.component("Accordion", Accordion);

@@ -80,42 +80,36 @@
         </div>
 
         <div class="mt-5 mb-0 pb-0">
-          <p>Optional fields:</p>
+          Optional fields:
         </div>
 
         <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
           <div class="grid column-gap-3">
-            <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+            <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-5">
               <span class="p-float-label">
                 <InputText v-model="state.ncesId" v-tooltip="ncesTooltip" inputId="nces-id" class="w-full" />
                 <label for="nces-id">NCES ID</label>
               </span>
             </div>
-            <div class="col-12 md:col-6 lg:col-6 xl:col-6 mt-3">
-              <span class="p-float-label">
-                <InputText v-model="state.street" inputId="address-street" class="w-full" />
-                <label for="address">Street Address</label>
+          </div>
+          <div class="grid column-gap-3 mt-3">
+            <div class="col-12">
+              Search for a {{ orgType.singular }} address:
+            </div>
+            <div class="col-12 md:col-6 lg:col-6 xl:col-6 p-inputgroup">
+              <span class="p-inputgroup-addon">
+                <i class="pi pi-map"></i>
               </span>
+              <GMapAutocomplete @place_changed="setAddress" :options="{
+                fields: ['address_components', 'formatted_address', 'place_id', 'url'],
+              }" class="p-inputtext p-component w-full">
+              </GMapAutocomplete>
             </div>
           </div>
-          <div class="grid column-gap-3">
-            <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <span class="p-float-label">
-                <InputText v-model="state.city" inputId="address-city" class="w-full" />
-                <label for="address-city">City</label>
-              </span>
-            </div>
-            <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <span class="p-float-label">
-                <InputText v-model="state.state" inputId="address-state" class="w-full" />
-                <label for="address-state">State/Province</label>
-              </span>
-            </div>
-            <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <span class="p-float-label">
-                <InputText v-model="state.postalCode" inputId="address-zip" class="w-full" />
-                <label for="address-zip">Postal Code</label>
-              </span>
+          <div v-if="state.address?.formattedAddress" class="grid">
+            <div class="col-12 mt-3">
+              {{ orgTypeLabel }} Address:
+              <Chip :label="state.address.formattedAddress" removable @remove="removeAddress" />
             </div>
           </div>
         </div>
@@ -165,11 +159,8 @@ import { getSidebarActions } from "../router/sidebarActions";
 const state = reactive({
   orgName: "",
   orgInitials: "",
-  ncesId: "",
-  street: "",
-  city: "",
-  state: "",
-  postalCode: "",
+  ncesId: undefined,
+  address: undefined,
   parentOrg: undefined,
   grade: undefined,
   tags: [],
@@ -286,14 +277,27 @@ const parentOrgs = computed(() => {
   return [];
 })
 
+const setAddress = (place) => {
+  state.address = {
+    addressComponents: place.address_components || [],
+    formattedAddress: place.formatted_address,
+    googlePlacesId: place.place_id,
+    googleMapsUrl: place.url,
+  }
+}
+
+const removeAddress = () => {
+  state.address = undefined;
+}
+
 const preSubmit = (event) => {
   if (orgType.value.singular === "school" && !state.parentOrg) {
     confirm.require({
       target: event.currentTarget,
       message:
         "You created a school that doesn't belong to any district. If you "
-        + "continue, we will create a pseudo-district with all of this "
-        + "school's data. Are you sure you want to do this?",
+        + "continue, we will create a parent pseudo-district using this "
+        + "school's data. Are you sure you want to do that?",
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         submit();
@@ -318,10 +322,7 @@ const submit = async (event) => {
 
     if (state.grade) orgData.grade = toRaw(state.grade).value;
     if (state.ncesId) orgData.ncesId = state.ncesId;
-    if (state.street) _set(orgData, "address.street", state.street);
-    if (state.city) _set(orgData, "address.city", state.city);
-    if (state.state) _set(orgData, "address.state", state.state);
-    if (state.postalCode) _set(orgData, "address.postalCode", state.postalCode);
+    if (state.address) orgData.address = state.address;
     if (state.tags.length > 0) orgData.tags = state.tags;
 
     if (orgType.value?.singular === "class") {

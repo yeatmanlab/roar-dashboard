@@ -12,11 +12,13 @@
         </template>
 
         <TreeTable :value="hierarchicalAdminOrgs" scrollable :rowHover="true" tableStyle="min-width: 50rem"
-          sortMode="multiple" removableSort :paginator="true" :alwaysShowPaginator="false" :rows="10"
+          sortMode="multiple" removableSort resizableColumns :paginator="true" :alwaysShowPaginator="false" :rows="10"
           :rowsPerPageOptions="[5, 10, 25]">
           <Column field="name" header="Name" sortable expander></Column>
           <Column field="orgType" header="Type" sortable></Column>
           <Column field="abbreviation" header="Abbreviation" sortable></Column>
+          <Column field="ncesId" header="NCES ID" sortable></Column>
+          <Column field="address.formattedAddress" header="Address" sortable></Column>
           <Column field="grade" header="Grade" sortable style="width: 7rem;"></Column>
           <Column field="tags" header="Tags" style="min-width: 10rem;">
             <template #body="{ node }">
