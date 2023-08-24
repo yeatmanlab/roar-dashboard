@@ -381,8 +381,9 @@ function submitStudents(rawJson) {
       }
     }).catch((e) => {
       toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
-      processedUsers = processedUsers + 1;
+      // processedUsers = processedUsers + 1;
       addErrorUser(user, e)
+      console.log('checking...', processedUsers, totalUsers)
       if(processedUsers >= totalUsers){
         activeSubmit.value = false;
       }
@@ -409,6 +410,11 @@ function addErrorUser(user, error) {
     ...user,
     error
   })
+  processedUsers = processedUsers + 1;
+  console.log('processedUsers is now', processedUsers)
+  // if(processedUsers >= totalUsers){
+  //   activeSubmit.value = false;
+  // }
 }
 
 // Find the district id given the name. undefined if missing.
