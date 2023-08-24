@@ -76,8 +76,8 @@ const authWithClever = () => {
   if (isMobileBrowser()) {
     authStore.signInWithCleverRedirect();
   } else {
-    // authStore.signInWithCleverRedirect();
-    authStore.signInWithCleverPopup();
+    authStore.signInWithCleverRedirect();
+    // authStore.signInWithCleverPopup();
     spinner.value = true;
   }
 }
