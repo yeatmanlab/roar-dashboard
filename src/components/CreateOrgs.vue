@@ -14,49 +14,54 @@
 
         <Divider />
 
-        <div class="grid mt-4">
-          <div class="col-12 mb-2">
+        <div class="grid column-gap-3 mt-5">
+          <div class="col-12 md:col-6 lg:col-3 xl:col-3">
             <span class="p-float-label">
               <Dropdown v-model="orgType" inputId="org-type" :options="orgTypes" showClear optionLabel="singular"
-                placeholder="Select an org type" class="w-full md:w-30rem" />
+                placeholder="Select an org type" class="w-full" />
               <label for="org-type">Org Type</label>
             </span>
           </div>
+        </div>
 
-          <div class="col-12" v-if="parentOrgType">
-            <div v-if="parentOrgs.length > 1">
-              <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType.singular }}.</p>
-              <span class="p-float-label my-4">
-                <Dropdown v-model="state.parentOrg" inputId="parent-org" :options="parentOrgs" showClear
-                  optionLabel="name" :placeholder="`Select a ${parentOrgType.singular}`" class="w-full md:w-14rem" />
-                <label for="parent-org">{{ _capitalize(parentOrgType.singular) }}</label>
-                <small v-if="v$.parentOrg.$invalid && submitted" class="p-error">
-                  Please select a {{ parentOrgType.singular }}
-                </small>
-              </span>
-            </div>
-
-            <div v-else-if="parentOrgs.length === 1">
-              <p id="section-heading">
-                This {{ orgTypeLabel.toLowerCase() }} will be created in {{ parentOrgType }} {{ parentOrgs[0].name }}.
-              </p>
-            </div>
-
-            <div v-else class="loading-container">
-              <AppSpinner style="margin-bottom: 1rem;" />
-              <span>Loading {{ parentOrgType.plural }}</span>
-            </div>
+        <div v-if="parentOrgType" class="grid column-gap-3">
+          <div v-if="parentOrgs.length > 1" class="col-12 mt-3 mb-0 pb-0">
+            <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{
+              parentOrgType.singular }}.</p>
+          </div>
+          <div v-if="parentOrgs.length > 1" class="col-12 md:col-6 lg:col-3 xl:col-3">
+            <span class="p-float-label">
+              <Dropdown v-model="state.parentOrg" inputId="parent-org" :options="parentOrgs" showClear optionLabel="name"
+                :placeholder="`Select a ${parentOrgType.singular}`" class="w-full" />
+              <label for="parent-org">{{ _capitalize(parentOrgType.singular) }}</label>
+              <small v-if="v$.parentOrg.$invalid && submitted" class="p-error">
+                Please select a {{ parentOrgType.singular }}
+              </small>
+            </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3 mt-3">
+          <div v-else-if="parentOrgs.length === 1" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+            <p id="section-heading">
+              This {{ orgTypeLabel.toLowerCase() }} will be created in {{ parentOrgType }} {{ parentOrgs[0].name }}.
+            </p>
+          </div>
+
+          <div v-else class="loading-container">
+            <AppSpinner style="margin-bottom: 1rem;" />
+            <span>Loading {{ parentOrgType.plural }}</span>
+          </div>
+        </div>
+
+        <div class="grid column-gap-3 mt-3" v-if="parentOrgType">
+          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
             <span class="p-float-label">
-              <InputText id="org-name" v-model="state.orgName" />
+              <InputText id="org-name" v-model="state.orgName" class="w-full" />
               <label for="org-name">{{ orgTypeLabel }} Name</label>
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3 mt-3">
+          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
             <span class="p-float-label">
               <InputText id="org-initial" v-model="state.orgInitials" class="w-full" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
@@ -64,7 +69,7 @@
             </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3 mt-3" v-if="parentOrgType?.singular === 'school'">
+          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="parentOrgType?.singular === 'school'">
             <span class="p-float-label">
               <Dropdown v-model="state.grade" inputId="grade" :options="grades" showClear optionLabel="name"
                 placeholder="Select a grade" class="w-full" />
@@ -74,28 +79,52 @@
           </div>
         </div>
 
-        <div class="grid">
-          <div v-if="orgType?.singular === 'school' || orgType?.singular === 'district'">
-            <div class="col-12 md:col-6 lg:col-3">
-              <span class="p-float-label mt-5">
-                <InputText v-model="state.ncesId" inputId="nces-id" />
+        <div class="mt-5 mb-0 pb-0">
+          <p>Optional fields:</p>
+        </div>
+
+        <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
+          <div class="grid column-gap-3">
+            <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+              <span class="p-float-label">
+                <InputText v-model="state.ncesId" v-tooltip="ncesTooltip" inputId="nces-id" class="w-full" />
                 <label for="nces-id">NCES ID</label>
               </span>
             </div>
-            <div class="col-12 md:col-6 lg:col-3">
-              <span class="p-float-label mt-5">
-                <Textarea v-model="state.address" inputId="address" />
-                <label for="address">Address</label>
+            <div class="col-12 md:col-6 lg:col-6 xl:col-6 mt-3">
+              <span class="p-float-label">
+                <InputText v-model="state.street" inputId="address-street" class="w-full" />
+                <label for="address">Street Address</label>
+              </span>
+            </div>
+          </div>
+          <div class="grid column-gap-3">
+            <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+              <span class="p-float-label">
+                <InputText v-model="state.city" inputId="address-city" class="w-full" />
+                <label for="address-city">City</label>
+              </span>
+            </div>
+            <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+              <span class="p-float-label">
+                <InputText v-model="state.state" inputId="address-state" class="w-full" />
+                <label for="address-state">State/Province</label>
+              </span>
+            </div>
+            <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+              <span class="p-float-label">
+                <InputText v-model="state.postalCode" inputId="address-zip" class="w-full" />
+                <label for="address-zip">Postal Code</label>
               </span>
             </div>
           </div>
         </div>
 
-        <div class="grid mt-4">
-          <div class="col-12 md:col-6 lg:col-3">
-            <span class="p-float-label mt-5">
+        <div class="grid column-gap-3 mt-3">
+          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+            <span class="p-float-label">
               <AutoComplete v-model="state.tags" multiple dropdown :options="allTags" :suggestions="tagSuggestions"
-                @complete="searchTags" name="tags" />
+                @complete="searchTags" name="tags" class="w-full" />
               <label for="tags">Tags</label>
             </span>
           </div>
@@ -123,6 +152,7 @@ import { useConfirm } from "primevue/useconfirm";
 import { storeToRefs } from "pinia";
 import _capitalize from "lodash/capitalize";
 import _get from "lodash/get";
+import _set from "lodash/set";
 import _union from "lodash/union";
 import _without from "lodash/without";
 import { useVuelidate } from "@vuelidate/core";
@@ -136,7 +166,10 @@ const state = reactive({
   orgName: "",
   orgInitials: "",
   ncesId: "",
-  address: "",
+  street: "",
+  city: "",
+  state: "",
+  postalCode: "",
   parentOrg: undefined,
   grade: undefined,
   tags: [],
@@ -223,6 +256,15 @@ const allTags = computed(() => {
   ), undefined) || [];
 })
 
+const ncesTooltip = computed(() => {
+  if (orgType.value?.singular === "school") {
+    return "12 digit NCES school identification number";
+  } else if (orgType.value?.singular === "district") {
+    return "7 digit NCES district identification number";
+  }
+  return "";
+})
+
 const tagSuggestions = ref([]);
 const searchTags = (event) => {
   const query = event.query.toLowerCase();
@@ -276,7 +318,10 @@ const submit = async (event) => {
 
     if (state.grade) orgData.grade = toRaw(state.grade).value;
     if (state.ncesId) orgData.ncesId = state.ncesId;
-    if (state.address) orgData.address = state.address;
+    if (state.street) _set(orgData, "address.street", state.street);
+    if (state.city) _set(orgData, "address.city", state.city);
+    if (state.state) _set(orgData, "address.state", state.state);
+    if (state.postalCode) _set(orgData, "address.postalCode", state.postalCode);
     if (state.tags.length > 0) orgData.tags = state.tags;
 
     if (orgType.value?.singular === "class") {
@@ -285,7 +330,12 @@ const submit = async (event) => {
       if (state.parentOrg) {
         orgData.districtId = toRaw(state.parentOrg).map((org) => org.id);
       } else {
-        orgData.districtId = await roarfirekit.value.createOrg('districts', orgData);
+        const districtData = { ...orgData };
+        // The NCES school ID is composed of the 7 digit district ID followed by
+        // the 5 digit ID of the school within that district.
+        // To create the district ID, we need to take just the first 7 digits
+        if (orgData.ncesId) districtData.ncesId = orgData.ncesId.slice(0, 7);
+        orgData.districtId = await roarfirekit.value.createOrg('districts', districtData);
       }
     }
 
