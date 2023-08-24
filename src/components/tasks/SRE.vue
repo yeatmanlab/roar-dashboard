@@ -20,6 +20,16 @@ const gameStarted = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
 
+// Send user back to Home if page is reloaded
+const entries = performance.getEntriesByType("navigation");
+entries.forEach((entry) => {
+  if (entry.type === "reload") {
+    if(entry.name === window.location.href) {
+      router.replace({ name: "Home" })
+    }
+  }
+});
+
 onMounted(async () => {
   if(isFirekitInit.value) {
     await startTask();
