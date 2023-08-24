@@ -11,6 +11,7 @@ import PrimeVue from "primevue/config";
 // PrimeVue components
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
+import AutoComplete from "primevue/autocomplete";
 import Badge from 'primevue/badge';
 import Button from "primevue/button";
 import Calendar from 'primevue/calendar';
@@ -44,6 +45,7 @@ import SplitButton from "primevue/splitbutton";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import Tag from "primevue/tag";
+import Textarea from "primevue/textarea";
 import Toast from 'primevue/toast';
 import ToastService from 'primevue/toastservice';
 import Toolbar from "primevue/toolbar";
@@ -65,6 +67,8 @@ import Row from 'primevue/row';
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue'
 
+import VueGoogleMaps from 'vue-google-maps-community-fork'
+
 // Style assets
 import "primevue/resources/primevue.css"; // primevue css
 import "primeicons/primeicons.css"; // icons
@@ -83,10 +87,17 @@ app.use(ToastService);
 app.use(ConfirmationService);
 app.use(pinia);
 app.use(router);
+app.use(VueGoogleMaps, {
+  load: {
+    key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
+    libraries: 'places',
+  },
+})
 app.use(createHead());
 
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
+app.component("AutoComplete", AutoComplete);
 app.component("Badge", Badge);
 app.component("Button", Button);
 app.component("Calendar", Calendar);
@@ -119,6 +130,7 @@ app.component("SplitButton", SplitButton);
 app.component("TabPanel", TabPanel);
 app.component("TabView", TabView);
 app.component("Tag", Tag);
+app.component("Textarea", Textarea);
 app.component("Toast", Toast);
 app.component("ToggleButton", ToggleButton);
 app.component("Toolbar", Toolbar);

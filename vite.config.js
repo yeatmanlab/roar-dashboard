@@ -31,6 +31,10 @@ export default defineConfig({
     cssCodeSplit: false
   },
   optimizeDeps: {
-    include: ['@bdelab/roar-firekit'],
+    include: [
+      '@bdelab/roar-firekit',
+      "vue-google-maps-community-fork",
+      "fast-deep-equal",
+    ],
   },
 });
