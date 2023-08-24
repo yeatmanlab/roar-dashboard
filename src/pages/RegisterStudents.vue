@@ -128,7 +128,7 @@ const dropdown_options = ref([
     label: 'Required',
     items: [
       { label: 'Student Username', value: 'username' },
-      { label: 'Student Email', value: 'email' },
+      // { label: 'Student Email', value: 'email' },
       { label: 'Grade', value: 'grade' },
       { label: 'Password', value: 'password' },
       { label: 'Student Date of Birth', value: 'dob' },
@@ -381,7 +381,6 @@ function submitStudents(rawJson) {
       }
     }).catch((e) => {
       toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
-      // processedUsers = processedUsers + 1;
       addErrorUser(user, e)
       console.log('checking...', processedUsers, totalUsers)
       if(processedUsers >= totalUsers){
@@ -411,10 +410,6 @@ function addErrorUser(user, error) {
     error
   })
   processedUsers = processedUsers + 1;
-  console.log('processedUsers is now', processedUsers)
-  // if(processedUsers >= totalUsers){
-  //   activeSubmit.value = false;
-  // }
 }
 
 // Find the district id given the name. undefined if missing.
