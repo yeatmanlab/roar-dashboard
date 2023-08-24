@@ -109,7 +109,7 @@ export const csvFileToJson = (fileObject) =>
     Papa.parse(fileObject, {
       header: true,
       dynamicTyping: true,
-      skipEmptyLines: true,
+      skipEmptyLines: "greedy",
       complete: function (results) {
         if (results.errors.length !== 0) {
           reject(results.errors);
