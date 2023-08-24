@@ -110,6 +110,8 @@ export const csvFileToJson = (fileObject) =>
       header: true,
       dynamicTyping: true,
       skipEmptyLines: "greedy",
+      transform: (value) => value.trim(),
+      transformHeader: (value) => value.trim(),
       complete: function (results) {
         if (results.errors.length !== 0) {
           reject(results.errors);
