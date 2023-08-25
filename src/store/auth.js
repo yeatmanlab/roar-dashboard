@@ -11,6 +11,7 @@ export const useAuthStore = () => {
     id: "authStore",
     state: () => {
       return {
+        spinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
@@ -167,7 +168,10 @@ export const useAuthStore = () => {
         }
         if(this.isFirekitInit){
           return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then(() => {
+            console.log('In then block from initStateFromRedirect')
             if(this.roarfirekit.userData){
+              console.log('setting hasUserData to true')
+              this.spinner = true;
               this.hasUserData = true
               this.firekitUserData = this.roarfirekit.userData
             }
@@ -181,6 +185,8 @@ export const useAuthStore = () => {
             this.hasUserData = false;
             console.log('setting firekitIsAdmin to false')
             this.firekitIsAdmin = false;
+            this.firekitUserData = null;
+            this.spinner = false;
             // this.roarfirekit = initNewFirekit()
           });
         } else {
