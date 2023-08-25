@@ -1,6 +1,7 @@
 import { defineStore, storeToRefs } from "pinia";
-import { getTreeTableOrgs } from "@bdelab/roar-firekit";
+import { getTreeTableOrgs, emptyOrgList } from "@bdelab/roar-firekit";
 import { useAuthStore } from "@/store/auth"
+import { pluralizeFirestoreCollection } from "@/helpers";
 
 export const useQueryStore = () => {
   const authStore = useAuthStore();
@@ -35,6 +36,34 @@ export const useQueryStore = () => {
           }));
         } else {
           this.administrations = [];
+        }
+      },
+      async getUsersByAssignment(assignmentId, orgType, orgId, includeScores = false) {
+        if (roarfirekit.value?.admin?.db) {
+
+          const collection = pluralizeFirestoreCollection(orgType);
+          const orgs = emptyOrgList();
+          orgs[collection] = [orgId];
+
+          return roarfirekit.value.getUsersByAssignment({
+            assignmentId,
+            orgs,
+            countOnly: false,
+            includeScores,
+          });
+        } else {
+          return null;
+        }
+      },
+      async getUsersBySingleOrg(orgType, orgId) {
+        if (roarfirekit.value?.admin?.db) {
+          return roarfirekit.value.getUsersByOrg({
+            orgType,
+            orgId,
+            countOnly: false,
+          });
+        } else {
+          return null;
         }
       },
       async getOrgs(orgType) {

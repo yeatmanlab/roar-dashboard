@@ -23,13 +23,6 @@
 				<p><strong>Assessments</strong></p>
 				<p><span v-for="assessmentId in assessmentIds" class="card-inline-list-item">{{ assessmentId }}</span></p>
 			</div>
-			<div class="card-admin-link">
-				<router-link :to="{ name: 'ViewAdministration', params: { id: id } }" v-slot="{ href, route, navigate }">
-					<button :href="href" @click="navigate" class='p-button p-button-secondary p-button-outlined'>
-						View all details
-					</button>
-				</router-link>
-			</div>
 
 			<TreeTable v-if="isAssigned" :value="hierarchicalAssignedOrgs">
 				<Column field="name" header="Name" expander></Column>
@@ -41,10 +34,10 @@
 				<Column field="id" header="" style="width: 6rem">
 					<template #body="{ node }">
 						<router-link
-							:to="{ name: 'ViewAdministration', params: { id: id, orgId: node.data.id, orgType: node.data.orgType } }"
+							:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
 							v-slot="{ href, route, navigate }">
 							<Button v-tooltip.top="'See completion details'" icon="pi pi-info-circle" severity="secondary" text rounded
-								aria-label="Completion details" size="large" @click="" />
+								aria-label="Completion details" size="large" />
 						</router-link>
 					</template>
 				</Column>
