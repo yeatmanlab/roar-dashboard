@@ -1,4 +1,5 @@
 import { defineStore, storeToRefs } from "pinia";
+import { parse, stringify } from "zipson";
 import { getTreeTableOrgs, emptyOrgList } from "@bdelab/roar-firekit";
 import { useAuthStore } from "@/store/auth"
 import { pluralizeFirestoreCollection } from "@/helpers";
@@ -15,6 +16,20 @@ export const useQueryStore = () => {
         hierarchicalAdminOrgs: {},
         administrations: [],
       };
+    },
+    getters: {
+      getOrgInfo: (state) => {
+        return (orgType, orgId) => {
+          const collectionName = pluralizeFirestoreCollection(orgType);
+          const orgs = state.adminOrgs[collectionName];
+          return orgs?.find((org) => org.id === orgId);
+        };
+      },
+      getAdministrationInfo: (state) => {
+        return (administrationId) => {
+          return state.administrations.find((administration) => administration.id === administrationId);
+        }
+      }
     },
     actions: {
       async getMyAdministrations() {
@@ -113,6 +128,14 @@ export const useQueryStore = () => {
           this.allVariants = [];
         }
         this.variantsReady = true;
+      },
+    },
+    persist: {
+      storage: sessionStorage,
+      debug: false,
+      serializer: {
+        deserialize: parse,
+        serialize: stringify,
       },
     },
   })();
