@@ -46,6 +46,11 @@
 		.roar-game-description {
 			color: var(--text-color);
 			font-size: 1.15rem;
+			line-height: 1.5;
+			
+			p {
+				font-size: inherit;
+			}
 		}
 		
 		.roar-game-meta {
