@@ -7,46 +7,18 @@
       <Button label="Export Selected" :disabled="refSelectedRows.length === 0" @click="exportCSV(true, $event)" />
       <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
     </div>
-    <DataTable 
-      ref="dataTable"
-      :value="refData" 
-      :rowHover="true" 
-      :reorderableColumns="true" 
-      :resizableColumns="true"
-      :exportFilename="exportFilename"
-      v-model:selection="refSelectedRows"
-      removableSort
-      sortMode="multiple"
-      showGridlines
-      v-model:filters="refFilters"
-      filterDisplay="menu"
-      paginator
-      :alwaysShowPaginator="false"
-      :rows="10"
-      :rowsPerPageOptions="[10, 20, 50]"
-    >
-      <Column 
-        selectionMode="multiple" 
-        headerStyle="width: 3rem"
-      ></Column>
-      <Column 
-        v-for="col of columns" 
-        :key="col.field" 
-        :header="col.header" 
-        :field="col.field"
-        :dataType="col.dataType"
-        :sortable="(col.sort !== false)"
-        :showFilterMatchModes="!col.useMultiSelect"
-        :showFilterOperator="col.allowMultipleFilters === true"
-        :showAddButton="col.allowMultipleFilters === true"
-      >
+    <DataTable ref="dataTable" :value="refData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
+      :exportFilename="exportFilename" v-model:selection="refSelectedRows" removableSort sortMode="multiple" showGridlines
+      v-model:filters="refFilters" filterDisplay="menu" paginator :alwaysShowPaginator="false" :rows="10"
+      :rowsPerPageOptions="[10, 20, 50]">
+      <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+      <Column v-for="col of columns" :key="col.field" :header="col.header" :field="col.field" :dataType="col.dataType"
+        :sortable="(col.sort !== false)" :showFilterMatchModes="!col.useMultiSelect"
+        :showFilterOperator="col.allowMultipleFilters === true" :showAddButton="col.allowMultipleFilters === true">
         <template #body="{ data }">
-          <div v-if="col.chip">
-            <Tag
-              :severity="_get(data, col.severityField)"
-              :value="_get(data, col.field)"
-              :icon="_get(data, col.iconField)"
-            />
+          <div v-if="col.tag">
+            <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
+              :icon="_get(data, col.iconField)" rounded />
           </div>
           <div v-else-if="col.dataType === 'date'">
             {{ getFormattedDate(_get(data, col.field)) }}
@@ -56,30 +28,13 @@
           </div>
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
-          <InputText 
-            v-if="col.dataType === 'text' && !col.useMultiSelect"
-            type="text" v-model="filterModel.value" 
-            class="p-column-filter" 
-            placeholder="Search" 
-          />
-          <MultiSelect 
-            v-if="col.useMultiSelect"
-            v-model="filterModel.value" 
-            :options="_get(refOptions, col.field)"
-            placeholder="Any"
-            :showToggleAll="false" 
-            class="p-column-filter" 
-          />
-          <Calendar 
-            v-if="col.dataType === 'date' && !col.useMultiSelect"
-            v-model="filterModel.value" 
-            dateFormat="mm/dd/yy" 
-            placeholder="mm/dd/yyyy" 
-          />
-          <div 
-            v-if="col.dataType === 'boolean' && !col.useMultiSelect" 
-            class="flex flex-row gap-2"
-          >
+          <InputText v-if="col.dataType === 'text' && !col.useMultiSelect" type="text" v-model="filterModel.value"
+            class="p-column-filter" placeholder="Search" />
+          <MultiSelect v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
+            placeholder="Any" :showToggleAll="false" class="p-column-filter" />
+          <Calendar v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
+            dateFormat="mm/dd/yy" placeholder="mm/dd/yyyy" />
+          <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
             <TriStateCheckbox inputId="booleanFilter" v-model="filterModel.value" style="padding-top: 2px;" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
           </div>
@@ -124,10 +79,10 @@ Array of objects consisting of a field and header at minimum.
 */
 
 const props = defineProps({
-  columns: {type:Array, required: true},
-  data: {type: Array, required: true},
-  allowExport: {type: Boolean, default: true},
-  exportFilename: {type: String, default: 'datatable-export'}
+  columns: { type: Array, required: true },
+  data: { type: Array, required: true },
+  allowExport: { type: Boolean, default: true },
+  exportFilename: { type: String, default: 'datatable-export' }
 });
 
 let selectedRows = [];
@@ -136,7 +91,7 @@ const refSelectedRows = ref(selectedRows);
 const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
-  dataTable.value.exportCSV({selectionOnly: exportSelected});
+  dataTable.value.exportCSV({ selectionOnly: exportSelected });
 };
 
 // Generate filters and options objects
@@ -145,26 +100,26 @@ let filters = {};
 let options = {};
 _forEach(props.columns, column => {
   // Check if header text is supplied; if not, generate.
-  if(!_get(column, 'header')){
+  if (!_get(column, 'header')) {
     column['header'] = _startCase(_get(column, 'field'))
   }
   const dataType = _toUpper(_get(column, 'dataType'));
   let returnMatchMode = null;
-  if(valid_dataTypes.includes(dataType)){
-    if(dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN'){
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS};
-    } else if(dataType === 'TEXT' || dataType === 'STRING'){
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH};
-    } else if(dataType === 'DATE'){
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS};
+  if (valid_dataTypes.includes(dataType)) {
+    if (dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN') {
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
+    } else if (dataType === 'TEXT' || dataType === 'STRING') {
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
+    } else if (dataType === 'DATE') {
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
     }
-    
-    if(_get(column, 'useMultiSelect')){
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.IN};
+
+    if (_get(column, 'useMultiSelect')) {
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
       options[column.field] = getUniqueOptions(column);
     }
   }
-  if(returnMatchMode){
+  if (returnMatchMode) {
     filters[column.field] = {
       operator: FilterOperator.AND,
       constraints: [returnMatchMode]
@@ -183,7 +138,7 @@ _forEach(computedData, entry => {
   // Clean up date fields to use Date objects
   _forEach(dateFields, field => {
     let dateEntry = _get(entry, field);
-    if(dateEntry !== null){
+    if (dateEntry !== null) {
       const dateObj = new Date(dateEntry);
       _set(entry, field, dateObj);
     }
@@ -192,19 +147,19 @@ _forEach(computedData, entry => {
 const refData = ref(computedData);
 
 // Generate list of options given a column
-function getUniqueOptions(column){
+function getUniqueOptions(column) {
   const field = _get(column, 'field');
   let options = [];
   _forEach(props.data, entry => {
-    if(!options.includes(_get(entry, field))){
+    if (!options.includes(_get(entry, field))) {
       options.push(_get(entry, field));
     }
   });
   return options
 }
 
-function getFormattedDate(date){
-  if(date && !isNaN(date)){
+function getFormattedDate(date) {
+  if (date && !isNaN(date)) {
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })
   } else return ''
 }
