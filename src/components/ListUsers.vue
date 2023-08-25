@@ -13,7 +13,7 @@
 
         <div v-if="!isLoading">
           <div v-if="showTable">
-            <h2> Viewing {{ orgType }}: {{ orgId }}</h2>
+            <h2> Viewing {{ orgType }}: {{ orgName }}</h2>
             <RoarDataTable :data="users" :columns="columns" />
           </div>
           <div v-else>No users in this {{ orgType }}</div>
@@ -28,20 +28,25 @@ import { ref, computed } from "vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 import { useAuthStore } from "@/store/auth";
+import { useQueryStore } from "@/store/query";
 import { useRoute } from "vue-router";
 import _isEmpty from 'lodash/isEmpty';
 import _forEach from 'lodash/forEach';
+import _find from 'lodash/find'
 import _get from 'lodash/get';
 import _set from 'lodash/set';
 import _union from 'lodash/union';
+import _head from 'lodash/head'
 import AppSpinner from "./AppSpinner.vue";
 
 const authStore = useAuthStore();
+const queryStore = useQueryStore();
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
 const route = useRoute();
 const orgType = _get(route, 'params.orgType');
 const orgId = _get(route, 'params.orgId');
+const orgName = ref(orgId)
 
 const users = ref([]);
 const showTable = ref(false);
@@ -54,8 +59,9 @@ const spinIcon = computed(() => {
 });
 
 async function getUsers() {
+  const allOrgs = await queryStore.getOrgs(`${orgType}s`)
+  orgName.value = _get(_find(allOrgs, org => org.id === orgId), 'name')
   const rawUsers = await authStore.getUsersForOrg(`${orgType}s`, orgId)
-  console.log('rawUsers', rawUsers)
   // Process each user if necessary
   _forEach(rawUsers, user => {
     // Try to hydrate firestore date
