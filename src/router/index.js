@@ -155,7 +155,7 @@ const routes = [
     path: "/administration/:administrationId/:orgType/:orgId",
     name: "ViewAdministration",
     props: true,
-    component: () => import("../pages/Administration.vue"),
+    component: () => import("../pages/AdministrationProgress.vue"),
     meta: {pageTitle: "View Administration", requireAdmin: true}
   },
   {
