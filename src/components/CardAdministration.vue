@@ -26,20 +26,26 @@
 			</div>
 
 			<TreeTable v-if="isAssigned" :value="hierarchicalAssignedOrgs">
-				<Column field="name" header="Name" expander></Column>
+				<Column field="name" header="Name" expander style="width: 20rem"></Column>
 				<Column v-if="stats" field="id" header="Completion">
 					<template #body="{ node }">
 						<Chart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
 					</template>
 				</Column>
-				<Column field="id" header="" style="width: 6rem">
+				<Column field="id" header="" style="width: 14rem">
 					<template #body="{ node }">
-						<router-link
-							:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
-							v-slot="{ href, route, navigate }">
-							<Button v-tooltip.top="'See completion details'" icon="pi pi-info-circle" severity="secondary" text rounded
-								aria-label="Completion details" size="large" />
-						</router-link>
+						<span class="p-buttonset m-0">
+							<router-link
+								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
+								v-slot="{ href, route, navigate }">
+								<Button v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
+									aria-label="Completion details" size="small" />
+							</router-link>
+							<span v-tooltip.top="'Coming Soon'">
+								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised disabled label="Scores"
+									aria-label="Scores" size="small" />
+							</span>
+						</span>
 					</template>
 				</Column>
 			</TreeTable>
