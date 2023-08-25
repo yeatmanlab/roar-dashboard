@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, defineEmits, defineProps, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { required, requiredUnless } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
