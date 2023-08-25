@@ -334,7 +334,7 @@ onMounted(() => {
 });
 </script>
 
-<style>
+<style scoped>
 p {
   text-align: left;
   font-size:medium;
