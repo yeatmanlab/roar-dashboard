@@ -192,7 +192,7 @@ function getUniqueOptions(column){
 }
 
 function getFormattedDate(date){
-  if(date){
+  if(date && !isNaN(date)){
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })
   } else return ''
 }
