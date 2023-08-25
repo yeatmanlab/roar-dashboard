@@ -10,7 +10,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, defineEmits, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
 import { marked } from 'marked';
@@ -60,6 +60,7 @@ onMounted(() => {
   border: 2px solid var(--surface-d);
   border-radius: 5px;
 }
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }
