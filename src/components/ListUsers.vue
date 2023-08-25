@@ -16,7 +16,7 @@
             <h2> Viewing {{ orgType }}: {{ orgName }}</h2>
             <RoarDataTable :data="users" :columns="columns" />
           </div>
-          <div v-else>No users in this {{ orgType }}</div>
+          <div v-else>No users in this {{ orgType }}.</div>
         </div>
         <AppSpinner v-else />
       </Panel>

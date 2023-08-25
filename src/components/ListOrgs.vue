@@ -25,6 +25,11 @@
               <Chip v-for="(tag, index) in node.data.tags" :label="tag" :key="index" icon="pi pi-tag" class="m-1" />
             </template>
           </Column>
+          <Column field="" header="" #body="{ node }">
+            <router-link :to="{ name: 'ListUsers', params: { orgType: node.data.orgType, orgId: node.data.id } }">
+              <Button label="View users" />
+            </router-link>
+          </Column>
         </TreeTable>
       </Panel>
     </section>
