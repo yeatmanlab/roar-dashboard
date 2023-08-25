@@ -38,20 +38,19 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, toRaw, onBeforeUnmount } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount } from 'vue';
 import SignIn from "@/components/auth/SignIn.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from 'vue-router';
 import { isMobileBrowser } from "@/helpers";
-import AppSpinner from '../components/AppSpinner.vue';
 import _get from 'lodash/get'
-import { storeToRefs } from 'pinia';
 
-const spinner = ref(false);
 const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
+
+const spinner = ref(authStore.spinner);
 
 authStore.$subscribe((mutation, state) => {
   if (state.roarfirekit.userData) {
