@@ -52,7 +52,7 @@
           </div>
         </div>
 
-        <div class="grid column-gap-3 mt-3" v-if="parentOrgType">
+        <div class="grid column-gap-3 mt-3">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
             <span class="p-float-label">
               <InputText id="org-name" v-model="state.orgName" class="w-full" />
