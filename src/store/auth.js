@@ -166,7 +166,9 @@ export const useAuthStore = () => {
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
         }
+        console.log("in initStateFromRedirect")
         if(this.isFirekitInit){
+          console.log("firekit is initialized in initStateFromRedirect")
           return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then(() => {
             console.log('In then block from initStateFromRedirect')
             if(this.roarfirekit.userData){
