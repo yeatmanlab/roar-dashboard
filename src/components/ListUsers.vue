@@ -1,26 +1,133 @@
 <template>
-  List users Page!
+  <main class="container main">
+    <aside class="main-sidebar">
+      <AdministratorSidebar :actions="sidebarActions" />
+    </aside>
+    <section class="main-body">
+      <Panel header="View Users">
+        <template #icons>
+          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
+            <span :class="spinIcon"></span>
+          </button>
+        </template>
+
+        <div v-if="!isLoading">
+          <div v-if="showTable">
+            <h2> Viewing {{ orgType }}: {{ orgId }}</h2>
+            <RoarDataTable :data="users" :columns="columns" />
+          </div>
+          <div v-else>No users in this {{ orgType }}</div>
+        </div>
+        <AppSpinner v-else />
+      </Panel>
+    </section>
+  </main>
 </template>
 <script setup>
-import { defineProps } from "vue";
+import { ref, computed } from "vue";
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import { getSidebarActions } from "../router/sidebarActions";
+import { useAuthStore } from "@/store/auth";
+import { useRoute } from "vue-router";
+import _isEmpty from 'lodash/isEmpty';
+import _forEach from 'lodash/forEach';
+import _get from 'lodash/get';
+import _set from 'lodash/set';
+import _union from 'lodash/union';
+import AppSpinner from "./AppSpinner.vue";
 
-const props = defineProps({
-  orgs: { required: true, default: {} }
-})
+const authStore = useAuthStore();
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
-const users = ref([
-  {
-    username: 'listedUser1',
-    firstname: 'First1',
-    lastname: 'Last1',
-    district: 'Elijah Test District',
-    school: 'Elijah Test School',
-    classes: ['class1', 'class2'],
-    studentData: {
-      dob: new Date(),
-      grade: '5',
-      gender: 'male'
+const route = useRoute();
+const orgType = _get(route, 'params.orgType');
+const orgId = _get(route, 'params.orgId');
+
+const users = ref([]);
+const showTable = ref(false);
+const isLoading = ref(true);
+
+const refreshing = ref(false);
+const spinIcon = computed(() => {
+  if (refreshing.value) return "pi pi-spin pi-spinner";
+  return "pi pi-refresh";
+});
+
+async function getUsers() {
+  const rawUsers = await authStore.getUsersForOrg(`${orgType}s`, orgId)
+  console.log('rawUsers', rawUsers)
+  // Process each user if necessary
+  _forEach(rawUsers, user => {
+    // Try to hydrate firestore date
+    let dob = _get(user, 'studentData.dob')
+    if(dob){
+      try {
+        const date = dob.toDate();
+        _set(user, 'studentData.dob', date)
+      } catch(e) {};
     }
+  })
+  users.value = rawUsers;
+  // If there are no users, do not show the table
+  if(!_isEmpty(rawUsers)){
+    showTable.value = true;
   }
-]);
+  isLoading.value = false;
+}
+
+let unsubscribe;
+
+const refresh = async () => {
+  refreshing.value = true;
+  if (unsubscribe) unsubscribe();
+  getUsers().then(() => {
+    refreshing.value = false;
+  });
+}
+
+if (_isEmpty(users.value)) {
+  unsubscribe = authStore.$subscribe(async (mutation, state) => {
+    if (state.roarfirekit.getUsersBySingleOrg && state.roarfirekit.isAdmin()) {
+      await refresh();
+    }
+  });
+}
+
+const columns = ref([
+  {
+    field: 'username',
+    header: 'Username',
+    dataType: 'string'
+  },
+  {
+    field: 'name.first',
+    header: 'First Name', 
+    dataType: 'string',
+  },
+  {
+    field: 'name.last',
+    header: 'Last Name', 
+    dataType: 'string',
+  },
+  {
+    field: 'studentData.grade',
+    header: 'Grade', 
+    dataType: 'string',
+  },
+  {
+    field: 'studentData.gender',
+    header: 'Gender',
+    dataType: 'string'
+  },
+  {
+    field: 'studentData.dob',
+    header: 'Date of Birth',
+    dataType: 'date'
+  },
+  {
+    field: 'userType',
+    header: 'User Type',
+    dataType: 'string',
+  }
+])
 </script>
