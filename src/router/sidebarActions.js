@@ -12,12 +12,6 @@ export const sidebarActionOptions = [
     requiresSuperAdmin: false,
   },
   {
-    title: "List Users",
-    icon: "pi pi-list",
-    buttonLink: { name: "ListUsers" },
-    requiresSuperAdmin: false,
-  },
-  {
     title: "Create organization",
     icon: "pi pi-database",
     buttonLink: { name: "CreateOrgs" },
