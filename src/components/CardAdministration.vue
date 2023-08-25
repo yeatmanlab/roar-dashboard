@@ -7,7 +7,8 @@
 		<div class="card-admin-body">
 			<h2 class="card-admin-title">{{ title }}</h2>
 			<div class="card-admin-details">
-				<p><strong>{{ dates.start.toLocaleDateString() }} — {{ dates.end.toLocaleDateString() }}</strong></p>
+				<p><strong>{{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString()
+				}}</strong></p>
 				<p><strong>Assigned to: </strong>
 					<span v-for="orgType in Object.keys(displayOrgs)" class="card-inline-list-item">
 						<span v-if="displayOrgs[orgType].length">
@@ -47,12 +48,13 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useQueryStore } from "@/store/query";
 import { filterAdminOrgs, removeEmptyOrgs } from "@/helpers";
 import _capitalize from "lodash/capitalize";
 import _isEmpty from "lodash/isEmpty";
+import _mapValues from "lodash/mapValues";
 import _toPairs from "lodash/toPairs";
 
 const queryStore = useQueryStore();
@@ -66,6 +68,12 @@ const props = defineProps({
 	assignees: Object,
 	assessments: Array,
 });
+
+const processedDates = computed(() => {
+	return _mapValues(props.dates, (date) => {
+		return new Date(date);
+	})
+})
 
 const assessmentIds = props.assessments.map(assessment => assessment.taskId.toUpperCase());
 
