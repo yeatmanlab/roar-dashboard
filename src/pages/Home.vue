@@ -1,7 +1,7 @@
 <template>
-  <Participant v-if="!isAdminRef"/>
+  <Participant v-if="!isAdminRef" />
   <Administrator v-else-if="isAdminRef" />
-  <ConsentModal v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent"/>
+  <ConsentModal v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent" />
 </template>
 
 <script setup>
@@ -14,6 +14,7 @@ import { storeToRefs } from "pinia";
 import ConsentModal from "../components/ConsentModal.vue";
 const authStore = useAuthStore();
 const { isFirekitInit, roarfirekit, firekitUserData } = storeToRefs(authStore)
+
 const isAdmin = authStore.isUserAdmin();
 const isAdminRef = ref(isAdmin)
 
@@ -31,13 +32,13 @@ async function checkConsent() {
   const consentStatus = _get(roarfirekit.value, `userData.legal.${consentType.value}`) || _get(firekitUserData.value, `legal.${consentType.value}`)
   const consentDoc = await authStore.getLegalDoc(consentType.value);
   consentVersion.value = consentDoc.version
-  if(!_get(toRaw(consentStatus), consentDoc.version)){
+  if (!_get(toRaw(consentStatus), consentDoc.version)) {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
   }
 }
 onMounted(async () => {
-  if(isFirekitInit.value){
+  if (isFirekitInit.value) {
     await checkConsent();
   }
 })
