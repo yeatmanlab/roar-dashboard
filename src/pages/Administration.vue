@@ -10,8 +10,20 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useAuthStore } from '../store/auth';
+import { useQueryStore } from '../store/query';
 
-let selectedData = ref([]);
+const authStore = useAuthStore();
+const queryStore = useQueryStore();
+
+const props = defineProps({
+  administrationId: String,
+  orgType: String,
+  orgId: String,
+});
+
+const refreshing = ref(true);
+const data = ref([]);
 
 const columns = ref([
   { field: "student", header: "Student", dataType: "text" },
@@ -20,6 +32,30 @@ const columns = ref([
   { field: "status.sre.value", header: "SRE", dataType: "text", chip: true, severityField: "status.sre.severity", iconField: "status.sre.icon" },
   { field: "status.pa.value", header: "PA", dataType: "text", chip: true, severityField: "status.pa.severity", iconField: "status.pa.icon" },
 ]);
+
+let unsubscribe;
+
+const refresh = async () => {
+  refreshing.value = true;
+  if (unsubscribe) unsubscribe();
+
+  data.value = await queryStore.getUsersByAssignment(
+    props.administrationId, props.orgType, props.orgId, false
+  );
+
+  console.log('Refreshed data', { data: data.value })
+
+  refreshing.value = false;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  console.log('State mutated', mutation, state);
+  if (state.roarfirekit.getUsersByAssignment && state.roarfirekit.isAdmin()) {
+    console.log('Refreshing');
+    await refresh();
+  }
+});
+
 </script>
 
 <style>
