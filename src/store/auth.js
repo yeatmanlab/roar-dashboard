@@ -71,6 +71,9 @@ export const useAuthStore = () => {
           return this.firekitAdminInfo
         }
       },
+      async getUsersForOrg(orgType, orgId) {
+        return await this.roarfirekit.getUsersBySingleOrg({orgType, orgId})
+      },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if(user){
