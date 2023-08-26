@@ -7,7 +7,8 @@
 		<div class="card-admin-body">
 			<h2 class="card-admin-title">{{ title }}</h2>
 			<div class="card-admin-details">
-				<p><strong>{{ dates.start.toLocaleDateString() }} — {{ dates.end.toLocaleDateString() }}</strong></p>
+				<p><strong>{{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString()
+				}}</strong></p>
 				<p><strong>Assigned to: </strong>
 					<span v-for="orgType in Object.keys(displayOrgs)" class="card-inline-list-item">
 						<span v-if="displayOrgs[orgType].length">
@@ -23,29 +24,28 @@
 				<p><strong>Assessments</strong></p>
 				<p><span v-for="assessmentId in assessmentIds" class="card-inline-list-item">{{ assessmentId }}</span></p>
 			</div>
-			<div class="card-admin-link">
-				<router-link :to="{ name: 'ViewAdministration', params: { id: id } }" v-slot="{ href, route, navigate }">
-					<button :href="href" @click="navigate" class='p-button p-button-secondary p-button-outlined'>
-						View all details
-					</button>
-				</router-link>
-			</div>
 
 			<TreeTable v-if="isAssigned" :value="hierarchicalAssignedOrgs">
-				<Column field="name" header="Name" expander></Column>
+				<Column field="name" header="Name" expander style="width: 20rem"></Column>
 				<Column v-if="stats" field="id" header="Completion">
 					<template #body="{ node }">
 						<Chart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
 					</template>
 				</Column>
-				<Column field="id" header="" style="width: 6rem">
+				<Column field="id" header="" style="width: 14rem">
 					<template #body="{ node }">
-						<router-link
-							:to="{ name: 'ViewAdministration', params: { id: id, orgId: node.data.id, orgType: node.data.orgType } }"
-							v-slot="{ href, route, navigate }">
-							<Button v-tooltip.top="'See completion details'" icon="pi pi-info-circle" severity="secondary" text rounded
-								aria-label="Completion details" size="large" @click="" />
-						</router-link>
+						<span class="p-buttonset m-0">
+							<router-link
+								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
+								v-slot="{ href, route, navigate }">
+								<Button v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
+									aria-label="Completion details" size="small" />
+							</router-link>
+							<span v-tooltip.top="'Coming Soon'">
+								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised disabled label="Scores"
+									aria-label="Scores" size="small" />
+							</span>
+						</span>
 					</template>
 				</Column>
 			</TreeTable>
@@ -54,12 +54,13 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useQueryStore } from "@/store/query";
 import { filterAdminOrgs, removeEmptyOrgs } from "@/helpers";
 import _capitalize from "lodash/capitalize";
 import _isEmpty from "lodash/isEmpty";
+import _mapValues from "lodash/mapValues";
 import _toPairs from "lodash/toPairs";
 
 const queryStore = useQueryStore();
@@ -73,6 +74,12 @@ const props = defineProps({
 	assignees: Object,
 	assessments: Array,
 });
+
+const processedDates = computed(() => {
+	return _mapValues(props.dates, (date) => {
+		return new Date(date);
+	})
+})
 
 const assessmentIds = props.assessments.map(assessment => assessment.taskId.toUpperCase());
 
@@ -100,7 +107,7 @@ const setDoughnutChartOptions = () => ({
 
 const setDoughnutChartData = () => {
 	const docStyle = getComputedStyle(document.documentElement);
-	let { assigned = 0, started = 0, completed = 0 } = props.stats.total.assignment;
+	let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
 
 	assigned -= (started + completed);
 	started -= completed;
@@ -150,7 +157,7 @@ const getBorderRadii = (left, middle, right) => {
 }
 
 const setBarChartData = (orgId) => {
-	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId].assignment;
+	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId]?.assignment || {};
 	const documentStyle = getComputedStyle(document.documentElement);
 
 	assigned -= (started + completed);

@@ -152,9 +152,10 @@ const routes = [
     meta: {pageTitle: "List users", requireAdmin: true}
   },
   {
-    path: "/administration/:id",
+    path: "/administration/:administrationId/:orgType/:orgId",
     name: "ViewAdministration",
-    component: () => import("../pages/Administration.vue"),
+    props: true,
+    component: () => import("../pages/AdministrationProgress.vue"),
     meta: {pageTitle: "View Administration", requireAdmin: true}
   },
   {

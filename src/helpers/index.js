@@ -145,3 +145,25 @@ export const filterAdminOrgs = (adminOrgs, filters) => {
 export const removeEmptyOrgs = (orgs) => {
   return _fromPairs(_toPairs(orgs).filter(([orgType, orgs]) => orgs.length > 0));
 }
+
+export const pluralizeFirestoreCollection = (singular) => {
+  const plurals = {
+    group: "groups",
+    district: "districts",
+    school: "schools",
+    class: "classes",
+    family: "families",
+    administration: "administrations",
+    user: "users",
+    assignment: "assignments",
+    run: "runs",
+    trial: "trials",
+  }
+
+  if (Object.values(plurals).includes(singular)) return singular;
+
+  const plural = plurals[singular];
+  if (plural) return plural;
+
+  throw new Error(`There is no plural Firestore collection for the ${singular}`);
+}
