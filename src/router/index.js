@@ -145,6 +145,12 @@ const routes = [
     component: () => import("../components/ListOrgs.vue"),
     meta: {pageTitle: "List organizations", requireAdmin: true}
   },
+  { 
+    path: "/list-users/:orgType/:orgId",
+    name: "ListUsers",
+    component: () => import("../components/ListUsers.vue"),
+    meta: {pageTitle: "List users", requireAdmin: true}
+  },
   {
     path: "/administration/:id",
     name: "ViewAdministration",

@@ -312,6 +312,7 @@ function submitStudents(rawJson) {
       password,
       userData
     }
+    if (username) _set(sendObject, 'userData.username', username)
     if (firstName) _set(sendObject, 'userData.name.first', firstName)
     if (middleName) _set(sendObject, 'userData.name.middle', middleName)
     if (lastName) _set(sendObject, 'userData.name.last', lastName)
