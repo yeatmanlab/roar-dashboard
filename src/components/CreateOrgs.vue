@@ -342,7 +342,8 @@ const submit = async (event) => {
 
     await roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData).then(() => {
       toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-      router.push({ name: 'ListOrgs' });
+      submitted.value = false;
+      resetForm();
     })
   } else {
     console.log("Form is invalid");
@@ -367,6 +368,15 @@ if (districts.value.length === 0 || schools.value.length === 0) {
       await refresh();
     }
   });
+}
+
+const resetForm = () => {
+  state.orgName = "";
+  state.orgInitials = "";
+  state.ncesId = undefined;
+  state.address = undefined;
+  state.grade = undefined;
+  state.tags = [];
 }
 </script> 
 
