@@ -61,6 +61,7 @@ import { filterAdminOrgs, removeEmptyOrgs } from "@/helpers";
 import _capitalize from "lodash/capitalize";
 import _isEmpty from "lodash/isEmpty";
 import _toPairs from "lodash/toPairs";
+import _get from 'lodash/get'
 
 const queryStore = useQueryStore();
 const { adminOrgs } = storeToRefs(queryStore);
@@ -150,7 +151,7 @@ const getBorderRadii = (left, middle, right) => {
 }
 
 const setBarChartData = (orgId) => {
-	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId].assignment;
+	let { assigned = 0, started = 0, completed = 0 } = _get(props.stats, orgId, 'assignment')
 	const documentStyle = getComputedStyle(document.documentElement);
 
 	assigned -= (started + completed);
