@@ -43,6 +43,11 @@ const authStore = useAuthStore();
 const queryStore = useQueryStore();
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
+const props = defineProps({
+  orgType: String,
+  orgId: String
+})
+
 const route = useRoute();
 const orgType = _get(route, 'params.orgType');
 const orgId = _get(route, 'params.orgId');
