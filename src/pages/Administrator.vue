@@ -65,6 +65,10 @@ const refresh = async () => {
   await Promise.all([orgsPromise, adminsitrationsPromise]).then(() => {
     administrationsReady.value = true;
     refreshing.value = false;
+  }).catch((e) => {
+    // If there are no administrations, catch the 'missing documents' error
+    administrationsReady.value = true;
+    refreshing.value = false;
   });
 }
 

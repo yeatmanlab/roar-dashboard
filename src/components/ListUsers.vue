@@ -85,10 +85,16 @@ let unsubscribe;
 
 const refresh = async () => {
   refreshing.value = true;
+  isLoading.value = true;
   if (unsubscribe) unsubscribe();
   getUsers().then(() => {
     refreshing.value = false;
-  });
+  }).catch((e) => {
+    // If there are no administrations, catch the 'missing documents' error
+    console.log('Error caught:', e)
+    refreshing.value = false;
+    isLoading.value = false;
+  });;
 }
 
 if (_isEmpty(users.value)) {
