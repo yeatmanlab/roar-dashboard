@@ -16,6 +16,7 @@
             <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
               :assessments="a.assessments"></CardAdministration>
           </div>
+          <div v-else>There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.</div>
         </div>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
