@@ -27,7 +27,7 @@
           </Column>
           <Column field="" header="" #body="{ node }">
             <router-link :to="{ name: 'ListUsers', params: { orgType: node.data.orgType, orgId: node.data.id } }">
-              <Button label="View users" />
+              <Button v-tooltip.top="'View users'" severity="secondary" outlined aria-label="View users" icon="pi pi-users" />
             </router-link>
           </Column>
         </TreeTable>
