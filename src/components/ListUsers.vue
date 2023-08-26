@@ -29,7 +29,6 @@ import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 import { useAuthStore } from "@/store/auth";
 import { useQueryStore } from "@/store/query";
-import { useRoute } from "vue-router";
 import _isEmpty from 'lodash/isEmpty';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find'
@@ -43,10 +42,12 @@ const authStore = useAuthStore();
 const queryStore = useQueryStore();
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
-const route = useRoute();
-const orgType = _get(route, 'params.orgType');
-const orgId = _get(route, 'params.orgId');
-const orgName = ref(orgId)
+const props = defineProps({
+  orgType: String,
+  orgId: String,
+})
+
+const orgName = ref(props.orgId)
 
 const users = ref([]);
 const showTable = ref(false);
@@ -59,9 +60,9 @@ const spinIcon = computed(() => {
 });
 
 async function getUsers() {
-  const allOrgs = await queryStore.getOrgs(`${orgType}s`)
-  orgName.value = _get(_find(allOrgs, org => org.id === orgId), 'name')
-  const rawUsers = await authStore.getUsersForOrg(`${orgType}s`, orgId)
+  const allOrgs = await queryStore.getOrgs(`${props.orgType}s`)
+  orgName.value = _get(_find(allOrgs, org => org.id === props.orgId), 'name')
+  const rawUsers = await authStore.getUsersForOrg(`${props.orgType}s`, props.orgId)
   // Process each user if necessary
   _forEach(rawUsers, user => {
     // Try to hydrate firestore date
