@@ -187,6 +187,9 @@ export const useAuthStore = () => {
           console.log('Cant log out while not logged in')
         }
       },
+      async syncCleverOrgs() {
+        return this.roarfirekit.syncCleverOrgs(false);
+      },
       // Used for requesting access when user doesn't have access to page
       // TODO: punt- thinking about moving to a ticket system instead of this solution.
       // async requestAccess() {
