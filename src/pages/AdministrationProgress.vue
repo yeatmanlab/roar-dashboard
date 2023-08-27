@@ -140,8 +140,9 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   }
 });
 
+const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  if(roarfirekit.value.getUsersByAssignment) {
+  if (roarfirekit.value.getUsersByAssignment) {
     await refresh()
   }
 })
