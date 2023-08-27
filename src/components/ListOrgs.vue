@@ -27,7 +27,8 @@
           </Column>
           <Column field="" header="" #body="{ node }">
             <router-link :to="{ name: 'ListUsers', params: { orgType: node.data.orgType, orgId: node.data.id } }">
-              <Button v-tooltip.top="'View users'" severity="secondary" text raised label="Users" aria-label="View users" icon="pi pi-users" size="small" />
+              <Button v-tooltip.top="'View users'" severity="secondary" text raised label="Users" aria-label="View users"
+                icon="pi pi-users" size="small" />
             </router-link>
           </Column>
         </TreeTable>
@@ -37,7 +38,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
@@ -75,6 +76,13 @@ if (_isEmpty(_union(...Object.values(adminOrgs.value)))) {
     }
   });
 }
+
+const { roarfirekit } = storeToRefs(authStore);
+onMounted(async () => {
+  if (roarfirekit.value.getOrgs) {
+    await refresh()
+  }
+})
 </script> 
 
 <style lang="scss">
