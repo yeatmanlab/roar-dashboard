@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
@@ -75,6 +75,12 @@ if (_isEmpty(_union(...Object.values(adminOrgs.value)))) {
     }
   });
 }
+
+onMounted(async () => {
+  if(roarfirekit.value.getOrgs) {
+    await refresh()
+  }
+})
 </script> 
 
 <style lang="scss">

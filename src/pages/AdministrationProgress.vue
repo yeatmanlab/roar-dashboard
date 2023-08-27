@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import { useAuthStore } from '@/store/auth';
@@ -140,6 +140,11 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   }
 });
 
+onMounted(async () => {
+  if(roarfirekit.value.getUsersByAssignment) {
+    await refresh()
+  }
+})
 </script>
 
 <style>

@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import CardAdministration from "@/components/CardAdministration.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
@@ -44,6 +44,7 @@ const spinIcon = computed(() => {
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
+const { roarfirekit } = storeToRefs(authStore);
 const { administrations } = storeToRefs(queryStore);
 const administrationsReady = ref(administrations.value.length);
 
@@ -72,6 +73,13 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
     await refresh();
   }
 });
+
+onMounted(async () => {
+  if(roarfirekit.value.getOrgs && roarfirekit.value.getMyAdministrations) {
+    await refresh()
+  }
+})
+
 </script>
 
 <style scoped>

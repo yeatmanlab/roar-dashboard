@@ -112,7 +112,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
 import { useToast } from "primevue/usetoast";
@@ -242,6 +242,12 @@ const submit = async () => {
     router.push({ name: "Home" });
   });
 }
+
+onMounted(async () => {
+  if(roarfirekit.value.getOrgs && roarfirekit.value.createAdministrator) {
+    await refresh()
+  }
+})
 </script> 
 
 <style lang="scss">
