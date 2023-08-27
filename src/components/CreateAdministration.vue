@@ -307,6 +307,15 @@ if (allVariants.value.length === 0) {
   assessments.value = [allVariants.value, []];
 }
 
+onMounted(async () => {
+  if (roarfirekit.value.getVariants && roarfirekit.value.isAdmin()) {
+    await refreshAssessments();
+  }
+  if (roarfirekit.value.getOrgs && roarfirekit.value.isAdmin()) {
+    await refreshOrgs();
+  }
+})
+
 const submit = async () => {
   pickListError.value = ''
   submitted.value = true;
