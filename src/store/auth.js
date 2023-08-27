@@ -64,7 +64,7 @@ export const useAuthStore = () => {
       },
       async getAdministration(administration) {
         try {
-          const reply = await this.roarfirekit.getAdministrations(administration)
+          const reply = await Promise.all(this.roarfirekit.getAdministrations(administration))
           this.firekitAdminInfo = reply
           return this.firekitAdminInfo
         } catch(e) {
