@@ -24,7 +24,7 @@
   </main>
 </template>
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 import { useAuthStore } from "@/store/auth";
@@ -37,6 +37,7 @@ import _set from 'lodash/set';
 import _union from 'lodash/union';
 import _head from 'lodash/head'
 import AppSpinner from "./AppSpinner.vue";
+import { storeToRefs } from "pinia";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -46,6 +47,8 @@ const props = defineProps({
   orgType: String,
   orgId: String,
 })
+
+const { roarfirekit } = storeToRefs(authStore);
 
 const orgName = ref(props.orgId)
 
@@ -99,6 +102,12 @@ if (_isEmpty(users.value)) {
     }
   });
 }
+
+onMounted(async () => {
+  if(roarfirekit.value.getUsersBySingleOrg) {
+    await refresh()
+  }
+})
 
 const columns = ref([
   {
