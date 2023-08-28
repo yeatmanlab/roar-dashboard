@@ -28,7 +28,6 @@ export const useAuthStore = () => {
         firekitIsAdmin: false,
         firekitIsSuperAdmin: false,
         cleverOAuthRequested: false,
-        emailForSignInLink: null,
       };
     },
     getters: {
@@ -43,8 +42,8 @@ export const useAuthStore = () => {
       isUserAdmin() {
         if(this.isFirekitInit) {
           this.firekitIsAdmin = this.roarfirekit.isAdmin();
+          return this.firekitIsAdmin;
         }
-        return this.firekitIsAdmin;
       },
       isUserSuperAdmin() {
         if(this.isFirekitInit) {
@@ -163,17 +162,19 @@ export const useAuthStore = () => {
         return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
+        this.spinner = true;
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
         }
-        console.log("in initStateFromRedirect")
         if(this.isFirekitInit){
-          console.log("firekit is initialized in initStateFromRedirect")
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then(() => {
-            console.log('In then block from initStateFromRedirect')
-            if(this.roarfirekit.userData){
-              console.log('setting hasUserData to true')
+          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+            // If the result is null, then no redirect operation was called.
+            if (result !== null) {
               this.spinner = true;
+            } else {
+              this.spinner = false;
+            }
+            if(this.roarfirekit.userData) {
               this.hasUserData = true
               this.firekitUserData = this.roarfirekit.userData
             }
@@ -185,7 +186,6 @@ export const useAuthStore = () => {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
             this.hasUserData = false;
-            console.log('setting firekitIsAdmin to false')
             this.firekitIsAdmin = false;
             this.firekitUserData = null;
             this.spinner = false;
