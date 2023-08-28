@@ -1,6 +1,6 @@
 import { fileURLToPath, URL } from "url";
 import { defineConfig } from "vite";
-import { ViteFaviconsPlugin } from "vite-plugin-favicon";
+import vitePluginFaviconsInject from 'vite-plugin-favicons-inject';
 import Vue from "@vitejs/plugin-vue";
 import Markdown from "vite-plugin-vue-markdown";
 import basicSsl from '@vitejs/plugin-basic-ssl'
@@ -13,7 +13,7 @@ export default defineConfig({
       include: [/\.vue$/, /\.md$/],
     }),
     Markdown(),
-    ViteFaviconsPlugin("./src/assets/roar-icon.png"),
+    vitePluginFaviconsInject("./src/assets/roar-icon.svg"),
     basicSsl(),
     nodePolyfills({
       globals: {
