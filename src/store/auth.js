@@ -25,8 +25,8 @@ export const useAuthStore = () => {
         },
         firekitAdminInfo: null,
         firekitAssignmentIds: null,
-        firekitIsAdmin: false,
-        firekitIsSuperAdmin: false,
+        firekitIsAdmin: null,
+        firekitIsSuperAdmin: null,
         cleverOAuthRequested: false,
       };
     },
@@ -40,13 +40,15 @@ export const useAuthStore = () => {
     },
     actions: {
       isUserAdmin() {
-        if(this.isFirekitInit) {
+        if(this.isFirekitInit && this.firekitIsAdmin === null) {
           this.firekitIsAdmin = this.roarfirekit.isAdmin();
+          return this.firekitIsAdmin;
+        } else {
           return this.firekitIsAdmin;
         }
       },
       isUserSuperAdmin() {
-        if(this.isFirekitInit) {
+        if(this.isFirekitInit && this.firekitIsSuperAdmin === null) {
           this.firekitIsSuperAdmin = _get(this.roarfirekit, '_superAdmin');
         }
         return this.firekitIsSuperAdmin;
@@ -186,7 +188,8 @@ export const useAuthStore = () => {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
             this.hasUserData = false;
-            this.firekitIsAdmin = false;
+            this.firekitIsAdmin = null;
+            this.firekitIsSuperAdmin = null;
             this.firekitUserData = null;
             this.spinner = false;
             // this.roarfirekit = initNewFirekit()
