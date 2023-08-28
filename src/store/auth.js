@@ -11,6 +11,7 @@ export const useAuthStore = () => {
     id: "authStore",
     state: () => {
       return {
+        spinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
@@ -27,7 +28,6 @@ export const useAuthStore = () => {
         firekitIsAdmin: false,
         firekitIsSuperAdmin: false,
         cleverOAuthRequested: false,
-        emailForSignInLink: null,
       };
     },
     getters: {
@@ -42,8 +42,8 @@ export const useAuthStore = () => {
       isUserAdmin() {
         if(this.isFirekitInit) {
           this.firekitIsAdmin = this.roarfirekit.isAdmin();
+          return this.firekitIsAdmin;
         }
-        return this.firekitIsAdmin;
       },
       isUserSuperAdmin() {
         if(this.isFirekitInit) {
@@ -162,12 +162,19 @@ export const useAuthStore = () => {
         return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
+        this.spinner = true;
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
         }
         if(this.isFirekitInit){
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then(() => {
-            if(this.roarfirekit.userData){
+          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+            // If the result is null, then no redirect operation was called.
+            if (result !== null) {
+              this.spinner = true;
+            } else {
+              this.spinner = false;
+            }
+            if(this.roarfirekit.userData) {
               this.hasUserData = true
               this.firekitUserData = this.roarfirekit.userData
             }
@@ -179,13 +186,17 @@ export const useAuthStore = () => {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
             this.hasUserData = false;
-            console.log('setting firekitIsAdmin to false')
             this.firekitIsAdmin = false;
+            this.firekitUserData = null;
+            this.spinner = false;
             // this.roarfirekit = initNewFirekit()
           });
         } else {
           console.log('Cant log out while not logged in')
         }
+      },
+      async syncCleverOrgs() {
+        return this.roarfirekit.syncCleverOrgs(false);
       },
       // Used for requesting access when user doesn't have access to page
       // TODO: punt- thinking about moving to a ticket system instead of this solution.

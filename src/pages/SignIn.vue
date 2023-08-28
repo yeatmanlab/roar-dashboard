@@ -38,23 +38,23 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, toRaw, onBeforeUnmount } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount } from 'vue';
+import { storeToRefs } from "pinia";
+import { useRouter } from 'vue-router';
+import _get from 'lodash/get'
 import SignIn from "@/components/auth/SignIn.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
-import { useRouter } from 'vue-router';
 import { isMobileBrowser } from "@/helpers";
-import AppSpinner from '../components/AppSpinner.vue';
-import _get from 'lodash/get'
-import { storeToRefs } from 'pinia';
 
-const spinner = ref(false);
 const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 
+const { spinner } = storeToRefs(authStore);
+
 authStore.$subscribe((mutation, state) => {
-  if (state.roarfirekit.userData) {
+  if (state.roarfirekit.userData && state.roarfirekit._idTokenReceived) {
     router.push({ name: "Home" });
   }
 });
@@ -76,8 +76,8 @@ const authWithClever = () => {
   if (isMobileBrowser()) {
     authStore.signInWithCleverRedirect();
   } else {
-    // authStore.signInWithCleverRedirect();
-    authStore.signInWithCleverPopup();
+    authStore.signInWithCleverRedirect();
+    // authStore.signInWithCleverPopup();
     spinner.value = true;
   }
 }
@@ -92,9 +92,7 @@ const authWithEmail = (state) => {
   incorrect.value = false;
   let creds = toRaw(state);
   if (creds.useLink) {
-    console.log("creds", creds);
     authStore.initiateLoginWithEmailLink({ email: creds.email }).then(() => {
-      console.log("routing to AuthEmailSent");
       router.push({ name: "AuthEmailSent" })
     });
   } else {
@@ -118,6 +116,7 @@ onMounted(() => {
     authWithClever();
   }
 });
+
 onBeforeUnmount(() => {
   document.body.classList.remove('page-signin')
 })

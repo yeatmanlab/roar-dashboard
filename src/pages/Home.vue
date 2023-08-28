@@ -1,11 +1,19 @@
 <template>
-  <Participant v-if="!isAdminRef"/>
-  <Administrator v-else-if="isAdminRef" />
-  <ConsentModal v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent"/>
+  <div v-if="loading">
+    <div class="col-full text-center">
+      <AppSpinner />
+      <p class="text-center">Loading...</p>
+    </div>
+  </div>
+  <div v-else>
+    <Participant v-if="!isAdmin" />
+    <Administrator v-else-if="isAdmin" />
+  </div>
+  <ConsentModal v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent" />
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw, watch } from "vue";
+import { computed, onMounted, ref, toRaw, watch } from "vue";
 import { useAuthStore } from '@/store/auth';
 import Participant from "./Participant.vue";
 import Administrator from "./Administrator.vue";
@@ -14,10 +22,11 @@ import { storeToRefs } from "pinia";
 import ConsentModal from "../components/ConsentModal.vue";
 const authStore = useAuthStore();
 const { isFirekitInit, roarfirekit, firekitUserData } = storeToRefs(authStore)
-const isAdmin = authStore.isUserAdmin();
-const isAdminRef = ref(isAdmin)
 
-const consentType = ref(isAdmin ? 'tos' : 'assent')
+const loading = ref(true);
+const isAdmin = ref();
+
+const consentType = computed(() => isAdmin.value ? 'tos' : 'assent');
 const showConsent = ref(false);
 const confirmText = ref("");
 const consentVersion = ref("");
@@ -31,17 +40,23 @@ async function checkConsent() {
   const consentStatus = _get(roarfirekit.value, `userData.legal.${consentType.value}`) || _get(firekitUserData.value, `legal.${consentType.value}`)
   const consentDoc = await authStore.getLegalDoc(consentType.value);
   consentVersion.value = consentDoc.version
-  if(!_get(toRaw(consentStatus), consentDoc.version)){
+  if (!_get(toRaw(consentStatus), consentDoc.version)) {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
   }
 }
+
 onMounted(async () => {
-  if(isFirekitInit.value){
+  if (isFirekitInit.value) {
+    isAdmin.value = authStore.isUserAdmin();
+    loading.value = false;
     await checkConsent();
   }
 })
+
 watch(isFirekitInit, async (newValue, oldValue) => {
+  isAdmin.value = authStore.isUserAdmin();
+  loading.value = false;
   await checkConsent();
 })
 </script>
