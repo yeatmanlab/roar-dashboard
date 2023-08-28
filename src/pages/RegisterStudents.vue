@@ -7,12 +7,13 @@
       <!--Upload file section-->
       <div v-if="!isFileUploaded">
         <Panel header="Add Participants">
-          We need the following information for each student to register:
+          The following fields are required for registering a student:
           <ul>
-            <li>email (required)</li>
-            <li>date of birth (required)</li>
-            <li>grade (required)</li>
+            <li>username</li>
+            <li>date of birth</li>
+            <li>grade</li>
             <li>password</li>
+            <li>Either a group OR a district and school</li>
           </ul>
           Upload or drag-and-drop a student list below to begin!
         </Panel>
@@ -181,7 +182,6 @@ let groups = [];
 
 // Functions supporting Selecting Orgs
 const initFormFields = async () => {
-  console.log('inside init form fields')
   unsubscribe();
   // TODO: Optimize this with Promise.all or some such
   districts = await queryStore.getOrgs("districts");
@@ -238,6 +238,10 @@ function checkUniqueStudents(students, field) {
 }
 
 function submitStudents(rawJson) {
+  // Reset error users
+  errorUsers.value = [];
+  errorUserColumns.value = [];
+  showErrorTable.value = false;
   errorMessage.value = "";
   activeSubmit.value = true;
   const modelValues = _compact(Object.values(dropdown_model.value))
@@ -263,6 +267,16 @@ function submitStudents(rawJson) {
   if (!_includes(modelValues, 'password')) {
     // Password needs to be filled in 
     errorMessage.value = "Please select a column to be user's password."
+    activeSubmit.value = false;
+    return;
+  }
+  if (
+    ((!_includes(modelValues, 'district') && !_includes(modelValues, 'school')) || 
+    (!_includes(modelValues, 'district') && _includes(modelValues, 'school')) || 
+    (_includes(modelValues, 'district') && !_includes(modelValues, 'school'))) && 
+    !_includes(modelValues, 'group')){
+    // Requires either district and school, OR group
+    errorMessage.value = "Please assign columns to be either a group OR a pair of district and school."
     activeSubmit.value = false;
     return;
   }
@@ -326,6 +340,9 @@ function submitStudents(rawJson) {
         _set(sendObject, 'userData.district', id)
       } else {
         addErrorUser(user, `Error: District '${district}' is invalid`)
+        if(processedUsers >= totalUsers){
+          activeSubmit.value = false;
+        }
         return;
       }
     }
@@ -339,6 +356,9 @@ function submitStudents(rawJson) {
         _set(sendObject, 'userData.school', id)
       } else {
         addErrorUser(user, `Error: School '${school}' is invalid.`)
+        if(processedUsers >= totalUsers){
+          activeSubmit.value = false;
+        }
         return;
       }
     }
@@ -352,6 +372,9 @@ function submitStudents(rawJson) {
         _set(sendObject, 'userData.class', id)
       } else {
         addErrorUser(user, `Error: Class '${uClass}' is invalid.`)
+        if(processedUsers >= totalUsers){
+          activeSubmit.value = false;
+        }
         return;
       }
     }
@@ -365,12 +388,14 @@ function submitStudents(rawJson) {
         _set(sendObject, 'userData.group', id)
       } else {
         addErrorUser(user, `Error: Group '${group}' is invalid.`)
+        if(processedUsers >= totalUsers){
+          activeSubmit.value = false;
+        }
         return;
       }
     }
 
     authStore.registerWithEmailAndPassword(sendObject).then(() => {
-      console.log('sucessful user creation')
       toast.add({ severity: 'success', summary: 'User Creation Success', detail: `${sendObject.email} was sucessfully created.`, life: 9000 });
       processedUsers = processedUsers + 1;
       if(processedUsers >= totalUsers){
@@ -383,7 +408,6 @@ function submitStudents(rawJson) {
     }).catch((e) => {
       toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
       addErrorUser(user, e)
-      console.log('checking...', processedUsers, totalUsers)
       if(processedUsers >= totalUsers){
         activeSubmit.value = false;
       }

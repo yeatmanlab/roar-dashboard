@@ -16,6 +16,7 @@
             <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
               :assessments="a.assessments"></CardAdministration>
           </div>
+          <div v-else>There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.</div>
         </div>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
@@ -63,6 +64,10 @@ const refresh = async () => {
   const orgsPromise = queryStore.getAdminOrgs();
   const adminsitrationsPromise = queryStore.getMyAdministrations();
   await Promise.all([orgsPromise, adminsitrationsPromise]).then(() => {
+    administrationsReady.value = true;
+    refreshing.value = false;
+  }).catch((e) => {
+    // If there are no administrations, catch the 'missing documents' error
     administrationsReady.value = true;
     refreshing.value = false;
   });
