@@ -116,7 +116,8 @@
                     <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
                   </div>
                 </div>
-                <Button type="button" rounded size="small" icon="pi pi-info" @click="toggle($event, slotProps.item.id)" />
+                <Button type="button" v-tooltip.right="'Click to view params'" rounded size="small" icon="pi pi-info"
+                  @click="toggle($event, slotProps.item.id)" />
                 <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
                   <DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
                     :value="toEntryObjects(slotProps.item.variant.params)">
