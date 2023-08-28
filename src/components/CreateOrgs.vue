@@ -139,7 +139,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw } from "vue";
+import { computed, reactive, ref, toRaw, onMounted } from "vue";
 import { useRouter } from 'vue-router';
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
@@ -378,6 +378,12 @@ const resetForm = () => {
   state.grade = undefined;
   state.tags = [];
 }
+
+onMounted(async () => {
+  if(roarfirekit.value.getOrgs) {
+    await refresh()
+  }
+})
 </script> 
 
 <style lang="scss">
