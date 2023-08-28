@@ -204,7 +204,6 @@ const toEntryObjects = (inputObj) => {
 }
 
 const toggle = (event, id) => {
-  console.log("Toggling " + id)
   paramPanelRefs[id].value.toggle(event)
 }
 
