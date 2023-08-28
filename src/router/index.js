@@ -73,7 +73,7 @@ const routes = [
     path: '/register-students',
     name: 'RegisterStudents',
     component: () => import("../pages/RegisterStudents.vue"),
-    meta: {pageTitle: "Register Students", requireAdmin: true}
+    meta: {pageTitle: "Register Students", requireAdmin: true, requireSuperAdmin: true}
   },
   {
     path: "/signin",
