@@ -139,9 +139,6 @@ app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
 app.component("TreeTable", TreeTable);
 app.component("TriStateCheckbox", TriStateCheckbox)
-
-app.use(ConfirmationService);
-
 app.component("DataTable", DataTable);
 app.component("Column", Column);
 app.component("ColumnGroup", ColumnGroup);
