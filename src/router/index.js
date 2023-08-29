@@ -45,6 +45,12 @@ const routes = [
     meta: { pageTitle: "SRE" }
   },
   {
+    path: "/game/letter",
+    name: "Letter",
+    component: () => import("../components/tasks/Letter.vue"),
+    meta: { pageTitle: "Letter" }
+  },
+  {
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),
