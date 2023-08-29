@@ -24,6 +24,12 @@ export const sidebarActionOptions = [
     requiresSuperAdmin: false,
   },
   {
+    title: "Register organizations",
+    icon: "pi pi-database",
+    buttonLink: { name: "RegisterOrgs" },
+    requiresSuperAdmin: false,
+  },
+  {
     title: "Register administrator",
     icon: "pi pi-user-plus",
     buttonLink: { name: "CreateAdministrator" },
