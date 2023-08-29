@@ -1,20 +1,20 @@
 <template>
   <div class="sidebar-container">
-	<ul v-if="userInfo" class="sidebar-info">
-	  <li class="sidebar-title"><strong>Your Info</strong></li>
-	  <li>District: {{userInfo.district}}</li>
-	  <li>School: {school}</li>
-	  <li>Class: {class}</li>
-	</ul>
+	<Panel v-if="userInfo" header="Your Info">
+	  <div>District: {{userInfo.district}}</div>
+	  <div>School: {school}</div>
+	  <div>Class: {class}</div>
+	</Panel>
 	
-	<ul v-if="actions" class="sidebar-actions">
-	  <li class="sidebar-title"><strong>Actions</strong></li>
-	  <li v-for="(action, index) in actions">
-		<router-link :to="action.buttonLink" :key="index">
-			<Button :label="action.title" rounded :icon="action.icon" />
-		</router-link>
-	  </li>
-	</ul>
+	<Panel header="Actions" toggleable>
+		<div class="sidebar-actions">
+			<div v-for="(action, index) in actions">
+				<router-link :to="action.buttonLink" :key="index">
+					<Button :label="action.title" rounded :icon="action.icon" />
+				</router-link>
+			</div>
+		</div>
+	</Panel>
 
   </div>
 </template>
