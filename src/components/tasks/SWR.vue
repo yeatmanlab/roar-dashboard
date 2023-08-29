@@ -1,6 +1,6 @@
 <template>
-  <div v-if="gameStarted" id="jspsych-target" class="game-target" />
-  <div v-else class="col-full text-center">
+  <div id="jspsych-target" class="game-target" />
+  <div v-if="!gameStarted" class="col-full text-center">
     <h1>Preparing your game!</h1>
     <AppSpinner />
   </div>
