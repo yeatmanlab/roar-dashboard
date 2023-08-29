@@ -6,13 +6,18 @@
       <section class="main-body">
         <!--Upload file section-->
         <div v-if="!isFileUploaded">
-          <Panel header="Add Participants">
-            We need the following information for each student to register:
+          <Panel header="Add Organizations">
+            To register each organization, please provide the following details:
             <ul>
-              <li>email (required)</li>
-              <li>date of birth (required)</li>
-              <li>grade (required)</li>
-              <li>password</li>
+              <li>organization type (required)</li>
+              <li>organization name (required)</li>
+              <li>organization abbreviation (required)</li>
+            </ul>
+
+            Additional requirements:
+            <ul>
+              <li>Schools must be associated with a parent district (required)</li>
+              <li>Classes should be linked to a parent school (required)</li>
             </ul>
             Upload or drag-and-drop a student list below to begin!
           </Panel>
@@ -66,7 +71,7 @@
           <!-- Datatable of error students -->
           <div v-if="showErrorTable" class="error-container">
             <div class="error-header">
-              <h3>Error Users</h3>
+              <h3>Error Organizations</h3>
               <Button @click="downloadErrorTable($event)">
                 Download Table
               </Button>
@@ -226,8 +231,11 @@ import { each } from 'lodash';
     _forEach(columnValues, col => {
       let dataType = (typeof rawJson[col])
       if (dataType === 'object') {
-        if (rawJson[col] instanceof Date) dataType = 'date'
+        if (rawJson[col] instanceof Date) {
+            dataType = 'date';
+        } 
       }
+
       columns.push({
         field: col,
         header: _startCase(col),
@@ -383,7 +391,8 @@ function formatOrgTypesList(orgTypes) {
       const {district,school,grade,nces_id,address,tags,...otherorgData} = eachorg
       if (nces_id) _set(orgData, 'ncesId', nces_id)
       if (address) _set(orgData, 'address', address)
-      if (tags) _set(orgData, 'tags', tags)
+      let tag_length = tags ? Object.keys(tags).length : 0;
+      if (tag_length>0) _set(orgData, 'tags', tags)
 
 
       // This is to make pseudo-district for any school that does not have a district assigned
@@ -394,12 +403,12 @@ function formatOrgTypesList(orgTypes) {
       // }
 
       // check compulsory requirements depending on org type
-      if (eachorg.orgType === "school" && !_isEmpty(district)){
+      if (eachorg.org_type === "school" && _isEmpty(district)){
         addErrorUser(eachorg, `Error: School must have an assigned parent district`)
         return;
       }
 
-      if (eachorg.orgType === "class" && !_isEmpty(school)){
+      if (eachorg.org_type === "class" && _isEmpty(school)){
         addErrorUser(eachorg, `Error: Class must have an assigned parent school`)
         return;
       }
@@ -445,7 +454,7 @@ function formatOrgTypesList(orgTypes) {
       }
 
       console.log(orgData)
-      // await roarfirekit.value.createOrg(pluralizeOrgType(eachorg.orgType), orgData).then(() => {
+      // await roarfirekit.value.createOrg(pluralizeOrgType(eachorg.org_type), orgData).then(() => {
       //   toast.add({ severity: 'success', summary: 'Success', detail:`${orgData.name} was sucessfully created.`, life: 3000 });
       //   processedUsers = processedUsers + 1;
       //   if(processedUsers >= totalUsers){
@@ -502,6 +511,14 @@ function formatOrgTypesList(orgTypes) {
       showErrorTable.value = true
     }
     // Concat the userObject with the error reason.
+    let tag_length = user.tags ? Object.keys(user.tags).length : 0;
+    if (tag_length>0){
+      user.tags = Object.values(user.tags).join(',');
+    } else {
+    user.tags = '';
+    }
+
+
     errorUsers.value.push({
       ...user,
       error
