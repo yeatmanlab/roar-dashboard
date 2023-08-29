@@ -1,6 +1,6 @@
 <template>
-  <div v-if="gameStarted" id="jspsych-target" class="game-target" />
-  <div v-else class="col-full text-center">
+  <div id="jspsych-target" class="game-target" />
+  <div v-if="!gameStarted" class="col-full text-center">
     <h1>Preparing your game!</h1>
     <AppSpinner />
   </div>
@@ -45,8 +45,14 @@ async function startTask() {
   const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, "sre")
   console.log('appKit is defined as', appKit)
 
+  const userDob = _get(roarfirekit.value, 'userData.studentData.dob') || _get(firekitUserData.value, 'studentData.dob')
+  const userDateObj = new Date(toRaw(userDob).seconds * 1000)
+
   const userParams = {
-    grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade')
+    grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
+    birthMonth: userDateObj.getMonth()+1,
+    birthYear: userDateObj.getFullYear(),
+
   }
   const gameParams = appKit._taskInfo.variantParams
   const roarApp = new RoarSRE(appKit, gameParams, userParams, 'jspsych-target');
