@@ -30,8 +30,10 @@ const navbarBlacklist = ref([
   "SignIn",
   "PlayApp",
   "SWR",
+  "SWR-ES",
   "SRE",
-  "PA"
+  "PA",
+  "Letter"
 ]);
 
 onBeforeMount(async () => {
