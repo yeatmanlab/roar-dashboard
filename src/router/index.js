@@ -33,6 +33,12 @@ const routes = [
     meta: { pageTitle: "SWR" }
   },
   {
+    path: "/game/swr-es",
+    name: "SWR-ES",
+    component: () => import("../components/tasks/SWR-ES.vue"),
+    meta: { pageTitle: "SWR (ES)" }
+  },
+  {
     path: "/game/pa",
     name: "PA",
     component: () => import("../components/tasks/PA.vue"),
