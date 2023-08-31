@@ -16,7 +16,6 @@
 
             Additional requirements:
             <ul>
-              <li>Schools must be associated with a parent district (required)</li>
               <li>Classes should be linked to a parent school (required)</li>
             </ul>
             Upload or drag-and-drop a student list below to begin!
@@ -35,14 +34,16 @@
         <div v-if="isFileUploaded">
           <!-- <RoarDataTable :columns="tableColumns" :data="rawOrgFile" :allowExport="false" /> -->
           <Panel header="Assigning participant data" class="mb-4">
-            <p>Use the dropdowns below to properly assign each column. </p>
-            <p>Columns that are not assigned will not be imported. But please note that a column has to be assigned for each
-              of the required fields:</p>
+            To register each organization, please provide the following details:
             <ul>
-              <li>email</li>
-              <li>date of birth</li>
-              <li>grade</li>
-              <li>password</li>
+              <li>organization type (required)</li>
+              <li>organization name (required)</li>
+              <li>organization abbreviation (required)</li>
+            </ul>
+
+            Additional requirements:
+            <ul>
+              <li>Classes should be linked to a parent school (required)</li>
             </ul>
   
             <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
@@ -51,7 +52,7 @@
           <div v-if="errorMessage" class="error-box">
             {{ errorMessage }}
           </div>
-          <!-- <ConfirmPopup></ConfirmPopup> -->
+          <ConfirmPopup></ConfirmPopup>
           <!-- Can't use RoarDataTable to accomodate header dropdowns -->
           <DataTable ref="dataTable" :value="rawOrgFile" showGridlines :rowHover="true" :resizableColumns="true"
             paginator :alwaysShowPaginator="false" :rows="10" class="datatable">
@@ -66,7 +67,7 @@
             </Column>
           </DataTable>
           <div class="submit-container">
-            <Button @click="submitOrgs" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''" :disabled="activeSubmit" />
+            <Button @click="preSubmit" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''" :disabled="activeSubmit" />
           </div>
           <!-- Datatable of error students -->
           <div v-if="showErrorTable" class="error-container">
@@ -150,7 +151,12 @@ import { each } from 'lodash';
         { label: 'Parent School', value: 'school' },
         { label: 'Grade', value: 'grade' },
         { label: 'NCES ID', value: 'nces_id' },
-        { label: 'Address', value: 'address' },
+        { label: 'AddressLine1', value: 'addressline1' },
+        { label: 'AddressLine2', value: 'addressline2' },
+        { label: 'AddressCity', value: 'addresscity' },
+        { label: 'AddressState', value: 'addressstate' },
+        { label: 'AddressZip', value: 'addresszip' },
+
         { label: 'Tags', value: 'tags' },
       ]
     },
@@ -288,7 +294,7 @@ import { each } from 'lodash';
   return orgType + 's';  // For most English nouns, simply adding "s" forms the plural
 }
 
-function formatOrgTypesList(orgTypes) {
+function formatLists2Strings(orgTypes) {
   const pluralizedTypes = orgTypes.map(pluralizeOrgType);
 
   if (pluralizedTypes.length === 1) {
@@ -300,25 +306,14 @@ function formatOrgTypesList(orgTypes) {
   }
 }
 
-// const preSubmit = (event) => {
-//     confirm.require({
-//       target: event.currentTarget,
-//       message:
-//         "Note that for any school that does not have a district,"
-//         + "we will create a parent pseudo-district using this "
-//         + "school's data. Are you sure you want to do that?",
-//       icon: 'pi pi-exclamation-triangle',
-//       accept: () => {
-//         submitOrgs();
-//       },
-//       reject: () => {
-//         return;
-//       }
-//     });
-// }
-  
+function formatColumn(column) {
+    return column.split('_')
+                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                 .join(' ');
+}
 
-  function submitOrgs(rawJson) {
+const preSubmit = (event) => {
+
     errorMessage.value = "";
     activeSubmit.value = true;
     const modelValues = _compact(Object.values(dropdown_model.value))
@@ -342,6 +337,56 @@ function formatOrgTypesList(orgTypes) {
       return;
     }
 
+    let columns = ['org_type','name','abbreviation']
+    let missingEntries = []
+    let flagSchool = false
+    let dropdownMap = _cloneDeep(dropdown_model.value)
+    _forEach(rawOrgFile.value, org => {
+      _forEach(columns, col => {
+        const columnMap = getKeyByValue(dropdownMap, col)
+        if (_isEmpty(org[columnMap])) {
+          missingEntries.push(formatColumn(col))
+        }
+        if (['org_type'].includes(col)){
+          if (org[columnMap] === "school"){
+            flagSchool = true
+          }
+        }
+      })
+    })
+
+    if (missingEntries.length>0){
+      errorMessage.value = `Entries missing for: ${formatLists2Strings(missingEntries)}. Please check the columns.`
+      activeSubmit.value = false;
+      return;
+    }
+    
+    if (flagSchool) {
+      confirm.require({
+        target: event.currentTarget,
+        message:
+          "For any school not assigned to a parent district "
+          + "we will create a parent pseudo-district using this "
+          + "school's data. Are you sure you want to do that?",
+        icon: 'pi pi-exclamation-triangle',
+        accept: () => {
+          submitOrgs();
+        },
+        reject: () => {
+          return;
+        }
+      });
+    } else {
+      submitOrgs();
+    }
+}
+  
+
+async function submitOrgs(rawJson) {
+    errorMessage.value = "";
+    activeSubmit.value = true;
+    const modelValues = _compact(Object.values(dropdown_model.value))
+
     let submitObject = []
     // Construct list of student objects, handle special columns
     _forEach(rawOrgFile.value, student => {
@@ -349,18 +394,26 @@ function formatOrgTypesList(orgTypes) {
       let dropdownMap = _cloneDeep(dropdown_model.value)
       _forEach(modelValues, col => {
         const columnMap = getKeyByValue(dropdownMap, col)
+        let tagArr = [];
+
         if (['ignore'].includes(col)) {
           return;
         }
 
-        let tagDict = {};
-        if (['tags'].includes(col)){
+        
+        if (['addressline1','addressline2','addresscity','addressstate','addresszip'].includes(col)) {
+          studentObj[col] = student[columnMap]
+          if (!studentObj['address'] && student[columnMap]) {
+            studentObj['address'] = [student[columnMap]]
+          } else if (student[columnMap]) {
+            studentObj['address'].push(student[columnMap])
+          }
+        } else if (['tags'].includes(col)){
           let tags = student[columnMap] ? student[columnMap].split(',').map(tag => tag.trim()) : [];
           for (let i = 0; i < tags.length; i++) {
-          tagDict[i] = tags[i];
+            tagArr.push(tags[i]);
           }
-        // Assign the transformed tags to the student object
-          studentObj[col] = tagDict;
+          studentObj[col] = tagArr;
         } else {
           studentObj[col] = student[columnMap]
         }
@@ -373,14 +426,14 @@ function formatOrgTypesList(orgTypes) {
     // Check for duplicates by group
     let duplicateOrgTypes = hasDuplicateNames(groupedSubmitObject);
     if (duplicateOrgTypes.length > 0) {
-      errorMessage.value = `One or more of the ${formatOrgTypesList(duplicateOrgTypes)} in this CSV are not unique.`
+      errorMessage.value = `One or more of the ${formatLists2Strings(duplicateOrgTypes)} in this CSV are not unique.`
       activeSubmit.value = false;
       return;
     }
 
     // Begin submit process
     const totalUsers = submitObject.length;
-    _forEach(submitObject, eachorg => {
+    for (let eachorg of submitObject) {
       // Handle Email Registration
 
       let orgData = {
@@ -389,111 +442,98 @@ function formatOrgTypesList(orgTypes) {
       };
 
       const {district,school,grade,nces_id,address,tags,...otherorgData} = eachorg
-      if (nces_id) _set(orgData, 'ncesId', nces_id)
+      if (nces_id) _set(orgData, 'ncesId', String(nces_id))
       if (address) _set(orgData, 'address', address)
-      let tag_length = tags ? Object.keys(tags).length : 0;
+      let tag_length = tags ? tags.length: 0
       if (tag_length>0) _set(orgData, 'tags', tags)
 
 
-      // This is to make pseudo-district for any school that does not have a district assigned
-      // if ((eachorg.orgType.value?.singular === "school") && !_isEmpty(district)){
-      //   const districtData = { ...orgData };
-      //   if (ncesId) districtData.ncesId = orgData.ncesId.slice(0, 7);
-      //   orgData.districtId = await roarfirekit.value.createOrg('districts', districtData);
-      // }
-
-      // check compulsory requirements depending on org type
-      if (eachorg.org_type === "school" && _isEmpty(district)){
-        addErrorUser(eachorg, `Error: School must have an assigned parent district`)
-        return;
-      }
-
       if (eachorg.org_type === "class" && _isEmpty(school)){
         addErrorUser(eachorg, `Error: Class must have an assigned parent school`)
-        return;
+      }
+      if (eachorg.org_type === "class" && _isEmpty(grade)){
+        addErrorUser(eachorg, `Error: Class must have an assigned grade`)
       }
 
 
       // If district is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
       //   the sendObject. If not, reject user
-      if (district) {
+      if (eachorg.org_type === "school" && district) {
         const id = getDistrictId(district);
         if (!_isEmpty(id)) {
           _set(orgData, 'districtId', id)
         } else {
           addErrorUser(eachorg, `Error: District '${district}' is invalid`)
-          return;
+          continue;
+        }
+      } else if (eachorg.org_type === "school" && _isEmpty(district)) {
+        const districtData = { ...orgData };
+        if (nces_id) districtData.ncesId = orgData.ncesId.slice(0, 7);
+        
+        try {
+          const result = await roarfirekit.value.createOrg('districts', districtData);
+          orgData.districtId = result;
+          toast.add({ severity: 'success', summary: 'District Creation Success', detail: `For ${orgData.name} pseudo-district was sucessfully created.`, life: 9000 });
+        } catch (error) {
+          toast.add({ severity: 'error', summary: 'District Creation Failed', detail: 'Please see error table below.', life: 3000 });
+          console.error("Error creating parent district:", error);
         }
       }
   
+      if (eachorg.org_type === "school" && _isEmpty(orgData.districtId)) {
+        addErrorUser(eachorg, `Error: For School '${orgData.name}' pseudo-district failed to be created.`)
+        continue;
+      }
+
+
       // If school is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
       //   the sendObject. If not, reject user
-      if (school) {
+      if (eachorg.org_type === "class" && school) {
         const id = getSchoolId(school);
         if (!_isEmpty(id)) {
           _set(orgData, 'schoolId', id)
         } else {
           addErrorUser(eachorg, `Error: School '${school}' is invalid.`)
-          return;
+          continue;
         }
       }
 
       // If grade is a given column, check if the name is
       //   associated with a valid value. If so, add the value to
       //   the sendObject. If not, reject user
-      if (grade){
+      if (eachorg.org_type === "class" && grade){
         const value = gradesDict[grade];
         if (!_isEmpty(value)) {
           _set(orgData, 'grade', value)
         } else {
           addErrorUser(eachorg, `Error: Grade '${grade}' is invalid.`)
-          return;
+          continue;
         }
       }
 
-      console.log(orgData)
-      // await roarfirekit.value.createOrg(pluralizeOrgType(eachorg.org_type), orgData).then(() => {
-      //   toast.add({ severity: 'success', summary: 'Success', detail:`${orgData.name} was sucessfully created.`, life: 3000 });
-      //   processedUsers = processedUsers + 1;
-      //   if(processedUsers >= totalUsers){
-      //     activeSubmit.value = false;
-      //     if(errorUsers.value.length === 0) {
-      //       // Processing is finished, and there are no error users.
-      //       router.push({ name: "Home" })
-        //   }
-        // }
-      // }).catch((e) => {
-        //   toast.add({ severity: 'error', summary: 'Org Creation Failed', detail: 'Please see error table below.', life: 3000 });
-        //   addErrorUser(user, e)
-        //   console.log('checking...', processedUsers, totalUsers)
-        //   if(processedUsers >= totalUsers){
-        //     activeSubmit.value = false;
-        //   }
-        // })
-        
-      
-      // authStore.registerWithEmailAndPassword(sendObject).then(() => {
-      //   console.log('sucessful user creation')
-      //   toast.add({ severity: 'success', summary: 'User Creation Success', detail: `${sendObject.email} was sucessfully created.`, life: 9000 });
-      //   processedUsers = processedUsers + 1;
-      //   if(processedUsers >= totalUsers){
-      //     activeSubmit.value = false;
-      //     if(errorUsers.value.length === 0) {
-      //       // Processing is finished, and there are no error users.
-      //       router.push({ name: "Home" })
-      //     }
-      //   }
-      // }).catch((e) => {
-      //   toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
-      //   addErrorUser(user, e)
-      //   console.log('checking...', processedUsers, totalUsers)
-      //   if(processedUsers >= totalUsers){
-      //     activeSubmit.value = false;
-      //   }
-      // })
-    })
+      // console.log(orgData)
+      await roarfirekit.value.createOrg(pluralizeOrgType(eachorg.org_type), orgData).then(() => {
+        toast.add({ severity: 'success', summary: 'Success', detail:`${orgData.name} was sucessfully created.`, life: 3000 });
+        processedUsers = processedUsers + 1;
+        if(processedUsers >= totalUsers){
+          activeSubmit.value = false;
+          if(errorUsers.value.length === 0) {
+            // Processing is finished, and there are no error users.
+            router.push({ name: "Home" })
+          }
+        }
+      }).catch((e) => {
+          toast.add({ severity: 'error', summary: 'Org Creation Failed', detail: 'Please see error table below.', life: 3000 });
+          addErrorUser(user, e)
+          console.log('checking...', processedUsers, totalUsers)
+          if(processedUsers >= totalUsers){
+            activeSubmit.value = false;
+          }
+        })
+  
+    }
   }
   
   
@@ -501,6 +541,8 @@ function formatOrgTypesList(orgTypes) {
   function addErrorUser(user, error) {
     // If there are no error users yet, generate the
     //  columns before displaying the table.
+    delete user.address;
+
     if (_isEmpty(errorUserColumns.value)) {
       errorUserColumns.value = generateColumns(user)
       errorUserColumns.value.unshift({
