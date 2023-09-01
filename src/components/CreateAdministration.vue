@@ -156,7 +156,7 @@ import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
 import _uniqBy from "lodash/uniqBy";
 import { useVuelidate } from "@vuelidate/core";
-import { required } from "@vuelidate/validators";
+import { maxLength, minLength, required } from "@vuelidate/validators";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "@/components/AppSpinner.vue";
@@ -188,9 +188,18 @@ const state = reactive({
   families: []
 })
 
+const datesNotNull = (value) => {
+  value[0] && value[1];
+}
+
 const rules = {
   administrationName: { required },
-  dates: { $each: { required } },
+  dates: {
+    required,
+    minLength: minLength(2),
+    maxLength: maxLength(2),
+    datesNotNull,
+  },
   sequential: { required }
 }
 const v$ = useVuelidate(rules, state);
