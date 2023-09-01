@@ -51,9 +51,13 @@ async function startTask() {
   const userParams = {
     birthMonth: userDateObj.getMonth()+1,
     birthYear: userDateObj.getFullYear(),
+    language: 'es'
   }
 
   const gameParams = appKit._taskInfo.variantParams
+
+  console.log('userParams', userParams)
+  console.log('gameParams', gameParams)
   const roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
