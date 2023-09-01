@@ -64,9 +64,21 @@ onBeforeUnmount(async () => {
   }
 });
 
+const currentAssignment = ref();
+
+const selectBestRun = async () => {
+  await authStore.roarfirekit.selectBestRun({
+    assignmentId: currentAssignment.value,
+    taskId: "letter",
+  })
+}
+
+window.addEventListener('beforeunload', selectBestRun, { once: true });
+onBeforeUnmount(() => window.removeEventListener('beforeunload', selectBestRun));
+
 async function startTask() {
-  const currentAssignment = _head(toRaw(authStore.firekitAssignmentIds))
-  const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, "letter")
+  currentAssignment.value = _head(toRaw(authStore.firekitAssignmentIds))
+  const appKit = await authStore.roarfirekit.startAssessment(currentAssignment.value, "letter")
 
   const userDob = _get(roarfirekit.value, 'userData.studentData.dob') || _get(firekitUserData.value, 'studentData.dob')
   const userDateObj = new Date(toRaw(userDob).seconds * 1000)
@@ -82,8 +94,7 @@ async function startTask() {
   gameStarted.value = true;
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
-    completed.value = true;
-    await authStore.roarfirekit.completeAssessment(currentAssignment, "letter")
+    await authStore.roarfirekit.completeAssessment(currentAssignment.value, "letter")
     router.replace({ name: "Home" });
   });
 }
