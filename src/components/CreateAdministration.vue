@@ -24,7 +24,10 @@
               <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
                 selectionMode="range" :manualInput="false" showIcon showButtonBar />
               <label for="dates">Dates</label>
-              <small v-if="v$.dates.$invalid && submitted" class="p-error">Please select dates for your admin</small>
+              <small v-if="v$.dates.required.$invalid && submitted" class="p-error">Please select dates.</small>
+              <small v-else-if="v$.dates.datesNotNull.$invalid && submitted" class="p-error">Please select both a start
+                and end
+                date.</small>
             </span>
           </div>
         </div>
