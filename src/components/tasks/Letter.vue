@@ -24,7 +24,7 @@ const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
 const entries = performance.getEntriesByType("navigation");
 entries.forEach((entry) => {
   if (entry.type === "reload") {
-    if(entry.name === window.location.href) {
+    if(entry.name === window.location.href && history.state.replaced === true) {
       router.replace({ name: "Home" })
     }
   }
