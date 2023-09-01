@@ -192,7 +192,7 @@ const state = reactive({
 })
 
 const datesNotNull = (value) => {
-  value[0] && value[1];
+  return (value[0] && value[1]);
 }
 
 const rules = {
