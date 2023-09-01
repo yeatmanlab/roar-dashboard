@@ -55,9 +55,6 @@ async function startTask() {
   }
 
   const gameParams = appKit._taskInfo.variantParams
-
-  console.log('userParams', userParams)
-  console.log('gameParams', gameParams)
   const roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
