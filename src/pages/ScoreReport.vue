@@ -61,9 +61,8 @@ const assignmentData = ref([]);
 
 const columns = computed(() => {
   const tableColumns = [
-    { field: "user.name.first", header: "First Name", dataType: "text" },
-    { field: "user.name.last", header: "Last Name", dataType: "text" },
     { field: "user.assessmentPid", header: "PID", dataType: "text" },
+    { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
   if (tableData.value.length > 0) {
