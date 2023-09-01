@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@bdelab/roar-firekit": "^3.12.1",
-    "@bdelab/roar-letter": "^1.0.5",
+    "@bdelab/roar-letter": "^1.0.6",
     "@bdelab/roar-pa": "^1.0.14",
     "@bdelab/roar-sre": "^1.0.16",
     "@bdelab/roar-swr": "^1.0.17",
