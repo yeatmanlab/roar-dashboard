@@ -32,7 +32,6 @@ entries.forEach((entry) => {
 });
 
 onMounted(async () => {
-  console.log('onMounted')
   if(isFirekitInit.value) {
     await startTask();
   }
