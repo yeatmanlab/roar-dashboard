@@ -38,8 +38,8 @@ export const useQueryStore = () => {
           this.administrations =  administrations.map((administration) => ({
             ...administration,
             dates: {
-              start: administration.dateOpened.toDate(),
-              end: administration.dateClosed.toDate(),
+              start: administration.dateOpened.toDate() ?? null,
+              end: administration.dateClosed?.toDate() ?? null,
             },
             assignedOrgs: {
               districts: administration.districts,
