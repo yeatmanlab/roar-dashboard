@@ -8,11 +8,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bdelab/roar-firekit": "^3.12.1",
-    "@bdelab/roar-letter": "^1.0.6",
-    "@bdelab/roar-pa": "^1.0.14",
-    "@bdelab/roar-sre": "^1.0.17",
-    "@bdelab/roar-swr": "^1.0.18",
+    "@bdelab/roar-firekit": "^3.12.5",
+    "@bdelab/roar-letter": "^1.1.1",
+    "@bdelab/roar-pa": "^1.1.1",
+    "@bdelab/roar-sre": "^1.1.1",
+    "@bdelab/roar-swr": "^1.1.1",
     "@vuelidate/core": "^2.0.0-alpha.40",
     "@vuelidate/validators": "^2.0.0-alpha.28",
     "@vueuse/head": "^1.0.13",
