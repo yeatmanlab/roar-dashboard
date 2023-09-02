@@ -8,7 +8,7 @@
 <script setup>
 import RoarSWR from '@bdelab/roar-swr';
 import AppSpinner from '../AppSpinner.vue';
-import { toRaw, onMounted, watch, ref } from 'vue';
+import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
@@ -25,14 +25,14 @@ const entries = performance.getEntriesByType("navigation");
 entries.forEach((entry) => {
   if (entry.type === "reload") {
     // Detect if our previous reload was on this page, AND if the last naviagtion was a replace.
-    if(entry.name === window.location.href && history.state.replaced === true) {
+    if (entry.name === window.location.href && history.state.replaced === true) {
       router.replace({ name: "Home" })
     }
   }
 });
 
 onMounted(async () => {
-  if(isFirekitInit.value) {
+  if (isFirekitInit.value) {
     await startTask();
   }
 })
@@ -41,7 +41,16 @@ watch(isFirekitInit, async (newValue, oldValue) => {
   await startTask();
 })
 
-async function startTask() { 
+let roarApp;
+
+const completed = ref(false);
+onBeforeUnmount(async () => {
+  if (roarApp && completed.value === false) {
+    roarApp.abort();
+  }
+});
+
+async function startTask() {
   const currentAssignment = _head(toRaw(authStore.firekitAssignmentIds))
   const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, "swr-es")
 
@@ -49,30 +58,31 @@ async function startTask() {
   const userDateObj = new Date(toRaw(userDob).seconds * 1000)
 
   const userParams = {
-    birthMonth: userDateObj.getMonth()+1,
+    birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
     language: 'es'
   }
 
   const gameParams = appKit._taskInfo.variantParams
-  const roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
+  roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
+    completed.value = true;
     await authStore.roarfirekit.completeAssessment(currentAssignment, "swr-es")
     router.replace({ name: "Home" });
   });
 }
 </script>
-<style scoped> 
-.game-target {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-}
-.game-target:focus {
-  outline: none;
-}
+<style scoped> .game-target {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+ }
+
+ .game-target:focus {
+   outline: none;
+ }
 </style>
