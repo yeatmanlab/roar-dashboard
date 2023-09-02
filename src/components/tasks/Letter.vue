@@ -9,7 +9,7 @@
 import RoarLetter from '@bdelab/roar-letter';
 import AppSpinner from '../AppSpinner.vue';
 import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
+import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import _head from 'lodash/head';
@@ -28,6 +28,20 @@ entries.forEach((entry) => {
     if (entry.name === window.location.href && history.state.replaced === true) {
       router.replace({ name: "Home" })
     }
+  }
+});
+
+// The following code intercepts the back button and instead forces a refresh.
+// We use the ``preventBack`` variable to prevent an infinite loop. I.e., we
+// only want to intercept this the first time.
+let preventBack = true;
+onBeforeRouteLeave((to, from, next) => {
+  if (window.event.type === "popstate" && preventBack) {
+    preventBack = false;
+    // router.go(router.currentRoute);
+    router.go(0);
+  } else {
+    next();
   }
 });
 
