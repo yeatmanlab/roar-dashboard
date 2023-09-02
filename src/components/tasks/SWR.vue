@@ -9,7 +9,7 @@
 import RoarSWR from '@bdelab/roar-swr';
 import AppSpinner from '../AppSpinner.vue';
 import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
+import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import _head from 'lodash/head';
@@ -23,11 +23,28 @@ const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
 // Send user back to Home if page is reloaded
 const entries = performance.getEntriesByType("navigation");
 entries.forEach((entry) => {
+  console.log(entry);
   if (entry.type === "reload") {
+    console.log("Reloading detected");
     // Detect if our previous reload was on this page, AND if the last naviagtion was a replace.
     if (entry.name === window.location.href && history.state.replaced === true) {
+      console.log("Replacing to Home");
       router.replace({ name: "Home" })
     }
+  }
+});
+
+// The following code intercepts the back button and instead forces a refresh.
+// We use the ``preventBack`` variable to prevent an infinite loop. I.e., we
+// only want to intercept this the first time.
+let preventBack = true;
+onBeforeRouteLeave((to, from, next) => {
+  if (window.event.type === "popstate" && preventBack) {
+    preventBack = false;
+    // router.go(router.currentRoute);
+    router.go(0);
+  } else {
+    next();
   }
 });
 
@@ -46,6 +63,7 @@ let roarApp;
 const completed = ref(false);
 onBeforeUnmount(async () => {
   if (roarApp && completed.value === false) {
+    console.log("Aborting roar app");
     roarApp.abort();
   }
 });
