@@ -62,12 +62,6 @@ watch(isFirekitInit, async (newValue, oldValue) => {
 let roarApp;
 
 const completed = ref(false);
-onBeforeUnmount(async () => {
-  if (roarApp && completed.value === false) {
-    roarApp.abort();
-  }
-});
-
 const currentAssignment = ref();
 
 const selectBestRun = async () => {
