@@ -532,7 +532,6 @@ async function submitOrgs(rawJson) {
             activeSubmit.value = false;
           }
         })
-  
     }
   }
   
