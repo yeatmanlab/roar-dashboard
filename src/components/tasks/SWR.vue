@@ -89,6 +89,7 @@ async function startTask() {
   const userParams = {
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
+    language: 'en'
   }
 
   const gameParams = appKit._taskInfo.variantParams
