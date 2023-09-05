@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/auth';
 import _head from 'lodash/head';
 import _get from 'lodash/get';
 
+const taskId = "sre"
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -58,16 +59,26 @@ watch(isFirekitInit, async (newValue, oldValue) => {
 let roarApp;
 
 const completed = ref(false);
+const currentAssignment = ref();
+
+const selectBestRun = async () => {
+  await authStore.roarfirekit.selectBestRun({
+    assignmentId: currentAssignment.value,
+    taskId,
+  })
+}
+
+window.addEventListener('beforeunload', selectBestRun, { once: true });
 onBeforeUnmount(async () => {
   if (roarApp && completed.value === false) {
     roarApp.abort();
   }
+  selectBestRun();
 });
 
 async function startTask() {
-  const currentAssignment = _head(toRaw(authStore.firekitAssignmentIds))
-  const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, "sre")
-  console.log('appKit is defined as', appKit)
+  currentAssignment.value = _head(toRaw(authStore.firekitAssignmentIds))
+  const appKit = await authStore.roarfirekit.startAssessment(currentAssignment.value, taskId)
 
   const userDob = _get(roarfirekit.value, 'userData.studentData.dob') || _get(firekitUserData.value, 'studentData.dob')
   const userDateObj = new Date(toRaw(userDob).seconds * 1000)
@@ -76,16 +87,15 @@ async function startTask() {
     grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
-
   }
+
   const gameParams = appKit._taskInfo.variantParams
   roarApp = new RoarSRE(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
-    completed.value = true;
-    await authStore.roarfirekit.completeAssessment(currentAssignment, "sre")
+    await authStore.roarfirekit.completeAssessment(currentAssignment.value, taskId)
     router.replace({ name: "Home" });
   });
 }
