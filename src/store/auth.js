@@ -20,9 +20,7 @@ export const useAuthStore = () => {
         roarfirekit: null,
         hasUserData: false,
         firekitUserData: null,
-        firekitAssignments: {
-          assigned: null
-        },
+        firekitAssignments: null,
         firekitAdminInfo: null,
         firekitAssignmentIds: null,
         firekitIsAdmin: null,
@@ -60,7 +58,7 @@ export const useAuthStore = () => {
           this.firekitAssignmentIds = assignments;
           return reply
         } catch(e) {
-          return this.firekitAssignments.assigned
+          return this.firekitAssignments;
         }
         
       },

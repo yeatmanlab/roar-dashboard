@@ -24,8 +24,9 @@ import { onMounted, ref, watch, toRaw } from "vue";
 import GameTabs from "../components/GameTabs.vue";
 import ParticipantSidebar from "../components/ParticipantSidebar.vue";
 import _filter from 'lodash/filter'
-import _head from 'lodash/head'
 import _get from 'lodash/get'
+import _head from 'lodash/head'
+import _isEmpty from 'lodash/isEmpty'
 import { useAuthStore } from "@/store/auth";
 import { storeToRefs } from 'pinia';
 import AppSpinner from "../components/AppSpinner.vue";
@@ -45,8 +46,8 @@ const studentInfo = ref({
   grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
 })
 
-async function setUpAssignments() {
-  const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
+async function setUpAssignments(assignedAssignments = [], useUnsubscribe = false) {
+  // const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
   console.log("assignedAssignments from storeToRefs: ", assignedAssignments);
   let assignmentInfo = [];
   let allAdminInfo = [];
@@ -86,23 +87,50 @@ async function setUpAssignments() {
     console.log("got through try/catch and assignmentInfo has length == 0")
     noGamesAvailable.value = true
   }
-
-
 }
 
 onMounted(async () => {
   if (isFirekitInit.value) {
-    await setUpAssignments();
+    const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
+    await setUpAssignments(assignedAssignments);
   } else {
     console.log('[onMounted] firekit isnt ready!')
   }
 })
+
 watch(isFirekitInit, async (newValue, oldValue) => {
-  await setUpAssignments();
+  await setUpAssignments(authStore.roarfirekit.currentAssignments?.assigned);
 })
+
 watch(assessments, (newValue, oldValue) => {
   loadingGames.value = false
 })
+
+watch(() => roarfirekit.value, async (newValue, oldValue) => {
+  // const oldCurrentAssignments = toRaw(oldValue.currentAssignments).assigned;
+  const newCurrentAssignments = toRaw(newValue.currentAssignments).assigned;
+  console.log("[watch] roarfirekit has changed", {
+    newCurrentAssignments,
+    authStoreFirekitAssignments: authStore.firekitAssignmentIds,
+    // oldCurrentAssignments,
+  });
+  if (newCurrentAssignments !== authStore.firekitAssignmentIds) {
+    console.log('[watch] roarfirekit.currentAssignments changed')
+    await setUpAssignments(newCurrentAssignments);
+  }
+  // console.log("[subscription]: ", { mutation, state });
+  // const currentAssignments = state.roarfirekit.currentAssignments?.assigned;
+  // console.log("[subscription] outside condition, currentAssignments: ", JSON.stringify({
+  //   roarfirekit: state.roarfirekit,
+  //   currentAssignments: state.roarfirekit.currentAssignments,
+  //   assigned: currentAssignments,
+  // }, null, 2));
+  // if (!_isEmpty(currentAssignments)) {
+  //   console.log("[subscription] assignments has length.", currentAssignments);
+  //   await setUpAssignments(currentAssignments, true);
+  // }
+}, { deep: true });
+
 </script>
 <style scoped>
 .tabs-container {
