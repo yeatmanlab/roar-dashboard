@@ -22,7 +22,7 @@ export const useAuthStore = () => {
         firekitUserData: null,
         firekitAssignments: null,
         firekitAdminInfo: null,
-        firekitAssignmentIds: null,
+        firekitAssignmentIds: [],
         firekitIsAdmin: null,
         firekitIsSuperAdmin: null,
         cleverOAuthRequested: false,
@@ -54,8 +54,8 @@ export const useAuthStore = () => {
       async getAssignments(assignments) {
         try{
           const reply = await this.roarfirekit.getAssignments(assignments)
-          this.firekitAssignments = reply
           this.firekitAssignmentIds = assignments;
+          this.firekitAssignments = reply
           return reply
         } catch(e) {
           return this.firekitAssignments;

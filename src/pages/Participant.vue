@@ -27,6 +27,7 @@ import _filter from 'lodash/filter'
 import _get from 'lodash/get'
 import _head from 'lodash/head'
 import _isEmpty from 'lodash/isEmpty'
+import _isEqual from 'lodash/isEqual'
 import { useAuthStore } from "@/store/auth";
 import { storeToRefs } from 'pinia';
 import AppSpinner from "../components/AppSpinner.vue";
@@ -44,11 +45,17 @@ let completeGames = ref(0);
 // Set up studentInfo for sidebar
 const studentInfo = ref({
   grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
-})
+});
 
+let unsubscribe;
 async function setUpAssignments(assignedAssignments = [], useUnsubscribe = false) {
+  if (useUnsubscribe && unsubscribe) {
+    console.log("[watch] unsubscribing");
+    unsubscribe();
+  }
+
   // const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
-  console.log("assignedAssignments from storeToRefs: ", assignedAssignments);
+  console.log("assignedAssignments input: ", assignedAssignments);
   let assignmentInfo = [];
   let allAdminInfo = [];
   try {
@@ -79,12 +86,18 @@ async function setUpAssignments(assignedAssignments = [], useUnsubscribe = false
 
     const adminInfo = _head(toRaw(allAdminInfo))
     isSequential.value = _get(adminInfo, 'sequential')
+    // studentInfo.value.grade = (
+    //   _get(roarfirekit.value, 'userData.studentData.grade')
+    //   || _get(firekitUserData.value, 'studentData.grade')
+    // );
 
     const completedTasks = _filter(assessmentInfo, (task) => task.completedOn)
     totalGames.value = assessmentInfo.length;
     completeGames.value = completedTasks.length;
+    noGamesAvailable.value = false;
   } else {
     console.log("got through try/catch and assignmentInfo has length == 0")
+    // authStore.firekitAssignmentIds = assignedAssignments;
     noGamesAvailable.value = true
   }
 }
@@ -106,17 +119,17 @@ watch(assessments, (newValue, oldValue) => {
   loadingGames.value = false
 })
 
-watch(() => roarfirekit.value, async (newValue, oldValue) => {
+unsubscribe = watch(() => roarfirekit.value, async (newValue) => {
   // const oldCurrentAssignments = toRaw(oldValue.currentAssignments).assigned;
-  const newCurrentAssignments = toRaw(newValue.currentAssignments).assigned;
-  console.log("[watch] roarfirekit has changed", {
+  const newCurrentAssignments = toRaw(newValue.currentAssignments)?.assigned;
+  const oldCurrentAssignments = toRaw(authStore.firekitAssignmentIds);
+  console.log("[watch] roarfirekit has changed", JSON.stringify({
     newCurrentAssignments,
-    authStoreFirekitAssignments: authStore.firekitAssignmentIds,
-    // oldCurrentAssignments,
-  });
-  if (newCurrentAssignments !== authStore.firekitAssignmentIds) {
+    oldCurrentAssignments,
+  }, null, 2));
+  if (!_isEqual(newCurrentAssignments, oldCurrentAssignments)) {
     console.log('[watch] roarfirekit.currentAssignments changed')
-    await setUpAssignments(newCurrentAssignments);
+    await setUpAssignments(newCurrentAssignments, true);
   }
   // console.log("[subscription]: ", { mutation, state });
   // const currentAssignments = state.roarfirekit.currentAssignments?.assigned;
