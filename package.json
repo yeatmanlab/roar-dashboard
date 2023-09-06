@@ -3,13 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite --force",
+    "dev": "vite --force --host",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@bdelab/roar-firekit": "^3.12.5",
-    "@bdelab/roar-letter": "^1.1.1",
+    "@bdelab/roar-letter": "^1.1.2",
     "@bdelab/roar-pa": "^1.1.1",
     "@bdelab/roar-sre": "^1.1.1",
     "@bdelab/roar-swr": "^1.1.2",
