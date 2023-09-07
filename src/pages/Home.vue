@@ -9,7 +9,8 @@
     <Participant v-if="!isAdmin" />
     <Administrator v-else-if="isAdmin" />
   </div>
-  <ConsentModal v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent" />
+  <ConsentModal v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent"
+    @delayed="touchFirekit" />
 </template>
 
 <script setup>
@@ -31,8 +32,19 @@ const showConsent = ref(false);
 const confirmText = ref("");
 const consentVersion = ref("");
 
+authStore.$subscribe((mutation, state) => {
+  if (!["firekitUserData", "firekitAssignmentIds"].includes(mutation.events.key)) {
+    authStore.syncFirekitCache(state ?? {});
+  }
+})
+
 async function updateConsent() {
   authStore.updateConsentStatus(consentType.value, consentVersion.value)
+}
+
+async function touchFirekit() {
+  roarfirekit.value.newField = 0;
+  roarfirekit.value.newField = undefined;
 }
 
 async function checkConsent() {
