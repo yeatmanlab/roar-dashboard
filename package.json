@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bdelab/roar-firekit": "^3.12.5",
+    "@bdelab/roar-firekit": "^3.12.6",
     "@bdelab/roar-letter": "^1.1.2",
     "@bdelab/roar-pa": "^1.1.1",
     "@bdelab/roar-sre": "^1.1.1",
