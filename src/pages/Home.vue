@@ -33,7 +33,7 @@ const confirmText = ref("");
 const consentVersion = ref("");
 
 authStore.$subscribe((mutation, state) => {
-  if (!["firekitUserData", "firekitAssignmentIds"].includes(mutation.events.key)) {
+  if (!["firekitUserData", "firekitAssignmentIds"].includes(mutation.events?.key)) {
     authStore.syncFirekitCache(state ?? {});
   }
 })
