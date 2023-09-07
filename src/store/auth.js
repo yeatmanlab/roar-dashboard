@@ -1,7 +1,9 @@
-import { defineStore } from "pinia";
+import { toRaw } from "vue";
+import { defineStore, acceptHMRUpdate } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
 
+import _assign from "lodash/assign";
 import _get from "lodash/get";
 import _set from "lodash/set";
 
@@ -12,6 +14,7 @@ export const useAuthStore = () => {
     state: () => {
       return {
         spinner: false,
+        consentSpinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
@@ -37,6 +40,15 @@ export const useAuthStore = () => {
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
     },
     actions: {
+      syncFirekitCache(state) {
+        const { userData, currentAssignments } = state.roarfirekit;
+        if (userData) {
+          this.firekitUserData = _assign(this.firekitUserData, userData);
+        }
+        if (currentAssignments?.assigned?.length > 0) {
+          this.firekitAssignmentIds = currentAssignments.assigned;
+        }
+      },
       isUserAdmin() {
         if(this.isFirekitInit && this.firekitIsAdmin === null) {
           this.firekitIsAdmin = this.roarfirekit.isAdmin();
@@ -224,11 +236,15 @@ export const useAuthStore = () => {
     persist: {
       storage: sessionStorage,
       debug: false,
-      afterRestore: async (ctx) => {
-        if (ctx.store.roarfirekit) {
-          ctx.store.roarfirekit = await initNewFirekit();
-        }
-      }
+      // afterRestore: async (ctx) => {
+      //   if (ctx.store.roarfirekit) {
+      //     ctx.store.roarfirekit = await initNewFirekit();
+      //   }
+      // }
     },
   })();
 };
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot))
+}
