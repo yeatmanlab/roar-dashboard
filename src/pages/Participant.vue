@@ -1,7 +1,10 @@
 <template>
   <div>
     <div v-if="!noGamesAvailable || consentSpinner">
-      <AppSpinner v-if="loadingGames || consentSpinner" />
+      <div v-if="loadingGames || consentSpinner" class="loading-container">
+        <AppSpinner style="margin-bottom: 1rem;" />
+        <span>Loading Assignments</span>
+      </div>
       <div v-else class="tabs-container">
         <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
         <GameTabs :games="assessments" :sequential="isSequential" />
@@ -130,5 +133,10 @@ unsubscribe = watch(() => roarfirekit.value, async (newValue) => {
   .tabs-container {
     flex-direction: column;
   }
+}
+
+.loading-container {
+  width: 100%;
+  text-align: center;
 }
 </style>
