@@ -7,11 +7,11 @@
 </template>
 <script setup>
 import RoarLetter from '@bdelab/roar-letter';
-import AppSpinner from '../AppSpinner.vue';
 import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
+import { useGameStore } from '@/store/game';
 import _head from 'lodash/head';
 import _get from 'lodash/get';
 
@@ -19,6 +19,7 @@ const taskId = "letter"
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
+const gameStore = useGameStore();
 const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
 
 // Send user back to Home if page is reloaded
@@ -59,11 +60,11 @@ watch(isFirekitInit, async (newValue, oldValue) => {
 let roarApp;
 
 const completed = ref(false);
-const currentAssignment = ref();
+const { selectedAdmin } = storeToRefs(gameStore);
 
 const selectBestRun = async () => {
   await authStore.roarfirekit.selectBestRun({
-    assignmentId: currentAssignment.value,
+    assignmentId: selectedAdmin.value,
     taskId,
   })
 }
@@ -77,8 +78,7 @@ onBeforeUnmount(async () => {
 });
 
 async function startTask() {
-  currentAssignment.value = _head(toRaw(authStore.firekitAssignmentIds))
-  const appKit = await authStore.roarfirekit.startAssessment(currentAssignment.value, taskId)
+  const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value, taskId)
 
   const userDob = _get(roarfirekit.value, 'userData.studentData.dob') || _get(firekitUserData.value, 'studentData.dob')
   const userDateObj = new Date(toRaw(userDob).seconds * 1000)
@@ -94,7 +94,7 @@ async function startTask() {
   gameStarted.value = true;
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
-    await authStore.roarfirekit.completeAssessment(currentAssignment.value, taskId)
+    await authStore.roarfirekit.completeAssessment(selectedAdmin.value, taskId)
     router.replace({ name: "Home" });
   });
 }
