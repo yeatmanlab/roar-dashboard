@@ -42,7 +42,7 @@ async function updateConsent() {
   authStore.updateConsentStatus(consentType.value, consentVersion.value)
 }
 
-async function touchFirekit() {
+function touchFirekit() {
   roarfirekit.value.newField = 0;
   roarfirekit.value.newField = undefined;
 }
@@ -60,6 +60,7 @@ async function checkConsent() {
 
 onMounted(async () => {
   if (isFirekitInit.value) {
+    touchFirekit();
     isAdmin.value = authStore.isUserAdmin();
     loading.value = false;
     await checkConsent();

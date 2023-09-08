@@ -18,9 +18,9 @@ const { roarfirekit } = storeToRefs(authStore);
 let userDataCheckInterval;
 
 function checkForUserType() {
-  if(roarfirekit.value.userData) {
+  if (roarfirekit.value.userData) {
     const userType = _get(roarfirekit.value, 'userData.userType')
-    if(userType !== 'guest') {
+    if (userType !== 'guest') {
       clearInterval(userDataCheckInterval)
       router.push({ name: "Home" })
     }
