@@ -18,7 +18,12 @@ const routes = [
     name: "Home",
     component: () => import("../pages/Home.vue"),
     meta: { pageTitle: "Dashboard" },
-
+  },
+  {
+    path: "/clever-user",
+    name: "CleverLanding",
+    component: () => import("../pages/CleverLanding.vue"),
+    meta: { pageTitle: "Logging You In" },
   },
   // {
   //   path: "/game/:gameId",
