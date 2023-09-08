@@ -14,7 +14,7 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed } from "vue";
 
 const props = defineProps({
   totalGames: {required: true, default: 0},
@@ -22,13 +22,11 @@ const props = defineProps({
   studentInfo: {required: true}
 })
 
-onMounted(() => {
+const chartData = computed(() => {
   const completed = props.completedGames;
   const incomplete = (props.totalGames - props.completedGames);
-  chartData.value = setChartData(completed, incomplete);
+  return setChartData(completed, incomplete)
 });
-
-const chartData = ref();
 const chartOptions = ref({
     cutout: '60%',
     showToolTips: false,
