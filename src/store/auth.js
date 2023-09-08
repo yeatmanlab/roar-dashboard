@@ -29,6 +29,7 @@ export const useAuthStore = () => {
         firekitIsAdmin: null,
         firekitIsSuperAdmin: null,
         cleverOAuthRequested: false,
+        authFromClever: false,
       };
     },
     getters: {
@@ -158,6 +159,7 @@ export const useAuthStore = () => {
         }
       },
       async signInWithCleverPopup() {
+        this.authFromClever = true;
         if(this.isFirekitInit){
           return this.roarfirekit.signInWithPopup('clever').then(() => {
             if(this.roarfirekit.userData){
@@ -171,6 +173,7 @@ export const useAuthStore = () => {
         return this.roarfirekit.initiateRedirect("google");
       },
       async signInWithCleverRedirect() {
+        this.authFromClever = true;
         return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
@@ -202,6 +205,7 @@ export const useAuthStore = () => {
             this.firekitIsSuperAdmin = null;
             this.firekitUserData = null;
             this.spinner = false;
+            this.authFromClever = false;
             // this.roarfirekit = initNewFirekit()
           });
         } else {
