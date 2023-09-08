@@ -6,7 +6,11 @@
         <span>Loading Assignments</span>
       </div>
       <div v-else>
-        <Dropdown v-if="allAdmins.length > 1" :options="allAdmins" v-model="selectedAdmin" optionLabel="label" optionValue="value" class="dropdown-container" />
+        <div v-if="allAdmins.length > 1" class="p-float-label dropdown-container">
+          <Dropdown :options="allAdmins" v-model="selectedAdmin" optionLabel="label" optionValue="value"
+            inputId="dd-assignment" />
+          <label for="dd-assignment">Select an assignment</label>
+        </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
           <GameTabs :games="assessments" :sequential="isSequential" />
@@ -37,6 +41,7 @@ import _find from 'lodash/find'
 import _isEmpty from 'lodash/isEmpty'
 import _isEqual from 'lodash/isEqual'
 import { useAuthStore } from "@/store/auth";
+import { useGameStore } from "@/store/game";
 import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
@@ -78,8 +83,9 @@ const studentInfo = ref({
   grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
 });
 
+const gameStore = useGameStore();
 const allAdmins = ref([]);
-const selectedAdmin = ref('');
+const { selectedAdmin } = storeToRefs(gameStore);
 
 let unsubscribe;
 async function setUpAssignments(assignedAssignments, useUnsubscribe = false) {
@@ -101,7 +107,12 @@ async function setUpAssignments(assignedAssignments, useUnsubscribe = false) {
         }
       })
       allAdmins.value = assignmentOptions;
-      selectedAdmin.value = _head(assignmentOptions).value
+
+      // If the selectedAdmin that we retrieved from storeToRefs is empty or not
+      // in the list of available administrations, pick a new one.
+      if (selectedAdmin.value === "" || !assignedAssignments.includes(selectedAdmin.value)) {
+        selectedAdmin.value = _head(assignmentOptions).value
+      }
     }
   } catch (e) {
     // Could not grab data from live roarfirekit, user cached firekit.
@@ -115,7 +126,12 @@ async function setUpAssignments(assignedAssignments, useUnsubscribe = false) {
         }
       })
       allAdmins.value = assignmentOptions;
-      selectedAdmin.value = _head(assignmentOptions).value
+
+      // Likewise, if the selectedAdmin that we retrieved from storeToRefs is empty or not
+      // in the list of available administrations, pick a new one.
+      if (selectedAdmin.value === "" || !authStore.firekitAssignmentIds.includes(selectedAdmin.value)) {
+        selectedAdmin.value = _head(assignmentOptions).value
+      }
     } else {
       noGamesAvailable.value = true;
     }
