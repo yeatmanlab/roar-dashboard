@@ -166,11 +166,11 @@ const routes = [
     meta: {pageTitle: "View Administration", requireAdmin: true}
   },
   {
-    path: "/administration/:administrationId/:orgType/:orgId",
+    path: "/scores/:administrationId/:orgType/:orgId",
     name: "ScoreReport",
     props: true,
     component: () => import("../pages/ScoreReport.vue"),
-    meta: {pageTitle: "View Administration", requireAdmin: true}
+    meta: {pageTitle: "View Scores", requireAdmin: true}
   },
   {
     path: "/enable-cookies",

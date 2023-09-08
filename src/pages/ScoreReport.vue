@@ -16,12 +16,45 @@
           <p v-if="administrationInfo">Administration: {{ administrationInfo.name }}</p>
         </div>
 
+        <!-- Header blurbs about tasks -->
+        <h2>In this Report...</h2>
+        <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
+        <div v-if="allTasks.includes('pa')">
+          <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span> assesses some of the most foundational skills for reading: mapping letters to their corresponding sounds. This skill is crucial for building further reading fluency skills, such as decoding.
+        </div>
+        <div v-if="allTasks.includes('swr')">
+          <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the word level.
+        </div>
+        <div v-if="allTasks.includes('sre')">
+          <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency at the sentence level. 
+        </div>
+
+
+        <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
           <span>Loading Administration Data</span>
         </div>
 
+        <!-- Main table -->
         <RoarDataTable v-else :data="tableData" :columns="columns" />
+
+        <!-- In depth breakdown of each task-->
+        <div v-if="allTasks.includes('pa')" class="task-card">
+          <div class="task-title">ROAR-PHENOME</div>
+          <span style="text-transform: uppercase;">Phonological Awareness</span>
+          <p class="task-description">ROAR - Phoneme assesses a student's mastery of phonological awareness through elision and sound matching tasks. Research indicates that phonological awareness, as a foundational pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading abilities, students may struggle to catch up in overall reading proficiency. </p>
+        </div>
+        <div v-if="allTasks.includes('swr')" class="task-card">
+          <div class="task-title">ROAR-WORD</div>
+          <span style="text-transform: uppercase;">Single Word Recognition</span>
+          <p class="task-description">ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. </p>
+        </div>
+        <div v-if="allTasks.includes('sre')" class="task-card">
+          <div class="task-title">ROAR-SENTENCE</div>
+          <span style="text-transform: uppercase;">Sentence Reading Efficiency</span>
+          <p class="task-description">ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort.</p>
+        </div>
       </Panel>
     </section>
   </main>
@@ -58,6 +91,12 @@ const spinIcon = computed(() => {
 });
 
 const assignmentData = ref([]);
+
+const allTasks = computed(() => {
+  if(tableData.value.length > 0) {
+    return Object.keys(tableData.value[0].status)
+  } else return []
+})
 
 const columns = computed(() => {
   const tableColumns = [
@@ -119,7 +158,7 @@ const refresh = async () => {
   if (unsubscribe) unsubscribe();
 
   assignmentData.value = await queryStore.getUsersByAssignment(
-    props.administrationId, props.orgType, props.orgId, false
+    props.administrationId, props.orgType, props.orgId, true
   );
 
   if (!orgInfo.value) {
@@ -150,5 +189,22 @@ onMounted(async () => {
 <style>
 .p-button {
   margin: 0px 8px;
+}
+.task-header {
+  font-weight: bold;
+}
+.task-card {
+  background: #f6f6fe;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.task-title {
+  font-size: 3.5rem;
+  /* font-weight: bold; */
+}
+.task-description {
+  font-size: 1.25rem;
+  text-align: left;
 }
 </style>
