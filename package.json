@@ -9,7 +9,8 @@
     "emulate:admin": "source firebase/emulate_admin.sh",
     "emulate:assessment": "source firebase/emulate_assessment.sh",
     "emulate:start": "npm run emulate:admin && npm run emulate:assessment",
-    "emulate:stop": "ps -e | grep firebase | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill"
+    "emulate:stop": "ps -e | grep firebase | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill -s INT",
+    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh && source firebase/export_admin.sh && source firebase/export_assessment.sh"
   },
   "dependencies": {
     "@bdelab/roar-firekit": "^3.12.9",
