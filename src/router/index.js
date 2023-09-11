@@ -109,7 +109,6 @@ const routes = [
       return { name: "SignIn" };
     },
     meta: { pageTitle: "Sign Out" },
-
   },
   {
     path: "/auth-clever",
