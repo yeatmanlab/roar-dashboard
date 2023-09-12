@@ -109,8 +109,8 @@ const setDoughnutChartData = () => {
 	const docStyle = getComputedStyle(document.documentElement);
 	let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
 
-	assigned -= (started + completed);
 	started -= completed;
+	assigned -= (started + completed);
 
 	return {
 		labels: ['Completed', 'Started', 'Assigned'],
@@ -160,8 +160,8 @@ const setBarChartData = (orgId) => {
 	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId]?.assignment || {};
 	const documentStyle = getComputedStyle(document.documentElement);
 
-	assigned -= (started + completed);
 	started -= completed;
+	assigned -= (started + completed);
 
 	const borderRadii = getBorderRadii(completed, started, assigned);
 	const borderWidth = 0;
