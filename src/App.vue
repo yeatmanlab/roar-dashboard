@@ -33,7 +33,8 @@ const navbarBlacklist = ref([
   "SWR-ES",
   "SRE",
   "PA",
-  "Letter"
+  "Letter",
+  "Multichoice"
 ]);
 
 onBeforeMount(async () => {
