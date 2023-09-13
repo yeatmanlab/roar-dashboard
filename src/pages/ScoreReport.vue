@@ -4,17 +4,14 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Administration Progress">
+      <Panel :header="`Administration Score Report: ${administrationInfo.name}`">
         <template #icons>
           <button class="p-panel-header-icon p-link mr-2" @click="refresh">
             <span :class="spinIcon"></span>
           </button>
         </template>
 
-        <div>
-          <p v-if="orgInfo">{{ _capitalize(props.orgType) }}: {{ orgInfo.name }}</p>
-          <p v-if="administrationInfo">Administration: {{ administrationInfo.name }}</p>
-        </div>
+        <h2 v-if="orgInfo">{{ orgInfo.name }} Score Report</h2>
 
         <!-- Header blurbs about tasks -->
         <h2>In this Report...</h2>
@@ -38,6 +35,31 @@
 
         <!-- Main table -->
         <RoarDataTable v-else :data="tableData" :columns="columns" />
+
+        <div class="legend-container">
+          <div class="legend-entry">
+            <div class="circle" :style="`background-color: ${emptyTagColorMap.below};`"/>
+            <div>
+              <div>Needs extra support</div>
+              <div>(Below 25th percentile)</div>
+            </div>
+          </div>
+          <div class="legend-entry">
+            <div class="circle" :style="`background-color: ${emptyTagColorMap.some};`"/>
+            <div>
+              <div>Needs some support</div>
+              <div>(Below 50th percentile)</div>
+            </div>
+          </div>
+          <div class="legend-entry">
+            <div class="circle" :style="`background-color: ${emptyTagColorMap.above};`"/>
+            <div>
+              <div>At or above average</div>
+              <div>(At or above 50th percentile)</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align: center;">Students are classified into three support groups based on nationally-normed percentiles. Blank spaces indicate that the assessment was not completed.</div>
 
         <!-- In depth breakdown of each task-->
         <div v-if="allTasks.includes('pa')" class="task-card">
@@ -64,6 +86,7 @@
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
+import _get from 'lodash/get'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
@@ -94,25 +117,31 @@ const assignmentData = ref([]);
 
 const allTasks = computed(() => {
   if(tableData.value.length > 0) {
-    return Object.keys(tableData.value[0].status)
+    return tableData.value[0].assignment.assessments.map(assessment => assessment.taskId)
   } else return []
 })
 
+const emptyTagColorMap = {
+  above: 'green',
+  some: '#edc037',
+  below: '#c93d82'
+}
+
 const columns = computed(() => {
   const tableColumns = [
+    { field: "user.username", header: "Username", dataType: "text" },
     { field: "user.assessmentPid", header: "PID", dataType: "text" },
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
   if (tableData.value.length > 0) {
-    for (const taskId of Object.keys(tableData.value[0].status)) {
+    for (const taskId of allTasks.value) {
       tableColumns.push({
-        field: `status.${taskId}.value`,
+        field: `scores.${taskId}.value`,
         header: taskId.toUpperCase(),
         dataType: "text",
-        tag: true,
-        severityField: `status.${taskId}.severity`,
-        iconField: `status.${taskId}.icon`
+        emptyTag: true,
+        tagColor: `scores.${taskId}.color`,
       });
     }
   }
@@ -122,31 +151,60 @@ const columns = computed(() => {
 const tableData = computed(() => {
   return assignmentData.value.map(({ user, assignment }) => {
     const status = {};
+    const scores = {};
     for (const assessment of (assignment?.assessments || [])) {
-      if (assessment.completedOn !== undefined) {
-        status[assessment.taskId] = {
-          value: "completed",
-          icon: "pi pi-check",
-          severity: "success",
-        };
-      } else if (assessment.startedOn !== undefined) {
-        status[assessment.taskId] = {
-          value: "started",
-          icon: "pi pi-exclamation-triangle",
-          severity: "warning",
-        };
-      } else {
-        status[assessment.taskId] = {
-          value: "assigned",
-          icon: "pi pi-times",
-          severity: "danger",
-        };
+      let percentileScore = undefined;
+      if(assessment.taskId === "swr") {
+        percentileScore = _get(assessment, 'scores.computed.composite.wjPercentile')
       }
+      if(assessment.taskId === "sre") {
+        percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
+      }
+      if(percentileScore !== undefined){
+        let support_level = '';
+        let tag_color = '';
+        if(percentileScore >= 50) {
+          support_level = 'at_above'
+          tag_color = emptyTagColorMap.above;
+        } else if(percentileScore > 25 && percentileScore < 50) {
+          support_level = 'some_support'
+          tag_color = emptyTagColorMap.some
+        } else {
+          support_level = "needs_extra"
+          tag_color = emptyTagColorMap.below
+        }
+        console.log('swr score', percentileScore)
+        scores[assessment.taskId] = {
+          score: percentileScore,
+          support_level,
+          color: tag_color
+        }
+      }
+      // if (assessment.completedOn !== undefined) {
+      //   status[assessment.taskId] = {
+      //     value: "completed",
+      //     icon: "pi pi-check",
+      //     severity: "success",
+      //   };
+      // } else if (assessment.startedOn !== undefined) {
+      //   status[assessment.taskId] = {
+      //     value: "started",
+      //     icon: "pi pi-exclamation-triangle",
+      //     severity: "warning",
+      //   };
+      // } else {
+      //   status[assessment.taskId] = {
+      //     value: "assigned",
+      //     icon: "pi pi-times",
+      //     severity: "danger",
+      //   };
+      // }
     }
     return {
       user,
       assignment,
       status,
+      scores,
     }
   });
 })
@@ -206,5 +264,27 @@ onMounted(async () => {
 .task-description {
   font-size: 1.25rem;
   text-align: left;
+}
+.legend-container {
+  display: flex;
+  flex-direction: row;
+  gap: 3vw;
+  justify-content: center;
+  margin-top: 3rem;
+}
+.legend-entry {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.circle {
+  border-color: white;
+  display: inline-block;
+  border-radius: 50%;
+  border-width: 5px;
+  height: 25px;
+  width: 25px;
+  vertical-align: middle;
+  margin-right: 10px;
 }
 </style>
