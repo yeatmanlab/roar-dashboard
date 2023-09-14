@@ -88,11 +88,14 @@
             <li>Students who have phonological awareness skills but need support in single-word recognition would likely benefit from targeted instruction in decoding skills to improve accuracy.</li>
             <li>Students who have phonological awareness and word-decoding skills but need support in sentence-reading would likely benefit from sustained practice in reading for accuracy and fluency. These students demonstrate they can read at the word-level, but they do not appear to read quickly and accurately across the length of a sentence.</li>
           </ol>
-          <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students.
+          <!-- Reintroduce when we have somewhere for this link to go. -->
+          <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
         <div>
           <h2 class="extra-info-title">NEXT STEPS</h2>
-          <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p>
+          <!-- Reintroduce when we have somewhere for this link to go. -->
+          <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
+          <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support.</p>
         </div>
       </Panel>
     </section>
