@@ -20,7 +20,7 @@
           <div v-if="allTasks.includes('pa')" class="task-blurb">
             <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span> assesses some of the most foundational skills for reading: mapping letters to their corresponding sounds. This skill is crucial for building further reading fluency skills, such as decoding.
           </div>
-          <div v-if="allTasks.includes('swr')" class="task-blurb">
+          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
             <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the word level.
           </div>
           <div v-if="allTasks.includes('sre')" class="task-blurb">
@@ -69,7 +69,7 @@
           <span style="text-transform: uppercase;">Phonological Awareness</span>
           <p class="task-description">ROAR - Phoneme assesses a student's mastery of phonological awareness through elision and sound matching tasks. Research indicates that phonological awareness, as a foundational pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading abilities, students may struggle to catch up in overall reading proficiency. </p>
         </div>
-        <div v-if="allTasks.includes('swr')" class="task-card">
+        <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-card">
           <div class="task-title">ROAR-WORD</div>
           <span style="text-transform: uppercase;">Single Word Recognition</span>
           <p class="task-description">ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. </p>
@@ -168,12 +168,15 @@ const columns = computed(() => {
 
 const tableData = computed(() => {
   return assignmentData.value.map(({ user, assignment }) => {
-    const status = {};
     const scores = {};
     for (const assessment of (assignment?.assessments || [])) {
       let percentileScore = undefined;
-      if(assessment.taskId === "swr") {
+      if(assessment.taskId === "swr" || assessment.taskId === "swr-es") {
         percentileScore = _get(assessment, 'scores.computed.composite.wjPercentile')
+      }
+      if(assessment.taskId === "pa") {
+        // TODO: this needs to be switched out once Adam completes the script to correct scores
+        percentileScore = _get(assessment, 'scores.computed.composite.roarScore')
       }
       if(assessment.taskId === "sre") {
         percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
@@ -198,30 +201,10 @@ const tableData = computed(() => {
           color: tag_color
         }
       }
-      // if (assessment.completedOn !== undefined) {
-      //   status[assessment.taskId] = {
-      //     value: "completed",
-      //     icon: "pi pi-check",
-      //     severity: "success",
-      //   };
-      // } else if (assessment.startedOn !== undefined) {
-      //   status[assessment.taskId] = {
-      //     value: "started",
-      //     icon: "pi pi-exclamation-triangle",
-      //     severity: "warning",
-      //   };
-      // } else {
-      //   status[assessment.taskId] = {
-      //     value: "assigned",
-      //     icon: "pi pi-times",
-      //     severity: "danger",
-      //   };
-      // }
     }
     return {
       user,
       assignment,
-      status,
       scores,
     }
   });
