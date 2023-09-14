@@ -417,7 +417,7 @@ async function submitStudents(rawJson) {
         }
       })
     })
-    await delay(1000)
+    await delay(1250)
   }
 }
 
