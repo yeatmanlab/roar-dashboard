@@ -39,6 +39,7 @@
             <li>date of birth</li>
             <li>grade</li>
             <li>password</li>
+            <li>Either a group OR a district and school</li>
           </ul>
 
           <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
@@ -139,9 +140,9 @@ const dropdown_options = ref([
     label: 'Optional',
     items: [
       { label: 'Ignore this column', value: 'ignore' },
-      { label: 'First Name', value: 'first' },
-      { label: 'Middle Name', value: 'middle' },
-      { label: 'Last Name', value: 'last' },
+      { label: 'First Name', value: 'firstName' },
+      { label: 'Middle Name', value: 'middleName' },
+      { label: 'Last Name', value: 'lastName' },
       { label: 'State ID', value: 'state_id' },
       { label: 'Gender', value: 'gender' },
       { label: 'English Language Level', value: 'ell_status' },
