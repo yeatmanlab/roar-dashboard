@@ -318,7 +318,7 @@ async function submitStudents(rawJson) {
   }
   // Begin submit process
   const totalUsers = submitObject.length;
-  const chunkedSubmitObject = _chunk(submitObject, 5)
+  const chunkedSubmitObject = _chunk(submitObject, 10)
   for(let i = 0; i < chunkedSubmitObject.length; i++){
     const chunk = chunkedSubmitObject[i]
     _forEach(chunk, user => {
