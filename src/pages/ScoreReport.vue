@@ -38,7 +38,7 @@
         <!-- Main table -->
         <div v-else>
           <div class="toggle-container">
-            <span>Show numbers</span>
+            <span>Show percentiles</span>
             <InputSwitch v-model="showNumbers" class="ml-2"/>
           </div>
           <RoarDataTable :data="tableData" :columns="columns" />
