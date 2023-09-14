@@ -36,7 +36,14 @@
         </div>
 
         <!-- Main table -->
-        <RoarDataTable v-else :data="tableData" :columns="columns" />
+        <div v-else>
+          <div class="toggle-container">
+            <span>Show numbers</span>
+            <InputSwitch v-model="showNumbers" class="ml-2"/>
+          </div>
+          <RoarDataTable :data="tableData" :columns="columns" />
+        </div>
+        
 
         <div class="legend-container">
           <div class="legend-entry">
@@ -134,6 +141,8 @@ const spinIcon = computed(() => {
   return "pi pi-refresh";
 });
 
+const showNumbers = ref(false);
+
 const assignmentData = ref([]);
 
 const allTasks = computed(() => {
@@ -158,10 +167,10 @@ const columns = computed(() => {
   if (tableData.value.length > 0) {
     for (const taskId of allTasks.value) {
       tableColumns.push({
-        field: `scores.${taskId}.value`,
+        field: `scores.${taskId}.score`,
         header: taskId.toUpperCase(),
         dataType: "text",
-        emptyTag: true,
+        emptyTag: !showNumbers.value,
         tagColor: `scores.${taskId}.color`,
       });
     }
@@ -281,6 +290,12 @@ onMounted(async () => {
 }
 .loading-container {
   text-align: center;
+}
+.toggle-container {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  width: 100%
 }
 .legend-container {
   display: flex;
