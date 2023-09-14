@@ -422,7 +422,6 @@ async function submitStudents(rawJson) {
 }
 
 function delay(milliseconds){
-  console.log('delay function has been called')
   return new Promise(resolve => {
       setTimeout(resolve, milliseconds);
   });
