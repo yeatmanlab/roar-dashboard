@@ -206,7 +206,6 @@ const tableData = computed(() => {
           support_level = "needs_extra"
           tag_color = emptyTagColorMap.below
         }
-        console.log('swr score', percentileScore)
         scores[assessment.taskId] = {
           score: percentileScore,
           support_level,
