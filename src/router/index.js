@@ -79,12 +79,12 @@ const routes = [
     component: () => import("../pages/QueryPage.vue"),
     meta: { pageTitle: "Query", requireAdmin: true, requireSuperAdmin: true },
   },
-  {
-    path: "/score-report",
-    name: "ScoreReport",
-    component: () => import("../pages/ScoreReport.vue"),
-    meta: { pageTitle: "Score Reports" },
-  },
+  // {
+  //   path: "/score-report",
+  //   name: "ScoreReport",
+  //   component: () => import("../pages/ScoreReport.vue"),
+  //   meta: { pageTitle: "Score Reports" },
+  // },
   // We don't support individual registration yet
   {
     path: "/register",
@@ -180,6 +180,13 @@ const routes = [
     props: true,
     component: () => import("../pages/AdministrationProgress.vue"),
     meta: {pageTitle: "View Administration", requireAdmin: true}
+  },
+  {
+    path: "/scores/:administrationId/:orgType/:orgId",
+    name: "ScoreReport",
+    props: true,
+    component: () => import("../pages/ScoreReport.vue"),
+    meta: {pageTitle: "View Scores", requireAdmin: true}
   },
   {
     path: "/enable-cookies",
