@@ -1,7 +1,9 @@
-import { defineStore } from "pinia";
+import { toRaw } from "vue";
+import { defineStore, acceptHMRUpdate } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
 
+import _assign from "lodash/assign";
 import _get from "lodash/get";
 import _set from "lodash/set";
 
@@ -12,6 +14,7 @@ export const useAuthStore = () => {
     state: () => {
       return {
         spinner: false,
+        consentSpinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
@@ -20,14 +23,13 @@ export const useAuthStore = () => {
         roarfirekit: null,
         hasUserData: false,
         firekitUserData: null,
-        firekitAssignments: {
-          assigned: null
-        },
+        firekitAssignments: null,
         firekitAdminInfo: null,
-        firekitAssignmentIds: null,
+        firekitAssignmentIds: [],
         firekitIsAdmin: null,
         firekitIsSuperAdmin: null,
         cleverOAuthRequested: false,
+        authFromClever: false,
       };
     },
     getters: {
@@ -39,6 +41,15 @@ export const useAuthStore = () => {
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
     },
     actions: {
+      syncFirekitCache(state) {
+        const { userData, currentAssignments } = state.roarfirekit;
+        if (userData) {
+          this.firekitUserData = _assign(this.firekitUserData, userData);
+        }
+        if (currentAssignments?.assigned?.length > 0) {
+          this.firekitAssignmentIds = currentAssignments.assigned;
+        }
+      },
       isUserAdmin() {
         if(this.isFirekitInit && this.firekitIsAdmin === null) {
           this.firekitIsAdmin = this.roarfirekit.isAdmin();
@@ -56,11 +67,11 @@ export const useAuthStore = () => {
       async getAssignments(assignments) {
         try{
           const reply = await this.roarfirekit.getAssignments(assignments)
-          this.firekitAssignments = reply
           this.firekitAssignmentIds = assignments;
+          this.firekitAssignments = reply
           return reply
         } catch(e) {
-          return this.firekitAssignments.assigned
+          return this.firekitAssignments;
         }
         
       },
@@ -148,6 +159,7 @@ export const useAuthStore = () => {
         }
       },
       async signInWithCleverPopup() {
+        this.authFromClever = true;
         if(this.isFirekitInit){
           return this.roarfirekit.signInWithPopup('clever').then(() => {
             if(this.roarfirekit.userData){
@@ -161,6 +173,7 @@ export const useAuthStore = () => {
         return this.roarfirekit.initiateRedirect("google");
       },
       async signInWithCleverRedirect() {
+        this.authFromClever = true;
         return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
@@ -192,6 +205,7 @@ export const useAuthStore = () => {
             this.firekitIsSuperAdmin = null;
             this.firekitUserData = null;
             this.spinner = false;
+            this.authFromClever = false;
             // this.roarfirekit = initNewFirekit()
           });
         } else {
@@ -226,11 +240,15 @@ export const useAuthStore = () => {
     persist: {
       storage: sessionStorage,
       debug: false,
-      afterRestore: async (ctx) => {
-        if (ctx.store.roarfirekit) {
-          ctx.store.roarfirekit = await initNewFirekit();
-        }
-      }
+      // afterRestore: async (ctx) => {
+      //   if (ctx.store.roarfirekit) {
+      //     ctx.store.roarfirekit = await initNewFirekit();
+      //   }
+      // }
     },
   })();
 };
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot))
+}

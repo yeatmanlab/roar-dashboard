@@ -18,7 +18,12 @@ const routes = [
     name: "Home",
     component: () => import("../pages/Home.vue"),
     meta: { pageTitle: "Dashboard" },
-
+  },
+  {
+    path: "/clever-user",
+    name: "CleverLanding",
+    component: () => import("../pages/CleverLanding.vue"),
+    meta: { pageTitle: "Logging You In" },
   },
   // {
   //   path: "/game/:gameId",
@@ -31,6 +36,12 @@ const routes = [
     name: "SWR",
     component: () => import("../components/tasks/SWR.vue"),
     meta: { pageTitle: "SWR" }
+  },
+  {
+    path: "/game/swr-es",
+    name: "SWR-ES",
+    component: () => import("../components/tasks/SWR-ES.vue"),
+    meta: { pageTitle: "SWR (ES)" }
   },
   {
     path: "/game/pa",
@@ -49,6 +60,12 @@ const routes = [
     name: "Letter",
     component: () => import("../components/tasks/Letter.vue"),
     meta: { pageTitle: "Letter" }
+  },
+  {
+    path: "/game/multichoice",
+    name: "Multichoice",
+    component: () => import("../components/tasks/Multichoice.vue"),
+    meta: { pageTitle: "Multichoice" }
   },
   {
     path: "/upload-scores",
@@ -98,7 +115,6 @@ const routes = [
       return { name: "SignIn" };
     },
     meta: { pageTitle: "Sign Out" },
-
   },
   {
     path: "/auth-clever",

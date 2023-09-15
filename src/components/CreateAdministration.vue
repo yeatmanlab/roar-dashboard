@@ -24,7 +24,10 @@
               <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
                 selectionMode="range" :manualInput="false" showIcon showButtonBar />
               <label for="dates">Dates</label>
-              <small v-if="v$.dates.$invalid && submitted" class="p-error">Please select dates for your admin</small>
+              <small v-if="v$.dates.required.$invalid && submitted" class="p-error">Please select dates.</small>
+              <small v-else-if="v$.dates.datesNotNull.$invalid && submitted" class="p-error">Please select both a start
+                and end
+                date.</small>
             </span>
           </div>
         </div>
@@ -156,7 +159,7 @@ import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
 import _uniqBy from "lodash/uniqBy";
 import { useVuelidate } from "@vuelidate/core";
-import { required, requiredIf, requiredUnless } from "@vuelidate/validators";
+import { maxLength, minLength, required } from "@vuelidate/validators";
 import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "@/components/AppSpinner.vue";
@@ -188,9 +191,18 @@ const state = reactive({
   families: []
 })
 
+const datesNotNull = (value) => {
+  return (value[0] && value[1]);
+}
+
 const rules = {
   administrationName: { required },
-  dates: { required },
+  dates: {
+    required,
+    minLength: minLength(2),
+    maxLength: maxLength(2),
+    datesNotNull,
+  },
   sequential: { required }
 }
 const v$ = useVuelidate(rules, state);
