@@ -62,6 +62,12 @@ const routes = [
     meta: { pageTitle: "Letter" }
   },
   {
+    path: "/game/multichoice",
+    name: "Multichoice",
+    component: () => import("../components/tasks/Multichoice.vue"),
+    meta: { pageTitle: "Multichoice" }
+  },
+  {
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),
