@@ -51,11 +51,15 @@ const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { spinner } = storeToRefs(authStore);
+const { spinner, authFromClever } = storeToRefs(authStore);
 
 authStore.$subscribe((mutation, state) => {
   if (state.roarfirekit.userData && state.roarfirekit._idTokenReceived) {
-    router.push({ name: "Home" });
+    if(authFromClever.value){
+      router.push({ name: "CleverLanding" })
+    } else {
+      router.push({ name: "Home" });
+    }
   }
 });
 
@@ -130,7 +134,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   z-index: 10;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.7);
   padding-top: 21vh;
 }
 </style>

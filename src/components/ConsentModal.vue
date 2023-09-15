@@ -11,11 +11,14 @@
 
 <script setup>
 import { computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useConfirm } from "primevue/useconfirm";
 import { useToast } from "primevue/usetoast";
 import { marked } from 'marked';
+import { useAuthStore } from '@/store/auth';
 
-console.log('inside consentModal')
+const authStore = useAuthStore();
+
 const props = defineProps({
   consentText: { require: true, default: 'Text Here' },
   consentType: { require: true, default: 'Consent' },
@@ -25,7 +28,7 @@ const consentHeader = {
   consent: "Consent",
   assent: "Assent"
 }
-const emit = defineEmits(['accepted']);
+const emit = defineEmits(['accepted', 'delayed']);
 
 const confirm = useConfirm();
 const toast = useToast();
@@ -34,16 +37,25 @@ const markdownToHtml = computed(() => {
   return marked(props.consentText)
 })
 
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const { consentSpinner } = storeToRefs(authStore);
+
 onMounted(() => {
+  const delayPromise = delay(8000);
   confirm.require({
     group: 'templating',
     header: `${consentHeader[props.consentType]} Form`,
     icon: 'pi pi-question-circle',
     acceptLabel: 'Continue',
     acceptIcon: 'pi pi-check',
-    accept: () => {
-      emit('accepted');
+    accept: async () => {
       toast.add({ severity: 'info', summary: 'Confirmed', detail: `${consentHeader[props.consentType]} status updated.`, life: 3000 });
+      emit('accepted');
+      consentSpinner.value = true;
+      await delayPromise.then(() => {
+        consentSpinner.value = false;
+        emit('delayed');
+      });
     },
   });
 })

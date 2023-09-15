@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import RoarPA from '@bdelab/roar-pa';
+import RoarSWR from '@bdelab/roar-swr';
 import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -15,7 +15,7 @@ import { useGameStore } from '@/store/game';
 import _head from 'lodash/head';
 import _get from 'lodash/get';
 
-const taskId = "pa"
+const taskId = "swr-es"
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -86,10 +86,11 @@ async function startTask() {
   const userParams = {
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
+    language: 'es'
   }
 
   const gameParams = appKit._taskInfo.variantParams
-  roarApp = new RoarPA(appKit, gameParams, userParams, 'jspsych-target');
+  roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {

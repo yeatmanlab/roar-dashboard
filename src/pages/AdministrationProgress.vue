@@ -63,6 +63,7 @@ const columns = computed(() => {
   const tableColumns = [
     { field: "user.name.first", header: "First Name", dataType: "text" },
     { field: "user.name.last", header: "Last Name", dataType: "text" },
+    { field: "user.username", header: "Username", dataType: "text" },
     { field: "user.assessmentPid", header: "PID", dataType: "text" },
   ];
 
