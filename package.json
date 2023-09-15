@@ -12,7 +12,7 @@
     "emulate:stop": "ps -e | grep firebase | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill"
   },
   "dependencies": {
-    "@bdelab/roar-firekit": "^3.12.8",
+    "@bdelab/roar-firekit": "^3.12.9",
     "@bdelab/roar-multichoice": "^1.0.4",
     "@bdelab/roar-letter": "^1.1.6",
     "@bdelab/roar-pa": "^1.1.5",

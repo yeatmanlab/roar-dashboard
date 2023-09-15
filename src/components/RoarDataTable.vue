@@ -20,6 +20,9 @@
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
               :icon="_get(data, col.iconField)" rounded />
           </div>
+          <div v-else-if="col.emptyTag">
+            <div class="circle" :style="`background-color: ${_get(data, col.tagColor)};`"/>
+          </div>
           <div v-else-if="col.dataType === 'date'">
             {{ getFormattedDate(_get(data, col.field)) }}
           </div>
@@ -164,3 +167,15 @@ function getFormattedDate(date) {
   } else return ''
 }
 </script>
+<style>
+.circle {
+  border-color: white;
+  display: inline-block;
+  border-radius: 50%;
+  border-width: 5px;
+  height: 25px;
+  width: 25px;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+</style>
