@@ -71,9 +71,9 @@ const selectBestRun = async () => {
 
 window.addEventListener('beforeunload', selectBestRun, { once: true });
 onBeforeUnmount(async () => {
-  if (roarApp && completed.value === false) {
-    roarApp.abort();
-  }
+  // if (roarApp && completed.value === false) {
+  //   roarApp.abort();
+  // }
   selectBestRun();
 });
 
@@ -95,7 +95,11 @@ async function startTask() {
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
     await authStore.roarfirekit.completeAssessment(selectedAdmin.value, taskId)
-    router.replace({ name: "Home" });
+    completed.value = true;
+    // Here we refresh instead of routing home, with the knowledge that a
+    // refresh is intercepted above and sent home.
+    router.go(0);
+    // router.replace({ name: "Home" });
   });
 }
 </script>
