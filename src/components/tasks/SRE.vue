@@ -95,7 +95,8 @@ async function startTask() {
   gameStarted.value = true;
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
-    await authStore.roarfirekit.completeAssessment(selectedAdmin.value, taskId)
+    // await authStore.roarfirekit.completeAssessment(selectedAdmin.value, taskId)
+    await authStore.completeAssessment(selectedAdmin.value, taskId)
     completed.value = true;
     // Here we refresh instead of routing home, with the knowledge that a
     // refresh is intercepted above and sent home.
