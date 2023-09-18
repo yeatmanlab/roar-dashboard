@@ -17,7 +17,7 @@
     "@bdelab/roar-letter": "^1.1.6",
     "@bdelab/roar-pa": "^1.1.5",
     "@bdelab/roar-sre": "^1.1.7",
-    "@bdelab/roar-swr": "^1.1.7",
+    "@bdelab/roar-swr": "^1.1.8",
     "@vuelidate/core": "^2.0.0-alpha.40",
     "@vuelidate/validators": "^2.0.0-alpha.28",
     "@vueuse/head": "^1.0.13",
