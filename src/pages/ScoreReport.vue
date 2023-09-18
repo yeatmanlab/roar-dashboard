@@ -115,6 +115,7 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _toUpper from 'lodash/toUpper'
 import _get from 'lodash/get'
+import _set from 'lodash/set'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
@@ -173,43 +174,81 @@ const columns = computed(() => {
         emptyTag: !showNumbers.value,
         tagColor: `scores.${taskId}.color`,
       });
+      if(taskId === "pa") {
+        for (const subTask of ['del', 'fsm', 'lsm']) {
+          tableColumns.push({
+            field: `scores.${taskId}.subscores.${subTask}.score`,
+            header: `PA - ${subTask.toUpperCase()}`,
+            dataType: "text",
+            emptyTag: !showNumbers.value,
+            tagColor: `scores.${taskId}.subscores.${subTask}.color`,
+          })
+        }
+      }
     }
   }
   return tableColumns;
 });
+
+function getColorFromPercentile(percentileScore) {
+  let color;
+  let support_level;
+  if(percentileScore >= 50) {
+    support_level = 'at_above'
+    color = emptyTagColorMap.above;
+  } else if(percentileScore > 25 && percentileScore < 50) {
+    support_level = 'some_support'
+    color = emptyTagColorMap.some
+  } else {
+    support_level = "needs_extra"
+    color = emptyTagColorMap.below
+  }
+  return {
+    support_level,
+    color
+  }
+}
 
 const tableData = computed(() => {
   return assignmentData.value.map(({ user, assignment }) => {
     const scores = {};
     for (const assessment of (assignment?.assessments || [])) {
       let percentileScore = undefined;
+      let del = undefined;
+      let fsm = undefined;
+      let lsm = undefined;
       if(assessment.taskId === "swr" || assessment.taskId === "swr-es") {
         percentileScore = _get(assessment, 'scores.computed.composite.wjPercentile')
       }
       if(assessment.taskId === "pa") {
         // TODO: this needs to be switched out once Adam completes the script to correct scores
         percentileScore = _get(assessment, 'scores.computed.composite.roarScore')
+        del = _get(assessment, 'scores.computed.DEL.roarScore')
+        fsm = _get(assessment, 'scores.computed.FSM.roarScore')
+        lsm = _get(assessment, 'scores.computed.LSM.roarScore')
       }
       if(assessment.taskId === "sre") {
         percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
       }
       if(percentileScore !== undefined){
-        let support_level = '';
-        let tag_color = '';
-        if(percentileScore >= 50) {
-          support_level = 'at_above'
-          tag_color = emptyTagColorMap.above;
-        } else if(percentileScore > 25 && percentileScore < 50) {
-          support_level = 'some_support'
-          tag_color = emptyTagColorMap.some
-        } else {
-          support_level = "needs_extra"
-          tag_color = emptyTagColorMap.below
-        }
         scores[assessment.taskId] = {
           score: percentileScore,
-          support_level,
-          color: tag_color
+          ...getColorFromPercentile(percentileScore)
+        }
+        // Add extra fields to scores object
+        if(assessment.taskId === "pa") {
+          _set(scores[assessment.taskId], 'subscores.del', {
+            score: del,
+            ...getColorFromPercentile(del)
+          })
+          _set(scores[assessment.taskId], 'subscores.fsm', {
+            score: fsm,
+            ...getColorFromPercentile(fsm)
+          })
+          _set(scores[assessment.taskId], 'subscores.lsm', {
+            score: lsm,
+            ...getColorFromPercentile(lsm)
+          })
         }
       }
     }
