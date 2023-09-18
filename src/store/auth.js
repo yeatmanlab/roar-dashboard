@@ -3,6 +3,7 @@ import { defineStore, acceptHMRUpdate } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
 
+import _findIndex from "lodash/findIndex";
 import _assign from "lodash/assign";
 import _get from "lodash/get";
 import _set from "lodash/set";
@@ -63,6 +64,14 @@ export const useAuthStore = () => {
           this.firekitIsSuperAdmin = _get(this.roarfirekit, '_superAdmin');
         }
         return this.firekitIsSuperAdmin;
+      },
+      async completeAssessment(adminId, taskId) {
+        console.log('inside authStore func')
+        await this.roarfirekit.completeAssessment(adminId, taskId)
+        const currentAdminIndex = _findIndex(this.firekitAssignments, admin => admin.id === adminId)
+        const currentAssessmentIndex = _findIndex(this.firekitAssignments[currentAdminIndex].assessments, assess => assess.taskId === taskId);
+        _set(this.firekitAssignments[currentAdminIndex]['assessments'][currentAssessmentIndex], 'completedOn', new Date())
+        
       },
       async getAssignments(assignments) {
         try{
