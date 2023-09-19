@@ -39,7 +39,7 @@
   </div>
 </template>
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import _get from 'lodash/get'
 import _find from 'lodash/find'
 import _findIndex from 'lodash/findIndex'
