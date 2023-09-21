@@ -1,4 +1,12 @@
 #games {
+	// margin-bottom: 3rem;
+	// padding-bottom: 2rem;
+	margin-bottom: 0;
+	
+	// height hack
+	.p-tabview, .p-tabview-panels, .p-tabview-panel, .roar-tabview-game {
+		// height: 100%;
+	}
 	
 	.p-tabview {
 		*[data-game-status="complete"] {
@@ -15,7 +23,8 @@
 	}
 	
 	.roar-tabview-game {
-		--contentWidth: 52%; //set variable for width of content (title, text, footer)
+		// --contentWidth: 35%;
+		--contentWidth: clamp(300px, 40%, 600px); //variable for width .roar-game-content
 		
 		display: inline-flex;
 		border-left: 1px solid var(--surface-d);
@@ -37,7 +46,7 @@
 		}
 		
 		.roar-game-title {
-			font-size: clamp(2rem, 2.6vw, 3.25rem);
+			font-size: clamp(2rem, 2.2vw, 2.5rem);
 			padding-bottom: 1rem;
 			margin-bottom: .5rem;
 			border-bottom: 1px dotted var(--surface-d);
@@ -45,18 +54,21 @@
 		
 		.roar-game-description {
 			color: var(--text-color);
-			font-size: 1.25rem;
+			font-size: 1.15rem;
 			line-height: 1.5;
+			min-height: 120px;
 			
 			p {
 				font-size: inherit;
+				margin-top: clamp(.25rem, 3%, 1rem);
 			}
 		}
 		
 		.roar-game-meta {
+			display: none;
 			padding-block: .5rem 1rem;
 			padding-bottom: 2rem;
-			display: inline-flex;
+			// display: inline-flex;
 			gap: 1rem;
 			
 			.p-tag {
@@ -94,7 +106,14 @@
 				height: 100%;
 				aspect-ratio: 16/9;
 				object-fit: cover;
+				object-position: top center;
 			}
+			
+			// @media screen and (max-width: 1140px) {
+			// 	img {
+			// 		object-fit: contain;
+			// 	}
+			// }
 		}
 		
 		a {
@@ -115,7 +134,6 @@
 		// HOVER
 		&:hover {
 			color: var(--primary-color);
-			// background-color: var(--surface-b);
 			
 			.roar-game-footer {
 				background: var(--primary-color);
