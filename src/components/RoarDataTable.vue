@@ -16,9 +16,9 @@
         :sortable="(col.sort !== false)" :showFilterMatchModes="!col.useMultiSelect"
         :showFilterOperator="col.allowMultipleFilters === true" :showAddButton="col.allowMultipleFilters === true">
         <template #body="{ data }">
-          <div v-if="col.tag">
+          <div v-if="col.tag && _get(data, col.field) !== undefined">
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
-              :icon="_get(data, col.iconField)" rounded />
+              :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`" rounded />
           </div>
           <div v-else-if="col.emptyTag">
             <div class="circle" :style="`background-color: ${_get(data, col.tagColor)};`"/>

@@ -37,9 +37,17 @@
 
         <!-- Main table -->
         <div v-else>
-          <div class="toggle-container">
+          <!-- <div class="toggle-container">
             <span>Show percentiles</span>
             <InputSwitch v-model="showNumbers" class="ml-2"/>
+          </div>
+          <div class="toggle-container">
+            <span>Scores / Percentiles</span>
+            <InputSwitch v-model="showScores" class="ml-2"/>
+          </div> -->
+          <div class="toggle-container">
+            <span>View</span>
+            <Dropdown :options="viewOptions" v-model="viewMode" optionLabel="label" optionValue="value" class="ml-2"/>
           </div>
           <RoarDataTable :data="tableData" :columns="columns" />
         </div>
@@ -142,6 +150,16 @@ const spinIcon = computed(() => {
 });
 
 const showNumbers = ref(false);
+const showScores = ref(false);
+
+const viewMode = ref('color');
+
+const viewOptions = ref([
+  {label: 'Color', value: 'color'},
+  {label: 'Percentile', value: 'percentile'},
+  {label: 'Standard Score', value: 'standard'},
+  {label: 'Raw Score', value: 'raw'},
+])
 
 const assignmentData = ref([]);
 
@@ -160,17 +178,23 @@ const emptyTagColorMap = {
 const columns = computed(() => {
   const tableColumns = [
     { field: "user.username", header: "Username", dataType: "text" },
-    { field: "user.assessmentPid", header: "PID", dataType: "text" },
+    { field: "user.name.first", header: "First Name", dataType: "text" },
+    { field: "user.name.last", header: "Last Name", dataType: "text" },
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
   if (tableData.value.length > 0) {
     for (const taskId of allTasks.value) {
+      let colField;
+      if(viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`
+      if(viewMode.value === 'standard') colField = `scores.${taskId}.standard`
+      if(viewMode.value === 'raw') colField = `scores.${taskId}.raw`
       tableColumns.push({
-        field: `scores.${taskId}.score`,
+        field: colField,
         header: taskId.toUpperCase(),
         dataType: "text",
-        emptyTag: !showNumbers.value,
+        tag: (viewMode.value !== 'color'),
+        emptyTag: (viewMode.value === 'color'),
         tagColor: `scores.${taskId}.color`,
       });
     }
@@ -183,15 +207,23 @@ const tableData = computed(() => {
     const scores = {};
     for (const assessment of (assignment?.assessments || [])) {
       let percentileScore = undefined;
+      let standardScore = undefined;
+      let rawScore = undefined;
       if(assessment.taskId === "swr" || assessment.taskId === "swr-es") {
         percentileScore = _get(assessment, 'scores.computed.composite.wjPercentile')
+        standardScore = _get(assessment, 'scores.computed.composite.standardScore')
+        rawScore = _get(assessment, 'scores.computed.composite.roarScore')
       }
       if(assessment.taskId === "pa") {
         // TODO: this needs to be switched out once Adam completes the script to correct scores
         percentileScore = _get(assessment, 'scores.computed.composite.roarScore')
+        standardScore = _get(assessment, 'scores.computed.composite.roarScore')
+        rawScore = _get(assessment, 'scores.computed.composite.roarScore')
       }
       if(assessment.taskId === "sre") {
         percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
+        standardScore = _get(assessment, 'scores.computed.composite.tosrecSS')
+        rawScore = _get(assessment, 'scores.computed.composite.tosrecPercentile') // TODO: replace this with SRE raw score.
       }
       if(percentileScore !== undefined){
         let support_level = '';
@@ -207,7 +239,9 @@ const tableData = computed(() => {
           tag_color = emptyTagColorMap.below
         }
         scores[assessment.taskId] = {
-          score: percentileScore,
+          percentile: percentileScore,
+          standard: standardScore,
+          raw: rawScore,
           support_level,
           color: tag_color
         }
