@@ -68,6 +68,12 @@ const routes = [
     meta: { pageTitle: "Multichoice" }
   },
   {
+    path: "/register-game",
+    name: "RegisterGame",
+    component: () => import("../pages/RegisterGame.vue"),
+    meta: { pageTitle: "Register Game" }
+  },
+  {
     path: "/upload-scores",
     name: "UploadScores",
     component: () => import("../pages/UploadFiles.vue"),
@@ -223,6 +229,8 @@ router.beforeEach(async (to, from) => {
     "AuthClever",
     "AuthEmailLink",
     "AuthEmailSent",
+    // REMOVE LATER
+    "RegisterGame"
   ];
 
   // Check if user is signed in. If not, go to signin
