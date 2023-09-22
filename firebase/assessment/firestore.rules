@@ -23,12 +23,14 @@ service cloud.firestore {
     //   families?: string[],
     //   groups?: string[],
     // }
-    function getAdminList(orgType) {
-      return request.auth.token.get("adminOrgs", {}).get(orgType, []).toSet();
+    function targetOrgsInAdminList(orgType, targetOrgIds) {
+      let adminList = request.auth.token.get("adminOrgs", {}).get(orgType, []);
+      return targetOrgIds.size() > 0 && adminList.hasAny(targetOrgIds);
     }
 
-    function targetOrgsInAdminList(orgType, targetOrgIds) {
-      return targetOrgIds.size() > 0 && getAdminList(orgType).hasAny(targetOrgIds);
+    function targetOrgsContainAdminOrgs(orgType, targetOrgIds) {
+      let adminList = request.auth.token.get("adminOrgs", {}).get(orgType, ['..']);
+      return targetOrgIds.hasAny(adminList);
     }
 
     function keysNotUpdated(keys) {
@@ -332,6 +334,22 @@ service cloud.firestore {
           allow write: if canWriteTrial();
         }
       }
+    }
+
+    match /{path=**}/runs/{runId} {
+      function isAdminForAssigningOrg(orgType) {
+        return targetOrgsContainAdminOrgs(orgType, resource.data.get(['assigningOrgs', orgType], []));
+      }
+
+      function isAdminForAnyAssigningOrg() {
+        return (isAdminForAssigningOrg('districts')
+        || isAdminForAssigningOrg('schools')
+        || isAdminForAssigningOrg('classes')
+        || isAdminForAssigningOrg('groups')
+        || isAdminForAssigningOrg('families'));
+      }
+
+      allow read: if loggedIn() && isAdminForAnyAssigningOrg();
     }
 
     // We allow anonymous guest access so that people can try an individual ROAR

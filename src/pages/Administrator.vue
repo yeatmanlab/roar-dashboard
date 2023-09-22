@@ -5,28 +5,23 @@
     </aside>
     <section class="main-body">
       <Panel header="Your administrations">
-        <template #icons v-if="isSuperAdmin">
+        <template #icons>
           <button class="p-panel-header-icon p-link mr-2" @click="refresh">
             <span :class="spinIcon"></span>
           </button>
         </template>
 
-        <div v-if="isSuperAdmin">
-          <div v-if="administrationsReady">
-            <div v-if="administrations.length" v-for="(a, index) in administrations" :key="index">
-              <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
-                :assessments="a.assessments"></CardAdministration>
-            </div>
-            <div v-else>There are no administrations to display. Please contact a lab administrator to add you as an admin
-              to an administration.</div>
+        <div v-if="administrationsReady">
+          <div v-if="administrations.length" v-for="(a, index) in administrations" :key="index">
+            <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
+              :assessments="a.assessments"></CardAdministration>
           </div>
-          <div v-else class="loading-container">
-            <AppSpinner style="margin-bottom: 1rem;" />
-            <span>Loading Administrations</span>
-          </div>
+          <div v-else>There are no administrations to display. Please contact a lab administrator to add you as an admin
+            to an administration.</div>
         </div>
-        <div v-else>
-          The Administrator View is currently under construction!
+        <div v-else class="loading-container">
+          <AppSpinner style="margin-bottom: 1rem;" />
+          <span>Loading Administrations</span>
         </div>
       </Panel>
     </section>
