@@ -161,6 +161,14 @@ const viewOptions = ref([
   {label: 'Raw Score', value: 'raw'},
 ])
 
+const displayNames = {
+  "swr": "Word",
+  "swr-es": "Word (ES)",
+  "pa": "Phonological",
+  "sre": "Sentence",
+  "letter": "Letter"
+}
+
 const assignmentData = ref([]);
 
 const allTasks = computed(() => {
@@ -189,9 +197,10 @@ const columns = computed(() => {
       if(viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`
       if(viewMode.value === 'standard') colField = `scores.${taskId}.standard`
       if(viewMode.value === 'raw') colField = `scores.${taskId}.raw`
+      // const header = displayNames[taskId]
       tableColumns.push({
         field: colField,
-        header: taskId.toUpperCase(),
+        header: displayNames[taskId],
         dataType: "text",
         tag: (viewMode.value !== 'color'),
         emptyTag: (viewMode.value === 'color'),
@@ -206,6 +215,7 @@ const tableData = computed(() => {
   return assignmentData.value.map(({ user, assignment }) => {
     const scores = {};
     for (const assessment of (assignment?.assessments || [])) {
+      let displayName;
       let percentileScore = undefined;
       let standardScore = undefined;
       let rawScore = undefined;
@@ -213,17 +223,20 @@ const tableData = computed(() => {
         percentileScore = _get(assessment, 'scores.computed.composite.wjPercentile')
         standardScore = _get(assessment, 'scores.computed.composite.standardScore')
         rawScore = _get(assessment, 'scores.computed.composite.roarScore')
+        displayName = (assessment.taskId === "swr-es") ? "Word (ES)" : "Word"
       }
       if(assessment.taskId === "pa") {
         // TODO: this needs to be switched out once Adam completes the script to correct scores
         percentileScore = _get(assessment, 'scores.computed.composite.roarScore')
         standardScore = _get(assessment, 'scores.computed.composite.roarScore')
         rawScore = _get(assessment, 'scores.computed.composite.roarScore')
+        displayName = "Phonological"
       }
       if(assessment.taskId === "sre") {
         percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
         standardScore = _get(assessment, 'scores.computed.composite.tosrecSS')
         rawScore = _get(assessment, 'scores.computed.composite.tosrecPercentile') // TODO: replace this with SRE raw score.
+        displayName = "Sentence"
       }
       if(percentileScore !== undefined){
         let support_level = '';
@@ -239,6 +252,7 @@ const tableData = computed(() => {
           tag_color = emptyTagColorMap.below
         }
         scores[assessment.taskId] = {
+          displayName: displayName || assessment.taskId,
           percentile: percentileScore,
           standard: standardScore,
           raw: rawScore,
