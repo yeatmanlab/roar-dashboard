@@ -56,10 +56,16 @@ const noGamesAvailable = ref(false)
 // Assessments to populate the game tabs.
 //   Generated based on the current selected admin Id
 let assessments = computed(() => {
-  return _get(_find(assignmentInfo.value, assignment => {
+  const gameAssessments = _get(_find(assignmentInfo.value, assignment => {
     return assignment.id === selectedAdmin.value
   }), 'assessments') ?? []
+
+  console.log('assessments: ', gameAssessments)
+
+  return gameAssessments
 });
+
+// console.log('Assessments: ', toRaw(assessments))
 
 // Grab the sequential key from the current admin's data object
 const isSequential = computed(() => {

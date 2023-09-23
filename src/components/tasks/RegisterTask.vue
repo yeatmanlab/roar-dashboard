@@ -103,7 +103,7 @@
 
     <div v-else>
         <h2>Your task has been created!</h2>
-        <p>Redirect to this URL upon task completion. ParticipantId can be any stringm, completed should be true.</p>
+        <p>Redirect to this URL upon task completion. ParticipantId can be any string, completed should be set to true.</p>
         <p>roar.education/?participantId=[$PARTICIPANT_ID]&completed=[$BOOLEAN]</p>
     </div>
 
@@ -117,10 +117,13 @@
   import { useAuthStore } from "@/store/auth";
   import { isMobileBrowser } from "@/helpers";
   import _get from 'lodash/get'
-  import Message from 'primevue/message';
+  import { storeToRefs } from 'pinia';
 
   const router = useRouter()
   const authStore = useAuthStore()
+
+  const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
+
 
   const taskFields = reactive({
     taskName: "",
@@ -128,6 +131,7 @@
     taskId: "",
     coverImage: "",
     description: "",
+    external: true
   });
 
     const rules = {
@@ -159,7 +163,9 @@
   const v$ = useVuelidate(rules, taskFields);
   const submitted = ref(false);
   
-  const handleFormSubmit = (isFormValid) => {
+  const handleFormSubmit = async (isFormValid) => {
+    console.log(toRaw(authStore.roarfirekit))
+
     if (!isFormValid) {
       return;
     }
@@ -167,9 +173,33 @@
 
     const completeTaskURL = buildTaskURL()
 
-    // Write task variant to DB
+    console.log('params as object: ', convertParamsState())
 
+    console.log('task URL: ', taskFields.taskURL)
+
+    // // Write task variant to DB
+    const res = await authStore.roarfirekit.registerTaskVariant({
+      taskId: taskFields.taskId,
+      taskName: taskFields.taskName,
+      taskDescription: taskFields.description,
+      taskImage: taskFields.coverImage,
+      taskURL: taskFields.taskURL,
+      // variantName,
+      // variantDescription,
+      variantParams: convertParamsState()
+    })
+
+    console.log({res})
   };
+
+  function convertParamsState() {
+    return params.value.reduce((acc, item) => {
+        if (item.name) {  // Check if name is not empty
+            acc[item.name] = item.value;
+        }
+        return acc;
+    }, {});
+  }
 
   function buildTaskURL() {
     const baseURL = taskFields.taskURL
