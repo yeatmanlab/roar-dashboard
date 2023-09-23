@@ -229,8 +229,8 @@ router.beforeEach(async (to, from) => {
     "AuthClever",
     "AuthEmailLink",
     "AuthEmailSent",
-    // REMOVE LATER
-    "RegisterGame"
+    // // REMOVE LATER
+    // "RegisterGame"
   ];
 
   // Check if user is signed in. If not, go to signin
