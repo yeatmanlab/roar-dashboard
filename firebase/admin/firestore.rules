@@ -23,14 +23,18 @@ service cloud.firestore {
     //   families?: string[],
     //   groups?: string[],
     // }
+    function getAdminOrgs(orgType) {
+      let userClaims = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data;
+      return userClaims.get("claims", {}).get("adminOrgs", {}).get(orgType, []);
+    }
+
     function targetOrgsInAdminList(orgType, targetOrgIds) {
-      let adminList = request.auth.token.get("adminOrgs", {}).get(orgType, []);
-      return targetOrgIds.size() > 0 && adminList.hasAny(targetOrgIds);
+      return targetOrgIds.size() > 0 && getAdminOrgs(orgType).hasAny(targetOrgIds);
     }
 
     function targetOrgsContainAdminOrgs(orgType, targetOrgIds) {
       let adminList = request.auth.token.get("adminOrgs", {}).get(orgType, ['..']);
-      return targetOrgIds.hasAny(adminList);
+      return debug(targetOrgIds).hasAny(debug(adminList));
     }
 
     function keysNotUpdated(keys) {
@@ -62,7 +66,7 @@ service cloud.firestore {
   			return uid == roarUid();
 			}
       
-      function isCurrentOrPreviousAdmin() {
+      function isUserAdmin() {
         let districts = resource.data.get(['districts', 'current'], []);
         let schools = resource.data.get(['schools', 'current'], []);
         let classes = resource.data.get(['classes', 'current'], []);
@@ -71,12 +75,12 @@ service cloud.firestore {
         return targetOrgsContainAdminOrgs('districts', districts)
         || targetOrgsContainAdminOrgs('schools', schools)
         || targetOrgsContainAdminOrgs('classes', classes)
-        || targetOrgsContainAdminOrgs('families', groups)
-        || targetOrgsContainAdminOrgs('groups', families);
+        || targetOrgsContainAdminOrgs('groups', groups)
+        || targetOrgsContainAdminOrgs('families', families);
       }
 
       function canReadExistingUser() {
-        return myData() || isCurrentOrPreviousAdmin();
+        return myData() || isUserAdmin();
       }
 
       allow read: if canReadExistingUser();
