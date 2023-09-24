@@ -38,6 +38,7 @@ import _union from 'lodash/union';
 import _head from 'lodash/head'
 import AppSpinner from "./AppSpinner.vue";
 import { storeToRefs } from "pinia";
+import { pluralizeFirestoreCollection } from '@/helpers';
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -65,21 +66,21 @@ const spinIcon = computed(() => {
 async function getUsers() {
   const allOrgs = await queryStore.getOrgs(`${props.orgType}s`)
   orgName.value = _get(_find(allOrgs, org => org.id === props.orgId), 'name')
-  const rawUsers = await authStore.getUsersForOrg(`${props.orgType}s`, props.orgId)
+  const rawUsers = await authStore.getUsersForOrg(pluralizeFirestoreCollection(props.orgType), props.orgId)
   // Process each user if necessary
   _forEach(rawUsers, user => {
     // Try to hydrate firestore date
     let dob = _get(user, 'studentData.dob')
-    if(dob){
+    if (dob) {
       try {
         const date = dob.toDate();
         _set(user, 'studentData.dob', date)
-      } catch(e) {};
+      } catch (e) { };
     }
   })
   users.value = rawUsers;
   // If there are no users, do not show the table
-  if(!_isEmpty(rawUsers)){
+  if (!_isEmpty(rawUsers)) {
     showTable.value = true;
   }
   isLoading.value = false;
@@ -110,7 +111,7 @@ if (_isEmpty(users.value)) {
 }
 
 onMounted(async () => {
-  if(roarfirekit.value.getUsersBySingleOrg) {
+  if (roarfirekit.value.getUsersBySingleOrg) {
     await refresh()
   }
 })
@@ -123,17 +124,17 @@ const columns = ref([
   },
   {
     field: 'name.first',
-    header: 'First Name', 
+    header: 'First Name',
     dataType: 'string',
   },
   {
     field: 'name.last',
-    header: 'Last Name', 
+    header: 'Last Name',
     dataType: 'string',
   },
   {
     field: 'studentData.grade',
-    header: 'Grade', 
+    header: 'Grade',
     dataType: 'string',
   },
   {
