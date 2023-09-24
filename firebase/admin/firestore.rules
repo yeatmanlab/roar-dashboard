@@ -1,14 +1,14 @@
-rules_version = '2'; 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Allow super_admins to do everything
     match /{everythingInMyDatabase=**} {
       allow read, write: if request.auth.token.get("super_admin", false) == true;
     }
-    
+
     function loggedIn() {
- 			return request.auth != null;
-		}
+      return request.auth != null;
+    }
 
     function roarUid() {
       return request.auth.token.get("roarUid", "");
@@ -33,13 +33,8 @@ service cloud.firestore {
       return targetOrgIds.size() > 0 && adminList.hasAny(targetOrgIds);
     }
 
-    function targetOrgsContainAdminOrgs(orgType, targetOrgIds) {
-      let adminOrgs = getAdminOrgs(orgType, ['..']);
-      return targetOrgIds.hasAny(adminList);
-    }
-
     function keysNotUpdated(keys) {
-      return (!request.resource.data.diff(resource.data).affectedKeys().hasAny(keys));
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(keys);
     }
 
     function onlyTheseKeysUpdated(keys) {
@@ -64,20 +59,21 @@ service cloud.firestore {
     // Also allow admins to read and write data for their users
     match /users/{uid} {
       function myData() {
-  			return uid == roarUid();
-			}
-      
+        return uid == roarUid();
+      }
+
       function isUserAdmin() {
         let districts = resource.data.get(['districts', 'current'], []);
         let schools = resource.data.get(['schools', 'current'], []);
         let classes = resource.data.get(['classes', 'current'], []);
         let groups = resource.data.get(['groups', 'current'], []);
         let families = resource.data.get(['families', 'current'], []);
-        return targetOrgsContainAdminOrgs('districts', districts)
-        || targetOrgsContainAdminOrgs('schools', schools)
-        || targetOrgsContainAdminOrgs('classes', classes)
-        || targetOrgsContainAdminOrgs('groups', groups)
-        || targetOrgsContainAdminOrgs('families', families);
+        let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+        return districts.hasAny(adminOrgs.get('districts', ['..']))
+        || schools.hasAny(adminOrgs.get('schools', ['..']))
+        || classes.hasAny(adminOrgs.get('classes', ['..']))
+        || groups.hasAny(adminOrgs.get('groups', ['..']))
+        || families.hasAny(adminOrgs.get('families', ['..']));
       }
 
       function canReadExistingUser() {
@@ -103,6 +99,19 @@ service cloud.firestore {
         return ['classes', 'schools', 'districts'];
       }
 
+      function readOnlyKeys() {
+        return ['archived', 'assessmentUid']
+      }
+
+      function userUpdateKeys() {
+        return [
+          'assessmentsCompleted',
+          'assessmentsAssigned',
+          'consent',
+          'legal'
+        ]
+      }
+
       function allowedEduKeys(newUser) {
         let allowedKeys = commonKeys().concat(educationalOrgKeys());
         return newUser ? allowedKeys.concat(['assessmentUid']) : allowedKeys;
@@ -116,19 +125,6 @@ service cloud.firestore {
       function allowedGroupKeys(newUser) {
         let allowedKeys = commonKeys().concat(['groups']);
         return newUser ? allowedKeys.concat(['assessmentUid']) : allowedKeys;
-      }
-
-      function readOnlyKeys() {
-        return ['archived', 'assessmentUid']
-      }
-
-      function userUpdateKeys() {
-        return [
-          'assessmentsCompleted',
-          'assessmentsAssigned',
-          'consent',
-          'legal'
-        ]
       }
 
       function requestHasOnlyEduKeys(newUser) {
@@ -231,7 +227,7 @@ service cloud.firestore {
       }
 
       allow create: if canCreateUser();
-      
+
       // We now address updating an existing user
       // If the authenticated user (requestor) is updating an existing user (target), then
       // the requestor must satisfy one of the following conditions
@@ -324,16 +320,17 @@ service cloud.firestore {
       // N.B. This assumes that the assigningOrgs are exhaustively listed. E.g., if district 1 assigns an administration,
       // then schools A and B, which are in district 1, are assumed to also be listed in assigningOrgs.
       match /assignments/{administrationId} {
-        function isAdminForAssigningOrg(orgType) {
-          return targetOrgsContainAdminOrgs(orgType, resource.data.get(['assigningOrgs', orgType], []));
+        function isAdminForAssigningOrg(orgType, adminOrgs) {
+          return resource.data.get(['assigningOrgs', orgType], []).hasAny(adminOrgs.get(orgType, ['..']));
         }
 
         function isAdminForAnyAssigningOrg() {
-          return (isAdminForAssigningOrg('districts')
-          || isAdminForAssigningOrg('schools')
-          || isAdminForAssigningOrg('classes')
-          || isAdminForAssigningOrg('groups')
-          || isAdminForAssigningOrg('families'));
+          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+          return isAdminForAssigningOrg('districts', adminOrgs)
+          || isAdminForAssigningOrg('schools', adminOrgs)
+          || isAdminForAssigningOrg('classes', adminOrgs)
+          || isAdminForAssigningOrg('groups', adminOrgs)
+          || isAdminForAssigningOrg('families', adminOrgs);
         }
 
         function canReadAssignment() {
@@ -356,16 +353,17 @@ service cloud.firestore {
 
     // Security rules for the collection **GROUP** assignments
     match /{path=**}/assignments/{assignmentId} {
-      function isAdminForAssigningOrg(orgType) {
-        return targetOrgsContainAdminOrgs(orgType, resource.data.get(['assigningOrgs', orgType], []));
+      function isAdminForAssigningOrg(orgType, adminOrgs) {
+        return resource.data.get(['assigningOrgs', orgType], []).hasAny(adminOrgs.get(orgType, ['..']));
       }
 
       function isAdminForAnyAssigningOrg() {
-        return (isAdminForAssigningOrg('districts')
-        || isAdminForAssigningOrg('schools')
-        || isAdminForAssigningOrg('classes')
-        || isAdminForAssigningOrg('groups')
-        || isAdminForAssigningOrg('families'));
+        let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+        return (isAdminForAssigningOrg('districts', adminOrgs)
+        || isAdminForAssigningOrg('schools', adminOrgs)
+        || isAdminForAssigningOrg('classes', adminOrgs)
+        || isAdminForAssigningOrg('groups', adminOrgs)
+        || isAdminForAssigningOrg('families', adminOrgs));
       }
 
       allow read: if loggedIn() && isAdminForAnyAssigningOrg();
@@ -406,11 +404,12 @@ service cloud.firestore {
         let classes = resource.data.get('classes', []);
         let groups = resource.data.get('groups', []);
         let families = resource.data.get('families', []);
-        return targetOrgsContainAdminOrgs('districts', districts)
-        || targetOrgsContainAdminOrgs('schools', schools)
-        || targetOrgsContainAdminOrgs('classes', classes)
-        || targetOrgsContainAdminOrgs('groups', groups)
-        || targetOrgsContainAdminOrgs('families', families);
+        let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+        return districts.hasAny(adminOrgs.get('districts', ['..']))
+        || schools.hasAny(adminOrgs.get('schools', ['..']))
+        || classes.hasAny(adminOrgs.get('classes', ['..']))
+        || groups.hasAny(adminOrgs.get('groups', ['..']))
+        || families.hasAny(adminOrgs.get('families', ['..']))
       }
 
       function isAdminForAnyAssignedOrgInNewAdministration() {
@@ -419,11 +418,12 @@ service cloud.firestore {
         let classes = request.resource.data.get('classes', []);
         let groups = request.resource.data.get('groups', []);
         let families = request.resource.data.get('families', []);
-        return targetOrgsContainAdminOrgs('districts', districts)
-        || targetOrgsContainAdminOrgs('schools', schools)
-        || targetOrgsContainAdminOrgs('classes', classes)
-        || targetOrgsContainAdminOrgs('groups', groups)
-        || targetOrgsContainAdminOrgs('families', families);
+        let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+        return districts.hasAny(adminOrgs.get('districts', ['..']))
+        || schools.hasAny(adminOrgs.get('schools', ['..']))
+        || classes.hasAny(adminOrgs.get('classes', ['..']))
+        || groups.hasAny(adminOrgs.get('groups', ['..']))
+        || families.hasAny(adminOrgs.get('families', ['..']))
       }
       
       function canRead() {
@@ -456,11 +456,12 @@ service cloud.firestore {
           let classes = parentAdministration.get('classes', []);
           let groups = parentAdministration.get('groups', []);
           let families = parentAdministration.get('families', []);
-          return targetOrgsContainAdminOrgs('districts', districts)
-          || targetOrgsContainAdminOrgs('schools', schools)
-          || targetOrgsContainAdminOrgs('classes', classes)
-          || targetOrgsContainAdminOrgs('groups', groups)
-          || targetOrgsContainAdminOrgs('families', families);
+          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+          return districts.hasAny(adminOrgs.get('districts', ['..']))
+          || schools.hasAny(adminOrgs.get('schools', ['..']))
+          || classes.hasAny(adminOrgs.get('classes', ['..']))
+          || groups.hasAny(adminOrgs.get('groups', ['..']))
+          || families.hasAny(adminOrgs.get('families', ['..']))
         }
 
         function userCreatedAdministrationWithRead() {
@@ -507,8 +508,9 @@ service cloud.firestore {
 
       function isAdmin() {
         let districtId = resource.data.get('districtId', 'nullId');
-        let adminDistricts = getAdminOrgs('districts', []);
-        let adminSchools = getAdminOrgs('schools', []);
+        let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+        let adminDistricts = adminOrgs.get('districts', []);
+        let adminSchools = adminOrgs.get('schools', []);
         return schoolId in adminSchools || districtId in adminDistricts;
       }
 
@@ -516,7 +518,7 @@ service cloud.firestore {
         return getAllOrgs('schools').hasAll([schoolId]);
       }
 
-      allow read: if loggedIn() && (isAdmin() || inSchool());
+      allow read: if isAdmin() || inSchool();
       allow create: if targetOrgsInAdminList('districts', [request.resource.data.get('districtId', 'nullId')]);
       allow update, delete: if isDistrictAdmin();
     }
@@ -527,8 +529,9 @@ service cloud.firestore {
       function isDistrictOrSchoolAdmin() {
         let districtId = resource.data.get('districtId', 'nullId');
         let schoolId = resource.data.get('schoolId', 'nullId');
-        let adminDistricts = getAdminOrgs('districts', []);
-        let adminSchools = getAdminOrgs('schools', []);
+        let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+        let adminDistricts = adminOrgs.get('districts', []);
+        let adminSchools = adminOrgs.get('schools', []);
         return schoolId in adminSchools
         || districtId in adminDistricts;
       }
@@ -536,9 +539,10 @@ service cloud.firestore {
       function isAdmin() {
         let districtId = resource.data.get('districtId', 'nullId');
         let schoolId = resource.data.get('schoolId', 'nullId');
-        let adminDistricts = getAdminOrgs('districts', []);
-        let adminSchools = getAdminOrgs('schools', []);
-        let adminClasses = getAdminOrgs('classes', []);
+        let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+        let adminDistricts = adminOrgs.get('districts', []);
+        let adminSchools = adminOrgs.get('schools', []);
+        let adminClasses = adminOrgs.get('classes', []);
         return classId in adminClasses
         || schoolId in adminSchools
         || districtId in adminDistricts;
@@ -548,7 +552,7 @@ service cloud.firestore {
         return getAllOrgs('classes').hasAll([classId]);
       }
 
-      allow read: if loggedIn() && (isAdmin() || inClass());
+      allow read: if isAdmin() || inClass();
       allow create: if targetOrgsInAdminList('districts', [request.resource.data.get('districtId', 'nullId')])
       || targetOrgsInAdminList('schools', [request.resource.data.get('schoolId', 'nullId')]);
       allow update, delete: if isDistrictOrSchoolAdmin();
