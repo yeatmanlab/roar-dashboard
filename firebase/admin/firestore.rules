@@ -25,7 +25,7 @@ service cloud.firestore {
     // }
     function getAdminOrgs(orgType, defaultValue) {
       let userClaims = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data;
-      return userClaims.get("claims", {}).get("adminOrgs", {}).get(orgType, defaultValue);
+      return userClaims.get('claims', {}).get('adminOrgs', {}).get(orgType, defaultValue);
     }
 
     function targetOrgsInAdminList(orgType, targetOrgIds) {
