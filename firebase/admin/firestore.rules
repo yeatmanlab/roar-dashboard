@@ -23,18 +23,19 @@ service cloud.firestore {
     //   families?: string[],
     //   groups?: string[],
     // }
-    function getAdminOrgs(orgType) {
+    function getAdminOrgs(orgType, defaultValue) {
       let userClaims = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data;
-      return userClaims.get("claims", {}).get("adminOrgs", {}).get(orgType, []);
+      return userClaims.get("claims", {}).get("adminOrgs", {}).get(orgType, defaultValue);
     }
 
     function targetOrgsInAdminList(orgType, targetOrgIds) {
-      return targetOrgIds.size() > 0 && getAdminOrgs(orgType).hasAny(targetOrgIds);
+      let adminList = getAdminOrgs(orgType, []);
+      return targetOrgIds.size() > 0 && adminList.hasAny(targetOrgIds);
     }
 
     function targetOrgsContainAdminOrgs(orgType, targetOrgIds) {
-      let adminList = request.auth.token.get("adminOrgs", {}).get(orgType, ['..']);
-      return debug(targetOrgIds).hasAny(debug(adminList));
+      let adminOrgs = getAdminOrgs(orgType, ['..']);
+      return targetOrgIds.hasAny(adminList);
     }
 
     function keysNotUpdated(keys) {
@@ -484,7 +485,7 @@ service cloud.firestore {
     // Only super_admins can write districts.
     match /districts/{districtId} {
       function isAdmin() {
-        let adminDistricts = request.auth.token.get("adminOrgs", {}).get('districts', []);
+        let adminDistricts = getAdminOrgs('districts', []);
         return districtId in adminDistricts;
       }
 
@@ -500,14 +501,14 @@ service cloud.firestore {
     match /schools/{schoolId} {
       function isDistrictAdmin() {
         let districtId = resource.data.get('districtId', 'nullId');
-        let adminDistricts = request.auth.token.get("adminOrgs", {}).get('districts', []);
+        let adminDistricts = getAdminOrgs('districts', []);
         return districtId in adminDistricts;
       }
 
       function isAdmin() {
         let districtId = resource.data.get('districtId', 'nullId');
-        let adminDistricts = request.auth.token.get("adminOrgs", {}).get('districts', []);
-        let adminSchools = request.auth.token.get("adminOrgs", {}).get('schools', []);
+        let adminDistricts = getAdminOrgs('districts', []);
+        let adminSchools = getAdminOrgs('schools', []);
         return schoolId in adminSchools || districtId in adminDistricts;
       }
 
@@ -526,8 +527,8 @@ service cloud.firestore {
       function isDistrictOrSchoolAdmin() {
         let districtId = resource.data.get('districtId', 'nullId');
         let schoolId = resource.data.get('schoolId', 'nullId');
-        let adminDistricts = request.auth.token.get("adminOrgs", {}).get('districts', []);
-        let adminSchools = request.auth.token.get("adminOrgs", {}).get('schools', []);
+        let adminDistricts = getAdminOrgs('districts', []);
+        let adminSchools = getAdminOrgs('schools', []);
         return schoolId in adminSchools
         || districtId in adminDistricts;
       }
@@ -535,9 +536,9 @@ service cloud.firestore {
       function isAdmin() {
         let districtId = resource.data.get('districtId', 'nullId');
         let schoolId = resource.data.get('schoolId', 'nullId');
-        let adminDistricts = request.auth.token.get("adminOrgs", {}).get('districts', []);
-        let adminSchools = request.auth.token.get("adminOrgs", {}).get('schools', []);
-        let adminClasses = request.auth.token.get("adminOrgs", {}).get('classes', []);
+        let adminDistricts = getAdminOrgs('districts', []);
+        let adminSchools = getAdminOrgs('schools', []);
+        let adminClasses = getAdminOrgs('classes', []);
         return classId in adminClasses
         || schoolId in adminSchools
         || districtId in adminDistricts;
