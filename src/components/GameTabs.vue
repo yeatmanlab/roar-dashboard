@@ -32,8 +32,8 @@
               <!-- TODO: Get real backup image -->
               <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
             </div>
-            <router-link v-if="!allGamesComplete && !game.taskData.taskURL" :to="{ path: 'game/' + game.taskId }"></router-link>
-            <router-link v-else :to="{ path: game.taskData.taskURL }"></router-link>
+            <router-link v-if="!allGamesComplete && !game.taskData?.taskURL" :to="{ path: 'game/' + game.taskId }"></router-link>
+            <a v-else :href="game.taskData?.taskURL"></a>
         </article>
       </TabPanel>
     </TabView>
