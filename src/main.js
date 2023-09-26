@@ -4,7 +4,8 @@ import { createHead } from '@vueuse/head'
 import router from '@/router/index.js'
 import App from "@/App.vue";
 
-import piniaPluginPersistedState from "pinia-plugin-persistedstate"
+import piniaPluginPersistedState from "pinia-plugin-persistedstate";
+import TextClamp from 'vue3-text-clamp';
 
 import PrimeVue from "primevue/config";
 
@@ -95,6 +96,7 @@ app.use(VueGoogleMaps, {
   },
 })
 app.use(createHead());
+app.use(TextClamp);
 
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
