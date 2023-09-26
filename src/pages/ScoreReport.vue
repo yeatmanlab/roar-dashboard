@@ -162,11 +162,11 @@ const viewOptions = ref([
 ])
 
 const displayNames = {
-  "swr": "Word",
-  "swr-es": "Word (ES)",
-  "pa": "Phonological",
-  "sre": "Sentence",
-  "letter": "Letter"
+  "swr": { name: "Word", order: 3 },
+  "swr-es": { name: "Word (ES)", order: 4 }, 
+  "pa": { name: "Phonological", order: 2 }, 
+  "sre": { name: "Sentence", order: 5 },
+  "letter": { name: "Letter", order: 1 },
 }
 
 const assignmentData = ref([]);
@@ -191,8 +191,15 @@ const columns = computed(() => {
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
+  if(authStore.isUserSuperAdmin()) {
+    tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
+  }
+
   if (tableData.value.length > 0) {
-    for (const taskId of allTasks.value) {
+    const sortedTasks = allTasks.value.sort((p1, p2) => {
+      return displayNames[p1].order - displayNames[p2].order
+    })
+    for (const taskId of sortedTasks) {
       let colField;
       if(viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`
       if(viewMode.value === 'standard') colField = `scores.${taskId}.standard`
@@ -200,7 +207,7 @@ const columns = computed(() => {
       // const header = displayNames[taskId]
       tableColumns.push({
         field: colField,
-        header: displayNames[taskId],
+        header: displayNames[taskId].name,
         dataType: "text",
         tag: (viewMode.value !== 'color'),
         emptyTag: (viewMode.value === 'color'),
