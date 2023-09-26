@@ -79,7 +79,7 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.getOrgs && roarfirekit.value.getMyAdministrations) {
+  if (roarfirekit.value.getOrgs && roarfirekit.value.getMyAdministrations && roarfirekit.value.isAdmin()) {
     await refresh()
   }
 })

@@ -115,7 +115,7 @@ if (_isEmpty(_union(...Object.values(adminOrgs.value)))) {
 
 const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  if (roarfirekit.value.getOrgs) {
+  if (roarfirekit.value.getOrgs && roarfirekit.value.isAdmin()) {
     await refresh()
   }
 })
