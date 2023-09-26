@@ -15,6 +15,11 @@ export const useQueryStore = () => {
         adminOrgs: {},
         hierarchicalAdminOrgs: {},
         administrations: [],
+        users: {},
+        assignmentData: {},
+        administrationInfo: {},
+        orgInfo: {},
+        scoresData: {},
       };
     },
     getters: {
