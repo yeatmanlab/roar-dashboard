@@ -11,8 +11,8 @@
           </button>
         </template>
 
-        <div v-if="!isLoading">
-          <div v-if="showTable">
+        <div v-if="!refreshing">
+          <div v-if="users.length > 0">
             <h2> Viewing {{ orgType }}: {{ orgName }}</h2>
             <RoarDataTable :data="users" :columns="columns" />
           </div>
@@ -53,9 +53,7 @@ const { roarfirekit } = storeToRefs(authStore);
 
 const orgName = ref(props.orgId)
 
-const users = ref([]);
-const showTable = ref(false);
-const isLoading = ref(true);
+const users = ref(queryStore.users[props.orgId]);
 
 const refreshing = ref(false);
 const spinIcon = computed(() => {
@@ -79,26 +77,20 @@ async function getUsers() {
     }
   })
   users.value = rawUsers;
-  // If there are no users, do not show the table
-  if (!_isEmpty(rawUsers)) {
-    showTable.value = true;
-  }
-  isLoading.value = false;
+  queryStore.users[props.orgId] = rawUsers;
 }
 
 let unsubscribe;
 
 const refresh = async () => {
   refreshing.value = true;
-  isLoading.value = true;
   if (unsubscribe) unsubscribe();
   getUsers().then(() => {
     refreshing.value = false;
   }).catch((e) => {
-    // If there are no administrations, catch the 'missing documents' error
+    // If there are no users, catch the 'missing documents' error
     console.log('Error caught:', e)
     refreshing.value = false;
-    isLoading.value = false;
   });;
 }
 
@@ -111,7 +103,7 @@ if (_isEmpty(users.value)) {
 }
 
 onMounted(async () => {
-  if (roarfirekit.value.getUsersBySingleOrg) {
+  if (roarfirekit.value.getUsersBySingleOrg && roarfirekit.value.isAdmin()) {
     await refresh()
   }
 })

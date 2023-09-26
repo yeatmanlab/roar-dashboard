@@ -21,7 +21,7 @@
           <span>Loading Administration Data</span>
         </div>
 
-        <RoarDataTable v-else :data="tableData" :columns="columns" />
+        <RoarDataTable v-else-if="assignmentData?.length ?? 0 > 0" :data="tableData" :columns="columns" />
       </Panel>
     </section>
   </main>
@@ -40,8 +40,9 @@ const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
 const { getAdministrationInfo, getOrgInfo } = storeToRefs(queryStore);
-const orgInfo = ref(getOrgInfo.value(props.orgType, props.orgId));
-const administrationInfo = ref(getAdministrationInfo.value(props.administrationId));
+const orgInfo = ref(queryStore.orgInfo[props.orgId]);
+const administrationInfo = ref(queryStore.administrationInfo[props.administrationId]);
+const assignmentData = ref(queryStore.assignmentData[props.administrationId]);
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
@@ -51,15 +52,15 @@ const props = defineProps({
   orgId: String,
 });
 
-const refreshing = ref(true);
+const refreshing = ref(false);
 const spinIcon = computed(() => {
   if (refreshing.value) return "pi pi-spin pi-spinner";
   return "pi pi-refresh";
 });
 
-const assignmentData = ref([]);
-
 const columns = computed(() => {
+  if (assignmentData.value === undefined) return [];
+
   const tableColumns = [
     { field: "user.name.first", header: "First Name", dataType: "text" },
     { field: "user.name.last", header: "Last Name", dataType: "text" },
@@ -83,6 +84,8 @@ const columns = computed(() => {
 });
 
 const tableData = computed(() => {
+  if (assignmentData.value === undefined) return [];
+
   return assignmentData.value.map(({ user, assignment }) => {
     const status = {};
     for (const assessment of (assignment?.assessments || [])) {
@@ -131,8 +134,11 @@ const refresh = async () => {
   if (!administrationInfo.value) {
     administrationInfo.value = getAdministrationInfo.value(props.administrationId);
   }
-
   refreshing.value = false;
+
+  queryStore.assignmentData[props.administrationId] = assignmentData.value;
+  queryStore.administrationInfo[props.administrationId] = administrationInfo.value;
+  queryStore.orgInfo[props.orgId] = orgInfo.value;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
@@ -143,7 +149,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  if (roarfirekit.value.getUsersByAssignment) {
+  if (roarfirekit.value.getUsersByAssignment && roarfirekit.value.isAdmin()) {
     await refresh()
   }
 })
