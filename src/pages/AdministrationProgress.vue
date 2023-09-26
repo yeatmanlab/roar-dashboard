@@ -69,9 +69,9 @@ const assignmentData = ref([]);
 
 const columns = computed(() => {
   const tableColumns = [
+  { field: "user.username", header: "Username", dataType: "text", pinned: true },
     { field: "user.name.first", header: "First Name", dataType: "text" },
     { field: "user.name.last", header: "Last Name", dataType: "text" },
-    { field: "user.username", header: "Username", dataType: "text" },
   ];
 
   if(authStore.isUserSuperAdmin()) {
