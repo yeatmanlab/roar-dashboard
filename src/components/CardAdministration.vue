@@ -9,16 +9,14 @@
 			<div class="card-admin-details">
 				<p><strong>{{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString()
 				}}</strong></p>
-				<p><strong>Assigned to: </strong>
-					<span v-for="orgType in Object.keys(displayOrgs)" class="card-inline-list-item">
-						<span v-if="displayOrgs[orgType].length">
-							{{ _capitalize(orgType) }}:
-							<span v-for="assignee in displayOrgs[orgType]" class="card-inline-list-item">
-								{{ assignee.name }}
-							</span>
-						</span>
-					</span>
-				</p>
+				<text-clamp :text="displayOrgsText" :max-lines="3" location="end">
+					<template v-if="displayOrgsText" #before>
+						<b>Assigned to: </b>
+					</template>
+					<template #after="{clamped, expanded, toggle}">
+						<Button v-if="clamped || expanded" text :label="expanded ? 'Show Less' : 'Show More'" @click="toggle" style="padding: 0 .5rem"/>
+					</template>
+				</text-clamp>
 			</div>
 			<div class="card-admin-assessments">
 				<p><strong>Assessments</strong></p>
@@ -72,6 +70,7 @@ import _capitalize from "lodash/capitalize";
 import _isEmpty from "lodash/isEmpty";
 import _mapValues from "lodash/mapValues";
 import _toPairs from "lodash/toPairs";
+import _forEach from "lodash/forEach";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -98,6 +97,15 @@ const assignedOrgs = filterAdminOrgs(adminOrgs.value, props.assignees);
 const displayOrgs = removeEmptyOrgs(assignedOrgs);
 const isAssigned = !_isEmpty(Object.values(displayOrgs));
 const hierarchicalAssignedOrgs = isAssigned ? queryStore.getTreeTableOrgs(assignedOrgs) : null;
+
+const displayOrgsText = computed(() => {
+	let orgsList = "";
+	_forEach(Object.keys(displayOrgs), orgType => {
+		let nameList = displayOrgs[orgType].map(org => org.name).join(', ')
+		orgsList = orgsList + `${_capitalize(orgType)}: ${nameList} \n`
+	})
+	return orgsList;
+})
 
 const doughnutChartData = ref();
 const doughnutChartOptions = ref();
