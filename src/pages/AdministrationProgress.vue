@@ -58,21 +58,35 @@ const spinIcon = computed(() => {
   return "pi pi-refresh";
 });
 
+const displayNames = {
+  "swr": { name: "Word", order: 3 },
+  "swr-es": { name: "Palabra", order: 4 }, 
+  "pa": { name: "Phoneme", order: 2 }, 
+  "sre": { name: "Sentence", order: 5 },
+  "letter": { name: "Letter", order: 1 },
+}
+
 const columns = computed(() => {
   if (assignmentData.value === undefined) return [];
 
   const tableColumns = [
+    { field: "user.username", header: "Username", dataType: "text", pinned: true },
     { field: "user.name.first", header: "First Name", dataType: "text" },
     { field: "user.name.last", header: "Last Name", dataType: "text" },
-    { field: "user.username", header: "Username", dataType: "text" },
-    { field: "user.assessmentPid", header: "PID", dataType: "text" },
   ];
 
+  if(authStore.isUserSuperAdmin()) {
+    tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
+  }
+
   if (tableData.value.length > 0) {
-    for (const taskId of Object.keys(tableData.value[0].status)) {
+    const sortedTasks = Object.keys(tableData.value[0].status).sort((p1, p2) => {
+      return displayNames[p1].order - displayNames[p2].order
+    })
+    for (const taskId of sortedTasks) {
       tableColumns.push({
         field: `status.${taskId}.value`,
-        header: taskId.toUpperCase(),
+        header: displayNames[taskId].name,
         dataType: "text",
         tag: true,
         severityField: `status.${taskId}.severity`,

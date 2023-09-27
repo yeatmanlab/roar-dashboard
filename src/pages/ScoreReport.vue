@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel :header="`Administration Score Report: ${administrationInfo.name}`">
+      <Panel :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`">
         <template #icons>
           <button class="p-panel-header-icon p-link mr-2" @click="refresh">
             <span :class="spinIcon"></span>
@@ -42,8 +42,8 @@
         <!-- Main table -->
         <div v-else-if="scoresData?.length ?? 0 > 0">
           <div class="toggle-container">
-            <span>Show percentiles</span>
-            <InputSwitch v-model="showNumbers" class="ml-2" />
+            <span>View</span>
+            <Dropdown :options="viewOptions" v-model="viewMode" optionLabel="label" optionValue="value" class="ml-2"/>
           </div>
           <RoarDataTable :data="tableData" :columns="columns" />
         </div>
@@ -168,7 +168,22 @@ const spinIcon = computed(() => {
   return "pi pi-refresh";
 });
 
-const showNumbers = ref(false);
+const viewMode = ref('color');
+
+const viewOptions = ref([
+  {label: 'Color', value: 'color'},
+  {label: 'Percentile', value: 'percentile'},
+  {label: 'Standard Score', value: 'standard'},
+  {label: 'Raw Score', value: 'raw'},
+])
+
+const displayNames = {
+  "swr": { name: "Word", order: 3 },
+  "swr-es": { name: "Palabra", order: 4 }, 
+  "pa": { name: "Phoneme", order: 2 }, 
+  "sre": { name: "Sentence", order: 5 },
+  "letter": { name: "Letter", order: 1 },
+}
 
 const allTasks = computed(() => {
   if (tableData.value.length > 0) {
@@ -185,18 +200,32 @@ const emptyTagColorMap = {
 const columns = computed(() => {
   if (scoresData.value === undefined) return [];
   const tableColumns = [
-    { field: "user.username", header: "Username", dataType: "text" },
-    { field: "user.assessmentPid", header: "PID", dataType: "text" },
+    { field: "user.username", header: "Username", dataType: "text", pinned: true },
+    { field: "user.name.first", header: "First Name", dataType: "text" },
+    { field: "user.name.last", header: "Last Name", dataType: "text" },
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
+  if(authStore.isUserSuperAdmin()) {
+    tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
+  }
+
   if (tableData.value.length > 0) {
-    for (const taskId of allTasks.value) {
+    const sortedTasks = allTasks.value.sort((p1, p2) => {
+      return displayNames[p1].order - displayNames[p2].order
+    })
+    for (const taskId of sortedTasks) {
+      let colField;
+      if(viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`
+      if(viewMode.value === 'standard') colField = `scores.${taskId}.standard`
+      if(viewMode.value === 'raw') colField = `scores.${taskId}.raw`
+      // const header = displayNames[taskId]
       tableColumns.push({
-        field: `scores.${taskId}.score`,
-        header: taskId.toUpperCase(),
+        field: colField,
+        header: displayNames[taskId].name,
         dataType: "text",
-        emptyTag: !showNumbers.value,
+        tag: (viewMode.value !== 'color'),
+        emptyTag: (viewMode.value === 'color'),
         tagColor: `scores.${taskId}.color`,
       });
     }
@@ -209,16 +238,27 @@ const tableData = computed(() => {
   return scoresData.value.map(({ user, assignment }) => {
     const scores = {};
     for (const assessment of (assignment?.assessments || [])) {
+      let displayName;
       let percentileScore = undefined;
+      let standardScore = undefined;
+      let rawScore = undefined;
       if (assessment.taskId === "swr" || assessment.taskId === "swr-es") {
         percentileScore = _get(assessment, 'scores.computed.composite.wjPercentile')
+        standardScore = _get(assessment, 'scores.computed.composite.standardScore')
+        rawScore = _get(assessment, 'scores.computed.composite.roarScore')
+        displayName = (assessment.taskId === "swr-es") ? "Word (ES)" : "Word"
       }
       if (assessment.taskId === "pa") {
-        // TODO: this needs to be switched out once Adam completes the script to correct scores
-        percentileScore = _get(assessment, 'scores.computed.composite.roarScore')
+        percentileScore = _get(assessment, 'scores.computed.composite.percentile')
+        standardScore = _get(assessment, 'scores.computed.composite.roarScore')
+        rawScore = _get(assessment, 'scores.computed.composite.standardScore')
+        displayName = "Phonological"
       }
       if (assessment.taskId === "sre") {
         percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
+        standardScore = _get(assessment, 'scores.computed.composite.tosrecSS')
+        rawScore = _get(assessment, 'scores.computed.composite.tosrecPercentile') // TODO: replace this with SRE raw score.
+        displayName = "Sentence"
       }
       if (percentileScore !== undefined) {
         let support_level = '';
@@ -234,7 +274,10 @@ const tableData = computed(() => {
           tag_color = emptyTagColorMap.below
         }
         scores[assessment.taskId] = {
-          score: percentileScore,
+          displayName: displayName || assessment.taskId,
+          percentile: percentileScore,
+          standard: standardScore,
+          raw: rawScore,
           support_level,
           color: tag_color
         }
