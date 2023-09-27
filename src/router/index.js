@@ -71,7 +71,7 @@ const routes = [
     path: "/register-game",
     name: "RegisterGame",
     component: () => import("../pages/RegisterGame.vue"),
-    meta: { pageTitle: "Register Game" }
+    meta: { pageTitle: "Register Game", requireAdmin: true, requireSuperAdmin: true }
   },
   {
     path: "/upload-scores",
@@ -229,8 +229,6 @@ router.beforeEach(async (to, from) => {
     "AuthClever",
     "AuthEmailLink",
     "AuthEmailSent",
-    // // REMOVE LATER
-    // "RegisterGame"
   ];
 
   // Check if user is signed in. If not, go to signin

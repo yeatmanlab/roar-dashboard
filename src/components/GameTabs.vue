@@ -32,8 +32,10 @@
               <!-- TODO: Get real backup image -->
               <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
             </div>
-            <router-link v-if="!allGamesComplete && !game.taskData?.taskURL" :to="{ path: 'game/' + game.taskId }"></router-link>
-            <a v-else :href="game.taskData?.taskURL"></a>
+
+            <a v-if="!allGamesComplete && game.taskData?.variantURL" :href="game.taskData.variantURL"></a>
+            <a v-else-if="!allGamesComplete && game.taskData?.taskURL" :href="game.taskData?.taskURL"></a>
+            <router-link v-else-if="!allGamesComplete" :to="{ path: 'game/' + game.taskId }"></router-link>
         </article>
       </TabPanel>
     </TabView>
@@ -66,6 +68,8 @@ const currentGameIndex = computed(() => {
     return gameIndex
   }
 })
+
+
 </script>
 <style scoped lang="scss">
 
