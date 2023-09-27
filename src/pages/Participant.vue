@@ -40,6 +40,7 @@ import _head from 'lodash/head'
 import _find from 'lodash/find'
 import _isEmpty from 'lodash/isEmpty'
 import _isEqual from 'lodash/isEqual'
+import _intersectionWith from 'lodash/intersectionWith'
 import { useAuthStore } from "@/store/auth";
 import { useGameStore } from "@/store/game";
 import { storeToRefs } from 'pinia';
@@ -60,12 +61,24 @@ let assessments = computed(() => {
     return assignment.id === selectedAdmin.value
   }), 'assessments') ?? []
 
-  console.log('assessments: ', gameAssessments)
+
+  // This logic should be rewritten later where selectedAdmin has the assessments so we don't need to find it again.
+  const fullAdmin = allAdminInfo.value.find(admin => admin.id === selectedAdmin.value)
+  
+  if (fullAdmin) {
+      const assessmentsWithVariantParams = fullAdmin.assessments
+
+    // cross check gameAssessments id with assessmentsWithVariantParams id and add variantURL to gameAssessments object
+    _intersectionWith(gameAssessments, assessmentsWithVariantParams, (a, b) => {
+      if (a.taskId === b.taskId) {
+        a.taskData.variantURL = b.params?.variantURL || ""
+      }
+    })
+  }
 
   return gameAssessments
 });
 
-// console.log('Assessments: ', toRaw(assessments))
 
 // Grab the sequential key from the current admin's data object
 const isSequential = computed(() => {
