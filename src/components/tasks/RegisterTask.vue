@@ -1,7 +1,8 @@
 <template>
+  <Toast />
   <TabView>
-    <TabPanel header="Register Game">
-      <div v-if="!submitted" class="card">
+    <TabPanel header="Register Task">
+      <div v-if="!created" class="card">
           <h1 class="text-center">Register a new task</h1>
         <!-- <p class="login-title" align="left">Register for ROAR</p> -->
         <form @submit.prevent="handleNewTaskSubmit(!t$.$invalid)" class="p-fluid">
@@ -115,8 +116,17 @@
           <form @submit.prevent="handleVariantSubmit(!v$.$invalid)" class="p-fluid">
             <h1 class="text-center">Register a new Variant</h1>
 
-            <label>Select an Existing Game (Task ID)</label>
-            <Dropdown v-model="selectedGame" :options="registeredGames" optionLabel="id" placeholder="Select a Game" ></Dropdown>
+            <label>Select an Existing Task (Task ID) <span class="required">*</span></label>
+            <Dropdown v-model="v$.selectedGame.$model" :options="registeredGames" optionLabel="id" placeholder="Select a Game" :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"></Dropdown>
+            <span v-if="v$.selectedGame.$error && submitted">
+              <span v-for="(error, index) of v$.selectedGame.$errors" :key="index">
+                  <small class="p-error">{{ error.$message }}</small>
+                </span>
+              </span>
+            <small v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$response" class="p-error">
+              {{ v$.selectedGame.id.required.$message.replace("Value", "Task selection") }}
+            </small>
+
 
             <section class="form-section">
                 <div class="p-input-icon-right">
@@ -134,13 +144,13 @@
                   </span>
                 </span>
                 <small v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$response" class="p-error">
-                  {{ v$.variantName.required.$message.replace("Value", "Task Name") }}
+                  {{ v$.variantName.required.$message.replace("Value", "Variant Name") }}
                 </small>
             </section>
 
             <h3 class="text-center">Parameters / Configuration</h3>
 
-            <div v-for="(param, index) in taskParams" :key="index">
+            <div v-for="(param, index) in variantParams" :key="index">
                 <div style="display: flex; align-items: center; margin-bottom: 1rem;">
                     <InputText
                         v-model="param.name"
@@ -173,17 +183,19 @@
   
   <script setup>
   import { computed, reactive, ref, toRaw, watch, } from "vue";
-  import { required, } from "@vuelidate/validators";
+  import { required, url } from "@vuelidate/validators";
   import { useVuelidate } from "@vuelidate/core";
   import { useAuthStore } from "@/store/auth";
   import _get from 'lodash/get'
   import { storeToRefs } from 'pinia';
+  import { useToast } from "primevue/usetoast";
+  const toast = useToast();
 
   const authStore = useAuthStore()
 
   const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
 
-  const selectedGame = ref();
+  // const selectedGame = ref();
   const registeredGames = ref([])
   
   watch(isFirekitInit, async (newValue, oldValue) => {
@@ -204,7 +216,7 @@
 
   const taskRules = {
     taskName: { required },
-    taskURL: { required },
+    taskURL: { required, url },
     taskId: { required }
   };
 
@@ -217,12 +229,16 @@
 
   const variantFields = reactive({
     variantName: "",
+    selectedGame: {},
     // Based on type of account?
     external: true
   });
 
   const variantRules = {
-    variantName: { required }
+    variantName: { required },
+    selectedGame: { 
+      id: { required } 
+    }
   }
 
   const variantParams = ref([
@@ -234,36 +250,28 @@
 
 
   function addField(type) {
-    type.value.push({
+    type.push({
         name: '',
         value: '',
     });
   }
 
   function removeField(type, index) {
-      type.value.splice(index, 1);
+      type.splice(index, 1);
   }
 
  
   const t$ = useVuelidate(taskRules, taskFields);
   const v$ = useVuelidate(variantRules, variantFields);
   const submitted = ref(false);
+  const created = ref(false)
   
   const handleNewTaskSubmit = async (isFormValid) => {
-    console.log(toRaw(t$._value.$error));
-    console.log(toRaw(t$._value.$errors));
-    console.log(toRaw(t$._value.$invalid));
-
-    console.log(toRaw(authStore.roarfirekit))
+    submitted.value = true
 
     if (!isFormValid) {
       return;
     }
-    submitted.value = true
-
-    console.log('params as object: ', convertParamsToObj(taskParams))
-
-    console.log('task URL: ', taskFields.taskURL)
 
    // Write task variant to DB
    try {
@@ -272,22 +280,20 @@
         taskName: taskFields.taskName,
         taskDescription: taskFields.description,
         taskImage: taskFields.coverImage,
-        taskURL: buildTaskURL(),
+        taskURL: buildTaskURL(taskFields.taskURL, taskParams),
         // variantName,
         // variantDescription,
         variantParams: convertParamsToObj(taskParams)
       })
 
-      console.log({res})
+      created.value = true
     } catch (error) {
       console.error(error)
     }
   };
 
   const handleVariantSubmit = async (isFormValid) => {
-    console.log('Selected game', toRaw(selectedGame.value))
-
-    console.log('params as object: ', convertParamsToObj(variantParams))
+    submitted.value = true
 
     if (!isFormValid) {
       return;
@@ -296,17 +302,20 @@
     // Write variant to Db
     try {
       const res = await authStore.roarfirekit.registerTaskVariant({
-        taskId: selectedGame.id,
-        taskName: variantFields,
-        taskDescription: selectedGame.description,
-        taskImage: selectedGame.image,
-        taskURL: selectedGame?.taskURL,
-        // variantName,
+        taskId: variantFields.selectedGame.id,
+        taskDescription: variantFields.selectedGame.description,
+        taskImage: variantFields.selectedGame.image,
+        variantName: variantFields.variantName,
         // variantDescription,
-        variantParams: convertParamsToObj(taskParams)
+        variantParams: {...convertParamsToObj(variantParams), variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || "", variantParams)}
       })
 
-      console.log({res})
+      toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully created.', life: 3000 });
+
+      submitted.value = false
+
+      resetVariantForm()
+
     } catch (error) {
       console.error(error)
     }
@@ -321,12 +330,12 @@
     }, {});
   }
 
-  function buildTaskURL() {
-    const baseURL = taskFields.taskURL
+  function buildTaskURL(url, params) {
+    const baseURL = url
 
-    let queryParams = "/?"
+    let queryParams = url.includes("/?") ? "" : "/?"
 
-    taskParams.value.forEach((param, i) => {
+    params.value.forEach((param, i) => {
         if (param.name) {
             if (i === 0) {
                 queryParams += `${param.name}=${param.value}`
@@ -339,6 +348,21 @@
     const completeURL = baseURL + queryParams
 
     return completeURL
+  }
+
+  function resetVariantForm() {
+    Object.assign(variantFields, {
+      variantName: "",
+      selectedGame: {},
+      external: true
+    })
+
+    variantParams.value = [
+      {
+          name: '',
+          value: '',
+      },
+    ]
   }
  
   </script>
