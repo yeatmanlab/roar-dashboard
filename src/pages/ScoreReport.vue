@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel :header="`Administration Score Report: ${administrationInfo.name}`">
+      <Panel :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`">
         <template #icons>
           <button class="p-panel-header-icon p-link mr-2" @click="refresh">
             <span :class="spinIcon"></span>
@@ -167,9 +167,6 @@ const spinIcon = computed(() => {
   if (refreshing.value) return "pi pi-spin pi-spinner";
   return "pi pi-refresh";
 });
-
-const showNumbers = ref(false);
-const showScores = ref(false);
 
 const viewMode = ref('color');
 
