@@ -10,6 +10,9 @@
 				<p><strong>{{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString()
 				}}</strong></p>
 				<text-clamp :text="displayOrgsText" :max-lines="3" location="end">
+					<template v-if="displayOrgsText" #before>
+						<b>Assigned to: </b>
+					</template>
 					<template #after="{clamped, expanded, toggle}">
 						<Button v-if="clamped || expanded" text :label="expanded ? 'Show Less' : 'Show More'" @click="toggle" style="padding: 0 .5rem"/>
 					</template>
@@ -99,7 +102,7 @@ const displayOrgsText = computed(() => {
 	let orgsList = "";
 	_forEach(Object.keys(displayOrgs), orgType => {
 		let nameList = displayOrgs[orgType].map(org => org.name).join(', ')
-		orgsList = orgsList + `${_capitalize(orgType)}: ${nameList}`
+		orgsList = orgsList + `${_capitalize(orgType)}: ${nameList} \n`
 	})
 	return orgsList;
 })

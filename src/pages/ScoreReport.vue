@@ -182,8 +182,8 @@ const viewOptions = ref([
 
 const displayNames = {
   "swr": { name: "Word", order: 3 },
-  "swr-es": { name: "Word (ES)", order: 4 }, 
-  "pa": { name: "Phonological", order: 2 }, 
+  "swr-es": { name: "Palabra", order: 4 }, 
+  "pa": { name: "Phoneme", order: 2 }, 
   "sre": { name: "Sentence", order: 5 },
   "letter": { name: "Letter", order: 1 },
 }
