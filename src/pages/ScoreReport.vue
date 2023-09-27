@@ -252,10 +252,9 @@ const tableData = computed(() => {
         displayName = (assessment.taskId === "swr-es") ? "Word (ES)" : "Word"
       }
       if (assessment.taskId === "pa") {
-        // TODO: this needs to be switched out once Adam completes the script to correct scores
-        percentileScore = _get(assessment, 'scores.computed.composite.roarScore')
+        percentileScore = _get(assessment, 'scores.computed.composite.percentile')
         standardScore = _get(assessment, 'scores.computed.composite.roarScore')
-        rawScore = _get(assessment, 'scores.computed.composite.roarScore')
+        rawScore = _get(assessment, 'scores.computed.composite.standardScore')
         displayName = "Phonological"
       }
       if (assessment.taskId === "sre") {
