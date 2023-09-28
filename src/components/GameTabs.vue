@@ -1,7 +1,7 @@
 <template>
   <div id="games">
     <TabView v-model:activeIndex="currentGameIndex">
-      <TabPanel v-for="game in games" :key="game.taskData.taskId" :disabled="(sequential && allGamesComplete && (!game.completedOn || allGamesComplete) && (currentGameId !== game.taskId))">
+      <TabPanel v-for="game in games" :key="game.taskData.taskId" :disabled="(sequential && (!game.completedOn || !allGamesComplete) && (currentGameId !== game.taskId))">
         <template #header>
           <!--Complete Game-->
           <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
