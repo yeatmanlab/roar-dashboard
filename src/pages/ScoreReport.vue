@@ -43,7 +43,7 @@
         <div v-else-if="scoresData?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
-            <Dropdown :options="viewOptions" v-model="viewMode" optionLabel="label" optionValue="value" class="ml-2"/>
+            <Dropdown :options="viewOptions" v-model="viewMode" optionLabel="label" optionValue="value" class="ml-2" />
           </div>
           <RoarDataTable :data="tableData" :columns="columns" />
         </div>
@@ -171,16 +171,16 @@ const spinIcon = computed(() => {
 const viewMode = ref('color');
 
 const viewOptions = ref([
-  {label: 'Color', value: 'color'},
-  {label: 'Percentile', value: 'percentile'},
-  {label: 'Standard Score', value: 'standard'},
-  {label: 'Raw Score', value: 'raw'},
+  { label: 'Color', value: 'color' },
+  { label: 'Percentile', value: 'percentile' },
+  { label: 'Standard Score', value: 'standard' },
+  { label: 'Raw Score', value: 'raw' },
 ])
 
 const displayNames = {
   "swr": { name: "Word", order: 3 },
-  "swr-es": { name: "Palabra", order: 4 }, 
-  "pa": { name: "Phoneme", order: 2 }, 
+  "swr-es": { name: "Palabra", order: 4 },
+  "pa": { name: "Phoneme", order: 2 },
   "sre": { name: "Sentence", order: 5 },
   "letter": { name: "Letter", order: 1 },
 }
@@ -206,7 +206,7 @@ const columns = computed(() => {
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
-  if(authStore.isUserSuperAdmin()) {
+  if (authStore.isUserSuperAdmin()) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
   }
 
@@ -216,9 +216,9 @@ const columns = computed(() => {
     })
     for (const taskId of sortedTasks) {
       let colField;
-      if(viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`
-      if(viewMode.value === 'standard') colField = `scores.${taskId}.standard`
-      if(viewMode.value === 'raw') colField = `scores.${taskId}.raw`
+      if (viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`
+      if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`
+      if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`
       // const header = displayNames[taskId]
       tableColumns.push({
         field: colField,
@@ -250,8 +250,8 @@ const tableData = computed(() => {
       }
       if (assessment.taskId === "pa") {
         percentileScore = _get(assessment, 'scores.computed.composite.percentile')
-        standardScore = _get(assessment, 'scores.computed.composite.roarScore')
-        rawScore = _get(assessment, 'scores.computed.composite.standardScore')
+        standardScore = _get(assessment, 'scores.computed.composite.standardScore')
+        rawScore = _get(assessment, 'scores.computed.composite.roarScore')
         displayName = "Phonological"
       }
       if (assessment.taskId === "sre") {
