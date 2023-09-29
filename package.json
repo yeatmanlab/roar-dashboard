@@ -3,14 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "dev:emulate": "export VITE_FIREBASE_EMULATOR=true && vite --force --host",
     "dev": "vite --force --host",
     "build": "vite build",
     "preview": "vite preview",
     "emulate:admin": "source firebase/emulate_admin.sh",
     "emulate:assessment": "source firebase/emulate_assessment.sh",
     "emulate:start": "unset GOOGLE_APPLICATION_CREDENTIALS && npm run emulate:admin && npm run emulate:assessment",
-    "emulate:stop": "ps -e | grep firebase | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill -s INT",
-    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh && source firebase/export_admin.sh && source firebase/export_assessment.sh"
+    "emulate:stop": "ps -e | grep 'firebase emulators:start' | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill -s INT",
+    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh"
   },
   "dependencies": {
     "@bdelab/roar-firekit": "^3.12.11",
