@@ -3,7 +3,31 @@ import * as adminFirebaseConfig from '../../firebase/admin/firebase.json';
 
 let appConfig;
 let adminConfig;
-if (import.meta.env.PROD) {
+
+const isEmulated = import.meta.env.VITE_FIREBASE_EMULATOR === 'true';
+
+if (isEmulated) {
+  console.log("Using firebase emulators in development mode");
+  appConfig = {
+    projectId: 'demo-gse-roar-assessment',
+    apiKey: 'any-string-value',
+    emulatorPorts: {
+      db: assessmentFirebaseConfig.emulators.firestore.port,
+      auth: assessmentFirebaseConfig.emulators.auth.port,
+      functions: assessmentFirebaseConfig.emulators.functions.port,
+    },
+  };
+
+  adminConfig = {
+    projectId: 'demo-gse-roar-admin',
+    apiKey: 'any-string-value',
+    emulatorPorts: {
+      db: adminFirebaseConfig.emulators.firestore.port,
+      auth: adminFirebaseConfig.emulators.auth.port,
+      functions: adminFirebaseConfig.emulators.functions.port,
+    },
+  };
+} else {
   appConfig = {
     apiKey: "AIzaSyDw0TnTXbvRyoVo5_oa_muhXk9q7783k_g",
     authDomain: "roar.education",
@@ -25,27 +49,6 @@ if (import.meta.env.PROD) {
     messagingSenderId: "1062489366521",
     appId: "1:1062489366521:web:d0b8b5371a67332d1d2728",
     measurementId: "G-YYE3YN0S99",
-  };
-} else if (import.meta.env.DEV) {
-  console.log("Using firebase emulators in development mode");
-  appConfig = {
-    projectId: 'demo-gse-roar-assessment',
-    apiKey: 'any-string-value',
-    emulatorPorts: {
-      db: assessmentFirebaseConfig.emulators.firestore.port,
-      auth: assessmentFirebaseConfig.emulators.auth.port,
-      functions: assessmentFirebaseConfig.emulators.functions.port,
-    },
-  };
-
-  adminConfig = {
-    projectId: 'demo-gse-roar-admin',
-    apiKey: 'any-string-value',
-    emulatorPorts: {
-      db: adminFirebaseConfig.emulators.firestore.port,
-      auth: adminFirebaseConfig.emulators.auth.port,
-      functions: adminFirebaseConfig.emulators.functions.port,
-    },
   };
 }
 

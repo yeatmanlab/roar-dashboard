@@ -10,7 +10,7 @@
     },
     "firestore": {
       "host": "127.0.0.1",
-      "port": 8079
+      "port": 8081
     },
     "functions": {
       "host": "127.0.0.1",
