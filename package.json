@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev:emulate": "export VITE_FIREBASE_EMULATOR=true && vite --force --host",
-    "dev:prod": "vite --force --host",
+    "dev": "vite --force --host",
     "build": "vite build",
     "preview": "vite preview",
     "emulate:admin": "source firebase/emulate_admin.sh",
