@@ -19,7 +19,7 @@
     "@bdelab/roar-multichoice": "^1.0.4",
     "@bdelab/roar-pa": "^1.1.8",
     "@bdelab/roar-sre": "^1.1.12",
-    "@bdelab/roar-swr": "^1.1.11",
+    "@bdelab/roar-swr": "^1.1.12",
     "@vuelidate/core": "^2.0.0-alpha.40",
     "@vuelidate/validators": "^2.0.0-alpha.28",
     "@vueuse/head": "^1.0.13",
