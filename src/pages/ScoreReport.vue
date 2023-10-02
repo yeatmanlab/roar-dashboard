@@ -140,6 +140,7 @@ import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _toUpper from 'lodash/toUpper'
+import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
@@ -257,7 +258,7 @@ const tableData = computed(() => {
       if (assessment.taskId === "sre") {
         percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
         standardScore = _get(assessment, 'scores.computed.composite.tosrecSS')
-        rawScore = _get(assessment, 'scores.computed.composite.tosrecPercentile') // TODO: replace this with SRE raw score.
+        rawScore = _get(assessment, 'scores.computed.composite.sreScore')
         displayName = "Sentence"
       }
       if (percentileScore !== undefined) {
@@ -304,6 +305,18 @@ const refresh = async () => {
   if (!orgInfo.value) {
     queryStore.getAdminOrgs();
     orgInfo.value = getOrgInfo.value(props.orgType, props.orgId);
+  }
+  // If this is a district score report, grab schools
+  if(props.orgType === 'district'){
+    _forEach(_get(orgInfo.value, 'schools'), schoolId => {
+      console.log('checking for', schoolId)
+      if(!queryStore.orgInfo[schoolId]){
+        console.log('not found.')
+        const schoolInfo = getOrgInfo.value('school', schoolId)
+        console.log('fetching', schoolId)
+        queryStore.orgInfo[schoolId] = schoolInfo
+      }
+    })
   }
   if (!administrationInfo.value) {
     administrationInfo.value = getAdministrationInfo.value(props.administrationId);
