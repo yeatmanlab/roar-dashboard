@@ -207,6 +207,10 @@ const columns = computed(() => {
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
+  if(props.orgType === 'district') {
+    tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" })
+  }
+
   if (authStore.isUserSuperAdmin()) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
   }
@@ -284,6 +288,25 @@ const tableData = computed(() => {
         }
       }
     }
+    // If this is a district score report, grab school information
+    if(props.orgType === 'district'){
+      // Grab user's school list
+      const currentSchools = _get(user, 'schools.current')
+      if(currentSchools.length) {
+        // If there is one valid school, 
+        const schoolId = currentSchools[0]
+        let schoolInfo;
+        if(queryStore.orgInfo[schoolId]) {
+          console.log('[sch] already found id', schoolId)
+          schoolInfo = queryStore.orgInfo[schoolId]
+        } else {
+          console.log('[sch] not found. grabbing info for id', schoolId)
+          schoolInfo = getOrgInfo.value('school', schoolId)
+          queryStore.orgInfo[schoolId] = schoolInfo
+        }
+        user['schoolName'] = schoolInfo.name
+      }
+    }
     return {
       user,
       assignment,
@@ -305,18 +328,6 @@ const refresh = async () => {
   if (!orgInfo.value) {
     queryStore.getAdminOrgs();
     orgInfo.value = getOrgInfo.value(props.orgType, props.orgId);
-  }
-  // If this is a district score report, grab schools
-  if(props.orgType === 'district'){
-    _forEach(_get(orgInfo.value, 'schools'), schoolId => {
-      console.log('checking for', schoolId)
-      if(!queryStore.orgInfo[schoolId]){
-        console.log('not found.')
-        const schoolInfo = getOrgInfo.value('school', schoolId)
-        console.log('fetching', schoolId)
-        queryStore.orgInfo[schoolId] = schoolInfo
-      }
-    })
   }
   if (!administrationInfo.value) {
     administrationInfo.value = getAdministrationInfo.value(props.administrationId);
