@@ -86,6 +86,13 @@ export const useQueryStore = () => {
           return null;
         }
       },
+      async getOrgsById(orgType, orgIds) {
+        if (roarfirekit.value?.app?.db) {
+          return roarfirekit.value.getOrgsById(orgType, orgIds);
+        } else {
+          return []
+        }
+      },
       async getOrgs(orgType) {
         if (roarfirekit.value?.app?.db) {
           return roarfirekit.value.getOrgs(orgType);

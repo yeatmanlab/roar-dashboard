@@ -4,91 +4,64 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Your organizations">
-        <template #icons>
-          <!-- <div class="flex justify-content-end flex-wrap column-gap-8"> -->
-          <!-- <SpeedDial size="small" v-if="superAdmin" :model="superAdminItems" direction="down" :transitionDelay="20"
-              showIcon="pi pi-cog" hideIcon="pi pi-times" :tooltipOptions="{ position: 'left' }"
-              buttonClass="p-panel-header-icon" class="flex align-items-center justify-content-center" /> -->
-          <button v-if="superAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-icon mr-2"
-            @click="syncClever">
-            <span :class="cleverSyncIcon"></span>
-          </button>
+      <TabView v-model:activeIndex="activeIndex">
+        <TabPanel v-for="orgType in orgData" :header="orgType.header">
           <button v-tooltip.top="'Refresh'" class="p-panel-header-icon mr-2" @click="refresh">
             <span :class="spinIcon"></span>
           </button>
-          <!-- </div> -->
-        </template>
-
-        <TreeTable :value="hierarchicalAdminOrgs" scrollable :rowHover="true" tableStyle="min-width: 50rem"
-          sortMode="multiple" removableSort resizableColumns :paginator="true" :alwaysShowPaginator="false" :rows="10"
-          :rowsPerPageOptions="[5, 10, 25]">
-          <Column field="name" header="Name" sortable expander>
-            <template #body="{ node }">
-              {{ node.data.name }}
-              <Badge v-if="node.data.clever" v-tooltip.right="`This is a Clever ${node.data.orgType}`" value="C"
-                severity="info" class="ml-2"></Badge>
-            </template>
-          </Column>
-          <Column field="orgType" header="Type" sortable></Column>
-          <Column field="abbreviation" header="Abbreviation" sortable></Column>
-          <Column field="ncesId" header="NCES ID" sortable></Column>
-          <Column field="address.formattedAddress" header="Address" sortable></Column>
-          <Column field="grade" header="Grade" sortable style="width: 7rem;"></Column>
-          <Column field="tags" header="Tags" style="min-width: 10rem;">
-            <template #body="{ node }">
-              <Chip v-for="(tag, index) in node.data.tags" :label="tag" :key="index" icon="pi pi-tag" class="m-1" />
-            </template>
-          </Column>
-          <Column field="" header="" #body="{ node }">
-            <router-link :to="{ name: 'ListUsers', params: { orgType: node.data.orgType, orgId: node.data.id } }">
-              <Button v-tooltip.top="'View users'" severity="secondary" text raised label="Users" aria-label="View users"
-                icon="pi pi-users" size="small" />
-            </router-link>
-          </Column>
-        </TreeTable>
-      </Panel>
+          <div class="grid column-gap-3 mt-3">
+            <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="orgType.id === 'schools' || orgType.id === 'classes'">
+              <span class="p-float-label">
+                <Dropdown v-model="selectedDistrict" inputId="district" :options="orgData.districts.data" showClear optionLabel="name"
+                  placeholder="Select a district" class="w-full" />
+                <label for="district">District</label>
+              </span>
+            </div>
+            <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="orgType.id === 'classes'">
+              <span class="p-float-label">
+                <Dropdown v-model="selectedSchool" inputId="school" :options="orgData.schools.data" showClear optionLabel="name"
+                  placeholder="Select a school" class="w-full" />
+                <label for="school">School</label>
+              </span>
+            </div>
+          </div>
+          <SkeletonTable v-if="isFetching" />
+          <RoarDataTable :columns="tableColumns" :data="tableData" :key="tableKey" v-if="tableData.length && !isFetching" @page="handlePageEvent($event)"/>
+          <div v-else-if="!isFetching">No data!</div>
+        </TabPanel>
+      </TabView>
     </section>
   </main>
 </template>
-
 <script setup>
-import { computed, ref, onMounted } from "vue";
-import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import { useQueryStore } from "@/store/query";
-import { useAuthStore } from "@/store/auth";
-import _isEmpty from "lodash/isEmpty";
-import _union from "lodash/union";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import SkeletonTable from "@/components/SkeletonTable.vue";
 import { getSidebarActions } from "../router/sidebarActions";
+import { ref, reactive, computed, onMounted, watch } from "vue";
+import { useAuthStore } from "@/store/auth";
+import { useQueryStore } from "@/store/query";
+import { storeToRefs } from "pinia";
+import _forEach from 'lodash/forEach'
+import _isEmpty from 'lodash/isEmpty'
+import _head from 'lodash/head'
+import _get from 'lodash/get'
 
-const toast = useToast();
-const queryStore = useQueryStore();
+// const showTable = ref(false);
+const tableKey = ref(0);
+const orgData = ref({
+  districts: { header: "Districts", id: 'districts', data: [] },
+  schools: { header: "Schools", id: 'schools',  data: [] },
+  classes: { header: "Classes", id: 'classes', data: [] },
+  groups: { header: "Groups", id: 'groups', data: [] },
+})
+const activeIndex = ref(0);
+
+// Authstore and Sidebar
 const authStore = useAuthStore();
-const { adminOrgs, hierarchicalAdminOrgs } = storeToRefs(queryStore);
-
-const syncingClever = ref(false);
-const superAdmin = ref(authStore.isUserSuperAdmin());
-const cleverSyncIcon = computed(() => {
-  if (syncingClever.value) {
-    return "pi pi-sync pi-spin";
-  } else {
-    return "pi pi-cloud-download"
-  }
-});
-
-const syncClever = async () => {
-  toast.add({ severity: 'info', summary: 'Syncing', detail: 'Clever sync initiated', life: 3000 });
-  syncingClever.value = true;
-  await authStore.syncCleverOrgs()
-  syncingClever.value = false;
-  refresh();
-  toast.add({ severity: 'success', summary: 'Success', detail: 'Clever sync successful', life: 5000 });
-}
-
+const queryStore = useQueryStore();
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
+// Refresh actions
 const refreshing = ref(false);
 const spinIcon = computed(() => {
   if (refreshing.value) return "pi pi-spin pi-spinner";
@@ -100,29 +73,122 @@ let unsubscribe;
 const refresh = async () => {
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
-  queryStore.getAdminOrgs().then(() => {
-    refreshing.value = false;
-  });
+  
+  let districtsData = await queryStore.getOrgs('districts')
+  refreshing.value = false;
+  console.log('districts', districtsData)
+  orgData.value.districts.data = districtsData
+  tableData.value = districtsData
+  // showTable.value = true;
+  tableKey.value = tableKey.value +1;
+  isFetching.value = false;
 }
 
-if (_isEmpty(_union(...Object.values(adminOrgs.value)))) {
-  unsubscribe = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-      await refresh();
-    }
-  });
-}
+const isFetching = ref(true);
 
+// Call refresh in onMounted hook
 const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
   if (roarfirekit.value.getOrgs && roarfirekit.value.isAdmin()) {
     await refresh()
   }
 })
-</script> 
 
-<style lang="scss">
-.hide {
-  display: none;
+const tableColumns = ref([
+  { field: 'name', header: 'District Name', dataType: 'string'}
+])
+
+const tableData = ref([])
+const selectedDistrict = ref({})
+const selectedSchool = ref({})
+
+async function refreshOrgs(orgType, orgIds) {
+  console.log('refresh orgs called')
+  isFetching.value = true
+  const newOrgs = await queryStore.getOrgsById(orgType, orgIds);
+  console.log(`new ${orgType}:`, newOrgs)
+  orgData.value[orgType].data = newOrgs
+  tableData.value = newOrgs;
+  tableKey.value = tableKey.value + 1;
+  isFetching.value = false;
 }
-</style>
+
+watch([selectedDistrict, selectedSchool], async ([newDistrict, newSchool], [oldDistrict, oldSchool]) => {
+  console.log('watcher changed!')
+  console.log('new district:', newDistrict.name)
+  if(newDistrict !== oldDistrict){
+    // If district actually changed
+    const newSchools = _get(newDistrict, 'schools')
+    if(newSchools) {
+      await refreshOrgs('schools', newSchools)
+    } else {
+      tableData.value = []
+      tableKey.value = tableKey.value + 1;
+    }
+  }
+  if(newSchool !== oldSchool) {
+    console.log('grabbing new classes. please hold...')
+    const newClasses = _get(newSchool, 'classes')
+    if(newClasses) {
+      await refreshOrgs('classes', newClasses);
+    } else {
+      tableData.value = [];
+      tableKey.value = tableKey.value + 1
+    }
+    console.log('classes callback finished.')
+  }
+  if(activeIndex.value === 2 && _isEmpty(selectedSchool.value)) {
+    // console.log('youre viewing classes, and that is currently', selectedSchool.value)
+    selectedSchool.value = _head(orgData.value.schools.data)
+    // console.log('now, schools are', orgData.value.schools.data)
+  }
+})
+
+watch(activeIndex, async (newIndex, oldIndex) => {
+  // 0: districts
+  // 1: schools
+  // 2: classes
+  // 3: groups
+  if(newIndex === 0){
+    console.log('Now viewing districts.')
+    tableData.value = orgData.value.districts.data
+    tableKey.value = tableKey.value + 1
+    isFetching.value = false;
+  }
+  if(newIndex === 1){
+    console.log('Now viewing schools.')
+    if(_isEmpty(selectedDistrict.value)) {
+      console.log('selected district is empty.')
+      selectedDistrict.value = _head(orgData.value.districts.data)
+    }
+    const newSchools = _get(selectedDistrict.value, 'schools');
+    if(newSchools) await refreshOrgs('schools', newSchools);
+  }
+  if(newIndex === 2){
+    console.log('Now viewing classes.')
+    if(_isEmpty(selectedDistrict.value)) {
+      const schoolData = _head(orgData.value.districts.data)
+      selectedDistrict.value = schoolData
+    }
+    if(_isEmpty(selectedSchool.value)) {
+      console.log('seleted school is empty.')
+      selectedSchool.value = _head(orgData.value.schools.data)
+      console.log('set sel school to ', selectedSchool.value)
+    }
+    const newClasses = _get(selectedSchool.value, 'classes')
+    if(newClasses) await refreshOrgs('classes', newClasses)
+  }
+  if(newIndex === 3){
+    if(_isEmpty(orgData.value.groups.data)){
+      isFetching.value = true;
+      const groupsData = await queryStore.getOrgs('groups')
+      orgData.value.groups.data = groupsData
+      tableData.value = groupsData
+      isFetching.value = false;
+    } else {
+      tableData.value = orgData.value.groups.data
+    }
+    tableKey.value = tableKey.value + 1
+  }
+})
+</script>
