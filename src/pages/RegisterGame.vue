@@ -1,14 +1,33 @@
 <template>
-    <div>
+    <main class="container main">
+      <aside class="main-sidebar">
+        <AdministratorSidebar :userInfo="userInfo" :actions="sidebarActions" />
+      </aside>
+      <section class="main-body">
         <div class="register-container mx-auto md:flex-none">
             <RegisterTask />
         </div>
-    </div>
+      </section>
+    </main>
 </template>
   
   <script setup>
+  import { ref, } from "vue";
   import RegisterTask from "../components/tasks/RegisterTask.vue";
+  import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+  import { getSidebarActions } from "../router/sidebarActions";
+  import { useAuthStore } from "@/store/auth";
 
+  const authStore = useAuthStore();
+
+  const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), false));
+  
+  const userInfo = ref(
+  {
+    name: "Admin name",
+    district: "District Name"
+  }
+)
   </script>
   
   <style scoped>
@@ -21,7 +40,6 @@
     width: 26.875rem;
     padding-right: 1.5rem;
     padding-left: 1.5rem;
-    margin-top: 6.5rem;
     position: relative;
   }
   
