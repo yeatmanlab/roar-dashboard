@@ -300,7 +300,6 @@ const tableData = computed(() => {
           // console.log('[sch] already found id', schoolId)
           schoolInfo = queryStore.orgInfo[schoolId]
         } else {
-          // console.log('[sch] not found. grabbing info for id', schoolId)
           schoolInfo = getOrgInfo.value('school', schoolId)
           queryStore.orgInfo[schoolId] = schoolInfo
         }
