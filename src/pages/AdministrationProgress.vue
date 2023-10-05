@@ -60,8 +60,8 @@ const spinIcon = computed(() => {
 
 const displayNames = {
   "swr": { name: "Word", order: 3 },
-  "swr-es": { name: "Palabra", order: 4 }, 
-  "pa": { name: "Phoneme", order: 2 }, 
+  "swr-es": { name: "Palabra", order: 4 },
+  "pa": { name: "Phoneme", order: 2 },
   "sre": { name: "Sentence", order: 5 },
   "letter": { name: "Letter", order: 1 },
 }
@@ -73,9 +73,10 @@ const columns = computed(() => {
     { field: "user.username", header: "Username", dataType: "text", pinned: true },
     { field: "user.name.first", header: "First Name", dataType: "text" },
     { field: "user.name.last", header: "Last Name", dataType: "text" },
+    { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
-  if(authStore.isUserSuperAdmin()) {
+  if (authStore.isUserSuperAdmin()) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
   }
 
