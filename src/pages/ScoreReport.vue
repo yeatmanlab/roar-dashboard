@@ -140,6 +140,7 @@ import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _toUpper from 'lodash/toUpper'
+import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
@@ -206,6 +207,10 @@ const columns = computed(() => {
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
+  if(props.orgType === 'district') {
+    tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" })
+  }
+
   if (authStore.isUserSuperAdmin()) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
   }
@@ -257,7 +262,7 @@ const tableData = computed(() => {
       if (assessment.taskId === "sre") {
         percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
         standardScore = _get(assessment, 'scores.computed.composite.tosrecSS')
-        rawScore = _get(assessment, 'scores.computed.composite.tosrecPercentile') // TODO: replace this with SRE raw score.
+        rawScore = _get(assessment, 'scores.computed.composite.sreScore')
         displayName = "Sentence"
       }
       if (percentileScore !== undefined) {
@@ -281,6 +286,23 @@ const tableData = computed(() => {
           support_level,
           color: tag_color
         }
+      }
+    }
+    // If this is a district score report, grab school information
+    if(props.orgType === 'district'){
+      // Grab user's school list
+      const currentSchools = _get(user, 'schools.current')
+      if(currentSchools.length) {
+        // If there is one valid school, 
+        const schoolId = currentSchools[0]
+        let schoolInfo;
+        if(queryStore.orgInfo[schoolId]) {
+          schoolInfo = queryStore.orgInfo[schoolId]
+        } else {
+          schoolInfo = getOrgInfo.value('school', schoolId)
+          queryStore.orgInfo[schoolId] = schoolInfo
+        }
+        user['schoolName'] = schoolInfo.name
       }
     }
     return {
