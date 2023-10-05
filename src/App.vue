@@ -14,7 +14,7 @@
   <div>
     <Toast />
     <Navbar v-if="!navbarBlacklist.includes($route.name)" />
-    <router-view />
+    <router-view :key="$route.fullPath" />
   </div>
 
   <!-- <AppSpinner v-show="!showPage" /> -->
@@ -30,15 +30,18 @@ const navbarBlacklist = ref([
   "SignIn",
   "PlayApp",
   "SWR",
+  "SWR-ES",
   "SRE",
-  "PA"
+  "PA",
+  "Letter",
+  "Multichoice"
 ]);
 
 onBeforeMount(async () => {
   const authStore = useAuthStore();
   await authStore.initFirekit();
   authStore.setUser();
-  // await authStore.initStateFromRedirect();
+  await authStore.initStateFromRedirect();
 });
 
 </script>

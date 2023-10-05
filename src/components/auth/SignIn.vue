@@ -78,8 +78,6 @@ const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
-  console.log(isFormValid);
-  console.log(state)
   if (!isFormValid) {
     return;
   }

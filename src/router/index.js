@@ -18,7 +18,12 @@ const routes = [
     name: "Home",
     component: () => import("../pages/Home.vue"),
     meta: { pageTitle: "Dashboard" },
-
+  },
+  {
+    path: "/clever-user",
+    name: "CleverLanding",
+    component: () => import("../pages/CleverLanding.vue"),
+    meta: { pageTitle: "Logging You In" },
   },
   // {
   //   path: "/game/:gameId",
@@ -33,6 +38,12 @@ const routes = [
     meta: { pageTitle: "SWR" }
   },
   {
+    path: "/game/swr-es",
+    name: "SWR-ES",
+    component: () => import("../components/tasks/SWR-ES.vue"),
+    meta: { pageTitle: "SWR (ES)" }
+  },
+  {
     path: "/game/pa",
     name: "PA",
     component: () => import("../components/tasks/PA.vue"),
@@ -43,6 +54,18 @@ const routes = [
     name: "SRE",
     component: () => import("../components/tasks/SRE.vue"),
     meta: { pageTitle: "SRE" }
+  },
+  {
+    path: "/game/letter",
+    name: "Letter",
+    component: () => import("../components/tasks/Letter.vue"),
+    meta: { pageTitle: "Letter" }
+  },
+  {
+    path: "/game/multichoice",
+    name: "Multichoice",
+    component: () => import("../components/tasks/Multichoice.vue"),
+    meta: { pageTitle: "Multichoice" }
   },
   {
     path: "/upload-scores",
@@ -56,12 +79,12 @@ const routes = [
     component: () => import("../pages/QueryPage.vue"),
     meta: { pageTitle: "Query", requireAdmin: true, requireSuperAdmin: true },
   },
-  {
-    path: "/score-report",
-    name: "ScoreReport",
-    component: () => import("../pages/ScoreReport.vue"),
-    meta: { pageTitle: "Score Reports" },
-  },
+  // {
+  //   path: "/score-report",
+  //   name: "ScoreReport",
+  //   component: () => import("../pages/ScoreReport.vue"),
+  //   meta: { pageTitle: "Score Reports" },
+  // },
   // We don't support individual registration yet
   {
     path: "/register",
@@ -73,7 +96,7 @@ const routes = [
     path: '/register-students',
     name: 'RegisterStudents',
     component: () => import("../pages/RegisterStudents.vue"),
-    meta: {pageTitle: "Register Students", requireAdmin: true}
+    meta: {pageTitle: "Register Students", requireAdmin: true, requireSuperAdmin: true}
   },
   {
     path: '/register-orgs',
@@ -98,7 +121,6 @@ const routes = [
       return { name: "SignIn" };
     },
     meta: { pageTitle: "Sign Out" },
-
   },
   {
     path: "/auth-clever",
@@ -164,6 +186,13 @@ const routes = [
     props: true,
     component: () => import("../pages/AdministrationProgress.vue"),
     meta: {pageTitle: "View Administration", requireAdmin: true}
+  },
+  {
+    path: "/scores/:administrationId/:orgType/:orgId",
+    name: "ScoreReport",
+    props: true,
+    component: () => import("../pages/ScoreReport.vue"),
+    meta: {pageTitle: "View Scores", requireAdmin: true}
   },
   {
     path: "/enable-cookies",

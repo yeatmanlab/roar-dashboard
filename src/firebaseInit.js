@@ -1,5 +1,5 @@
-import firebaseConfig from "./config/firebase";
 import { RoarFirekit } from "@bdelab/roar-firekit";
+import firebaseConfig from "./config/firebase";
 
 export async function initNewFirekit() {
   const firekit = new RoarFirekit({ 

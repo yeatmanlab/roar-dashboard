@@ -15,7 +15,7 @@
 	}
 	
 	.roar-tabview-game {
-		--contentWidth: 45%; //set variable for width of content (title, text, footer)
+		--contentWidth: 52%; //set variable for width of content (title, text, footer)
 		
 		display: inline-flex;
 		border-left: 1px solid var(--surface-d);
@@ -37,7 +37,7 @@
 		}
 		
 		.roar-game-title {
-			font-size: 2rem;
+			font-size: clamp(2rem, 2.6vw, 3.25rem);
 			padding-bottom: 1rem;
 			margin-bottom: .5rem;
 			border-bottom: 1px dotted var(--surface-d);
@@ -45,7 +45,7 @@
 		
 		.roar-game-description {
 			color: var(--text-color);
-			font-size: 1.15rem;
+			font-size: 1.25rem;
 			line-height: 1.5;
 			
 			p {

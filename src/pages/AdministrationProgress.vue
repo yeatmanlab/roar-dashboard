@@ -21,14 +21,14 @@
           <span>Loading Administration Data</span>
         </div>
 
-        <RoarDataTable v-else :data="tableData" :columns="columns" />
+        <RoarDataTable v-else-if="assignmentData?.length ?? 0 > 0" :data="tableData" :columns="columns" />
       </Panel>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import { useAuthStore } from '@/store/auth';
@@ -40,8 +40,9 @@ const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
 const { getAdministrationInfo, getOrgInfo } = storeToRefs(queryStore);
-const orgInfo = ref(getOrgInfo.value(props.orgType, props.orgId));
-const administrationInfo = ref(getAdministrationInfo.value(props.administrationId));
+const orgInfo = ref(queryStore.orgInfo[props.orgId]);
+const administrationInfo = ref(queryStore.administrationInfo[props.administrationId]);
+const assignmentData = ref(queryStore.assignmentData[props.administrationId]);
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
@@ -51,26 +52,42 @@ const props = defineProps({
   orgId: String,
 });
 
-const refreshing = ref(true);
+const refreshing = ref(false);
 const spinIcon = computed(() => {
   if (refreshing.value) return "pi pi-spin pi-spinner";
   return "pi pi-refresh";
 });
 
-const assignmentData = ref([]);
+const displayNames = {
+  "swr": { name: "Word", order: 3 },
+  "swr-es": { name: "Palabra", order: 4 },
+  "pa": { name: "Phoneme", order: 2 },
+  "sre": { name: "Sentence", order: 5 },
+  "letter": { name: "Letter", order: 1 },
+}
 
 const columns = computed(() => {
+  if (assignmentData.value === undefined) return [];
+
   const tableColumns = [
+    { field: "user.username", header: "Username", dataType: "text", pinned: true },
     { field: "user.name.first", header: "First Name", dataType: "text" },
     { field: "user.name.last", header: "Last Name", dataType: "text" },
-    { field: "user.assessmentPid", header: "PID", dataType: "text" },
+    { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
+  if (authStore.isUserSuperAdmin()) {
+    tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
+  }
+
   if (tableData.value.length > 0) {
-    for (const taskId of Object.keys(tableData.value[0].status)) {
+    const sortedTasks = Object.keys(tableData.value[0].status).sort((p1, p2) => {
+      return displayNames[p1].order - displayNames[p2].order
+    })
+    for (const taskId of sortedTasks) {
       tableColumns.push({
         field: `status.${taskId}.value`,
-        header: taskId.toUpperCase(),
+        header: displayNames[taskId].name,
         dataType: "text",
         tag: true,
         severityField: `status.${taskId}.severity`,
@@ -82,6 +99,8 @@ const columns = computed(() => {
 });
 
 const tableData = computed(() => {
+  if (assignmentData.value === undefined) return [];
+
   return assignmentData.value.map(({ user, assignment }) => {
     const status = {};
     for (const assessment of (assignment?.assessments || [])) {
@@ -130,8 +149,11 @@ const refresh = async () => {
   if (!administrationInfo.value) {
     administrationInfo.value = getAdministrationInfo.value(props.administrationId);
   }
-
   refreshing.value = false;
+
+  queryStore.assignmentData[props.administrationId] = assignmentData.value;
+  queryStore.administrationInfo[props.administrationId] = administrationInfo.value;
+  queryStore.orgInfo[props.orgId] = orgInfo.value;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
@@ -140,6 +162,12 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   }
 });
 
+const { roarfirekit } = storeToRefs(authStore);
+onMounted(async () => {
+  if (roarfirekit.value.getUsersByAssignment && roarfirekit.value.isAdmin()) {
+    await refresh()
+  }
+})
 </script>
 
 <style>

@@ -1,7 +1,10 @@
-import { defineStore } from "pinia";
+import { toRaw } from "vue";
+import { defineStore, acceptHMRUpdate } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
 
+import _findIndex from "lodash/findIndex";
+import _assign from "lodash/assign";
 import _get from "lodash/get";
 import _set from "lodash/set";
 
@@ -11,6 +14,8 @@ export const useAuthStore = () => {
     id: "authStore",
     state: () => {
       return {
+        spinner: false,
+        consentSpinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
@@ -19,15 +24,13 @@ export const useAuthStore = () => {
         roarfirekit: null,
         hasUserData: false,
         firekitUserData: null,
-        firekitAssignments: {
-          assigned: null
-        },
+        firekitAssignments: null,
         firekitAdminInfo: null,
-        firekitAssignmentIds: null,
-        firekitIsAdmin: false,
-        firekitIsSuperAdmin: false,
+        firekitAssignmentIds: [],
+        firekitIsAdmin: null,
+        firekitIsSuperAdmin: null,
         cleverOAuthRequested: false,
-        emailForSignInLink: null,
+        authFromClever: false,
       };
     },
     getters: {
@@ -39,32 +42,51 @@ export const useAuthStore = () => {
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
     },
     actions: {
-      isUserAdmin() {
-        if(this.isFirekitInit) {
-          this.firekitIsAdmin = this.roarfirekit.isAdmin();
+      syncFirekitCache(state) {
+        const { userData, currentAssignments } = state.roarfirekit;
+        if (userData) {
+          this.firekitUserData = _assign(this.firekitUserData, userData);
         }
-        return this.firekitIsAdmin;
+        if (currentAssignments?.assigned?.length > 0) {
+          this.firekitAssignmentIds = currentAssignments.assigned;
+        }
+      },
+      isUserAdmin() {
+        if(this.isFirekitInit && this.firekitIsAdmin === null) {
+          this.firekitIsAdmin = this.roarfirekit.isAdmin();
+          return this.firekitIsAdmin;
+        } else {
+          return this.firekitIsAdmin;
+        }
       },
       isUserSuperAdmin() {
-        if(this.isFirekitInit) {
+        if(this.isFirekitInit && this.firekitIsSuperAdmin === null) {
           this.firekitIsSuperAdmin = _get(this.roarfirekit, '_superAdmin');
         }
         return this.firekitIsSuperAdmin;
       },
+      async completeAssessment(adminId, taskId) {
+        console.log('inside authStore func')
+        await this.roarfirekit.completeAssessment(adminId, taskId)
+        const currentAdminIndex = _findIndex(this.firekitAssignments, admin => admin.id === adminId)
+        const currentAssessmentIndex = _findIndex(this.firekitAssignments[currentAdminIndex].assessments, assess => assess.taskId === taskId);
+        _set(this.firekitAssignments[currentAdminIndex]['assessments'][currentAssessmentIndex], 'completedOn', new Date())
+        
+      },
       async getAssignments(assignments) {
         try{
           const reply = await this.roarfirekit.getAssignments(assignments)
-          this.firekitAssignments = reply
           this.firekitAssignmentIds = assignments;
+          this.firekitAssignments = reply
           return reply
         } catch(e) {
-          return this.firekitAssignments.assigned
+          return this.firekitAssignments;
         }
         
       },
       async getAdministration(administration) {
         try {
-          const reply = await this.roarfirekit.getAdministrations(administration)
+          const reply = await Promise.all(this.roarfirekit.getAdministrations(administration))
           this.firekitAdminInfo = reply
           return this.firekitAdminInfo
         } catch(e) {
@@ -146,6 +168,7 @@ export const useAuthStore = () => {
         }
       },
       async signInWithCleverPopup() {
+        this.authFromClever = true;
         if(this.isFirekitInit){
           return this.roarfirekit.signInWithPopup('clever').then(() => {
             if(this.roarfirekit.userData){
@@ -159,15 +182,23 @@ export const useAuthStore = () => {
         return this.roarfirekit.initiateRedirect("google");
       },
       async signInWithCleverRedirect() {
+        this.authFromClever = true;
         return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
+        this.spinner = true;
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
         }
         if(this.isFirekitInit){
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then(() => {
-            if(this.roarfirekit.userData){
+          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+            // If the result is null, then no redirect operation was called.
+            if (result !== null) {
+              this.spinner = true;
+            } else {
+              this.spinner = false;
+            }
+            if(this.roarfirekit.userData) {
               this.hasUserData = true
               this.firekitUserData = this.roarfirekit.userData
             }
@@ -179,13 +210,19 @@ export const useAuthStore = () => {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
             this.hasUserData = false;
-            console.log('setting firekitIsAdmin to false')
-            this.firekitIsAdmin = false;
+            this.firekitIsAdmin = null;
+            this.firekitIsSuperAdmin = null;
+            this.firekitUserData = null;
+            this.spinner = false;
+            this.authFromClever = false;
             // this.roarfirekit = initNewFirekit()
           });
         } else {
           console.log('Cant log out while not logged in')
         }
+      },
+      async syncCleverOrgs() {
+        return this.roarfirekit.syncCleverOrgs(false);
       },
       // Used for requesting access when user doesn't have access to page
       // TODO: punt- thinking about moving to a ticket system instead of this solution.
@@ -212,11 +249,15 @@ export const useAuthStore = () => {
     persist: {
       storage: sessionStorage,
       debug: false,
-      afterRestore: async (ctx) => {
-        if (ctx.store.roarfirekit) {
-          ctx.store.roarfirekit = await initNewFirekit();
-        }
-      }
+      // afterRestore: async (ctx) => {
+      //   if (ctx.store.roarfirekit) {
+      //     ctx.store.roarfirekit = await initNewFirekit();
+      //   }
+      // }
     },
   })();
 };
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot))
+}

@@ -139,7 +139,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw } from "vue";
+import { computed, reactive, ref, toRaw, onMounted } from "vue";
 import { useRouter } from 'vue-router';
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
@@ -342,7 +342,8 @@ const submit = async (event) => {
 
     await roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData).then(() => {
       toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-      router.push({ name: 'ListOrgs' });
+      submitted.value = false;
+      resetForm();
     })
   } else {
     console.log("Form is invalid");
@@ -368,6 +369,21 @@ if (districts.value.length === 0 || schools.value.length === 0) {
     }
   });
 }
+
+const resetForm = () => {
+  state.orgName = "";
+  state.orgInitials = "";
+  state.ncesId = undefined;
+  state.address = undefined;
+  state.grade = undefined;
+  state.tags = [];
+}
+
+onMounted(async () => {
+  if(roarfirekit.value.getOrgs) {
+    await refresh()
+  }
+})
 </script> 
 
 <style lang="scss">

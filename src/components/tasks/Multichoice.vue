@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import RoarSRE from '@bdelab/roar-sre';
+import RoarMultichoice from '@bdelab/roar-multichoice';
 import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -15,7 +15,7 @@ import { useGameStore } from '@/store/game';
 import _head from 'lodash/head';
 import _get from 'lodash/get';
 
-const taskId = "sre"
+const taskId = "multichoice"
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -84,13 +84,12 @@ async function startTask() {
   const userDateObj = new Date(toRaw(userDob).seconds * 1000)
 
   const userParams = {
-    grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
   }
 
   const gameParams = {...appKit._taskInfo.variantParams, fromDashboard: true}
-  roarApp = new RoarSRE(appKit, gameParams, userParams, 'jspsych-target');
+  roarApp = new RoarMultichoice(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {
@@ -105,7 +104,6 @@ async function startTask() {
   });
 }
 </script>
-
 <style scoped> .game-target {
    position: absolute;
    top: 0;

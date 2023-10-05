@@ -7,12 +7,13 @@
       <!--Upload file section-->
       <div v-if="!isFileUploaded">
         <Panel header="Add Participants">
-          We need the following information for each student to register:
+          The following fields are required for registering a student:
           <ul>
-            <li>email (required)</li>
-            <li>date of birth (required)</li>
-            <li>grade (required)</li>
+            <li>username</li>
+            <li>date of birth</li>
+            <li>grade</li>
             <li>password</li>
+            <li>Either a group OR a district and school</li>
           </ul>
           Upload or drag-and-drop a student list below to begin!
         </Panel>
@@ -38,6 +39,7 @@
             <li>date of birth</li>
             <li>grade</li>
             <li>password</li>
+            <li>Either a group OR a district and school</li>
           </ul>
 
           <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
@@ -90,6 +92,7 @@
 import { ref, toRaw } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
+import _chunk from 'lodash/chunk';
 import _compact from 'lodash/compact';
 import _find from 'lodash/find';
 import _forEach from 'lodash/forEach'
@@ -138,9 +141,9 @@ const dropdown_options = ref([
     label: 'Optional',
     items: [
       { label: 'Ignore this column', value: 'ignore' },
-      { label: 'First Name', value: 'first' },
-      { label: 'Middle Name', value: 'middle' },
-      { label: 'Last Name', value: 'last' },
+      { label: 'First Name', value: 'firstName' },
+      { label: 'Middle Name', value: 'middleName' },
+      { label: 'Last Name', value: 'lastName' },
       { label: 'State ID', value: 'state_id' },
       { label: 'Gender', value: 'gender' },
       { label: 'English Language Level', value: 'ell_status' },
@@ -181,7 +184,6 @@ let groups = [];
 
 // Functions supporting Selecting Orgs
 const initFormFields = async () => {
-  console.log('inside init form fields')
   unsubscribe();
   // TODO: Optimize this with Promise.all or some such
   districts = await queryStore.getOrgs("districts");
@@ -237,7 +239,11 @@ function checkUniqueStudents(students, field) {
   return (students.length === uniqueStudents.length)
 }
 
-function submitStudents(rawJson) {
+async function submitStudents(rawJson) {
+  // Reset error users
+  errorUsers.value = [];
+  errorUserColumns.value = [];
+  showErrorTable.value = false;
   errorMessage.value = "";
   activeSubmit.value = true;
   const modelValues = _compact(Object.values(dropdown_model.value))
@@ -263,6 +269,16 @@ function submitStudents(rawJson) {
   if (!_includes(modelValues, 'password')) {
     // Password needs to be filled in 
     errorMessage.value = "Please select a column to be user's password."
+    activeSubmit.value = false;
+    return;
+  }
+  if (
+    ((!_includes(modelValues, 'district') && !_includes(modelValues, 'school')) || 
+    (!_includes(modelValues, 'district') && _includes(modelValues, 'school')) || 
+    (_includes(modelValues, 'district') && !_includes(modelValues, 'school'))) && 
+    !_includes(modelValues, 'group')){
+    // Requires either district and school, OR group
+    errorMessage.value = "Please assign columns to be either a group OR a pair of district and school."
     activeSubmit.value = false;
     return;
   }
@@ -303,92 +319,113 @@ function submitStudents(rawJson) {
   }
   // Begin submit process
   const totalUsers = submitObject.length;
-  _forEach(submitObject, user => {
-    // Handle Email Registration
-    const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
-    const computedEmail = email || `${username}@roar-auth.com`
-    let sendObject = {
-      email: computedEmail,
-      password,
-      userData
-    }
-    if (username) _set(sendObject, 'userData.username', username)
-    if (firstName) _set(sendObject, 'userData.name.first', firstName)
-    if (middleName) _set(sendObject, 'userData.name.middle', middleName)
-    if (lastName) _set(sendObject, 'userData.name.last', lastName)
-
-    // If district is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    if (district) {
-      const id = getDistrictId(district);
-      if (!_isEmpty(id)) {
-        _set(sendObject, 'userData.district', id)
-      } else {
-        addErrorUser(user, `Error: District '${district}' is invalid`)
-        return;
+  const chunkedSubmitObject = _chunk(submitObject, 10)
+  for(let i = 0; i < chunkedSubmitObject.length; i++){
+    const chunk = chunkedSubmitObject[i]
+    _forEach(chunk, user => {
+      // Handle Email Registration
+      const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
+      const computedEmail = email || `${username}@roar-auth.com`
+      let sendObject = {
+        email: computedEmail,
+        password,
+        userData
       }
-    }
+      if (username) _set(sendObject, 'userData.username', username)
+      if (firstName) _set(sendObject, 'userData.name.first', firstName)
+      if (middleName) _set(sendObject, 'userData.name.middle', middleName)
+      if (lastName) _set(sendObject, 'userData.name.last', lastName)
 
-    // If school is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    if (school) {
-      const id = getSchoolId(school);
-      if (!_isEmpty(id)) {
-        _set(sendObject, 'userData.school', id)
-      } else {
-        addErrorUser(user, `Error: School '${school}' is invalid.`)
-        return;
-      }
-    }
-
-    // If class is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    if (uClass) {
-      const id = getClassId(uClass);
-      if (!_isEmpty(id)) {
-        _set(sendObject, 'userData.class', id)
-      } else {
-        addErrorUser(user, `Error: Class '${uClass}' is invalid.`)
-        return;
-      }
-    }
-
-    // If group is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    if (group) {
-      const id = getGroupId(group);
-      if (!_isEmpty(id)) {
-        _set(sendObject, 'userData.group', id)
-      } else {
-        addErrorUser(user, `Error: Group '${group}' is invalid.`)
-        return;
-      }
-    }
-
-    authStore.registerWithEmailAndPassword(sendObject).then(() => {
-      console.log('sucessful user creation')
-      toast.add({ severity: 'success', summary: 'User Creation Success', detail: `${sendObject.email} was sucessfully created.`, life: 9000 });
-      processedUsers = processedUsers + 1;
-      if(processedUsers >= totalUsers){
-        activeSubmit.value = false;
-        if(errorUsers.value.length === 0) {
-          // Processing is finished, and there are no error users.
-          router.push({ name: "Home" })
+      // If district is a given column, check if the name is
+      //   associated with a valid id. If so, add the id to
+      //   the sendObject. If not, reject user
+      if (district) {
+        const id = getDistrictId(district);
+        if (!_isEmpty(id)) {
+          _set(sendObject, 'userData.district', id)
+        } else {
+          addErrorUser(user, `Error: District '${district}' is invalid`)
+          if(processedUsers >= totalUsers){
+            activeSubmit.value = false;
+          }
+          return;
         }
       }
-    }).catch((e) => {
-      toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
-      addErrorUser(user, e)
-      console.log('checking...', processedUsers, totalUsers)
-      if(processedUsers >= totalUsers){
-        activeSubmit.value = false;
+
+      // If school is a given column, check if the name is
+      //   associated with a valid id. If so, add the id to
+      //   the sendObject. If not, reject user
+      if (school) {
+        const id = getSchoolId(school);
+        if (!_isEmpty(id)) {
+          _set(sendObject, 'userData.school', id)
+        } else {
+          addErrorUser(user, `Error: School '${school}' is invalid.`)
+          if(processedUsers >= totalUsers){
+            activeSubmit.value = false;
+          }
+          return;
+        }
       }
+
+      // If class is a given column, check if the name is
+      //   associated with a valid id. If so, add the id to
+      //   the sendObject. If not, reject user
+      if (uClass) {
+        const id = getClassId(uClass);
+        if (!_isEmpty(id)) {
+          _set(sendObject, 'userData.class', id)
+        } else {
+          addErrorUser(user, `Error: Class '${uClass}' is invalid.`)
+          if(processedUsers >= totalUsers){
+            activeSubmit.value = false;
+          }
+          return;
+        }
+      }
+
+      // If group is a given column, check if the name is
+      //   associated with a valid id. If so, add the id to
+      //   the sendObject. If not, reject user
+      if (group) {
+        const id = getGroupId(group);
+        if (!_isEmpty(id)) {
+          _set(sendObject, 'userData.group', id)
+        } else {
+          addErrorUser(user, `Error: Group '${group}' is invalid.`)
+          if(processedUsers >= totalUsers){
+            activeSubmit.value = false;
+          }
+          return;
+        }
+      }
+
+      authStore.registerWithEmailAndPassword(sendObject).then(() => {
+        toast.add({ severity: 'success', summary: 'User Creation Success', detail: `${sendObject.email} was sucessfully created.`, life: 9000 });
+        processedUsers = processedUsers + 1;
+        if(processedUsers >= totalUsers){
+          activeSubmit.value = false;
+          if(errorUsers.value.length === 0) {
+            // Processing is finished, and there are no error users.
+            router.push({ name: "Home" })
+          }
+        }
+      }).catch((e) => {
+        toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
+        addErrorUser(user, e)
+        if(processedUsers >= totalUsers){
+          activeSubmit.value = false;
+        }
+      })
     })
-  })
+    await delay(1250)
+  }
+}
+
+function delay(milliseconds){
+  return new Promise(resolve => {
+      setTimeout(resolve, milliseconds);
+  });
 }
 
 

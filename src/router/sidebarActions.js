@@ -21,7 +21,7 @@ export const sidebarActionOptions = [
     title: "Register students",
     icon: "pi pi-users",
     buttonLink: { name: "RegisterStudents" },
-    requiresSuperAdmin: false,
+    requiresSuperAdmin: true,
   },
   {
     title: "Register organizations",

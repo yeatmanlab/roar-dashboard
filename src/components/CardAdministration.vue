@@ -9,20 +9,31 @@
 			<div class="card-admin-details">
 				<p><strong>{{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString()
 				}}</strong></p>
-				<p><strong>Assigned to: </strong>
-					<span v-for="orgType in Object.keys(displayOrgs)" class="card-inline-list-item">
-						<span v-if="displayOrgs[orgType].length">
-							{{ _capitalize(orgType) }}:
-							<span v-for="assignee in displayOrgs[orgType]" class="card-inline-list-item">
-								{{ assignee.name }}
-							</span>
-						</span>
-					</span>
-				</p>
+				<text-clamp :text="displayOrgsText" :max-lines="3" location="end">
+					<template v-if="displayOrgsText" #before>
+						<b>Assigned to: </b>
+					</template>
+					<template #after="{ clamped, expanded, toggle }">
+						<Button v-if="clamped || expanded" text :label="expanded ? 'Show Less' : 'Show More'" @click="toggle"
+							style="padding: 0 .5rem" />
+					</template>
+				</text-clamp>
 			</div>
 			<div class="card-admin-assessments">
 				<p><strong>Assessments</strong></p>
-				<p><span v-for="assessmentId in assessmentIds" class="card-inline-list-item">{{ assessmentId }}</span></p>
+				<p>
+					<span v-for="assessmentId in assessmentIds" class="card-inline-list-item" v-tooltip.top="'Click to view params'"
+						@click="toggleParams($event, assessmentId)">
+						{{ displayNames[assessmentId]?.name ?? assessmentId }}
+					</span>
+					<OverlayPanel v-for="assessmentId in assessmentIds" :ref="paramPanelRefs[assessmentId]">
+						<DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
+							:value="toEntryObjects(params[assessmentId])">
+							<Column field="key" header="Parameter" style="width: 50%"></Column>
+							<Column field="value" header="Value" style="width: 50%"></Column>
+						</DataTable>
+					</OverlayPanel>
+				</p>
 			</div>
 
 			<TreeTable v-if="isAssigned" :value="hierarchicalAssignedOrgs">
@@ -41,8 +52,17 @@
 								<Button v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
 									aria-label="Completion details" size="small" />
 							</router-link>
-							<span v-tooltip.top="'Coming Soon'">
-								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised disabled label="Scores"
+							<router-link v-if="authStore.isUserSuperAdmin()" :to="{
+								name: 'ScoreReport', params: {
+									administrationId: props.id, orgId: node.data.id, orgType:
+										node.data.orgType
+								}
+							}" v-slot="{ href, route, navigate }">
+								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
+									size="small" />
+							</router-link>
+							<span v-else v-tooltip.top="'Coming Soon'">
+								<Button v-tooltip.top="'Coming Soon'" severity="secondary" text raised label="Scores" disabled
 									aria-label="Scores" size="small" />
 							</span>
 						</span>
@@ -56,13 +76,17 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
+import { useAuthStore } from "@/store/auth";
 import { useQueryStore } from "@/store/query";
 import { filterAdminOrgs, removeEmptyOrgs } from "@/helpers";
 import _capitalize from "lodash/capitalize";
+import _fromPairs from "lodash/fromPairs";
 import _isEmpty from "lodash/isEmpty";
 import _mapValues from "lodash/mapValues";
 import _toPairs from "lodash/toPairs";
+import _forEach from "lodash/forEach";
 
+const authStore = useAuthStore();
 const queryStore = useQueryStore();
 const { adminOrgs } = storeToRefs(queryStore);
 
@@ -81,12 +105,42 @@ const processedDates = computed(() => {
 	})
 })
 
-const assessmentIds = props.assessments.map(assessment => assessment.taskId.toUpperCase());
+const displayNames = {
+	"swr": { name: "Word", order: 3 },
+	"swr-es": { name: "Palabra", order: 4 },
+	"pa": { name: "Phoneme", order: 2 },
+	"sre": { name: "Sentence", order: 5 },
+	"letter": { name: "Letter", order: 1 },
+}
+
+const assessmentIds = props.assessments.map(assessment => assessment.taskId.toLowerCase()).sort((p1, p2) => {
+	return (displayNames[p1]?.order ?? 0) - (displayNames[p2]?.order ?? 0);
+});
+
+const paramPanelRefs = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
+const params = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
+
+const toEntryObjects = (inputObj) => {
+	return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+}
+
+const toggleParams = (event, id) => {
+	paramPanelRefs[id].value[0].toggle(event)
+}
 
 const assignedOrgs = filterAdminOrgs(adminOrgs.value, props.assignees);
 const displayOrgs = removeEmptyOrgs(assignedOrgs);
 const isAssigned = !_isEmpty(Object.values(displayOrgs));
 const hierarchicalAssignedOrgs = isAssigned ? queryStore.getTreeTableOrgs(assignedOrgs) : null;
+
+const displayOrgsText = computed(() => {
+	let orgsList = "";
+	_forEach(Object.keys(displayOrgs), orgType => {
+		let nameList = displayOrgs[orgType].map(org => org.name).join(', ')
+		orgsList = orgsList + `${_capitalize(orgType)}: ${nameList} \n`
+	})
+	return orgsList;
+})
 
 const doughnutChartData = ref();
 const doughnutChartOptions = ref();
@@ -109,8 +163,8 @@ const setDoughnutChartData = () => {
 	const docStyle = getComputedStyle(document.documentElement);
 	let { assigned = 0, started = 0, completed = 0 } = props.stats.total?.assignment || {};
 
-	assigned -= (started + completed);
 	started -= completed;
+	assigned -= (started + completed);
 
 	return {
 		labels: ['Completed', 'Started', 'Assigned'],
@@ -160,8 +214,8 @@ const setBarChartData = (orgId) => {
 	let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId]?.assignment || {};
 	const documentStyle = getComputedStyle(document.documentElement);
 
-	assigned -= (started + completed);
 	started -= completed;
+	assigned -= (started + completed);
 
 	const borderRadii = getBorderRadii(completed, started, assigned);
 	const borderWidth = 0;
@@ -306,6 +360,7 @@ onMounted(() => {
 
 .card-inline-list-item {
 	position: relative;
+	cursor: pointer;
 
 	&:not(:last-child):after {
 		content: ", ";

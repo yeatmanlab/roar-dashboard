@@ -4,7 +4,8 @@ import { createHead } from '@vueuse/head'
 import router from '@/router/index.js'
 import App from "@/App.vue";
 
-import piniaPluginPersistedState from "pinia-plugin-persistedstate"
+import piniaPluginPersistedState from "pinia-plugin-persistedstate";
+import TextClamp from 'vue3-text-clamp';
 
 import PrimeVue from "primevue/config";
 
@@ -41,6 +42,7 @@ import PickList from 'primevue/picklist';
 import ProgressBar from 'primevue/progressbar';
 import SelectButton from "primevue/selectbutton";
 import Skeleton from "primevue/skeleton";
+import SpeedDial from "primevue/speeddial";
 import SplitButton from "primevue/splitbutton";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
@@ -94,6 +96,7 @@ app.use(VueGoogleMaps, {
   },
 })
 app.use(createHead());
+app.use(TextClamp);
 
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
@@ -126,6 +129,7 @@ app.component("PickList", PickList);
 app.component("ProgressBar", ProgressBar);
 app.component("SelectButton", SelectButton);
 app.component("Skeleton", Skeleton);
+app.component("SpeedDial", SpeedDial);
 app.component("SplitButton", SplitButton);
 app.component("TabPanel", TabPanel);
 app.component("TabView", TabView);
@@ -137,9 +141,6 @@ app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
 app.component("TreeTable", TreeTable);
 app.component("TriStateCheckbox", TriStateCheckbox)
-
-app.use(ConfirmationService);
-
 app.component("DataTable", DataTable);
 app.component("Column", Column);
 app.component("ColumnGroup", ColumnGroup);
