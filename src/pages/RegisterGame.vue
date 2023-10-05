@@ -37,7 +37,7 @@
     border-radius: 5px;
     border-color: #E5E5E5;
     background-color: #FCFCFC;
-    width: 26.875rem;
+    width: 65%;
     padding-right: 1.5rem;
     padding-left: 1.5rem;
     position: relative;

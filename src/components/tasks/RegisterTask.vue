@@ -7,6 +7,7 @@
         <!-- <p class="login-title" align="left">Register for ROAR</p> -->
         <form @submit.prevent="handleNewTaskSubmit(!t$.$invalid)" class="p-fluid">
           <!-- Task name -->
+          <div class="flex flex-column row-gap-3">
           <section class="form-section">
             <div class="p-input-icon-right">
               <label for="taskName">Task Name <span class="required">*</span></label>
@@ -60,7 +61,9 @@
                 {{ t$.taskURL.required.$message.replace("Value", "Task URL") }}
               </small>
             </div>
-            <!-- Cover Image -->
+          </section>
+          <!-- Cover Image -->
+          <section class="form-section">
             <div>
               <label for="coverImage">Cover Image (URL)</label>
               <InputText name="coverImage" v-model="taskFields.coverImage" />
@@ -73,25 +76,38 @@
               <InputText v-model="taskFields.description" name="description" />
             </div>
           </section>
+        </div>
 
           <h3 class="text-center">Parameters / Configuration</h3>
 
           <div v-for="(param, index) in taskParams" :key="index">
-              <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+              <div class="flex gap-2 align-content-start flex-grow-0 params-container">
                   <InputText
                       v-model="param.name"
                       placeholder="Name"
-                      style="margin-right: 1rem;"
                   />
-                  <InputText
+
+                  <Dropdown v-model="param.type" :options="typeOptions" />
+
+                  <InputText v-if="param.type === 'String'"
                       v-model="param.value"
                       placeholder="Value"
-                      style="margin-right: 1rem;"
                   />
+
+                  <Dropdown v-else-if="param.type === 'Boolean'"
+                    v-model="param.value"
+                    :options="[true, false]"
+                  />
+
+                  <InputNumber v-else-if="param.type === 'Number'"
+                    v-model="param.value"
+                    show-buttons
+                  />
+                  
                   <Button
-                      label="Remove"
-                      @click="removeField(taskParams, index)"
-                      class="p-button-danger"
+                    icon="pi pi-trash"
+                    @click="removeField(taskParams, index)"
+                    class="p-button-danger delete-btn"
                   />
               </div>
           </div>
@@ -116,57 +132,62 @@
           <form @submit.prevent="handleVariantSubmit(!v$.$invalid)" class="p-fluid">
             <h1 class="text-center">Register a new Variant</h1>
 
-            <label>Select an Existing Task (Task ID) <span class="required">*</span></label>
-            <Dropdown v-model="v$.selectedGame.$model" :options="registeredGames" optionLabel="id" placeholder="Select a Game" :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"></Dropdown>
-            <span v-if="v$.selectedGame.$error && submitted">
-              <span v-for="(error, index) of v$.selectedGame.$errors" :key="index">
-                  <small class="p-error">{{ error.$message }}</small>
-                </span>
-              </span>
-            <small v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$response" class="p-error">
-              {{ v$.selectedGame.id.required.$message.replace("Value", "Task selection") }}
-            </small>
-
-
-            <section class="form-section">
-                <div class="p-input-icon-right">
-                  <label for="variantName">Variant Name <span class="required">*</span></label>
-                  <InputText
-                    v-model="v$.variantName.$model"
-                    name="variantName"
-                    :class="{ 'p-invalid': v$.variantName.$invalid && submitted }" 
-                    aria-describedby="activation-code-error"
-                  />
-                </div>
-                <span v-if="v$.variantName.$error && submitted">
-                  <span v-for="(error, index) of v$.variantName.$errors" :key="index">
-                    <small class="p-error">{{ error.$message }}</small>
+            <div class="flex flex-column row-gap-3">
+              <section class="form-section">
+                <label for="variant-fields">Select an Existing Task (Task ID) <span class="required">*</span></label>
+                <Dropdown v-model="v$.selectedGame.$model" :options="registeredGames" optionLabel="id" placeholder="Select a Game" :class="{ 'p-invalid': v$.variantName.$invalid && submitted }" name="variant-fields"></Dropdown>
+                <span v-if="v$.selectedGame.$error && submitted">
+                  <span v-for="(error, index) of v$.selectedGame.$errors" :key="index">
+                      <small class="p-error">{{ error.$message }}</small>
+                    </span>
                   </span>
-                </span>
-                <small v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$response" class="p-error">
-                  {{ v$.variantName.required.$message.replace("Value", "Variant Name") }}
+                <small v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$response" class="p-error">
+                  {{ v$.selectedGame.id.required.$message.replace("Value", "Task selection") }}
                 </small>
-            </section>
+              </section>
+
+              <section class="form-section">
+                  <div class="p-input-icon-right">
+                    <label for="variantName">Variant Name <span class="required">*</span></label>
+                    <InputText
+                      v-model="v$.variantName.$model"
+                      name="variantName"
+                      :class="{ 'p-invalid': v$.variantName.$invalid && submitted }" 
+                      aria-describedby="activation-code-error"
+                    />
+                  </div>
+                  <span v-if="v$.variantName.$error && submitted">
+                    <span v-for="(error, index) of v$.variantName.$errors" :key="index">
+                      <small class="p-error">{{ error.$message }}</small>
+                    </span>
+                  </span>
+                  <small v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$response" class="p-error">
+                    {{ v$.variantName.required.$message.replace("Value", "Variant Name") }}
+                  </small>
+              </section>
+            </div>
 
             <h3 class="text-center">Parameters / Configuration</h3>
 
             <div v-for="(param, index) in variantParams" :key="index">
-                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                    <InputText
-                        v-model="param.name"
-                        placeholder="Name"
-                        style="margin-right: 1rem;"
-                    />
-                    <InputText
-                        v-model="param.value"
-                        placeholder="Value"
-                        style="margin-right: 1rem;"
-                    />
-                    <Button
-                        label="Remove"
-                        @click="removeField(variantParams, index)"
-                        class="p-button-danger"
-                    />
+                <div class="flex gap-2 align-content-start flex-grow-0 params-container">
+                  <InputText
+                      v-model="param.name"
+                      placeholder="Name"
+                  />
+
+                  <Dropdown v-model="param.type" :options="typeOptions" />
+
+                  <InputText
+                      v-model="param.value"
+                      placeholder="Value"
+                  />
+
+                  <Button
+                      label="Remove"
+                      @click="removeField(variantParams, index)"
+                      class="p-button-danger"
+                  />
                 </div>
             </div>
 
@@ -177,25 +198,25 @@
             </div>
           </form>
         </div>
-      </TabPanel>
+      </TabPanel> 
     </TabView>
   </template>
   
   <script setup>
-  import { computed, reactive, ref, toRaw, watch, } from "vue";
+  import { reactive, ref, watch, toRaw } from "vue";
   import { required, url } from "@vuelidate/validators";
   import { useVuelidate } from "@vuelidate/core";
   import { useAuthStore } from "@/store/auth";
   import _get from 'lodash/get'
+  import _number from 'lodash/toNumber'
   import { storeToRefs } from 'pinia';
   import { useToast } from "primevue/usetoast";
   const toast = useToast();
 
   const authStore = useAuthStore()
 
-  const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
+  const { isFirekitInit } = storeToRefs(authStore);
 
-  // const selectedGame = ref();
   const registeredGames = ref([])
   
   watch(isFirekitInit, async (newValue, oldValue) => {
@@ -224,6 +245,7 @@
     {
         name: '',
         value: '',
+        type: 'String'
     },
   ]);
 
@@ -245,6 +267,7 @@
       {
           name: '',
           value: '',
+          type: 'String'
       },
   ]);
 
@@ -253,12 +276,15 @@
     type.push({
         name: '',
         value: '',
+        type: 'String',
     });
   }
 
   function removeField(type, index) {
       type.splice(index, 1);
   }
+
+  const typeOptions = ['String', 'Number', 'Boolean']
 
  
   const t$ = useVuelidate(taskRules, taskFields);
@@ -268,6 +294,9 @@
   
   const handleNewTaskSubmit = async (isFormValid) => {
     submitted.value = true
+
+    console.log('variant params state: ', toRaw(taskParams.value))
+    console.log('variant params converted to obj: ', convertParamsToObj(taskParams))
 
     if (!isFormValid) {
       return;
@@ -324,7 +353,16 @@
   function convertParamsToObj(paramType) {
     return paramType.value.reduce((acc, item) => {
         if (item.name) {  // Check if name is not empty
-            acc[item.name] = item.value;
+          // console.log('item: ', toRaw(item))
+          // let itemVal = item.value
+
+          // if (item.type === 'Number') {
+          //   itemVal = _number(itemVal)
+          // } else if (item.type === 'Boolean') {
+          //   itemVal = itemVal.toLowerCase() === 'true'
+          // }
+
+          acc[item.name] = item.value;
         }
         return acc;
     }, {});
@@ -349,6 +387,7 @@
 
     return completeURL
   }
+
 
   function resetVariantForm() {
     Object.assign(variantFields, {
@@ -381,5 +420,14 @@
   .submit-button:hover {
     background-color: #2b8ecb;
     color: black;
+  }
+
+  .delete-btn {
+    padding: .8rem
+  }
+
+  .params-container {
+    display: flex; 
+    margin-bottom: 1rem;
   }
   </style>
