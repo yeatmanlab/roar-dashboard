@@ -28,7 +28,7 @@ export default defineConfig({
     },
   },
   build: {
-    cssCodeSplit: false
+    cssCodeSplit: false,
   },
   optimizeDeps: {
     include: [
