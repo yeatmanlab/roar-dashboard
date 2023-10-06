@@ -178,15 +178,25 @@
 
                   <Dropdown v-model="param.type" :options="typeOptions" />
 
-                  <InputText
+                  <InputText v-if="param.type === 'String'"
                       v-model="param.value"
                       placeholder="Value"
                   />
 
+                  <Dropdown v-else-if="param.type === 'Boolean'"
+                    v-model="param.value"
+                    :options="[true, false]"
+                  />
+
+                  <InputNumber v-else-if="param.type === 'Number'"
+                    v-model="param.value"
+                    show-buttons
+                  />
+
                   <Button
-                      label="Remove"
-                      @click="removeField(variantParams, index)"
-                      class="p-button-danger"
+                    icon="pi pi-trash"
+                    @click="removeField(variantParams, index)"
+                    class="p-button-danger delete-btn"
                   />
                 </div>
             </div>
@@ -295,9 +305,6 @@
   const handleNewTaskSubmit = async (isFormValid) => {
     submitted.value = true
 
-    console.log('variant params state: ', toRaw(taskParams.value))
-    console.log('variant params converted to obj: ', convertParamsToObj(taskParams))
-
     if (!isFormValid) {
       return;
     }
@@ -353,15 +360,6 @@
   function convertParamsToObj(paramType) {
     return paramType.value.reduce((acc, item) => {
         if (item.name) {  // Check if name is not empty
-          // console.log('item: ', toRaw(item))
-          // let itemVal = item.value
-
-          // if (item.type === 'Number') {
-          //   itemVal = _number(itemVal)
-          // } else if (item.type === 'Boolean') {
-          //   itemVal = itemVal.toLowerCase() === 'true'
-          // }
-
           acc[item.name] = item.value;
         }
         return acc;
@@ -400,6 +398,7 @@
       {
           name: '',
           value: '',
+          type: 'String'
       },
     ]
   }
