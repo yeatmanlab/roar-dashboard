@@ -35,6 +35,12 @@ export const sidebarActionOptions = [
     buttonLink: { name: "CreateAdministration" },
     requiresSuperAdmin: true,
   },
+  {
+    title: "Register Task",
+    icon: "pi pi-pencil",
+    buttonLink: { name: "RegisterGame" },
+    requiresSuperAdmin: true,
+  },
 ]
 
 export const getSidebarActions = (isSuperAdmin = false, includeHomeLink = true) => {
