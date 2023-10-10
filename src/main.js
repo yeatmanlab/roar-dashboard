@@ -67,6 +67,8 @@ import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     //optional for column grouping
 import Row from 'primevue/row';
 
+import { VueQueryPlugin } from "@tanstack/vue-query";
+
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue'
 
@@ -98,6 +100,7 @@ app.use(VueGoogleMaps, {
 })
 app.use(createHead());
 app.use(TextClamp);
+app.use(VueQueryPlugin);
 
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
