@@ -211,6 +211,10 @@ const columns = computed(() => {
     tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" })
   }
 
+  if(props.orgType === 'district' || props.orgType === 'school') {
+    tableColumns.push({ field: 'user.className', header: 'Class', dataType: 'text' })
+  }
+
   if (authStore.isUserSuperAdmin()) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
   }
@@ -303,6 +307,28 @@ const tableData = computed(() => {
           queryStore.orgInfo[schoolId] = schoolInfo
         }
         user['schoolName'] = schoolInfo.name
+      }
+    }
+    if(props.orgType === 'district' || props.orgType === 'school') {
+      const currentClasses = _get(user, 'classes.current');
+      let className;
+      if(currentClasses.length) {
+        if(currentClasses.length === 1) {
+          // If there's only one class, grab the info and save it to user doc
+          const classId = currentClasses[0];
+          if(queryStore.orgInfo[classId]) {
+            const classInfo = queryStore.orgInfo[classId];
+            className = _get(classInfo, 'name');
+          } else {
+            const classInfo = getOrgInfo.value('class', classId);
+            queryStore.orgInfo[classId] = classInfo;
+            className = _get(classInfo, 'name');
+          }
+        } else {
+          // More than 1 current class listed
+          className = '2+ classes';
+        }
+        user['className'] = className;
       }
     }
     return {
