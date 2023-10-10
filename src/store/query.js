@@ -86,9 +86,10 @@ export const useQueryStore = () => {
           return null;
         }
       },
-      async getOrgsById(orgType, orgIds) {
+      async getOrgsById({ orgType, orgIds, pageLimit, startAfterDocId }) {
         if (roarfirekit.value?.app?.db) {
-          return roarfirekit.value.getOrgsById(orgType, orgIds);
+          console.log('queryStore getting orgs by ids', orgType, orgIds, pageLimit, startAfterDocId);
+          return roarfirekit.value.getOrgsById({ orgType, orgIds, pageLimit, startAfterDocId });
         } else {
           return []
         }

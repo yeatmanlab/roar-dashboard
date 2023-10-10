@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!refData">
+  <div v-if="!computedData">
     <SkeletonTable />
   </div>
   <div v-else>
@@ -7,21 +7,23 @@
       <Button label="Export Selected" :disabled="refSelectedRows.length === 0" @click="exportCSV(true, $event)" />
       <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
     </div>
-    <DataTable ref="dataTable" :value="refData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
+    <DataTable ref="dataTable" :value="computedData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
       :exportFilename="exportFilename" v-model:selection="refSelectedRows" removableSort sortMode="multiple" showGridlines
-      v-model:filters="refFilters" filterDisplay="menu" paginator :alwaysShowPaginator="false" :rows="10"
-      :rowsPerPageOptions="[10, 20, 50]" scrollable>
+      v-model:filters="refFilters" filterDisplay="menu" paginator :rows="props.pageLimit" :alwaysShowPaginator="true"
+      :totalRecords="totalRecords" lazy :loading="props.loading" scrollable @page="handlePageEvent($event)">
       <Column selectionMode="multiple" headerStyle="width: 3rem" frozen></Column>
       <Column v-for="col of columns" :key="col.field" :header="col.header" :field="col.field" :dataType="col.dataType"
         :sortable="(col.sort !== false)" :showFilterMatchModes="!col.useMultiSelect"
-        :showFilterOperator="col.allowMultipleFilters === true" :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned">
+        :showFilterOperator="col.allowMultipleFilters === true" :showAddButton="col.allowMultipleFilters === true"
+        :frozen="col.pinned">
         <template #body="{ data }">
           <div v-if="col.tag && _get(data, col.field) !== undefined">
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
-              :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`" rounded />
+              :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`"
+              rounded />
           </div>
           <div v-else-if="col.emptyTag">
-            <div class="circle" :style="`background-color: ${_get(data, col.tagColor)};`"/>
+            <div class="circle" :style="`background-color: ${_get(data, col.tagColor)};`" />
           </div>
           <div v-else-if="col.dataType === 'date'">
             {{ getFormattedDate(_get(data, col.field)) }}
@@ -43,11 +45,14 @@
           </div>
         </template>
       </Column>
+      <template #empty>
+        No data!
+      </template>
     </DataTable>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 import SkeletonTable from "@/components/SkeletonTable.vue"
 import _get from 'lodash/get'
@@ -88,8 +93,16 @@ const props = defineProps({
   columns: { type: Array, required: true },
   data: { type: Array, required: true },
   allowExport: { type: Boolean, default: true },
-  exportFilename: { type: String, default: 'datatable-export' }
+  exportFilename: { type: String, default: 'datatable-export' },
+  pageLimit: { type: Number, default: 15 },
+  totalRecords: { type: Number, required: false },
+  loading: { type: Boolean, default: false },
 });
+
+const totalRecords = ref();
+onMounted(() => {
+  totalRecords.value = props.totalRecords ?? props.data.length;
+})
 
 let selectedRows = [];
 const refSelectedRows = ref(selectedRows);
@@ -139,18 +152,20 @@ const refFilters = ref(filters);
 let dateFields = _filter(props.columns, col => _toUpper(col.dataType) === 'DATE');
 dateFields = _map(dateFields, col => col.field);
 
-let computedData = JSON.parse(JSON.stringify(props.data))
-_forEach(computedData, entry => {
-  // Clean up date fields to use Date objects
-  _forEach(dateFields, field => {
-    let dateEntry = _get(entry, field);
-    if (dateEntry !== null) {
-      const dateObj = new Date(dateEntry);
-      _set(entry, field, dateObj);
-    }
-  })
-})
-const refData = ref(computedData);
+const computedData = computed(() => {
+  const data = JSON.parse(JSON.stringify(props.data));
+  _forEach(data, (entry) => {
+    // Clean up date fields to use Date objects
+    _forEach(dateFields, field => {
+      let dateEntry = _get(entry, field);
+      if (dateEntry !== null) {
+        const dateObj = new Date(dateEntry);
+        _set(entry, field, dateObj);
+      }
+    })
+  });
+  return data;
+});
 
 // Generate list of options given a column
 function getUniqueOptions(column) {
@@ -168,6 +183,11 @@ function getFormattedDate(date) {
   if (date && !isNaN(date)) {
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })
   } else return ''
+}
+
+const emit = defineEmits(['page']);
+const handlePageEvent = (event) => {
+  emit('page', event)
 }
 </script>
 <style>
