@@ -31,6 +31,7 @@
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
+import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
@@ -75,6 +76,14 @@ const columns = computed(() => {
     { field: "user.name.last", header: "Last Name", dataType: "text" },
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
+
+  if(props.orgType === 'district') {
+    tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" });
+  }
+  
+  if(props.orgType === 'district' || props.orgType === 'school') {
+    tableColumns.push({ field: "user.className", header: "Class", dataType: "text" })
+  }
 
   if (authStore.isUserSuperAdmin()) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
@@ -122,6 +131,44 @@ const tableData = computed(() => {
           icon: "pi pi-times",
           severity: "danger",
         };
+      }
+    }
+    if(props.orgType === 'district'){
+      // Grab user's school list
+      const currentSchools = _get(user, 'schools.current')
+      if(currentSchools.length) {
+        // If there is one valid school, 
+        const schoolId = currentSchools[0]
+        let schoolInfo;
+        if(queryStore.orgInfo[schoolId]) {
+          schoolInfo = queryStore.orgInfo[schoolId]
+        } else {
+          schoolInfo = getOrgInfo.value('school', schoolId)
+          queryStore.orgInfo[schoolId] = schoolInfo
+        }
+        user['schoolName'] = schoolInfo.name
+      }
+    }
+    if (props.orgType === 'district' || props.orgType === 'school') {
+      const currentClasses = _get(user, 'classes.current');
+      let className;
+      if(currentClasses.length) {
+        if(currentClasses.length === 1) {
+          // If there's only one class, grab the info and save it to user doc
+          const classId = currentClasses[0];
+          if(queryStore.orgInfo[classId]) {
+            const classInfo = queryStore.orgInfo[classId];
+            className = _get(classInfo, 'name');
+          } else {
+            const classInfo = getOrgInfo.value('class', classId);
+            queryStore.orgInfo[classId] = classInfo;
+            className = _get(classInfo, 'name');
+          }
+        } else {
+          // More than 1 current class listed
+          className = '2+ classes';
+        }
+        user['className'] = className;
       }
     }
     return {
