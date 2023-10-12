@@ -20,7 +20,7 @@ export const convertValues = (value) => {
     if (passThroughKeys.includes(key)) {
       return _value;
     } else if (key === "arrayValue") {
-      return _value.values.map((itemValue) => convertValues(itemValue));
+      return (_value.values ?? []).map((itemValue) => convertValues(itemValue));
     } else if (key === "mapValue") {
       return _fromPairs(_toPairs(_value.fields).map(
         ([mapKey, mapValue]) => [mapKey, convertValues(mapValue)]
@@ -39,5 +39,6 @@ export const mapFields = (data) => {
     }
     return undefined;
   }), undefined);
+  console.log("in mapFields", fields);
   return fields.map((item) => _mapValues(item, (value) => convertValues(value)));
 }
