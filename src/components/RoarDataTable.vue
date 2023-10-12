@@ -4,23 +4,28 @@
   </div>
   <div v-else>
     <div v-if="allowExport" class="flex flex-row w-full gap-2 py-2" style="justify-content: flex-end;">
-      <Button label="Export Selected" :disabled="refSelectedRows.length === 0" @click="exportCSV(true, $event)" />
+      <Button label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
       <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
     </div>
     <DataTable ref="dataTable" :value="computedData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
-      :exportFilename="exportFilename" v-model:selection="refSelectedRows" removableSort sortMode="multiple" showGridlines
-      v-model:filters="refFilters" filterDisplay="menu" paginator :rows="props.pageLimit" :alwaysShowPaginator="true"
-      :totalRecords="totalRecords" lazy :loading="props.loading" scrollable @page="handlePageEvent($event)">
+      :exportFilename="exportFilename" removableSort sortMode="multiple" showGridlines v-model:filters="refFilters"
+      filterDisplay="menu" paginator :rows="props.pageLimit" :alwaysShowPaginator="true"
+      :totalRecords="props.totalRecords" :lazy="props.lazy" :loading="props.loading" scrollable @page="onPage($event)"
+      @sort="onSort($event)" v-model:selection="selectedRows" :selectAll="selectAll" @select-all-change="onSelectAll"
+      @row-select="onSelectionChange" @row-unselect="onSelectionChange">
       <Column selectionMode="multiple" headerStyle="width: 3rem" frozen></Column>
       <Column v-for="col of columns" :key="col.field" :header="col.header" :field="col.field" :dataType="col.dataType"
         :sortable="(col.sort !== false)" :showFilterMatchModes="!col.useMultiSelect"
         :showFilterOperator="col.allowMultipleFilters === true" :showAddButton="col.allowMultipleFilters === true"
         :frozen="col.pinned">
         <template #body="{ data }">
-          <div v-if="col.tag && _get(data, col.field) !== undefined">
+          <div v-if="col.tag && col.dataType === 'string' && _get(data, col.field) !== undefined">
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
               :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`"
               rounded />
+          </div>
+          <div v-if="col.chip && col.dataType === 'array' && _get(data, col.field) !== undefined">
+            <Chip v-for="chip in _get(data, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
             <div class="circle" :style="`background-color: ${_get(data, col.tagColor)};`" />
@@ -45,14 +50,13 @@
           </div>
         </template>
       </Column>
-      <template #empty>
-        No data!
-      </template>
+      <template #empty> No data found. </template>
     </DataTable>
   </div>
 </template>
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useToast } from 'primevue/usetoast';
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 import SkeletonTable from "@/components/SkeletonTable.vue"
 import _get from 'lodash/get'
@@ -97,20 +101,37 @@ const props = defineProps({
   pageLimit: { type: Number, default: 15 },
   totalRecords: { type: Number, required: false },
   loading: { type: Boolean, default: false },
+  lazy: { type: Boolean, default: false },
 });
 
-const totalRecords = ref();
-onMounted(() => {
-  totalRecords.value = props.totalRecords ?? props.data.length;
-})
-
-let selectedRows = [];
-const refSelectedRows = ref(selectedRows);
+const selectedRows = ref([]);
+const toast = useToast();
+const selectAll = ref(false);
+const onSelectAll = () => {
+  selectAll.value = !selectAll.value;
+  if (selectAll.value) {
+    selectedRows.value = computedData.value;
+    toast.add({
+      severity: 'info',
+      summary: 'Rows selected',
+      detail: `You selected ${selectedRows.value.length} rows but there are ${props.totalRecords} total rows in all of this tables pages. You've been warned.`, life: 5000
+    });
+  } else {
+    selectedRows.value = [];
+  }
+  emit("selection", selectedRows.value);
+}
+const onSelectionChange = (event) => {
+  emit("selection", selectedRows.value);
+}
 
 const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
-  dataTable.value.exportCSV({ selectionOnly: exportSelected });
+  if (exportSelected) {
+    dataTable.value.exportCSV({ selectionOnly: exportSelected });
+  }
+  emit('export-all');
 };
 
 // Generate filters and options objects
@@ -185,10 +206,9 @@ function getFormattedDate(date) {
   } else return ''
 }
 
-const emit = defineEmits(['page']);
-const handlePageEvent = (event) => {
-  emit('page', event)
-}
+const emit = defineEmits(['page', 'sort', 'export-all', 'selection']);
+const onPage = (event) => { emit('page', event) };
+const onSort = (event) => { emit('sort', event) };
 </script>
 <style>
 .circle {

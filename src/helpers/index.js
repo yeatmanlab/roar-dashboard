@@ -95,7 +95,7 @@ export const flattenObj = (obj) => {
     if ((typeof obj[i]) === 'object' && !Array.isArray(obj[i]) && obj[i] !== null) {
       const temp = flattenObj(obj[i]);
       for (const j in temp) {
-        result[camelCase(i + '_' + j)] = temp[j] || "";
+        result[camelCase(i + '.' + j)] = temp[j] || "";
       }
     } else {
       result[i] = obj[i] || "";

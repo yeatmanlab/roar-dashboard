@@ -12,12 +12,21 @@
         </template>
 
         <div v-if="administrationsReady">
-          <div v-if="administrations.length" v-for="(a, index) in administrations" :key="index">
-            <CardAdministration :id="a.id" :title="a.name" :stats="a.stats" :dates="a.dates" :assignees="a.assignedOrgs"
-              :assessments="a.assessments"></CardAdministration>
-          </div>
-          <div v-else>There are no administrations to display. Please contact a lab administrator to add you as an admin
-            to an administration.</div>
+          <DataView :value="administrations" paginator :rows="3">
+            <template #list="slotProps">
+              <div class="mb-2 w-full">
+                <CardAdministration :id="slotProps.data.id" :title="slotProps.data.name" :stats="slotProps.data.stats"
+                  :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
+                  :assessments="slotProps.data.assessments" />
+              </div>
+            </template>
+            <template #empty>
+              <div>
+                There are no administrations to display. Please contact a lab
+                administrator to add you as an admin to an administration.
+              </div>
+            </template>
+          </DataView>
         </div>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
@@ -35,6 +44,7 @@ import CardAdministration from "@/components/CardAdministration.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { useAuthStore } from "@/store/auth";
 import { useQueryStore } from "@/store/query";
+import { useQuery } from '@tanstack/vue-query'
 import { getSidebarActions } from "../router/sidebarActions";
 
 const refreshing = ref(false);
@@ -64,12 +74,9 @@ const isSuperAdmin = computed(() => authStore.isUserSuperAdmin())
 const refresh = async () => {
   unsubscribe();
   refreshing.value = true;
-  const orgsPromise = queryStore.getAdminOrgs();
-  const adminsitrationsPromise = queryStore.getMyAdministrations();
-  await Promise.all([orgsPromise, adminsitrationsPromise]).then(() => {
-    administrationsReady.value = true;
-    refreshing.value = false;
-  });
+  await queryStore.getMyAdministrations();
+  administrationsReady.value = true;
+  refreshing.value = false;
 }
 
 const unsubscribe = authStore.$subscribe(async (mutation, state) => {
