@@ -11,7 +11,7 @@
           <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
           <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{ game.taskData.name }}</span>
         </template>
-        <article class="roar-tabview-game">
+        <article class="roar-tabview-game pointer" @click="routeExternalTask(game)">
             <div class="roar-game-content">
               <h2 class="roar-game-title">{{ game.taskData.name }}</h2>
               <div class="roar-game-description"><p>{{game.taskData.description}}</p></div>
@@ -33,9 +33,7 @@
               <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
             </div>
 
-            <a v-if="!allGamesComplete && game.taskData?.variantURL" :href="game.taskData.variantURL"></a>
-            <a v-else-if="!allGamesComplete && game.taskData?.taskURL" :href="game.taskData?.taskURL"></a>
-            <router-link v-else-if="!allGamesComplete" :to="{ path: 'game/' + game.taskId }"></router-link>
+            <router-link v-if="!allGamesComplete && !game.taskData?.taskURL && !game.taskData?.variantURL" :to="{ path: 'game/' + game.taskId }"></router-link>
         </article>
       </TabPanel>
     </TabView>
@@ -46,6 +44,9 @@ import { computed, ref } from 'vue';
 import _get from 'lodash/get'
 import _find from 'lodash/find'
 import _findIndex from 'lodash/findIndex'
+import { useAuthStore } from '@/store/auth';
+import { useGameStore } from '@/store/game';
+import { storeToRefs } from 'pinia';
 const props = defineProps({
   games: {required: true, default: []},
   sequential: {required: false, default: true}
@@ -69,8 +70,30 @@ const currentGameIndex = computed(() => {
   }
 })
 
+const authStore = useAuthStore();
+const gameStore = useGameStore();
+
+const { selectedAdmin } = storeToRefs(gameStore);
+
+async function routeExternalTask(game) {
+  let url
+
+  if (!allGamesComplete.value && game.taskData?.variantURL) {
+    url = game.taskData.variantURL
+  } else if (!allGamesComplete.value && game.taskData?.taskURL) {
+    url = game.taskData.taskURL
+  } else {
+    return
+  }
+
+  await authStore.completeAssessment(selectedAdmin.value, game.taskId)
+
+  window.location.href = url;
+}
 
 </script>
 <style scoped lang="scss">
-
+.pointer {
+  cursor: pointer;
+}
 </style>
