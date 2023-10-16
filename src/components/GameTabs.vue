@@ -86,6 +86,8 @@ async function routeExternalTask(game) {
     return
   }
 
+  if (game.taskId == 'mep')  url += `participant=${authStore.firekitUserData.assessmentPid}`
+
   await authStore.completeAssessment(selectedAdmin.value, game.taskId)
 
   window.location.href = url;
