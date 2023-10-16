@@ -160,7 +160,7 @@ const singularOrgTypes = {
 	families: "families",
 };
 
-// dgf: districts, schools, groups, families
+// dsgf: districts, schools, groups, families
 const dsgfQueries = computed(() => {
 	const result = []
 	for (const orgType of ["districts", "schools", "groups", "families"]) {
@@ -211,13 +211,23 @@ const dsgfOrgs = computed(() => {
 });
 
 const independentSchoolIds = computed(() => {
-	const dependentSchools = _flattenDeep(dsgfOrgs.value.map((node) => node.data.schools ?? []))
-	return _without(props.assignees.schools, ...dependentSchools)
+	if (!loadingDsgfOrgs.value && dsgfOrgs.value.length > 0) {
+		const dependentSchools = _flattenDeep(dsgfOrgs.value.map((node) => node.data.schools ?? []));
+		return _without(props.assignees.schools, ...dependentSchools);
+	} else if (loadingDsgfOrgs.value) {
+		return [];
+	}
+	return props.assignees.schools;
 });
 
 const independentClassIds = computed(() => {
-	const dependentClasses = _flattenDeep(dsgfOrgs.value.map((node) => node.data.classes ?? []))
-	return _without(props.assignees.classes, ...dependentClasses)
+	if (!loadingDsgfOrgs.value && dsgfOrgs.value.length > 0) {
+		const dependentClasses = _flattenDeep(dsgfOrgs.value.map((node) => node.data.classes ?? []));
+		return _without(props.assignees.classes, ...dependentClasses);
+	} else if (loadingDsgfOrgs.value) {
+		return [];
+	}
+	return props.assignees.classes;
 });
 
 const enableClassQueries = computed(() => {
@@ -234,13 +244,13 @@ const classQueries = computed(() => {
 	}));
 });
 
-const classQueryResults = [ref({})]; //useQueries({ queries: classQueries });
+const classQueryResults = useQueries({ queries: classQueries });
 const independentClasses = computed(() => {
 	return _without(classQueryResults.map((queryResult, index) => {
 		if (queryResult.isSuccess) {
 			const { collection, ...nodeData } = queryResult.data;
 			const node = {
-				key: String(dgsfQueryResults.length + index),
+				key: String(dsgfQueryResults.length + index),
 				data: {
 					orgType: singularOrgTypes[collection],
 					...nodeData,
@@ -303,7 +313,11 @@ const orgs = computed(() => {
 const treeTableOrgs = ref([]);
 watch(orgs, (newValue) => {
 	treeTableOrgs.value = newValue;
-})
+});
+
+watch(showTable, (newValue) => {
+	if (newValue) treeTableOrgs.value = orgs.value;
+});
 
 const expanding = ref(false);
 const onExpand = async (node) => {
