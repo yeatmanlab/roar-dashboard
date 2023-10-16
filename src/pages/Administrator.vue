@@ -15,12 +15,12 @@
         </template>
 
         <div v-if="initialized && !isLoadingAdministrations">
-          <DataView :key="dataViewKey" :value="preprocessedAdministrations" lazy paginator :totalRecords="totalRecords"
-            :rows="pageLimit" @page="onPage($event)" :dataKey="id">
+          <DataView :key="dataViewKey" :value="administrations" lazy paginator paginatorPosition="top"
+            :totalRecords="totalRecords" :rows="pageLimit" @page="onPage($event)" dataKey="id">
             <template #list="slotProps">
-              <div class="mt-2 w-full">
-                <CardAdministration :id="slotProps.data.id" :title="slotProps.data.name" :stats="slotProps.data.stats"
-                  :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
+              <div class="mb-2 w-full">
+                <CardAdministration :key="slotProps.data.id" :id="slotProps.data.id" :title="slotProps.data.name"
+                  :stats="slotProps.data.stats" :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
                   :assessments="slotProps.data.assessments" />
               </div>
             </template>
@@ -44,19 +44,22 @@
 <script setup>
 import { computed, ref, onMounted } from "vue";
 import { storeToRefs } from "pinia";
-import { convertValues, mapFields } from "@/helpers/firestoreRest";
+import {
+  orderByDefault,
+  fetchDocById,
+} from "@/helpers/query/utils";
+import { administrationCounter, administrationPageFetcher } from "../helpers/query/administrations";
 import { getSidebarActions } from "../router/sidebarActions";
 import CardAdministration from "@/components/CardAdministration.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { useAuthStore } from "@/store/auth";
-import { useQueryStore } from "@/store/query";
 import { useQuery } from '@tanstack/vue-query'
-import axios from "axios"
 import _mapValues from "lodash/mapValues";
+import _zip from "lodash/zip";
 
 const initialized = ref(false);
 const page = ref(0);
-const pageLimit = 3;
+const pageLimit = ref(3);
 const refreshing = ref(false);
 const spinIcon = computed(() => {
   if (refreshing.value) return "pi pi-spin pi-spinner";
@@ -64,7 +67,6 @@ const spinIcon = computed(() => {
 });
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -77,30 +79,10 @@ const userInfo = ref(
   }
 )
 
-const isSuperAdmin = computed(() => authStore.isUserSuperAdmin())
-
-const userFetcher = () => {
-  const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-  const axiosInstance = axios.create(axiosOptions);
-  const docPath = `/users/${roarfirekit.value.roarUid}`
-  return axiosInstance.get(docPath).then(({ data }) => {
-    return _mapValues(data.fields, (value) => convertValues(value));
-  });
-}
-
-const userClaimsFetcher = () => {
-  const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-  const axiosInstance = axios.create(axiosOptions);
-  const docPath = `/userClaims/${roarfirekit.value.roarUid}`
-  return axiosInstance.get(docPath).then(({ data }) => {
-    return _mapValues(data.fields, (value) => convertValues(value));
-  });
-}
-
 const { isLoading: isLoadingUser, isFetching: isFetchingUser, data: userData } =
   useQuery({
     queryKey: ['user'],
-    queryFn: () => userFetcher(),
+    queryFn: () => fetchDocById('users', roarfirekit.value.roarUid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -109,7 +91,7 @@ const { isLoading: isLoadingUser, isFetching: isFetchingUser, data: userData } =
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
     queryKey: ['userClaims'],
-    queryFn: () => userClaimsFetcher(),
+    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -129,159 +111,29 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 })
 
-const orderByDefault = [
-  {
-    field: { fieldPath: "name" },
-    direction: "ASCENDING",
-  }
-];
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const orderBy = ref(orderByDefault);
-
-const getRequestBody = ({
-  orderBy,
-  aggregationQuery,
-  paginate = true,
-  skinnyQuery = false,
-}) => {
-  const requestBody = {
-    structuredQuery: {
-      orderBy: orderBy ?? orderByDefault,
-    }
-  };
-
-  if (!aggregationQuery) {
-    if (paginate) {
-      requestBody.structuredQuery.limit = pageLimit;
-      requestBody.structuredQuery.offset = page.value * pageLimit;
-    }
-
-    if (skinnyQuery) {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "id" },
-          { fieldPath: "name" },
-        ]
-      };
-    } else {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "id" },
-          { fieldPath: "name" },
-          { fieldPath: "assessments" },
-          { fieldPath: "dateClosed" },
-          { fieldPath: "dateCreated" },
-          { fieldPath: "dateOpened" },
-          { fieldPath: "districts" },
-          { fieldPath: "schools" },
-          { fieldPath: "classes" },
-          { fieldPath: "groups" },
-          { fieldPath: "families" },
-        ]
-      };
-    }
-  }
-
-  requestBody.structuredQuery.from = [
-    {
-      collectionId: "administrations",
-      allDescendants: false,
-    }
-  ];
-
-  if (aggregationQuery) {
-    return {
-      structuredAggregationQuery: {
-        ...requestBody,
-        aggregations: [{
-          alias: "count",
-          count: {},
-        }]
-      }
-    }
-  }
-
-  return requestBody;
-}
-
-const countAdministrations = (orderBy) => {
-  if (userClaims.value.claims.super_admin) {
-    const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-    const axiosInstance = axios.create(axiosOptions);
-    const requestBody = getRequestBody({
-      aggregationQuery: true,
-      orderBy: orderBy.value,
-      paginate: false,
-      skinnyQuery: true,
-    });
-    console.log(`Fetching count for administrations`, requestBody);
-    return axiosInstance.post(":runAggregationQuery", requestBody).then(({ data }) => {
-      console.log("count data", data)
-      return Number(convertValues(data[0].result?.aggregateFields?.count));
-    })
-  }
-}
-
-const fetchAdministrations = (orderBy, page) => {
-  if (userClaims.value.claims.super_admin) {
-    const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-    const axiosInstance = axios.create(axiosOptions);
-    const requestBody = getRequestBody({
-      aggregationQuery: false,
-      orderBy: orderBy.value,
-      paginate: true,
-      skinnyQuery: false,
-    });
-    console.log(`Fetching page ${page.value} for administrations`, requestBody);
-    return axiosInstance.post(":runQuery", requestBody).then(({ data }) => {
-      console.log("fetchAdministrations data", data)
-      return mapFields(data)
-    });
-  }
-}
+const canQueryAdministrations = computed(() => {
+  return initialized.value && !isLoadingClaims.value;
+});
 
 const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecords } =
   useQuery({
-    queryKey: ['countAdministrations', orderBy],
-    queryFn: () => countAdministrations(orderBy),
+    queryKey: ['countAdministrations', orderBy, isSuperAdmin],
+    queryFn: () => administrationCounter(orderBy, isSuperAdmin),
     keepPreviousData: true,
-    enabled: initialized,
+    enabled: canQueryAdministrations,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
 const { isLoading: isLoadingAdministrations, isFetching: isFetchingAdministrations, data: administrations } =
   useQuery({
-    queryKey: ['administrations', orderBy, page],
-    queryFn: () => fetchAdministrations(orderBy, page),
+    queryKey: ['administrations', orderBy, page, pageLimit, isSuperAdmin],
+    queryFn: () => administrationPageFetcher(orderBy, pageLimit, page, isSuperAdmin, userClaims.value.claims?.adminOrgs),
     keepPreviousData: true,
-    enabled: initialized,
+    enabled: canQueryAdministrations,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-
-const preprocessedAdministrations = computed(() => {
-  return (administrations.value ?? []).map((a) => {
-    const assignedOrgs = {
-      districts: a.districts,
-      schools: a.schools,
-      classes: a.classes,
-      groups: a.groups,
-      families: a.families,
-    }
-    if (!userClaims.value.claims.super_admin) {
-      assignedOrgs = filterAdminOrgs(userClaims.value.claims.adminOrgs, assignedOrgs);
-    }
-    return {
-      id: a.id,
-      name: a.name,
-      stats: a.stats,
-      dates: {
-        start: a.dateOpened,
-        end: a.dateClosed,
-      },
-      assessments: a.assessments,
-      assignedOrgs,
-    }
-  })
-});
 
 const onPage = (event) => {
   page.value = event.page;
