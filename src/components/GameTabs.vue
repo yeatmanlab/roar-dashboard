@@ -86,7 +86,9 @@ async function routeExternalTask(game) {
     return
   }
 
-  if (game.taskId == 'mep')  url += `participant=${authStore.firekitUserData.assessmentPid}`
+  if (game.taskId == 'mep') {
+    url += `&participant=${authStore.firekitUserData.assessmentPid}${authStore.firekitUserData.schools.length ? '&schoolId=' + authStore.firekitUserData.schools.current.join("“%2C”") : ''}${authStore.firekitUserData.classes.current.length ? '&classId=' + authStore.firekitUserData.classes.current.join("“%2C”") : ''}`
+  } 
 
   await authStore.completeAssessment(selectedAdmin.value, game.taskId)
 
