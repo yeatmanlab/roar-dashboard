@@ -46,15 +46,21 @@
 </template>
 <script setup>
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import { convertValues, mapFields } from "@/helpers/firestoreRest";
-import { flattenObj } from '@/helpers';
+import {
+  orgFetcher,
+  orgCounter,
+  orgFetchAll,
+  orgPageFetcher,
+} from "@/helpers/query/orgs";
+import {
+  orderByDefault,
+  exportCsv,
+} from "@/helpers/query/utils";
 import { getSidebarActions } from "@/router/sidebarActions";
 import { ref, computed, onMounted, watch } from "vue";
+import { storeToRefs } from "pinia";
 import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from "@/store/auth";
-import { storeToRefs } from "pinia";
-import Papa from "papaparse";
-import axios from "axios"
 import _get from "lodash/get";
 import _head from "lodash/head";
 import _isEmpty from "lodash/isEmpty";
@@ -62,7 +68,7 @@ import _union from "lodash/union";
 
 const initialized = ref(false);
 const page = ref(0);
-const pageLimit = 10;
+const pageLimit = ref(10);
 const orgHeaders = ref({
   districts: { header: "Districts", id: 'districts' },
   schools: { header: "Schools", id: 'schools' },
@@ -77,12 +83,6 @@ const activeOrgType = computed(() => {
 
 const selectedDistrict = ref(undefined)
 const selectedSchool = ref(undefined)
-const orderByDefault = [
-  {
-    field: { fieldPath: "name" },
-    direction: "ASCENDING",
-  }
-];
 const orderBy = ref(orderByDefault);
 
 const districtPlaceholder = computed(() => {
@@ -113,165 +113,10 @@ const cleverSyncIcon = computed(() => {
   }
 });
 
-const getRequestBody = ({
-  orgType,
-  parentDistrict,
-  parentSchool,
-  orderBy,
-  aggregationQuery,
-  paginate = true,
-  skinnyQuery = false,
-}) => {
-  const requestBody = {
-    structuredQuery: {
-      orderBy: orderBy ?? orderByDefault,
-    }
-  };
-
-  if (!aggregationQuery) {
-    if (paginate) {
-      requestBody.structuredQuery.limit = pageLimit;
-      requestBody.structuredQuery.offset = page.value * pageLimit;
-    }
-
-    if (skinnyQuery) {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "id" },
-          { fieldPath: "name" },
-        ]
-      };
-    } else {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "abbreviation" },
-          { fieldPath: "address" },
-          { fieldPath: "clever" },
-          { fieldPath: "districtContact" },
-          { fieldPath: "id" },
-          { fieldPath: "mdrNumber" },
-          { fieldPath: "name" },
-          { fieldPath: "ncesId" },
-          { fieldPath: "tags" },
-        ]
-      };
-    }
-  }
-
-  requestBody.structuredQuery.from = [
-    {
-      collectionId: orgType,
-      allDescendants: false,
-    }
-  ];
-
-  if (orgType === "schools" && parentDistrict) {
-    requestBody.structuredQuery.where = {
-      fieldFilter: {
-        field: { fieldPath: "districtId" },
-        op: "EQUAL",
-        value: { stringValue: parentDistrict }
-      }
-    }
-  } else if (orgType === "classes" && parentSchool) {
-    requestBody.structuredQuery.where = {
-      fieldFilter: {
-        field: { fieldPath: "schoolId" },
-        op: "EQUAL",
-        value: { stringValue: parentSchool }
-      }
-    }
-  }
-
-  if (aggregationQuery) {
-    return {
-      structuredAggregationQuery: {
-        ...requestBody,
-        aggregations: [{
-          alias: "count",
-          count: {},
-        }]
-      }
-    }
-  }
-
-  return requestBody;
-}
-
-const { roarfirekit } = storeToRefs(authStore);
-
-const counter = (activeOrgType, selectedDistrict, selectedSchool, orderBy) => {
-  const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-  const axiosInstance = axios.create(axiosOptions);
-  const requestBody = getRequestBody({
-    orgType: activeOrgType.value,
-    parentDistrict: selectedDistrict.value ?? _get(_head(allDistricts.value), "id"),
-    parentSchool: selectedSchool.value ?? _get(_head(allSchools.value), "id"),
-    aggregationQuery: true,
-    orderBy: orderBy.value,
-    paginate: false,
-    skinnyQuery: true,
-  });
-  console.log(`Fetching count for ${activeOrgType.value}`, requestBody);
-  return axiosInstance.post(":runAggregationQuery", requestBody).then(({ data }) => {
-    return Number(convertValues(data[0].result?.aggregateFields?.count));
-  })
-}
-
-const schoolFetcher = (selectedDistrict) => {
-  const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-  const axiosInstance = axios.create(axiosOptions);
-
-  const parentDistrict = selectedDistrict.value ?? _get(_head(allDistricts.value), "id");
-  const requestBody = getRequestBody({
-    orgType: "schools",
-    parentDistrict,
-    aggregationQuery: false,
-    paginate: false,
-    skinnyQuery: true,
-  });
-
-  console.log(`Fetching schools for ${parentDistrict}`, requestBody);
-  return axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
-}
-
-const districtFetcher = () => {
-  const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-  const axiosInstance = axios.create(axiosOptions);
-
-  const requestBody = getRequestBody({
-    orgType: "districts",
-    aggregationQuery: false,
-    paginate: false,
-    skinnyQuery: true,
-  });
-
-  console.log(`Fetching districts`);
-  return axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
-}
-
-const pageFetcher = (activeOrgType, selectedDistrict, selectedSchool, orderBy, page) => {
-  const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-  const axiosInstance = axios.create(axiosOptions);
-
-  const requestBody = getRequestBody({
-    orgType: activeOrgType.value,
-    parentDistrict: selectedDistrict.value ?? _get(_head(allDistricts.value), "id"),
-    parentSchool: selectedSchool.value ?? _get(_head(allSchools.value), "id"),
-    aggregationQuery: false,
-    orderBy: orderBy.value,
-    paginate: true,
-    skinnyQuery: false,
-  });
-
-  console.log(`Fetching page ${page.value} for ${activeOrgType.value}`, requestBody);
-  return axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
-}
-
 const { isLoading: isLoadingDistricts, data: allDistricts } =
   useQuery({
     queryKey: ['districts'],
-    queryFn: () => districtFetcher(),
+    queryFn: () => orgFetcher('districts'),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -284,7 +129,7 @@ const schoolQueryEnabled = computed(() => {
 const { isLoading: isLoadingSchools, data: allSchools } =
   useQuery({
     queryKey: ['schools', selectedDistrict],
-    queryFn: () => schoolFetcher(selectedDistrict),
+    queryFn: () => orgFetcher('schools', selectedDistrict),
     keepPreviousData: true,
     enabled: schoolQueryEnabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -293,7 +138,7 @@ const { isLoading: isLoadingSchools, data: allSchools } =
 const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecords } =
   useQuery({
     queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy],
-    queryFn: () => counter(activeOrgType, selectedDistrict, selectedSchool, orderBy),
+    queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -301,41 +146,16 @@ const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecor
 
 const { isLoading, isFetching, data: tableData } =
   useQuery({
-    queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, page],
-    queryFn: () => pageFetcher(activeOrgType, selectedDistrict, selectedSchool, orderBy, page),
+    queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page],
+    queryFn: () => orgPageFetcher(activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
 const exportAll = async () => {
-  const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
-  const axiosInstance = axios.create(axiosOptions);
-
-  const requestBody = getRequestBody({
-    orgType: activeOrgType.value,
-    parentDistrict: selectedDistrict.value ?? _get(_head(allDistricts.value), "id"),
-    parentSchool: selectedSchool.value ?? _get(_head(allSchools.value), "id"),
-    aggregationQuery: false,
-    orderBy: orderBy.value,
-    paginate: false,
-    skinnyQuery: false,
-  });
-
-  const exportData = await axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
-  const csvData = exportData.map(flattenObj);
-  const csvColumns = _union(...csvData.map(Object.keys));
-  const csv = Papa.unparse(exportData.map(flattenObj), {
-    columns: csvColumns,
-  });
-
-  const blob = new Blob([csv]);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob, { type: 'text/plain' });
-  a.download = `roar-${activeOrgType.value}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const exportData = await orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, orderBy);
+  exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 }
 
 const tableColumns = computed(() => {
@@ -363,6 +183,7 @@ const tableColumns = computed(() => {
 });
 
 const onPage = (event) => {
+  console.log("onPage", event.page);
   page.value = event.page;
 }
 
@@ -380,6 +201,8 @@ const initTable = () => {
   initialized.value = true;
 }
 
+const { roarfirekit } = storeToRefs(authStore);
+
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) initTable();
 });
@@ -389,15 +212,11 @@ onMounted(() => {
 })
 
 watch(allDistricts, (newValue) => {
-  if (selectedDistrict.value === undefined) {
-    selectedDistrict.value = _get(_head(newValue), "id");
-  }
+  selectedDistrict.value = _get(_head(newValue), "id");
 });
 
 watch(allSchools, (newValue) => {
-  if (selectedSchool.value === undefined) {
-    selectedSchool.value = _get(_head(newValue), "id");
-  }
+  selectedSchool.value = _get(_head(newValue), "id");
 });
 
 watch(activeIndex, () => {

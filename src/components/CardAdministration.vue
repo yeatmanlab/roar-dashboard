@@ -1,32 +1,43 @@
 <template>
 	<div class="p-card card-administration">
-		<div v-if="stats" class="card-admin-chart">
+		<div v-if="props.stats" class="card-admin-chart">
 			<Chart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
 		</div>
 
 		<div class="card-admin-body">
 			<h2 class="card-admin-title">{{ title }}</h2>
 			<div class="card-admin-details">
-				<p><strong>{{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString()
-				}}</strong></p>
-				<text-clamp :text="displayOrgsText" :max-lines="3" location="end">
-					<template v-if="displayOrgsText" #before>
-						<b>Assigned to: </b>
-					</template>
-					<template #after="{ clamped, expanded, toggle }">
-						<Button v-if="clamped || expanded" text :label="expanded ? 'Show Less' : 'Show More'" @click="toggle"
-							style="padding: 0 .5rem" />
-					</template>
-				</text-clamp>
+				<span class="mr-1"><strong>Dates</strong>:</span>
+				<span>
+					{{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }}
+				</span>
 			</div>
 			<div class="card-admin-assessments">
-				<p><strong>Assessments</strong></p>
-				<p><span v-for="assessmentId in assessmentIds" class="card-inline-list-item">{{ assessmentId }}</span></p>
+				<span class="mr-1"><strong>Assessments</strong>:</span>
+				<span v-for="assessmentId in assessmentIds" class="card-inline-list-item">
+					{{ displayNames[assessmentId]?.name ?? assessmentId }}
+					<span v-tooltip.top="'Click to view params'" class="pi pi-info-circle cursor-pointer" style="font-size: 1rem"
+						@click="toggleParams($event, assessmentId)" />
+				</span>
+				<OverlayPanel v-for="assessmentId in assessmentIds" :ref="paramPanelRefs[assessmentId]">
+					<DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
+						:value="toEntryObjects(params[assessmentId])">
+						<Column field="key" header="Parameter" style="width: 50%"></Column>
+						<Column field="value" header="Value" style="width: 50%"></Column>
+					</DataTable>
+				</OverlayPanel>
 			</div>
 
-			<TreeTable v-if="isAssigned" :value="hierarchicalAssignedOrgs">
+			<div class="break my-2"></div>
+
+			<div v-if="isAssigned">
+				<Button :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
+			</div>
+
+			<TreeTable v-if="showTable" class="mt-3" lazy rowHover :loading="loadingTreeTable" :value="treeTableOrgs"
+				@nodeExpand="onExpand">
 				<Column field="name" header="Name" expander style="width: 20rem"></Column>
-				<Column v-if="stats" field="id" header="Completion">
+				<Column v-if="props.stats" field="id" header="Completion">
 					<template #body="{ node }">
 						<Chart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
 					</template>
@@ -62,20 +73,21 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
-import { storeToRefs } from "pinia";
+import { computed, onMounted, ref, watch } from "vue";
+import { useQueries } from "@tanstack/vue-query";
+import { fetchDocById } from "@/helpers/query/utils";
 import { useAuthStore } from "@/store/auth";
-import { useQueryStore } from "@/store/query";
-import { filterAdminOrgs, removeEmptyOrgs } from "@/helpers";
+import { removeEmptyOrgs } from "@/helpers";
 import _capitalize from "lodash/capitalize";
+import _flattenDeep from "lodash/flattenDeep";
+import _forEach from "lodash/forEach";
+import _fromPairs from "lodash/fromPairs";
 import _isEmpty from "lodash/isEmpty";
 import _mapValues from "lodash/mapValues";
 import _toPairs from "lodash/toPairs";
-import _forEach from "lodash/forEach";
+import _without from "lodash/without";
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
-const { adminOrgs } = storeToRefs(queryStore);
 
 const props = defineProps({
 	id: String,
@@ -92,17 +104,263 @@ const processedDates = computed(() => {
 	})
 })
 
-const assessmentIds = props.assessments.map(assessment => assessment.taskId.toUpperCase());
+const displayNames = {
+	"swr": { name: "Word", order: 3 },
+	"swr-es": { name: "Palabra", order: 4 },
+	"pa": { name: "Phoneme", order: 2 },
+	"sre": { name: "Sentence", order: 5 },
+	"letter": { name: "Letter", order: 1 },
+}
 
-const assignedOrgs = filterAdminOrgs(adminOrgs.value, props.assignees);
-const displayOrgs = removeEmptyOrgs(assignedOrgs);
+const assessmentIds = props.assessments.map(assessment => assessment.taskId.toLowerCase()).sort((p1, p2) => {
+	return (displayNames[p1]?.order ?? 0) - (displayNames[p2]?.order ?? 0);
+});
+
+const paramPanelRefs = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
+const params = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), assessment.params]));
+
+const toEntryObjects = (inputObj) => {
+	return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+}
+
+const toggleParams = (event, id) => {
+	paramPanelRefs[id].value[0].toggle(event)
+}
+
+const displayOrgs = removeEmptyOrgs(props.assignees);
 const isAssigned = !_isEmpty(Object.values(displayOrgs));
-const hierarchicalAssignedOrgs = isAssigned ? queryStore.getTreeTableOrgs(assignedOrgs) : null;
+
+const showTable = ref(false);
+const enableQueries = ref(false);
+
+const toggleIcon = computed(() => {
+	if (showTable.value) {
+		return "pi pi-chevron-down";
+	}
+	return "pi pi-chevron-right";
+});
+
+const toggleLabel = computed(() => {
+	if (showTable.value) {
+		return "Hide details";
+	}
+	return "Show details";
+});
+
+const toggleTable = () => {
+	enableQueries.value = true;
+	showTable.value = !showTable.value;
+}
+
+const singularOrgTypes = {
+	districts: "district",
+	schools: "school",
+	classes: "class",
+	groups: "group",
+	families: "families",
+};
+
+// dgf: districts, schools, groups, families
+const dsgfQueries = computed(() => {
+	const result = []
+	for (const orgType of ["districts", "schools", "groups", "families"]) {
+		for (const org of props.assignees[orgType]) {
+			result.push({
+				queryKey: [orgType, org],
+				queryFn: () => fetchDocById(orgType, org, ["name", "schools", "classes", "districtId"]),
+				keepPreviousData: true,
+				staleTime: 5 * 60 * 1000, // 5 minutes
+				enabled: enableQueries,
+			})
+		}
+	}
+	return result;
+});
+
+const dsgfQueryResults = useQueries({ queries: dsgfQueries });
+const loadingDsgfOrgs = computed(() => {
+	return dsgfQueryResults.map((q) => q.isLoading).some(Boolean);
+})
+
+const dsgfOrgs = computed(() => {
+	return _without(dsgfQueryResults.map((queryResult, index) => {
+		if (queryResult.isSuccess) {
+			const { classes, schools, collection, ...nodeData } = queryResult.data;
+			const node = {
+				key: String(index),
+				data: {
+					orgType: singularOrgTypes[collection],
+					schools,
+					classes,
+					...nodeData,
+				},
+			};
+			if (classes) node.children = classes.map((classId) => {
+				return {
+					key: `${node.key}-${classId}`,
+					data: {
+						orgType: "class",
+						id: classId,
+					}
+				}
+			});
+			return node;
+		}
+		return undefined;
+	}), undefined);
+});
+
+const independentSchoolIds = computed(() => {
+	const dependentSchools = _flattenDeep(dsgfOrgs.value.map((node) => node.data.schools ?? []))
+	return _without(props.assignees.schools, ...dependentSchools)
+});
+
+const independentClassIds = computed(() => {
+	const dependentClasses = _flattenDeep(dsgfOrgs.value.map((node) => node.data.classes ?? []))
+	return _without(props.assignees.classes, ...dependentClasses)
+});
+
+const enableClassQueries = computed(() => {
+	return !loadingDsgfOrgs.value && (independentClassIds.value.length ?? 0) > 0;
+})
+
+const classQueries = computed(() => {
+	return (independentClassIds.value ?? []).map((classId) => ({
+		queryKey: ["classes", classId],
+		queryFn: () => fetchDocById("classes", classId, ["name", "schoolId"]),
+		keepPreviousData: true,
+		staleTime: 5 * 60 * 1000, // 5 minutes
+		enabled: enableClassQueries,
+	}));
+});
+
+const classQueryResults = [ref({})]; //useQueries({ queries: classQueries });
+const independentClasses = computed(() => {
+	return _without(classQueryResults.map((queryResult, index) => {
+		if (queryResult.isSuccess) {
+			const { collection, ...nodeData } = queryResult.data;
+			const node = {
+				key: String(dgsfQueryResults.length + index),
+				data: {
+					orgType: singularOrgTypes[collection],
+					...nodeData,
+				},
+			};
+			return node;
+		}
+		return undefined;
+	}), undefined);
+})
+
+const loadingClassOrgs = computed(() => {
+	return classQueryResults.map((q) => q.isLoading).some(Boolean);
+})
+
+const loadingTreeTable = computed(() => {
+	return loadingDsgfOrgs.value || loadingClassOrgs.value || expanding.value;
+});
+
+const independentSchools = computed(() => {
+	return (dsgfOrgs.value ?? []).filter((node) => {
+		return node.data.orgType === "school" && independentSchoolIds.value.includes(node.data.id)
+	});
+})
+
+const dependentSchools = computed(() => {
+	return (dsgfOrgs.value ?? []).filter((node) => {
+		return node.data.orgType === "school" && !independentSchoolIds.value.includes(node.data.id);
+	});
+})
+
+const orgs = computed(() => {
+	const _orgs = dsgfOrgs.value.filter((node) => node.data.orgType === "district");
+	_orgs.push(...independentSchools.value);
+
+	for (const school of dependentSchools.value) {
+		const districtId = school.data.districtId;
+		const districtIndex = _orgs.findIndex((node) => node.data.id === districtId);
+		if (districtIndex !== -1) {
+			if (_orgs[districtIndex].children === undefined) {
+				_orgs[districtIndex].children = [{
+					...school,
+					key: `${_orgs[districtIndex].key}-${school.key}`,
+				}];
+			} else {
+				_orgs[districtIndex].children.push(school);
+			}
+		} else {
+			_orgs.push(school);
+		}
+	}
+
+	_orgs.push(...(independentClasses.value ?? []));
+	_orgs.push(...dsgfOrgs.value.filter((node) => node.data.orgType === "group"));
+	_orgs.push(...dsgfOrgs.value.filter((node) => node.data.orgType === "family"));
+
+	return _orgs;
+});
+
+const treeTableOrgs = ref([]);
+watch(orgs, (newValue) => {
+	treeTableOrgs.value = newValue;
+})
+
+const expanding = ref(false);
+const onExpand = async (node) => {
+	console.log("onExpand", node);
+	if (node.data.orgType === "school" && node.children?.length > 0 && !node.data.expanded) {
+		expanding.value = true;
+		const lazyNode = {
+			key: node.key,
+			data: {
+				...node.data,
+				expanded: true,
+			}
+		};
+
+		const promises = node.children.map(({ data }) => {
+			return fetchDocById("classes", data.id, ["name", "schoolId"])
+		});
+
+		const childNodes = (await Promise.all(promises)).map((schoolData, index) => {
+			const { collection, ...nodeData } = schoolData;
+			return {
+				key: `${node.key}-${index}`,
+				data: {
+					orgType: singularOrgTypes[collection],
+					...nodeData,
+				},
+			};
+		})
+
+		lazyNode.children = childNodes;
+
+		const newNodes = treeTableOrgs.value.map((n) => {
+			if (n.data.id === node.data.districtId) {
+				const newNode = {
+					...n,
+					children: n.children.map((child) => {
+						if (child.data.id === node.data.id) {
+							return lazyNode;
+						}
+						return child;
+					})
+				}
+				return newNode;
+			}
+
+			return n;
+		});
+
+		treeTableOrgs.value = newNodes;
+		expanding.value = false;
+	}
+};
 
 const displayOrgsText = computed(() => {
 	let orgsList = "";
-	_forEach(Object.keys(displayOrgs), orgType => {
-		let nameList = displayOrgs[orgType].map(org => org.name).join(', ')
+	_forEach(Object.keys(displayOrgs), (orgType) => {
+		let nameList = displayOrgs[orgType].map((org) => org).join(', ')
 		orgsList = orgsList + `${_capitalize(orgType)}: ${nameList} \n`
 	})
 	return orgsList;
@@ -291,7 +549,7 @@ onMounted(() => {
 
 	.card-admin-body {
 		flex: 1 1 auto;
-		display: inline-flex;
+		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
 		align-content: start;
@@ -299,6 +557,11 @@ onMounted(() => {
 		p {
 			margin-block: .5rem;
 		}
+	}
+
+	.break {
+		flex-basis: 100%;
+		height: 0;
 	}
 
 	.card-admin-title {
@@ -321,6 +584,10 @@ onMounted(() => {
 	.card-admin-class-list {
 		width: 100%;
 		margin-top: 2rem;
+	}
+
+	.cursor-pointer {
+		cursor: pointer;
 	}
 }
 
