@@ -144,8 +144,11 @@ import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
+import { useQuery } from '@tanstack/vue-query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
+import { orderByDefault } from '../helpers/query/utils';
+import { scoresPageFetcher } from "@/helpers/query/assignments";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -162,6 +165,22 @@ const props = defineProps({
   orgType: String,
   orgId: String,
 });
+
+const initialized = ref(false);
+
+// scores query
+const orderBy = ref(orderByDefault);
+const pageLimit = ref(10);
+const page = ref(0);
+const { isLoading: isLoadingScores, data: scoresDataQuery } = 
+  useQuery({
+    queryKey: ['scores', props.administrationId, pageLimit, page],
+    queryFn: () => scoresPageFetcher(props.administrationId, pageLimit, page),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 mins
+  })
+
 
 const refreshing = ref(false);
 const spinIcon = computed(() => {
@@ -331,6 +350,7 @@ const refresh = async () => {
     administrationInfo.value = getAdministrationInfo.value(props.administrationId);
   }
   refreshing.value = false;
+  initialized.value = true;
 
   queryStore.scoresData[props.administrationId] = scoresData.value;
   queryStore.administrationInfo[props.administrationId] = administrationInfo.value;
