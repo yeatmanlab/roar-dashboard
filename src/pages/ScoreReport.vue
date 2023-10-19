@@ -152,6 +152,7 @@ import { getSidebarActions } from "@/router/sidebarActions";
 import { orderByDefault } from '../helpers/query/utils';
 import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
 // import { usersPageFetcher } from "@/helpers/query/users";
+import { getGrade } from "@bdelab/roar-utils";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -270,7 +271,6 @@ const columns = computed(() => {
       if (viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`
       if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`
       if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`
-      // const header = displayNames[taskId]
       tableColumns.push({
         field: colField,
         header: displayNames[taskId].name,
@@ -288,29 +288,48 @@ const tableData = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   return scoresDataQuery.value.map(({ user, assignment }) => {
     const scores = {};
+    const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of (assignment?.assessments || [])) {
-      let displayName;
-      let percentileScore = undefined;
-      let standardScore = undefined;
-      let rawScore = undefined;
+      let percentileScoreKey = undefined;
+      let standardScoreKey = undefined;
+      let rawScoreKey = undefined;
       if (assessment.taskId === "swr" || assessment.taskId === "swr-es") {
-        percentileScore = _get(assessment, 'scores.computed.composite.wjPercentile')
-        standardScore = _get(assessment, 'scores.computed.composite.standardScore')
-        rawScore = _get(assessment, 'scores.computed.composite.roarScore')
-        displayName = (assessment.taskId === "swr-es") ? "Word (ES)" : "Word"
+        if(grade < 6) {
+          percentileScoreKey = 'wjPercentile';
+          standardScoreKey = 'standardScore';
+        } else {
+          percentileScoreKey = 'sprPercentile';
+          standardScoreKey = 'sprStandardScore';
+        }
+        rawScoreKey = 'roarScore';
       }
       if (assessment.taskId === "pa") {
-        percentileScore = _get(assessment, 'scores.computed.composite.percentile')
-        standardScore = _get(assessment, 'scores.computed.composite.standardScore')
-        rawScore = _get(assessment, 'scores.computed.composite.roarScore')
-        displayName = "Phonological"
+        if(grade < 6) {
+          percentileScoreKey = 'percentile';
+          standardScoreKey = 'standardScore';
+        } else {
+          // These are string values intended for display
+          //   they include '>' when the ceiling is hit
+          // Replace them with non '-String' versions for
+          //   comparison.
+          percentileScoreKey = 'sprPercentileString';
+          standardScoreKey = 'sprStandardScoreString';
+        }
+        rawScoreKey = 'roarScore';
       }
       if (assessment.taskId === "sre") {
-        percentileScore = _get(assessment, 'scores.computed.composite.tosrecPercentile')
-        standardScore = _get(assessment, 'scores.computed.composite.tosrecSS')
-        rawScore = _get(assessment, 'scores.computed.composite.sreScore')
-        displayName = "Sentence"
+        if(grade < 6) {
+          percentileScoreKey = 'tosrecPercentile';
+          standardScoreKey = 'tosrecSS'
+        } else {
+          percentileScoreKey = 'sprPercentile';
+          standardScoreKey = 'sprStandardScore';
+        } 
+        rawScoreKey = 'sreScore';
       }
+      const percentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
+      const standardScore = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
+      const rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       if (percentileScore !== undefined) {
         let support_level = '';
         let tag_color = '';
@@ -325,7 +344,6 @@ const tableData = computed(() => {
           tag_color = emptyTagColorMap.below
         }
         scores[assessment.taskId] = {
-          displayName: displayName || assessment.taskId,
           percentile: percentileScore,
           standard: standardScore,
           raw: rawScore,
