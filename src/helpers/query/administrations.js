@@ -9,6 +9,8 @@ const getAdministrationsRequestBody = ({
   page,
   pageLimit,
   skinnyQuery = false,
+  assigningOrgCollection,
+  assigningOrgIds,
 }) => {
   const requestBody = {
     structuredQuery: {
@@ -55,6 +57,20 @@ const getAdministrationsRequestBody = ({
     }
   ];
 
+  if (assigningOrgCollection && assigningOrgIds) {
+    requestBody.structuredQuery.where = {
+      fieldFilter: {
+        field: { fieldPath: assigningOrgCollection },
+        op: "ARRAY_CONTAINS_ANY",
+        value: {
+          arrayValue: {
+            value: assigningOrgIds.map((orgId) => ({ stringValue: orgId }))
+          }
+        }
+      }
+    }
+  }
+
   if (aggregationQuery) {
     return {
       structuredAggregationQuery: {
@@ -70,7 +86,7 @@ const getAdministrationsRequestBody = ({
   return requestBody;
 }
 
-export const administrationCounter = (orderBy, isSuperAdmin) => {
+export const administrationCounter = (orderBy, isSuperAdmin, adminOrgs) => {
   if (isSuperAdmin.value) {
     const axiosInstance = getAxiosInstance();
     const requestBody = getAdministrationsRequestBody({
@@ -83,12 +99,17 @@ export const administrationCounter = (orderBy, isSuperAdmin) => {
     return axiosInstance.post(":runAggregationQuery", requestBody).then(({ data }) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
     })
+  } else {
+    // Iterate through each adminOrg type
+    // Then chunk those arrays into chunks of 10
+    // Map all of those chunks into request bodies
+
   }
 }
 
 export const administrationPageFetcher = (orderBy, pageLimit, page, isSuperAdmin, adminOrgs) => {
+  const axiosInstance = getAxiosInstance();
   if (isSuperAdmin.value) {
-    const axiosInstance = getAxiosInstance();
     const requestBody = getAdministrationsRequestBody({
       aggregationQuery: false,
       orderBy: orderBy.value,
@@ -137,5 +158,12 @@ export const administrationPageFetcher = (orderBy, pageLimit, page, isSuperAdmin
         };
       });
     });
+  } else {
+    // Iterate through each adminOrg type
+    // Then chunk those arrays into chunks of 10
+    // Map all of those chunks into request bodies
+    // Map all of those request bodies into axios promises
+    // await Promise.all(promises);
+    // Concatenate all of those promises
   }
 }

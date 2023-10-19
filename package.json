@@ -14,7 +14,7 @@
     "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh"
   },
   "dependencies": {
-    "@bdelab/roar-firekit": "^3.13.0",
+    "@bdelab/roar-firekit": "^3.13.2",
     "@bdelab/roar-letter": "^1.1.8",
     "@bdelab/roar-multichoice": "^1.0.7",
     "@bdelab/roar-pa": "^1.1.8",

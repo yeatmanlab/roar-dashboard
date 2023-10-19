@@ -39,13 +39,18 @@ export const convertValues = (value) => {
   })[0];
 }
 
-export const mapFields = (data) => {
+export const mapFields = (data, getParentDocId) => {
   const fields = _without(data.map((item) => {
     if (item.document?.fields) {
-      return {
+      const nameSplit = (item.document?.name ?? "").split("/");
+      const result = {
         ...item.document?.fields,
-        id: { stringValue: _last(item.document?.name.split("/")) },
+        id: { stringValue: _last(nameSplit) },
+      };
+      if (getParentDocId) {
+        result.parentDoc = nameSplit[nameSplit.length - 3];
       }
+      return result;
     }
     return undefined;
   }), undefined);
