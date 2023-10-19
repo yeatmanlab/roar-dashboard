@@ -10,9 +10,8 @@ import _without from "lodash/without";
 import { convertValues, getAxiosInstance, mapFields, orderByDefault } from "./utils";
 import { getOrgsRequestBody } from "./orgs";
 
-export const getScoresRequestBody = ({
+export const getAssignmentsRequestBody = ({
   adminId,
-  orderBy,
   aggregationQuery,
   pageLimit,
   page,
@@ -29,7 +28,6 @@ export const getScoresRequestBody = ({
       requestBody.structuredQuery.offset = page * pageLimit;
     }
     
-    // TODO: determine skinny query selects after optimizing scores page
     if(skinnyQuery) {
       requestBody.structuredQuery.select = {
         fields: [
@@ -57,7 +55,79 @@ export const getScoresRequestBody = ({
   requestBody.structuredQuery.from = [
     {
       collectionId: "assignments",
-      allDecendants: true,
+      allDescendants: true,
+    }
+  ];
+
+  requestBody.structuredQuery.where = {
+    fieldFilter: {
+      field: { fieldPath: "id" },
+      op: "EQUAL",
+      value: { stringValue: adminId }
+    }
+  }
+
+  if(aggregationQuery) {
+    return {
+      structuredAggregationQuery: {
+        ...requestBody,
+        aggregations: [{
+          alias: "count",
+          count: {},
+        }]
+      }
+    }
+  }
+
+  return requestBody;
+}
+
+export const getScoresRequestBody = async ({
+  adminId,
+  aggregationQuery,
+  pageLimit,
+  page,
+  paginate = true,
+  skinnyQuery = false,
+}) => {
+  const requestBody = {
+    structuredQuery: {}
+  };
+
+  if(!aggregationQuery) {
+    if(paginate) {
+      requestBody.structuredQuery.limit = pageLimit;
+      requestBody.structuredQuery.offset = page * pageLimit;
+    }
+    
+    if(skinnyQuery) {
+      requestBody.structuredQuery.select = {
+        fields: [
+          { fieldPath: "assessments" },
+          { fieldPath: "started" },
+          { fieldPath: "completed" },
+        ]
+      };
+    } else {
+      requestBody.structuredQuery.select = {
+        fields: [
+          { fieldPath: "assessments" },
+          { fieldPath: "assigningOrgs" },
+          { fieldPath: "completed" },
+          { fieldPath: "dateAssigned" },
+          { fieldPath: "dateClosed" },
+          { fieldPath: "dateOpened" },
+          { fieldPath: "started" },
+          { fieldPath: "id" },
+        ]
+      };
+    }
+  }
+
+  requestBody.structuredQuery.from = [
+    {
+      collectionId: "assignments",
+      allDescendants: true,
     }
   ];
 
@@ -85,18 +155,23 @@ export const getScoresRequestBody = ({
 }
 
 export const scoresPageFetcher = async (adminId, pageLimit, page) => {
-  const axiosInstance = getAxiosInstance();
-  console.log('axios instance:', axiosInstance)
-  const requestBody = getScoresRequestBody({
+  const adminAxiosInstance = getAxiosInstance();
+  const appAxiosInstance = getAxiosInstance('app');
+  console.log('axios instance:', adminAxiosInstance)
+  const requestBody = getAssignmentsRequestBody({
     adminId: adminId,
     aggregationQuery: false,
     pageLimit: pageLimit.value,
     page: page.value,
     paginate: true,
-    skinnyQuery: true,
+    skinnyQuery: false,
   })
   console.log('requestBody', requestBody)
 
   console.log(`Fetching page ${page.value} for ${adminId}`);
-  return axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
+  const assignmentResponse = adminAxiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
+  console.log('assignmentPromise', assignmentResponse)
+  const assignmentData = Promise.all(assignmentResponse)
+  console.log('assignmentData', assignmentData)
+  return assignmentResponse
 }
