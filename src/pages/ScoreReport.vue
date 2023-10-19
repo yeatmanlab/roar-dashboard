@@ -149,6 +149,7 @@ import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
 import { orderByDefault } from '../helpers/query/utils';
 import { scoresPageFetcher } from "@/helpers/query/assignments";
+import { usersPageFetcher } from "@/helpers/query/users";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -180,6 +181,16 @@ const { isLoading: isLoadingScores, data: scoresDataQuery } =
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 mins
   })
+
+// Used to test users query
+// const { isLoading: isLoadingUsers, data: userDataQuery } =
+//   useQuery({
+//     queryKey: ['users'],
+//     queryFn: () => usersPageFetcher(['9L73ik6rX2V0y5XKGdl4GeMCNVx1', 'RyYmJirod4MJNG9VHUhnieylxJG2'], pageLimit, page),
+//     keepPreviousData: false,
+//     enabled: initialized,
+//     staleTime: 5 * 60 * 1000, // 5 mins
+//   })
 
 
 const refreshing = ref(false);
