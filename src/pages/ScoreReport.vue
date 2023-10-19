@@ -155,6 +155,7 @@ import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignment
 import { getGrade } from "@bdelab/roar-utils";
 import { orderByDefault } from '../helpers/query/utils';
 import { scoresPageFetcher } from "@/helpers/query/assignments";
+import { usersPageFetcher } from "@/helpers/query/users";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
