@@ -52,19 +52,12 @@
 								<Button v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
 									aria-label="Completion details" size="small" />
 							</router-link>
-							<router-link v-if="authStore.isUserSuperAdmin()" :to="{
-								name: 'ScoreReport', params: {
-									administrationId: props.id, orgId: node.data.id, orgType:
-										node.data.orgType
-								}
-							}" v-slot="{ href, route, navigate }">
+							<router-link
+								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
+								v-slot="{ href, route, navigate }">
 								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
 									size="small" />
 							</router-link>
-							<span v-else v-tooltip.top="'Coming Soon'">
-								<Button v-tooltip.top="'Coming Soon'" severity="secondary" text raised label="Scores" disabled
-									aria-label="Scores" size="small" />
-							</span>
 						</span>
 					</template>
 				</Column>
