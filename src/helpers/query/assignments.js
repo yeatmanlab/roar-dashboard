@@ -7,6 +7,7 @@ import _mapValues from "lodash/mapValues";
 import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
 import _without from "lodash/without";
+import _zip from "lodash/zip";
 import { convertValues, getAxiosInstance, mapFields, orderByDefault } from "./utils";
 import { getOrgsRequestBody } from "./orgs";
 
@@ -169,9 +170,24 @@ export const scoresPageFetcher = async (adminId, pageLimit, page) => {
   console.log('requestBody', requestBody)
 
   console.log(`Fetching page ${page.value} for ${adminId}`);
-  const assignmentResponse = adminAxiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
-  console.log('assignmentPromise', assignmentResponse)
-  const assignmentData = Promise.all(assignmentResponse)
-  console.log('assignmentData', assignmentData)
-  return assignmentResponse
+  return adminAxiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
+    const assignmentData = mapFields(data)
+    const userDocPaths = data.map((adminDoc) => {
+      // Split the path, grab the userId
+      const userId = adminDoc.document.name.split('/')[6]
+      return `/users/${userId}/`;
+    })
+    const userDocPromises = []
+    for (const docPath of userDocPaths) {
+      userDocPromises.push(adminAxiosInstance.get(docPath).then(({ data }) => {
+        return _mapValues(data.fields, (value) => convertValues(value));
+      }))
+    }
+    const userDocData = await Promise.all(userDocPromises);
+    const scoresObj = _zip(userDocData, assignmentData).map(([userData, assignmentData]) => ({
+        assignment: assignmentData,
+        user: userData
+    }))
+    return scoresObj
+  });
 }
