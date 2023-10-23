@@ -192,6 +192,7 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
     paginate: true,
     skinnyQuery: false,
   })
+  console.log('request body', requestBody)
 
   console.log(`Fetching page ${page.value} for ${adminId}`);
   return adminAxiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
@@ -213,6 +214,7 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
       }))
     }
     const userDocData = await Promise.all(userDocPromises);
+    console.log('userDocData', userDocData)
     // Get scores docs
     const runIds = []
     for (const assignment of assignmentData) {
@@ -220,21 +222,25 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
         if(task.runId) runIds.push(task.runId)
       }
     }
-    const scoresRequestBody = getScoresRequestBody({
-      runIds: runIds,
-      aggregationQuery: false,
-      pageLimit: pageLimit.value,
-      page: page.value,
-      paginate: false,
-      skinnyQuery: false
-    })
-    const scoreData = await appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
-      return mapFields(data)
-    })
-    for (const assignment of assignmentData) {
-      for (const task of assignment.assessments) {
-        const runId = task.runId
-        task['scores'] = _get(_find(scoreData, scoreDoc => scoreDoc.id === runId), 'scores')
+    console.log('runIds', runIds)
+    if(!_isEmpty(runIds)){
+      const scoresRequestBody = getScoresRequestBody({
+        runIds: runIds,
+        aggregationQuery: false,
+        pageLimit: pageLimit.value,
+        page: page.value,
+        paginate: false,
+        skinnyQuery: false
+      })
+      console.log('scores request body', scoresRequestBody)
+      const scoreData = await appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
+        return mapFields(data)
+      })
+      for (const assignment of assignmentData) {
+        for (const task of assignment.assessments) {
+          const runId = task.runId
+          task['scores'] = _get(_find(scoreData, scoreDoc => scoreDoc.id === runId), 'scores')
+        }
       }
     }
     const scoresObj = _zip(userDocData, assignmentData).map(([userData, assignmentData]) => ({
