@@ -67,15 +67,24 @@ export const getAssignmentsRequestBody = ({
   ];
 
   requestBody.structuredQuery.where = {
-    fieldFilter: {
-      field: { fieldPath: "id" },
-      op: "EQUAL",
-      value: { stringValue: adminId }
-    },
-    fieldFilter: {
-      field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
-      op: "ARRAY_CONTAINS",
-      value: { stringValue: orgId }
+    compositeFilter: {
+      op: "AND",
+      filters: [
+        {
+          fieldFilter: {
+            field: { fieldPath: "id" },
+            op: "EQUAL",
+            value: { stringValue: adminId }
+          },
+        },
+        {
+          fieldFilter: {
+            field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            op: "ARRAY_CONTAINS",
+            value: { stringValue: orgId }
+          }
+        }
+      ]
     }
   }
 
@@ -96,6 +105,8 @@ export const getAssignmentsRequestBody = ({
 
 export const getScoresRequestBody = ({
   runIds,
+  orgType,
+  orgId,
   aggregationQuery,
   pageLimit,
   page,
@@ -136,18 +147,32 @@ export const getScoresRequestBody = ({
   ];
 
   requestBody.structuredQuery.where = {
-    fieldFilter: {
-      field: { fieldPath: "id" },
-      op: "IN",
-      value: {
-        arrayValue: {
-          values: [
-            runIds.map(runId => {
-              return { stringValue: runId }
-            })
-          ]
+    compositeFilter: {
+      op: 'AND',
+      filters: [
+        {
+          fieldFilter: {
+            field: { fieldPath: "id" },
+            op: "IN",
+            value: {
+              arrayValue: {
+                values: [
+                  runIds.map(runId => {
+                    return { stringValue: runId }
+                  })
+                ]
+              }
+            }
+          }
+        },
+        {
+          fieldFilter: {
+            field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            op: "ARRAY_CONTAINS",
+            value: { stringValue: orgId }
+          }
         }
-      }
+      ]
     }
   }
 
@@ -208,6 +233,7 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
       }
     }), undefined)
     const userDocPromises = []
+    // TODO: this can be refactored to use fetchDocById
     for (const docPath of userDocPaths) {
       userDocPromises.push(adminAxiosInstance.get(docPath).then(({ data }) => {
         return _mapValues(data.fields, (value) => convertValues(value));
@@ -226,6 +252,8 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
     if(!_isEmpty(runIds)){
       const scoresRequestBody = getScoresRequestBody({
         runIds: runIds,
+        orgType: orgType,
+        orgId: orgId,
         aggregationQuery: false,
         pageLimit: pageLimit.value,
         page: page.value,
