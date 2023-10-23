@@ -109,13 +109,8 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-const isSuperAdmin = computed(() => {
-  return Boolean(userClaims.value?.claims?.super_admin);
-});
-
-const adminOrgs = computed(() => {
-  return userClaims.value?.claims?.minimalAdminOrgs;
-});
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
   const headers = {

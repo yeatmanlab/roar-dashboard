@@ -293,7 +293,6 @@ export const orgPageFetcher = async (
         return 0;
       }
     );
-    console.log("in orgPageFetcher", { orgs, page: page.value, pageLimit: pageLimit.value });
     return orgs.slice(page.value * pageLimit.value, (page.value + 1) * pageLimit.value);
   }
 }
