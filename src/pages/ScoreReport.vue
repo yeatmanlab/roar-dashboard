@@ -154,11 +154,13 @@ import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignment
 // import { usersPageFetcher } from "@/helpers/query/users";
 import { getGrade } from "@bdelab/roar-utils";
 import { orderByDefault } from '../helpers/query/utils';
+import { orderByDefault, fetchDocById } from '../helpers/query/utils';
 import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
-// import { usersPageFetcher } from "@/helpers/query/users";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
+
+const { roarfirekit } = storeToRefs(authStore);
 
 const { getAdministrationInfo, getOrgInfo } = storeToRefs(queryStore);
 const orgInfo = ref(queryStore.orgInfo[props.orgId]);
@@ -179,12 +181,22 @@ const initialized = ref(false);
 const orderBy = ref(orderByDefault);
 const pageLimit = ref(10);
 const page = ref(0);
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims'],
+    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+
 const { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } = 
   useQuery({
     queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
     queryFn: () => scoresPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
     keepPreviousData: true,
-    enabled: initialized,
+    enabled: (initialized && claimsLoaded),
     staleTime: 5 * 60 * 1000, // 5 mins
   })
 
@@ -193,7 +205,7 @@ const { isLoading: isLoadingCount, data: scoresCount } =
     queryKey: ['scores', props.administrationId, props.orgId],
     queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
     keepPreviousData: true,
-    enabled: initialized,
+    enabled: (initialized && claimsLoaded),
     staleTime: 5 * 60 * 1000,
   })
 
@@ -411,7 +423,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   }
 });
 
-const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
   if (roarfirekit.value.getUsersByAssignment && roarfirekit.value.isAdmin()) {
     await refresh()
