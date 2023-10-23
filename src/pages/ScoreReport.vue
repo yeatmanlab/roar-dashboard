@@ -153,7 +153,6 @@ import { orderByDefault } from '../helpers/query/utils';
 import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
 // import { usersPageFetcher } from "@/helpers/query/users";
 import { getGrade } from "@bdelab/roar-utils";
-import { orderByDefault } from '../helpers/query/utils';
 import { orderByDefault, fetchDocById } from '../helpers/query/utils';
 import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
 
@@ -190,6 +189,9 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 const claimsLoaded = computed(() => !isLoadingClaims.value);
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
 const { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } = 
   useQuery({
