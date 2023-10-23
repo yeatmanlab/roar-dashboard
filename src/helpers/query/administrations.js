@@ -1,6 +1,10 @@
+import _chunk from "lodash/chunk";
+import _flatten from "lodash/flatten";
 import _mapValues from "lodash/mapValues";
+import _uniqBy from "lodash/uniqBy";
 import _zip from "lodash/zip";
-import { convertValues, getAxiosInstance, mapFields } from "./utils";
+import { convertValues, getAxiosInstance, mapFields, orderByDefault } from "./utils";
+import { filterAdminOrgs } from "@/helpers";
 
 const getAdministrationsRequestBody = ({
   orderBy,
@@ -64,7 +68,7 @@ const getAdministrationsRequestBody = ({
         op: "ARRAY_CONTAINS_ANY",
         value: {
           arrayValue: {
-            value: assigningOrgIds.map((orgId) => ({ stringValue: orgId }))
+            values: assigningOrgIds.map((orgId) => ({ stringValue: orgId }))
           }
         }
       }
@@ -86,9 +90,9 @@ const getAdministrationsRequestBody = ({
   return requestBody;
 }
 
-export const administrationCounter = (orderBy, isSuperAdmin, adminOrgs) => {
+export const administrationCounter = async (orderBy, isSuperAdmin, adminOrgs) => {
+  const axiosInstance = getAxiosInstance();
   if (isSuperAdmin.value) {
-    const axiosInstance = getAxiosInstance();
     const requestBody = getAdministrationsRequestBody({
       aggregationQuery: true,
       orderBy: orderBy.value,
@@ -100,14 +104,77 @@ export const administrationCounter = (orderBy, isSuperAdmin, adminOrgs) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
     })
   } else {
+    const promises = [];
     // Iterate through each adminOrg type
-    // Then chunk those arrays into chunks of 10
-    // Map all of those chunks into request bodies
+    for (const [orgType, orgIds] of Object.entries(adminOrgs.value)) {
+      // Then chunk those arrays into chunks of 10
+      if ((orgIds ?? []).length > 0) {
+        for (const orgChunk of _chunk(orgIds, 10)) {
+          // Map all of those chunks into request bodies
+          const requestBodies = orgChunk.map((orgId) => getAdministrationsRequestBody({
+            aggregationQuery: false,
+            paginate: false,
+            skinnyQuery: true,
+            assigningOrgCollection: orgType,
+            assigningOrgIds: orgChunk,
+          }))
+          // Map all of those request bodies into axios promises
+          promises.push(requestBodies.map((requestBody) => axiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
+            return mapAdministrations({ isSuperAdmin, data, adminOrgs });
+          })));
+        }
+      }
+    }
 
+    const flattened = _flatten(await Promise.all(_flatten(promises)));
+    const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
+    const administrations = _uniqBy(flattened, "id").filter((a) => a[orderField] !== undefined);
+    return administrations.length;
   }
 }
 
-export const administrationPageFetcher = (orderBy, pageLimit, page, isSuperAdmin, adminOrgs) => {
+const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
+  const axiosInstance = getAxiosInstance();
+  const administrationData = mapFields(data);
+  const statsPaths = administrationData.map((administration) => `/administrations/${administration.id}/stats/completion`);
+  const statsPromises = [];
+  for (const docPath of statsPaths) {
+    statsPromises.push(axiosInstance.get(docPath).then(({ data }) => {
+      return _mapValues(data.fields, (value) => convertValues(value));
+    }));
+  }
+  const statsData = await Promise.all(statsPromises);
+  const administrations = _zip(administrationData, statsData).map(([administration, stats]) => ({
+    ...administration,
+    stats,
+  }));
+
+  return administrations.map((a) => {
+    let assignedOrgs = {
+      districts: a.districts,
+      schools: a.schools,
+      classes: a.classes,
+      groups: a.groups,
+      families: a.families,
+    };
+    if (!isSuperAdmin.value) {
+      assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
+    };
+    return {
+      id: a.id,
+      name: a.name,
+      stats: a.stats,
+      dates: {
+        start: a.dateOpened,
+        end: a.dateClosed,
+      },
+      assessments: a.assessments,
+      assignedOrgs,
+    };
+  });
+};
+
+export const administrationPageFetcher = async (orderBy, pageLimit, page, isSuperAdmin, adminOrgs) => {
   const axiosInstance = getAxiosInstance();
   if (isSuperAdmin.value) {
     const requestBody = getAdministrationsRequestBody({
@@ -120,50 +187,39 @@ export const administrationPageFetcher = (orderBy, pageLimit, page, isSuperAdmin
     });
     console.log(`Fetching page ${page.value} for administrations`);
     return axiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
-      const administrationData = mapFields(data);
-      const statsPaths = administrationData.map((administration) => `/administrations/${administration.id}/stats/completion`);
-      const statsPromises = [];
-      for (const docPath of statsPaths) {
-        statsPromises.push(axiosInstance.get(docPath).then(({ data }) => {
-          return _mapValues(data.fields, (value) => convertValues(value));
-        }));
-      }
-      const statsData = await Promise.all(statsPromises);
-      const administrations = _zip(administrationData, statsData).map(([administration, stats]) => ({
-        ...administration,
-        stats,
-      }));
-
-      return administrations.map((a) => {
-        let assignedOrgs = {
-          districts: a.districts,
-          schools: a.schools,
-          classes: a.classes,
-          groups: a.groups,
-          families: a.families,
-        };
-        if (!isSuperAdmin.value) {
-          assignedOrgs = filterAdminOrgs(adminOrgs, assignedOrgs);
-        };
-        return {
-          id: a.id,
-          name: a.name,
-          stats: a.stats,
-          dates: {
-            start: a.dateOpened,
-            end: a.dateClosed,
-          },
-          assessments: a.assessments,
-          assignedOrgs,
-        };
-      });
+      return mapAdministrations({ isSuperAdmin, data, adminOrgs });
     });
   } else {
+    const promises = [];
     // Iterate through each adminOrg type
-    // Then chunk those arrays into chunks of 10
-    // Map all of those chunks into request bodies
-    // Map all of those request bodies into axios promises
-    // await Promise.all(promises);
-    // Concatenate all of those promises
+    for (const [orgType, orgIds] of Object.entries(adminOrgs.value)) {
+      // Then chunk those arrays into chunks of 10
+      for (const orgChunk of _chunk(orgIds, 10)) {
+        // Map all of those chunks into request bodies
+        const requestBodies = orgChunk.map((orgId) => getAdministrationsRequestBody({
+          aggregationQuery: false,
+          paginate: false,
+          skinnyQuery: false,
+          assigningOrgCollection: orgType,
+          assigningOrgIds: orgChunk,
+        }))
+        // Map all of those request bodies into axios promises
+        promises.push(requestBodies.map((requestBody) => axiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
+          return mapAdministrations({ isSuperAdmin, data, adminOrgs });
+        })));
+      }
+    }
+
+    const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
+    const orderDirection = (orderBy?.value?? orderByDefault)[0].direction;
+    const flattened = _flatten(await Promise.all(_flatten(promises)));
+    const administrations = _uniqBy(flattened, "id").filter((a) => a[orderField] !== undefined).sort(
+      (a, b) => {
+        if (orderDirection === "ASCENDING") return 2 * (+(a[orderField] > b[orderField])) - 1;
+        if (orderDirection === "DESCENDING") return 2 * (+(b[orderField] > a[orderField])) - 1;
+        return 0;
+      }
+    );
+    return administrations.slice(page.value * pageLimit.value, (page.value + 1) * pageLimit.value);
   }
 }

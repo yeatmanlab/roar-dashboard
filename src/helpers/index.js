@@ -136,7 +136,7 @@ export const standardDeviation = (arr, usePopulation = false) => {
 export const filterAdminOrgs = (adminOrgs, filters) => {
   const filteredOrgPairs = _toPairs(adminOrgs).map(([orgType, orgs]) => [
     orgType,
-    orgs.filter((org) => filters[orgType]?.includes(org.id))
+    orgs.filter((org) => filters[orgType]?.includes(org))
   ]);
 
   return _fromPairs(filteredOrgPairs);
