@@ -187,7 +187,16 @@ const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecor
 const { isLoading, isFetching, data: tableData } =
   useQuery({
     queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page],
-    queryFn: () => orgPageFetcher(activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page, isSuperAdmin, adminOrgs),
+    queryFn: () => orgPageFetcher(
+      activeOrgType,
+      selectedDistrict,
+      selectedSchool,
+      orderBy,
+      pageLimit,
+      page,
+      isSuperAdmin,
+      adminOrgs,
+    ),
     keepPreviousData: true,
     enabled: claimsLoaded,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -195,6 +204,7 @@ const { isLoading, isFetching, data: tableData } =
 
 const exportAll = async () => {
   const exportData = await orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs);
+  console.log("Exporting all:", exportData)
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 }
 
