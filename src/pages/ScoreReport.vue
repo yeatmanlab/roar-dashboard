@@ -40,12 +40,13 @@
         </div>
 
         <!-- Main table -->
-        <div v-else-if="scoresData?.length ?? 0 > 0">
+        <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
             <Dropdown :options="viewOptions" v-model="viewMode" optionLabel="label" optionValue="value" class="ml-2" />
           </div>
-          <RoarDataTable :data="tableData" :columns="columns" />
+          <RoarDataTable :data="tableData" :columns="columns" :totalRecords="scoresCount" lazy :pageLimit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)" @export-all="exportAll"/>
         </div>
 
 
@@ -142,14 +143,15 @@ import _capitalize from 'lodash/capitalize';
 import _toUpper from 'lodash/toUpper'
 import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
+import _isEmpty from 'lodash/isEmpty'
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
 import { useQuery } from '@tanstack/vue-query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
 import { orderByDefault } from '../helpers/query/utils';
-import { scoresPageFetcher } from "@/helpers/query/assignments";
-import { usersPageFetcher } from "@/helpers/query/users";
+import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
+// import { usersPageFetcher } from "@/helpers/query/users";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
@@ -157,7 +159,7 @@ const queryStore = useQueryStore();
 const { getAdministrationInfo, getOrgInfo } = storeToRefs(queryStore);
 const orgInfo = ref(queryStore.orgInfo[props.orgId]);
 const administrationInfo = ref(queryStore.administrationInfo[props.administrationId]);
-const scoresData = ref(queryStore.scoresData[props.administrationId]);
+// const scoresData = ref(queryStore.scoresData[props.administrationId]);
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
@@ -173,25 +175,39 @@ const initialized = ref(false);
 const orderBy = ref(orderByDefault);
 const pageLimit = ref(10);
 const page = ref(0);
-const { isLoading: isLoadingScores, data: scoresDataQuery } = 
+const { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } = 
   useQuery({
-    queryKey: ['scores', props.administrationId, pageLimit, page],
-    queryFn: () => scoresPageFetcher(props.administrationId, pageLimit, page),
+    queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
+    queryFn: () => scoresPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 mins
   })
 
-// Used to test users query
-// const { isLoading: isLoadingUsers, data: userDataQuery } =
-//   useQuery({
-//     queryKey: ['users'],
-//     queryFn: () => usersPageFetcher(['9L73ik6rX2V0y5XKGdl4GeMCNVx1', 'RyYmJirod4MJNG9VHUhnieylxJG2'], pageLimit, page),
-//     keepPreviousData: false,
-//     enabled: initialized,
-//     staleTime: 5 * 60 * 1000, // 5 mins
-//   })
+const { isLoading: isLoadingCount, data: scoresCount } = 
+  useQuery({
+    queryKey: ['scores', props.administrationId, props.orgId],
+    queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000,
+  })
 
+const onPage = (event) => {
+  console.log("onPage", event.page);
+  page.value = event.page;
+}
+const onSort = (event) => {
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
+    field: { fieldPath: item.field },
+    direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
+  }));
+  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+}
+
+const exportAll = () => {
+  return;
+}
 
 const refreshing = ref(false);
 const spinIcon = computed(() => {
@@ -229,7 +245,7 @@ const emptyTagColorMap = {
 }
 
 const columns = computed(() => {
-  if (scoresData.value === undefined) return [];
+  if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
     { field: "user.username", header: "Username", dataType: "text", pinned: true },
     { field: "user.name.first", header: "First Name", dataType: "text" },
@@ -269,8 +285,8 @@ const columns = computed(() => {
 });
 
 const tableData = computed(() => {
-  if (scoresData.value === undefined) return [];
-  return scoresData.value.map(({ user, assignment }) => {
+  if (scoresDataQuery.value === undefined) return [];
+  return scoresDataQuery.value.map(({ user, assignment }) => {
     const scores = {};
     for (const assessment of (assignment?.assessments || [])) {
       let displayName;
@@ -349,9 +365,9 @@ const refresh = async () => {
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
 
-  scoresData.value = await queryStore.getUsersByAssignment(
-    props.administrationId, props.orgType, props.orgId, true
-  );
+  // scoresData.value = await queryStore.getUsersByAssignment(
+  //   props.administrationId, props.orgType, props.orgId, true
+  // );
 
   if (!orgInfo.value) {
     queryStore.getAdminOrgs();
@@ -363,7 +379,7 @@ const refresh = async () => {
   refreshing.value = false;
   initialized.value = true;
 
-  queryStore.scoresData[props.administrationId] = scoresData.value;
+  // queryStore.scoresData[props.administrationId] = scoresData.value;
   queryStore.administrationInfo[props.administrationId] = administrationInfo.value;
   queryStore.orgInfo[props.orgId] = orgInfo.value;
 };
