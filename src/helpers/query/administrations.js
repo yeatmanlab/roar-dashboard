@@ -120,7 +120,7 @@ export const administrationCounter = async (orderBy, isSuperAdmin, adminOrgs) =>
           }))
           // Map all of those request bodies into axios promises
           promises.push(requestBodies.map((requestBody) => axiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
-            return mapAdministrations({ isSuperAdmin, data, adminOrgs });
+            return mapFields(data);
           })));
         }
       }
@@ -174,7 +174,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
   });
 };
 
-export const administrationPageFetcher = async (orderBy, pageLimit, page, isSuperAdmin, adminOrgs) => {
+export const administrationPageFetcher = async (orderBy, pageLimit, page, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs) => {
   const axiosInstance = getAxiosInstance();
   if (isSuperAdmin.value) {
     const requestBody = getAdministrationsRequestBody({
@@ -205,7 +205,7 @@ export const administrationPageFetcher = async (orderBy, pageLimit, page, isSupe
         }))
         // Map all of those request bodies into axios promises
         promises.push(requestBodies.map((requestBody) => axiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
-          return mapAdministrations({ isSuperAdmin, data, adminOrgs });
+          return mapAdministrations({ isSuperAdmin, data, adminOrgs: exhaustiveAdminOrgs });
         })));
       }
     }
