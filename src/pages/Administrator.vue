@@ -113,6 +113,7 @@ onMounted(() => {
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 const orderBy = ref(orderByDefault);
 const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
@@ -130,7 +131,7 @@ const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecor
 const { isLoading: isLoadingAdministrations, isFetching: isFetchingAdministrations, data: administrations } =
   useQuery({
     queryKey: ['administrations', orderBy, page, pageLimit, isSuperAdmin],
-    queryFn: () => administrationPageFetcher(orderBy, pageLimit, page, isSuperAdmin, adminOrgs),
+    queryFn: () => administrationPageFetcher(orderBy, pageLimit, page, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
     keepPreviousData: true,
     enabled: canQueryAdministrations,
     staleTime: 5 * 60 * 1000, // 5 minutes

@@ -1,6 +1,6 @@
 <template>
 	<div class="p-card card-administration">
-		<div v-if="props.stats" class="card-admin-chart">
+		<div v-if="props.stats && authStore.isUserSuperAdmin()" class="card-admin-chart">
 			<Chart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
 		</div>
 
@@ -51,7 +51,7 @@
 								<Button v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
 									aria-label="Completion details" size="small" />
 							</router-link>
-							<router-link v-if="authStore.isUserSuperAdmin()" :to="{
+							<router-link :to="{
 								name: 'ScoreReport', params: {
 									administrationId: props.id, orgId: node.data.id, orgType:
 										node.data.orgType
@@ -60,10 +60,6 @@
 								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
 									size="small" />
 							</router-link>
-							<span v-else v-tooltip.top="'Coming Soon'">
-								<Button v-tooltip.top="'Coming Soon'" severity="secondary" text raised label="Scores" disabled
-									aria-label="Scores" size="small" />
-							</span>
 						</span>
 					</template>
 				</Column>
@@ -164,7 +160,7 @@ const singularOrgTypes = {
 const dsgfQueries = computed(() => {
 	const result = []
 	for (const orgType of ["districts", "schools", "groups", "families"]) {
-		for (const org of props.assignees[orgType]) {
+		for (const org of (props.assignees[orgType] ?? [])) {
 			result.push({
 				queryKey: [orgType, org],
 				queryFn: () => fetchDocById(orgType, org, ["name", "schools", "classes", "districtId"]),
