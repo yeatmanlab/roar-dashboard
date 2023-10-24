@@ -1,27 +1,34 @@
 <template>
-  <div v-if="!refData">
+  <div v-if="!computedData">
     <SkeletonTable />
   </div>
   <div v-else>
     <div v-if="allowExport" class="flex flex-row w-full gap-2 py-2" style="justify-content: flex-end;">
-      <Button label="Export Selected" :disabled="refSelectedRows.length === 0" @click="exportCSV(true, $event)" />
+      <Button label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
       <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
     </div>
-    <DataTable ref="dataTable" :value="refData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
-      :exportFilename="exportFilename" v-model:selection="refSelectedRows" removableSort sortMode="multiple" showGridlines
-      v-model:filters="refFilters" filterDisplay="menu" paginator :alwaysShowPaginator="false" :rows="10"
-      :rowsPerPageOptions="[10, 20, 50]" scrollable>
+    <DataTable ref="dataTable" :value="computedData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
+      :exportFilename="exportFilename" removableSort sortMode="multiple" showGridlines v-model:filters="refFilters"
+      filterDisplay="menu" paginator :rows="props.pageLimit" :alwaysShowPaginator="true"
+      :totalRecords="props.totalRecords" :lazy="props.lazy" :loading="props.loading" scrollable @page="onPage($event)"
+      @sort="onSort($event)" v-model:selection="selectedRows" :selectAll="selectAll" @select-all-change="onSelectAll"
+      @row-select="onSelectionChange" @row-unselect="onSelectionChange">
       <Column selectionMode="multiple" headerStyle="width: 3rem" frozen></Column>
       <Column v-for="col of columns" :key="col.field" :header="col.header" :field="col.field" :dataType="col.dataType"
         :sortable="(col.sort !== false)" :showFilterMatchModes="!col.useMultiSelect"
-        :showFilterOperator="col.allowMultipleFilters === true" :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned">
+        :showFilterOperator="col.allowMultipleFilters === true" :showAddButton="col.allowMultipleFilters === true"
+        :frozen="col.pinned">
         <template #body="{ data }">
-          <div v-if="col.tag && _get(data, col.field) !== undefined">
+          <div v-if="col.tag && col.dataType === 'string' && _get(data, col.field) !== undefined">
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
-              :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`" rounded />
+              :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`"
+              rounded />
+          </div>
+          <div v-if="col.chip && col.dataType === 'array' && _get(data, col.field) !== undefined">
+            <Chip v-for="chip in _get(data, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
-            <div class="circle" :style="`background-color: ${_get(data, col.tagColor)};`"/>
+            <div class="circle" :style="`background-color: ${_get(data, col.tagColor)};`" />
           </div>
           <div v-else-if="col.dataType === 'date'">
             {{ getFormattedDate(_get(data, col.field)) }}
@@ -43,11 +50,13 @@
           </div>
         </template>
       </Column>
+      <template #empty> No data found. </template>
     </DataTable>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useToast } from 'primevue/usetoast';
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 import SkeletonTable from "@/components/SkeletonTable.vue"
 import _get from 'lodash/get'
@@ -88,16 +97,41 @@ const props = defineProps({
   columns: { type: Array, required: true },
   data: { type: Array, required: true },
   allowExport: { type: Boolean, default: true },
-  exportFilename: { type: String, default: 'datatable-export' }
+  exportFilename: { type: String, default: 'datatable-export' },
+  pageLimit: { type: Number, default: 15 },
+  totalRecords: { type: Number, required: false },
+  loading: { type: Boolean, default: false },
+  lazy: { type: Boolean, default: false },
 });
 
-let selectedRows = [];
-const refSelectedRows = ref(selectedRows);
+const selectedRows = ref([]);
+const toast = useToast();
+const selectAll = ref(false);
+const onSelectAll = () => {
+  selectAll.value = !selectAll.value;
+  if (selectAll.value) {
+    selectedRows.value = computedData.value;
+    toast.add({
+      severity: 'info',
+      summary: 'Rows selected',
+      detail: `You selected ${selectedRows.value.length} rows but there are ${props.totalRecords} total rows in all of this tables pages. You've been warned.`, life: 5000
+    });
+  } else {
+    selectedRows.value = [];
+  }
+  emit("selection", selectedRows.value);
+}
+const onSelectionChange = (event) => {
+  emit("selection", selectedRows.value);
+}
 
 const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
-  dataTable.value.exportCSV({ selectionOnly: exportSelected });
+  if (exportSelected) {
+    dataTable.value.exportCSV({ selectionOnly: exportSelected });
+  }
+  emit('export-all');
 };
 
 // Generate filters and options objects
@@ -139,18 +173,20 @@ const refFilters = ref(filters);
 let dateFields = _filter(props.columns, col => _toUpper(col.dataType) === 'DATE');
 dateFields = _map(dateFields, col => col.field);
 
-let computedData = JSON.parse(JSON.stringify(props.data))
-_forEach(computedData, entry => {
-  // Clean up date fields to use Date objects
-  _forEach(dateFields, field => {
-    let dateEntry = _get(entry, field);
-    if (dateEntry !== null) {
-      const dateObj = new Date(dateEntry);
-      _set(entry, field, dateObj);
-    }
-  })
-})
-const refData = ref(computedData);
+const computedData = computed(() => {
+  const data = JSON.parse(JSON.stringify(props.data));
+  _forEach(data, (entry) => {
+    // Clean up date fields to use Date objects
+    _forEach(dateFields, field => {
+      let dateEntry = _get(entry, field);
+      if (dateEntry !== null) {
+        const dateObj = new Date(dateEntry);
+        _set(entry, field, dateObj);
+      }
+    })
+  });
+  return data;
+});
 
 // Generate list of options given a column
 function getUniqueOptions(column) {
@@ -169,6 +205,10 @@ function getFormattedDate(date) {
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })
   } else return ''
 }
+
+const emit = defineEmits(['page', 'sort', 'export-all', 'selection']);
+const onPage = (event) => { emit('page', event) };
+const onSort = (event) => { emit('sort', event) };
 </script>
 <style>
 .circle {

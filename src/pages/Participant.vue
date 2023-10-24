@@ -6,8 +6,8 @@
         <span>Loading Assignments</span>
       </div>
       <div v-else>
-        <div v-if="allAdmins.length > 1" class="p-float-label dropdown-container">
-          <Dropdown :options="allAdmins" v-model="selectedAdmin" optionLabel="label" optionValue="value"
+        <div v-if="allAdminInfo.length > 1" class="p-float-label dropdown-container">
+          <Dropdown :options="allAdminInfo" v-model="selectedAdmin" optionLabel="name" optionValue="id"
             inputId="dd-assignment" />
           <label for="dd-assignment">Select an assignment</label>
         </div>
@@ -103,7 +103,6 @@ const studentInfo = ref({
 });
 
 const gameStore = useGameStore();
-const allAdmins = ref([]);
 const { selectedAdmin } = storeToRefs(gameStore);
 
 let unsubscribe;
@@ -125,7 +124,6 @@ async function setUpAssignments(assignedAssignments, useUnsubscribe = false) {
           value: adminId,
         }
       })
-      allAdmins.value = assignmentOptions;
 
       // If the selectedAdmin that we retrieved from storeToRefs is empty or not
       // in the list of available administrations, pick a new one.
@@ -144,7 +142,6 @@ async function setUpAssignments(assignedAssignments, useUnsubscribe = false) {
           value: adminId,
         }
       })
-      allAdmins.value = assignmentOptions;
 
       // Likewise, if the selectedAdmin that we retrieved from storeToRefs is empty or not
       // in the list of available administrations, pick a new one.
