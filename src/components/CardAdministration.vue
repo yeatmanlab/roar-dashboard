@@ -52,8 +52,8 @@
 									aria-label="Completion details" size="small" />
 							</router-link>
 							<router-link
-								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
-								v-slot="{ href, route, navigate }">
+                :to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }" 
+                v-slot="{ href, route, navigate }">
 								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
 									size="small" />
 							</router-link>
@@ -67,7 +67,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
-import { useQueries } from "@tanstack/vue-query";
+import { useQuery } from "@tanstack/vue-query";
 import { fetchDocById } from "@/helpers/query/utils";
 import { useAuthStore } from "@/store/auth";
 import { removeEmptyOrgs } from "@/helpers";
@@ -154,153 +154,118 @@ const singularOrgTypes = {
 };
 
 // dsgf: districts, schools, groups, families
-const dsgfQueries = computed(() => {
-	const result = []
+const fetchTreeOrgs = async () => {
+	const promises = [];
 	for (const orgType of ["districts", "schools", "groups", "families"]) {
 		for (const org of (props.assignees[orgType] ?? [])) {
-			result.push({
-				queryKey: [orgType, org],
-				queryFn: () => fetchDocById(orgType, org, ["name", "schools", "classes", "districtId"]),
-				keepPreviousData: true,
-				staleTime: 5 * 60 * 1000, // 5 minutes
-				enabled: enableQueries,
-			})
+			promises.push(fetchDocById(orgType, org, ["name", "schools", "classes", "districtId"]));
 		}
 	}
-	return result;
-});
 
-const dsgfQueryResults = useQueries({ queries: dsgfQueries });
-const loadingDsgfOrgs = computed(() => {
-	return dsgfQueryResults.map((q) => q.isLoading).some(Boolean);
-})
-
-const dsgfOrgs = computed(() => {
-	return _without(dsgfQueryResults.map((queryResult, index) => {
-		if (queryResult.isSuccess) {
-			const { classes, schools, collection, ...nodeData } = queryResult.data;
-			const node = {
-				key: String(index),
-				data: {
-					orgType: singularOrgTypes[collection],
-					schools,
-					classes,
-					...nodeData,
-				},
-			};
-			if (classes) node.children = classes.map((classId) => {
-				return {
-					key: `${node.key}-${classId}`,
-					data: {
-						orgType: "class",
-						id: classId,
-					}
+	const dsgfOrgs = await Promise.allSettled(promises).then((promiseResults) => {
+		return _without(
+			promiseResults.map((promiseResult, index) => {
+				const { status, value: org } = promiseResult;
+				if (status === "fulfilled") {
+					const { classes, schools, collection, ...nodeData } = org;
+					const node = {
+						key: String(index),
+						data: {
+							orgType: singularOrgTypes[collection],
+							schools,
+							classes,
+							...nodeData,
+						},
+					};
+					if (classes) node.children = classes.map((classId) => {
+						return {
+							key: `${node.key}-${classId}`,
+							data: {
+								orgType: "class",
+								id: classId,
+							}
+						}
+					});
+					return node;
 				}
-			});
-			return node;
+				return undefined;
+			}),
+			undefined,
+		);
+	});
+
+	const dependentSchoolIds = _flattenDeep(dsgfOrgs.map((node) => node.data.schools ?? []));
+	const independentSchoolIds = dsgfOrgs.length > 0 ? _without(props.assignees.schools, ...dependentSchoolIds) : props.assignees.schools;
+	const dependentClassIds = _flattenDeep(dsgfOrgs.map((node) => node.data.classes ?? []));
+	const independentClassIds = dsgfOrgs.length > 0 ? _without(props.assignees.classes, ...dependentClassIds) : props.assignees.classes;
+
+	const independentSchools = (dsgfOrgs ?? []).filter((node) => {
+		return node.data.orgType === "school" && independentSchoolIds.includes(node.data.id)
+	});
+
+	const dependentSchools = (dsgfOrgs ?? []).filter((node) => {
+		return node.data.orgType === "school" && !independentSchoolIds.includes(node.data.id);
+	});
+
+	const classPromises = independentClassIds.map((classId) => fetchDocById("classes", classId, ["name", "schoolId"]));
+	const independentClasses = await Promise.allSettled(classPromises).then((promiseResults) => {
+		return _without(
+			promiseResults.map((promiseResult, index) => {
+				const { status, value: org } = promiseResult;
+				if (status === "fulfilled") {
+					const { collection, ...nodeData } = org;
+					const node = {
+						key: String(dsgfOrgs.length + index),
+						data: {
+							orgType: singularOrgTypes[collection],
+							...nodeData,
+						},
+					};
+					return node;
+				}
+				return undefined;
+			}),
+			undefined,
+		);
+	});
+
+	const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === "district");
+	treeTableOrgs.push(...independentSchools);
+
+	for (const school of dependentSchools) {
+		const districtId = school.data.districtId;
+		const districtIndex = treeTableOrgs.findIndex((node) => node.data.id === districtId);
+		if (districtIndex !== -1) {
+			if (treeTableOrgs[districtIndex].children === undefined) {
+				treeTableOrgs[districtIndex].children = [{
+					...school,
+					key: `${treeTableOrgs[districtIndex].key}-${school.key}`,
+				}];
+			} else {
+				treeTableOrgs[districtIndex].children.push(school);
+			}
+		} else {
+			treeTableOrgs.push(school);
 		}
-		return undefined;
-	}), undefined);
-});
-
-const independentSchoolIds = computed(() => {
-	if (!loadingDsgfOrgs.value && dsgfOrgs.value.length > 0) {
-		const dependentSchools = _flattenDeep(dsgfOrgs.value.map((node) => node.data.schools ?? []));
-		return _without(props.assignees.schools, ...dependentSchools);
-	} else if (loadingDsgfOrgs.value) {
-		return [];
 	}
-	return props.assignees.schools;
-});
 
-const independentClassIds = computed(() => {
-	if (!loadingDsgfOrgs.value && dsgfOrgs.value.length > 0) {
-		const dependentClasses = _flattenDeep(dsgfOrgs.value.map((node) => node.data.classes ?? []));
-		return _without(props.assignees.classes, ...dependentClasses);
-	} else if (loadingDsgfOrgs.value) {
-		return [];
-	}
-	return props.assignees.classes;
-});
+	treeTableOrgs.push(...(independentClasses ?? []));
+	treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === "group"));
+	treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === "family"));
 
-const enableClassQueries = computed(() => {
-	return !loadingDsgfOrgs.value && (independentClassIds.value.length ?? 0) > 0;
-})
+	return treeTableOrgs;
+};
 
-const classQueries = computed(() => {
-	return (independentClassIds.value ?? []).map((classId) => ({
-		queryKey: ["classes", classId],
-		queryFn: () => fetchDocById("classes", classId, ["name", "schoolId"]),
-		keepPreviousData: true,
-		staleTime: 5 * 60 * 1000, // 5 minutes
-		enabled: enableClassQueries,
-	}));
-});
-
-const classQueryResults = useQueries({ queries: classQueries });
-const independentClasses = computed(() => {
-	return _without(classQueryResults.map((queryResult, index) => {
-		if (queryResult.isSuccess) {
-			const { collection, ...nodeData } = queryResult.data;
-			const node = {
-				key: String(dsgfQueryResults.length + index),
-				data: {
-					orgType: singularOrgTypes[collection],
-					...nodeData,
-				},
-			};
-			return node;
-		}
-		return undefined;
-	}), undefined);
-})
-
-const loadingClassOrgs = computed(() => {
-	return classQueryResults.map((q) => q.isLoading).some(Boolean);
+const { data: orgs, isLoading: loadingDsgfOrgs } = useQuery({
+	queryKey: ["dsgfOrgs", props.id],
+	queryFn: () => fetchTreeOrgs(),
+	keepPreviousData: true,
+	staleTime: 5 * 60 * 1000, // 5 minutes
+	enabled: enableQueries,
 })
 
 const loadingTreeTable = computed(() => {
-	return loadingDsgfOrgs.value || loadingClassOrgs.value || expanding.value;
-});
-
-const independentSchools = computed(() => {
-	return (dsgfOrgs.value ?? []).filter((node) => {
-		return node.data.orgType === "school" && independentSchoolIds.value.includes(node.data.id)
-	});
-})
-
-const dependentSchools = computed(() => {
-	return (dsgfOrgs.value ?? []).filter((node) => {
-		return node.data.orgType === "school" && !independentSchoolIds.value.includes(node.data.id);
-	});
-})
-
-const orgs = computed(() => {
-	const _orgs = dsgfOrgs.value.filter((node) => node.data.orgType === "district");
-	_orgs.push(...independentSchools.value);
-
-	for (const school of dependentSchools.value) {
-		const districtId = school.data.districtId;
-		const districtIndex = _orgs.findIndex((node) => node.data.id === districtId);
-		if (districtIndex !== -1) {
-			if (_orgs[districtIndex].children === undefined) {
-				_orgs[districtIndex].children = [{
-					...school,
-					key: `${_orgs[districtIndex].key}-${school.key}`,
-				}];
-			} else {
-				_orgs[districtIndex].children.push(school);
-			}
-		} else {
-			_orgs.push(school);
-		}
-	}
-
-	_orgs.push(...(independentClasses.value ?? []));
-	_orgs.push(...dsgfOrgs.value.filter((node) => node.data.orgType === "group"));
-	_orgs.push(...dsgfOrgs.value.filter((node) => node.data.orgType === "family"));
-
-	return _orgs;
+	return loadingDsgfOrgs.value || expanding.value;
 });
 
 const treeTableOrgs = ref([]);
@@ -314,9 +279,13 @@ watch(showTable, (newValue) => {
 
 const expanding = ref(false);
 const onExpand = async (node) => {
-	console.log("onExpand", node);
 	if (node.data.orgType === "school" && node.children?.length > 0 && !node.data.expanded) {
 		expanding.value = true;
+
+		const promises = node.children.map(({ data }) => {
+			return fetchDocById("classes", data.id, ["name", "schoolId"])
+		});
+
 		const lazyNode = {
 			key: node.key,
 			data: {
@@ -325,12 +294,8 @@ const onExpand = async (node) => {
 			}
 		};
 
-		const promises = node.children.map(({ data }) => {
-			return fetchDocById("classes", data.id, ["name", "schoolId"])
-		});
-
-		const childNodes = (await Promise.all(promises)).map((schoolData, index) => {
-			const { collection, ...nodeData } = schoolData;
+		const childNodes = (await Promise.all(promises)).map((classData, index) => {
+			const { collection, ...nodeData } = classData;
 			return {
 				key: `${node.key}-${index}`,
 				data: {
