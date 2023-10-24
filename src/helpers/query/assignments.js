@@ -217,8 +217,6 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
     paginate: true,
     skinnyQuery: false,
   })
-  console.log('request body', requestBody)
-
   console.log(`Fetching page ${page.value} for ${adminId}`);
   return adminAxiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
     const assignmentData = mapFields(data)
@@ -233,14 +231,13 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
       }
     }), undefined)
     const userDocPromises = []
-    // TODO: this can be refactored to use fetchDocById
+    // this can eventually be refactored to use fetchDocById
     for (const docPath of userDocPaths) {
       userDocPromises.push(adminAxiosInstance.get(docPath).then(({ data }) => {
         return _mapValues(data.fields, (value) => convertValues(value));
       }))
     }
     const userDocData = await Promise.all(userDocPromises);
-    console.log('userDocData', userDocData)
     // Get scores docs
     const runIds = []
     for (const assignment of assignmentData) {
@@ -248,7 +245,6 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
         if(task.runId) runIds.push(task.runId)
       }
     }
-    console.log('runIds', runIds)
     if(!_isEmpty(runIds)){
       const scoresRequestBody = getScoresRequestBody({
         runIds: runIds,
@@ -260,7 +256,6 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
         paginate: false,
         skinnyQuery: false
       })
-      console.log('scores request body', scoresRequestBody)
       const scoreData = await appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
         return mapFields(data)
       })
