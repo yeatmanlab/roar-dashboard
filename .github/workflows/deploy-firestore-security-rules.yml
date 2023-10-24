@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Deploy Firestore Rules
 on:
   push:
     branches:
@@ -11,10 +11,6 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@master
-      - name: Install Dependencies
-        run: npm install
-      - name: Build
-        run: npm run build-prod
       - name: Archive Production Artifact
         uses: actions/upload-artifact@master
         with:
