@@ -143,9 +143,9 @@ import _capitalize from 'lodash/capitalize';
 import _toUpper from 'lodash/toUpper'
 import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
+import _find from 'lodash/find'
 import _isEmpty from 'lodash/isEmpty'
 import { useAuthStore } from '@/store/auth';
-import { useQueryStore } from '@/store/query';
 import { useQuery } from '@tanstack/vue-query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
@@ -155,10 +155,10 @@ import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignment
 import { getGrade } from "@bdelab/roar-utils";
 import { orderByDefault, fetchDocById } from '../helpers/query/utils';
 import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
+import { orgFetcher } from "@/helpers/query/orgs";
 import { pluralizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -186,6 +186,8 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 const claimsLoaded = computed(() => !isLoadingClaims.value);
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: administrationInfo } =
   useQuery({
@@ -205,8 +207,18 @@ const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInf
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
+// Grab schools if this is a district score report
+const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfo } = 
+  useQuery({
+    queryKey: ['schools', ref(props.orgId)],
+    queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
+    keepPreviousData: true,
+    enabled: (props.orgType === 'district' && initialized),
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
 // Scores Query
-const { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } = 
+let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } = 
   useQuery({
     queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
     queryFn: () => scoresPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
@@ -226,7 +238,6 @@ const { isLoading: isLoadingCount, data: scoresCount } =
   })
 
 const onPage = (event) => {
-  console.log("onPage", event.page);
   page.value = event.page;
 }
 const onSort = (event) => {
@@ -387,17 +398,17 @@ const tableData = computed(() => {
     if(props.orgType === 'district'){
       // Grab user's school list
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length) {
-        // If there is one valid school, 
+      if(currentSchools.length) { 
         const schoolId = currentSchools[0]
-        let schoolInfo;
-        if(queryStore.orgInfo[schoolId]) {
-          schoolInfo = queryStore.orgInfo[schoolId]
-        } else {
-          schoolInfo = getOrgInfo.value('school', schoolId)
-          queryStore.orgInfo[schoolId] = schoolInfo
+        const schoolName = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
+        return {
+          user: {
+            ...user,
+            schoolName
+          },
+          assignment,
+          scores,
         }
-        user['schoolName'] = schoolInfo.name
       }
     }
     return {
