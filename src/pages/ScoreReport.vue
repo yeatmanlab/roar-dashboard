@@ -155,16 +155,12 @@ import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignment
 import { getGrade } from "@bdelab/roar-utils";
 import { orderByDefault, fetchDocById } from '../helpers/query/utils';
 import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
+import { pluralizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
 const { roarfirekit } = storeToRefs(authStore);
-
-const { getAdministrationInfo, getOrgInfo } = storeToRefs(queryStore);
-const orgInfo = ref(queryStore.orgInfo[props.orgId]);
-const administrationInfo = ref(queryStore.administrationInfo[props.administrationId]);
-// const scoresData = ref(queryStore.scoresData[props.administrationId]);
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
@@ -176,10 +172,11 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-// scores query
+// Queries for page
 const orderBy = ref(orderByDefault);
 const pageLimit = ref(10);
 const page = ref(0);
+// User Claims
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
     queryKey: ['userClaims'],
@@ -189,10 +186,26 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 const claimsLoaded = computed(() => !isLoadingClaims.value);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
+const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: administrationInfo } =
+  useQuery({
+    queryKey: ['administrationInfo', props.administrationId],
+    queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInfo } = 
+  useQuery({
+    queryKey: ['orgInfo', props.orgId],
+    queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+// Scores Query
 const { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } = 
   useQuery({
     queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
@@ -202,6 +215,7 @@ const { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDa
     staleTime: 5 * 60 * 1000, // 5 mins
   })
 
+// Scores count query
 const { isLoading: isLoadingCount, data: scoresCount } = 
   useQuery({
     queryKey: ['scores', props.administrationId, props.orgId],
@@ -400,33 +414,18 @@ const refresh = async () => {
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
 
-  // scoresData.value = await queryStore.getUsersByAssignment(
-  //   props.administrationId, props.orgType, props.orgId, true
-  // );
-
-  if (!orgInfo.value) {
-    queryStore.getAdminOrgs();
-    orgInfo.value = getOrgInfo.value(props.orgType, props.orgId);
-  }
-  if (!administrationInfo.value) {
-    administrationInfo.value = getAdministrationInfo.value(props.administrationId);
-  }
   refreshing.value = false;
   initialized.value = true;
-
-  // queryStore.scoresData[props.administrationId] = scoresData.value;
-  queryStore.administrationInfo[props.administrationId] = administrationInfo.value;
-  queryStore.orgInfo[props.orgId] = orgInfo.value;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getUsersByAssignment && state.roarfirekit.isAdmin()) {
+  if (state.roarfirekit.isAdmin()) {
     await refresh();
   }
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.getUsersByAssignment && roarfirekit.value.isAdmin()) {
+  if (roarfirekit.value.isAdmin()) {
     await refresh()
   }
 })
