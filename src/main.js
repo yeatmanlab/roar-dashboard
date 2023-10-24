@@ -42,6 +42,7 @@ import Password from "primevue/password";
 import PickList from 'primevue/picklist';
 import ProgressBar from 'primevue/progressbar';
 import SelectButton from "primevue/selectbutton";
+import Sidebar from "primevue/sidebar";
 import Skeleton from "primevue/skeleton";
 import SpeedDial from "primevue/speeddial";
 import SplitButton from "primevue/splitbutton";
@@ -66,6 +67,8 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     //optional for column grouping
 import Row from 'primevue/row';
+
+import { VueQueryPlugin } from "@tanstack/vue-query";
 
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue'
@@ -98,6 +101,7 @@ app.use(VueGoogleMaps, {
 })
 app.use(createHead());
 app.use(TextClamp);
+app.use(VueQueryPlugin);
 
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
@@ -130,6 +134,7 @@ app.component("Password", Password);
 app.component("PickList", PickList);
 app.component("ProgressBar", ProgressBar);
 app.component("SelectButton", SelectButton);
+app.component("Sidebar", Sidebar);
 app.component("Skeleton", Skeleton);
 app.component("SpeedDial", SpeedDial);
 app.component("SplitButton", SplitButton);

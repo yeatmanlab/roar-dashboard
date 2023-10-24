@@ -6,70 +6,92 @@
     <section class="main-body">
       <Panel header="Your organizations">
         <template #icons>
-          <!-- <div class="flex justify-content-end flex-wrap column-gap-8"> -->
-          <!-- <SpeedDial size="small" v-if="superAdmin" :model="superAdminItems" direction="down" :transitionDelay="20"
-              showIcon="pi pi-cog" hideIcon="pi pi-times" :tooltipOptions="{ position: 'left' }"
-              buttonClass="p-panel-header-icon" class="flex align-items-center justify-content-center" /> -->
-          <button v-if="superAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-icon mr-2"
+          <button v-if="isSuperAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-icon mr-2"
             @click="syncClever">
             <span :class="cleverSyncIcon"></span>
           </button>
-          <button v-tooltip.top="'Refresh'" class="p-panel-header-icon mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button>
-          <!-- </div> -->
         </template>
-
-        <TreeTable :value="hierarchicalAdminOrgs" scrollable :rowHover="true" tableStyle="min-width: 50rem"
-          sortMode="multiple" removableSort resizableColumns :paginator="true" :alwaysShowPaginator="false" :rows="10"
-          :rowsPerPageOptions="[5, 10, 25]">
-          <Column field="name" header="Name" sortable expander>
-            <template #body="{ node }">
-              {{ node.data.name }}
-              <Badge v-if="node.data.clever" v-tooltip.right="`This is a Clever ${node.data.orgType}`" value="C"
-                severity="info" class="ml-2"></Badge>
-            </template>
-          </Column>
-          <Column field="orgType" header="Type" sortable></Column>
-          <Column field="abbreviation" header="Abbreviation" sortable></Column>
-          <Column field="ncesId" header="NCES ID" sortable></Column>
-          <Column field="address.formattedAddress" header="Address" sortable></Column>
-          <Column field="grade" header="Grade" sortable style="width: 7rem;"></Column>
-          <Column field="tags" header="Tags" style="min-width: 10rem;">
-            <template #body="{ node }">
-              <Chip v-for="(tag, index) in node.data.tags" :label="tag" :key="index" icon="pi pi-tag" class="m-1" />
-            </template>
-          </Column>
-          <Column field="" header="" #body="{ node }">
-            <router-link :to="{ name: 'ListUsers', params: { orgType: node.data.orgType, orgId: node.data.id } }">
-              <Button v-tooltip.top="'View users'" severity="secondary" text raised label="Users" aria-label="View users"
-                icon="pi pi-users" size="small" />
-            </router-link>
-          </Column>
-        </TreeTable>
+        <TabView v-if="claimsLoaded" lazy v-model:activeIndex="activeIndex">
+          <TabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+            <div class="grid column-gap-3 mt-2">
+              <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
+                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'">
+                <span class="p-float-label">
+                  <Dropdown v-model="selectedDistrict" inputId="district" :options="allDistricts" optionLabel="name"
+                    optionValue="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts" class="w-full" />
+                  <label for="district">District</label>
+                </span>
+              </div>
+              <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="orgType.id === 'classes'">
+                <span class="p-float-label">
+                  <Dropdown v-model="selectedSchool" inputId="school" :options="allSchools" optionLabel="name"
+                    optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
+                  <label for="school">School</label>
+                </span>
+              </div>
+            </div>
+            <RoarDataTable v-if="tableData" :key="tableKey" lazy :columns="tableColumns" :data="tableData"
+              :pageLimit="pageLimit" :totalRecords="totalRecords"
+              :loading="isLoading || isLoadingCount || isFetching || isFetchingCount" @page="onPage($event)"
+              @sort="onSort($event)" @export-all="exportAll" />
+            <AppSpinner v-else />
+          </TabPanel>
+        </TabView>
+        <AppSpinner v-else />
       </Panel>
     </section>
   </main>
 </template>
-
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
+import {
+  orgFetcher,
+  orgCounter,
+  orgFetchAll,
+  orgPageFetcher,
+} from "@/helpers/query/orgs";
+import {
+  orderByDefault,
+  exportCsv,
+  fetchDocById,
+} from "@/helpers/query/utils";
+import { getSidebarActions } from "@/router/sidebarActions";
+import { ref, computed, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import { useQueryStore } from "@/store/query";
+import { useQuery } from '@tanstack/vue-query'
 import { useAuthStore } from "@/store/auth";
+import _get from "lodash/get";
+import _head from "lodash/head";
 import _isEmpty from "lodash/isEmpty";
 import _union from "lodash/union";
-import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import { getSidebarActions } from "../router/sidebarActions";
 
-const toast = useToast();
-const queryStore = useQueryStore();
+const initialized = ref(false);
+const page = ref(0);
+const pageLimit = ref(10);
+
+const selectedDistrict = ref(undefined)
+const selectedSchool = ref(undefined)
+const orderBy = ref(orderByDefault);
+
+const districtPlaceholder = computed(() => {
+  if (isLoadingDistricts.value) {
+    return "Loading..."
+  }
+  return "Select a district"
+})
+
+const schoolPlaceholder = computed(() => {
+  if (isLoadingSchools.value) {
+    return "Loading..."
+  }
+  return "Select a school"
+})
+
+// Authstore and Sidebar
 const authStore = useAuthStore();
-const { adminOrgs, hierarchicalAdminOrgs } = storeToRefs(queryStore);
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
 const syncingClever = ref(false);
-const superAdmin = ref(authStore.isUserSuperAdmin());
 const cleverSyncIcon = computed(() => {
   if (syncingClever.value) {
     return "pi pi-sync pi-spin";
@@ -78,51 +100,177 @@ const cleverSyncIcon = computed(() => {
   }
 });
 
-const syncClever = async () => {
-  toast.add({ severity: 'info', summary: 'Syncing', detail: 'Clever sync initiated', life: 3000 });
-  syncingClever.value = true;
-  await authStore.syncCleverOrgs()
-  syncingClever.value = false;
-  refresh();
-  toast.add({ severity: 'success', summary: 'Success', detail: 'Clever sync successful', life: 5000 });
-}
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims'],
+    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
-const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return "pi pi-spin pi-spinner";
-  return "pi pi-refresh";
+const orgHeaders = computed(() => {
+  const headers = {
+    districts: { header: "Districts", id: 'districts' },
+    schools: { header: "Schools", id: 'schools' },
+    classes: { header: "Classes", id: 'classes' },
+    groups: { header: "Groups", id: 'groups' },
+  };
+
+  if (isSuperAdmin.value) return headers;
+
+  const result = {}
+  if ((adminOrgs.value?.districts ?? []).length > 0) {
+    result.districts = { header: "Districts", id: 'districts' };
+    result.schools = { header: "Schools", id: 'schools' };
+    result.classes = { header: "Classes", id: 'classes' };
+  }
+  if ((adminOrgs.value?.schools ?? []).length > 0) {
+    result.schools = { header: "Schools", id: 'schools' };
+    result.classes = { header: "Classes", id: 'classes' };
+  }
+  if ((adminOrgs.value?.classes ?? []).length > 0) {
+    result.classes = { header: "Classes", id: 'classes' };
+  }
+  if ((adminOrgs.value?.groups ?? []).length > 0) {
+    result.groups = { header: "Groups", id: 'groups' };
+  }
+  return result;
 });
 
-let unsubscribe;
+const activeIndex = ref(0);
+const activeOrgType = computed(() => {
+  return Object.keys(orgHeaders.value)[activeIndex.value]
+})
 
-const refresh = async () => {
-  refreshing.value = true;
-  if (unsubscribe) unsubscribe();
-  queryStore.getAdminOrgs().then(() => {
-    refreshing.value = false;
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+
+const { isLoading: isLoadingDistricts, data: allDistricts } =
+  useQuery({
+    queryKey: ['districts'],
+    queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
+    keepPreviousData: true,
+    enabled: claimsLoaded,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+const schoolQueryEnabled = computed(() => {
+  return claimsLoaded.value && selectedDistrict.value !== undefined;
+})
+
+const { isLoading: isLoadingSchools, data: allSchools } =
+  useQuery({
+    queryKey: ['schools', selectedDistrict],
+    queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
+    keepPreviousData: true,
+    enabled: schoolQueryEnabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecords } =
+  useQuery({
+    queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy],
+    queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs),
+    keepPreviousData: true,
+    enabled: claimsLoaded,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const { isLoading, isFetching, data: tableData } =
+  useQuery({
+    queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page],
+    queryFn: () => orgPageFetcher(
+      activeOrgType,
+      selectedDistrict,
+      selectedSchool,
+      orderBy,
+      pageLimit,
+      page,
+      isSuperAdmin,
+      adminOrgs,
+    ),
+    keepPreviousData: true,
+    enabled: claimsLoaded,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const exportAll = async () => {
+  const exportData = await orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs);
+  console.log("Exporting all:", exportData)
+  exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 }
 
-if (_isEmpty(_union(...Object.values(adminOrgs.value)))) {
-  unsubscribe = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-      await refresh();
-    }
-  });
+const tableColumns = computed(() => {
+  const columns = [
+    { field: 'name', header: 'Name', dataType: 'string', pinned: true },
+    { field: "abbreviation", header: "Abbreviation", dataType: "string" },
+    { field: "address.formattedAddress", header: "Address", dataType: "string" },
+    { field: "tags", header: "Tags", dataType: "array", chip: true },
+  ];
+
+  if (["districts", "schools"].includes(activeOrgType.value)) {
+    columns.push(
+      { field: "mdrNumber", header: "MDR Number", dataType: "string" },
+      { field: "ncesId", header: "NCES ID", dataType: "string" },
+    )
+  }
+
+  if (["districts", "schools", "classes"].includes(activeOrgType.value)) {
+    columns.push(
+      { field: "clever", header: "Clever", dataType: "boolean" },
+    )
+  }
+
+  return columns;
+});
+
+const onPage = (event) => {
+  console.log("onPage", event.page);
+  page.value = event.page;
+}
+
+const onSort = (event) => {
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
+    field: { fieldPath: item.field },
+    direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
+  }));
+  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+}
+
+let unsubscribe;
+const initTable = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
 }
 
 const { roarfirekit } = storeToRefs(authStore);
-onMounted(async () => {
-  if (roarfirekit.value.getOrgs && roarfirekit.value.isAdmin()) {
-    await refresh()
-  }
-})
-</script> 
 
-<style lang="scss">
-.hide {
-  display: none;
-}
-</style>
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) initTable();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) initTable();
+})
+
+watch(allDistricts, (newValue) => {
+  selectedDistrict.value = _get(_head(newValue), "id");
+});
+
+watch(allSchools, (newValue) => {
+  selectedSchool.value = _get(_head(newValue), "id");
+});
+
+watch(activeIndex, () => {
+  page.value = 0;
+})
+
+const tableKey = ref(0);
+watch([selectedDistrict, selectedSchool], () => {
+  page.value = 0;
+  tableKey.value += 1;
+});
+</script>
