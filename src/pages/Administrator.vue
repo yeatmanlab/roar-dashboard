@@ -9,9 +9,6 @@
           <label class="mr-2" for="dd-sort">Sort by</label>
           <Dropdown v-model="sortKey" inputId="dd-sort" :options="sortOptions" optionLabel="label"
             @change="onSortChange($event)" />
-          <!-- <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button> -->
         </template>
 
         <div v-if="initialized && !isLoadingAdministrations">
@@ -210,25 +207,6 @@ const onSortChange = (event) => {
   page.value = 0;
   orderBy.value = event.value.value;
 };
-
-// const refresh = async () => {
-//   unsubscribe();
-//   refreshing.value = true;
-//   await queryStore.getMyAdministrations();
-//   refreshing.value = false;
-// }
-
-// const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-//   if (state.roarfirekit.getOrgs && state.roarfirekit.getMyAdministrations && state.roarfirekit.isAdmin()) {
-//     await refresh();
-//   }
-// });
-
-// onMounted(async () => {
-//   if (roarfirekit.value.getOrgs && roarfirekit.value.getMyAdministrations && roarfirekit.value.isAdmin()) {
-//     await refresh()
-//   }
-// })
 
 </script>
 
