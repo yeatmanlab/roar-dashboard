@@ -16,7 +16,8 @@
 
         <div v-if="initialized && !isLoadingAdministrations">
           <DataView :key="dataViewKey" :value="administrations" lazy paginator paginatorPosition="top"
-            :totalRecords="totalRecords" :rows="pageLimit" @page="onPage($event)" dataKey="id">
+            :totalRecords="totalRecords" :rows="pageLimit" :rowsPerPageOptions="[3, 5, 10, 25]" @page="onPage($event)"
+            dataKey="id">
             <template #list="slotProps">
               <div class="mb-2 w-full">
                 <CardAdministration :key="slotProps.data.id" :id="slotProps.data.id" :title="slotProps.data.name"
@@ -138,6 +139,7 @@ const { isLoading: isLoadingAdministrations, isFetching: isFetchingAdministratio
   });
 
 const onPage = (event) => {
+  pageLimit.value = event.rows;
   page.value = event.page;
 }
 
@@ -202,6 +204,7 @@ const sortOptions = ref([
 const sortKey = ref(sortOptions.value[0]);
 
 const dataViewKey = ref(0);
+
 const onSortChange = (event) => {
   dataViewKey.value += 1;
   page.value = 0;
