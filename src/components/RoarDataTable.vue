@@ -151,7 +151,8 @@ const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
   if (exportSelected) {
-    dataTable.value.exportCSV({ selectionOnly: exportSelected });
+    emit('export-selected', selectedRows.value)
+    return;
   }
   emit('export-all');
 };
