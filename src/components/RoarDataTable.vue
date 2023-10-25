@@ -3,15 +3,23 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div v-if="allowExport" class="flex flex-row w-full gap-2 py-2" style="justify-content: flex-end;">
+    <div class="flex flex-row flex-wrap w-full gap-2 pt-4 justify-content-end">
       <span class="p-float-label">
         <MultiSelect id="ms-columns" :modelValue="selectedColumns" :options="inputColumns" optionLabel="header"
           :maxSelectedLabels="3" @update:modelValue="onColumnToggle" class="w-full md:w-20rem"
           selectedItemsLabel="{0} columns selected" />
         <label for="ms-columns">Select Columns</label>
       </span>
-      <Button label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
-      <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
+      <span class="p-float-label">
+        <MultiSelect id="ms-freeze" :modelValue="frozenColumns" :options="inputColumns" optionLabel="header"
+          :maxSelectedLabels="3" @update:modelValue="onFreezeToggle" class="w-full md:w-20rem"
+          selectedItemsLabel="{0} columns frozen" :showToggleAll="false" />
+        <label for="ms-columns">Freeze Columns</label>
+      </span>
+      <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
+        <Button label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
+        <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
+      </span>
     </div>
     <DataTable ref="dataTable" :value="computedData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
       :exportFilename="exportFilename" removableSort sortMode="multiple" showGridlines v-model:filters="refFilters"
@@ -20,13 +28,11 @@
       :loading="props.loading" scrollable @page="onPage($event)" @sort="onSort($event)" v-model:selection="selectedRows"
       :selectAll="selectAll" @select-all-change="onSelectAll" @row-select="onSelectionChange"
       @row-unselect="onSelectionChange">
-      <template #header>
-      </template>
-      <Column selectionMode="multiple" headerStyle="width: 3rem" frozen></Column>
+      <Column selectionMode="multiple" headerStyle="width: 3rem" :reorderableColumn="false" frozen></Column>
       <Column v-for="(col, index) of selectedColumns" :key="col.field + '_' + index" :header="col.header"
         :field="col.field" :dataType="col.dataType" :sortable="(col.sort !== false)"
         :showFilterMatchModes="!col.useMultiSelect" :showFilterOperator="col.allowMultipleFilters === true"
-        :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned" alignFrozen="left">
+        :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned">
         <template #body="{ data }">
           <div v-if="col.tag && col.dataType === 'string' && _get(data, col.field) !== undefined">
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
@@ -223,10 +229,16 @@ function getFormattedDate(date) {
 }
 
 const onColumnToggle = (selected) => {
-  selectedColumns.value = inputColumns.value.filter((col) => selected.includes(col)).sort(
-    // Sort true values first
-    (a, b) => (a.pinned === b.pinned) ? 0 : a.pinned ? -1 : 1
-  );
+  selectedColumns.value = inputColumns.value.filter((col) => selected.includes(col));
+};
+
+const frozenColumns = ref(inputColumns.value.filter((col) => col.pinned));
+const onFreezeToggle = (selected) => {
+  frozenColumns.value = inputColumns.value.filter((col) => selected.includes(col));
+  selectedColumns.value = selectedColumns.value.map((col) => {
+    col.pinned = selected.includes(col);
+    return col
+  })
 };
 
 const emit = defineEmits(['page', 'sort', 'export-all', 'selection']);
