@@ -513,8 +513,7 @@ const tableData = computed(() => {
 })
 
 let unsubscribe;
-
-const refresh = async () => {
+const refresh = () => {
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
 
@@ -523,15 +522,11 @@ const refresh = async () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.isAdmin()) {
-    await refresh();
-  }
+  if (state.roarfirekit.restConfig) refresh();
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.isAdmin()) {
-    await refresh()
-  }
+  if (roarfirekit.value.restConfig) refresh();
 })
 </script>
 
