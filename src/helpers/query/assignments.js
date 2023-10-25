@@ -203,7 +203,7 @@ export const assignmentCounter = (adminId, orgType, orgId) => {
   })
 }
 
-export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page) => {
+export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page, skinny = false, paginate = true) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
   const requestBody = getAssignmentsRequestBody({
@@ -213,8 +213,8 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
     aggregationQuery: false,
     pageLimit: pageLimit.value,
     page: page.value,
-    paginate: true,
-    skinnyQuery: false,
+    paginate: paginate,
+    skinnyQuery: skinny,
   })
   console.log(`Fetching page ${page.value} for ${adminId}`);
   return adminAxiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
@@ -255,7 +255,7 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
           pageLimit: pageLimit.value,
           page: page.value,
           paginate: false,
-          skinnyQuery: false
+          skinnyQuery: skinny
         })
         scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
           return mapFields(data);
@@ -275,4 +275,9 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
     }))
     return scoresObj
   });
+}
+
+export const scoresFetchAll = async (adminId, orgType, orgId) => {
+  console.log('gathering export data')
+  return await scoresPageFetcher(adminId, orgType, orgId, { value: 2**31 - 1 }, { value: 0 }, true, true)
 }
