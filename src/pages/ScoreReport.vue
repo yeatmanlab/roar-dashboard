@@ -47,7 +47,7 @@
           </div>
           <RoarDataTable :data="tableData" :columns="columns" :totalRecords="scoresCount" lazy :pageLimit="pageLimit"
             :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
-            @export-all="exportAll" />
+            @export-all="exportAll" @export-selected="exportSelected" />
         </div>
 
 
@@ -149,6 +149,7 @@ import _map from 'lodash/map'
 import _keys from 'lodash/keys'
 import _pick from 'lodash/pick'
 import _mapKeys from 'lodash/mapKeys'
+import _kebabCase from 'lodash/kebabCase'
 import _find from 'lodash/find'
 import _isEmpty from 'lodash/isEmpty'
 import { useAuthStore } from '@/store/auth';
@@ -253,6 +254,39 @@ const onSort = (event) => {
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
 }
 
+const exportSelected = (selectedRows) => {
+  console.log('selectedRows', selectedRows)
+  const computedExportData = _map(selectedRows, ({ user, assignment, scores }) => {
+    let tableRow = {
+      Username: _get(user, 'username'),
+      First: _get(user, 'name.first'),
+      Last: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+    }
+    if (authStore.isUserSuperAdmin()) {
+      tableRow['PID'] = _get(user, 'assessmentPid')
+    }
+    if(props.orgType === 'district') {
+      const currentSchools = _get(user, 'schools.current')
+      if(currentSchools.length){
+        const schoolId = currentSchools[0]
+        tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
+      }
+    }
+    for(const assessment of assignment.assessments) {
+      const taskId = assessment.taskId
+      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
+      const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
+      tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
+      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
+      tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+    }
+    return tableRow
+  })
+  exportCsv(computedExportData, 'roar-scores-selected.csv');
+  return;
+}
+
 const exportAll = async () => {
   const exportData = await scoresFetchAll(props.administrationId, props.orgType, props.orgId)
   const sortedTasks = allTasks.value.sort((p1, p2) => {
@@ -274,48 +308,10 @@ const exportAll = async () => {
         const schoolId = currentSchools[0]
         tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
       }
-      
     }
     for(const assessment of assignment.assessments) {
       const taskId = assessment.taskId
-      const grade = getGrade(_get(user, 'studentData.grade'));
-      let percentileScoreKey = undefined
-      let standardScoreKey = undefined
-      let rawScoreKey = undefined
-      if (assessment.taskId === "swr" || assessment.taskId === "swr-es") {
-        if (grade < 6) {
-          percentileScoreKey = 'wjPercentile';
-          standardScoreKey = 'standardScore';
-        } else {
-          percentileScoreKey = 'sprPercentile';
-          standardScoreKey = 'sprStandardScore';
-        }
-        rawScoreKey = 'roarScore';
-      }
-      if (assessment.taskId === "pa") {
-        if (grade < 6) {
-          percentileScoreKey = 'percentile';
-          standardScoreKey = 'standardScore';
-        } else {
-          // These are string values intended for display
-          //   they include '>' when the ceiling is hit
-          // Replace them with non '-String' versions for
-          //   comparison.
-          percentileScoreKey = 'sprPercentileString';
-          standardScoreKey = 'sprStandardScoreString';
-        }
-        rawScoreKey = 'roarScore';
-      }
-      if (assessment.taskId === "sre") {
-        if (grade < 6) {
-          percentileScoreKey = 'tosrecPercentile';
-          standardScoreKey = 'tosrecSS'
-        } else {
-          percentileScoreKey = 'sprPercentile';
-          standardScoreKey = 'sprStandardScore';
-        }
-        rawScoreKey = 'sreScore';
-      }
+      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
       const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
       tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
       tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
@@ -323,8 +319,54 @@ const exportAll = async () => {
     }
     return tableRow
   })
-  exportCsv(computedExportData, `roar-scores-${administrationInfo.value.name}.csv`);
+  exportCsv(computedExportData, `roar-scores-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`);
   return;
+}
+
+function getScoreKeys(row, grade) {
+  const taskId = row.taskId
+  let percentileScoreKey = undefined
+  let standardScoreKey = undefined
+  let rawScoreKey = undefined
+  if (taskId === "swr" || taskId === "swr-es") {
+    if (grade < 6) {
+      percentileScoreKey = 'wjPercentile';
+      standardScoreKey = 'standardScore';
+    } else {
+      percentileScoreKey = 'sprPercentile';
+      standardScoreKey = 'sprStandardScore';
+    }
+    rawScoreKey = 'roarScore';
+  }
+  if (taskId === "pa") {
+    if (grade < 6) {
+      percentileScoreKey = 'percentile';
+      standardScoreKey = 'standardScore';
+    } else {
+      // These are string values intended for display
+      //   they include '>' when the ceiling is hit
+      // Replace them with non '-String' versions for
+      //   comparison.
+      percentileScoreKey = 'sprPercentileString';
+      standardScoreKey = 'sprStandardScoreString';
+    }
+    rawScoreKey = 'roarScore';
+  }
+  if (taskId === "sre") {
+    if (grade < 6) {
+      percentileScoreKey = 'tosrecPercentile';
+      standardScoreKey = 'tosrecSS'
+    } else {
+      percentileScoreKey = 'sprPercentile';
+      standardScoreKey = 'sprStandardScore';
+    }
+    rawScoreKey = 'sreScore';
+  }
+  return {
+    percentileScoreKey,
+    standardScoreKey,
+    rawScoreKey
+  }
 }
 
 const refreshing = ref(false);
