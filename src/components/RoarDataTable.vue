@@ -4,6 +4,12 @@
   </div>
   <div v-else>
     <div v-if="allowExport" class="flex flex-row w-full gap-2 py-2" style="justify-content: flex-end;">
+      <span class="p-float-label">
+        <MultiSelect id="ms-columns" :modelValue="selectedColumns" :options="inputColumns" optionLabel="header"
+          :maxSelectedLabels="3" @update:modelValue="onColumnToggle" class="w-full md:w-20rem"
+          selectedItemsLabel="{0} columns selected" />
+        <label for="ms-columns">Select Columns</label>
+      </span>
       <Button label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
       <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
     </div>
@@ -14,11 +20,13 @@
       :loading="props.loading" scrollable @page="onPage($event)" @sort="onSort($event)" v-model:selection="selectedRows"
       :selectAll="selectAll" @select-all-change="onSelectAll" @row-select="onSelectionChange"
       @row-unselect="onSelectionChange">
+      <template #header>
+      </template>
       <Column selectionMode="multiple" headerStyle="width: 3rem" frozen></Column>
-      <Column v-for="col of columns" :key="col.field" :header="col.header" :field="col.field" :dataType="col.dataType"
-        :sortable="(col.sort !== false)" :showFilterMatchModes="!col.useMultiSelect"
-        :showFilterOperator="col.allowMultipleFilters === true" :showAddButton="col.allowMultipleFilters === true"
-        :frozen="col.pinned">
+      <Column v-for="(col, index) of selectedColumns" :key="col.field + '_' + index" :header="col.header"
+        :field="col.field" :dataType="col.dataType" :sortable="(col.sort !== false)"
+        :showFilterMatchModes="!col.useMultiSelect" :showFilterOperator="col.allowMultipleFilters === true"
+        :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned" alignFrozen="left">
         <template #body="{ data }">
           <div v-if="col.tag && col.dataType === 'string' && _get(data, col.field) !== undefined">
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
@@ -105,6 +113,8 @@ const props = defineProps({
   lazy: { type: Boolean, default: false },
 });
 
+const inputColumns = ref(props.columns);
+const selectedColumns = ref(props.columns);
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -211,6 +221,13 @@ function getFormattedDate(date) {
     return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })
   } else return ''
 }
+
+const onColumnToggle = (selected) => {
+  selectedColumns.value = inputColumns.value.filter((col) => selected.includes(col)).sort(
+    // Sort true values first
+    (a, b) => (a.pinned === b.pinned) ? 0 : a.pinned ? -1 : 1
+  );
+};
 
 const emit = defineEmits(['page', 'sort', 'export-all', 'selection']);
 const onPage = (event) => { emit('page', event) };
