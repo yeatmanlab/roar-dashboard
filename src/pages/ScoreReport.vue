@@ -255,7 +255,6 @@ const onSort = (event) => {
 }
 
 const exportSelected = (selectedRows) => {
-  console.log('selectedRows', selectedRows)
   const computedExportData = _map(selectedRows, ({ user, assignment, scores }) => {
     let tableRow = {
       Username: _get(user, 'username'),
@@ -280,6 +279,8 @@ const exportSelected = (selectedRows) => {
       tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
       tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
       tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      const { support_level, tag_color } = getSupportLevel(rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore)
+      tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
     }
     return tableRow
   })
@@ -316,6 +317,8 @@ const exportAll = async () => {
       tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
       tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
       tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      const { support_level, tag_color } = getSupportLevel(rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore)
+      tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
     }
     return tableRow
   })
@@ -366,6 +369,27 @@ function getScoreKeys(row, grade) {
     percentileScoreKey,
     standardScoreKey,
     rawScoreKey
+  }
+}
+
+function getSupportLevel(percentile) {
+  let support_level = null;
+  let tag_color = null;
+  if (percentile !== undefined) {
+    if (percentile >= 50) {
+      support_level = 'At or Above Average'
+      tag_color = emptyTagColorMap.above;
+    } else if (percentile > 25 && percentile < 50) {
+      support_level = 'Needs Some Support'
+      tag_color = emptyTagColorMap.some
+    } else {
+      support_level = "Needs Extra Support"
+      tag_color = emptyTagColorMap.below
+    }
+  }
+  return {
+    support_level,
+    tag_color
   }
 }
 
@@ -449,67 +473,18 @@ const tableData = computed(() => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of (assignment?.assessments || [])) {
-      let percentileScoreKey = undefined;
-      let standardScoreKey = undefined;
-      let rawScoreKey = undefined;
-      if (assessment.taskId === "swr" || assessment.taskId === "swr-es") {
-        if (grade < 6) {
-          percentileScoreKey = 'wjPercentile';
-          standardScoreKey = 'standardScore';
-        } else {
-          percentileScoreKey = 'sprPercentile';
-          standardScoreKey = 'sprStandardScore';
-        }
-        rawScoreKey = 'roarScore';
-      }
-      if (assessment.taskId === "pa") {
-        if (grade < 6) {
-          percentileScoreKey = 'percentile';
-          standardScoreKey = 'standardScore';
-        } else {
-          // These are string values intended for display
-          //   they include '>' when the ceiling is hit
-          // Replace them with non '-String' versions for
-          //   comparison.
-          percentileScoreKey = 'sprPercentileString';
-          standardScoreKey = 'sprStandardScoreString';
-        }
-        rawScoreKey = 'roarScore';
-      }
-      if (assessment.taskId === "sre") {
-        if (grade < 6) {
-          percentileScoreKey = 'tosrecPercentile';
-          standardScoreKey = 'tosrecSS'
-        } else {
-          percentileScoreKey = 'sprPercentile';
-          standardScoreKey = 'sprStandardScore';
-        }
-        rawScoreKey = 'sreScore';
-      }
+      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(assessment, grade)
       const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
       const percentileScore = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
       const rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
-      if (percentileScore !== undefined) {
-        let support_level = '';
-        let tag_color = '';
-        if (percentileScore >= 50) {
-          support_level = 'at_above'
-          tag_color = emptyTagColorMap.above;
-        } else if (percentileScore > 25 && percentileScore < 50) {
-          support_level = 'some_support'
-          tag_color = emptyTagColorMap.some
-        } else {
-          support_level = "needs_extra"
-          tag_color = emptyTagColorMap.below
-        }
-        scores[assessment.taskId] = {
-          percentile: percentileScore,
-          standard: standardScore,
-          raw: rawScore,
-          support_level,
-          color: tag_color
-        }
+      const { support_level, tag_color } = getSupportLevel(percentileScore);
+      scores[assessment.taskId] = {
+        percentile: percentileScore,
+        standard: standardScore,
+        raw: rawScore,
+        support_level,
+        color: tag_color
       }
     }
     // If this is a district score report, grab school information
