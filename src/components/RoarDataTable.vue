@@ -32,7 +32,7 @@
       <Column v-for="(col, index) of selectedColumns" :key="col.field + '_' + index" :header="col.header"
         :field="col.field" :dataType="col.dataType" :sortable="(col.sort !== false)"
         :showFilterMatchModes="!col.useMultiSelect" :showFilterOperator="col.allowMultipleFilters === true"
-        :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned">
+        :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned" alignFrozen="left">
         <template #body="{ data }">
           <div v-if="col.tag && col.dataType === 'string' && _get(data, col.field) !== undefined">
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
