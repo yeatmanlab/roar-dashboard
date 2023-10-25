@@ -9,10 +9,11 @@
     </div>
     <DataTable ref="dataTable" :value="computedData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
       :exportFilename="exportFilename" removableSort sortMode="multiple" showGridlines v-model:filters="refFilters"
-      filterDisplay="menu" paginator :rows="props.pageLimit" :alwaysShowPaginator="true"
-      :totalRecords="props.totalRecords" :lazy="props.lazy" :loading="props.loading" scrollable @page="onPage($event)"
-      @sort="onSort($event)" v-model:selection="selectedRows" :selectAll="selectAll" @select-all-change="onSelectAll"
-      @row-select="onSelectionChange" @row-unselect="onSelectionChange">
+      filterDisplay="menu" paginator :rows="props.pageLimit" :alwaysShowPaginator="true" paginatorPosition="both"
+      :rowsPerPageOptions="[10, 25, 50, 100]" :totalRecords="props.totalRecords" :lazy="props.lazy"
+      :loading="props.loading" scrollable @page="onPage($event)" @sort="onSort($event)" v-model:selection="selectedRows"
+      :selectAll="selectAll" @select-all-change="onSelectAll" @row-select="onSelectionChange"
+      @row-unselect="onSelectionChange">
       <Column selectionMode="multiple" headerStyle="width: 3rem" frozen></Column>
       <Column v-for="col of columns" :key="col.field" :header="col.header" :field="col.field" :dataType="col.dataType"
         :sortable="(col.sort !== false)" :showFilterMatchModes="!col.useMultiSelect"
@@ -114,7 +115,12 @@ const onSelectAll = () => {
     toast.add({
       severity: 'info',
       summary: 'Rows selected',
-      detail: `You selected ${selectedRows.value.length} rows but there are ${props.totalRecords} total rows in all of this tables pages. You've been warned.`, life: 5000
+      detail:
+        `You selected ${selectedRows.value.length} rows but there are
+        ${props.totalRecords} total rows in all of this table's pages. If you
+        would like to export all rows, please click the "Export Whole Table"
+        button.`,
+      life: 5000
     });
   } else {
     selectedRows.value = [];
