@@ -142,6 +142,7 @@ import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _toUpper from 'lodash/toUpper'
+import _round from 'lodash/round';
 import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
 import _find from 'lodash/find'
@@ -369,7 +370,8 @@ const tableData = computed(() => {
         }
         rawScoreKey = 'sreScore';
       }
-      const percentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
+      const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
+      const percentileScore = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
       const rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       if (percentileScore !== undefined) {
