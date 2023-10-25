@@ -230,6 +230,7 @@ const tableColumns = computed(() => {
 const onPage = (event) => {
   console.log("onPage", event.page);
   page.value = event.page;
+  pageLimit.value = event.rows;
 }
 
 const onSort = (event) => {
