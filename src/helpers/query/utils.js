@@ -1,5 +1,6 @@
 import axios from "axios"
 import Papa from "papaparse";
+import _get from "lodash/get";
 import _fromPairs from "lodash/fromPairs";
 import _last from "lodash/last";
 import _mapValues from "lodash/mapValues";
@@ -64,10 +65,10 @@ export const orderByDefault = [
   }
 ];
 
-export const getAxiosInstance = () => {
+export const getAxiosInstance = (db = 'admin') => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
-  const axiosOptions = roarfirekit.value.restConfig?.admin ?? {};
+  const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
   return axios.create(axiosOptions);
 }
 

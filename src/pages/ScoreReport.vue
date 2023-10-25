@@ -40,12 +40,13 @@
         </div>
 
         <!-- Main table -->
-        <div v-else-if="scoresData?.length ?? 0 > 0">
+        <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
             <Dropdown :options="viewOptions" v-model="viewMode" optionLabel="label" optionValue="value" class="ml-2" />
           </div>
-          <RoarDataTable :data="tableData" :columns="columns" />
+          <RoarDataTable :data="tableData" :columns="columns" :totalRecords="scoresCount" lazy :pageLimit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)" @export-all="exportAll"/>
         </div>
 
 
@@ -142,19 +143,21 @@ import _capitalize from 'lodash/capitalize';
 import _toUpper from 'lodash/toUpper'
 import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
+import _find from 'lodash/find'
+import _isEmpty from 'lodash/isEmpty'
 import { useAuthStore } from '@/store/auth';
-import { useQueryStore } from '@/store/query';
+import { useQuery } from '@tanstack/vue-query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
 import { getGrade } from "@bdelab/roar-utils";
+import { orderByDefault, fetchDocById } from '../helpers/query/utils';
+import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
+import { orgFetcher } from "@/helpers/query/orgs";
+import { pluralizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
 
-const { getAdministrationInfo, getOrgInfo } = storeToRefs(queryStore);
-const orgInfo = ref(queryStore.orgInfo[props.orgId]);
-const administrationInfo = ref(queryStore.administrationInfo[props.administrationId]);
-const scoresData = ref(queryStore.scoresData[props.administrationId]);
+const { roarfirekit } = storeToRefs(authStore);
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
@@ -163,6 +166,88 @@ const props = defineProps({
   orgType: String,
   orgId: String,
 });
+
+const initialized = ref(false);
+
+// Queries for page
+const orderBy = ref(orderByDefault);
+const pageLimit = ref(10);
+const page = ref(0);
+// User Claims
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims'],
+    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+
+const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: administrationInfo } =
+  useQuery({
+    queryKey: ['administrationInfo', props.administrationId],
+    queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInfo } = 
+  useQuery({
+    queryKey: ['orgInfo', props.orgId],
+    queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+// Grab schools if this is a district score report
+const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfo } = 
+  useQuery({
+    queryKey: ['schools', ref(props.orgId)],
+    queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
+    keepPreviousData: true,
+    enabled: (props.orgType === 'district' && initialized),
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+// Scores Query
+let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } = 
+  useQuery({
+    queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
+    queryFn: () => scoresPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
+    keepPreviousData: true,
+    enabled: (initialized && claimsLoaded),
+    staleTime: 5 * 60 * 1000, // 5 mins
+  })
+
+// Scores count query
+const { isLoading: isLoadingCount, data: scoresCount } = 
+  useQuery({
+    queryKey: ['scores', props.administrationId, props.orgId],
+    queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
+    keepPreviousData: true,
+    enabled: (initialized && claimsLoaded),
+    staleTime: 5 * 60 * 1000,
+  })
+
+const onPage = (event) => {
+  page.value = event.page;
+}
+const onSort = (event) => {
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
+    field: { fieldPath: item.field },
+    direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
+  }));
+  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+}
+
+const exportAll = () => {
+  return;
+}
 
 const refreshing = ref(false);
 const spinIcon = computed(() => {
@@ -200,7 +285,7 @@ const emptyTagColorMap = {
 }
 
 const columns = computed(() => {
-  if (scoresData.value === undefined) return [];
+  if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
     { field: "user.username", header: "Username", dataType: "text", pinned: true },
     { field: "user.name.first", header: "First Name", dataType: "text" },
@@ -239,8 +324,8 @@ const columns = computed(() => {
 });
 
 const tableData = computed(() => {
-  if (scoresData.value === undefined) return [];
-  return scoresData.value.map(({ user, assignment }) => {
+  if (scoresDataQuery.value === undefined) return [];
+  return scoresDataQuery.value.map(({ user, assignment }) => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of (assignment?.assessments || [])) {
@@ -310,17 +395,17 @@ const tableData = computed(() => {
     if(props.orgType === 'district'){
       // Grab user's school list
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length) {
-        // If there is one valid school, 
+      if(currentSchools.length) { 
         const schoolId = currentSchools[0]
-        let schoolInfo;
-        if(queryStore.orgInfo[schoolId]) {
-          schoolInfo = queryStore.orgInfo[schoolId]
-        } else {
-          schoolInfo = getOrgInfo.value('school', schoolId)
-          queryStore.orgInfo[schoolId] = schoolInfo
+        const schoolName = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
+        return {
+          user: {
+            ...user,
+            schoolName
+          },
+          assignment,
+          scores,
         }
-        user['schoolName'] = schoolInfo.name
       }
     }
     return {
@@ -337,33 +422,18 @@ const refresh = async () => {
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
 
-  scoresData.value = await queryStore.getUsersByAssignment(
-    props.administrationId, props.orgType, props.orgId, true
-  );
-
-  if (!orgInfo.value) {
-    queryStore.getAdminOrgs();
-    orgInfo.value = getOrgInfo.value(props.orgType, props.orgId);
-  }
-  if (!administrationInfo.value) {
-    administrationInfo.value = getAdministrationInfo.value(props.administrationId);
-  }
   refreshing.value = false;
-
-  queryStore.scoresData[props.administrationId] = scoresData.value;
-  queryStore.administrationInfo[props.administrationId] = administrationInfo.value;
-  queryStore.orgInfo[props.orgId] = orgInfo.value;
+  initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getUsersByAssignment && state.roarfirekit.isAdmin()) {
+  if (state.roarfirekit.isAdmin()) {
     await refresh();
   }
 });
 
-const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  if (roarfirekit.value.getUsersByAssignment && roarfirekit.value.isAdmin()) {
+  if (roarfirekit.value.isAdmin()) {
     await refresh()
   }
 })
