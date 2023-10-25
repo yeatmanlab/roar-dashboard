@@ -1,5 +1,7 @@
-import _fromPairs from "lodash/fromPairs";
+import _chunk from "lodash/chunk";
 import _find from "lodash/find";
+import _flatten from "lodash/flatten";
+import _fromPairs from "lodash/fromPairs";
 import _get from "lodash/get";
 import _head from "lodash/head";
 import _isEmpty from "lodash/isEmpty";
@@ -11,9 +13,6 @@ import _without from "lodash/without";
 import _zip from "lodash/zip";
 import { convertValues, getAxiosInstance, mapFields, orderByDefault } from "./utils";
 import { pluralizeFirestoreCollection } from "@/helpers";
-import { getOrgsRequestBody } from "./orgs";
-import { assign } from "lodash";
-import { stringValue } from "vega";
 
 export const getAssignmentsRequestBody = ({
   adminId,
@@ -246,19 +245,23 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
       }
     }
     if(!_isEmpty(runIds)){
-      const scoresRequestBody = getScoresRequestBody({
-        runIds: runIds,
-        orgType: orgType,
-        orgId: orgId,
-        aggregationQuery: false,
-        pageLimit: pageLimit.value,
-        page: page.value,
-        paginate: false,
-        skinnyQuery: false
-      })
-      const scoreData = await appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
-        return mapFields(data)
-      })
+      const scorePromises = [];
+      for (const runChunk of _chunk(runIds, 25)) {
+        const scoresRequestBody = getScoresRequestBody({
+          runIds: runChunk,
+          orgType: orgType,
+          orgId: orgId,
+          aggregationQuery: false,
+          pageLimit: pageLimit.value,
+          page: page.value,
+          paginate: false,
+          skinnyQuery: false
+        })
+        scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
+          return mapFields(data);
+        }))
+      }
+      const scoreData = _flatten(await Promise.all(scorePromises));
       for (const assignment of assignmentData) {
         for (const task of assignment.assessments) {
           const runId = task.runId

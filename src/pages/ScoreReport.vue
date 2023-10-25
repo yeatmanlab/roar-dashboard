@@ -46,7 +46,8 @@
             <Dropdown :options="viewOptions" v-model="viewMode" optionLabel="label" optionValue="value" class="ml-2" />
           </div>
           <RoarDataTable :data="tableData" :columns="columns" :totalRecords="scoresCount" lazy :pageLimit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)" @export-all="exportAll"/>
+            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
+            @export-all="exportAll" />
         </div>
 
 
@@ -195,7 +196,7 @@ const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: ad
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
-const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInfo } = 
+const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInfo } =
   useQuery({
     queryKey: ['orgInfo', props.orgId],
     queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
@@ -205,7 +206,7 @@ const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInf
   })
 
 // Grab schools if this is a district score report
-const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfo } = 
+const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfo } =
   useQuery({
     queryKey: ['schools', ref(props.orgId)],
     queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
@@ -215,7 +216,7 @@ const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: school
   })
 
 // Scores Query
-let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } = 
+let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } =
   useQuery({
     queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
     queryFn: () => scoresPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
@@ -225,7 +226,7 @@ let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresData
   })
 
 // Scores count query
-const { isLoading: isLoadingCount, data: scoresCount } = 
+const { isLoading: isLoadingCount, data: scoresCount } =
   useQuery({
     queryKey: ['scores', props.administrationId, props.orgId],
     queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
@@ -236,7 +237,9 @@ const { isLoading: isLoadingCount, data: scoresCount } =
 
 const onPage = (event) => {
   page.value = event.page;
+  pageLimit.value = event.rows;
 }
+
 const onSort = (event) => {
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
     field: { fieldPath: item.field },
@@ -293,7 +296,7 @@ const columns = computed(() => {
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
 
-  if(props.orgType === 'district') {
+  if (props.orgType === 'district') {
     tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" })
   }
 
@@ -333,7 +336,7 @@ const tableData = computed(() => {
       let standardScoreKey = undefined;
       let rawScoreKey = undefined;
       if (assessment.taskId === "swr" || assessment.taskId === "swr-es") {
-        if(grade < 6) {
+        if (grade < 6) {
           percentileScoreKey = 'wjPercentile';
           standardScoreKey = 'standardScore';
         } else {
@@ -343,7 +346,7 @@ const tableData = computed(() => {
         rawScoreKey = 'roarScore';
       }
       if (assessment.taskId === "pa") {
-        if(grade < 6) {
+        if (grade < 6) {
           percentileScoreKey = 'percentile';
           standardScoreKey = 'standardScore';
         } else {
@@ -357,13 +360,13 @@ const tableData = computed(() => {
         rawScoreKey = 'roarScore';
       }
       if (assessment.taskId === "sre") {
-        if(grade < 6) {
+        if (grade < 6) {
           percentileScoreKey = 'tosrecPercentile';
           standardScoreKey = 'tosrecSS'
         } else {
           percentileScoreKey = 'sprPercentile';
           standardScoreKey = 'sprStandardScore';
-        } 
+        }
         rawScoreKey = 'sreScore';
       }
       const percentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
@@ -392,10 +395,10 @@ const tableData = computed(() => {
       }
     }
     // If this is a district score report, grab school information
-    if(props.orgType === 'district'){
+    if (props.orgType === 'district') {
       // Grab user's school list
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length) { 
+      if (currentSchools.length) {
         const schoolId = currentSchools[0]
         const schoolName = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
         return {
