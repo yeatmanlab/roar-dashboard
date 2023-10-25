@@ -23,7 +23,7 @@
       <template #header>
       </template>
       <Column selectionMode="multiple" headerStyle="width: 3rem" frozen></Column>
-      <Column v-for="(col, index) of selectedColumns" :key="col.field + '_' + index" :header="col.header"
+      <Column v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
         :field="col.field" :dataType="col.dataType" :sortable="(col.sort !== false)"
         :showFilterMatchModes="!col.useMultiSelect" :showFilterOperator="col.allowMultipleFilters === true"
         :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned" alignFrozen="left">
@@ -115,6 +115,12 @@ const props = defineProps({
 
 const inputColumns = ref(props.columns);
 const selectedColumns = ref(props.columns);
+// Filter the live data (props.columns) with the selections of selectedColumns
+const computedColumns = computed(() => {
+  return _map(selectedColumns.value, col => {
+    return _find(props.columns, pcol => pcol.header === col.header)
+  })
+})
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
