@@ -23,17 +23,17 @@
       <template #header>
       </template>
       <Column selectionMode="multiple" headerStyle="width: 3rem" frozen></Column>
-      <Column v-for="(col, index) of selectedColumns" :key="col.field + '_' + index" :header="col.header"
+      <Column v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
         :field="col.field" :dataType="col.dataType" :sortable="(col.sort !== false)"
         :showFilterMatchModes="!col.useMultiSelect" :showFilterOperator="col.allowMultipleFilters === true"
         :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned" alignFrozen="left">
         <template #body="{ data }">
-          <div v-if="col.tag && col.dataType === 'string' && _get(data, col.field) !== undefined">
+          <div v-if="col.tag && _get(data, col.field) !== undefined">
             <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
               :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`"
               rounded />
           </div>
-          <div v-if="col.chip && col.dataType === 'array' && _get(data, col.field) !== undefined">
+          <div v-else-if="col.chip && col.dataType === 'array' && _get(data, col.field) !== undefined">
             <Chip v-for="chip in _get(data, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
@@ -115,6 +115,12 @@ const props = defineProps({
 
 const inputColumns = ref(props.columns);
 const selectedColumns = ref(props.columns);
+// Filter the live data (props.columns) with the selections of selectedColumns
+const computedColumns = computed(() => {
+  return _map(selectedColumns.value, col => {
+    return _find(props.columns, pcol => pcol.header === col.header)
+  })
+})
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -145,7 +151,8 @@ const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
   if (exportSelected) {
-    dataTable.value.exportCSV({ selectionOnly: exportSelected });
+    emit('export-selected', selectedRows.value)
+    return;
   }
   emit('export-all');
 };
