@@ -145,6 +145,10 @@ import _toUpper from 'lodash/toUpper'
 import _round from 'lodash/round';
 import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
+import _map from 'lodash/map'
+import _keys from 'lodash/keys'
+import _pick from 'lodash/pick'
+import _mapKeys from 'lodash/mapKeys'
 import _find from 'lodash/find'
 import _isEmpty from 'lodash/isEmpty'
 import { useAuthStore } from '@/store/auth';
@@ -152,8 +156,8 @@ import { useQuery } from '@tanstack/vue-query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
 import { getGrade } from "@bdelab/roar-utils";
-import { orderByDefault, fetchDocById } from '../helpers/query/utils';
-import { scoresPageFetcher, assignmentCounter } from "@/helpers/query/assignments";
+import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
+import { scoresPageFetcher, assignmentCounter, scoresFetchAll } from "@/helpers/query/assignments";
 import { orgFetcher } from "@/helpers/query/orgs";
 import { pluralizeFirestoreCollection } from "@/helpers";
 
@@ -249,7 +253,77 @@ const onSort = (event) => {
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
 }
 
-const exportAll = () => {
+const exportAll = async () => {
+  const exportData = await scoresFetchAll(props.administrationId, props.orgType, props.orgId)
+  const sortedTasks = allTasks.value.sort((p1, p2) => {
+    return displayNames[p1].order - displayNames[p2].order
+  })
+  const computedExportData = _map(exportData, ({ user, assignment }) => {
+    let tableRow = {
+      Username: _get(user, 'username'),
+      First: _get(user, 'name.first'),
+      Last: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+    }
+    if (authStore.isUserSuperAdmin()) {
+      tableRow['PID'] = _get(user, 'assessmentPid')
+    }
+    if(props.orgType === 'district') {
+      const currentSchools = _get(user, 'schools.current')
+      if(currentSchools.length){
+        const schoolId = currentSchools[0]
+        tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
+      }
+      
+    }
+    for(const assessment of assignment.assessments) {
+      const taskId = assessment.taskId
+      const grade = getGrade(_get(user, 'studentData.grade'));
+      let percentileScoreKey = undefined
+      let standardScoreKey = undefined
+      let rawScoreKey = undefined
+      if (assessment.taskId === "swr" || assessment.taskId === "swr-es") {
+        if (grade < 6) {
+          percentileScoreKey = 'wjPercentile';
+          standardScoreKey = 'standardScore';
+        } else {
+          percentileScoreKey = 'sprPercentile';
+          standardScoreKey = 'sprStandardScore';
+        }
+        rawScoreKey = 'roarScore';
+      }
+      if (assessment.taskId === "pa") {
+        if (grade < 6) {
+          percentileScoreKey = 'percentile';
+          standardScoreKey = 'standardScore';
+        } else {
+          // These are string values intended for display
+          //   they include '>' when the ceiling is hit
+          // Replace them with non '-String' versions for
+          //   comparison.
+          percentileScoreKey = 'sprPercentileString';
+          standardScoreKey = 'sprStandardScoreString';
+        }
+        rawScoreKey = 'roarScore';
+      }
+      if (assessment.taskId === "sre") {
+        if (grade < 6) {
+          percentileScoreKey = 'tosrecPercentile';
+          standardScoreKey = 'tosrecSS'
+        } else {
+          percentileScoreKey = 'sprPercentile';
+          standardScoreKey = 'sprStandardScore';
+        }
+        rawScoreKey = 'sreScore';
+      }
+      const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
+      tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
+      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
+      tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+    }
+    return tableRow
+  })
+  exportCsv(computedExportData, `roar-scores-${administrationInfo.value.name}.csv`);
   return;
 }
 
