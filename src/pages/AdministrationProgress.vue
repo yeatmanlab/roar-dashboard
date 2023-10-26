@@ -21,7 +21,15 @@
           <span>Loading Administration Data</span>
         </div>
 
-        <RoarDataTable v-else-if="assignmentData?.length ?? 0 > 0" :data="tableData" :columns="columns" />
+        <RoarDataTable v-else-if="assignmentData?.length ?? 0 > 0" 
+          :data="tableData"
+          :columns="columns"
+          :totalRecords="assignmentCount"
+          @page="onPage($event)"
+          @sort="onSort($event)"
+          @export-selected="exportSelected"
+          @export-all="exportAll"
+        />
       </Panel>
     </section>
   </main>
@@ -30,19 +38,21 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
+import _map from 'lodash/map'
+import _get from 'lodash/get'
+import _kebabCase from 'lodash/kebabCase'
 import _capitalize from 'lodash/capitalize';
 import { useAuthStore } from '@/store/auth';
 import { useQueryStore } from '@/store/query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
+import { useQuery } from '@tanstack/vue-query';
+import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
+import { scoresPageFetcher, assignmentCounter, scoresFetchAll } from "@/helpers/query/assignments";
+import { pluralizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
-
-const { getAdministrationInfo, getOrgInfo } = storeToRefs(queryStore);
-const orgInfo = ref(queryStore.orgInfo[props.orgId]);
-const administrationInfo = ref(queryStore.administrationInfo[props.administrationId]);
-const assignmentData = ref(queryStore.assignmentData[props.administrationId]);
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
 
@@ -51,6 +61,139 @@ const props = defineProps({
   orgType: String,
   orgId: String,
 });
+
+const initialized = ref(false);
+
+// Queries for page
+const orderBy = ref(orderByDefault);
+const pageLimit = ref(10);
+const page = ref(0);
+// User Claims
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims'],
+    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+
+const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: administrationInfo } =
+  useQuery({
+    queryKey: ['administrationInfo', props.administrationId],
+    queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInfo } =
+  useQuery({
+    queryKey: ['orgInfo', props.orgId],
+    queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+// Grab schools if this is a district score report
+const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfoQ } =
+  useQuery({
+    queryKey: ['schools', ref(props.orgId)],
+    queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
+    keepPreviousData: true,
+    enabled: (props.orgType === 'district' && initialized),
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+// Scores Query
+let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: assignmentData } =
+  useQuery({
+    queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
+    queryFn: () => scoresPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
+    keepPreviousData: true,
+    enabled: (initialized && claimsLoaded),
+    staleTime: 5 * 60 * 1000, // 5 mins
+  })
+
+// Scores count query
+const { isLoading: isLoadingCount, data: assignmentCount } =
+  useQuery({
+    queryKey: ['scores', props.administrationId, props.orgId],
+    queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
+    keepPreviousData: true,
+    enabled: (initialized && claimsLoaded),
+    staleTime: 5 * 60 * 1000,
+  })
+
+const onPage = (event) => {
+  page.value = event.page;
+  pageLimit.value = event.rows;
+}
+
+const onSort = (event) => {
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
+    field: { fieldPath: item.field },
+    direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
+  }));
+  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+}
+
+const exportSelected = (selectedRows) => {
+  const computedExportData = _map(selectedRows, ({ user, assignment }) => {
+    let tableRow = {
+      Username: _get(user, 'username'),
+      First: _get(user, 'name.first'),
+      Last: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade')
+    }
+    if (authStore.isUserSuperAdmin()) {
+      tableRow['PID'] = _get(user, 'assessmentPid')
+    }
+    for ( const assessment of assignment.assessments ) {
+      const taskId = assessment.taskId
+      if (assessment.completedOn !== undefined) {
+        tableRow[displayNames[taskId].name] = 'Completed'
+      } else if (assessment.startedOn !== undefined) {
+        tableRow[displayNames[taskId].name] = 'Started'
+      } else {
+        tableRow[displayNames[taskId].name] = 'Assigned'
+      }
+    }
+    return tableRow
+  })
+  exportCsv(computedExportData, 'roar-scores-selected.csv');
+}
+
+const exportAll = async () => {
+  const exportData = await scoresFetchAll(props.administrationId, props.orgType, props.orgId)
+  const computedExportData = _map(exportData, ({ user, assignment }) => {
+    let tableRow = {
+      Username: _get(user, 'username'),
+      First: _get(user, 'name.first'),
+      Last: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade')
+    }
+    if (authStore.isUserSuperAdmin()) {
+      tableRow['PID'] = _get(user, 'assessmentPid')
+    }
+    for ( const assessment of assignment.assessments ) {
+      const taskId = assessment.taskId
+      if (assessment.completedOn !== undefined) {
+        tableRow[displayNames[taskId].name] = 'Completed'
+      } else if (assessment.startedOn !== undefined) {
+        tableRow[displayNames[taskId].name] = 'Started'
+      } else {
+        tableRow[displayNames[taskId].name] = 'Assigned'
+      }
+    }
+    return tableRow
+  })
+  exportCsv(computedExportData, `roar-progress-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`);
+}
 
 const refreshing = ref(false);
 const spinIcon = computed(() => {
@@ -137,23 +280,8 @@ let unsubscribe;
 const refresh = async () => {
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
-
-  assignmentData.value = await queryStore.getUsersByAssignment(
-    props.administrationId, props.orgType, props.orgId, false
-  );
-
-  if (!orgInfo.value) {
-    queryStore.getAdminOrgs();
-    orgInfo.value = getOrgInfo.value(props.orgType, props.orgId);
-  }
-  if (!administrationInfo.value) {
-    administrationInfo.value = getAdministrationInfo.value(props.administrationId);
-  }
   refreshing.value = false;
-
-  queryStore.assignmentData[props.administrationId] = assignmentData.value;
-  queryStore.administrationInfo[props.administrationId] = administrationInfo.value;
-  queryStore.orgInfo[props.orgId] = orgInfo.value;
+  initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
