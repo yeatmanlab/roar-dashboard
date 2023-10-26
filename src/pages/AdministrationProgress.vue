@@ -226,6 +226,7 @@ const displayNames = {
   "pa": { name: "Phoneme", order: 2 },
   "sre": { name: "Sentence", order: 5 },
   "letter": { name: "Letter", order: 1 },
+  "multichoice": { name: "Multichoice", order: 6 },
 }
 
 const columns = computed(() => {
