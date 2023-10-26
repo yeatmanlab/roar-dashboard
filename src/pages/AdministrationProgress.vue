@@ -52,7 +52,7 @@ import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
 import { useQuery } from '@tanstack/vue-query';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
-import { scoresPageFetcher, assignmentCounter, scoresFetchAll } from "@/helpers/query/assignments";
+import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from "@/helpers/query/assignments";
 import { orgFetcher } from "@/helpers/query/orgs";
 import { pluralizeFirestoreCollection } from "@/helpers";
 
@@ -117,8 +117,8 @@ const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: school
 // Scores Query
 let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: assignmentData } =
   useQuery({
-    queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
-    queryFn: () => scoresPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
+    queryKey: ['assignments', props.administrationId, props.orgId, pageLimit, page],
+    queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
     keepPreviousData: true,
     enabled: (initialized && claimsLoaded),
     staleTime: 5 * 60 * 1000, // 5 mins
@@ -127,7 +127,7 @@ let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: assignment
 // Scores count query
 const { isLoading: isLoadingCount, data: assignmentCount } =
   useQuery({
-    queryKey: ['scores', props.administrationId, props.orgId],
+    queryKey: ['assignments', props.administrationId, props.orgId],
     queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
     keepPreviousData: true,
     enabled: (initialized && claimsLoaded),
@@ -181,7 +181,7 @@ const exportSelected = (selectedRows) => {
 }
 
 const exportAll = async () => {
-  const exportData = await scoresFetchAll(props.administrationId, props.orgType, props.orgId)
+  const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId)
   const computedExportData = _map(exportData, ({ user, assignment }) => {
     let tableRow = {
       Username: _get(user, 'username'),
