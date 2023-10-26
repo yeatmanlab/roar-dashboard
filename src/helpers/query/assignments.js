@@ -203,7 +203,7 @@ export const assignmentCounter = (adminId, orgType, orgId) => {
   })
 }
 
-export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page, skinny = false, paginate = true) => {
+export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, page, includeScores = false, skinny = false, paginate = true) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
   const requestBody = getAssignmentsRequestBody({
@@ -237,35 +237,38 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
       }))
     }
     const userDocData = await Promise.all(userDocPromises);
-    // Get scores docs
-    const runIds = []
-    for (const assignment of assignmentData) {
-      for (const task of assignment.assessments) {
-        if(task.runId) runIds.push(task.runId)
-      }
-    }
-    if(!_isEmpty(runIds)){
-      const scorePromises = [];
-      for (const runChunk of _chunk(runIds, 25)) {
-        const scoresRequestBody = getScoresRequestBody({
-          runIds: runChunk,
-          orgType: orgType,
-          orgId: orgId,
-          aggregationQuery: false,
-          pageLimit: pageLimit.value,
-          page: page.value,
-          paginate: false,
-          skinnyQuery: skinny
-        })
-        scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
-          return mapFields(data);
-        }))
-      }
-      const scoreData = _flatten(await Promise.all(scorePromises));
+
+    if(includeScores){
+      // Get scores docs
+      const runIds = []
       for (const assignment of assignmentData) {
         for (const task of assignment.assessments) {
-          const runId = task.runId
-          task['scores'] = _get(_find(scoreData, scoreDoc => scoreDoc.id === runId), 'scores')
+          if(task.runId) runIds.push(task.runId)
+        }
+      }
+      if(!_isEmpty(runIds)){
+        const scorePromises = [];
+        for (const runChunk of _chunk(runIds, 25)) {
+          const scoresRequestBody = getScoresRequestBody({
+            runIds: runChunk,
+            orgType: orgType,
+            orgId: orgId,
+            aggregationQuery: false,
+            pageLimit: pageLimit.value,
+            page: page.value,
+            paginate: false,
+            skinnyQuery: skinny
+          })
+          scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
+            return mapFields(data);
+          }))
+        }
+        const scoreData = _flatten(await Promise.all(scorePromises));
+        for (const assignment of assignmentData) {
+          for (const task of assignment.assessments) {
+            const runId = task.runId
+            task['scores'] = _get(_find(scoreData, scoreDoc => scoreDoc.id === runId), 'scores')
+          }
         }
       }
     }
@@ -277,7 +280,7 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
   });
 }
 
-export const scoresFetchAll = async (adminId, orgType, orgId) => {
+export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {
   console.log('gathering export data')
-  return await scoresPageFetcher(adminId, orgType, orgId, { value: 2**31 - 1 }, { value: 0 }, true, true)
+  return await assignmentPageFetcher(adminId, orgType, orgId, { value: 2**31 - 1 }, { value: 0 }, includeScores, true, true)
 }
