@@ -25,6 +25,9 @@
           :data="tableData"
           :columns="columns"
           :totalRecords="assignmentCount"
+          :loading="isLoadingScores || isFetchingScores"
+          :pageLimit="pageLimit"
+          lazy
           @page="onPage($event)"
           @sort="onSort($event)"
           @export-selected="exportSelected"
@@ -40,6 +43,7 @@ import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import _map from 'lodash/map'
 import _get from 'lodash/get'
+import _find from 'lodash/find'
 import _kebabCase from 'lodash/kebabCase'
 import _capitalize from 'lodash/capitalize';
 import { useAuthStore } from '@/store/auth';
@@ -49,6 +53,7 @@ import { getSidebarActions } from "@/router/sidebarActions";
 import { useQuery } from '@tanstack/vue-query';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { scoresPageFetcher, assignmentCounter, scoresFetchAll } from "@/helpers/query/assignments";
+import { orgFetcher } from "@/helpers/query/orgs";
 import { pluralizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
@@ -100,7 +105,7 @@ const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInf
   })
 
 // Grab schools if this is a district score report
-const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfoQ } =
+const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfo } =
   useQuery({
     queryKey: ['schools', ref(props.orgId)],
     queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
@@ -153,6 +158,13 @@ const exportSelected = (selectedRows) => {
     if (authStore.isUserSuperAdmin()) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
+    if(props.orgType === 'district') {
+      const currentSchools = _get(user, 'schools.current')
+      if(currentSchools.length){
+        const schoolId = currentSchools[0]
+        tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
+      }
+    }
     for ( const assessment of assignment.assessments ) {
       const taskId = assessment.taskId
       if (assessment.completedOn !== undefined) {
@@ -179,6 +191,13 @@ const exportAll = async () => {
     }
     if (authStore.isUserSuperAdmin()) {
       tableRow['PID'] = _get(user, 'assessmentPid')
+    }
+    if(props.orgType === 'district') {
+      const currentSchools = _get(user, 'schools.current')
+      if(currentSchools.length){
+        const schoolId = currentSchools[0]
+        tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
+      }
     }
     for ( const assessment of assignment.assessments ) {
       const taskId = assessment.taskId
@@ -218,6 +237,10 @@ const columns = computed(() => {
     { field: "user.name.last", header: "Last Name", dataType: "text" },
     { field: "user.studentData.grade", header: "Grade", dataType: "text" },
   ];
+
+  if (props.orgType === 'district') {
+    tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" })
+  }
 
   if (authStore.isUserSuperAdmin()) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
@@ -265,6 +288,23 @@ const tableData = computed(() => {
           icon: "pi pi-times",
           severity: "danger",
         };
+      }
+    }
+    // If this is a district score report, grab school information
+    if (props.orgType === 'district') {
+      // Grab user's school list
+      const currentSchools = _get(user, 'schools.current')
+      if (currentSchools.length) {
+        const schoolId = currentSchools[0]
+        const schoolName = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
+        return {
+          user: {
+            ...user,
+            schoolName
+          },
+          assignment,
+          status,
+        }
       }
     }
     return {
