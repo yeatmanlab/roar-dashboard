@@ -23,9 +23,11 @@ import { useRouter } from 'vue-router'
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const success = ref(false);
 
 authStore.$subscribe((mutation, state) => {
   if (state.roarfirekit.userData) {
+    success.value = true;
     router.push({ name: "Home" });
   }
 });
@@ -74,5 +76,13 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   localStorageEmail.value = window.localStorage.getItem('emailForSignIn');
+  setTimeout(() => {
+    if (!success.value) {
+      addMessages();
+      setTimeout(() => {
+        router.replace({ name: "SignIn" });
+      }, 5000);
+    }
+  }, 6000)
 })
 </script>
