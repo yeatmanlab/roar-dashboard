@@ -222,21 +222,33 @@ export const scoresPageFetcher = async (adminId, orgType, orgId, pageLimit, page
     // Get User docs
     const userDocPaths = _without(data.map((adminDoc) => {
       if(adminDoc.document?.name){
-        // Split the path, grab the userId
-        const userId = adminDoc.document.name.split('/')[6]
-        return `/users/${userId}/`;
+        return adminDoc.document.name.split('/assignments/')[0]
       } else {
         return undefined
       }
     }), undefined)
-    const userDocPromises = []
-    // this can eventually be refactored to use fetchDocById
-    for (const docPath of userDocPaths) {
-      userDocPromises.push(adminAxiosInstance.get(docPath).then(({ data }) => {
-        return _mapValues(data.fields, (value) => convertValues(value));
-      }))
-    }
-    const userDocData = await Promise.all(userDocPromises);
+
+    // Use batchGet to get all user docs with one post request
+    const batchUserDocs = await adminAxiosInstance.post(":batchGet", {
+      documents: userDocPaths
+    }).then(({ data }) => {
+      return _without(data.map(({ found }) => {
+        if (found) {
+          return {
+            name: found.name,
+            data: _mapValues(found.fields, (value) => convertValues(value)),
+          };
+        }
+        return undefined;
+      }), undefined);
+    })
+
+    // But the order of batchGet is not guaranteed, so we need to order the docs
+    // by the order of userDocPaths
+    const userDocData = batchUserDocs.sort((a, b) => {
+      return userDocPaths.indexOf(a.name) - userDocPaths.indexOf(b.name);
+    }).map(({ data }) => data);
+
     // Get scores docs
     const runIds = []
     for (const assignment of assignmentData) {
