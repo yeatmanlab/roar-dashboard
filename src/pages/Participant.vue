@@ -19,7 +19,7 @@
     </div>
     <div v-else>
       <div class="col-full text-center">
-        <h1>You have no assigments!</h1>
+        <h1>You have no assignments!</h1>
         <p class="text-center">Please contact your administrator to get added to an assignment.</p>
         <router-link :to="{ name: 'SignOut' }">
           <Button label="Sign out" icon="pi pi-sign-out" />
@@ -64,9 +64,9 @@ let assessments = computed(() => {
 
   // This logic should be rewritten later where selectedAdmin has the assessments so we don't need to find it again.
   const fullAdmin = allAdminInfo.value.find(admin => admin.id === selectedAdmin.value)
-  
+
   if (fullAdmin) {
-      const assessmentsWithVariantParams = fullAdmin.assessments
+    const assessmentsWithVariantParams = fullAdmin.assessments
 
     // cross check gameAssessments id with assessmentsWithVariantParams id and add variantURL to gameAssessments object
     _intersectionWith(gameAssessments, assessmentsWithVariantParams, (a, b) => {
