@@ -68,6 +68,12 @@ const routes = [
     meta: { pageTitle: "Multichoice" }
   },
   {
+    path: "/game/vocab",
+    name: "Vocab",
+    component: () => import("../components/tasks/SWR.vue"),
+    meta: { pageTitle: "Vocab" }
+  },
+  {
     path: "/register-game",
     name: "RegisterGame",
     component: () => import("../pages/RegisterGame.vue"),
