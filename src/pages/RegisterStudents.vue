@@ -62,7 +62,8 @@
           </Column>
         </DataTable>
         <div class="submit-container">
-          <Button @click="submitStudents" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''" :disabled="activeSubmit" />
+          <Button @click="submitStudents" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
+            :disabled="activeSubmit" />
         </div>
         <!-- Datatable of error students -->
         <div v-if="showErrorTable" class="error-container">
@@ -104,18 +105,15 @@ import _set from 'lodash/set';
 import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase'
 import { useAuthStore } from '@/store/auth';
-import { useQueryStore } from '@/store/query';
 import { useRouter } from 'vue-router';
-// import RoarDataTable from '../components/RoarDataTable.vue';
-import { storeToRefs } from 'pinia';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 import { useToast } from "primevue/usetoast";
+import { pluralizeFirestoreCollection } from '@/helpers';
+import { fetchOrgByName } from '@/helpers/query/orgs';
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
 const router = useRouter();
-const { roarfirekit, isFirekitInit } = storeToRefs(authStore);
 const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
@@ -175,28 +173,6 @@ const showErrorTable = ref(false);
 
 const activeSubmit = ref(false);
 let processedUsers = 0;
-
-// Selecting Orgs
-let districts = [];
-let schools = [];
-let classes = [];
-let groups = [];
-
-// Functions supporting Selecting Orgs
-const initFormFields = async () => {
-  unsubscribe();
-  // TODO: Optimize this with Promise.all or some such
-  districts = await queryStore.getOrgs("districts");
-  schools = await queryStore.getOrgs("schools");
-  classes = await queryStore.getOrgs("classes");
-  groups = await queryStore.getOrgs("groups");
-}
-
-const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-    await initFormFields();
-  }
-});
 
 // Functions supporting the uploader
 const onFileUpload = async (event) => {
@@ -273,10 +249,10 @@ async function submitStudents(rawJson) {
     return;
   }
   if (
-    ((!_includes(modelValues, 'district') && !_includes(modelValues, 'school')) || 
-    (!_includes(modelValues, 'district') && _includes(modelValues, 'school')) || 
-    (_includes(modelValues, 'district') && !_includes(modelValues, 'school'))) && 
-    !_includes(modelValues, 'group')){
+    ((!_includes(modelValues, 'district') && !_includes(modelValues, 'school')) ||
+      (!_includes(modelValues, 'district') && _includes(modelValues, 'school')) ||
+      (_includes(modelValues, 'district') && !_includes(modelValues, 'school'))) &&
+    !_includes(modelValues, 'group')) {
     // Requires either district and school, OR group
     errorMessage.value = "Please assign columns to be either a group OR a pair of district and school."
     activeSubmit.value = false;
@@ -309,10 +285,10 @@ async function submitStudents(rawJson) {
   })
   // Check for duplicate username / emails 
   let authField;
-  if(_includes(modelValues, 'username')) authField = 'username';
+  if (_includes(modelValues, 'username')) authField = 'username';
   else authField = 'email';
   const areUnique = checkUniqueStudents(submitObject, authField);
-  if(!areUnique) {
+  if (!areUnique) {
     errorMessage.value = `One or more of the ${authField}s in this CSV are not unique.`
     activeSubmit.value = false;
     return;
@@ -320,9 +296,8 @@ async function submitStudents(rawJson) {
   // Begin submit process
   const totalUsers = submitObject.length;
   const chunkedSubmitObject = _chunk(submitObject, 10)
-  for(let i = 0; i < chunkedSubmitObject.length; i++){
-    const chunk = chunkedSubmitObject[i]
-    _forEach(chunk, user => {
+  for (const chunk of chunkedSubmitObject) {
+    for (const user of chunk) {
       // Handle Email Registration
       const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
       const computedEmail = email || `${username}@roar-auth.com`
@@ -336,76 +311,48 @@ async function submitStudents(rawJson) {
       if (middleName) _set(sendObject, 'userData.name.middle', middleName)
       if (lastName) _set(sendObject, 'userData.name.last', lastName)
 
-      // If district is a given column, check if the name is
-      //   associated with a valid id. If so, add the id to
-      //   the sendObject. If not, reject user
-      if (district) {
-        const id = getDistrictId(district);
-        if (!_isEmpty(id)) {
-          _set(sendObject, 'userData.district', id)
-        } else {
-          addErrorUser(user, `Error: District '${district}' is invalid`)
-          if(processedUsers >= totalUsers){
-            activeSubmit.value = false;
-          }
-          return;
-        }
+      const orgNameMap = {
+        "district": district,
+        "school": school,
+        "class": uClass,
+        "group": group,
       }
 
-      // If school is a given column, check if the name is
+      // If orgType is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
       //   the sendObject. If not, reject user
-      if (school) {
-        const id = getSchoolId(school);
-        if (!_isEmpty(id)) {
-          _set(sendObject, 'userData.school', id)
-        } else {
-          addErrorUser(user, `Error: School '${school}' is invalid.`)
-          if(processedUsers >= totalUsers){
-            activeSubmit.value = false;
+      for (const [orgType, orgName] of Object.entries(orgNameMap)) {
+        if (orgName) {
+          let orgInfo;
+          if (orgType === 'school') {
+            const { id: districtId } = await getOrgId("districts", district);
+            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
+          } else if (orgType === 'class') {
+            const { id: districtId } = await getOrgId("districts", district);
+            const { id: schoolId } = await getOrgId("schools", school);
+            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
+          } else {
+            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
           }
-          return;
-        }
-      }
 
-      // If class is a given column, check if the name is
-      //   associated with a valid id. If so, add the id to
-      //   the sendObject. If not, reject user
-      if (uClass) {
-        const id = getClassId(uClass);
-        if (!_isEmpty(id)) {
-          _set(sendObject, 'userData.class', id)
-        } else {
-          addErrorUser(user, `Error: Class '${uClass}' is invalid.`)
-          if(processedUsers >= totalUsers){
-            activeSubmit.value = false;
+          if (!_isEmpty(orgInfo)) {
+            _set(sendObject, `userData.${orgType}`, orgInfo)
+          } else {
+            addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`)
+            if (processedUsers >= totalUsers) {
+              activeSubmit.value = false;
+            }
+            return;
           }
-          return;
-        }
-      }
-
-      // If group is a given column, check if the name is
-      //   associated with a valid id. If so, add the id to
-      //   the sendObject. If not, reject user
-      if (group) {
-        const id = getGroupId(group);
-        if (!_isEmpty(id)) {
-          _set(sendObject, 'userData.group', id)
-        } else {
-          addErrorUser(user, `Error: Group '${group}' is invalid.`)
-          if(processedUsers >= totalUsers){
-            activeSubmit.value = false;
-          }
-          return;
         }
       }
 
       authStore.registerWithEmailAndPassword(sendObject).then(() => {
         toast.add({ severity: 'success', summary: 'User Creation Success', detail: `${sendObject.email} was sucessfully created.`, life: 9000 });
         processedUsers = processedUsers + 1;
-        if(processedUsers >= totalUsers){
+        if (processedUsers >= totalUsers) {
           activeSubmit.value = false;
-          if(errorUsers.value.length === 0) {
+          if (errorUsers.value.length === 0) {
             // Processing is finished, and there are no error users.
             router.push({ name: "Home" })
           }
@@ -413,18 +360,18 @@ async function submitStudents(rawJson) {
       }).catch((e) => {
         toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
         addErrorUser(user, e)
-        if(processedUsers >= totalUsers){
+        if (processedUsers >= totalUsers) {
           activeSubmit.value = false;
         }
       })
-    })
+    }
     await delay(1250)
   }
 }
 
-function delay(milliseconds){
+function delay(milliseconds) {
   return new Promise(resolve => {
-      setTimeout(resolve, milliseconds);
+    setTimeout(resolve, milliseconds);
   });
 }
 
@@ -450,32 +397,28 @@ function addErrorUser(user, error) {
   processedUsers = processedUsers + 1;
 }
 
-// Find the district id given the name. undefined if missing.
-function getDistrictId(districtName) {
-  return _pick(_find(districts, (district) => {
-    return district.name === districtName;
-  }), ['id', 'abbreviation'])
-}
+const orgIds = ref({
+  districts: {},
+  schools: {},
+  classes: {},
+  groups: {},
+})
 
-// Find the school id given the name. undefined if missing.
-function getSchoolId(schoolName) {
-  return _pick(_find(schools, (school) => {
-    return school.name === schoolName;
-  }), ['id', 'abbreviation'])
-}
+const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
+  if (orgIds.value[orgType][orgName]) return orgIds.value[orgType][orgName];
 
-// Find the class id given the name. undefined if missing.
-function getClassId(className) {
-  return _pick(_find(classes, (c) => {
-    return c.name === className;
-  }), ['id', 'abbreviation'])
-}
+  // Currently we don't supply selectedDistrict or selectedSchool
+  const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
+  // TODO: If multiple orgs are returned display an org selection modal to the user.
+  if (orgs.length > 1) {
+    throw new Error(`Multiple organizations found for ${orgType} '${orgName}'`)
+  }
+  if (orgs.length === 0) {
+    throw new Error(`No organizations found for ${orgType} '${orgName}'`)
+  }
 
-// Find the group id given the name. undefined if missing.
-function getGroupId(groupName) {
-  return _pick(_find(groups, (group) => {
-    return group.name === groupName;
-  }), ['id', 'abbreviation'])
+  orgIds.value[orgType][orgName] = orgs[0];
+  return orgs[0];
 }
 
 // Functions supporting error table
