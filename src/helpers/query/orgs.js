@@ -6,6 +6,7 @@ import { convertValues, fetchDocById, getAxiosInstance, mapFields, orderByDefaul
 
 export const getOrgsRequestBody = ({
   orgType,
+  orgName,
   parentDistrict,
   parentSchool,
   orderBy,
@@ -13,7 +14,9 @@ export const getOrgsRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  skinnyQuery = false,
+  select = [
+    "abbreviation", "address", "clever", "districtContact", "id", "mdrNumber", "name", "ncesId", "tags"
+  ],
 }) => {
   const requestBody = {
     structuredQuery: {
@@ -27,28 +30,9 @@ export const getOrgsRequestBody = ({
       requestBody.structuredQuery.offset = page * pageLimit;
     }
 
-    if (skinnyQuery) {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "id" },
-          { fieldPath: "name" },
-        ]
-      };
-    } else {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "abbreviation" },
-          { fieldPath: "address" },
-          { fieldPath: "clever" },
-          { fieldPath: "districtContact" },
-          { fieldPath: "id" },
-          { fieldPath: "mdrNumber" },
-          { fieldPath: "name" },
-          { fieldPath: "ncesId" },
-          { fieldPath: "tags" },
-        ]
-      };
-    }
+    requestBody.structuredQuery.select = {
+      fields: select.map((field) => ({ fieldPath: field }))
+    };
   }
 
   requestBody.structuredQuery.from = [
@@ -58,20 +42,76 @@ export const getOrgsRequestBody = ({
     }
   ];
 
-  if (orgType === "schools" && parentDistrict) {
+  if (orgName && !(parentDistrict || parentSchool)) {
     requestBody.structuredQuery.where = {
       fieldFilter: {
-        field: { fieldPath: "districtId" },
+        field: { fieldPath: "name" },
         op: "EQUAL",
-        value: { stringValue: parentDistrict }
+        value: { stringValue: orgName }
+      }
+    }
+  } else if (orgType === "schools" && parentDistrict) {
+    if (orgName) {
+      requestBody.structuredQuery.where = {
+        compositeFilter: {
+          op: 'AND',
+          filters: [
+            {
+              fieldFilter: {
+                field: { fieldPath: "name" },
+                op: "EQUAL",
+                value: { stringValue: orgName }
+              }
+            },
+            {
+              fieldFilter: {
+                field: { fieldPath: "districtId" },
+                op: "EQUAL",
+                value: { stringValue: parentDistrict }
+              }
+            }
+          ]
+        }
+      };
+    } else {
+      requestBody.structuredQuery.where = {
+        fieldFilter: {
+          field: { fieldPath: "districtId" },
+          op: "EQUAL",
+          value: { stringValue: parentDistrict }
+        }
       }
     }
   } else if (orgType === "classes" && parentSchool) {
-    requestBody.structuredQuery.where = {
-      fieldFilter: {
-        field: { fieldPath: "schoolId" },
-        op: "EQUAL",
-        value: { stringValue: parentSchool }
+    if (orgName) {
+      requestBody.structuredQuery.where = {
+        compositeFilter: {
+          op: 'AND',
+          filters: [
+            {
+              fieldFilter: {
+                field: { fieldPath: "name" },
+                op: "EQUAL",
+                value: { stringValue: orgName }
+              }
+            },
+            {
+              fieldFilter: {
+                field: { fieldPath: "schoolId" },
+                op: "EQUAL",
+                value: { stringValue: parentSchool }
+              }
+            }
+          ]
+        }
+      };
+    } else {
+      requestBody.structuredQuery.where = {
+        fieldFilter: {
+          field: { fieldPath: "schoolId" },
+          op: "EQUAL",
+          value: { stringValue: parentSchool }
+        }
       }
     }
   }
@@ -101,7 +141,7 @@ export const orgCounter = async (activeOrgType, selectedDistrict, selectedSchool
       aggregationQuery: true,
       orderBy: orderBy.value,
       paginate: false,
-      skinnyQuery: true,
+      select: ["name", "id"],
     });
     console.log(`Fetching count for ${activeOrgType.value}`);
     return axiosInstance.post(":runAggregationQuery", requestBody).then(({ data }) => {
@@ -168,6 +208,21 @@ export const orgCounter = async (activeOrgType, selectedDistrict, selectedSchool
   }
 }
 
+export const fetchOrgByName = async (orgType, orgName, selectedDistrict, selectedSchool) => {
+  const axiosInstance = getAxiosInstance();
+  const requestBody = getOrgsRequestBody({
+    orgType: orgType,
+    parentDistrict: orgType === "schools" ? selectedDistrict.value : null,
+    parentSchool: orgType === "classes" ? selectedSchool.value : null,
+    aggregationQuery: false,
+    orgName,
+    paginate: false,
+    select: ["id", "abbreviation"],
+  });
+
+  return axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
+};
+
 export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminOrgs) => {
   if (isSuperAdmin.value) {
     const axiosInstance = getAxiosInstance();
@@ -176,7 +231,7 @@ export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminO
       parentDistrict: orgType === "schools" ? selectedDistrict.value : null,
       aggregationQuery: false,
       paginate: false,
-      skinnyQuery: true,
+      select: ["name", "id"],
     });
 
     if (orgType === "districts") {
@@ -266,7 +321,6 @@ export const orgPageFetcher = async (
     pageLimit: pageLimit.value,
     paginate: true,
     page: page.value,
-    skinnyQuery: false,
   });
 
   console.log(`Fetching page ${page.value} for ${activeOrgType.value}`);
@@ -306,7 +360,6 @@ export const orgFetchAll = async (activeOrgType, selectedDistrict, selectedSchoo
     aggregationQuery: false,
     orderBy: orderBy.value,
     paginate: false,
-    skinnyQuery: false,
   });
 
   if (isSuperAdmin.value) {
