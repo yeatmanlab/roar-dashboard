@@ -70,7 +70,7 @@ const routes = [
   {
     path: "/game/vocab",
     name: "Vocab",
-    component: () => import("../components/tasks/SWR.vue"),
+    component: () => import("../components/tasks/Vocab.vue"),
     meta: { pageTitle: "Vocab" }
   },
   {
