@@ -32,10 +32,23 @@ import { useQuery } from "@tanstack/vue-query";
 import AppSpinner from "./AppSpinner.vue";
 import { storeToRefs } from "pinia";
 import { countUsersByOrg, fetchUsersByOrg } from "@/helpers/query/users";
+import { fetchDocById } from "../helpers/query/utils";
 import { singularizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const { roarfirekit } = storeToRefs(authStore);
+
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims'],
+    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const sidebarActions = ref(getSidebarActions(isSuperAdmin, true));
 
 const initialized = ref(false);
 const pageLimit = ref(10);
@@ -53,7 +66,7 @@ const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecor
     queryKey: ['countUsers', props.orgType, props.orgId, orderBy],
     queryFn: () => countUsersByOrg(props.orgType, props.orgId, orderBy),
     keepPreviousData: true,
-    enabled: initialized,
+    enabled: isLoadingClaims,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -68,7 +81,7 @@ const { isLoading, isFetching, data: users } =
       orderBy,
     ),
     keepPreviousData: true,
-    enabled: initialized,
+    enabled: isLoadingClaims,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -128,8 +141,6 @@ const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 }
-
-const { roarfirekit } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
