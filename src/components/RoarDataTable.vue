@@ -28,22 +28,26 @@
       :loading="props.loading" scrollable @page="onPage($event)" @sort="onSort($event)" v-model:selection="selectedRows"
       :selectAll="selectAll" @select-all-change="onSelectAll" @row-select="onSelectionChange"
       @row-unselect="onSelectionChange">
-      <Column selectionMode="multiple" headerStyle="width: 3rem" :reorderableColumn="false" frozen></Column>
+      <Column selectionMode="multiple" headerStyle="width: 3rem" :reorderableColumn="false" frozen />
       <Column v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
         :field="col.field" :dataType="col.dataType" :sortable="(col.sort !== false)"
         :showFilterMatchModes="!col.useMultiSelect" :showFilterOperator="col.allowMultipleFilters === true"
         :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned" alignFrozen="left">
         <template #body="{ data }">
           <div v-if="col.tag && _get(data, col.field) !== undefined">
-            <Tag :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
+            <Tag v-if="!col.tagOutlined" :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
               :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`"
               rounded />
+            <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
           </div>
           <div v-else-if="col.chip && col.dataType === 'array' && _get(data, col.field) !== undefined">
             <Chip v-for="chip in _get(data, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
-            <div class="circle" :style="`background-color: ${_get(data, col.tagColor)};`" />
+            <div class="circle" v-if="!col.tagOutlined"
+                 :style="`background-color: ${_get(data, col.tagColor)};
+                          color: ${_get(data, col.tagColor) === 'white' ? 'black' : 'white'}`" />
+            <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
           </div>
           <div v-else-if="col.dataType === 'date'">
             {{ getFormattedDate(_get(data, col.field)) }}
@@ -262,5 +266,10 @@ const onSort = (event) => { emit('sort', event) };
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+}
+
+.circle.empty {
+  border: 2px solid black;
+  background-color: red;
 }
 </style>
