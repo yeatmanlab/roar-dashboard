@@ -16,7 +16,7 @@
   "dependencies": {
     "@bdelab/roar-firekit": "^3.13.2",
     "@bdelab/roar-letter": "^1.1.8",
-    "@bdelab/roar-multichoice": "^1.0.7",
+    "@bdelab/roar-multichoice": "^1.1.0",
     "@bdelab/roar-pa": "^1.1.9",
     "@bdelab/roar-sre": "^1.1.14",
     "@bdelab/roar-swr": "^1.1.13",
