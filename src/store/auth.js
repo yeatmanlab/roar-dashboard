@@ -213,6 +213,9 @@ export const useAuthStore = () => {
             this.firekitIsAdmin = null;
             this.firekitIsSuperAdmin = null;
             this.firekitUserData = null;
+            this.firekitAssignments = null;
+            this.firekitAdminInfo = null;
+            this.firekitAssignmentIds = [];
             this.spinner = false;
             this.authFromClever = false;
             // this.roarfirekit = initNewFirekit()

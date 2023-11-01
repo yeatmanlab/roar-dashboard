@@ -1,13 +1,14 @@
 <template>
   <div>
+    {{ authStore.uid }}
     <div v-if="!noGamesAvailable || consentSpinner">
       <div v-if="loadingGames || consentSpinner" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem;" />
         <span>Loading Assignments</span>
       </div>
       <div v-else>
-        <div v-if="allAdminInfo.length > 1" class="p-float-label dropdown-container">
-          <Dropdown :options="allAdminInfo" v-model="selectedAdmin" optionLabel="name" optionValue="id"
+        <div v-if="allAdminInfoQ.length > 1" class="p-float-label dropdown-container">
+          <Dropdown :options="allAdminInfoQ" v-model="selectedAdmin" optionLabel="name" optionValue="id"
             inputId="dd-assignment" />
           <label for="dd-assignment">Select an assignment</label>
         </div>
@@ -44,6 +45,9 @@ import _intersectionWith from 'lodash/intersectionWith'
 import { useAuthStore } from "@/store/auth";
 import { useGameStore } from "@/store/game";
 import { storeToRefs } from 'pinia';
+import { useQuery } from '@tanstack/vue-query';
+import { fetchDocById, fetchDocsById } from "../helpers/query/utils";
+import { getUserAssignments } from "../helpers/query/assignments";
 
 const authStore = useAuthStore();
 const { isFirekitInit, firekitUserData, roarfirekit, consentSpinner } = storeToRefs(authStore);
@@ -54,10 +58,45 @@ let allAdminInfo = ref([]);
 const loadingGames = ref(true)
 const noGamesAvailable = ref(false)
 
+const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userDataQ } = 
+  useQuery({
+    queryKey: ['userData', 'self'],
+    queryFn: () => fetchDocById('users', authStore.uid),
+    keepPreviousData: true,
+    enabled: true,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+const { isLoading: isLoadingAssignments, isFetching: isFetchingAssignments, data: assignmentInfoQ } = 
+  useQuery({
+    queryKey: ['assignments', authStore.uid],
+    queryFn: () => getUserAssignments(authStore.uid),
+    keepPreviousData: true,
+    enabled: true,
+    staleTime: 5 * 60 * 1000 // 5 min
+  })
+const { isLoading: isLoadingAdmins, isFetching: isFetchingAdmins, data: allAdminInfoQ } =
+  useQuery({
+    queryKey: ['administrations'],
+    queryFn: () => fetchDocsById(assignmentInfoQ.value.map((assignment) => {
+      const assignmentId = assignment.id;
+      console.log('adminid:', assignmentId)
+      return {
+        collection: 'administrations',
+        docId: assignmentId,
+        select: ['name', 'sequential']
+      }
+    })),
+    keepPreviousData: true,
+    enabled: true,
+    staleTime: 5 * 60 * 1000,
+  })
+
 // Assessments to populate the game tabs.
 //   Generated based on the current selected admin Id
 let assessments = computed(() => {
-  const gameAssessments = _get(_find(assignmentInfo.value, assignment => {
+  const gameAssessments = _get(_find(assignmentInfoQ.value, assignment => {
+    console.log('assessments current', assignment)
     return assignment.id === selectedAdmin.value
   }), 'assessments') ?? []
 
@@ -82,7 +121,7 @@ let assessments = computed(() => {
 
 // Grab the sequential key from the current admin's data object
 const isSequential = computed(() => {
-  return _get(_find(allAdminInfo.value, admin => {
+  return _get(_find(allAdminInfoQ.value, admin => {
     return admin.id === selectedAdmin.value
   }), 'sequential') ?? true
 })
@@ -166,12 +205,19 @@ async function setUpAssignments(assignedAssignments, useUnsubscribe = false) {
 
 onMounted(async () => {
   if (isFirekitInit.value) {
-    const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
+    // const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
+    // const assignedAssignments = await getUserAssignments(userDataQ.value.id);
+    const assignedAssignments = await getUserAssignments(authStore.uid);
+    // assignmentInfo.value = assignedAssignments
+    allAdminInfo.value = assignedAssignments
+    console.log('found assignments', assignedAssignments)
     await setUpAssignments(assignedAssignments);
   }
 })
 
 watch(isFirekitInit, async (newValue, oldValue) => {
+  // const assignmentsAssigned = getUserAssignments(userDataQ.id);
+  // console.log('found assignments', assignedAssignments)
   await setUpAssignments(authStore.roarfirekit.currentAssignments?.assigned);
 })
 
