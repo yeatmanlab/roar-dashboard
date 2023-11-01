@@ -278,7 +278,8 @@ const exportSelected = (selectedRows) => {
       const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
       tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
       tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
-      tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      tableRow[`${displayNames[taskId].name} - Raw`] = assessment.taskId === 'letter' ?
+          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level, tag_color } = getSupportLevel(rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore)
       tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
     }
@@ -316,7 +317,8 @@ const exportAll = async () => {
       const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
       tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
       tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
-      tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      tableRow[`${displayNames[taskId].name} - Raw`] = assessment.taskId === 'letter' ?
+          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level, tag_color } = getSupportLevel(rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore)
       tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
     }
@@ -415,6 +417,9 @@ const displayNames = {
   "sre": { name: "Sentence", order: 5 },
   "letter": { name: "Letter", order: 1 },
   "multichoice": { name: "Multichoice", order: 6 },
+  "mep": { name: "MEP", order: 7 },
+  "ExternalTask": { name: "External Task", order: 8 },
+  "ExternalTest": { name: "External Test", order: 9 },
 }
 
 const allTasks = computed(() => {
@@ -459,9 +464,10 @@ const columns = computed(() => {
         field: colField,
         header: displayNames[taskId].name,
         dataType: "text",
-        tag: (viewMode.value !== 'color'),
-        emptyTag: (viewMode.value === 'color'),
+        tag: (viewMode.value !== 'color' && taskId !== 'letter'),
+        emptyTag: (viewMode.value === 'color' || (taskId === 'letter' && viewMode.value !== 'raw')),
         tagColor: `scores.${taskId}.color`,
+        tagOutlined: (taskId === 'letter' && viewMode.value !== "raw")
       });
     }
   }
@@ -478,15 +484,17 @@ const tableData = computed(() => {
       const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
       const percentileScore = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
-      const rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      const rawScore = assessment.taskId === 'letter' ?
+          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level, tag_color } = getSupportLevel(percentileScore);
       scores[assessment.taskId] = {
         percentile: percentileScore,
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: tag_color
+        color: (assessment.taskId === 'letter' && rawScore) ? 'white' : tag_color
       }
+
     }
     // If this is a district score report, grab school information
     if (props.orgType === 'district') {
