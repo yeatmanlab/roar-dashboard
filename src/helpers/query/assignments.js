@@ -22,7 +22,17 @@ export const getAssignmentsRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  skinnyQuery = false,
+  select = [
+    "assessments",
+    "assigningOrgs",
+    "completed",
+    "dateAssigned",
+    "dateClosed",
+    "dateOpened",
+    "started",
+    "id"
+  ],
+  isCollectionGroupQuery = true,
 }) => {
   const requestBody = {
     structuredQuery: {}
@@ -34,56 +44,62 @@ export const getAssignmentsRequestBody = ({
       requestBody.structuredQuery.offset = page * pageLimit;
     }
     
-    if(skinnyQuery) {
+    if(select.length > 0){
       requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "assessments" },
-          { fieldPath: "started" },
-          { fieldPath: "completed" },
-        ]
-      };
-    } else {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "assessments" },
-          { fieldPath: "assigningOrgs" },
-          { fieldPath: "completed" },
-          { fieldPath: "dateAssigned" },
-          { fieldPath: "dateClosed" },
-          { fieldPath: "dateOpened" },
-          { fieldPath: "started" },
-          { fieldPath: "id" },
-        ]
-      };
+        fields: select.map((field) => ({ fieldPath: field }))
+      }
     }
   }
 
   requestBody.structuredQuery.from = [
     {
       collectionId: "assignments",
-      allDescendants: true,
+      allDescendants: isCollectionGroupQuery,
     }
   ];
 
-  requestBody.structuredQuery.where = {
-    compositeFilter: {
-      op: "AND",
-      filters: [
-        {
-          fieldFilter: {
-            field: { fieldPath: "id" },
-            op: "EQUAL",
-            value: { stringValue: adminId }
+  if(adminId && orgId){
+    requestBody.structuredQuery.where = {
+      compositeFilter: {
+        op: "AND",
+        filters: [
+          {
+            fieldFilter: {
+              field: { fieldPath: "id" },
+              op: "EQUAL",
+              value: { stringValue: adminId }
+            },
           },
-        },
-        {
-          fieldFilter: {
-            field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
-            op: "ARRAY_CONTAINS",
-            value: { stringValue: orgId }
+          {
+            fieldFilter: {
+              field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+              op: "ARRAY_CONTAINS",
+              value: { stringValue: orgId }
+            }
           }
-        }
-      ]
+        ]
+      }
+    }
+  } else {
+    const currentDate = new Date().toISOString()
+    // requestBody.structuredQuery.orderBy = [
+    //   {
+    //     field: { fieldPath: "dateClosed" },
+    //     direction: "ASCENDING",
+    //   },
+    // ]
+    // requestBody.structuredQuery.startA = {
+    //   values: [
+    //     { timestampValue: currentDate }
+    //   ],
+    //   before: false,
+    // }
+    requestBody.structuredQuery.where = {
+      fieldFilter: {
+        field: { fieldPath: "dateClosed" },
+        op: "GREATER_THAN_OR_EQUAL",
+        value: { timestampValue: currentDate },
+      }
     }
   }
 
@@ -203,7 +219,7 @@ export const assignmentCounter = (adminId, orgType, orgId) => {
   })
 }
 
-export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, page, includeScores = false, skinny = false, paginate = true) => {
+export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, page, includeScores = false, select = undefined, paginate = true) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
   const requestBody = getAssignmentsRequestBody({
@@ -214,7 +230,7 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
     pageLimit: pageLimit.value,
     page: page.value,
     paginate: paginate,
-    skinnyQuery: skinny,
+    select: select
   })
   console.log(`Fetching page ${page.value} for ${adminId}`);
   return adminAxiosInstance.post(":runQuery", requestBody).then(async ({ data }) => {
@@ -312,6 +328,21 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
     }))
     return scoresObj
   });
+}
+
+export const getUserAssignments = async (roarUid) => {
+  console.log('making request with roarUid ->', roarUid)
+  const adminAxiosInstance = getAxiosInstance();
+  const assignmentRequest = getAssignmentsRequestBody({
+    aggregationQuery: false,
+    paginate: false,
+    isCollectionGroupQuery: false,
+  })
+  console.log('request body', assignmentRequest)
+  return await adminAxiosInstance.post(`/users/${roarUid}:runQuery`, assignmentRequest).then(async ({ data }) => {
+    const assignmentData = mapFields(data);
+    return assignmentData
+  })
 }
 
 export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {

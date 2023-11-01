@@ -101,3 +101,22 @@ export const fetchDocById = async (collection, docId, select) => {
     };
   });
 }
+
+export const fetchDocsById = async (documents) => {
+  console.log('fetching multiple docs with params', documents)
+  const axiosInstance = getAxiosInstance();
+  const promises = [];
+  for (const { collection, docId, select } of documents) {
+    const docPath = `/${collection}/${docId}`;
+    const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`)
+    const queryString = queryParams.length > 0? `?${queryParams.join("&")}` : "";
+    promises.push(axiosInstance.get(docPath + queryString).then(({ data }) => {
+      return {
+        id: docId,
+        collection,
+        ..._mapValues(data.fields, (value) => convertValues(value)),
+      };
+    }))
+  }
+  return Promise.all(promises)
+}
