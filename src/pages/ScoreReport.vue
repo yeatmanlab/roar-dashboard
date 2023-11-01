@@ -558,7 +558,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style>
 .report-title {
   font-size: 3.5rem;
   margin-top: 0;
