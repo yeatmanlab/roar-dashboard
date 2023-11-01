@@ -267,9 +267,4 @@ const onSort = (event) => { emit('sort', event) };
   vertical-align: middle;
   margin-right: 10px;
 }
-
-.circle.empty {
-  border: 2px solid black;
-  background-color: red;
-}
 </style>
