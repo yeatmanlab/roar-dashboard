@@ -88,9 +88,9 @@ export const exportCsv = (data, filename) => {
   document.body.removeChild(a);
 };
 
-export const fetchDocById = async (collection, docId, select) => {
+export const fetchDocById = async (collection, docId, select, db = 'admin') => {
   const docPath = `/${collection}/${docId}`;
-  const axiosInstance = getAxiosInstance();
+  const axiosInstance = getAxiosInstance(db);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`)
   const queryString = queryParams.length > 0? `?${queryParams.join("&")}` : "";
   return axiosInstance.get(docPath + queryString).then(({ data }) => {
@@ -102,9 +102,9 @@ export const fetchDocById = async (collection, docId, select) => {
   });
 }
 
-export const fetchDocsById = async (documents) => {
-  console.log('fetching multiple docs with params', documents)
-  const axiosInstance = getAxiosInstance();
+export const fetchDocsById = async (documents, db = 'admin') => {
+  console.log('fetching docs', documents);
+  const axiosInstance = getAxiosInstance(db);
   const promises = [];
   for (const { collection, docId, select } of documents) {
     const docPath = `/${collection}/${docId}`;
