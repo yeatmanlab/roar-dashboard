@@ -1,4 +1,3 @@
-import { toRaw } from "vue";
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
@@ -22,13 +21,6 @@ export const useAuthStore = () => {
         },
         adminOrgs: null,
         roarfirekit: null,
-        // hasUserData: false,
-        // firekitUserData: null,
-        // firekitAssignments: null,
-        // firekitAdminInfo: null,
-        // firekitAssignmentIds: [],
-        // firekitIsAdmin: null,
-        // firekitIsSuperAdmin: null,
         userData: null,
         userClaims: null,
         cleverOAuthRequested: false,
@@ -52,43 +44,11 @@ export const useAuthStore = () => {
       isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
     },
     actions: {
-      // syncFirekitCache(state) {
-      //   const { userData, currentAssignments } = state.roarfirekit;
-      //   if (userData) {
-      //     this.firekitUserData = _assign(this.firekitUserData, userData);
-      //   }
-      //   if (currentAssignments?.assigned?.length > 0) {
-      //     this.firekitAssignmentIds = currentAssignments.assigned;
-      //   }
-      // },
       async completeAssessment(adminId, taskId) {
         console.log('inside authStore func')
         await this.roarfirekit.completeAssessment(adminId, taskId)
         this.assignmentQueryKeyIndex += 1;
-        // const currentAdminIndex = _findIndex(this.firekitAssignments, admin => admin.id === adminId)
-        // const currentAssessmentIndex = _findIndex(this.firekitAssignments[currentAdminIndex].assessments, assess => assess.taskId === taskId);
-        // _set(this.firekitAssignments[currentAdminIndex]['assessments'][currentAssessmentIndex], 'completedOn', new Date())
-        
       },
-      // async getAssignments(assignments) {
-      //   try{
-      //     const reply = await this.roarfirekit.getAssignments(assignments)
-      //     this.firekitAssignmentIds = assignments;
-      //     this.firekitAssignments = reply
-      //     return reply
-      //   } catch(e) {
-      //     return this.firekitAssignments;
-      //   }
-      // },
-      // async getAdministration(administration) {
-      //   try {
-      //     const reply = await Promise.all(this.roarfirekit.getAdministrations(administration))
-      //     this.firekitAdminInfo = reply
-      //     return this.firekitAdminInfo
-      //   } catch(e) {
-      //     return this.firekitAdminInfo
-      //   }
-      // },
       async getUsersForOrg(orgType, orgId) {
         return await this.roarfirekit.getUsersBySingleOrg({orgType, orgId})
       },
@@ -118,7 +78,6 @@ export const useAuthStore = () => {
         return await this.roarfirekit.getLegalDoc(docName);
       },
       async updateConsentStatus(docName, consentVersion) {
-        // _set(this.firekitUserData, `legal.${docName}.${consentVersion}`, new Date())
         this.roarfirekit.updateConsentStatus(docName, consentVersion);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
@@ -127,10 +86,6 @@ export const useAuthStore = () => {
       async logInWithEmailAndPassword({ email, password }) {
         if(this.isFirekitInit){
           return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {
-            // if(this.roarfirekit.userData){
-            //   this.hasUserData = true;
-            //   this.firekitUserData = this.roarfirekit.userData;
-            // }
           })
         }
       },
@@ -145,33 +100,19 @@ export const useAuthStore = () => {
       async signInWithEmailLink({ email, emailLink }) {
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithEmailLink({ email, emailLink }).then(() => {
-            // if(this.roarfirekit.userData){
-            //   this.hasUserData = true
-            //   this.firekitUserData = this.roarfirekit.userData
-            // }
             window.localStorage.removeItem('emailForSignIn');
           });
         }
       },
       async signInWithGooglePopup() {
-        if(this.isFirekitInit){
-          return this.roarfirekit.signInWithPopup('google').then(() => {
-            // if(this.roarfirekit.userData){
-            //   this.hasUserData = true
-            //   this.firekitUserData = this.roarfirekit.userData
-            // }
-          })
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup('google');
         }
       },
       async signInWithCleverPopup() {
         this.authFromClever = true;
-        if(this.isFirekitInit){
-          return this.roarfirekit.signInWithPopup('clever').then(() => {
-            // if(this.roarfirekit.userData){
-            //   this.hasUserData = true
-            //   this.firekitUserData = this.roarfirekit.userData
-            // }
-          })
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup('clever');
         }
       },
       async signInWithGoogleRedirect() {
@@ -194,10 +135,6 @@ export const useAuthStore = () => {
             } else {
               this.spinner = false;
             }
-            // if(this.roarfirekit.userData) {
-            //   this.hasUserData = true
-            //   this.firekitUserData = this.roarfirekit.userData
-            // }
           });
         }
       },
@@ -205,16 +142,8 @@ export const useAuthStore = () => {
         if(this.isAuthenticated && this.isFirekitInit){
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
-            // this.hasUserData = false;
-            // this.firekitIsAdmin = null;
-            // this.firekitIsSuperAdmin = null;
-            // this.firekitUserData = null;
-            // this.firekitAssignments = null;
-            // this.firekitAdminInfo = null;
-            // this.firekitAssignmentIds = [];
             this.spinner = false;
             this.authFromClever = false;
-            // this.roarfirekit = initNewFirekit()
           });
         } else {
           console.log('Cant log out while not logged in')
@@ -248,11 +177,6 @@ export const useAuthStore = () => {
     persist: {
       storage: sessionStorage,
       debug: false,
-      // afterRestore: async (ctx) => {
-      //   if (ctx.store.roarfirekit) {
-      //     ctx.store.roarfirekit = await initNewFirekit();
-      //   }
-      // }
     },
   })();
 };
