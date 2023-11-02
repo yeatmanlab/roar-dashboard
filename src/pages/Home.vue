@@ -80,7 +80,8 @@ const consentVersion = ref("");
 // })
 
 async function updateConsent() {
-  authStore.updateConsentStatus(consentType.value, consentVersion.value)
+  await authStore.updateConsentStatus(consentType.value, consentVersion.value)
+  userQueryKeyIndex.value += 1;
 }
 
 function refreshDocs() {
