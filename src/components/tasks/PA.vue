@@ -15,13 +15,25 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _head from 'lodash/head';
 import _get from 'lodash/get';
+import { fetchDocById } from '@/helpers/query/utils';
 
 const taskId = "pa"
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit } = storeToRefs(authStore);
+const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+
+const initialized = ref(false);
+let unsubscribe;
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+}
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
 
 const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } =
   useQuery({
@@ -58,6 +70,7 @@ onBeforeRouteLeave((to, from, next) => {
 });
 
 onMounted(async () => {
+  if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
@@ -91,7 +104,7 @@ async function startTask() {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId)
 
   const userDob = _get(userData, 'studentData.dob')
-  const userDateObj = new Date(toRaw(userDob).seconds * 1000)
+  const userDateObj = new Date(userDob);
 
   const userParams = {
     birthMonth: userDateObj.getMonth() + 1,

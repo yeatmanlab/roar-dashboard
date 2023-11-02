@@ -21,18 +21,9 @@
           <span>Loading Administration Data</span>
         </div>
 
-        <RoarDataTable v-else-if="assignmentData?.length ?? 0 > 0" 
-          :data="tableData"
-          :columns="columns"
-          :totalRecords="assignmentCount"
-          :loading="isLoadingScores || isFetchingScores"
-          :pageLimit="pageLimit"
-          lazy
-          @page="onPage($event)"
-          @sort="onSort($event)"
-          @export-selected="exportSelected"
-          @export-all="exportAll"
-        />
+        <RoarDataTable v-else-if="assignmentData?.length ?? 0 > 0" :data="tableData" :columns="columns"
+          :totalRecords="assignmentCount" :loading="isLoadingScores || isFetchingScores" :pageLimit="pageLimit" lazy
+          @page="onPage($event)" @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll" />
       </Panel>
     </section>
   </main>
@@ -76,8 +67,8 @@ const page = ref(0);
 // User Claims
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
-    queryKey: ['userClaims'],
-    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -158,14 +149,14 @@ const exportSelected = (selectedRows) => {
     if (authStore.isUserSuperAdmin()) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
-    if(props.orgType === 'district') {
+    if (props.orgType === 'district') {
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length){
+      if (currentSchools.length) {
         const schoolId = currentSchools[0]
         tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
       }
     }
-    for ( const assessment of assignment.assessments ) {
+    for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId
       if (assessment.completedOn !== undefined) {
         tableRow[displayNames[taskId].name] = 'Completed'
@@ -192,14 +183,14 @@ const exportAll = async () => {
     if (authStore.isUserSuperAdmin()) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
-    if(props.orgType === 'district') {
+    if (props.orgType === 'district') {
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length){
+      if (currentSchools.length) {
         const schoolId = currentSchools[0]
         tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
       }
     }
-    for ( const assessment of assignment.assessments ) {
+    for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId
       if (assessment.completedOn !== undefined) {
         tableRow[displayNames[taskId].name] = 'Completed'
