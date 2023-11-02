@@ -36,14 +36,24 @@ const formEmail = ref();
 const localStorageEmail = ref();
 const messages = ref([]);
 
-const addMessages = () => {
-  messages.value = [
-    {
-      severity: 'warn',
-      content: 'There was an issue with the sign-in link that you clicked on. This can happen when you attempt reuse a sign-in link from a previous email. We are rerouting you to the sign-in page to request another link.',
-      id: 0,
-    }
-  ];
+const addMessages = (errorCode) => {
+  if (errorCode === "auth/invalid-action-code") {
+    messages.value = [
+      {
+        severity: 'warn',
+        content: 'There was an issue with the sign-in link that you clicked on. This can happen when you attempt reuse a sign-in link from a previous email. We are rerouting you to the sign-in page to request another link.',
+        id: 0,
+      }
+    ];
+  } else if (errorCode === "timeout") {
+    messages.value = [
+      {
+        severity: 'warn',
+        content: 'There was an issue with the email sign-in link. We apologize for the inconvenience and are rerouting you to the sign-in page to request another link.',
+        id: 0,
+      }
+    ];
+  }
 };
 
 const loginFromEmailLink = async (email) => {
@@ -51,7 +61,7 @@ const loginFromEmailLink = async (email) => {
   const emailLink = window.location.href;
   await authStore.signInWithEmailLink({ email, emailLink }).catch((error) => {
     if (error.code === "auth/invalid-action-code") {
-      addMessages();
+      addMessages(error.code);
       setTimeout(() => {
         router.replace({ name: "SignIn" });
       }, 5000);
@@ -78,11 +88,13 @@ onMounted(() => {
   localStorageEmail.value = window.localStorage.getItem('emailForSignIn');
   setTimeout(() => {
     if (!success.value) {
-      addMessages();
+      addMessages("timeout");
       setTimeout(() => {
-        router.replace({ name: "SignIn" });
+        if (!success.value) {
+          router.replace({ name: "SignIn" });
+        }
       }, 5000);
     }
-  }, 6000)
+  }, 8000)
 })
 </script>

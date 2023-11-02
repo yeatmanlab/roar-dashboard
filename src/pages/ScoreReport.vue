@@ -254,6 +254,18 @@ const onSort = (event) => {
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
 }
 
+const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
+  let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
+  let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
+  if (percentile) percentile = _round(percentile);
+  if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
+
+  return {
+    percentile,
+    percentileString,
+  }
+}
+
 const exportSelected = (selectedRows) => {
   const computedExportData = _map(selectedRows, ({ user, assignment, scores }) => {
     let tableRow = {
@@ -265,21 +277,21 @@ const exportSelected = (selectedRows) => {
     if (authStore.isUserSuperAdmin()) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
-    if(props.orgType === 'district') {
+    if (props.orgType === 'district') {
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length){
+      if (currentSchools.length) {
         const schoolId = currentSchools[0]
         tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
       }
     }
-    for(const assessment of assignment.assessments) {
+    for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId
-      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
-      const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
-      tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
-      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
+      const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
+      tableRow[`${displayNames[taskId].name} - Percentile`] = percentileString;
+      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
-      const { support_level, tag_color } = getSupportLevel(rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore)
+      const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
     }
     return tableRow
@@ -303,21 +315,21 @@ const exportAll = async () => {
     if (authStore.isUserSuperAdmin()) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
-    if(props.orgType === 'district') {
+    if (props.orgType === 'district') {
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length){
+      if (currentSchools.length) {
         const schoolId = currentSchools[0]
         tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
       }
     }
-    for(const assessment of assignment.assessments) {
+    for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId
-      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
-      const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
-      tableRow[`${displayNames[taskId].name} - Percentile`] = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
-      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
+      const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
+      tableRow[`${displayNames[taskId].name} - Percentile`] = percentileString;
+      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
-      const { support_level, tag_color } = getSupportLevel(rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore)
+      const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
     }
     return tableRow
@@ -329,46 +341,62 @@ const exportAll = async () => {
 function getScoreKeys(row, grade) {
   const taskId = row.taskId
   let percentileScoreKey = undefined
+  let percentileScoreDisplayKey = undefined
   let standardScoreKey = undefined
+  let standardScoreDisplayKey = undefined
   let rawScoreKey = undefined
   if (taskId === "swr" || taskId === "swr-es") {
     if (grade < 6) {
       percentileScoreKey = 'wjPercentile';
+      percentileScoreDisplayKey = 'wjPercentile';
       standardScoreKey = 'standardScore';
+      standardScoreDisplayKey = 'standardScore';
     } else {
       percentileScoreKey = 'sprPercentile';
+      percentileScoreDisplayKey = 'sprPercentile';
       standardScoreKey = 'sprStandardScore';
+      standardScoreDisplayKey = 'sprStandardScore';
     }
     rawScoreKey = 'roarScore';
   }
   if (taskId === "pa") {
     if (grade < 6) {
       percentileScoreKey = 'percentile';
+      percentileScoreDisplayKey = 'percentile';
       standardScoreKey = 'standardScore';
+      standardScoreDisplayKey = 'standardScore';
     } else {
       // These are string values intended for display
       //   they include '>' when the ceiling is hit
       // Replace them with non '-String' versions for
       //   comparison.
-      percentileScoreKey = 'sprPercentileString';
-      standardScoreKey = 'sprStandardScoreString';
+      percentileScoreKey = 'sprPercentile';
+      percentileScoreDisplayKey = 'sprPercentileString';
+      standardScoreKey = 'sprStandardScore';
+      standardScoreDisplayKey = 'sprStandardScoreString';
     }
     rawScoreKey = 'roarScore';
   }
   if (taskId === "sre") {
     if (grade < 6) {
       percentileScoreKey = 'tosrecPercentile';
+      percentileScoreDisplayKey = 'tosrecPercentile';
       standardScoreKey = 'tosrecSS'
+      standardScoreDisplayKey = 'tosrecSS';
     } else {
       percentileScoreKey = 'sprPercentile';
+      percentileScoreDisplayKey = 'sprPercentile';
       standardScoreKey = 'sprStandardScore';
+      standardScoreDisplayKey = 'sprStandardScore';
     }
     rawScoreKey = 'sreScore';
   }
   return {
     percentileScoreKey,
+    percentileScoreDisplayKey,
     standardScoreKey,
-    rawScoreKey
+    standardScoreDisplayKey,
+    rawScoreKey,
   }
 }
 
@@ -474,14 +502,13 @@ const tableData = computed(() => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of (assignment?.assessments || [])) {
-      const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(assessment, grade)
-      const rawPercentileScore = _get(assessment, `scores.computed.composite.${percentileScoreKey}`)
-      const percentileScore = rawPercentileScore ? _round(rawPercentileScore) : rawPercentileScore
-      const standardScore = _get(assessment, `scores.computed.composite.${standardScoreKey}`)
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, grade)
+      const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
+      const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`)
       const rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
-      const { support_level, tag_color } = getSupportLevel(percentileScore);
+      const { support_level, tag_color } = getSupportLevel(percentile);
       scores[assessment.taskId] = {
-        percentile: percentileScore,
+        percentile: percentileString,
         standard: standardScore,
         raw: rawScore,
         support_level,
