@@ -46,31 +46,17 @@ import SignIn from "@/components/auth/SignIn.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
-import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById } from "../helpers/query/utils";
 
 const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 
-// const hasLoggedIn = ref(false);
-
-// const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userDataQ } = 
-//   useQuery({
-//     queryKey: ['userData', 'self'],
-//     queryFn: () => fetchDocById('users', authStore.uid),
-//     keepPreviousData: false,
-//     enabled: hasLoggedIn,
-//     staleTime: 5 * 60 * 1000 // 5 minutes
-//   })
-
 const { spinner, authFromClever } = storeToRefs(authStore);
 
 authStore.$subscribe((mutation, state) => {
-  if (state.firekitUserData && state.roarfirekit._idTokenReceived) {
-    console.log('auth change detected')
-    console.log('firekitUserData:', state.firekitUserData)
-    if(authFromClever.value){
+  if (state.userData && state.roarfirekit._idTokenReceived) {
+    if (authFromClever.value) {
       router.push({ name: "CleverLanding" })
     } else {
       router.push({ name: "Home" });
@@ -85,10 +71,11 @@ const authWithGoogle = () => {
     // authStore.signInWithGoogleRedirect();
     authStore.signInWithGooglePopup().then(async () => {
       console.log('then block of google popup')
-      if(authStore.uid) {
+      if (authStore.uid) {
         const userData = await fetchDocById('users', authStore.uid);
-        console.log('[google popup] fetched userData', userData)
-        authStore.firekitUserData = userData
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userData = userData
+        authStore.userClaims = userClaims
       }
     }).catch((e) => {
       console.log('caught error', e)
@@ -128,11 +115,11 @@ const authWithEmail = (state) => {
     }
 
     authStore.logInWithEmailAndPassword(creds).then(async () => {
-      console.log('do we have access to uid?', authStore.uid)
-      if(authStore.uid) {
+      if (authStore.uid) {
         const userData = await fetchDocById('users', authStore.uid);
-        console.log('userData', userData)
-        authStore.firekitUserData = userData
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userData = userData
+        authStore.userClaims = userClaims
       }
       spinner.value = true;
     }).catch((e) => {

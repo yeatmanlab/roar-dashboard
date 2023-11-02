@@ -79,8 +79,8 @@ const userInfo = ref(
 
 const { isLoading: isLoadingUser, isFetching: isFetchingUser, data: userData } =
   useQuery({
-    queryKey: ['user'],
-    queryFn: () => fetchDocById('users', roarfirekit.value.roarUid),
+    queryKey: ['user', authStore.uid, authStore.userQueryKeyIndex],
+    queryFn: () => fetchDocById('users', authStore.uid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -88,8 +88,8 @@ const { isLoading: isLoadingUser, isFetching: isFetchingUser, data: userData } =
 
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
-    queryKey: ['userClaims'],
-    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes

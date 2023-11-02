@@ -66,19 +66,19 @@ const { selectedAdmin } = storeToRefs(gameStore);
 
 const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } =
   useQuery({
-    queryKey: ['userData', authStore.uid],
+    queryKey: ['userData', authStore.uid, authStore.userQueryKeyIndex],
     queryFn: () => fetchDocById('users', authStore.uid),
     keepPreviousData: true,
-    enabled: true,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
 const { isLoading: isLoadingAssignments, isFetching: isFetchingAssignments, data: assignmentInfo } =
   useQuery({
-    queryKey: ['assignments', authStore.uid],
+    queryKey: ['assignments', authStore.uid, authStore.assignmentQueryKeyIndex],
     queryFn: () => getUserAssignments(authStore.uid),
     keepPreviousData: true,
-    enabled: true,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000 // 5 min
   })
 

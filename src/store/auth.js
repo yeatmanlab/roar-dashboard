@@ -24,13 +24,17 @@ export const useAuthStore = () => {
         roarfirekit: null,
         hasUserData: false,
         firekitUserData: null,
-        firekitAssignments: null,
-        firekitAdminInfo: null,
-        firekitAssignmentIds: [],
-        firekitIsAdmin: null,
-        firekitIsSuperAdmin: null,
+        // firekitAssignments: null,
+        // firekitAdminInfo: null,
+        // firekitAssignmentIds: [],
+        // firekitIsAdmin: null,
+        // firekitIsSuperAdmin: null,
+        userData: null,
+        userClaims: null,
         cleverOAuthRequested: false,
         authFromClever: false,
+        userQueryKeyIndex: 0,
+        assignmentQueryKeyIndex: 0,
       };
     },
     getters: {
@@ -40,59 +44,51 @@ export const useAuthStore = () => {
       isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
       isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser)) },
       isFirekitInit: (state) => { return state.roarfirekit?.initialized },
+      isUserAdmin: (state) => {
+        if (Boolean(state.userClaims?.claims?.super_admin)) return true;
+        if (_isEmpty(_union(...Object.values(state.userClaims?.claims?.minimalAdminOrgs ?? {})))) return false;
+        return true;
+      },
+      isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
     },
     actions: {
-      syncFirekitCache(state) {
-        const { userData, currentAssignments } = state.roarfirekit;
-        if (userData) {
-          this.firekitUserData = _assign(this.firekitUserData, userData);
-        }
-        if (currentAssignments?.assigned?.length > 0) {
-          this.firekitAssignmentIds = currentAssignments.assigned;
-        }
-      },
-      isUserAdmin() {
-        if(this.isFirekitInit && this.firekitIsAdmin === null) {
-          this.firekitIsAdmin = this.roarfirekit.isAdmin();
-          return this.firekitIsAdmin;
-        } else {
-          return this.firekitIsAdmin;
-        }
-      },
-      isUserSuperAdmin() {
-        if(this.isFirekitInit && this.firekitIsSuperAdmin === null) {
-          this.firekitIsSuperAdmin = _get(this.roarfirekit, '_superAdmin');
-        }
-        return this.firekitIsSuperAdmin;
-      },
+      // syncFirekitCache(state) {
+      //   const { userData, currentAssignments } = state.roarfirekit;
+      //   if (userData) {
+      //     this.firekitUserData = _assign(this.firekitUserData, userData);
+      //   }
+      //   if (currentAssignments?.assigned?.length > 0) {
+      //     this.firekitAssignmentIds = currentAssignments.assigned;
+      //   }
+      // },
       async completeAssessment(adminId, taskId) {
         console.log('inside authStore func')
         await this.roarfirekit.completeAssessment(adminId, taskId)
-        const currentAdminIndex = _findIndex(this.firekitAssignments, admin => admin.id === adminId)
-        const currentAssessmentIndex = _findIndex(this.firekitAssignments[currentAdminIndex].assessments, assess => assess.taskId === taskId);
-        _set(this.firekitAssignments[currentAdminIndex]['assessments'][currentAssessmentIndex], 'completedOn', new Date())
+        this.assignmentQueryKeyIndex += 1;
+        // const currentAdminIndex = _findIndex(this.firekitAssignments, admin => admin.id === adminId)
+        // const currentAssessmentIndex = _findIndex(this.firekitAssignments[currentAdminIndex].assessments, assess => assess.taskId === taskId);
+        // _set(this.firekitAssignments[currentAdminIndex]['assessments'][currentAssessmentIndex], 'completedOn', new Date())
         
       },
-      async getAssignments(assignments) {
-        try{
-          const reply = await this.roarfirekit.getAssignments(assignments)
-          this.firekitAssignmentIds = assignments;
-          this.firekitAssignments = reply
-          return reply
-        } catch(e) {
-          return this.firekitAssignments;
-        }
-        
-      },
-      async getAdministration(administration) {
-        try {
-          const reply = await Promise.all(this.roarfirekit.getAdministrations(administration))
-          this.firekitAdminInfo = reply
-          return this.firekitAdminInfo
-        } catch(e) {
-          return this.firekitAdminInfo
-        }
-      },
+      // async getAssignments(assignments) {
+      //   try{
+      //     const reply = await this.roarfirekit.getAssignments(assignments)
+      //     this.firekitAssignmentIds = assignments;
+      //     this.firekitAssignments = reply
+      //     return reply
+      //   } catch(e) {
+      //     return this.firekitAssignments;
+      //   }
+      // },
+      // async getAdministration(administration) {
+      //   try {
+      //     const reply = await Promise.all(this.roarfirekit.getAdministrations(administration))
+      //     this.firekitAdminInfo = reply
+      //     return this.firekitAdminInfo
+      //   } catch(e) {
+      //     return this.firekitAdminInfo
+      //   }
+      // },
       async getUsersForOrg(orgType, orgId) {
         return await this.roarfirekit.getUsersBySingleOrg({orgType, orgId})
       },
@@ -213,9 +209,9 @@ export const useAuthStore = () => {
             this.firekitIsAdmin = null;
             this.firekitIsSuperAdmin = null;
             this.firekitUserData = null;
-            this.firekitAssignments = null;
-            this.firekitAdminInfo = null;
-            this.firekitAssignmentIds = [];
+            // this.firekitAssignments = null;
+            // this.firekitAdminInfo = null;
+            // this.firekitAssignmentIds = [];
             this.spinner = false;
             this.authFromClever = false;
             // this.roarfirekit = initNewFirekit()

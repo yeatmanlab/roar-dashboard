@@ -114,7 +114,7 @@ export const getScoresRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  skinnyQuery = false,
+  select = ["scores"],
 }) => {
   const requestBody = {
     structuredQuery: {}
@@ -126,19 +126,8 @@ export const getScoresRequestBody = ({
       requestBody.structuredQuery.offset = page * pageLimit;
     }
     
-    if(skinnyQuery) {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "scores" },
-        ]
-      };
-    } else {
-      // TODO: fill this out
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "scores" },
-        ]
-      };
+    requestBody.structuredQuery.select = {
+      fields: select.map((field) => ({ fieldPath: field }))
     }
   }
 
@@ -271,7 +260,6 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
             pageLimit: pageLimit.value,
             page: page.value,
             paginate: false,
-            skinnyQuery: skinny
           })
           scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
             return mapFields(data);
@@ -294,7 +282,6 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
               pageLimit: pageLimit.value,
               page: page.value,
               paginate: false,
-              skinnyQuery: skinny
             })
             scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
               return mapFields(data);
