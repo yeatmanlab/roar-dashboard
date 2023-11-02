@@ -242,7 +242,7 @@ router.beforeEach(async (to, from) => {
   }
 
   // Check if user is a super admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin()) {
+  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin) {
     return { name: "Home" }
   }
 })

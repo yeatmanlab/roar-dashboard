@@ -1,6 +1,6 @@
 <template>
 	<div class="p-card card-administration">
-		<div v-if="props.stats && authStore.isUserSuperAdmin()" class="card-admin-chart">
+		<div v-if="props.stats && authStore.isUserSuperAdmin" class="card-admin-chart">
 			<Chart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
 		</div>
 

@@ -20,7 +20,7 @@
 
   const authStore = useAuthStore();
 
-  const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), false));
+  const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, false));
   
   const userInfo = ref(
   {
