@@ -68,7 +68,7 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), false));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, false));
 
 const userInfo = ref(
   {

@@ -89,7 +89,7 @@ const schoolPlaceholder = computed(() => {
 
 // Authstore and Sidebar
 const authStore = useAuthStore();
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const syncingClever = ref(false);
 const cleverSyncIcon = computed(() => {

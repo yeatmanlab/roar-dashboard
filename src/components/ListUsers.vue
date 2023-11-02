@@ -42,7 +42,7 @@ import { pluralizeFirestoreCollection } from '@/helpers';
 
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   orgType: String,

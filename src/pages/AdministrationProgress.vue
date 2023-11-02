@@ -50,7 +50,7 @@ import { pluralizeFirestoreCollection } from "@/helpers";
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: String,
@@ -146,7 +146,7 @@ const exportSelected = (selectedRows) => {
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade')
     }
-    if (authStore.isUserSuperAdmin()) {
+    if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
     if (props.orgType === 'district') {
@@ -180,7 +180,7 @@ const exportAll = async () => {
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade')
     }
-    if (authStore.isUserSuperAdmin()) {
+    if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
     if (props.orgType === 'district') {
@@ -234,7 +234,7 @@ const columns = computed(() => {
     tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" })
   }
 
-  if (authStore.isUserSuperAdmin()) {
+  if (authStore.isUserSuperAdmin) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
   }
 
