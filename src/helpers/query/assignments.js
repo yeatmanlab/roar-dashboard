@@ -11,7 +11,7 @@ import _toPairs from "lodash/toPairs";
 import _union from "lodash/union";
 import _without from "lodash/without";
 import _zip from "lodash/zip";
-import { convertValues, getAxiosInstance, mapFields, orderByDefault } from "./utils";
+import { convertValues, getAxiosInstance, mapFields } from "./utils";
 import { pluralizeFirestoreCollection } from "@/helpers";
 
 export const getAssignmentsRequestBody = ({
@@ -82,18 +82,6 @@ export const getAssignmentsRequestBody = ({
     }
   } else {
     const currentDate = new Date().toISOString()
-    // requestBody.structuredQuery.orderBy = [
-    //   {
-    //     field: { fieldPath: "dateClosed" },
-    //     direction: "ASCENDING",
-    //   },
-    // ]
-    // requestBody.structuredQuery.startA = {
-    //   values: [
-    //     { timestampValue: currentDate }
-    //   ],
-    //   before: false,
-    // }
     requestBody.structuredQuery.where = {
       fieldFilter: {
         field: { fieldPath: "dateClosed" },
@@ -338,10 +326,10 @@ export const getUserAssignments = async (roarUid) => {
     paginate: false,
     isCollectionGroupQuery: false,
   })
-  console.log('request body', assignmentRequest)
   return await adminAxiosInstance.post(`/users/${roarUid}:runQuery`, assignmentRequest).then(async ({ data }) => {
     const assignmentData = mapFields(data);
-    return assignmentData
+    const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
+    return openAssignments;
   })
 }
 

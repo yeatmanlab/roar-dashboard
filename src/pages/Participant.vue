@@ -1,20 +1,18 @@
 <template>
   <div>
-    {{ authStore.uid }}
     <div v-if="!noGamesAvailable || consentSpinner">
-      <div v-if="loadingGames || consentSpinner" class="loading-container">
+      <div v-if="isFetching || consentSpinner" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem;" />
         <span>Loading Assignments</span>
       </div>
       <div v-else>
-        <div v-if="allAdminInfoQ.length > 1" class="p-float-label dropdown-container">
-          <Dropdown :options="allAdminInfoQ" v-model="selectedAdmin" optionLabel="name" optionValue="id"
-            inputId="dd-assignment" />
+        <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
+          <Dropdown :options="adminInfo ?? []" v-model="selectedAdmin" optionLabel="name" inputId="dd-assignment" />
           <label for="dd-assignment">Select an assignment</label>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <GameTabs :games="assessments" :sequential="isSequential" />
+          <GameTabs :games="assessments" :sequential="isSequential" :userData="userData" />
         </div>
       </div>
     </div>
@@ -31,17 +29,13 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, toRaw, computed } from "vue";
+import { onMounted, ref, watch, computed } from "vue";
 import GameTabs from "../components/GameTabs.vue";
 import ParticipantSidebar from "../components/ParticipantSidebar.vue";
 import _filter from 'lodash/filter'
 import _get from 'lodash/get'
-import _map from 'lodash/map'
 import _head from 'lodash/head'
 import _find from 'lodash/find'
-import _isEmpty from 'lodash/isEmpty'
-import _isEqual from 'lodash/isEqual'
-import _intersectionWith from 'lodash/intersectionWith'
 import { useAuthStore } from "@/store/auth";
 import { useGameStore } from "@/store/game";
 import { storeToRefs } from 'pinia';
@@ -49,25 +43,37 @@ import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById } from "../helpers/query/utils";
 import { getUserAssignments } from "../helpers/query/assignments";
 
+let unsubscribe;
+const initialized = ref(false);
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+}
+
 const authStore = useAuthStore();
-const { isFirekitInit, firekitUserData, roarfirekit, consentSpinner } = storeToRefs(authStore);
+const { roarfirekit, consentSpinner } = storeToRefs(authStore);
 
-let assignmentInfo = ref([]);
-let allAdminInfo = ref([]);
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
 
-const loadingGames = ref(true)
-const noGamesAvailable = ref(false)
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+})
 
-const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userDataQ } = 
+const gameStore = useGameStore();
+const { selectedAdmin } = storeToRefs(gameStore);
+
+const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } =
   useQuery({
-    queryKey: ['userData', 'self'],
+    queryKey: ['userData', authStore.uid],
     queryFn: () => fetchDocById('users', authStore.uid),
     keepPreviousData: true,
     enabled: true,
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
-const { isLoading: isLoadingAssignments, isFetching: isFetchingAssignments, data: assignmentInfoQ } = 
+const { isLoading: isLoadingAssignments, isFetching: isFetchingAssignments, data: assignmentInfo } =
   useQuery({
     queryKey: ['assignments', authStore.uid],
     queryFn: () => getUserAssignments(authStore.uid),
@@ -75,54 +81,87 @@ const { isLoading: isLoadingAssignments, isFetching: isFetchingAssignments, data
     enabled: true,
     staleTime: 5 * 60 * 1000 // 5 min
   })
-const { isLoading: isLoadingAdmins, isFetching: isFetchingAdmins, data: allAdminInfoQ } =
+
+const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));
+const administrationQueryEnabled = computed(() => (administrationIds.value ?? []).length > 0);
+
+const { isLoading: isLoadingAdmins, isFetching: isFetchingAdmins, data: adminInfo } =
   useQuery({
-    queryKey: ['administrations'],
-    queryFn: () => fetchDocsById(assignmentInfoQ.value.map((assignment) => {
-      const assignmentId = assignment.id;
-      console.log('adminid:', assignmentId)
+    queryKey: ['administrations', administrationIds],
+    queryFn: () => fetchDocsById(administrationIds.value.map((administrationId) => {
       return {
         collection: 'administrations',
-        docId: assignmentId,
-        select: ['name', 'sequential']
-      }
+        docId: administrationId,
+        select: ['name', 'sequential', "assessments"]
+      };
     })),
     keepPreviousData: true,
-    enabled: true,
+    enabled: administrationQueryEnabled,
     staleTime: 5 * 60 * 1000,
   })
 
-// Assessments to populate the game tabs.
-//   Generated based on the current selected admin Id
-let assessments = computed(() => {
-  const gameAssessments = _get(_find(assignmentInfoQ.value, assignment => {
-    console.log('assessments current', assignment)
-    return assignment.id === selectedAdmin.value
-  }), 'assessments') ?? []
+const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
+const taskQueryEnabled = computed(() => (taskIds.value ?? []).length > 0);
 
+const { isLoading: isLoadingTasks, isFetching: isFetchingTasks, data: taskInfo } =
+  useQuery({
+    queryKey: ['tasks', taskIds],
+    queryFn: () => fetchDocsById(
+      taskIds.value.map((taskId) => ({
+        collection: 'tasks',
+        docId: taskId,
+      })),
+      'app'
+    ),
+    keepPreviousData: true,
+    enabled: taskQueryEnabled,
+    staleTime: 5 * 60 * 1000,
+  })
 
-  // This logic should be rewritten later where selectedAdmin has the assessments so we don't need to find it again.
-  const fullAdmin = allAdminInfo.value.find(admin => admin.id === selectedAdmin.value)
-
-  if (fullAdmin) {
-    const assessmentsWithVariantParams = fullAdmin.assessments
-
-    // cross check gameAssessments id with assessmentsWithVariantParams id and add variantURL to gameAssessments object
-    _intersectionWith(gameAssessments, assessmentsWithVariantParams, (a, b) => {
-      if (a.taskId === b.taskId) {
-        a.taskData.variantURL = b.params?.variantURL || ""
-      }
-    })
-  }
-
-  return gameAssessments
+const isLoading = computed(() => {
+  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
 });
 
+const isFetching = computed(() => {
+  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingAdmins.value || isFetchingTasks.value;
+});
+
+const noGamesAvailable = computed(() => {
+  if (isFetching.value || isLoading.value) return false;
+  return assessments.value.length === 0;
+});
+
+// Assessments to populate the game tabs.
+// Generated based on the current selected admin Id
+const assessments = computed(() => {
+  console.log('Recomputing assessments');
+  if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
+    console.log('Using map to combine assessment data')
+    return selectedAdmin.value.assessments.map((assessment) => {
+      // Get the matching assessment from assignmentInfo
+      const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
+      const matchingAssessments = matchingAssignment?.assessments ?? [];
+      const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
+      const combinedAssessment = {
+        ...matchingAssessment,
+        ...assessment,
+        taskData: {
+          ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
+          variantURL: _get(assessment, "params.variantURL"),
+        },
+      };
+      console.log("combinedAssessment", combinedAssessment);
+      return combinedAssessment;
+    })
+  }
+  console.log('No assessments found');
+  return [];
+});
 
 // Grab the sequential key from the current admin's data object
 const isSequential = computed(() => {
-  return _get(_find(allAdminInfoQ.value, admin => {
-    return admin.id === selectedAdmin.value
+  return _get(_find(adminInfo.value, admin => {
+    return admin.id === selectedAdmin.value.id
   }), 'sequential') ?? true
 })
 
@@ -137,101 +176,17 @@ let completeGames = computed(() => {
 });
 
 // Set up studentInfo for sidebar
-const studentInfo = ref({
-  grade: _get(roarfirekit.value, 'userData.studentData.grade') || _get(firekitUserData.value, 'studentData.grade'),
-});
+const studentInfo = computed(() => ({ grade: _get(userData.value, "studentData.grade") }));
 
-const gameStore = useGameStore();
-const { selectedAdmin } = storeToRefs(gameStore);
-
-let unsubscribe;
-async function setUpAssignments(assignedAssignments, useUnsubscribe = false) {
-  noGamesAvailable.value = false;
-  loadingGames.value = true;
-  if (useUnsubscribe && unsubscribe) {
-    unsubscribe();
-  }
-
-  try {
-    // This if statement is important to prevent overwriting the session storage cache.
-    if (assignedAssignments.length > 0) {
-      assignmentInfo.value = await authStore.getAssignments(assignedAssignments);
-      allAdminInfo.value = await authStore.getAdministration(assignedAssignments);
-      const assignmentOptions = _map(assignedAssignments, adminId => {
-        return {
-          label: _get(_find(allAdminInfo.value, admin => admin.id === adminId), 'name'),
-          value: adminId,
-        }
-      })
-
-      // If the selectedAdmin that we retrieved from storeToRefs is empty or not
-      // in the list of available administrations, pick a new one.
-      if (selectedAdmin.value === "" || !assignedAssignments.includes(selectedAdmin.value)) {
-        selectedAdmin.value = _head(assignmentOptions).value
-      }
-    }
-  } catch (e) {
-    // Could not grab data from live roarfirekit, user cached firekit.
-    if (authStore.firekitAssignments) {
-      assignmentInfo.value = authStore.firekitAssignments
-      allAdminInfo.value = authStore.firekitAdminInfo
-      const assignmentOptions = _map(authStore.firekitAssignmentIds, adminId => {
-        return {
-          label: _get(_find(allAdminInfo.value, admin => admin.id === adminId), 'name'),
-          value: adminId,
-        }
-      })
-
-      // Likewise, if the selectedAdmin that we retrieved from storeToRefs is empty or not
-      // in the list of available administrations, pick a new one.
-      if (selectedAdmin.value === "" || !authStore.firekitAssignmentIds.includes(selectedAdmin.value)) {
-        selectedAdmin.value = _head(assignmentOptions).value
-      }
-    } else {
-      noGamesAvailable.value = true;
-    }
-  }
-  if (assignmentInfo.value.length > 0) {
-    studentInfo.value.grade = (
-      _get(roarfirekit.value, 'userData.studentData.grade')
-      || _get(firekitUserData.value, 'studentData.grade')
-    );
-    noGamesAvailable.value = false;
-  } else {
-    noGamesAvailable.value = true
-  }
-  loadingGames.value = false;
-}
-
-onMounted(async () => {
-  if (isFirekitInit.value) {
-    // const assignedAssignments = _get(roarfirekit.value, "currentAssignments.assigned");
-    // const assignedAssignments = await getUserAssignments(userDataQ.value.id);
-    const assignedAssignments = await getUserAssignments(authStore.uid);
-    // assignmentInfo.value = assignedAssignments
-    allAdminInfo.value = assignedAssignments
-    console.log('found assignments', assignedAssignments)
-    await setUpAssignments(assignedAssignments);
+watch(adminInfo, () => {
+  const selectedAdminId = selectedAdmin.value?.id;
+  const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
+  // If there is no selected admin or if the selected admin is not in the list
+  // of all administrations choose the first one from adminInfo
+  if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
+    selectedAdmin.value = _head(adminInfo.value)
   }
 })
-
-watch(isFirekitInit, async (newValue, oldValue) => {
-  // const assignmentsAssigned = getUserAssignments(userDataQ.id);
-  // console.log('found assignments', assignedAssignments)
-  await setUpAssignments(authStore.roarfirekit.currentAssignments?.assigned);
-})
-
-watch(assessments, (newValue, oldValue) => {
-  loadingGames.value = false
-})
-
-unsubscribe = watch(() => roarfirekit.value, async (newValue) => {
-  const newCurrentAssignments = toRaw(newValue.currentAssignments)?.assigned;
-  const oldCurrentAssignments = toRaw(authStore.firekitAssignmentIds);
-  if (newCurrentAssignments && !_isEqual(newCurrentAssignments, oldCurrentAssignments)) {
-    await setUpAssignments(newCurrentAssignments, true);
-  }
-}, { deep: true });
 
 </script>
 <style scoped>
