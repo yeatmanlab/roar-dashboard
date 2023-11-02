@@ -22,8 +22,8 @@ export const useAuthStore = () => {
         },
         adminOrgs: null,
         roarfirekit: null,
-        hasUserData: false,
-        firekitUserData: null,
+        // hasUserData: false,
+        // firekitUserData: null,
         // firekitAssignments: null,
         // firekitAdminInfo: null,
         // firekitAssignmentIds: [],
@@ -118,7 +118,7 @@ export const useAuthStore = () => {
         return await this.roarfirekit.getLegalDoc(docName);
       },
       async updateConsentStatus(docName, consentVersion) {
-        _set(this.firekitUserData, `legal.${docName}.${consentVersion}`, new Date())
+        // _set(this.firekitUserData, `legal.${docName}.${consentVersion}`, new Date())
         this.roarfirekit.updateConsentStatus(docName, consentVersion);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
@@ -127,10 +127,10 @@ export const useAuthStore = () => {
       async logInWithEmailAndPassword({ email, password }) {
         if(this.isFirekitInit){
           return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true;
-              this.firekitUserData = this.roarfirekit.userData;
-            }
+            // if(this.roarfirekit.userData){
+            //   this.hasUserData = true;
+            //   this.firekitUserData = this.roarfirekit.userData;
+            // }
           })
         }
       },
@@ -145,10 +145,10 @@ export const useAuthStore = () => {
       async signInWithEmailLink({ email, emailLink }) {
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithEmailLink({ email, emailLink }).then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true
-              this.firekitUserData = this.roarfirekit.userData
-            }
+            // if(this.roarfirekit.userData){
+            //   this.hasUserData = true
+            //   this.firekitUserData = this.roarfirekit.userData
+            // }
             window.localStorage.removeItem('emailForSignIn');
           });
         }
@@ -156,10 +156,10 @@ export const useAuthStore = () => {
       async signInWithGooglePopup() {
         if(this.isFirekitInit){
           return this.roarfirekit.signInWithPopup('google').then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true
-              this.firekitUserData = this.roarfirekit.userData
-            }
+            // if(this.roarfirekit.userData){
+            //   this.hasUserData = true
+            //   this.firekitUserData = this.roarfirekit.userData
+            // }
           })
         }
       },
@@ -167,10 +167,10 @@ export const useAuthStore = () => {
         this.authFromClever = true;
         if(this.isFirekitInit){
           return this.roarfirekit.signInWithPopup('clever').then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true
-              this.firekitUserData = this.roarfirekit.userData
-            }
+            // if(this.roarfirekit.userData){
+            //   this.hasUserData = true
+            //   this.firekitUserData = this.roarfirekit.userData
+            // }
           })
         }
       },
@@ -194,10 +194,10 @@ export const useAuthStore = () => {
             } else {
               this.spinner = false;
             }
-            if(this.roarfirekit.userData) {
-              this.hasUserData = true
-              this.firekitUserData = this.roarfirekit.userData
-            }
+            // if(this.roarfirekit.userData) {
+            //   this.hasUserData = true
+            //   this.firekitUserData = this.roarfirekit.userData
+            // }
           });
         }
       },
@@ -205,10 +205,10 @@ export const useAuthStore = () => {
         if(this.isAuthenticated && this.isFirekitInit){
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
-            this.hasUserData = false;
-            this.firekitIsAdmin = null;
-            this.firekitIsSuperAdmin = null;
-            this.firekitUserData = null;
+            // this.hasUserData = false;
+            // this.firekitIsAdmin = null;
+            // this.firekitIsSuperAdmin = null;
+            // this.firekitUserData = null;
             // this.firekitAssignments = null;
             // this.firekitAdminInfo = null;
             // this.firekitAssignmentIds = [];
