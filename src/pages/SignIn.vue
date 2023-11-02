@@ -70,7 +70,6 @@ const authWithGoogle = () => {
   } else {
     // authStore.signInWithGoogleRedirect();
     authStore.signInWithGooglePopup().then(async () => {
-      console.log('then block of google popup')
       if (authStore.uid) {
         const userData = await fetchDocById('users', authStore.uid);
         const userClaims = await fetchDocById('userClaims', authStore.uid);
