@@ -5,25 +5,14 @@
     </aside>
     <section class="main-body">
       <Panel header="Administration Progress">
-        <template #icons>
-          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button>
-        </template>
-
         <div>
           <p v-if="orgInfo">{{ _capitalize(props.orgType) }}: {{ orgInfo.name }}</p>
           <p v-if="administrationInfo">Administration: {{ administrationInfo.name }}</p>
         </div>
 
-        <div v-if="refreshing" class="loading-container">
-          <AppSpinner style="margin-bottom: 1rem;" />
-          <span>Loading Administration Data</span>
-        </div>
-
-        <RoarDataTable v-else-if="assignmentData?.length ?? 0 > 0" :data="tableData" :columns="columns"
-          :totalRecords="assignmentCount" :loading="isLoadingScores || isFetchingScores" :pageLimit="pageLimit" lazy
-          @page="onPage($event)" @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll" />
+        <RoarDataTable :data="tableData" :columns="columns" :totalRecords="assignmentCount"
+          :loading="isLoadingScores || isFetchingScores" :pageLimit="pageLimit" lazy @page="onPage($event)"
+          @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll" />
       </Panel>
     </section>
   </main>
@@ -205,12 +194,6 @@ const exportAll = async () => {
   exportCsv(computedExportData, `roar-progress-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`);
 }
 
-const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return "pi pi-spin pi-spinner";
-  return "pi pi-refresh";
-});
-
 const displayNames = {
   "swr": { name: "Word", order: 3 },
   "swr-es": { name: "Palabra", order: 4 },
@@ -309,24 +292,18 @@ const tableData = computed(() => {
 
 let unsubscribe;
 
-const refresh = async () => {
-  refreshing.value = true;
+const init = () => {
   if (unsubscribe) unsubscribe();
-  refreshing.value = false;
   initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getUsersByAssignment && state.roarfirekit.isAdmin()) {
-    await refresh();
-  }
+  if (state.roarfirekit.restConfig) init();
 });
 
 const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  if (roarfirekit.value.getUsersByAssignment && roarfirekit.value.isAdmin()) {
-    await refresh()
-  }
+  if (roarfirekit.value.restConfig) init();
 })
 </script>
 
