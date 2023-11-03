@@ -16,10 +16,10 @@
 				<span class="mr-1"><strong>Assessments</strong>:</span>
 				<span v-for="assessmentId in assessmentIds" class="card-inline-list-item">
 					{{ displayNames[assessmentId]?.name ?? assessmentId }}
-					<span v-tooltip.top="'Click to view params'" class="pi pi-info-circle cursor-pointer" style="font-size: 1rem"
-						@click="toggleParams($event, assessmentId)" />
+					<span v-if="showParams" v-tooltip.top="'Click to view params'" class="pi pi-info-circle cursor-pointer"
+						style="font-size: 1rem" @click="toggleParams($event, assessmentId)" />
 				</span>
-				<OverlayPanel v-for="assessmentId in assessmentIds" :ref="paramPanelRefs[assessmentId]">
+				<OverlayPanel v-if="showParams" v-for="assessmentId in assessmentIds" :ref="paramPanelRefs[assessmentId]">
 					<DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
 						:value="toEntryObjects(params[assessmentId])">
 						<Column field="key" header="Parameter" style="width: 50%"></Column>
@@ -52,8 +52,8 @@
 									aria-label="Completion details" size="small" />
 							</router-link>
 							<router-link
-                :to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }" 
-                v-slot="{ href, route, navigate }">
+								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
+								v-slot="{ href, route, navigate }">
 								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
 									size="small" />
 							</router-link>
@@ -89,6 +89,7 @@ const props = defineProps({
 	dates: Object,
 	assignees: Object,
 	assessments: Array,
+	showParams: Boolean,
 });
 
 const processedDates = computed(() => {
