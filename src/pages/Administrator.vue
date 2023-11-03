@@ -19,7 +19,7 @@
               <div class="mb-2 w-full">
                 <CardAdministration :key="slotProps.data.id" :id="slotProps.data.id" :title="slotProps.data.name"
                   :stats="slotProps.data.stats" :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
-                  :assessments="slotProps.data.assessments" />
+                  :assessments="slotProps.data.assessments" :showParams="isSuperAdmin" />
               </div>
             </template>
             <template #empty>
