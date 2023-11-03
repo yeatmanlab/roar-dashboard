@@ -68,6 +68,19 @@ const routes = [
     meta: { pageTitle: "Multichoice" }
   },
   {
+    path: "/game/cva",
+    name: "Cva",
+    component: () => import("../components/tasks/Multichoice.vue"),
+    props: {taskId: "cva"},
+    meta: { pageTitle: "CVA" }
+  },
+  {
+    path: "/game/vocab",
+    name: "Vocab",
+    component: () => import("../components/tasks/Vocab.vue"),
+    meta: { pageTitle: "Vocab" }
+  },
+  {
     path: "/register-game",
     name: "RegisterGame",
     component: () => import("../pages/RegisterGame.vue"),
