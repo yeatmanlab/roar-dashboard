@@ -15,7 +15,11 @@ import { useGameStore } from '@/store/game';
 import _head from 'lodash/head';
 import _get from 'lodash/get';
 
-const taskId = "multichoice"
+const props = defineProps({
+    taskId: {required: true, default: "multichoice"}
+  })
+
+const taskId = props.taskId
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();

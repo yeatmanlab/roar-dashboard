@@ -33,7 +33,7 @@
               <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"/>
             </div>
 
-            <router-link v-if="!allGamesComplete && !game.taskData?.taskURL && !game.taskData?.variantURL" :to="{ path: 'game/' + game.taskId }"></router-link>
+            <router-link v-if="!allGamesComplete && !game.taskData?.taskURL && !game.taskData?.variantURL" :to="{ path: 'game/' + game.taskId}" :taskId="game.taskId"></router-link>
         </article>
       </TabPanel>
     </TabView>
@@ -49,7 +49,7 @@ import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 const props = defineProps({
   games: {required: true, default: []},
-  sequential: {required: false, default: true}
+  sequential: {required: false, default: true},
 })
 
 const selectedIndex = ref(0);
