@@ -5,11 +5,6 @@
     </aside>
     <section class="main-body">
       <Panel header="Create a new organization">
-        <template #icons>
-          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button>
-        </template>
         Use this form to create a new organization.
 
         <Divider />
@@ -24,6 +19,11 @@
           </div>
         </div>
 
+        <!-- TODO: Edit this section to include two separate dropdowns, one for districts and one for schools. -->
+        <!-- TODO: The one for districts should be populated by ``districts`` and the one for schools should be populated by ``schools``. -->
+        <!-- TODO: The v-model for districts should be ``selectedDistrict`` and the v-model for schools should be ``selectedSchool``. -->
+        <!-- TODO: If ``isLoadingSchools`` is true, show the schools dropdown in a loading state. See: https://primevue.org/dropdown/#loadingstate -->
+        <!-- TODO: This will also require changing ``state.parentOrg`` into two variables: ``state.parentDistrict`` and ``state.parentSchool``. -->
         <div v-if="parentOrgType" class="grid column-gap-3">
           <div v-if="parentOrgs.length > 1" class="col-12 mt-3 mb-0 pb-0">
             <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{
@@ -140,7 +140,6 @@
 
 <script setup>
 import { computed, reactive, ref, toRaw, onMounted } from "vue";
-import { useRouter } from 'vue-router';
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
 import { storeToRefs } from "pinia";
@@ -149,12 +148,95 @@ import _get from "lodash/get";
 import _set from "lodash/set";
 import _union from "lodash/union";
 import _without from "lodash/without";
+import { useQuery } from '@tanstack/vue-query'
 import { useVuelidate } from "@vuelidate/core";
 import { required, requiredIf } from "@vuelidate/validators";
-import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import { getSidebarActions } from "../router/sidebarActions";
+import { getSidebarActions } from "@/router/sidebarActions";
+import { fetchDocById } from "@/helpers/query/utils";
+import { orgFetcher } from "@/helpers/query/orgs";
+
+const initialized = ref(false);
+const confirm = useConfirm();
+const toast = useToast();
+const authStore = useAuthStore();
+const selectedDistrict = ref();
+const selectedSchool = ref();
+const { roarfirekit } = storeToRefs(authStore);
+
+let unsubscribe;
+const initTable = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+}
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) initTable();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) initTable();
+})
+
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims', authStore.uid],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
+
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+
+const { isLoading: isLoadingDistricts, data: districts } =
+  useQuery({
+    queryKey: ['districts'],
+    queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
+    keepPreviousData: true,
+    enabled: claimsLoaded,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const { isLoading: isLoadingGroups, data: groups } =
+  useQuery({
+    queryKey: ['groups'],
+    queryFn: () => orgFetcher('groups', undefined, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
+    keepPreviousData: true,
+    enabled: claimsLoaded,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const schoolQueryEnabled = computed(() => {
+  return claimsLoaded.value && selectedDistrict.value !== undefined;
+})
+
+const { isLoading: isLoadingSchools, data: schools } =
+  useQuery({
+    queryKey: ['schools', selectedDistrict],
+    queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
+    keepPreviousData: true,
+    enabled: schoolQueryEnabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const classQueryEnabled = computed(() => {
+  return claimsLoaded.value && selectedSchool.value !== undefined;
+})
+
+const { isLoading: isLoadingClasses, data: classes } =
+  useQuery({
+    queryKey: ['classes', selectedSchool],
+    queryFn: () => orgFetcher('schools', selectedSchool, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
+    keepPreviousData: true,
+    enabled: classQueryEnabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
 const state = reactive({
   orgName: "",
@@ -175,12 +257,6 @@ const rules = {
 
 const v$ = useVuelidate(rules, state);
 const submitted = ref(false);
-
-const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return "pi pi-spin pi-spinner";
-  return "pi pi-refresh";
-});
 
 const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district' },
@@ -223,25 +299,11 @@ const grades = [
   { name: 'Grade 12', value: 12 },
 ];
 
-const router = useRouter();
-const confirm = useConfirm();
-const toast = useToast();
-const queryStore = useQueryStore();
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-const { adminOrgs } = storeToRefs(queryStore);
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
-
-const districts = ref(adminOrgs.value.districts || []);
-const schools = ref(adminOrgs.value.schools || []);
-const classes = ref(adminOrgs.value.classes || []);
-const groups = ref(adminOrgs.value.groups || []);
-
 const allTags = computed(() => {
-  const districtTags = districts.value.map((org) => org.tags);
-  const schoolTags = districts.value.map((org) => org.tags);
-  const classTags = classes.value.map((org) => org.tags);
-  const groupTags = groups.value.map((org) => org.tags);
+  const districtTags = (districts.value ?? []).map((org) => org.tags);
+  const schoolTags = (districts.value ?? []).map((org) => org.tags);
+  const classTags = (classes.value ?? []).map((org) => org.tags);
+  const groupTags = (groups.value ?? []).map((org) => org.tags);
   return _without(_union(
     ...districtTags, ...schoolTags, ...classTags, ...groupTags
   ), undefined) || [];
@@ -350,26 +412,6 @@ const submit = async (event) => {
   }
 };
 
-let unsubscribe;
-
-const refresh = async () => {
-  if (unsubscribe) unsubscribe();
-  refreshing.value = true;
-  districts.value = await queryStore.getOrgs("districts");
-  schools.value = await queryStore.getOrgs("schools");
-  classes.value = await queryStore.getOrgs("classes");
-  groups.value = await queryStore.getOrgs("groups");
-  refreshing.value = false;
-}
-
-if (districts.value.length === 0 || schools.value.length === 0) {
-  unsubscribe = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-      await refresh();
-    }
-  });
-}
-
 const resetForm = () => {
   state.orgName = "";
   state.orgInitials = "";
@@ -378,12 +420,6 @@ const resetForm = () => {
   state.grade = undefined;
   state.tags = [];
 }
-
-onMounted(async () => {
-  if(roarfirekit.value.getOrgs) {
-    await refresh()
-  }
-})
 </script> 
 
 <style lang="scss">
