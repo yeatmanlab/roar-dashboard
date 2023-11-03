@@ -1,6 +1,7 @@
 {
   "projects": {
-    "default": "gse-roar-admin"
+    "default": "gse-roar-admin",
+    "levante-admin-dev": "hs-levante-admin-dev"
   },
   "targets": {
     "gse-roar-admin": {
@@ -10,5 +11,6 @@
         ]
       }
     }
-  }
+  },
+  "etags": {}
 }
