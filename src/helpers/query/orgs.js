@@ -223,7 +223,7 @@ export const fetchOrgByName = async (orgType, orgName, selectedDistrict, selecte
   return axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
 };
 
-export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminOrgs) => {
+export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminOrgs, select = ["name", "id"]) => {
   if (isSuperAdmin.value) {
     const axiosInstance = getAxiosInstance();
     const requestBody = getOrgsRequestBody({
@@ -231,7 +231,7 @@ export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminO
       parentDistrict: orgType === "schools" ? selectedDistrict.value : null,
       aggregationQuery: false,
       paginate: false,
-      select: ["name", "id"],
+      select: select,
     });
 
     if (orgType === "districts") {
