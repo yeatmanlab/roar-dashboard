@@ -34,8 +34,9 @@ const navbarBlacklist = ref([
   "SRE",
   "PA",
   "Letter",
+  "Vocab",
   "Multichoice",
-  "Vocab"
+  "Cva"
 ]);
 
 onBeforeMount(async () => {
