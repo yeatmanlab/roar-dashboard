@@ -1,8 +1,12 @@
 .p-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: var(--surface-a);
   background: var(--primary-color);
   border: 1px solid var(--primary-color);
   padding: var(--inline-spacing-larger) 1rem;
+  margin: 0 8px;
   transition: none;
   border-radius: var(--border-radius);
 }
