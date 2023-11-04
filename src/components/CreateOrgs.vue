@@ -24,31 +24,40 @@
         <!-- TODO: The v-model for districts should be ``selectedDistrict`` and the v-model for schools should be ``selectedSchool``. -->
         <!-- TODO: If ``isLoadingSchools`` is true, show the schools dropdown in a loading state. See: https://primevue.org/dropdown/#loadingstate -->
         <!-- TODO: This will also require changing ``state.parentOrg`` into two variables: ``state.parentDistrict`` and ``state.parentSchool``. -->
-        <div v-if="parentOrgType" class="grid column-gap-3">
-          <div v-if="parentOrgs.length > 1" class="col-12 mt-3 mb-0 pb-0">
-            <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{
-              parentOrgType.singular }}.</p>
+        <div v-if="parentOrgRequired" class="grid column-gap-3 mt-4">
+          <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to:</p>
+          <div v-if="(districts ?? []).length === 1" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+            <p id="section-heading">
+              District {{ districts[0].name }}.
+            </p>
           </div>
-          <div v-if="parentOrgs.length > 1" class="col-12 md:col-6 lg:col-3 xl:col-3">
+          <div v-else class="col-12 md:col-6 lg:col-3 xl:col-3">
             <span class="p-float-label">
-              <Dropdown v-model="state.parentOrg" inputId="parent-org" :options="parentOrgs" showClear optionLabel="name"
-                :placeholder="`Select a ${parentOrgType.singular}`" class="w-full" />
-              <label for="parent-org">{{ _capitalize(parentOrgType.singular) }}</label>
-              <small v-if="v$.parentOrg.$invalid && submitted" class="p-error">
-                Please select a {{ parentOrgType.singular }}
+              <Dropdown v-model="state.parentDistrict" inputId="parent-district" :options="districts" showClear
+                optionLabel="name" placeholder="Select a district" :loading="isLoadingDistricts" class="w-full" />
+              <label for="parent-district">District</label>
+              <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error">
+                Please select a district.
               </small>
             </span>
           </div>
 
-          <div v-else-if="parentOrgs.length === 1" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-            <p id="section-heading">
-              This {{ orgTypeLabel.toLowerCase() }} will be created in {{ parentOrgType }} {{ parentOrgs[0].name }}.
-            </p>
-          </div>
-
-          <div v-else class="loading-container">
-            <AppSpinner style="margin-bottom: 1rem;" />
-            <span>Loading {{ parentOrgType.plural }}</span>
+          <div v-if="orgType.singular === 'class'">
+            <div v-if="(schools ?? []).length === 1" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+              <p id="section-heading">
+                School {{ schools[0].name }}.
+              </p>
+            </div>
+            <div v-else class="col-12 md:col-6 lg:col-3 xl:col-3">
+              <span class="p-float-label">
+                <Dropdown v-model="state.parentSchool" inputId="parent-school" :options="schools" showClear
+                  optionLabel="name" placeholder="Select a school" :loading="isLoadingSchools" class="w-full" />
+                <label for="parent-school">School</label>
+                <small v-if="v$.parentSchool.$invalid && submitted" class="p-error">
+                  Please select a district.
+                </small>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -69,7 +78,7 @@
             </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="parentOrgType?.singular === 'school'">
+          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="orgType?.singular === 'class'">
             <span class="p-float-label">
               <Dropdown v-model="state.grade" inputId="grade" :options="grades" showClear optionLabel="name"
                 placeholder="Select a grade" class="w-full" />
@@ -213,7 +222,7 @@ const { isLoading: isLoadingGroups, data: groups } =
   });
 
 const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && selectedDistrict.value !== undefined;
+  return claimsLoaded.value && state.parentDistrict !== undefined;
 })
 
 const { isLoading: isLoadingSchools, data: schools } =
@@ -226,7 +235,7 @@ const { isLoading: isLoadingSchools, data: schools } =
   });
 
 const classQueryEnabled = computed(() => {
-  return claimsLoaded.value && selectedSchool.value !== undefined;
+  return claimsLoaded.value && state.parentSchool !== undefined;
 })
 
 const { isLoading: isLoadingClasses, data: classes } =
@@ -243,7 +252,8 @@ const state = reactive({
   orgInitials: "",
   ncesId: undefined,
   address: undefined,
-  parentOrg: undefined,
+  parentDistrict: undefined,
+  parentSchool: undefined,
   grade: undefined,
   tags: [],
 })
@@ -251,7 +261,8 @@ const state = reactive({
 const rules = {
   orgName: { required },
   orgInitials: { required },
-  parentOrg: { required: requiredIf(() => orgType.value.singular === "class") },
+  parentDistrict: { required: requiredIf(() => ["school", "class"].includes(orgType.value.singular)) },
+  parentSchool: { required: requiredIf(() => orgType.value.singular === "class") },
   grade: { required: requiredIf(() => orgType.value.singular === "class") }
 };
 
@@ -273,13 +284,7 @@ const orgTypeLabel = computed(() => {
   return "Org";
 })
 
-const parentOrgType = computed(() => {
-  if (orgType.value?.singular === "school") {
-    return { plural: "districts", singular: "district" };
-  } else if (orgType.value?.singular === "class") {
-    return { plural: "school", singular: "school" };
-  }
-})
+const parentOrgRequired = computed(() => ["school", "class"].includes(orgType.value?.singular))
 
 const grades = [
   { name: 'Pre-K', value: 'PK' },
@@ -330,15 +335,6 @@ const searchTags = (event) => {
   tagSuggestions.value = filteredOptions;
 }
 
-const parentOrgs = computed(() => {
-  if (orgType.value?.singular === "school") {
-    return districts.value;
-  } else if (orgType.value?.singular === "class") {
-    return schools.value;
-  }
-  return [];
-})
-
 const setAddress = (place) => {
   state.address = {
     addressComponents: place.address_components || [],
@@ -350,27 +346,6 @@ const setAddress = (place) => {
 
 const removeAddress = () => {
   state.address = undefined;
-}
-
-const preSubmit = (event) => {
-  if (orgType.value.singular === "school" && !state.parentOrg) {
-    confirm.require({
-      target: event.currentTarget,
-      message:
-        "You created a school that doesn't belong to any district. If you "
-        + "continue, we will create a parent pseudo-district using this "
-        + "school's data. Are you sure you want to do that?",
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        submit();
-      },
-      reject: () => {
-        return;
-      }
-    });
-  } else {
-    submit();
-  }
 }
 
 const submit = async (event) => {
@@ -388,18 +363,10 @@ const submit = async (event) => {
     if (state.tags.length > 0) orgData.tags = state.tags;
 
     if (orgType.value?.singular === "class") {
-      orgData.schoolId = toRaw(state.parentOrg).id;
+      orgData.schoolId = toRaw(state.parentSchool).id;
+      orgData.districtId = toRaw(state.parentDistrict).id;
     } else if (orgType.value?.singular === "school") {
-      if (state.parentOrg) {
-        orgData.districtId = toRaw(state.parentOrg).id;
-      } else {
-        const districtData = { ...orgData };
-        // The NCES school ID is composed of the 7 digit district ID followed by
-        // the 5 digit ID of the school within that district.
-        // To create the district ID, we need to take just the first 7 digits
-        if (orgData.ncesId) districtData.ncesId = orgData.ncesId.slice(0, 7);
-        orgData.districtId = await roarfirekit.value.createOrg('districts', districtData);
-      }
+      orgData.districtId = toRaw(state.parentDistrict).id;
     }
 
     await roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData).then(() => {
