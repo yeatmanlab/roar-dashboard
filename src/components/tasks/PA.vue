@@ -103,7 +103,7 @@ onBeforeUnmount(async () => {
 async function startTask() {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId)
 
-  const userDob = _get(userData, 'studentData.dob')
+  const userDob = _get(userData.value, 'studentData.dob')
   const userDateObj = new Date(userDob);
 
   const userParams = {
