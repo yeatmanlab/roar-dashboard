@@ -95,10 +95,6 @@ const authWithClever = () => {
   }
 }
 
-function validateEmail(email) {
-  return ref.test('/^\S+@\S+\.\S+$/')
-}
-
 const authWithEmail = (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
