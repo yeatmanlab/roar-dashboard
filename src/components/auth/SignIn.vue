@@ -112,13 +112,14 @@ const validateRoarEmail = _debounce(async (email) => {
     } else {
       if (roarfirekit.value.isRoarAuthEmail(email)) {
         // Roar auth email are made up, so sign-in link is not allowed.
-        allowPassword.value = true;
         allowLink.value = false;
+        allowPassword.value = true;
       } else {
         allowLink.value = true;
         allowPassword.value = false;
       }
     }
+    state.useLink = allowLink.value;
     evaluatingEmail.value = false;
   })
 }, 250, { maxWait: 1000 });
@@ -132,9 +133,8 @@ watch(() => state.email, async (email) => {
     // Password is allowed. Sign-in link is not allowed.
     allowPassword.value = true;
     allowLink.value = false;
+    state.useLink = allowLink.value;
   }
-
-  state.useLink = allowLink.value;
 })
 
 </script>

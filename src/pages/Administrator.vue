@@ -12,23 +12,25 @@
         </template>
 
         <div v-if="initialized && !isLoadingAdministrations">
-          <DataView :key="dataViewKey" :value="administrations" lazy paginator paginatorPosition="top"
-            :totalRecords="totalRecords" :rows="pageLimit" :rowsPerPageOptions="[3, 5, 10, 25]" @page="onPage($event)"
-            dataKey="id">
-            <template #list="slotProps">
-              <div class="mb-2 w-full">
-                <CardAdministration :key="slotProps.data.id" :id="slotProps.data.id" :title="slotProps.data.name"
-                  :stats="slotProps.data.stats" :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
-                  :assessments="slotProps.data.assessments" :showParams="isSuperAdmin" />
-              </div>
-            </template>
-            <template #empty>
-              <div>
-                There are no administrations to display. Please contact a lab
-                administrator to add you as an admin to an administration.
-              </div>
-            </template>
-          </DataView>
+          <BlockUI :blocked="isFetchingAdministrations">
+            <DataView :key="dataViewKey" :value="administrations" lazy paginator paginatorPosition="top"
+              :totalRecords="totalRecords" :rows="pageLimit" :rowsPerPageOptions="[3, 5, 10, 25]" @page="onPage($event)"
+              dataKey="id">
+              <template #list="slotProps">
+                <div class="mb-2 w-full">
+                  <CardAdministration :key="slotProps.data.id" :id="slotProps.data.id" :title="slotProps.data.name"
+                    :stats="slotProps.data.stats" :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
+                    :assessments="slotProps.data.assessments" :showParams="isSuperAdmin" />
+                </div>
+              </template>
+              <template #empty>
+                <div>
+                  There are no administrations to display. Please contact a lab
+                  administrator to add you as an admin to an administration.
+                </div>
+              </template>
+            </DataView>
+          </BlockUI>
         </div>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />

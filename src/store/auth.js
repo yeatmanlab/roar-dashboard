@@ -1,6 +1,7 @@
 import { defineStore, acceptHMRUpdate } from "pinia";
 import { onAuthStateChanged } from "firebase/auth";
 import { initNewFirekit } from "../firebaseInit";
+import { useGameStore } from "@/store/game";
 
 import _findIndex from "lodash/findIndex";
 import _assign from "lodash/assign";
@@ -144,6 +145,8 @@ export const useAuthStore = () => {
             this.adminOrgs = null;
             this.spinner = false;
             this.authFromClever = false;
+            const gameStore = useGameStore();
+            gameStore.selectedAdmin = undefined;
           });
         } else {
           console.log('Cant log out while not logged in')

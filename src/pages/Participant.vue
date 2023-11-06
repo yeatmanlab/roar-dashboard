@@ -83,7 +83,7 @@ const { isLoading: isLoadingAssignments, isFetching: isFetchingAssignments, data
   })
 
 const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));
-const administrationQueryEnabled = computed(() => (administrationIds.value ?? []).length > 0);
+const administrationQueryEnabled = computed(() => !isLoadingAssignments.value);
 
 const { isLoading: isLoadingAdmins, isFetching: isFetchingAdmins, data: adminInfo } =
   useQuery({
@@ -101,7 +101,6 @@ const { isLoading: isLoadingAdmins, isFetching: isFetchingAdmins, data: adminInf
   })
 
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
-const taskQueryEnabled = computed(() => (taskIds.value ?? []).length > 0);
 
 const { isLoading: isLoadingTasks, isFetching: isFetchingTasks, data: taskInfo } =
   useQuery({
@@ -114,7 +113,7 @@ const { isLoading: isLoadingTasks, isFetching: isFetchingTasks, data: taskInfo }
       'app'
     ),
     keepPreviousData: true,
-    enabled: taskQueryEnabled,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000,
   })
 
