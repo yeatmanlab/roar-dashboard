@@ -254,6 +254,30 @@ const onSort = (event) => {
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
 }
 
+const viewMode = ref('color');
+
+const viewOptions = ref([
+  { label: 'Color', value: 'color' },
+  { label: 'Percentile', value: 'percentile' },
+  { label: 'Standard Score', value: 'standard' },
+  { label: 'Raw Score', value: 'raw' },
+])
+
+const displayNames = {
+  "swr": { name: "Word", order: 3 },
+  "swr-es": { name: "Palabra", order: 4 },
+  "pa": { name: "Phoneme", order: 2 },
+  "sre": { name: "Sentence", order: 5 },
+  "letter": { name: "Letter", order: 1 },
+  "multichoice": { name: "Multichoice", order: 6 },
+  "mep": { name: "MEP", order: 7 },
+  "ExternalTask": { name: "External Task", order: 8 },
+  "ExternalTest": { name: "External Test", order: 9 },
+}
+const rawOnlyTasks = [
+  'letter'
+]
+
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
@@ -290,7 +314,7 @@ const exportSelected = (selectedRows) => {
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
       tableRow[`${displayNames[taskId].name} - Percentile`] = percentileString;
       tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-      tableRow[`${displayNames[taskId].name} - Raw`] = assessment.taskId === 'letter' ?
+      tableRow[`${displayNames[taskId].name} - Raw`] = rawOnlyTasks.includes(assessment.taskId) ?
           _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
@@ -329,7 +353,7 @@ const exportAll = async () => {
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
       tableRow[`${displayNames[taskId].name} - Percentile`] = percentileString;
       tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-      tableRow[`${displayNames[taskId].name} - Raw`] = assessment.taskId === 'letter' ?
+      tableRow[`${displayNames[taskId].name} - Raw`] = rawOnlyTasks.includes(assessment.taskId) ?
           _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
@@ -429,27 +453,6 @@ const spinIcon = computed(() => {
   return "pi pi-refresh";
 });
 
-const viewMode = ref('color');
-
-const viewOptions = ref([
-  { label: 'Color', value: 'color' },
-  { label: 'Percentile', value: 'percentile' },
-  { label: 'Standard Score', value: 'standard' },
-  { label: 'Raw Score', value: 'raw' },
-])
-
-const displayNames = {
-  "swr": { name: "Word", order: 3 },
-  "swr-es": { name: "Palabra", order: 4 },
-  "pa": { name: "Phoneme", order: 2 },
-  "sre": { name: "Sentence", order: 5 },
-  "letter": { name: "Letter", order: 1 },
-  "multichoice": { name: "Multichoice", order: 6 },
-  "mep": { name: "MEP", order: 7 },
-  "ExternalTask": { name: "External Task", order: 8 },
-  "ExternalTest": { name: "External Test", order: 9 },
-}
-
 const allTasks = computed(() => {
   if (tableData.value.length > 0) {
     return tableData.value[0].assignment.assessments.map(assessment => assessment.taskId)
@@ -493,9 +496,9 @@ const columns = computed(() => {
         header: displayNames[taskId].name,
         dataType: "text",
         tag: (viewMode.value !== 'color' && taskId !== 'letter'),
-        emptyTag: (viewMode.value === 'color' || (taskId === 'letter' && viewMode.value !== 'raw')),
+        emptyTag: (viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw')),
         tagColor: `scores.${taskId}.color`,
-        tagOutlined: (taskId === 'letter' && viewMode.value !== "raw")
+        tagOutlined: (rawOnlyTasks.includes(taskId) && viewMode.value !== "raw")
       });
     }
   }
@@ -511,7 +514,7 @@ const tableData = computed(() => {
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, grade)
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`)
-      const rawScore = assessment.taskId === 'letter' ?
+      const rawScore = rawOnlyTasks.includes(assessment.taskId) ?
           _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level, tag_color } = getSupportLevel(percentile);
       scores[assessment.taskId] = {
@@ -519,7 +522,7 @@ const tableData = computed(() => {
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: (assessment.taskId === 'letter' && rawScore) ? 'white' : tag_color
+        color: (rawOnlyTasks.includes(assessment.taskId) && rawScore) ? 'white' : tag_color
       }
 
     }
