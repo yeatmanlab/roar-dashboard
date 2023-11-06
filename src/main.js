@@ -22,6 +22,7 @@ import Carousel from "primevue/carousel"
 import Checkbox from "primevue/checkbox";
 import Chart from 'primevue/chart'
 import Chip from "primevue/chip";
+import Chips from "primevue/chips";
 import ConfirmPopup from "primevue/confirmpopup";
 import ConfirmDialog from "primevue/confirmdialog";
 import DataView from 'primevue/dataview';
@@ -116,6 +117,7 @@ app.component("Carousel", Carousel);
 app.component("Checkbox", Checkbox);
 app.component("Chart", Chart);
 app.component("Chip", Chip);
+app.component("Chips", Chips);
 app.component("ConfirmPopup", ConfirmPopup);
 app.component("ConfirmDialog", ConfirmDialog);
 app.component("DataView", DataView);
