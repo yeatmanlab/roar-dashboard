@@ -55,7 +55,7 @@ const router = useRouter();
 const { spinner, authFromClever } = storeToRefs(authStore);
 
 authStore.$subscribe((mutation, state) => {
-  if (state.userData && state.roarfirekit._idTokenReceived) {
+  if (authStore.uid) {
     if (authFromClever.value) {
       router.push({ name: "CleverLanding" })
     } else {

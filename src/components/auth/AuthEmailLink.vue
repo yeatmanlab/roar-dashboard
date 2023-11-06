@@ -27,7 +27,7 @@ const { roarfirekit } = storeToRefs(authStore);
 const success = ref(false);
 
 authStore.$subscribe(async (mutation, state) => {
-  if (state.uid) {
+  if (authStore.uid) {
     const userData = await fetchDocById('users', authStore.uid);
     const userClaims = await fetchDocById('userClaims', authStore.uid);
     authStore.userData = userData
