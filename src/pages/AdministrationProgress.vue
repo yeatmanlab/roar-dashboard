@@ -168,11 +168,11 @@ const exportSelected = (selectedRows) => {
     for ( const assessment of assignment.assessments ) {
       const taskId = assessment.taskId
       if (assessment.completedOn !== undefined) {
-        tableRow[displayNames[taskId].name] = 'Completed'
+        tableRow[displayNames[taskId]?.name ?? taskId] = 'Completed'
       } else if (assessment.startedOn !== undefined) {
-        tableRow[displayNames[taskId].name] = 'Started'
+        tableRow[displayNames[taskId]?.name ?? taskId] = 'Started'
       } else {
-        tableRow[displayNames[taskId].name] = 'Assigned'
+        tableRow[displayNames[taskId]?.name ?? taskId] = 'Assigned'
       }
     }
     return tableRow
@@ -202,11 +202,11 @@ const exportAll = async () => {
     for ( const assessment of assignment.assessments ) {
       const taskId = assessment.taskId
       if (assessment.completedOn !== undefined) {
-        tableRow[displayNames[taskId].name] = 'Completed'
+        tableRow[displayNames[taskId]?.name ?? taskId] = 'Completed'
       } else if (assessment.startedOn !== undefined) {
-        tableRow[displayNames[taskId].name] = 'Started'
+        tableRow[displayNames[taskId]?.name ?? taskId] = 'Started'
       } else {
-        tableRow[displayNames[taskId].name] = 'Assigned'
+        tableRow[displayNames[taskId]?.name ?? taskId] = 'Assigned'
       }
     }
     return tableRow
@@ -227,6 +227,10 @@ const displayNames = {
   "sre": { name: "Sentence", order: 5 },
   "letter": { name: "Letter", order: 1 },
   "multichoice": { name: "Multichoice", order: 6 },
+  "anb": { name: "ANB", order: 7 },
+  "mep": { name: "MEP", order: 8 },
+  "mep-pseudo": { name: "MEP-Pseudo", order: 9},
+  "morphology": { name: "Morphology", order: 10 },
 }
 
 const columns = computed(() => {
@@ -249,12 +253,16 @@ const columns = computed(() => {
 
   if (tableData.value.length > 0) {
     const sortedTasks = Object.keys(tableData.value[0].status).sort((p1, p2) => {
-      return displayNames[p1].order - displayNames[p2].order
+      if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
+        return displayNames[p1].order - displayNames[p2].order
+      } else {
+        return -1
+      }
     })
     for (const taskId of sortedTasks) {
       tableColumns.push({
         field: `status.${taskId}.value`,
-        header: displayNames[taskId].name,
+        header: displayNames[taskId]?.name ?? taskId,
         dataType: "text",
         tag: true,
         severityField: `status.${taskId}.severity`,
