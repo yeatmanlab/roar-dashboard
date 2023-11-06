@@ -17,7 +17,7 @@
   </main>
 </template>
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 import { useAuthStore } from "@/store/auth";
@@ -37,6 +37,7 @@ import { singularizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const initialized = ref(false);
 
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
@@ -50,7 +51,6 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const sidebarActions = ref(getSidebarActions(isSuperAdmin, true));
 
-const initialized = ref(false);
 const pageLimit = ref(10);
 const page = ref(0);
 const orderBy = ref(null);
