@@ -66,7 +66,7 @@ const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecor
     queryKey: ['countUsers', props.orgType, props.orgId, orderBy],
     queryFn: () => countUsersByOrg(props.orgType, props.orgId, orderBy),
     keepPreviousData: true,
-    enabled: isLoadingClaims,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -81,7 +81,7 @@ const { isLoading, isFetching, data: users } =
       orderBy,
     ),
     keepPreviousData: true,
-    enabled: isLoadingClaims,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
