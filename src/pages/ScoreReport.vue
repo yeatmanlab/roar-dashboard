@@ -288,11 +288,11 @@ const exportSelected = (selectedRows) => {
       const taskId = assessment.taskId
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
-      tableRow[`${displayNames[taskId].name} - Percentile`] = percentileString;
-      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-      tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
-      tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow
   })
@@ -303,7 +303,11 @@ const exportSelected = (selectedRows) => {
 const exportAll = async () => {
   const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true)
   const sortedTasks = allTasks.value.sort((p1, p2) => {
-    return displayNames[p1].order - displayNames[p2].order
+    if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
+        return displayNames[p1].order - displayNames[p2].order
+      } else {
+        return -1
+      }
   })
   const computedExportData = _map(exportData, ({ user, assignment }) => {
     let tableRow = {
@@ -326,11 +330,11 @@ const exportAll = async () => {
       const taskId = assessment.taskId
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
-      tableRow[`${displayNames[taskId].name} - Percentile`] = percentileString;
-      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-      tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
-      tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow
   })
@@ -443,6 +447,10 @@ const displayNames = {
   "sre": { name: "Sentence", order: 5 },
   "letter": { name: "Letter", order: 1 },
   "multichoice": { name: "Multichoice", order: 6 },
+  "anb": { name: "ANB", order: 7 },
+  "mep": { name: "MEP", order: 8 },
+  "mep-pseudo": { name: "MEP-Pseudo", order: 9},
+  "morphology": { name: "Morphology", order: 10 },
 }
 
 const allTasks = computed(() => {
@@ -476,7 +484,11 @@ const columns = computed(() => {
 
   if (tableData.value.length > 0) {
     const sortedTasks = allTasks.value.sort((p1, p2) => {
-      return displayNames[p1].order - displayNames[p2].order
+      if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
+        return displayNames[p1].order - displayNames[p2].order
+      } else {
+        return -1
+      }
     })
     for (const taskId of sortedTasks) {
       let colField;
@@ -485,7 +497,7 @@ const columns = computed(() => {
       if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`
       tableColumns.push({
         field: colField,
-        header: displayNames[taskId].name,
+        header: displayNames[taskId]?.name ?? taskId,
         dataType: "text",
         tag: (viewMode.value !== 'color'),
         emptyTag: (viewMode.value === 'color'),
