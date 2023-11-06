@@ -187,7 +187,7 @@ const routes = [
     meta: {pageTitle: "List organizations", requireAdmin: true}
   },
   { 
-    path: "/list-users/:orgType/:orgId",
+    path: "/list-users/:orgType/:orgId/:orgName",
     name: "ListUsers",
     props: true,
     component: () => import("../components/ListUsers.vue"),
