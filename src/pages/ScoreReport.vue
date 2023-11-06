@@ -449,7 +449,8 @@ const displayNames = {
   "multichoice": { name: "Multichoice", order: 6 },
   "anb": { name: "ANB", order: 7 },
   "mep": { name: "MEP", order: 8 },
-  "morphology": { name: "Morphology", order: 9 }
+  "mep-pseudo": { name: "MEP-Pseudo", order: 9},
+  "morphology": { name: "Morphology", order: 10 },
 }
 
 const allTasks = computed(() => {
@@ -488,7 +489,6 @@ const columns = computed(() => {
       } else {
         return -1
       }
-      
     })
     for (const taskId of sortedTasks) {
       let colField;
