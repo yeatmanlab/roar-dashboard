@@ -5,18 +5,11 @@
     </aside>
     <section class="main-body">
       <Panel header="View Users">
-        <template #icons>
-          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button>
-        </template>
-
-        <div v-if="!refreshing">
-          <div v-if="users.length > 0">
-            <h2> Viewing {{ orgType }}: {{ orgName }}</h2>
-            <RoarDataTable :data="users" :columns="columns" />
-          </div>
-          <div v-else>No users in this {{ orgType }}.</div>
+        <div v-if="!(isLoading || isLoadingCount)">
+          <h2> Users in {{ singularizeFirestoreCollection(orgType) }} {{ orgName }}</h2>
+          <RoarDataTable v-if="users" lazy :columns="columns" :data="users" :pageLimit="pageLimit"
+            :totalRecords="totalRecords" :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
+            @page="onPage($event)" @sort="onSort($event)" :allowExport="false" />
         </div>
         <AppSpinner v-else />
       </Panel>
@@ -24,11 +17,10 @@
   </main>
 </template>
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 import { useAuthStore } from "@/store/auth";
-import { useQueryStore } from "@/store/query";
 import _isEmpty from 'lodash/isEmpty';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find'
@@ -36,77 +28,63 @@ import _get from 'lodash/get';
 import _set from 'lodash/set';
 import _union from 'lodash/union';
 import _head from 'lodash/head'
+import { useQuery } from "@tanstack/vue-query";
 import AppSpinner from "./AppSpinner.vue";
 import { storeToRefs } from "pinia";
-import { pluralizeFirestoreCollection } from '@/helpers';
+import { countUsersByOrg, fetchUsersByOrg } from "@/helpers/query/users";
+import { fetchDocById } from "../helpers/query/utils";
+import { singularizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
+
+const { roarfirekit } = storeToRefs(authStore);
+const initialized = ref(false);
+
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims'],
+    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const sidebarActions = ref(getSidebarActions(isSuperAdmin, true));
+
+const pageLimit = ref(10);
+const page = ref(0);
+const orderBy = ref(null);
 
 const props = defineProps({
   orgType: String,
   orgId: String,
+  orgName: String,
 })
 
-const { roarfirekit } = storeToRefs(authStore);
-
-const orgName = ref(props.orgId)
-
-const users = ref(queryStore.users[props.orgId]);
-
-const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return "pi pi-spin pi-spinner";
-  return "pi pi-refresh";
-});
-
-async function getUsers() {
-  const allOrgs = await queryStore.getOrgs(`${props.orgType}s`)
-  orgName.value = _get(_find(allOrgs, org => org.id === props.orgId), 'name')
-  const rawUsers = await authStore.getUsersForOrg(pluralizeFirestoreCollection(props.orgType), props.orgId)
-  // Process each user if necessary
-  _forEach(rawUsers, user => {
-    // Try to hydrate firestore date
-    let dob = _get(user, 'studentData.dob')
-    if (dob) {
-      try {
-        const date = dob.toDate();
-        _set(user, 'studentData.dob', date)
-      } catch (e) { };
-    }
-  })
-  users.value = rawUsers;
-  queryStore.users[props.orgId] = rawUsers;
-}
-
-let unsubscribe;
-
-const refresh = async () => {
-  refreshing.value = true;
-  if (unsubscribe) unsubscribe();
-  getUsers().then(() => {
-    refreshing.value = false;
-  }).catch((e) => {
-    // If there are no users, catch the 'missing documents' error
-    console.log('Error caught:', e)
-    refreshing.value = false;
-  });;
-}
-
-if (_isEmpty(users.value)) {
-  unsubscribe = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit.getUsersBySingleOrg && state.roarfirekit.isAdmin()) {
-      await refresh();
-    }
+const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecords } =
+  useQuery({
+    queryKey: ['countUsers', props.orgType, props.orgId, orderBy],
+    queryFn: () => countUsersByOrg(props.orgType, props.orgId, orderBy),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
-}
 
-onMounted(async () => {
-  if (roarfirekit.value.getUsersBySingleOrg && roarfirekit.value.isAdmin()) {
-    await refresh()
-  }
-})
+const { isLoading, isFetching, data: users } =
+  useQuery({
+    queryKey: ['usersByOrgPage', props.orgType, props.orgId, pageLimit, page, orderBy],
+    queryFn: () => fetchUsersByOrg(
+      props.orgType,
+      props.orgId,
+      pageLimit,
+      page,
+      orderBy,
+    ),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
 const columns = ref([
   {
@@ -145,4 +123,31 @@ const columns = ref([
     dataType: 'string',
   }
 ])
+
+const onPage = (event) => {
+  page.value = event.page;
+  pageLimit.value = event.rows;
+}
+
+const onSort = (event) => {
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
+    field: { fieldPath: item.field },
+    direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
+  }));
+  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : null;
+}
+
+let unsubscribe;
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+}
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+})
 </script>
