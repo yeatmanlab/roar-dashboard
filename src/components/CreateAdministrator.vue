@@ -51,31 +51,31 @@
           <div class="formgrid grid mt-5 mb-5" v-if="!refreshing">
             <div class="field col" v-if="districts.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="districts" />
+                <MultiSelect v-model="selectedOrgs.districts" :options="districts" optionLabel="name"
+                  class="w-full md:w-14rem" inputId="districts" />
                 <label for="districts">Districts</label>
               </span>
             </div>
 
             <div class="field col" v-if="schools.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="schools" />
+                <MultiSelect v-model="selectedOrgs.schools" :options="schools" optionLabel="name"
+                  class="w-full md:w-14rem" inputId="schools" />
                 <label for="schools">Schools</label>
               </span>
             </div>
 
             <div class="field col" v-if="classes.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="classes" />
+                <MultiSelect v-model="selectedOrgs.classes" :options="classes" optionLabel="name"
+                  class="w-full md:w-14rem" inputId="classes" />
                 <label for="classes">Classes</label>
               </span>
             </div>
 
             <div class="field col" v-if="groups.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
+                <MultiSelect v-model="selectedOrgs.groups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
                   inputId="groups" />
                 <label for="groups">Groups</label>
               </span>
@@ -83,8 +83,8 @@
 
             <div class="field col" v-if="families.length > 0">
               <span class="p-float-label">
-                <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="families" />
+                <MultiSelect v-model="selectedOrgs.families" :options="families" optionLabel="name"
+                  class="w-full md:w-14rem" inputId="families" />
                 <label for="families">Families</label>
               </span>
             </div>
@@ -93,6 +93,19 @@
             <AppSpinner style="margin-bottom: 1rem;" />
             <span>Loading Orgs</span>
           </div>
+
+          <Card>
+            <template #title>Selected organizations</template>
+            <template #content>
+              <div v-for="orgKey in Object.keys(selectedOrgs)">
+                <div v-if="selectedOrgs[orgKey].length > 0">
+                  <b>{{ _capitalize(orgKey) }}:</b>
+                  <Chip class="m-1" v-for="org in selectedOrgs[orgKey]" :key="org.id" removable :label="org.name"
+                    @remove="remove(org, orgKey)" />
+                </div>
+              </div>
+            </template>
+          </Card>
 
           <Divider />
 
@@ -112,10 +125,11 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, reactive, ref, onMounted } from "vue";
 import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
 import { useToast } from "primevue/usetoast";
+import _capitalize from "lodash/capitalize";
 import _cloneDeep from "lodash/cloneDeep";
 import _union from "lodash/union";
 import { useQueryStore } from "@/store/query";
@@ -151,11 +165,17 @@ const classes = ref(adminOrgs.value.classes || []);
 const groups = ref(adminOrgs.value.groups || []);
 const families = ref(adminOrgs.value.families || []);
 
-const selectedDistricts = ref([]);
-const selectedSchools = ref([]);
-const selectedClasses = ref([]);
-const selectedGroups = ref([]);
-const selectedFamilies = ref([]);
+const selectedOrgs = reactive({
+  districts: [],
+  schools: [],
+  classes: [],
+  groups: [],
+  families: [],
+});
+
+const remove = (org, orgKey) => {
+  selectedOrgs[orgKey] = selectedOrgs[orgKey].filter(_org => _org.id !== org.id);
+}
 
 let unsubscribe;
 
@@ -218,11 +238,11 @@ const submit = async () => {
   }
 
   const adminOrgs = {
-    districts: selectedDistricts.value.map(o => o.id),
-    schools: selectedSchools.value.map(o => o.id),
-    classes: selectedClasses.value.map(o => o.id),
-    groups: selectedGroups.value.map(o => o.id),
-    families: selectedFamilies.value.map(o => o.id),
+    districts: selectedOrgs.districts.map(o => o.id),
+    schools: selectedOrgs.schools.map(o => o.id),
+    classes: selectedOrgs.classes.map(o => o.id),
+    groups: selectedOrgs.groups.map(o => o.id),
+    families: selectedOrgs.families.map(o => o.id),
   }
 
   // Build orgs from admin orgs. Orgs should contain all of the admin orgs. And
@@ -244,7 +264,7 @@ const submit = async () => {
 }
 
 onMounted(async () => {
-  if(roarfirekit.value.getOrgs && roarfirekit.value.createAdministrator) {
+  if (roarfirekit.value.getOrgs && roarfirekit.value.createAdministrator) {
     await refresh()
   }
 })
