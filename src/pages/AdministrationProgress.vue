@@ -10,9 +10,13 @@
           <p v-if="administrationInfo">Administration: {{ administrationInfo.name }}</p>
         </div>
 
-        <RoarDataTable :data="tableData" :columns="columns" :totalRecords="assignmentCount"
+        <RoarDataTable v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns" :totalRecords="assignmentCount"
           :loading="isLoadingScores || isFetchingScores" :pageLimit="pageLimit" lazy @page="onPage($event)"
           @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll" />
+        <div v-else class="loading-container">
+          <AppSpinner style="margin-bottom: 1rem;" />
+          <span>Loading Progress Data</span>
+        </div>
       </Panel>
     </section>
   </main>
@@ -310,5 +314,8 @@ onMounted(async () => {
 <style>
 .p-button {
   margin: 0px 8px;
+}
+.loading-container {
+  text-align: center;
 }
 </style>
