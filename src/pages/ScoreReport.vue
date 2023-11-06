@@ -559,10 +559,6 @@ onMounted(async () => {
 </script>
 
 <style>
-.p-button {
-  margin: 0px 8px;
-}
-
 .report-title {
   font-size: 3.5rem;
   margin-top: 0;

@@ -1,6 +1,7 @@
 import { arrayUnion, query, where, getDocs, updateDoc, doc, collection } from "firebase/firestore";
 import _fromPairs from "lodash/fromPairs";
 import _intersection from "lodash/intersection";
+import _invert from "lodash/invert";
 import _toPairs from "lodash/toPairs";
 import * as Papa from "papaparse";
 
@@ -146,20 +147,20 @@ export const removeEmptyOrgs = (orgs) => {
   return _fromPairs(_toPairs(orgs).filter(([orgType, orgs]) => orgs.length > 0));
 }
 
-export const pluralizeFirestoreCollection = (singular) => {
-  const plurals = {
-    group: "groups",
-    district: "districts",
-    school: "schools",
-    class: "classes",
-    family: "families",
-    administration: "administrations",
-    user: "users",
-    assignment: "assignments",
-    run: "runs",
-    trial: "trials",
-  }
+const plurals = {
+  group: "groups",
+  district: "districts",
+  school: "schools",
+  class: "classes",
+  family: "families",
+  administration: "administrations",
+  user: "users",
+  assignment: "assignments",
+  run: "runs",
+  trial: "trials",
+}
 
+export const pluralizeFirestoreCollection = (singular) => {
   if (Object.values(plurals).includes(singular)) return singular;
 
   const plural = plurals[singular];
@@ -167,3 +168,13 @@ export const pluralizeFirestoreCollection = (singular) => {
 
   throw new Error(`There is no plural Firestore collection for the ${singular}`);
 }
+
+export const singularizeFirestoreCollection = (plural) => {
+  if (Object.values(_invert(plurals)).includes(plural)) return plural;
+
+  const singular = _invert(plurals)[plural];
+  if (singular) return singular;
+
+  throw new Error(`There is no Firestore collection ${plural}`);
+}
+
