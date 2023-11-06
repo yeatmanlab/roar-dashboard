@@ -179,7 +179,7 @@ const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecor
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-const { isLoading, isFetching, data: tableData } =
+const { isLoading, isFetching, data: orgData } =
   useQuery({
     queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page],
     queryFn: () => orgPageFetcher(
@@ -224,11 +224,33 @@ const tableColumns = computed(() => {
     )
   }
 
+  columns.push({
+    link: true,
+    routeName: "ListUsers",
+    routeTooltip: "View users",
+    routeLabel: "Users",
+    routeIcon: "pi pi-user",
+    sort: false,
+  })
+
   return columns;
 });
 
+const tableData = computed(() => {
+  if (isLoading.value) return [];
+  return orgData.value.map((org) => {
+    return {
+      ...org,
+      routeParams: {
+        orgType: activeOrgType.value,
+        orgId: org.id,
+        orgName: org.name,
+      }
+    }
+  });
+});
+
 const onPage = (event) => {
-  console.log("onPage", event.page);
   page.value = event.page;
   pageLimit.value = event.rows;
 }
