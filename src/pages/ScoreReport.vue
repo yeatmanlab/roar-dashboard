@@ -503,7 +503,7 @@ const columns = computed(() => {
         field: colField,
         header: displayNames[taskId]?.name ?? taskId,
         dataType: "text",
-        tag: (viewMode.value !== 'color' && taskId !== 'letter'),
+        tag: (viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId)),
         emptyTag: (viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw')),
         tagColor: `scores.${taskId}.color`,
         tagOutlined: (rawOnlyTasks.includes(taskId) && viewMode.value !== "raw")
@@ -532,7 +532,6 @@ const tableData = computed(() => {
         support_level,
         color: (rawOnlyTasks.includes(assessment.taskId) && rawScore) ? 'white' : tag_color
       }
-
     }
     // If this is a district score report, grab school information
     if (props.orgType === 'district') {
