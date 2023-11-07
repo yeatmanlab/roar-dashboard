@@ -118,6 +118,12 @@ const routes = [
     meta: {pageTitle: "Register Students", requireAdmin: true, requireSuperAdmin: true}
   },
   {
+    path: '/register-orgs',
+    name: 'RegisterOrgs',
+    component: () => import("../pages/RegisterOrgs.vue"),
+    meta: {pageTitle: "Register Organizations", requireAdmin: true}
+  },
+  {
     path: "/signin",
     name: "SignIn",
     component: () => import("../pages/SignIn.vue"),
