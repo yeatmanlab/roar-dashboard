@@ -2,15 +2,22 @@ import _mapValues from "lodash/mapValues";
 import { convertValues, getAxiosInstance, mapFields } from "./utils";
 
 export const getUsersRequestBody = ({
-  userIds,
+  userIds = [],
+  orgType,
+  orgId,
   aggregationQuery,
   pageLimit,
   page,
   paginate = true,
-  skinnyQuery = false,
+  select = ["name"],
+  orderBy,
 }) => {
   const requestBody = {
     structuredQuery: {}
+  }
+
+  if (orderBy) {
+    requestBody.structuredQuery.orderBy = orderBy;
   }
 
   if(!aggregationQuery) {
@@ -19,18 +26,8 @@ export const getUsersRequestBody = ({
       requestBody.structuredQuery.offset = page * pageLimit;
     }
 
-    if(skinnyQuery) {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "name" }
-        ]
-      }
-    } else {
-      requestBody.structuredQuery.select = {
-        fields: [
-          { fieldPath: "name" }
-        ]
-      }
+    requestBody.structuredQuery.select = {
+      fields: select.map((field) => ({ fieldPath: field })),
     }
   }
   requestBody.structuredQuery.from = [
@@ -40,20 +37,32 @@ export const getUsersRequestBody = ({
     }
   ]
 
-  requestBody.structuredQuery.where = {
-    fieldFilter: {
-      field: { fieldPath: "id" }, // change this to accept document Id, if we need 
-      op: "IN",
-      value: {
-        arrayValue: {
-          values: [
-            userIds.map(userId => {
-              return { stringValue: userId }
-            })
-          ]
+  if (userIds.length > 0) {
+    requestBody.structuredQuery.where = {
+      fieldFilter: {
+        field: { fieldPath: "id" }, // change this to accept document Id, if we need 
+        op: "IN",
+        value: {
+          arrayValue: {
+            values: [
+              userIds.map(userId => {
+                return { stringValue: userId }
+              })
+            ]
+          }
         }
       }
     }
+  } else if (orgType && orgId) {
+    requestBody.structuredQuery.where = {
+      fieldFilter: {
+        field: { fieldPath: `${orgType}.current` }, // change this to accept document Id, if we need 
+        op: "ARRAY_CONTAINS",
+        value: { stringValue: orgId },
+      }
+    }
+  } else {
+    throw new Error("Must provide either userIds or orgType and orgId");
   }
 
   if(aggregationQuery) {
@@ -79,12 +88,40 @@ export const usersPageFetcher = async (userIds, pageLimit, page) => {
     pageLimit: pageLimit.value, 
     page: page.value,
     paginate: true,
-    skinnyQuery: false,
   })
-  console.log('requestBody', requestBody)
 
   console.log(`Fetching page ${page.value} for ${userIds}`)
-  const response = axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
-  console.log('users response', response)
-  return response;
+  return axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
+}
+
+export const fetchUsersByOrg = async (orgType, orgId, pageLimit, page, orderBy) => {
+  const axiosInstance = getAxiosInstance();
+  const requestBody = getUsersRequestBody({
+    orgType,
+    orgId,
+    aggregationQuery: false,
+    pageLimit: pageLimit.value,
+    page: page.value,
+    paginate: true,
+    select: ["username", "name", "studentData", "userType"],
+    orderBy: orderBy.value,
+  });
+
+  console.log(`Fetching users page ${page.value} for ${orgType} ${orgId}`)
+  return axiosInstance.post(":runQuery", requestBody).then(({ data }) => mapFields(data));
+};
+
+export const countUsersByOrg = async (orgType, orgId, orderBy) => {
+  const axiosInstance = getAxiosInstance();
+  const requestBody = getUsersRequestBody({
+    orgType,
+    orgId,
+    aggregationQuery: true,
+    paginate: false,
+    orderBy: orderBy.value,
+  });
+
+  return axiosInstance.post(":runAggregationQuery", requestBody).then(({ data }) => {
+    return Number(convertValues(data[0].result?.aggregateFields?.count));
+  })
 }
