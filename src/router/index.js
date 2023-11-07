@@ -68,6 +68,19 @@ const routes = [
     meta: { pageTitle: "Multichoice" }
   },
   {
+    path: "/game/cva",
+    name: "Cva",
+    component: () => import("../components/tasks/Multichoice.vue"),
+    props: {taskId: "cva"},
+    meta: { pageTitle: "CVA" }
+  },
+  {
+    path: "/game/vocab",
+    name: "Vocab",
+    component: () => import("../components/tasks/Vocab.vue"),
+    meta: { pageTitle: "Vocab" }
+  },
+  {
     path: "/register-game",
     name: "RegisterGame",
     component: () => import("../pages/RegisterGame.vue"),
@@ -237,12 +250,12 @@ router.beforeEach(async (to, from) => {
     return { name: "SignIn" }
   }
   // Check if user is an admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin()) {
+  if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin) {
     return { name: "Home" }
   }
 
   // Check if user is a super admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin()) {
+  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin) {
     return { name: "Home" }
   }
 })

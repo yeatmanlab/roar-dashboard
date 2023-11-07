@@ -34,7 +34,7 @@
             </template>
           </Password>
           <div v-else-if="allowLink">
-            <Password disabled placeholder="Password unavailable. Press Go to sign-in with magic link" />
+            <Password disabled placeholder="Press Go to sign-in with an email link." />
           </div>
           <div v-else>
             <Password disabled class="p-invalid text-red-600" placeholder="Error: invalid email" />
@@ -51,6 +51,7 @@ import { reactive, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { required, requiredUnless } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
+import _debounce from "lodash/debounce";
 import { useAuthStore } from "@/store/auth";
 
 const authStore = useAuthStore();
@@ -101,34 +102,39 @@ const evaluatingEmail = ref(false);
 const allowPassword = ref(true);
 const allowLink = ref(false);
 
-watch(() => state.email, async (email, prevEmail) => {
+const validateRoarEmail = _debounce(async (email) => {
+  console.log("debounced function invoked");
+  await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
+    if (emailAvail) {
+      console.log(`Email ${email} is available`);
+      allowPassword.value = false;
+      allowLink.value = false;
+    } else {
+      if (roarfirekit.value.isRoarAuthEmail(email)) {
+        // Roar auth email are made up, so sign-in link is not allowed.
+        allowLink.value = false;
+        allowPassword.value = true;
+      } else {
+        allowLink.value = true;
+        allowPassword.value = false;
+      }
+    }
+    state.useLink = allowLink.value;
+    evaluatingEmail.value = false;
+  })
+}, 250, { maxWait: 1000 });
+
+watch(() => state.email, async (email) => {
   if (isValidEmail(email)) {
     evaluatingEmail.value = true;
-    await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
-      if (emailAvail) {
-        console.log(`Email ${email} is available`);
-        allowPassword.value = false;
-        allowLink.value = false;
-      } else {
-        if (roarfirekit.value.isRoarAuthEmail(email)) {
-          // Roar auth email are made up, so sign-in link is not allowed.
-          allowPassword.value = true;
-          allowLink.value = false;
-        } else {
-          allowLink.value = true;
-          allowPassword.value = false;
-        }
-      }
-      evaluatingEmail.value = false;
-    });
+    validateRoarEmail(email);
   } else {
     // In this case, assume that the input is a username
     // Password is allowed. Sign-in link is not allowed.
     allowPassword.value = true;
     allowLink.value = false;
+    state.useLink = allowLink.value;
   }
-
-  state.useLink = allowLink.value;
 })
 
 </script>

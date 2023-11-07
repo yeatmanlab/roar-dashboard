@@ -166,7 +166,7 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: String,
@@ -183,8 +183,8 @@ const page = ref(0);
 // User Claims
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
-    queryKey: ['userClaims'],
-    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -254,6 +254,30 @@ const onSort = (event) => {
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
 }
 
+const viewMode = ref('color');
+
+const viewOptions = ref([
+  { label: 'Color', value: 'color' },
+  { label: 'Percentile', value: 'percentile' },
+  { label: 'Standard Score', value: 'standard' },
+  { label: 'Raw Score', value: 'raw' },
+])
+
+const displayNames = {
+  "swr": { name: "Word", order: 3 },
+  "swr-es": { name: "Palabra", order: 4 },
+  "pa": { name: "Phoneme", order: 2 },
+  "sre": { name: "Sentence", order: 5 },
+  "letter": { name: "Letter", order: 1 },
+  "multichoice": { name: "Multichoice", order: 6 },
+  "mep": { name: "MEP", order: 7 },
+  "ExternalTask": { name: "External Task", order: 8 },
+  "ExternalTest": { name: "External Test", order: 9 },
+}
+const rawOnlyTasks = [
+  'letter'
+]
+
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
@@ -274,7 +298,7 @@ const exportSelected = (selectedRows) => {
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade'),
     }
-    if (authStore.isUserSuperAdmin()) {
+    if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
     if (props.orgType === 'district') {
@@ -288,11 +312,12 @@ const exportSelected = (selectedRows) => {
       const taskId = assessment.taskId
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
-      tableRow[`${displayNames[taskId].name} - Percentile`] = percentileString;
-      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-      tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId) ?
+          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
-      tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow
   })
@@ -303,7 +328,11 @@ const exportSelected = (selectedRows) => {
 const exportAll = async () => {
   const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true)
   const sortedTasks = allTasks.value.sort((p1, p2) => {
-    return displayNames[p1].order - displayNames[p2].order
+    if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
+        return displayNames[p1].order - displayNames[p2].order
+      } else {
+        return -1
+      }
   })
   const computedExportData = _map(exportData, ({ user, assignment }) => {
     let tableRow = {
@@ -312,7 +341,7 @@ const exportAll = async () => {
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade'),
     }
-    if (authStore.isUserSuperAdmin()) {
+    if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
     if (props.orgType === 'district') {
@@ -326,11 +355,12 @@ const exportAll = async () => {
       const taskId = assessment.taskId
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, getGrade(_get(user, 'studentData.grade')))
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
-      tableRow[`${displayNames[taskId].name} - Percentile`] = percentileString;
-      tableRow[`${displayNames[taskId].name} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-      tableRow[`${displayNames[taskId].name} - Raw`] = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId) ?
+          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
-      tableRow[`${displayNames[taskId].name} - Support Level`] = support_level;
+      tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow
   })
@@ -427,24 +457,6 @@ const spinIcon = computed(() => {
   return "pi pi-refresh";
 });
 
-const viewMode = ref('color');
-
-const viewOptions = ref([
-  { label: 'Color', value: 'color' },
-  { label: 'Percentile', value: 'percentile' },
-  { label: 'Standard Score', value: 'standard' },
-  { label: 'Raw Score', value: 'raw' },
-])
-
-const displayNames = {
-  "swr": { name: "Word", order: 3 },
-  "swr-es": { name: "Palabra", order: 4 },
-  "pa": { name: "Phoneme", order: 2 },
-  "sre": { name: "Sentence", order: 5 },
-  "letter": { name: "Letter", order: 1 },
-  "multichoice": { name: "Multichoice", order: 6 },
-}
-
 const allTasks = computed(() => {
   if (tableData.value.length > 0) {
     return tableData.value[0].assignment.assessments.map(assessment => assessment.taskId)
@@ -470,13 +482,17 @@ const columns = computed(() => {
     tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" })
   }
 
-  if (authStore.isUserSuperAdmin()) {
+  if (authStore.isUserSuperAdmin) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
   }
 
   if (tableData.value.length > 0) {
     const sortedTasks = allTasks.value.sort((p1, p2) => {
-      return displayNames[p1].order - displayNames[p2].order
+      if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
+        return displayNames[p1].order - displayNames[p2].order
+      } else {
+        return -1
+      }
     })
     for (const taskId of sortedTasks) {
       let colField;
@@ -485,11 +501,12 @@ const columns = computed(() => {
       if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`
       tableColumns.push({
         field: colField,
-        header: displayNames[taskId].name,
+        header: displayNames[taskId]?.name ?? taskId,
         dataType: "text",
-        tag: (viewMode.value !== 'color'),
-        emptyTag: (viewMode.value === 'color'),
+        tag: (viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId)),
+        emptyTag: (viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw')),
         tagColor: `scores.${taskId}.color`,
+        tagOutlined: (rawOnlyTasks.includes(taskId) && viewMode.value !== "raw")
       });
     }
   }
@@ -505,14 +522,15 @@ const tableData = computed(() => {
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(assessment, grade)
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`)
-      const rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+      const rawScore = rawOnlyTasks.includes(assessment.taskId) ?
+          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level, tag_color } = getSupportLevel(percentile);
       scores[assessment.taskId] = {
         percentile: percentileString,
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: tag_color
+        color: (rawOnlyTasks.includes(assessment.taskId) && rawScore) ? 'white' : tag_color
       }
     }
     // If this is a district score report, grab school information
@@ -559,10 +577,6 @@ onMounted(async () => {
 </script>
 
 <style>
-.p-button {
-  margin: 0px 8px;
-}
-
 .report-title {
   font-size: 3.5rem;
   margin-top: 0;

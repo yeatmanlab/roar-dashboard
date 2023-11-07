@@ -351,7 +351,15 @@ export const orgPageFetcher = async (
   }
 }
 
-export const orgFetchAll = async (activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs) => {
+export const orgFetchAll = async (
+  activeOrgType,
+  selectedDistrict,
+  selectedSchool,
+  orderBy,
+  isSuperAdmin,
+  adminOrgs,
+  select
+) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getOrgsRequestBody({
     orgType: activeOrgType.value,
@@ -360,6 +368,7 @@ export const orgFetchAll = async (activeOrgType, selectedDistrict, selectedSchoo
     aggregationQuery: false,
     orderBy: orderBy.value,
     paginate: false,
+    select,
   });
 
   if (isSuperAdmin.value) {

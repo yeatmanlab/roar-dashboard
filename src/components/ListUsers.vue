@@ -17,7 +17,7 @@
   </main>
 </template>
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 import { useAuthStore } from "@/store/auth";
@@ -36,7 +36,9 @@ import { fetchDocById } from "../helpers/query/utils";
 import { singularizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
+
 const { roarfirekit } = storeToRefs(authStore);
+const initialized = ref(false);
 
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
@@ -50,7 +52,6 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
-const initialized = ref(false);
 const pageLimit = ref(10);
 const page = ref(0);
 const orderBy = ref(null);
@@ -66,7 +67,7 @@ const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecor
     queryKey: ['countUsers', props.orgType, props.orgId, orderBy],
     queryFn: () => countUsersByOrg(props.orgType, props.orgId, orderBy),
     keepPreviousData: true,
-    enabled: isLoadingClaims,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -81,7 +82,7 @@ const { isLoading, isFetching, data: users } =
       orderBy,
     ),
     keepPreviousData: true,
-    enabled: isLoadingClaims,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 

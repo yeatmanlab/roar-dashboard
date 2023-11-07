@@ -12,23 +12,25 @@
         </template>
 
         <div v-if="initialized && !isLoadingAdministrations">
-          <DataView :key="dataViewKey" :value="administrations" lazy paginator paginatorPosition="top"
-            :totalRecords="totalRecords" :rows="pageLimit" :rowsPerPageOptions="[3, 5, 10, 25]" @page="onPage($event)"
-            dataKey="id">
-            <template #list="slotProps">
-              <div class="mb-2 w-full">
-                <CardAdministration :key="slotProps.data.id" :id="slotProps.data.id" :title="slotProps.data.name"
-                  :stats="slotProps.data.stats" :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
-                  :assessments="slotProps.data.assessments" />
-              </div>
-            </template>
-            <template #empty>
-              <div>
-                There are no administrations to display. Please contact a lab
-                administrator to add you as an admin to an administration.
-              </div>
-            </template>
-          </DataView>
+          <BlockUI :blocked="isFetchingAdministrations">
+            <DataView :key="dataViewKey" :value="administrations" lazy paginator paginatorPosition="top"
+              :totalRecords="totalRecords" :rows="pageLimit" :rowsPerPageOptions="[3, 5, 10, 25]" @page="onPage($event)"
+              dataKey="id">
+              <template #list="slotProps">
+                <div class="mb-2 w-full">
+                  <CardAdministration :key="slotProps.data.id" :id="slotProps.data.id" :title="slotProps.data.name"
+                    :stats="slotProps.data.stats" :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
+                    :assessments="slotProps.data.assessments" :showParams="isSuperAdmin" />
+                </div>
+              </template>
+              <template #empty>
+                <div>
+                  There are no administrations to display. Please contact a lab
+                  administrator to add you as an admin to an administration.
+                </div>
+              </template>
+            </DataView>
+          </BlockUI>
         </div>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
@@ -68,7 +70,7 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), false));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, false));
 
 const userInfo = ref(
   {
@@ -79,8 +81,8 @@ const userInfo = ref(
 
 const { isLoading: isLoadingUser, isFetching: isFetchingUser, data: userData } =
   useQuery({
-    queryKey: ['user'],
-    queryFn: () => fetchDocById('users', roarfirekit.value.roarUid),
+    queryKey: ['user', authStore.uid, authStore.userQueryKeyIndex],
+    queryFn: () => fetchDocById('users', authStore.uid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -88,8 +90,8 @@ const { isLoading: isLoadingUser, isFetching: isFetchingUser, data: userData } =
 
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
-    queryKey: ['userClaims'],
-    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes

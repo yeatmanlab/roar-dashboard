@@ -5,94 +5,43 @@
     </aside>
     <section class="main-body">
       <Panel header="Create a new administrator account">
-        <template #icons>
-          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button>
-        </template>
-
         Use this form to create a new user and give them administrator access to
         selected organizations.
 
         <Divider />
 
-        <div v-if="!registering">
+        <div v-if="initialized && !registering">
           <div class="grid">
-            <div class="col-12 md:col-6 lg:col-3 my-2">
+            <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText id="first-name" v-model="firstName" />
+                <InputText class="w-full" id="first-name" v-model="firstName" />
                 <label for="first-name">First Name</label>
               </span>
             </div>
 
-            <div class="col-12 md:col-6 lg:col-3 my-2">
+            <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText id="middle-name" v-model="middleName" />
+                <InputText class="w-full" id="middle-name" v-model="middleName" />
                 <label for="middle-name">Middle Name</label>
               </span>
             </div>
 
-            <div class="col-12 md:col-6 lg:col-3 my-2">
+            <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText id="last-name" v-model="lastName" />
+                <InputText class="w-full" id="last-name" v-model="lastName" />
                 <label for="last-name">Last Name</label>
               </span>
             </div>
 
-            <div class="col-12 md:col-6 lg:col-3 my-2">
+            <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText id="email" v-model="email" />
+                <InputText class="w-full" id="email" v-model="email" />
                 <label for="email">Email</label>
               </span>
             </div>
           </div>
 
-          <p id="section-heading">Select organizations that this user will have admin priviledges for.</p>
-          <div class="formgrid grid mt-5 mb-5" v-if="!refreshing">
-            <div class="field col" v-if="districts.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedDistricts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="districts" />
-                <label for="districts">Districts</label>
-              </span>
-            </div>
-
-            <div class="field col" v-if="schools.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedSchools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="schools" />
-                <label for="schools">Schools</label>
-              </span>
-            </div>
-
-            <div class="field col" v-if="classes.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedClasses" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="classes" />
-                <label for="classes">Classes</label>
-              </span>
-            </div>
-
-            <div class="field col" v-if="groups.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedGroups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="groups" />
-                <label for="groups">Groups</label>
-              </span>
-            </div>
-
-            <div class="field col" v-if="families.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="selectedFamilies" :options="families" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="families" />
-                <label for="families">Families</label>
-              </span>
-            </div>
-          </div>
-          <div v-else class="loading-container">
-            <AppSpinner style="margin-bottom: 1rem;" />
-            <span>Loading Orgs</span>
-          </div>
+          <OrgPicker @selection="selection($event)" />
 
           <Divider />
 
@@ -104,7 +53,8 @@
         </div>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
-          <span>Registering new administrator...</span>
+          <span v-if="initialized">Registering new administrator...</span>
+          <span v-else>Initializing...</span>
         </div>
       </Panel>
     </section>
@@ -116,22 +66,19 @@ import { computed, ref, onMounted } from "vue";
 import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
 import { useToast } from "primevue/usetoast";
+import { useQuery } from "@tanstack/vue-query"
 import _cloneDeep from "lodash/cloneDeep";
 import _union from "lodash/union";
-import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import { getSidebarActions } from "../router/sidebarActions";
+import OrgPicker from "@/components/OrgPicker.vue";
+import { getSidebarActions } from "@/router/sidebarActions";
+import { fetchDocById } from "@/helpers/query/utils";
 
 const router = useRouter();
 const toast = useToast();
-
+const initialized = ref(false);
 const registering = ref(false);
-const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return "pi pi-spin pi-spinner";
-  return "pi pi-refresh";
-});
 
 const firstName = ref();
 const middleName = ref();
@@ -139,62 +86,38 @@ const lastName = ref();
 const email = ref();
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
-
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
-
 const { roarfirekit } = storeToRefs(authStore);
-const { adminOrgs } = storeToRefs(queryStore);
-const districts = ref(adminOrgs.value.districts || []);
-const schools = ref(adminOrgs.value.schools || []);
-const classes = ref(adminOrgs.value.classes || []);
-const groups = ref(adminOrgs.value.groups || []);
-const families = ref(adminOrgs.value.families || []);
 
-const selectedDistricts = ref([]);
-const selectedSchools = ref([]);
-const selectedClasses = ref([]);
-const selectedGroups = ref([]);
-const selectedFamilies = ref([]);
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims', authStore.uid],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 let unsubscribe;
-
-const refresh = async () => {
+const init = () => {
   if (unsubscribe) unsubscribe();
-  refreshing.value = true;
-
-  const promises = [
-    queryStore.getOrgs("districts"),
-    queryStore.getOrgs("schools"),
-    queryStore.getOrgs("classes"),
-    queryStore.getOrgs("groups"),
-    queryStore.getOrgs("families"),
-  ]
-
-  const [_districts, _schools, _classes, _groups, _families] = await Promise.all(promises);
-
-  districts.value = _districts;
-  schools.value = _schools;
-  classes.value = _classes;
-  groups.value = _groups;
-  families.value = _families;
-
-  refreshing.value = false;
+  initialized.value = true;
 }
 
-if (
-  districts.value.length === 0
-  || schools.value.length === 0
-  || classes.value.length === 0
-  || groups.value.length === 0
-  || families.value.length === 0
-) {
-  refreshing.value = true;
-  unsubscribe = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit.getOrgs && state.roarfirekit.createAdministrator && state.roarfirekit.isAdmin()) {
-      await refresh();
-    }
-  });
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+})
+
+const selectedOrgs = ref();
+
+const selection = (selected) => {
+  selectedOrgs.value = selected;
 }
 
 const submit = async () => {
@@ -218,21 +141,21 @@ const submit = async () => {
   }
 
   const adminOrgs = {
-    districts: selectedDistricts.value.map(o => o.id),
-    schools: selectedSchools.value.map(o => o.id),
-    classes: selectedClasses.value.map(o => o.id),
-    groups: selectedGroups.value.map(o => o.id),
-    families: selectedFamilies.value.map(o => o.id),
+    districts: selectedOrgs.value.districts.map(o => o.id),
+    schools: selectedOrgs.value.schools.map(o => o.id),
+    classes: selectedOrgs.value.classes.map(o => o.id),
+    groups: selectedOrgs.value.groups.map(o => o.id),
+    families: selectedOrgs.value.families.map(o => o.id),
   }
 
   // Build orgs from admin orgs. Orgs should contain all of the admin orgs. And
   // also their parents.
   const orgs = _cloneDeep(adminOrgs)
-  for (const school of selectedSchools.value) {
+  for (const school of selectedOrgs.value.schools) {
     orgs.districts = _union(orgs.districts, [school.districtId]);
   }
 
-  for (const _class of selectedClasses.value) {
+  for (const _class of selectedOrgs.value.classes) {
     orgs.districts = _union(orgs.districts, [_class.districtId]);
     orgs.schools = _union(orgs.schools, [_class.schoolId]);
   }
@@ -242,12 +165,6 @@ const submit = async () => {
     router.push({ name: "Home" });
   });
 }
-
-onMounted(async () => {
-  if(roarfirekit.value.getOrgs && roarfirekit.value.createAdministrator) {
-    await refresh()
-  }
-})
 </script> 
 
 <style lang="scss">
