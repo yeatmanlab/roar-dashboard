@@ -32,61 +32,9 @@
           </div>
         </div>
 
-        <Panel header="Assign this administration to organizations">
-          <template #icons>
-            <button class="p-panel-header-icon p-link mr-2" @click="refreshOrgs">
-              <span :class="spinIcon.orgs"></span>
-            </button>
-          </template>
-          <div v-if="orgError" class="p-error">{{ orgError }}</div>
-          <div class="formgrid grid mt-5 mb-5" v-if="orgsReady">
-            <div class="field col" v-if="districts.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="state.districts" :options="districts" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="districts" />
-                <label for="districts">Districts</label>
-              </span>
-            </div>
+        <OrgPicker @selection="selection($event)" />
 
-            <div class="field col" v-if="schools.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="state.schools" :options="schools" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="schools" />
-                <label for="schools">Schools</label>
-              </span>
-            </div>
-
-            <div class="field col" v-if="classes.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="state.classes" :options="classes" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="classes" />
-                <label for="classes">Classes</label>
-              </span>
-            </div>
-
-            <div class="field col" v-if="groups.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="state.groups" :options="groups" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="groups" />
-                <label for="groups">Groups</label>
-              </span>
-            </div>
-
-            <div class="field col" v-if="families.length > 0">
-              <span class="p-float-label">
-                <MultiSelect v-model="state.families" :options="families" optionLabel="name" class="w-full md:w-14rem"
-                  inputId="families" />
-                <label for="families">Families</label>
-              </span>
-            </div>
-          </div>
-          <div v-else class="loading-container">
-            <AppSpinner style="margin-bottom: 1rem;" />
-            <span>Loading Organizations</span>
-          </div>
-        </Panel>
-
-        <Panel class="mt-3" header="Assign this administration to organizations">
+        <Panel class="mt-3" header="Select assessments for this administration">
           <template #icons>
             <div class="flex flex-row align-items-center justify-content-end">
               <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
@@ -150,13 +98,11 @@ import { computed, onMounted, reactive, ref, toRaw } from "vue";
 import { useRouter } from 'vue-router';
 import { storeToRefs } from "pinia";
 import { useToast } from "primevue/usetoast";
-import _filter from "lodash/filter"
-import _forEach from "lodash/forEach"
+import { useQuery } from "@tanstack/vue-query";
+import _filter from "lodash/filter";
 import _fromPairs from "lodash/fromPairs";
-import _get from "lodash/get";
 import _isEmpty from "lodash/isEmpty";
 import _toPairs from "lodash/toPairs";
-import _union from "lodash/union";
 import _uniqBy from "lodash/uniqBy";
 import { useVuelidate } from "@vuelidate/core";
 import { maxLength, minLength, required } from "@vuelidate/validators";
@@ -164,22 +110,32 @@ import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
 import AppSpinner from "@/components/AppSpinner.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-
-import { getSidebarActions } from "../router/sidebarActions";
+import OrgPicker from "@/components/OrgPicker.vue";
+import { getSidebarActions } from "@/router/sidebarActions";
+import { fetchDocById } from "@/helpers/query/utils";
 
 const router = useRouter();
 const toast = useToast();
+const initialized = ref(false);
 
-const refreshing = reactive({
-  orgs: false,
-  assessments: false,
-});
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
 
-const spinIcon = computed(() => ({
-  orgs: refreshing.orgs ? "pi pi-spin pi-spinner" : "pi pi-refresh",
-  assessments: refreshing.assessments ? "pi pi-spin pi-spinner" : "pi pi-refresh",
-}));
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims', authStore.uid],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
+
+//      +---------------------------------+
+// -----| Form state and validation rules |-----
+//      +---------------------------------+
 const state = reactive({
   administrationName: "",
   dates: [],
@@ -194,6 +150,8 @@ const state = reactive({
 const datesNotNull = (value) => {
   return (value[0] && value[1]);
 }
+
+const minStartDate = ref(new Date());
 
 const rules = {
   administrationName: { required },
@@ -210,6 +168,26 @@ const pickListError = ref('');
 const orgError = ref('');
 const submitted = ref(false);
 
+//      +---------------------------------+
+// -----|          Org Selection          |-----
+//      +---------------------------------+
+const selection = (selected) => {
+  for (const [key, value] of _toPairs(selected)) {
+    state[key] = value;
+  }
+}
+
+//      +---------------------------------+
+// -----|       Assessment Selection      |-----
+//      +---------------------------------+
+const refreshing = reactive({
+  assessments: false,
+});
+
+const spinIcon = computed(() => ({
+  assessments: refreshing.assessments ? "pi pi-spin pi-spinner" : "pi pi-refresh",
+}));
+
 let paramPanelRefs = {};
 
 const toEntryObjects = (inputObj) => {
@@ -220,23 +198,7 @@ const toggle = (event, id) => {
   paramPanelRefs[id].value.toggle(event)
 }
 
-const orgsReady = ref(false);
-
-const minStartDate = ref(new Date());
-
-const authStore = useAuthStore();
 const queryStore = useQueryStore();
-
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
-
-const { roarfirekit } = storeToRefs(authStore);
-const { adminOrgs } = storeToRefs(queryStore);
-
-const districts = ref(adminOrgs.value.districts || []);
-const schools = ref(adminOrgs.value.schools || []);
-const classes = ref(adminOrgs.value.classes || []);
-const groups = ref(adminOrgs.value.groups || []);
-const families = ref(adminOrgs.value.families || []);
 
 const { allVariants } = storeToRefs(queryStore);
 const assessments = ref([[], []])
@@ -248,65 +210,25 @@ const checkForUniqueTasks = (assignments) => {
   const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId)
   return (uniqueTasks.length === assignments.length)
 }
+
 const checkForRequiredOrgs = (orgs) => {
   const filtered = _filter(orgs, org => !_isEmpty(org))
   return Boolean(filtered.length)
 }
 
-let unsubscribeOrgs;
 let unsubscribeAssessments;
-
-const refreshOrgs = async () => {
-  refreshing.orgs = true;
-  orgsReady.value = false;
-  if (unsubscribeOrgs) unsubscribeOrgs();
-
-  const promises = [
-    queryStore.getOrgs("districts"),
-    queryStore.getOrgs("schools"),
-    queryStore.getOrgs("classes"),
-    queryStore.getOrgs("groups"),
-    queryStore.getOrgs("families"),
-  ]
-
-  const [_districts, _schools, _classes, _groups, _families] = await Promise.all(promises);
-
-  districts.value = _districts;
-  schools.value = _schools;
-  classes.value = _classes;
-  groups.value = _groups;
-  families.value = _families;
-  orgsReady.value = true;
-  refreshing.orgs = false;
-};
 
 const refreshAssessments = async () => {
   refreshing.assessments = true;
   if (unsubscribeAssessments) unsubscribeAssessments();
   assessments.value = [[], []];
 
-  const requireRegisteredTasks = !roarfirekit.value.superAdmin
+  const requireRegisteredTasks = !isSuperAdmin.value;
   queryStore.getVariants(requireRegisteredTasks).then(() => {
     assessments.value = [allVariants.value, []];
     paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
     refreshing.assessments = false;
   });
-}
-
-if (
-  districts.value.length === 0
-  || schools.value.length === 0
-  || classes.value.length === 0
-  || groups.value.length === 0
-  || families.value.length === 0
-) {
-  unsubscribeOrgs = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-      await refreshOrgs();
-    }
-  });
-} else {
-  orgsReady.value = true;
 }
 
 if (allVariants.value.length === 0) {
@@ -319,15 +241,9 @@ if (allVariants.value.length === 0) {
   assessments.value = [allVariants.value, []];
 }
 
-onMounted(async () => {
-  if (roarfirekit.value.getVariants && roarfirekit.value.isAdmin()) {
-    await refreshAssessments();
-  }
-  if (roarfirekit.value.getOrgs && roarfirekit.value.isAdmin()) {
-    await refreshOrgs();
-  }
-})
-
+//      +---------------------------------+
+// -----|         Form submission         |-----
+//      +---------------------------------+
 const submit = async () => {
   pickListError.value = ''
   submitted.value = true;
@@ -375,6 +291,26 @@ const submit = async () => {
     console.log('form is invalid')
   }
 };
+
+//      +-----------------------------------+
+// -----| Lifecycle hooks and subscriptions |-----
+//      +-----------------------------------+
+let unsubscribe;
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+}
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
+onMounted(async () => {
+  if (roarfirekit.value.restConfig) init();
+  if (roarfirekit.value.getVariants && roarfirekit.value.isAdmin()) {
+    await refreshAssessments();
+  }
+})
 </script> 
 
 <style lang="scss">

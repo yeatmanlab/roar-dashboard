@@ -101,8 +101,8 @@ const cleverSyncIcon = computed(() => {
 
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
-    queryKey: ['userClaims'],
-    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes

@@ -19,14 +19,19 @@ import { onMounted, ref } from "vue";
 import { useAuthStore } from '@/store/auth'
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router'
+import { fetchDocById } from "@/helpers/query/utils";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const success = ref(false);
 
-authStore.$subscribe((mutation, state) => {
-  if (state.roarfirekit.userData) {
+authStore.$subscribe(async (mutation, state) => {
+  if (authStore.uid) {
+    const userData = await fetchDocById('users', authStore.uid);
+    const userClaims = await fetchDocById('userClaims', authStore.uid);
+    authStore.userData = userData
+    authStore.userClaims = userClaims
     success.value = true;
     router.push({ name: "Home" });
   }
@@ -68,6 +73,15 @@ const loginFromEmailLink = async (email) => {
     } else {
       throw error;
     }
+  }).then(async () => {
+    if (authStore.uid) {
+      const userData = await fetchDocById('users', authStore.uid);
+      const userClaims = await fetchDocById('userClaims', authStore.uid);
+      authStore.userData = userData
+      authStore.userClaims = userClaims
+      success.value = true;
+      router.push({ name: "Home" });
+    }
   });
 }
 
@@ -86,15 +100,5 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   localStorageEmail.value = window.localStorage.getItem('emailForSignIn');
-  setTimeout(() => {
-    if (!success.value) {
-      addMessages("timeout");
-      setTimeout(() => {
-        if (!success.value) {
-          router.replace({ name: "SignIn" });
-        }
-      }, 5000);
-    }
-  }, 8000)
 })
 </script>

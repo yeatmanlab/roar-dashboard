@@ -10,17 +10,39 @@ import RoarSWR from '@bdelab/roar-swr';
 import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _head from 'lodash/head';
 import _get from 'lodash/get';
+import { fetchDocById } from '@/helpers/query/utils';
 
 const taskId = "swr"
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { roarfirekit, firekitUserData, isFirekitInit } = storeToRefs(authStore);
+const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+
+const initialized = ref(false);
+let unsubscribe;
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+}
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
+const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } =
+  useQuery({
+    queryKey: ['userData', authStore.uid, "studentData"],
+    queryFn: () => fetchDocById('users', authStore.uid, ["studentData"]),
+    keepPreviousData: true,
+    enabled: true,
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
 
 // Send user back to Home if page is reloaded
 const entries = performance.getEntriesByType("navigation");
@@ -51,13 +73,14 @@ onBeforeRouteLeave((to, from, next) => {
 });
 
 onMounted(async () => {
-  if (isFirekitInit.value) {
+  if (roarfirekit.value.restConfig) init();
+  if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
 })
 
-watch(isFirekitInit, async (newValue, oldValue) => {
-  await startTask();
+watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
+  if (newFirekitInitValue && !newLoadingUserData) await startTask();
 })
 
 let roarApp;
@@ -67,7 +90,7 @@ const { selectedAdmin } = storeToRefs(gameStore);
 
 const selectBestRun = async () => {
   await authStore.roarfirekit.selectBestRun({
-    assignmentId: selectedAdmin.value,
+    assignmentId: selectedAdmin.value.id,
     taskId,
   })
 }
@@ -81,10 +104,10 @@ onBeforeUnmount(async () => {
 });
 
 async function startTask() {
-  const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value, taskId)
+  const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId)
 
-  const userDob = _get(roarfirekit.value, 'userData.studentData.dob') || _get(firekitUserData.value, 'studentData.dob')
-  const userDateObj = new Date(toRaw(userDob).seconds * 1000)
+  const userDob = _get(userData.value, 'studentData.dob')
+  const userDateObj = new Date(userDob);
 
   const userParams = {
     birthMonth: userDateObj.getMonth() + 1,
@@ -92,14 +115,13 @@ async function startTask() {
     language: 'en'
   }
 
-  const gameParams = {...appKit._taskInfo.variantParams, fromDashboard: true}
+  const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true }
   roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
-    // await authStore.roarfirekit.completeAssessment(selectedAdmin.value, taskId)
-    await authStore.completeAssessment(selectedAdmin.value, taskId)
+    await authStore.completeAssessment(selectedAdmin.value.id, taskId)
     completed.value = true;
     // Here we refresh instead of routing home, with the knowledge that a
     // refresh is intercepted above and sent home.
