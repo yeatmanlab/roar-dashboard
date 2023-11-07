@@ -19,19 +19,8 @@
           </div>
         </div>
 
-        <!-- TODO: Edit this section to include two separate dropdowns, one for districts and one for schools. -->
-        <!-- TODO: The one for districts should be populated by ``districts`` and the one for schools should be populated by ``schools``. -->
-        <!-- TODO: The v-model for districts should be ``selectedDistrict`` and the v-model for schools should be ``selectedSchool``. -->
-        <!-- TODO: If ``isLoadingSchools`` is true, show the schools dropdown in a loading state. See: https://primevue.org/dropdown/#loadingstate -->
-        <!-- TODO: This will also require changing ``state.parentOrg`` into two variables: ``state.parentDistrict`` and ``state.parentSchool``. -->
         <div v-if="parentOrgRequired" class="grid mt-4">
-          <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to:</p>
-          <div v-if="(districts ?? []).length === 1" class="col-12 md:col-6 lg:col-4">
-            <p id="section-heading">
-              District {{ districts[0].name }}.
-            </p>
-          </div>
-          <div v-else class="col-12 md:col-6 lg:col-4">
+          <div class="col-12 md:col-6 lg:col-4">
             <span class="p-float-label">
               <Dropdown v-model="state.parentDistrict" inputId="parent-district" :options="districts" showClear
                 optionLabel="name" placeholder="Select a district" :loading="isLoadingDistricts" class="w-full" />
@@ -43,24 +32,16 @@
           </div>
 
           <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
-<!--            <div v-if="(schools ?? []).length === 1">-->
-<!--              <p id="section-heading">-->
-<!--                School {{ schools[0].name }}.-->
-<!--              </p>-->
-<!--            </div>-->
-
-            <div>
-              <span class="p-float-label">
-                <Dropdown v-model="state.parentSchool" inputId="parent-school" :options="schools" showClear
-                  optionLabel="name"
-                  :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
-                  :loading="!schoolDropdownEnabled" class="w-full" />
-                <label for="parent-school">School</label>
-                <small v-if="v$.parentSchool.$invalid && submitted" class="p-error">
-                  Please select a district.
-                </small>
-              </span>
-            </div>
+            <span class="p-float-label">
+              <Dropdown v-model="state.parentSchool" inputId="parent-school" :options="schools" showClear
+                optionLabel="name"
+                :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
+                :loading="!schoolDropdownEnabled" class="w-full" />
+              <label for="parent-school">School</label>
+              <small v-if="v$.parentSchool.$invalid && submitted" class="p-error">
+                Please select a district.
+              </small>
+            </span>
           </div>
         </div>
 
