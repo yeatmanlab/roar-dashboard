@@ -51,7 +51,7 @@
             <div v-else class="col-12 md:col-6 lg:col-3 xl:col-3">
               <span class="p-float-label">
                 <Dropdown v-model="state.parentSchool" inputId="parent-school" :options="schools" showClear
-                  optionLabel="name" placeholder="Select a school" :loading="isLoadingSchools" class="w-full" />
+                  optionLabel="name" placeholder="Select a school" :loading="isLoadingSchools" class="" />
                 <label for="parent-school">School</label>
                 <small v-if="v$.parentSchool.$invalid && submitted" class="p-error">
                   Please select a district.
