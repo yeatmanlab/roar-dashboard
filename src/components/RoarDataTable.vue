@@ -49,6 +49,12 @@
                           color: ${_get(data, col.tagColor) === 'white' ? 'black' : 'white'}`" />
             <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
           </div>
+          <div v-else-if="col.link">
+            <router-link :to="{ name: col.routeName, params: data.routeParams }">
+              <Button v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.routeLabel"
+                :aria-label="col.routeTooltip" :icon="col.routeIcon" size="small" />
+            </router-link>
+          </div>
           <div v-else-if="col.dataType === 'date'">
             {{ getFormattedDate(_get(data, col.field)) }}
           </div>
