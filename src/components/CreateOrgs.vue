@@ -43,13 +43,13 @@
           </div>
 
           <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
-            <div v-if="(schools ?? []).length === 1">
-              <p id="section-heading">
-                School {{ schools[0].name }}.
-              </p>
-            </div>
+<!--            <div v-if="(schools ?? []).length === 1">-->
+<!--              <p id="section-heading">-->
+<!--                School {{ schools[0].name }}.-->
+<!--              </p>-->
+<!--            </div>-->
 
-            <div v-else>
+            <div>
               <span class="p-float-label">
                 <Dropdown v-model="state.parentSchool" inputId="parent-school" :options="schools" showClear
                   optionLabel="name"
