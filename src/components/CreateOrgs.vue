@@ -24,14 +24,14 @@
         <!-- TODO: The v-model for districts should be ``selectedDistrict`` and the v-model for schools should be ``selectedSchool``. -->
         <!-- TODO: If ``isLoadingSchools`` is true, show the schools dropdown in a loading state. See: https://primevue.org/dropdown/#loadingstate -->
         <!-- TODO: This will also require changing ``state.parentOrg`` into two variables: ``state.parentDistrict`` and ``state.parentSchool``. -->
-        <div v-if="parentOrgRequired" class="grid column-gap-3 mt-4">
+        <div v-if="parentOrgRequired" class="grid mt-4">
           <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to:</p>
-          <div v-if="(districts ?? []).length === 1" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+          <div v-if="(districts ?? []).length === 1" class="col-12 md:col-6 lg:col-4">
             <p id="section-heading">
               District {{ districts[0].name }}.
             </p>
           </div>
-          <div v-else class="col-12 md:col-6 lg:col-3 xl:col-3">
+          <div v-else class="col-12 md:col-6 lg:col-4">
             <span class="p-float-label">
               <Dropdown v-model="state.parentDistrict" inputId="parent-district" :options="districts" showClear
                 optionLabel="name" placeholder="Select a district" :loading="isLoadingDistricts" class="w-full" />
@@ -42,16 +42,18 @@
             </span>
           </div>
 
-          <div v-if="orgType.singular === 'class'">
-            <div v-if="(schools ?? []).length === 1" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+          <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
+            <div v-if="(schools ?? []).length === 1">
               <p id="section-heading">
                 School {{ schools[0].name }}.
               </p>
             </div>
-            <div v-else class="col-12 md:col-6 lg:col-3 xl:col-3">
+            <div v-else>
               <span class="p-float-label">
                 <Dropdown v-model="state.parentSchool" inputId="parent-school" :options="schools" showClear
-                  optionLabel="name" placeholder="Select a school" :loading="isLoadingSchools" class="w-full" />
+                  optionLabel="name"
+                  :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
+                  :loading="!schoolDropdownEnabled" class="w-full" />
                 <label for="parent-school">School</label>
                 <small v-if="v$.parentSchool.$invalid && submitted" class="p-error">
                   Please select a district.
@@ -61,8 +63,8 @@
           </div>
         </div>
 
-        <div class="grid column-gap-3 mt-3">
-          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+        <div class="grid mt-3">
+          <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <InputText id="org-name" v-model="state.orgName" class="w-full" />
               <label for="org-name">{{ orgTypeLabel }} Name</label>
@@ -70,7 +72,7 @@
             </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+          <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <InputText id="org-initial" v-model="state.orgInitials" class="w-full" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
@@ -78,7 +80,7 @@
             </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="orgType?.singular === 'class'">
+          <div class="col-12 md:col-6 lg:col-4 mt-3" v-if="orgType?.singular === 'class'">
             <span class="p-float-label">
               <Dropdown v-model="state.grade" inputId="grade" :options="grades" showClear optionLabel="name"
                 placeholder="Select a grade" class="w-full" />
@@ -94,14 +96,14 @@
 
         <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
           <div class="grid column-gap-3">
-            <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-5">
+            <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
               <span class="p-float-label">
                 <InputText v-model="state.ncesId" v-tooltip="ncesTooltip" inputId="nces-id" class="w-full" />
                 <label for="nces-id">NCES ID</label>
               </span>
             </div>
           </div>
-          <div class="grid column-gap-3 mt-3">
+          <div class="grid mt-3">
             <div class="col-12">
               Search for a {{ orgType.singular }} address:
             </div>
@@ -123,8 +125,8 @@
           </div>
         </div>
 
-        <div class="grid column-gap-3 mt-3">
-          <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+        <div class="grid mt-3">
+          <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <AutoComplete v-model="state.tags" multiple dropdown :options="allTags" :suggestions="tagSuggestions"
                 @complete="searchTags" name="tags" class="w-full" />
@@ -170,9 +172,18 @@ const initialized = ref(false);
 const confirm = useConfirm();
 const toast = useToast();
 const authStore = useAuthStore();
-const selectedDistrict = ref();
-const selectedSchool = ref();
 const { roarfirekit } = storeToRefs(authStore);
+
+const state = reactive({
+  orgName: "",
+  orgInitials: "",
+  ncesId: undefined,
+  address: undefined,
+  parentDistrict: undefined,
+  parentSchool: undefined,
+  grade: undefined,
+  tags: [],
+})
 
 let unsubscribe;
 const initTable = () => {
@@ -225,7 +236,9 @@ const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && state.parentDistrict !== undefined;
 })
 
-const { isLoading: isLoadingSchools, data: schools } =
+const selectedDistrict = computed(() => state.parentDistrict?.id);
+
+const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schools } =
   useQuery({
     queryKey: ['schools', selectedDistrict],
     queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
@@ -238,6 +251,12 @@ const classQueryEnabled = computed(() => {
   return claimsLoaded.value && state.parentSchool !== undefined;
 })
 
+const schoolDropdownEnabled = computed(() => {
+  return state.parentDistrict && !isFetchingSchools.value;
+})
+
+const selectedSchool = computed(() => state.parentSchool?.id);
+
 const { isLoading: isLoadingClasses, data: classes } =
   useQuery({
     queryKey: ['classes', selectedSchool],
@@ -246,17 +265,6 @@ const { isLoading: isLoadingClasses, data: classes } =
     enabled: classQueryEnabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-
-const state = reactive({
-  orgName: "",
-  orgInitials: "",
-  ncesId: undefined,
-  address: undefined,
-  parentDistrict: undefined,
-  parentSchool: undefined,
-  grade: undefined,
-  tags: [],
-})
 
 const rules = {
   orgName: { required },
