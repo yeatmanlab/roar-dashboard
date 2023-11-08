@@ -50,7 +50,7 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
   });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const sidebarActions = ref(getSidebarActions(isSuperAdmin, true));
+const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 const pageLimit = ref(10);
 const page = ref(0);
