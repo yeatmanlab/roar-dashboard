@@ -230,7 +230,7 @@ const queryStore = useQueryStore();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const { adminOrgs } = storeToRefs(queryStore);
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const districts = ref(adminOrgs.value.districts || []);
 const schools = ref(adminOrgs.value.schools || []);

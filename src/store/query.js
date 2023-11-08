@@ -37,44 +37,6 @@ export const useQueryStore = () => {
       }
     },
     actions: {
-      async getMyAdministrations() {
-        if (roarfirekit.value?.app?.db) {
-          const administrations = await roarfirekit.value.getMyAdministrations();
-          this.administrations =  administrations.map((administration) => ({
-            ...administration,
-            dates: {
-              start: administration.dateOpened.toDate() ?? null,
-              end: administration.dateClosed?.toDate() ?? null,
-            },
-            assignedOrgs: {
-              districts: administration.districts,
-              schools: administration.schools,
-              classes: administration.classes,
-              groups: administration.groups,
-              families: administration.families,
-            }
-          }));
-        } else {
-          this.administrations = [];
-        }
-      },
-      async getUsersByAssignment(assignmentId, orgType, orgId, includeScores = false) {
-        if (roarfirekit.value?.admin?.db) {
-
-          const collection = pluralizeFirestoreCollection(orgType);
-          const orgs = emptyOrgList();
-          orgs[collection] = [orgId];
-
-          return roarfirekit.value.getUsersByAssignment({
-            assignmentId,
-            orgs,
-            countOnly: false,
-            includeScores,
-          });
-        } else {
-          return null;
-        }
-      },
       async getUsersBySingleOrg(orgType, orgId) {
         if (roarfirekit.value?.admin?.db) {
           return roarfirekit.value.getUsersByOrg({

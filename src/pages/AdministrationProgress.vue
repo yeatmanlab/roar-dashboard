@@ -5,34 +5,18 @@
     </aside>
     <section class="main-body">
       <Panel header="Administration Progress">
-        <template #icons>
-          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button>
-        </template>
-
         <div>
           <p v-if="orgInfo">{{ _capitalize(props.orgType) }}: {{ orgInfo.name }}</p>
           <p v-if="administrationInfo">Administration: {{ administrationInfo.name }}</p>
         </div>
 
-        <div v-if="refreshing" class="loading-container">
+        <RoarDataTable v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns" :totalRecords="assignmentCount"
+          :loading="isLoadingScores || isFetchingScores" :pageLimit="pageLimit" lazy @page="onPage($event)"
+          @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll" />
+        <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
-          <span>Loading Administration Data</span>
+          <span>Loading Progress Data</span>
         </div>
-
-        <RoarDataTable v-else-if="assignmentData?.length ?? 0 > 0" 
-          :data="tableData"
-          :columns="columns"
-          :totalRecords="assignmentCount"
-          :loading="isLoadingScores || isFetchingScores"
-          :pageLimit="pageLimit"
-          lazy
-          @page="onPage($event)"
-          @sort="onSort($event)"
-          @export-selected="exportSelected"
-          @export-all="exportAll"
-        />
       </Panel>
     </section>
   </main>
@@ -59,7 +43,7 @@ import { pluralizeFirestoreCollection } from "@/helpers";
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: String,
@@ -76,8 +60,8 @@ const page = ref(0);
 // User Claims
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
   useQuery({
-    queryKey: ['userClaims'],
-    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
     keepPreviousData: true,
     enabled: initialized,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -155,17 +139,17 @@ const exportSelected = (selectedRows) => {
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade')
     }
-    if (authStore.isUserSuperAdmin()) {
+    if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
-    if(props.orgType === 'district') {
+    if (props.orgType === 'district') {
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length){
+      if (currentSchools.length) {
         const schoolId = currentSchools[0]
         tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
       }
     }
-    for ( const assessment of assignment.assessments ) {
+    for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId
       if (assessment.completedOn !== undefined) {
         tableRow[displayNames[taskId]?.name ?? taskId] = 'Completed'
@@ -189,17 +173,17 @@ const exportAll = async () => {
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade')
     }
-    if (authStore.isUserSuperAdmin()) {
+    if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid')
     }
-    if(props.orgType === 'district') {
+    if (props.orgType === 'district') {
       const currentSchools = _get(user, 'schools.current')
-      if(currentSchools.length){
+      if (currentSchools.length) {
         const schoolId = currentSchools[0]
         tableRow['School'] = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
       }
     }
-    for ( const assessment of assignment.assessments ) {
+    for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId
       if (assessment.completedOn !== undefined) {
         tableRow[displayNames[taskId]?.name ?? taskId] = 'Completed'
@@ -213,12 +197,6 @@ const exportAll = async () => {
   })
   exportCsv(computedExportData, `roar-progress-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`);
 }
-
-const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return "pi pi-spin pi-spinner";
-  return "pi pi-refresh";
-});
 
 const displayNames = {
   "swr": { name: "Word", order: 3 },
@@ -247,7 +225,7 @@ const columns = computed(() => {
     tableColumns.push({ field: "user.schoolName", header: "School", dataType: "text" })
   }
 
-  if (authStore.isUserSuperAdmin()) {
+  if (authStore.isUserSuperAdmin) {
     tableColumns.push({ field: "user.assessmentPid", header: "PID", dataType: "text" });
   }
 
@@ -326,29 +304,26 @@ const tableData = computed(() => {
 
 let unsubscribe;
 
-const refresh = async () => {
-  refreshing.value = true;
+const init = () => {
   if (unsubscribe) unsubscribe();
-  refreshing.value = false;
   initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getUsersByAssignment && state.roarfirekit.isAdmin()) {
-    await refresh();
-  }
+  if (state.roarfirekit.restConfig) init();
 });
 
 const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  if (roarfirekit.value.getUsersByAssignment && roarfirekit.value.isAdmin()) {
-    await refresh()
-  }
+  if (roarfirekit.value.restConfig) init();
 })
 </script>
 
 <style>
 .p-button {
   margin: 0px 8px;
+}
+.loading-container {
+  text-align: center;
 }
 </style>

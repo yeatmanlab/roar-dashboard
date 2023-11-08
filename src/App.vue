@@ -25,6 +25,7 @@ import { onBeforeMount } from 'vue';
 import Navbar from "@/components/Navbar.vue";
 import { useAuthStore } from "@/store/auth";
 import { ref } from 'vue';
+import { fetchDocById } from "@/helpers/query/utils";
 
 const navbarBlacklist = ref([
   "SignIn",
@@ -43,7 +44,14 @@ onBeforeMount(async () => {
   const authStore = useAuthStore();
   await authStore.initFirekit();
   authStore.setUser();
-  await authStore.initStateFromRedirect();
+  await authStore.initStateFromRedirect().then(async () => {
+    if (authStore.uid) {
+      const userData = await fetchDocById('users', authStore.uid);
+      const userClaims = await fetchDocById('userClaims', authStore.uid);
+      authStore.userData = userData
+      authStore.userClaims = userClaims
+    }
+  });
 });
 
 </script>

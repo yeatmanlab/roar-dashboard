@@ -6,7 +6,7 @@ export const useGameStore = () => {
     id: "gameStore",
     state: () => {
       return {
-        selectedAdmin: "",
+        selectedAdmin: undefined,
       };
     },
     persist: {

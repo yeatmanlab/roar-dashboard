@@ -36,6 +36,7 @@ import { fetchDocById } from "../helpers/query/utils";
 import { singularizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
+
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 

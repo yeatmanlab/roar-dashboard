@@ -141,7 +141,7 @@ const email = ref();
 const authStore = useAuthStore();
 const queryStore = useQueryStore();
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const { roarfirekit } = storeToRefs(authStore);
 const { adminOrgs } = storeToRefs(queryStore);
