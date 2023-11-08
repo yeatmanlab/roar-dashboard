@@ -6,23 +6,19 @@
       <div class="mt-4 name-container">
         <div>
           <label for="firstName">First Name</label>
-          <InputText name="firstName"/>
+          <InputText name="firstName" />
         </div>
         <div>
           <label for="lastName">Last Name</label>
           <InputText name="lastName" />
-        </div>  
+        </div>
       </div>
       <!--Username / Email-->
       <div class="field mt-4">
         <div class="p-input-icon-right">
           <label for="username">Username or Email <span class="required">*</span></label>
-          <InputText
-            v-model="v$.email.$model" 
-            name="username"
-            :class="{ 'p-invalid': v$.email.$invalid && submitted }" 
-            aria-describedby="email-error"
-          />
+          <InputText v-model="v$.email.$model" name="username" :class="{ 'p-invalid': v$.email.$invalid && submitted }"
+            aria-describedby="email-error" />
         </div>
         <span v-if="v$.email.$error && submitted">
           <span v-for="(error, index) of v$.email.$errors" :key="index">
@@ -43,30 +39,28 @@
           </div>
         </div>
         <div v-if="!yearOnlyCheck">
-          <Calendar v-model="v$.dob.$model" view="date" dateFormat="mm/dd/yy" modelValue="string" showIcon :class="{ 'p-invalid': v$.dob.$invalid && submitted }"/>
+          <Calendar v-model="v$.dob.$model" view="date" dateFormat="mm/dd/yy" modelValue="string" showIcon
+            :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
         </div>
         <div v-else>
-          <Calendar v-model="v$.dob.$model" view="year" dateFormat="yy" modelValue="string" showIcon :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
+          <Calendar v-model="v$.dob.$model" view="year" dateFormat="yy" modelValue="string" showIcon
+            :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
         </div>
-        <small v-if="(v$.dob.$invalid && submitted) || v$.dob.$pending.$response" class="p-error">{{ v$.dob.required.$message.replace("Value", "Date of Birth") }}</small>
+        <small v-if="(v$.dob.$invalid && submitted) || v$.dob.$pending.$response" class="p-error">{{
+          v$.dob.required.$message.replace("Value", "Date of Birth") }}</small>
       </div>
       <!--Grade-->
       <div class="mt-4 mb-5">
         <label for="grade">Grade <span class="required">*</span></label>
-        <Dropdown 
-          v-model="v$.grade.$model" 
-          :options="gradeOptions" 
-          optionLabel="label" 
-          optionValue="value" 
-          name="grade"
-          :class="{ 'p-invalid': v$.grade.$invalid && submitted }"
-        />
-        <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{ v$.grade.required.$message.replace("Value", "Grade") }}</small>
+        <Dropdown v-model="v$.grade.$model" :options="gradeOptions" optionLabel="label" optionValue="value" name="grade"
+          :class="{ 'p-invalid': v$.grade.$invalid && submitted }" />
+        <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{
+          v$.grade.required.$message.replace("Value", "Grade") }}</small>
       </div>
       <!--English Language Level-->
       <div class="mt-4 mb-5">
         <label for="ell">English Language Level</label>
-        <Dropdown v-model="v$.ell.$model" :options="eLLOptions" optionLabel="label" optionValue="value" name="ell"/>
+        <Dropdown v-model="v$.ell.$model" :options="eLLOptions" optionLabel="label" optionValue="value" name="ell" />
       </div>
       <!--Sex-->
       <div class="mt-4 mb-5">
@@ -77,7 +71,8 @@
       <div class="field mt-4 mb-5">
         <div>
           <label for="password">Password <span class="required">*</span></label>
-          <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask feedback>
+          <Password v-model="v$.password.$model" name="password"
+            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask feedback>
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -102,8 +97,9 @@
       <div class="field mt-4 mb-5">
         <div>
           <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-          <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model" name="confirmPassword"
-            :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask :feedback="false">
+          <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model"
+            name="confirmPassword" :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask
+            :feedback="false">
           </Password>
         </div>
         <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
@@ -130,7 +126,7 @@ import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 
 const props = defineProps({
-  isRegistering: {type: Boolean, default: true}
+  isRegistering: { type: Boolean, default: true }
 });
 
 const authStore = useAuthStore();
@@ -153,7 +149,7 @@ const rules = {
   lastName: {},
   email: { required },
   password: { required },
-  confirmPassword: { required, sameAsPassword: sameAs(passwordRef) }, 
+  confirmPassword: { required, sameAsPassword: sameAs(passwordRef) },
   dob: { required },
   ell: {},
   sex: {},
@@ -191,32 +187,32 @@ const yearOnlyCheck = ref(false);
 
 // Dropdown Options
 const eLLOptions = ref([
-  {label: 'English as a First Language', value: 'EFL'},
-  {label: 'English as a Second Language', value: 'ESL'}
+  { label: 'English as a First Language', value: 'EFL' },
+  { label: 'English as a Second Language', value: 'ESL' }
 ]);
 
 const gradeOptions = ref([
-  {label: 'PK', value: 'PK'},
-  {label: 'TK', value: 'TK'},
-  {label: 'K', value: 'K'},
-  {label: '1st', value: '1'},
-  {label: '2nd', value: '2'},
-  {label: '3rd', value: '3'},
-  {label: '4th', value: '4'},
-  {label: '5th', value: '5'},
-  {label: '6th', value: '6'},
-  {label: '7th', value: '7'},
-  {label: '8th', value: '8'},
-  {label: '9th', value: '9'},
-  {label: '10th', value: '10'},
-  {label: '11th', value: '11'},
-  {label: '12th', value: '12'},
+  { label: 'PK', value: 'PK' },
+  { label: 'TK', value: 'TK' },
+  { label: 'K', value: 'K' },
+  { label: '1st', value: '1' },
+  { label: '2nd', value: '2' },
+  { label: '3rd', value: '3' },
+  { label: '4th', value: '4' },
+  { label: '5th', value: '5' },
+  { label: '6th', value: '6' },
+  { label: '7th', value: '7' },
+  { label: '8th', value: '8' },
+  { label: '9th', value: '9' },
+  { label: '10th', value: '10' },
+  { label: '11th', value: '11' },
+  { label: '12th', value: '12' },
 ]);
 
 const sexOptions = ref([
-  {label: 'Male', value: 'male'},
-  {label: 'Female', value: 'female'},
-  {label: 'Nonbinary / Do not want to specify', value: 'dns'}
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+  { label: 'Nonbinary / Do not want to specify', value: 'dns' }
 ]);
 </script>
 <style scoped>
@@ -225,12 +221,15 @@ const sexOptions = ref([
   flex-direction: row;
   gap: 1rem;
 }
+
 .required {
   color: red;
 }
+
 .login-title {
   font-size: 26px;
 }
+
 .submit-button {
   margin-top: .5rem;
   display: flex;
@@ -239,10 +238,12 @@ const sexOptions = ref([
   border: none;
   width: 11.75rem;
 }
+
 .submit-button:hover {
   background-color: #b7b5b5;
   color: black;
 }
+
 .terms-checkbox {
   margin-top: 0;
   margin-bottom: 0.75rem;
