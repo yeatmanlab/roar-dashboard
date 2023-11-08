@@ -1,21 +1,58 @@
 <template>
   <div>ROAR-{{ _capitalize(taskId) }} Student Score Information</div>
-  <RoarDataTable :columns="columns" :data="tableData" />
+  <RoarDataTable :columns="columns" :data="tableData" :totalRecords="totalRecords" lazy :pageLimit="pageLimit" @page="onPage($event)" />
 </template>
 <script setup>
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import _capitalize from "lodash/capitalize"
 import _get from "lodash/get";
 import _set from "lodash/set";
 import _zip from "lodash/zip";
 import _toLower from "lodash/toLower";
-import { getGrade } from "@bdelab/roar-utils";
+import { useQuery } from '@tanstack/vue-query';
+import { orderByDefault, exportCsv } from '@/helpers/query/utils';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
 const props = defineProps({
-  taskId: { required: true, default: ''},
-  taskData: { required: true, default: {} },
-  totalRecords: { required: false, default: 10 },
-  pageLimit: { required: false, default: 10 },
+  administrationId: { required: true, default: "" },
+  orgType: { required: true, default: "" },
+  orgId: { required: true, default: "" },
 })
+const emit = defineEmits(['page']);
+
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+
+const initialized = ref(false);
+
+const orderBy = ref(orderByDefault);
+const pageLimit = ref(10);
+const page = ref(0);
+
+const onPage = (event) => {
+  page.value = event.page;
+  pageLimit.value = event.rows;
+}
+
+// User Claims
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims'],
+    queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresDataQuery } =
+  useQuery({
+    queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
+    queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page, true),
+    keepPreviousData: true,
+    enabled: (initialized && claimsLoaded),
+    staleTime: 5 * 60 * 1000, // 5 mins
+  })
 
 const columns = computed(() => {
   if (props.taskData === undefined) return [];
@@ -39,15 +76,16 @@ const columns = computed(() => {
     tableColumns.push(
       { field: "scores.pa.firstSound", header: "First Sound", dataType: "text" },
       { field: "scores.pa.lastSound", header: "Last Sound", dataType: "text" },
-      { field: "scores.pa.deletion", header: "deletion", dataType: "text" },
+      { field: "scores.pa.deletion", header: "Deletion", dataType: "text" },
+      { field: "scores.pa.skills", header: "Skills to work on", dataType: "text"}
     )
   }
   return tableColumns
 })
 
 const tableData = computed(() => {
-  if (props.taskData === undefined) return [];
-  return props.taskData.map(({ user, assignment }) => {
+  if (scoresDataQuery.value === undefined) return [];
+  return scoresDataQuery.value.map(({ user, assignment }) => {
     const scores = {};
     for (const assessment of (assignment?.assessments || [])) {
       if(assessment.taskId === 'letter') {
@@ -73,10 +111,18 @@ const tableData = computed(() => {
       if(assessment.taskId === 'pa') {
         if(_get(assessment, 'scores')) {
           console.log('assessment obj', assessment)
+          const first = _get(assessment, 'scores.computed.FSM.roarScore');
+          const last = _get(assessment, 'scores.computed.LSM.roarScore');
+          const deletion = _get(assessment, 'scores.computed.DEL.roarScore');
+          let skills = []
+          if(first < 15) skills.push('First Sound Matching')
+          if(last < 15) skills.push('Last sound matching')
+          if(deletion < 15) skills.push('Deletion')
           _set(scores, 'pa', {
-            firstSound: _get(assessment, 'scores.computed.FSM.roarScore'),
-            lastSound: _get(assessment, 'scores.computed.LSM.roarScore'),
-            deletion: _get(assessment, 'scores.computed.DEL.roarScore'),
+            firstSound: first,
+            lastSound: last,
+            deletion: deletion,
+            skills: skills.join(', ')
           })
         }
       }
@@ -87,5 +133,19 @@ const tableData = computed(() => {
       scores
     }
   })
+})
+
+let unsubscribe;
+const refresh = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) refresh();
+});
+
+onMounted(async () => {
+  if (roarfirekit.value.restConfig) refresh();
 })
 </script>

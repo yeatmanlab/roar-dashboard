@@ -77,7 +77,12 @@
           percentiles. Blank spaces indicate that the assessment was not completed.</div>
         <!-- Subscores tables -->
         <SubscoreTable v-if="allTasks.includes('letter')" task-id="letter" :task-data="scoresDataQuery"/>
-        <SubscoreTable v-if="allTasks.includes('pa')" task-id="pa" :task-data="scoresDataQuery" :totalRecords="scoresCount" :pageLimit="pageLimit" />
+        <SubscoreTable v-if="allTasks.includes('pa')" 
+          task-id="pa"
+          :administrationId="administrationId"
+          :orgType="orgType"
+          :orgId="orgId"
+        />
         <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('pa')" class="task-card">
           <div class="task-title">ROAR-PHONEME</div>
