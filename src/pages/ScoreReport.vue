@@ -84,7 +84,8 @@
           <p class="task-description">ROAR - Phoneme assesses a student's mastery of phonological awareness through
             elision and sound matching tasks. Research indicates that phonological awareness, as a foundational
             pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading
-            abilities, students may struggle to catch up in overall reading proficiency. </p>
+            abilities, students may struggle to catch up in overall reading proficiency. The student's score will range 
+            between 0-57 and can be viewed by selecting 'Raw Score' on the table above.</p>
         </div>
         <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-card">
           <div class="task-title">ROAR-WORD</div>
