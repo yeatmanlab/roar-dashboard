@@ -84,7 +84,8 @@
           <p class="task-description">ROAR - Phoneme assesses a student's mastery of phonological awareness through
             elision and sound matching tasks. Research indicates that phonological awareness, as a foundational
             pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading
-            abilities, students may struggle to catch up in overall reading proficiency. </p>
+            abilities, students may struggle to catch up in overall reading proficiency. The student's score will range 
+            between 0-57 and can be viewed by selecting 'Raw Score' on the table above.</p>
         </div>
         <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-card">
           <div class="task-title">ROAR-WORD</div>
@@ -92,7 +93,8 @@
           <p class="task-description">ROAR - Word evaluates a student's ability to quickly and automatically recognize
             individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This
             test measures a student's ability to detect real and made-up words, which can then translate to a student's
-            reading levels and need for support. </p>
+            reading levels and need for support. The student's score will range between 100-900 and can be viewed by
+            selecting 'Raw Score' on the table above. </p>
         </div>
         <div v-if="allTasks.includes('sre')" class="task-card">
           <div class="task-title">ROAR-SENTENCE</div>
@@ -102,7 +104,8 @@
             Poor fluency can make it harder for students to understand what they're reading. Students who don't receive
             support for their basic reading skills may find it challenging to improve their overall reading ability. This
             assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties
-            with decoding words accurately or reading slowly and with effort.</p>
+            with decoding words accurately or reading slowly and with effort. The student's score will range between 
+            0-130 and can be viewed by selecting 'Raw Score' on the table above.</p>
         </div>
 
         <div>
