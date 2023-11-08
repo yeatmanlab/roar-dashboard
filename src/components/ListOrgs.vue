@@ -89,7 +89,6 @@ const schoolPlaceholder = computed(() => {
 
 // Authstore and Sidebar
 const authStore = useAuthStore();
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const syncingClever = ref(false);
 const cleverSyncIcon = computed(() => {
@@ -111,6 +110,7 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 const orgHeaders = computed(() => {
   const headers = {
