@@ -46,6 +46,7 @@ import SignIn from "@/components/auth/SignIn.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
+import { fetchDocById } from "../helpers/query/utils";
 
 const incorrect = ref(false);
 const authStore = useAuthStore();
@@ -54,8 +55,8 @@ const router = useRouter();
 const { spinner, authFromClever } = storeToRefs(authStore);
 
 authStore.$subscribe((mutation, state) => {
-  if (state.roarfirekit.userData && state.roarfirekit._idTokenReceived) {
-    if(authFromClever.value){
+  if (authStore.uid) {
+    if (authFromClever.value) {
       router.push({ name: "CleverLanding" })
     } else {
       router.push({ name: "Home" });
@@ -68,7 +69,15 @@ const authWithGoogle = () => {
     authStore.signInWithGoogleRedirect();
   } else {
     // authStore.signInWithGoogleRedirect();
-    authStore.signInWithGooglePopup().catch(() => {
+    authStore.signInWithGooglePopup().then(async () => {
+      if (authStore.uid) {
+        const userData = await fetchDocById('users', authStore.uid);
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userData = userData
+        authStore.userClaims = userClaims
+      }
+    }).catch((e) => {
+      console.log('caught error', e)
       spinner.value = false;
     });
 
@@ -86,10 +95,6 @@ const authWithClever = () => {
   }
 }
 
-function validateEmail(email) {
-  return ref.test('/^\S+@\S+\.\S+$/')
-}
-
 const authWithEmail = (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
@@ -104,7 +109,13 @@ const authWithEmail = (state) => {
       creds.email = `${creds.email}@roar-auth.com`
     }
 
-    authStore.logInWithEmailAndPassword(creds).then(() => {
+    authStore.logInWithEmailAndPassword(creds).then(async () => {
+      if (authStore.uid) {
+        const userData = await fetchDocById('users', authStore.uid);
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userData = userData
+        authStore.userClaims = userClaims
+      }
       spinner.value = true;
     }).catch((e) => {
       incorrect.value = true;
