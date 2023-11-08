@@ -50,9 +50,6 @@ export const useAuthStore = () => {
         await this.roarfirekit.completeAssessment(adminId, taskId)
         this.assignmentQueryKeyIndex += 1;
       },
-      async getUsersForOrg(orgType, orgId) {
-        return await this.roarfirekit.getUsersBySingleOrg({orgType, orgId})
-      },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if(user){

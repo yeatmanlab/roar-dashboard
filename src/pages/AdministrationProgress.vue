@@ -10,9 +10,9 @@
           <p v-if="administrationInfo">Administration: {{ administrationInfo.name }}</p>
         </div>
 
-        <RoarDataTable v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns" :totalRecords="assignmentCount"
-          :loading="isLoadingScores || isFetchingScores" :pageLimit="pageLimit" lazy @page="onPage($event)"
-          @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll" />
+        <RoarDataTable v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns"
+          :totalRecords="assignmentCount" :loading="isLoadingScores || isFetchingScores" :pageLimit="pageLimit" lazy
+          @page="onPage($event)" @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll" />
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
           <span>Loading Progress Data</span>
@@ -207,7 +207,7 @@ const displayNames = {
   "multichoice": { name: "Multichoice", order: 6 },
   "anb": { name: "ANB", order: 7 },
   "mep": { name: "MEP", order: 8 },
-  "mep-pseudo": { name: "MEP-Pseudo", order: 9},
+  "mep-pseudo": { name: "MEP-Pseudo", order: 9 },
   "morphology": { name: "Morphology", order: 10 },
 }
 
@@ -231,7 +231,7 @@ const columns = computed(() => {
 
   if (tableData.value.length > 0) {
     const sortedTasks = Object.keys(tableData.value[0].status).sort((p1, p2) => {
-      if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
+      if (Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)) {
         return displayNames[p1].order - displayNames[p2].order
       } else {
         return -1
@@ -304,7 +304,7 @@ const tableData = computed(() => {
 
 let unsubscribe;
 
-const init = () => {
+const init = async () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
@@ -323,6 +323,7 @@ onMounted(async () => {
 .p-button {
   margin: 0px 8px;
 }
+
 .loading-container {
   text-align: center;
 }
