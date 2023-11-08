@@ -50,7 +50,6 @@
             @export-all="exportAll" @export-selected="exportSelected" />
         </div>
 
-
         <div class="legend-container">
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${emptyTagColorMap.below};`" />
@@ -76,10 +75,12 @@
         </div>
         <div class="legend-description">Students are classified into three support groups based on nationally-normed
           percentiles. Blank spaces indicate that the assessment was not completed.</div>
-
-        <!-- In depth breakdown of each task-->
+        <!-- Subscores tables -->
+        <SubscoreTable v-if="allTasks.includes('letter')" task-id="letter" :task-data="scoresDataQuery"/>
+        <SubscoreTable v-if="allTasks.includes('pa')" task-id="pa" :task-data="scoresDataQuery" :totalRecords="scoresCount" :pageLimit="pageLimit" />
+        <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('pa')" class="task-card">
-          <div class="task-title">ROAR-PHENOME</div>
+          <div class="task-title">ROAR-PHONEME</div>
           <span style="text-transform: uppercase;">Phonological Awareness</span>
           <p class="task-description">ROAR - Phoneme assesses a student's mastery of phonological awareness through
             elision and sound matching tasks. Research indicates that phonological awareness, as a foundational
@@ -145,6 +146,7 @@ import _toUpper from 'lodash/toUpper'
 import _round from 'lodash/round';
 import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
+import _set from 'lodash/set'
 import _map from 'lodash/map'
 import _keys from 'lodash/keys'
 import _pick from 'lodash/pick'
@@ -161,6 +163,7 @@ import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils'
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from "@/helpers/query/assignments";
 import { orgFetcher } from "@/helpers/query/orgs";
 import { pluralizeFirestoreCollection } from "@/helpers";
+import SubscoreTable from '../components/reports/SubscoreTable.vue';
 
 const authStore = useAuthStore();
 
@@ -525,6 +528,10 @@ const tableData = computed(() => {
         raw: rawScore,
         support_level,
         color: tag_color
+      }
+      // Record the subscore information for use in the specialized tables
+      if(assessment.taskId === 'letter') {
+        _set(scores, 'letter.subscores', _get(assessment, 'scores.computed'))
       }
     }
     // If this is a district score report, grab school information
