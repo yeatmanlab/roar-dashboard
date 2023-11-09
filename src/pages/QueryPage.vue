@@ -1,23 +1,23 @@
 <template>
   <div>
     <div v-if="authStore.isAuthenticated">
-      <Accordion v-if="authStore.canRead" v-model:activeIndex="activeTab" class="accordion-custom">
-        <AccordionTab v-focustrap>
+      <PvAccordion v-if="authStore.canRead" v-model:activeIndex="activeTab" class="accordion-custom">
+        <PvAccordionTab v-focustrap>
           <template #header>
             <i class="pi pi-filter mr-2"></i>
             <span>Query Filters</span>
           </template>
           <QueryRuns />
-        </AccordionTab>
-        <AccordionTab>
+        </PvAccordionTab>
+        <PvAccordionTab>
           <template #header>
             <i class="pi pi-table mr-2"></i>
-            <Badge v-if="queryStore.runsReady" class="mr-2" :value="queryStore.nRuns" />
+            <PvBadge v-if="queryStore.runsReady" class="mr-2" :value="queryStore.nRuns" />
             <span>Runs</span>
           </template>
           <TableRunResults />
-        </AccordionTab>
-      </Accordion>
+        </PvAccordionTab>
+      </PvAccordion>
       <RequestPermission v-else />
     </div>
     <div v-else class="col-full text-center">

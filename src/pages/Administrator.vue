@@ -13,7 +13,7 @@ v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
         </template>
 
         <div v-if="initialized && !isLoadingAdministrations">
-          <BlockUI :blocked="isFetchingAdministrations">
+          <PvBlockUI :blocked="isFetchingAdministrations">
             <DataView
 :key="dataViewKey" :value="administrations" lazy paginator paginator-position="top"
               :total-records="totalRecords" :rows="pageLimit" :rows-per-page-options="[3, 5, 10, 25]" data-key="id"
@@ -33,7 +33,7 @@ v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
                 </div>
               </template>
             </DataView>
-          </BlockUI>
+          </PvBlockUI>
         </div>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />

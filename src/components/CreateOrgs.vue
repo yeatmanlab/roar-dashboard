@@ -134,7 +134,7 @@
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
-              <AutoComplete
+              <PvAutoComplete
                 v-model="state.tags"
                 multiple
                 dropdown
