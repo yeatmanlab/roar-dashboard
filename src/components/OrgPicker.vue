@@ -19,16 +19,17 @@ id="district" v-model="selectedDistrict" input-id="district" :options="allDistri
               <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
                 <span class="p-float-label">
                   <Dropdown
-id="school" v-model="selectedSchool" input-id="school" :options="allSchools" option-label="name"
-                    option-value="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
+id="school" v-model="selectedSchool" input-id="school" :options="allSchools"
+                    option-label="name" option-value="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools"
+                    class="w-full" />
                   <label for="school">Select from school</label>
                 </span>
               </div>
             </div>
             <div class="card flex justify-content-center">
               <Listbox
-v-model="selectedOrgs[activeOrgType]" :options="orgData" multiple option-label="name" class="w-full"
-                list-style="max-height:20rem">
+v-model="selectedOrgs[activeOrgType]" :options="orgData" multiple option-label="name"
+                class="w-full" list-style="max-height:20rem">
                 <template #option="slotProps">
                   <div class="flex align-items-center">
                     <Checkbox :binary="true" :model-value="isSelected(activeOrgType, slotProps.option.id)"></Checkbox>
@@ -44,7 +45,7 @@ v-model="selectedOrgs[activeOrgType]" :options="orgData" multiple option-label="
     <div class="col-12 md:col-6">
       <Panel class="h-full" header="Selected organizations">
         <ScrollPanel style="width: 100%; height: 26rem;">
-          <div v-for="orgKey in Object.keys(selectedOrgs)">
+          <div v-for="orgKey in Object.keys(selectedOrgs)" :key="orgKey">
             <div v-if="selectedOrgs[orgKey].length > 0">
               <b>{{ _capitalize(orgKey) }}:</b>
               <Chip
@@ -86,7 +87,7 @@ const selectedOrgs = reactive({
   families: [],
 });
 
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+const { isLoading: isLoadingClaims, data: userClaims } =
   useQuery({
     queryKey: ['userClaims', authStore.uid],
     queryFn: () => fetchDocById('userClaims', authStore.uid),
@@ -170,7 +171,7 @@ const { isLoading: isLoadingSchools, data: allSchools } =
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-const { isLoading, isFetching, data: orgData } =
+const { data: orgData } =
   useQuery({
     queryKey: ['orgs', activeOrgType, selectedDistrict, selectedSchool],
     queryFn: () => orgFetchAll(

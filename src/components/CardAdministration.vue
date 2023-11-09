@@ -14,20 +14,22 @@
 			</div>
 			<div class="card-admin-assessments">
 				<span class="mr-1"><strong>Assessments</strong>:</span>
-				<span v-for="assessmentId in assessmentIds" class="card-inline-list-item">
+				<span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
 					{{ displayNames[assessmentId]?.name ?? assessmentId }}
 					<span
 v-if="showParams" v-tooltip.top="'Click to view params'" class="pi pi-info-circle cursor-pointer"
 						style="font-size: 1rem" @click="toggleParams($event, assessmentId)" />
 				</span>
-				<OverlayPanel v-for="assessmentId in assessmentIds" v-if="showParams" :ref="paramPanelRefs[assessmentId]">
-					<DataTable
+				<div v-if="showParams">
+					<OverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+						<DataTable
 striped-rows class="p-datatable-small" table-style="min-width: 30rem"
-						:value="toEntryObjects(params[assessmentId])">
-						<Column field="key" header="Parameter" style="width: 50%"></Column>
-						<Column field="value" header="Value" style="width: 50%"></Column>
-					</DataTable>
-				</OverlayPanel>
+							:value="toEntryObjects(params[assessmentId])">
+							<Column field="key" header="Parameter" style="width: 50%"></Column>
+							<Column field="value" header="Value" style="width: 50%"></Column>
+						</DataTable>
+					</OverlayPanel>
+				</div>
 			</div>
 
 			<div class="break my-2"></div>
@@ -38,7 +40,7 @@ striped-rows class="p-datatable-small" table-style="min-width: 30rem"
 
 			<TreeTable
 v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value="treeTableOrgs"
-				@nodeExpand="onExpand">
+				@node-expand="onExpand">
 				<Column field="name" header="Name" expander style="width: 20rem"></Column>
 				<Column v-if="props.stats" field="id" header="Completion">
 					<template #body="{ node }">
@@ -49,14 +51,14 @@ v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value=
 					<template #body="{ node }">
 						<span class="p-buttonset m-0">
 							<router-link
-								v-slot="{ href, route, navigate }"
+v-slot="{ href, route, navigate }"
 								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
 								<Button
 v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
 									aria-label="Completion details" size="small" />
 							</router-link>
 							<router-link
-								v-slot="{ href, route, navigate }"
+v-slot="{ href, route, navigate }"
 								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
 								<Button
 v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
@@ -76,9 +78,7 @@ import { useQuery } from "@tanstack/vue-query";
 import { fetchDocById } from "@/helpers/query/utils";
 import { useAuthStore } from "@/store/auth";
 import { removeEmptyOrgs } from "@/helpers";
-import _capitalize from "lodash/capitalize";
 import _flattenDeep from "lodash/flattenDeep";
-import _forEach from "lodash/forEach";
 import _fromPairs from "lodash/fromPairs";
 import _isEmpty from "lodash/isEmpty";
 import _mapValues from "lodash/mapValues";
@@ -88,13 +88,13 @@ import _without from "lodash/without";
 const authStore = useAuthStore();
 
 const props = defineProps({
-	id: String,
-	title: String,
-	stats: Object,
-	dates: Object,
-	assignees: Object,
-	assessments: Array,
-	showParams: Boolean,
+	id: { type: String, required: true },
+	title: { type: String, required: true },
+	stats: { type: Object, required: true },
+	dates: { type: Object, required: true },
+	assignees: { type: Object, required: true },
+	assessments: { type: Array, required: true },
+	showParams: { type: Boolean, required: true },
 });
 
 const processedDates = computed(() => {
@@ -334,15 +334,6 @@ const onExpand = async (node) => {
 		expanding.value = false;
 	}
 };
-
-const displayOrgsText = computed(() => {
-	let orgsList = "";
-	_forEach(Object.keys(displayOrgs), (orgType) => {
-		let nameList = displayOrgs[orgType].map((org) => org).join(', ')
-		orgsList = orgsList + `${_capitalize(orgType)}: ${nameList} \n`
-	})
-	return orgsList;
-})
 
 const doughnutChartData = ref();
 const doughnutChartOptions = ref();

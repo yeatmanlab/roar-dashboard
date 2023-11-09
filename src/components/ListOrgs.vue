@@ -68,7 +68,6 @@ import { useAuthStore } from "@/store/auth";
 import _get from "lodash/get";
 import _head from "lodash/head";
 import _isEmpty from "lodash/isEmpty";
-import _union from "lodash/union";
 
 const initialized = ref(false);
 const page = ref(0);
@@ -104,7 +103,7 @@ const cleverSyncIcon = computed(() => {
   }
 });
 
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+const { isLoading: isLoadingClaims, data: userClaims } =
   useQuery({
     queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
     queryFn: () => fetchDocById('userClaims', authStore.uid),

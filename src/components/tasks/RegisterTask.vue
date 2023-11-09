@@ -193,8 +193,6 @@ import { reactive, ref, onMounted } from "vue";
 import { required, url } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 import { useAuthStore } from "@/store/auth";
-import _get from 'lodash/get'
-import _number from 'lodash/toNumber'
 import { useQuery } from "@tanstack/vue-query";
 import { storeToRefs } from 'pinia';
 import { useToast } from "primevue/usetoast";
@@ -220,7 +218,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 })
 
-const { isLoading: isLoadingTasks, isFetching: isFetchingTasks, data: tasks } =
+const { isFetching: isFetchingTasks, data: tasks } =
   useQuery({
     queryKey: ['tasks', registeredTasksOnly],
     queryFn: () => taskFetcher(registeredTasksOnly.value),
@@ -304,7 +302,7 @@ const handleNewTaskSubmit = async (isFormValid) => {
 
   // Write task variant to DB
   try {
-    const res = await authStore.roarfirekit.registerTaskVariant({
+    await authStore.roarfirekit.registerTaskVariant({
       taskId: taskFields.taskId,
       taskName: taskFields.taskName,
       taskDescription: taskFields.description,
@@ -330,7 +328,7 @@ const handleVariantSubmit = async (isFormValid) => {
 
   // Write variant to Db
   try {
-    const res = await authStore.roarfirekit.registerTaskVariant({
+    await authStore.roarfirekit.registerTaskVariant({
       taskId: variantFields.selectedGame.id,
       taskDescription: variantFields.selectedGame.description,
       taskImage: variantFields.selectedGame.image,

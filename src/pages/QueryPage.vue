@@ -26,7 +26,6 @@
         <Button label="Log In" icon="pi pi-sign-in" />
       </router-link>
     </div>
-    <AppSpinner v-else />
   </div>
 </template>
 
@@ -44,6 +43,4 @@ const queryStore = useQueryStore();
 const { activeTab } = storeToRefs(queryStore);
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

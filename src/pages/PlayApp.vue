@@ -23,16 +23,16 @@ const authStore = useAuthStore();
 const { isFirekitInit } = storeToRefs(authStore);
 
 onMounted(async () => {
-  if(isFirekitInit.value) {
+  if (isFirekitInit.value) {
     await startTask();
   }
 })
 
-watch(isFirekitInit, async (newValue, oldValue) => {
+watch(isFirekitInit, async () => {
   await startTask();
 })
 
-async function startTask() { 
+async function startTask() {
   const currentAssignment = _head(toRaw(authStore.firekitAssignmentIds))
   const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, currentGameId)
 
@@ -44,7 +44,7 @@ async function startTask() {
   const gameParams = appKit._taskInfo.variantParams
 
   let roarApp = null;
-  switch(currentGameId) {
+  switch (currentGameId) {
     case "swr":
       roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
       break;
@@ -65,14 +65,14 @@ async function startTask() {
 }
 
 </script>
-<style scoped> 
-.game-target {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-}
-.game-target:focus {
-  outline: none;
-}
+<style scoped> .game-target {
+   position: absolute;
+   top: 0;
+   left: 0;
+   width: 100%;
+ }
+
+ .game-target:focus {
+   outline: none;
+ }
 </style>

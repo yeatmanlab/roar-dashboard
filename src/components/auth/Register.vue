@@ -129,14 +129,6 @@ v-model="v$.password.$model" name="password"
 import { computed, reactive, ref } from "vue";
 import { required, sameAs } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
-import { useAuthStore } from "@/store/auth";
-import { isMobileBrowser } from "@/helpers";
-
-const props = defineProps({
-  isRegistering: { type: Boolean, default: true }
-});
-
-const authStore = useAuthStore();
 
 // TODO: Include middle
 const state = reactive({
@@ -174,22 +166,8 @@ const handleFormSubmit = (isFormValid) => {
     return;
   }
   console.log('to submit:', state)
-  // authStore.registerWithEmailAndPassword(state);
 };
 
-const resetForm = () => {
-  state.firstName = "";
-  state.lastName = "";
-  state.email = "";
-  state.password = "";
-  state.confirmPassword = "";
-  state.dob = "";
-  state.ell = "";
-  state.sex = "";
-  state.grade = "";
-  submitted.value = false;
-  yearOnlyCheck.value = false;
-};
 const yearOnlyCheck = ref(false);
 
 // Dropdown Options

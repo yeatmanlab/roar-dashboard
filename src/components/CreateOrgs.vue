@@ -165,11 +165,8 @@
 <script setup>
 import { computed, reactive, ref, toRaw, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { useConfirm } from 'primevue/useconfirm';
 import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
-import _get from 'lodash/get';
-import _set from 'lodash/set';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
 import { useQuery } from '@tanstack/vue-query';
@@ -182,7 +179,6 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { orgFetcher } from '@/helpers/query/orgs';
 
 const initialized = ref(false);
-const confirm = useConfirm();
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -212,11 +208,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
 });
 
-const {
-  isLoading: isLoadingClaims,
-  isFetching: isFetchingClaims,
-  data: userClaims,
-} = useQuery({
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid],
   queryFn: () => fetchDocById('userClaims', authStore.uid),
   keepPreviousData: true,
@@ -238,7 +230,7 @@ const { isLoading: isLoadingDistricts, data: districts } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { isLoading: isLoadingGroups, data: groups } = useQuery({
+const { data: groups } = useQuery({
   queryKey: ['groups'],
   queryFn: () => orgFetcher('groups', undefined, isSuperAdmin, adminOrgs, ['name', 'id', 'tags']),
   keepPreviousData: true,
@@ -252,11 +244,7 @@ const schoolQueryEnabled = computed(() => {
 
 const selectedDistrict = computed(() => state.parentDistrict?.id);
 
-const {
-  isLoading: isLoadingSchools,
-  isFetching: isFetchingSchools,
-  data: schools,
-} = useQuery({
+const { isFetching: isFetchingSchools, data: schools } = useQuery({
   queryKey: ['schools', selectedDistrict],
   queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs, ['name', 'id', 'tags']),
   keepPreviousData: true,
@@ -274,9 +262,9 @@ const schoolDropdownEnabled = computed(() => {
 
 const selectedSchool = computed(() => state.parentSchool?.id);
 
-const { isLoading: isLoadingClasses, data: classes } = useQuery({
+const { data: classes } = useQuery({
   queryKey: ['classes', selectedSchool],
-  queryFn: () => orgFetcher('schools', selectedSchool, isSuperAdmin, adminOrgs, ['name', 'id', 'tags']),
+  queryFn: () => orgFetcher('classes', selectedSchool, isSuperAdmin, adminOrgs, ['name', 'id', 'tags']),
   keepPreviousData: true,
   enabled: classQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -470,24 +458,10 @@ const resetForm = () => {
     margin: 0.625rem 0rem;
   }
 
-  // .p-dropdown-label {
-  //   font-family: 'Source Sans Pro', sans-serif;
-  //   color: #C4C4C4;
-  // }
-
   ::placeholder {
     font-family: 'Source Sans Pro', sans-serif;
     color: #c4c4c4;
   }
-
-  // .p-button {
-  //   width: 11.5625rem;
-  //   height: 2.25rem;
-  //   border-radius: 3.9375rem;
-  //   margin: 1.5rem 0rem;
-  //   margin-right: 1.375rem;
-  //   float: right;
-  // }
 
   .hide {
     display: none;

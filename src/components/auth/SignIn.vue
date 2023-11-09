@@ -60,9 +60,6 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const emit = defineEmits(['submit']);
-const props = defineProps({
-  invalid: { required: false, default: false },
-})
 
 const state = reactive({
   email: "",
@@ -87,14 +84,6 @@ const handleFormSubmit = (isFormValid) => {
   emit('submit', state);
 }
 
-const resetForm = () => {
-  state.email = "";
-  state.password = "";
-  state.accept = null;
-  state.useLink = false;
-  submitted.value = false;
-};
-
 const isValidEmail = (email) => {
   var re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(email);
@@ -105,7 +94,6 @@ const allowPassword = ref(true);
 const allowLink = ref(false);
 
 const validateRoarEmail = _debounce(async (email) => {
-  console.log("debounced function invoked");
   await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
     if (emailAvail) {
       console.log(`Email ${email} is available`);

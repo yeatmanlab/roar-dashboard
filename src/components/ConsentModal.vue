@@ -20,8 +20,8 @@ import { useAuthStore } from '@/store/auth';
 const authStore = useAuthStore();
 
 const props = defineProps({
-  consentText: { require: true, default: 'Text Here' },
-  consentType: { require: true, default: 'Consent' },
+  consentText: { type: String, require: true, default: 'Text Here' },
+  consentType: { type: String, require: true, default: 'Consent' },
 })
 const consentHeader = {
   tos: "Terms of Service",

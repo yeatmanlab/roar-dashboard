@@ -23,12 +23,6 @@ import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
 import { useAuthStore } from "@/store/auth";
 import _isEmpty from 'lodash/isEmpty';
-import _forEach from 'lodash/forEach';
-import _find from 'lodash/find'
-import _get from 'lodash/get';
-import _set from 'lodash/set';
-import _union from 'lodash/union';
-import _head from 'lodash/head'
 import { useQuery } from "@tanstack/vue-query";
 import AppSpinner from "./AppSpinner.vue";
 import { storeToRefs } from "pinia";
@@ -41,7 +35,7 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+const { data: userClaims } =
   useQuery({
     queryKey: ['userClaims'],
     queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
@@ -58,9 +52,18 @@ const page = ref(0);
 const orderBy = ref(null);
 
 const props = defineProps({
-  orgType: String,
-  orgId: String,
-  orgName: String,
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
+  orgName: {
+    type: String,
+    required: true,
+  },
 })
 
 const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecords } =

@@ -80,7 +80,8 @@ label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''" :
           <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
           <DataTable
 ref="errorTable" :value="errorUsers" show-gridlines export-filename="error-datatable-export"
-            :row-hover="true" :resizable-columns="true" paginator :always-show-paginator="false" :rows="10" class="datatable">
+            :row-hover="true" :resizable-columns="true" paginator :always-show-paginator="false" :rows="10"
+            class="datatable">
             <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
               <template #header>
                 {{ col.header }}
@@ -100,12 +101,10 @@ import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
 import _chunk from 'lodash/chunk';
 import _compact from 'lodash/compact';
-import _find from 'lodash/find';
 import _forEach from 'lodash/forEach'
 import _includes from 'lodash/includes'
 import _isEmpty from 'lodash/isEmpty';
 import _omit from 'lodash/omit';
-import _pick from 'lodash/pick';
 import _set from 'lodash/set';
 import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase'
@@ -220,7 +219,7 @@ function checkUniqueStudents(students, field) {
   return (students.length === uniqueStudents.length)
 }
 
-async function submitStudents(rawJson) {
+async function submitStudents() {
   // Reset error users
   errorUsers.value = [];
   errorUserColumns.value = [];

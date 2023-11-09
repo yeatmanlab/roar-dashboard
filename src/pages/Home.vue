@@ -41,7 +41,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } =
+const { isLoading: isLoadingUserData, data: userData } =
   useQuery({
     queryKey: ['userData', authStore.uid, userQueryKeyIndex],
     queryFn: () => fetchDocById('users', authStore.uid),
@@ -50,7 +50,7 @@ const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: user
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+const { isLoading: isLoadingClaims, data: userClaims } =
   useQuery({
     queryKey: ['userClaims', authStore.uid, userQueryKeyIndex],
     queryFn: () => fetchDocById('userClaims', authStore.uid),
@@ -60,7 +60,6 @@ const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClai
   })
 
 const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
-const isFetching = computed(() => isFetchingClaims.value || isFetchingUserData.value);
 
 const isAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;

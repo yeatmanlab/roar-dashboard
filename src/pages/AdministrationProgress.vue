@@ -26,13 +26,13 @@ v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns"
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import _map from 'lodash/map'
-import _get from 'lodash/get'
-import _find from 'lodash/find'
-import _kebabCase from 'lodash/kebabCase'
 import _capitalize from 'lodash/capitalize';
+import _find from 'lodash/find'
+import _get from 'lodash/get'
+import _isEmpty from 'lodash/isEmpty'
+import _kebabCase from 'lodash/kebabCase'
+import _map from 'lodash/map'
 import { useAuthStore } from '@/store/auth';
-import { useQueryStore } from '@/store/query';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "@/router/sidebarActions";
 import { useQuery } from '@tanstack/vue-query';
@@ -42,14 +42,22 @@ import { orgFetcher } from "@/helpers/query/orgs";
 import { pluralizeFirestoreCollection } from "@/helpers";
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
-  administrationId: String,
-  orgType: String,
-  orgId: String,
+  administrationId: {
+    type: String,
+    required: true,
+  },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
 });
 
 const initialized = ref(false);
@@ -59,7 +67,7 @@ const orderBy = ref(orderByDefault);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+const { isLoading: isLoadingClaims, data: userClaims } =
   useQuery({
     queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
     queryFn: () => fetchDocById('userClaims', authStore.uid),
@@ -71,7 +79,7 @@ const claimsLoaded = computed(() => !isLoadingClaims.value);
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
-const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: administrationInfo } =
+const { data: administrationInfo } =
   useQuery({
     queryKey: ['administrationInfo', props.administrationId],
     queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
@@ -80,7 +88,7 @@ const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: ad
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
-const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInfo } =
+const { data: orgInfo } =
   useQuery({
     queryKey: ['orgInfo', props.orgId],
     queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
@@ -90,7 +98,7 @@ const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInf
   })
 
 // Grab schools if this is a district score report
-const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfo } =
+const { data: schoolsInfo } =
   useQuery({
     queryKey: ['schools', ref(props.orgId)],
     queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
@@ -110,7 +118,7 @@ let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: assignment
   })
 
 // Scores count query
-const { isLoading: isLoadingCount, data: assignmentCount } =
+const { data: assignmentCount } =
   useQuery({
     queryKey: ['assignments', props.administrationId, props.orgId],
     queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),

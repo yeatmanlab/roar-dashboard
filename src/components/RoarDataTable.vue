@@ -24,12 +24,12 @@ id="ms-freeze" :model-value="frozenColumns" :options="inputColumns" option-label
       </span>
     </div>
     <DataTable
-ref="dataTable" v-model:filters="refFilters" v-model:selection="selectedRows" :value="computedData" :row-hover="true"
-      :reorderable-columns="true" :resizable-columns="true" :export-filename="exportFilename" removable-sort sort-mode="multiple"
-      show-gridlines filter-display="menu" paginator :rows="props.pageLimit" :always-show-paginator="true"
-      paginator-position="both" :rows-per-page-options="[10, 25, 50, 100]" :total-records="props.totalRecords"
-      :lazy="props.lazy" :loading="props.loading" scrollable :select-all="selectAll" @page="onPage($event)"
-      @sort="onSort($event)" @select-all-change="onSelectAll" @row-select="onSelectionChange"
+ref="dataTable" v-model:filters="refFilters" v-model:selection="selectedRows" :value="computedData"
+      :row-hover="true" :reorderable-columns="true" :resizable-columns="true" :export-filename="exportFilename"
+      removable-sort sort-mode="multiple" show-gridlines filter-display="menu" paginator :rows="props.pageLimit"
+      :always-show-paginator="true" paginator-position="both" :rows-per-page-options="[10, 25, 50, 100]"
+      :total-records="props.totalRecords" :lazy="props.lazy" :loading="props.loading" scrollable :select-all="selectAll"
+      @page="onPage($event)" @sort="onSort($event)" @select-all-change="onSelectAll" @row-select="onSelectionChange"
       @row-unselect="onSelectionChange">
       <Column selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
       <Column
@@ -37,23 +37,26 @@ v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="
         :field="col.field" :data-type="col.dataType" :sortable="(col.sort !== false)"
         :show-filter-match-modes="!col.useMultiSelect" :show-filter-operator="col.allowMultipleFilters === true"
         :show-add-button="col.allowMultipleFilters === true" :frozen="col.pinned" align-frozen="left">
-        <template #body="{ data }">
-          <div v-if="col.tag && _get(data, col.field) !== undefined">
+        <template #body="{ colData }">
+          <div v-if="col.tag && _get(colData, col.field) !== undefined">
             <Tag
-v-if="!col.tagOutlined" :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
-              :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`"
-              rounded />
-            <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
+v-if="!col.tagOutlined" :severity="_get(colData, col.severityField)" :value="_get(colData, col.field)"
+              :icon="_get(colData, col.iconField)"
+              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem;`" rounded />
+            <div
+v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
+              style="border: 1px solid black" />
           </div>
-          <div v-else-if="col.chip && col.dataType === 'array' && _get(data, col.field) !== undefined">
-            <Chip v-for="chip in _get(data, col.field)" :key="chip" :label="chip" />
+          <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
+            <Chip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
             <div
-v-if="!col.tagOutlined" class="circle"
-                 :style="`background-color: ${_get(data, col.tagColor)};
-                          color: ${_get(data, col.tagColor) === 'white' ? 'black' : 'white'}`" />
-            <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
+v-if="!col.tagOutlined" class="circle" :style="`background-color: ${_get(colData, col.tagColor)};
+                          color: ${_get(colData, col.tagColor) === 'white' ? 'black' : 'white'}`" />
+            <div
+v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
+              style="border: 1px solid black" />
           </div>
           <div v-else-if="col.link">
             <router-link :to="{ name: col.routeName, params: data.routeParams }">
@@ -63,10 +66,10 @@ v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.ro
             </router-link>
           </div>
           <div v-else-if="col.dataType === 'date'">
-            {{ getFormattedDate(_get(data, col.field)) }}
+            {{ getFormattedDate(_get(colData, col.field)) }}
           </div>
           <div v-else>
-            {{ _get(data, col.field) }}
+            {{ _get(colData, col.field) }}
           </div>
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
@@ -90,7 +93,7 @@ v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value
   </div>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 import SkeletonTable from "@/components/SkeletonTable.vue"
@@ -102,7 +105,6 @@ import _find from 'lodash/find'
 import _filter from 'lodash/filter'
 import _toUpper from 'lodash/toUpper'
 import _startCase from 'lodash/startCase'
-import _flatMap from 'lodash/flatMap'
 
 /*
 Using the DataTable
@@ -134,7 +136,7 @@ const props = defineProps({
   allowExport: { type: Boolean, default: true },
   exportFilename: { type: String, default: 'datatable-export' },
   pageLimit: { type: Number, default: 15 },
-  totalRecords: { type: Number, required: false },
+  totalRecords: { type: Number, required: false, default: 0 },
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
 });
@@ -169,7 +171,8 @@ const onSelectAll = () => {
   }
   emit("selection", selectedRows.value);
 }
-const onSelectionChange = (event) => {
+
+const onSelectionChange = () => {
   emit("selection", selectedRows.value);
 }
 

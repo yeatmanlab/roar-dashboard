@@ -88,7 +88,7 @@ const email = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+const { data: userClaims } =
   useQuery({
     queryKey: ['userClaims', authStore.uid],
     queryFn: () => fetchDocById('userClaims', authStore.uid),

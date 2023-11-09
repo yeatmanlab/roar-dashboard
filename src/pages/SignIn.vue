@@ -41,7 +41,6 @@
 import { onMounted, ref, toRaw, onBeforeUnmount } from 'vue';
 import { storeToRefs } from "pinia";
 import { useRouter } from 'vue-router';
-import _get from 'lodash/get'
 import SignIn from "@/components/auth/SignIn.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
@@ -54,7 +53,7 @@ const router = useRouter();
 
 const { spinner, authFromClever } = storeToRefs(authStore);
 
-authStore.$subscribe((mutation, state) => {
+authStore.$subscribe(() => {
   if (authStore.uid) {
     if (authFromClever.value) {
       router.push({ name: "CleverLanding" })

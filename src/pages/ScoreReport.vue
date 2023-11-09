@@ -110,7 +110,7 @@
           <p class="task-description">ROAR - Phoneme assesses a student's mastery of phonological awareness through
             elision and sound matching tasks. Research indicates that phonological awareness, as a foundational
             pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading
-            abilities, students may struggle to catch up in overall reading proficiency. The student's score will range 
+            abilities, students may struggle to catch up in overall reading proficiency. The student's score will range
             between 0-57 and can be viewed by selecting 'Raw Score' on the table above.</p>
         </div>
         <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-card">
@@ -130,7 +130,7 @@
             Poor fluency can make it harder for students to understand what they're reading. Students who don't receive
             support for their basic reading skills may find it challenging to improve their overall reading ability. This
             assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties
-            with decoding words accurately or reading slowly and with effort. The student's score will range between 
+            with decoding words accurately or reading slowly and with effort. The student's score will range between
             0-130 and can be viewed by selecting 'Raw Score' on the table above.</p>
         </div>
 
@@ -169,15 +169,10 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import _capitalize from 'lodash/capitalize';
 import _toUpper from 'lodash/toUpper'
 import _round from 'lodash/round';
-import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
 import _map from 'lodash/map'
-import _keys from 'lodash/keys'
-import _pick from 'lodash/pick'
-import _mapKeys from 'lodash/mapKeys'
 import _kebabCase from 'lodash/kebabCase'
 import _find from 'lodash/find'
 import _isEmpty from 'lodash/isEmpty'
@@ -199,9 +194,18 @@ const { roarfirekit } = storeToRefs(authStore);
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
-  administrationId: String,
-  orgType: String,
-  orgId: String,
+  administrationId: {
+    type: String,
+    required: true,
+  },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
 });
 
 const initialized = ref(false);
@@ -211,7 +215,7 @@ const orderBy = ref(orderByDefault);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+const { isLoading: isLoadingClaims, data: userClaims } =
   useQuery({
     queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
     queryFn: () => fetchDocById('userClaims', authStore.uid),
@@ -223,7 +227,7 @@ const claimsLoaded = computed(() => !isLoadingClaims.value);
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
-const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: administrationInfo } =
+const { data: administrationInfo } =
   useQuery({
     queryKey: ['administrationInfo', props.administrationId],
     queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
@@ -232,7 +236,7 @@ const { isLoading: isLoadingAdminData, isFetching: isFetchingAdminData, data: ad
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
-const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInfo } =
+const { data: orgInfo } =
   useQuery({
     queryKey: ['orgInfo', props.orgId],
     queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
@@ -242,7 +246,7 @@ const { isLoading: isLoadingOrgInfo, isFetching: isFetchingOrgInfo, data: orgInf
   })
 
 // Grab schools if this is a district score report
-const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schoolsInfo } =
+const { data: schoolsInfo } =
   useQuery({
     queryKey: ['schools', ref(props.orgId)],
     queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
@@ -262,7 +266,7 @@ let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresData
   })
 
 // Scores count query
-const { isLoading: isLoadingCount, data: scoresCount } =
+const { data: scoresCount } =
   useQuery({
     queryKey: ['assignments', props.administrationId, props.orgId],
     queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
@@ -321,7 +325,7 @@ const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDi
 }
 
 const exportSelected = (selectedRows) => {
-  const computedExportData = _map(selectedRows, ({ user, assignment, scores }) => {
+  const computedExportData = _map(selectedRows, ({ user, assignment }) => {
     let tableRow = {
       Username: _get(user, 'username'),
       First: _get(user, 'name.first'),
@@ -345,7 +349,7 @@ const exportSelected = (selectedRows) => {
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId) ?
-          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+        _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
@@ -357,13 +361,6 @@ const exportSelected = (selectedRows) => {
 
 const exportAll = async () => {
   const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true)
-  const sortedTasks = allTasks.value.sort((p1, p2) => {
-    if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
-        return displayNames[p1].order - displayNames[p2].order
-      } else {
-        return -1
-      }
-  })
   const computedExportData = _map(exportData, ({ user, assignment }) => {
     let tableRow = {
       Username: _get(user, 'username'),
@@ -388,7 +385,7 @@ const exportAll = async () => {
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId) ?
-          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+        _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
@@ -517,8 +514,8 @@ const columns = computed(() => {
   }
 
   if (tableData.value.length > 0) {
-    const sortedTasks = allTasks.value.sort((p1, p2) => {
-      if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
+    const sortedTasks = allTasks.value.toSorted((p1, p2) => {
+      if (Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)) {
         return displayNames[p1].order - displayNames[p2].order
       } else {
         return -1
@@ -553,7 +550,7 @@ const tableData = computed(() => {
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`)
       const rawScore = rawOnlyTasks.includes(assessment.taskId) ?
-          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+        _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level, tag_color } = getSupportLevel(percentile);
       scores[assessment.taskId] = {
         percentile: percentileString,

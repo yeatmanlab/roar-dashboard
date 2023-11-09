@@ -8,14 +8,14 @@ import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
-  code: { required: true, default: false },
+  code: { type: String, required: true },
 })
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { isFirekitInit } = storeToRefs(authStore);
 
-watch(isFirekitInit, async (newValue, oldValue) => {
+watch(isFirekitInit, async () => {
   if (props.code) {
     authStore.cleverOAuthRequested = true;
     router.replace({ name: "SignIn" });

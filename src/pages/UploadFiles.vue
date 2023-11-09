@@ -2,15 +2,15 @@
   <div>
     <Toast />
     <FileUpload
-class="mt-3" mode="basic" name="scorereport[]" :custom-upload="true" accept=".csv"
-      :multiple="false" :auto="true" choose-label="Choose a score file" @uploader="onScoreUpload">
+class="mt-3" mode="basic" name="scorereport[]" :custom-upload="true" accept=".csv" :multiple="false"
+      :auto="true" choose-label="Choose a score file" @uploader="onScoreUpload">
       <!-- <template #empty>
         <p>Drag and drop the score file here to upload.</p>
       </template> -->
     </FileUpload>
     <FileUpload
-class="my-3" mode="basic" name="adminreport[]" :custom-upload="true" accept=".csv"
-      :multiple="false" :auto="true" choose-label="Choose an identifier file" @uploader="onAdminUpload">
+class="my-3" mode="basic" name="adminreport[]" :custom-upload="true" accept=".csv" :multiple="false"
+      :auto="true" choose-label="Choose an identifier file" @uploader="onAdminUpload">
       <!-- <template #empty>
         <p>Drag and drop the identifier file here to upload.</p>
       </template> -->
@@ -22,7 +22,6 @@ icon="pi pi-chart-line" label="View Score Report" class="flex-none mb-1 ml-2"
 </template>
 
 <script setup>
-import { useAuthStore } from "@/store/auth";
 import { useScoreStore } from "@/store/scores";
 import { ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
@@ -30,7 +29,6 @@ import { csvFileToJson } from '@/helpers';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const authStore = useAuthStore();
 const scoreStore = useScoreStore();
 const toast = useToast();
 const uploadedFile = ref();
@@ -49,6 +47,4 @@ const submit = () => {
 }
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -7,13 +7,12 @@
 </template>
 <script setup>
 import RoarSWR from '@bdelab/roar-swr';
-import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import _head from 'lodash/head';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
@@ -35,7 +34,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } =
+const { isLoading: isLoadingUserData, data: userData } =
   useQuery({
     queryKey: ['userData', authStore.uid, "studentData"],
     queryFn: () => fetchDocById('users', authStore.uid, ["studentData"]),

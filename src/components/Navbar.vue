@@ -26,22 +26,22 @@ import _get from 'lodash/get'
 
 const router = useRouter()
 const authStore = useAuthStore();
-const { email, roarfirekit } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
-const loggedInItems = [
-  {
-    label: `Logged in as: ${email.value}`,
-    icon: 'pi pi-user',
-    to: '/profile',
-  },
-  {
-    label: 'Log Out',
-    icon: 'pi pi-sign-out',
-    to: '/logout',
-  }
-];
+// const loggedInItems = [
+//   {
+//     label: `Logged in as: ${email.value}`,
+//     icon: 'pi pi-user',
+//     to: '/profile',
+//   },
+//   {
+//     label: 'Log Out',
+//     icon: 'pi pi-sign-out',
+//     to: '/logout',
+//   }
+// ];
 
-const menu = ref();
+// const menu = ref();
 let dropdownItems = ref([
   {
     label: authStore.isAuthenticated ? 'Home' : 'Log in',
@@ -83,14 +83,13 @@ if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') ==
     })
 }
 
+// const toggleMenu = (event) => {
+//   menu.value.toggle(event);
+// };
 
-const toggleMenu = (event) => {
-  menu.value.toggle(event);
-};
-
-const displayInfo = ref(false);
-const openInfo = () => displayInfo.value = true;
-const closeInfo = () => displayInfo.value = false;
+// const displayInfo = ref(false);
+// const openInfo = () => displayInfo.value = true;
+// const closeInfo = () => displayInfo.value = false;
 
 import ROARLogo from "@/assets/RoarLogo.vue";
 

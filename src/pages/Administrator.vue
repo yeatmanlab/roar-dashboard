@@ -57,17 +57,10 @@ import CardAdministration from "@/components/CardAdministration.vue";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { useAuthStore } from "@/store/auth";
 import { useQuery } from '@tanstack/vue-query'
-import _mapValues from "lodash/mapValues";
-import _zip from "lodash/zip";
 
 const initialized = ref(false);
 const page = ref(0);
 const pageLimit = ref(3);
-const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return "pi pi-spin pi-spinner";
-  return "pi pi-refresh";
-});
 
 const authStore = useAuthStore();
 
@@ -82,16 +75,7 @@ const userInfo = ref(
   }
 )
 
-const { isLoading: isLoadingUser, isFetching: isFetchingUser, data: userData } =
-  useQuery({
-    queryKey: ['user', authStore.uid, authStore.userQueryKeyIndex],
-    queryFn: () => fetchDocById('users', authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+const { isLoading: isLoadingClaims, data: userClaims } =
   useQuery({
     queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],
     queryFn: () => fetchDocById('userClaims', authStore.uid),
@@ -122,7 +106,7 @@ const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
 
-const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecords } =
+const { data: totalRecords } =
   useQuery({
     queryKey: ['countAdministrations', orderBy, isSuperAdmin],
     queryFn: () => administrationCounter(orderBy, isSuperAdmin, adminOrgs),
