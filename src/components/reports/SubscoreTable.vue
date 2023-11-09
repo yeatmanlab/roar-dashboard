@@ -1,7 +1,6 @@
 <template>
   <div v-if="scoresDataQuery?.length ?? 0 > 0">
     <h2 class="header-text">ROAR-{{ _toUpper(taskId) }} STUDENT SCORE INFORMATION</h2>
-    <!-- <div>ROAR-{{ _capitalize(taskId) }} Student Score Information</div> -->
     <RoarDataTable
       :columns="columns"
       :data="tableData"
@@ -18,11 +17,8 @@
 </template>
 <script setup>
 import { computed, ref, onMounted } from "vue";
-import _capitalize from "lodash/capitalize"
 import _get from "lodash/get";
 import _set from "lodash/set";
-import _map from "lodash/map";
-import _zip from "lodash/zip";
 import _isEmpty from "lodash/isEmpty";
 import _toUpper from "lodash/toUpper";
 import { useQuery } from '@tanstack/vue-query';
@@ -54,7 +50,6 @@ const onPage = (event) => {
 }
 
 const onSort = (event) => {
-  console.log('sorting subtable')
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
     field: { fieldPath: item.field },
     direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
@@ -127,7 +122,6 @@ const tableData = computed(() => {
     for (const assessment of (assignment?.assessments || [])) {
       if(assessment.taskId === 'letter') {
         if(_get(assessment, 'scores')){
-          console.log('assessment obj', assessment)
           const incorrectLetters = [
             ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
             ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(',')
@@ -147,7 +141,6 @@ const tableData = computed(() => {
       }
       if(assessment.taskId === 'pa') {
         if(_get(assessment, 'scores')) {
-          console.log('assessment obj', assessment)
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
           const last = _get(assessment, 'scores.computed.LSM.roarScore');
           const deletion = _get(assessment, 'scores.computed.DEL.roarScore');
@@ -174,8 +167,7 @@ const tableData = computed(() => {
 })
 
 const exportSelected = (selectedRows) => {
-  console.log('selected rows', selectedRows)
-  const computedExportData = _map(selectedRows, ({ user, assignment, scores }) => {
+  const computedExportData = selectedRows.map(({ user, assignment, scores }) => {
     let tableRow = {
       Username: _get(user, 'username'),
       First: _get(user, 'name.first'),
@@ -205,7 +197,6 @@ const exportSelected = (selectedRows) => {
 
 const exportAll = async () => {
   const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true)
-  console.log('exportData', exportData)
   const computedExportData = exportData.map(({ user, assignment }) => {
     let tableRow = {
       Username: _get(user, 'username'),
