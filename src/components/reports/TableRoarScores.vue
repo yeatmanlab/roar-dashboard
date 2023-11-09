@@ -15,10 +15,10 @@ icon="pi pi-external-link" label="Export All" class="flex-none mb-1 ml-2 p-2"
   </div>
   <!-- TODO: Needs to be replaced with RoarDataTable -->
   <PvDataTable
-ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters" :value="scoreStore.tableRoarScores" :row-hover="true"
-    removable-sort sort-mode="multiple" scroll-height="50vh" :reorderable-columns="true" :resizable-columns="true"
-    column-resize-mode="fit" show-gridlines :virtual-scroller-options="{ itemSize: 44 }" :row="10"
-    data-key="runId" filter-display="menu">
+ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters"
+    :value="scoreStore.tableRoarScores" :row-hover="true" removable-sort sort-mode="multiple" scroll-height="50vh"
+    :reorderable-columns="true" :resizable-columns="true" column-resize-mode="fit" show-gridlines
+    :virtual-scroller-options="{ itemSize: 44 }" :row="10" data-key="runId" filter-display="menu">
     <template #empty>
       No students found.
     </template>
@@ -28,8 +28,8 @@ ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters" :v
     <PvColumn selection-mode="multiple" header-style="width: 3rem"></PvColumn>
 
     <PvColumn field="studentId" header="Student ID" sortable style="min-width: 8rem">
-      <template #body="{ data }">
-        {{ data.studentId }}
+      <template #body="{ colData }">
+        {{ colData.studentId }}
       </template>
       <template #filter="{ filterModel }">
         <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by student ID" />
@@ -37,10 +37,10 @@ ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters" :v
     </PvColumn>
 
     <PvColumn
-header="Grade" field="grade" sortable :show-filter-match-modes="false" :filter-menu-style="{ 'width': '12rem' }"
-      style="min-width: 6rem">
-      <template #body="{ data }">
-        {{ data.grade }}
+header="Grade" field="grade" sortable :show-filter-match-modes="false"
+      :filter-menu-style="{ 'width': '12rem' }" style="min-width: 6rem">
+      <template #body="{ colData }">
+        {{ colData.grade }}
       </template>
       <template #filter="{ filterModel }">
         <div class="mb-3 font-bold">Grade Picker</div>
@@ -53,8 +53,8 @@ v-model="filterModel.value" :options="grades" option-label="id" placeholder="Any
     <PvColumn
 header="age" field="age" sortable :show-filter-match-modes="false" :filter-menu-style="{ 'width': '12rem' }"
       style="min-width: 6rem">
-      <template #body="{ data }">
-        {{ data.age }}
+      <template #body="{ colData }">
+        {{ colData.age }}
       </template>
       <template #filter="{ filterModel }">
         <div class="mb-3 font-bold">Age Picker</div>
@@ -72,45 +72,12 @@ v-model="filterModel.value" :options="ages" option-label="id" placeholder="Any"
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref } from 'vue';
 import { FilterMatchMode, FilterOperator } from "primevue/api";
 import { storeToRefs } from 'pinia';
 import Papa from "papaparse";
 import { flattenObj } from '@/helpers';
 import { useScoreStore } from "@/store/scores";
-
-const data = [
-  {
-    "id": "1",
-    "pid": "demo-1",
-    "grade": 6,
-    "age": 11,
-    "roarScore": 561,
-    "wjStandardScore": 104,
-    "wjPercentile": 61,
-    "riskLevel": "At or Above Average",
-  },
-  {
-    "id": "2",
-    "pid": "demo-2",
-    "grade": 7,
-    "age": 12,
-    "roarScore": 306,
-    "wjStandardScore": 78,
-    "wjPercentile": 7,
-    "riskLevel": "Needs Extra Support",
-  },
-  {
-    "id": "3",
-    "pid": "demo-3",
-    "grade": 7,
-    "age": 12,
-    "roarScore": 501,
-    "wjStandardScore": 94,
-    "wjPercentile": 34,
-    "riskLevel": "Needs Some Support",
-  },
-];
 
 const scoreStore = useScoreStore();
 
@@ -142,14 +109,6 @@ const exportSelectedCSV = async () => {
   a.click();
   document.body.removeChild(a);
 };
-
-onMounted(() => {
-  startProgress();
-})
-
-onBeforeUnmount(() => {
-  endProgress();
-})
 
 const filters = ref({
   roarUid: {

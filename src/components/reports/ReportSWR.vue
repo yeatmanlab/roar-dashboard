@@ -16,65 +16,54 @@ import MarkdownSWR from "@/assets/markdown/reportSWR.md";
 const scoreStore = useScoreStore();
 const tableColumns = ref([
   {
-    "field": "runInfoOrig.name.first", 
-    "header": "First Name", 
+    "field": "runInfoOrig.name.first",
+    "header": "First Name",
     "allowMultipleFilters": true,
     "dataType": "text",
   },
   {
-    "field": "runInfoOrig.name.last", 
-    "header": "Last Name", 
+    "field": "runInfoOrig.name.last",
+    "header": "Last Name",
     "allowMultipleFilters": true,
     "dataType": "text",
   },
   {
-    "field": "runInfoCommon.parsedGrade", 
-    "header": "Grade", 
+    "field": "runInfoCommon.parsedGrade",
+    "header": "Grade",
     "allowMultipleFilters": true,
     "dataType": "text",
     "useMultiSelect": true
   },
   {
-    "field": "runInfoCommon.roarScore", 
-    "header": "SWR ROAR SCORE", 
+    "field": "runInfoCommon.roarScore",
+    "header": "SWR ROAR SCORE",
     "dataType": "numeric",
   },
   {
-    "field": "runInfoCommon.normedPercentile", 
-    "header": "Estimated Woodcock-Johnson Percentile", 
-    "dataType": "numeric",
-  },
-    {
-    "field": "runInfoCommon.normedStandardScore", 
-    "header": "Estimated Woodcock-Johnson Standard Score", 
+    "field": "runInfoCommon.normedPercentile",
+    "header": "Estimated Woodcock-Johnson Percentile",
     "dataType": "numeric",
   },
   {
-    "field": "runInfoCommon.supportLevel", 
-    "header": "Support Level", 
+    "field": "runInfoCommon.normedStandardScore",
+    "header": "Estimated Woodcock-Johnson Standard Score",
+    "dataType": "numeric",
+  },
+  {
+    "field": "runInfoCommon.supportLevel",
+    "header": "Support Level",
     "dataType": "text",
   },
 ]);
 
-
-const globalChartConfig = {
-  $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-  // TODO look at the colors in this example: https://vega.github.io/vega-lite/examples/bar_heatlane.html
-  description: "default settings to be used for all charts",
-  data: {
-    values: scoreStore.scores,
-  },
-};
-
 const distributionByGrade = {
-  // ...globalChartConfig,
   description: "ROAR Score Distribution by Grade Level",
   title: { text: "ROAR Score Distribution", anchor: "middle", fontSize: 18 },
   config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
 
-  data: { values: scoreStore.scores},
+  data: { values: scoreStore.scores },
 
-  mark: "bar", 
+  mark: "bar",
   height: 50,
   width: 500,
 
@@ -113,20 +102,20 @@ const distributionByGrade = {
     },
 
     x: {
-      bin: true,
       field: "runInfoCommon.roarScore",
       title: "ROAR Score",
       bin: { step: 50 },
     },
-    
-    y: { aggregate: "count", 
-         title: "count", 
-         axis: { orient: "right" } },
+
+    y: {
+      aggregate: "count",
+      title: "count",
+      axis: { orient: "right" }
+    },
   },
 };
 
 const normedPercentileDistribution = {
-  // ...globalChartConfig,
   description: "Distribution of Normed Percentiles (all grades)",
   title: {
     text: "Distribution of Woodcock-Johnson Equivalent Percentiles",
@@ -143,7 +132,6 @@ const normedPercentileDistribution = {
   encoding: {
     // thetaEstimate should be changed to percentile
     x: {
-      bin: true,
       field: "runInfoCommon.normedPercentile",
       title: "Percentile (relative to national norms)",
       scale: { domain: [0, 100] },
@@ -166,13 +154,12 @@ const normedPercentileDistribution = {
           supportLevelsType.average,
         ],
         range: [graphColorType.mediumPink, graphColorType.mediumYellow, graphColorType.mediumBlue],
-      }, 
+      },
     },
   },
 };
 
 const firstGradePercentileDistribution = {
-  // ...globalChartConfig,
   description:
     "Distribution of First Grade Woodcock-Johnson Equivalent Percentiles",
   title: {
@@ -192,7 +179,6 @@ const firstGradePercentileDistribution = {
   mark: "bar",
   encoding: {
     x: {
-      bin: true,
       field: "runInfoCommon.normedPercentile",
       title: "Percentile (relative to national norms)",
       scale: { domain: [0, 100] },
@@ -279,7 +265,7 @@ const stackedAutomaticityFirstGrade = {
   width: 600,
   data: { values: scoreStore.scores },
   transform: [
-    { calculate: "indexof(['Limited', 'Average or Above Average'], datum.Automaticity)", as: "order",},
+    { calculate: "indexof(['Limited', 'Average or Above Average'], datum.Automaticity)", as: "order", },
     { filter: "(datum.runInfoOrig.grade == 'Kindergarten') || (datum.runInfoOrig.grade <= 1)" },
   ],
   mark: "bar",
@@ -293,9 +279,9 @@ const stackedAutomaticityFirstGrade = {
       bin: false,
       field: "runInfoOrig.grade",
       title: "grade",
-      axis: { 
-        tickBand: "extent", 
-        labelExpr: "join([if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')", 
+      axis: {
+        tickBand: "extent",
+        labelExpr: "join([if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
       },
 
     },
@@ -323,9 +309,9 @@ const moveTableElements = () => {
 const draw = async () => {
   await embed("#viz-distribution-by-grade", distributionByGrade);
   await embed("#viz-normed-percentile-distribution", normedPercentileDistribution);
-  await embed("#viz-first-grade-percentile-distribution",firstGradePercentileDistribution);
+  await embed("#viz-first-grade-percentile-distribution", firstGradePercentileDistribution);
   await embed("#viz-stacked-support-by-grade", stackedSupportByGrade);
-  await embed("#viz-automaticity-distributions-first-grade",stackedAutomaticityFirstGrade);
+  await embed("#viz-automaticity-distributions-first-grade", stackedAutomaticityFirstGrade);
 };
 
 onMounted(() => {
@@ -337,7 +323,7 @@ onMounted(() => {
 <style scoped>
 p {
   text-align: left;
-  font-size:medium;
+  font-size: medium;
   font-family: "Helvetica Neue", "Source Sans Pro", "Palatino Linotype",
     sans-serif;
 

@@ -13,7 +13,7 @@
   </AppHead>
   <div>
     <PvToast />
-    <Navbar v-if="!navbarBlacklist.includes($route.name)" />
+    <NavBar v-if="!navbarBlacklist.includes($route.name)" />
     <router-view :key="$route.fullPath" />
   </div>
 
@@ -22,7 +22,7 @@
 
 <script setup>
 import { onBeforeMount } from 'vue';
-import Navbar from "@/components/Navbar.vue";
+import NavBar from "@/components/NavBar.vue";
 import { useAuthStore } from "@/store/auth";
 import { ref } from 'vue';
 import { fetchDocById } from "@/helpers/query/utils";

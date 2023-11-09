@@ -1,10 +1,6 @@
 <template>
   <div v-if="scoreStore.scoresReady">
-    <VueShowdown
-      :vue-template="true"
-      :vue-template-data="{ ...scoreStoreRefs }"
-      :markdown="markdownText"
-    />
+    <VueShowdown :vue-template="true" :vue-template-data="{ ...scoreStoreRefs }" :markdown="markdownText" />
   </div>
   <AppSpinner v-else />
 </template>
@@ -13,19 +9,10 @@
 import { onMounted } from "vue";
 import embed from "vega-embed";
 import { useScoreStore } from "@/store/scores";
-import { storeToRefs } from "pinia";
 import markdownText from "@/assets/markdown/reportPA.md?raw";
-import TableRoarScores from "./TableRoarScores.vue";
 
 const scoreStore = useScoreStore();
-const globalChartConfig = {
-  $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-  data: {
-    values: scoreStore.scores,
-  },
-}
 const distributionByGradePA = {
-  // ...globalChartConfig,
   description: "ROAR Score Distribution by Grade Level",
   title: { text: "ROAR PA Score Distribution", anchor: "middle", fontSize: 18 },
   config: { view: { stroke: "#000000", strokeWidth: 1 } },
@@ -70,7 +57,6 @@ const distributionByGradePA = {
     },
     // TODO thetaEstimate should be changed to ROAR score
     x: {
-      bin: true,
       field: "roarTotalCorrect",
       title: "ROAR PA Total Items Correct (out of 57)",
       bin: { step: 5 },
@@ -99,7 +85,7 @@ const stackedSkillByGradePA = {
   ],
   mark: "bar",
   encoding: {
-    x: { aggregate: "count", title: "# of students", axis: { tickMinStep: 5,  } },
+    x: { aggregate: "count", title: "# of students", axis: { tickMinStep: 5, } },
     y: {
       bin: false,
       type: "ordinal",
@@ -115,10 +101,10 @@ const stackedSkillByGradePA = {
           'No Mastery',
           'Some Mastery',
           'Beginning to Exhibit Full Mastery',
-           'Full Mastery',
+          'Full Mastery',
         ],
         //range: ["#aa4599","#342288", "#88ccee", "#44aa99"],
-        range: ["#aa4599","#F8E768", "#b4ddd1", "#44aa99"],
+        range: ["#aa4599", "#F8E768", "#b4ddd1", "#44aa99"],
 
       },
       title: "Skill Classification",
@@ -139,12 +125,12 @@ const skillFocusByGradePA = {
   width: 600,
   data: { values: scoreStore.scores },
   transform: [
-      // convert mastery to focus so we can use sum to count the number who need to work on the skill
-      {calculate: "(datum.masteryFSM==0)?1:0", as: "FSM"},
-      {calculate: "(datum.masteryLSM==0)?1:0", as: "LSM"},
-      {calculate: "(datum.masteryDEL==0)?1:0", as: "DEL"},
+    // convert mastery to focus so we can use sum to count the number who need to work on the skill
+    { calculate: "(datum.masteryFSM==0)?1:0", as: "FSM" },
+    { calculate: "(datum.masteryLSM==0)?1:0", as: "LSM" },
+    { calculate: "(datum.masteryDEL==0)?1:0", as: "DEL" },
   ],
-  "repeat": {"layer": ["FSM", "LSM", "DEL"]},
+  "repeat": { "layer": ["FSM", "LSM", "DEL"] },
   "spec": {
     "mark": "bar",
     "encoding": {
@@ -152,29 +138,28 @@ const skillFocusByGradePA = {
       "y": {
         "field": "grade",
         "type": "nominal",
-        axis: {labelAngle:"0"},
+        axis: { labelAngle: "0" },
       },
       "x": {
         "aggregate": "sum",
-        "field": {"repeat": "layer"},
+        "field": { "repeat": "layer" },
         "type": "quantitative",
         "title": "# of students"
       },
       "color": {
-        "datum": {"repeat": "layer"}, 
+        "datum": { "repeat": "layer" },
         "title": "Skill",
-        scale: {range: ["#be95c4","#5e548e", "#0072b2", ]},
+        scale: { range: ["#be95c4", "#5e548e", "#0072b2",] },
       },
-      "yOffset": {"datum": {"repeat": "layer"}}
+      "yOffset": { "datum": { "repeat": "layer" } }
     }
   },
   "config": {
-    "mark": {"invalid": null}
+    "mark": { "invalid": null }
   }
 };
 
 const normedPercentileDistribution1to4PA = {
-  // ...globalChartConfig,
   description: "Distribution of Normed Percentiles (all grades)",
   title: {
     text: "Distribution of CTOPP Equivalent Percentiles",
@@ -189,23 +174,24 @@ const normedPercentileDistribution1to4PA = {
   data: { values: scoreStore.scores },
 
   transform: [
-    {  calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
-       as: "SupportGrade1to4",
+    {
+      calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+      as: "SupportGrade1to4",
     },
-    {  calculate: "datum.percentileRankCTOPP <= 15? 'Extra Support Needed': datum.percentileRankCTOPP <=30? 'Some Support Needed': 'Average or Above Average' ",
-       as: "SupportGrade5to12",
+    {
+      calculate: "datum.percentileRankCTOPP <= 15? 'Extra Support Needed': datum.percentileRankCTOPP <=30? 'Some Support Needed': 'Average or Above Average' ",
+      as: "SupportGrade5to12",
     },
-    {"filter": "(datum.grade == 'Kindergarten') || (datum.grade <= 4)" },  
+    { "filter": "(datum.grade == 'Kindergarten') || (datum.grade <= 4)" },
   ],
 
   mark: "bar",
   encoding: {
     x: {
-      bin: true,
       field: "percentileRankCTOPP",
       title: "Percentile (relative to national norms)",
       scale: { domain: [0, 100] },
-      bin: { step: 5, "extent":[0,100], },
+      bin: { step: 5, "extent": [0, 100], },
       axis: { tickMinStep: 1 },
     },
     y: { aggregate: "count", title: "count of students" },
@@ -224,7 +210,6 @@ const normedPercentileDistribution1to4PA = {
 };
 
 const normedPercentileDistribution5to12PA = {
-  // ...globalChartConfig,
   description: "Distribution of Normed Percentiles (all grades)",
   title: {
     text: "Distribution of CTOPP Equivalent Percentiles",
@@ -239,23 +224,24 @@ const normedPercentileDistribution5to12PA = {
   data: { values: scoreStore.scores },
 
   transform: [
-    {  calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
-       as: "SupportGrade1to4",
+    {
+      calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+      as: "SupportGrade1to4",
     },
-    {  calculate: "datum.percentileRankCTOPP <= 15? 'Extra Support Needed': datum.percentileRankCTOPP <=30? 'Some Support Needed': 'Average or Above Average' ",
-       as: "SupportGrade5to12",
+    {
+      calculate: "datum.percentileRankCTOPP <= 15? 'Extra Support Needed': datum.percentileRankCTOPP <=30? 'Some Support Needed': 'Average or Above Average' ",
+      as: "SupportGrade5to12",
     },
-    {"filter": "datum.grade >= 5" },  
+    { "filter": "datum.grade >= 5" },
   ],
 
   mark: "bar",
   encoding: {
     x: {
-      bin: true,
       field: "percentileRankCTOPP",
       title: "Percentile (relative to national norms)",
       scale: { domain: [0, 100] },
-      bin: { step: 5, "extent":[0,100], },
+      bin: { step: 5, "extent": [0, 100], },
       axis: { tickMinStep: 1 },
     },
     y: { aggregate: "count", title: "count of students" },
@@ -284,15 +270,17 @@ const stackedSupportByGradePA = {
   width: 600,
   data: { values: scoreStore.scores },
   transform: [
-    {  calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
-       as: "SupportGrade1to4",
+    {
+      calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+      as: "SupportGrade1to4",
     },
-    {  calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
-       as: "SupportGrade5to12",
+    {
+      calculate: "datum.percentileRankCTOPP <= 25? 'Extra Support Needed': datum.percentileRankCTOPP <=50? 'Some Support Needed': 'Average or Above Average' ",
+      as: "SupportGrade5to12",
     },
     {
       calculate:
-      "(datum.grade >=5)? datum.SupportGrade5to12 :datum.SupportGrade1to4 ",
+        "(datum.grade >=5)? datum.SupportGrade5to12 :datum.SupportGrade1to4 ",
       as: "Support",
     },
     {
@@ -303,7 +291,7 @@ const stackedSupportByGradePA = {
   ],
   mark: "bar",
   encoding: {
-    x: { aggregate: "count", title: "# of students", axis: { tickMinStep: 5,  } },
+    x: { aggregate: "count", title: "# of students", axis: { tickMinStep: 5, } },
     y: {
       bin: false,
       type: "ordinal",
@@ -328,39 +316,13 @@ const stackedSupportByGradePA = {
   },
 };
 
-const distributionByGrade = {
-  ...globalChartConfig,
-  description: 'ROAR Score Distribution by Grade Level',
-  mark: 'bar',
-  encoding: {
-    row: { field: "grade" },
-    // TODO thetaEstimate should be changed to ROAR score
-    x: { bin: true, field: 'thetaEstimate' },
-    y: { aggregate: 'count' },
-    color: { field: 'grade' },
-  },
-};
-
-const normedPercentileDistribution = {
-  ...globalChartConfig,
-  description: 'Distribution of Normed Percentiles (all grades)',
-  mark: 'bar',
-  encoding: {
-    // TODO thetaEstimate should be changed to percentile
-    x: { bin: true, field: 'thetaEstimate' },
-    y: { aggregate: 'count' },
-  },
-}
-
 const draw = async () => {
   await embed('#viz-distribution-by-grade-pa', distributionByGradePA);
   await embed("#viz-stacked-skill-by-grade-pa", stackedSkillByGradePA);
   await embed("#viz-skill-focus-by-grade-pa", skillFocusByGradePA);
-
-  await embed('#viz-normed-percentile-distribution-1-4-pa',normedPercentileDistribution1to4PA);
-  await embed('#viz-normed-percentile-distribution-5-12-pa',normedPercentileDistribution5to12PA);
+  await embed('#viz-normed-percentile-distribution-1-4-pa', normedPercentileDistribution1to4PA);
+  await embed('#viz-normed-percentile-distribution-5-12-pa', normedPercentileDistribution5to12PA);
   await embed("#viz-stacked-support-by-grade-pa", stackedSupportByGradePA);
-
 };
 
 onMounted(() => {
@@ -368,6 +330,4 @@ onMounted(() => {
 })
 </script>
 
-<style>
-
-</style>
+<style></style>

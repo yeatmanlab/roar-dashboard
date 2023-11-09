@@ -46,40 +46,40 @@ const getRunInfoCommon = (mergedRun) => {
   }
 };
 
-const getRunInfoTask = (mergedRun) => {
-  switch (mergedRun.taskId) {
-    case 'swr':
-      return processSWRRun(mergedRun);
+// const getRunInfoTask = (mergedRun) => {
+//   switch (mergedRun.taskId) {
+//     case 'swr':
+//       return processSWRRun(mergedRun);
 
-    case 'pa':
-    case 'sre':
-    case 'vocab':
-    default:
-      console.log(mergedRun.taskId, 'missing from switch');
-      break;
-  }
-};
+//     case 'pa':
+//     case 'sre':
+//     case 'vocab':
+//     default:
+//       console.log(mergedRun.taskId, 'missing from switch');
+//       break;
+//   }
+// };
 
-const processSWRRun = () => {
-  return {
-    // fields that vary between tasks
-    subScores: {
-      // These subtask IDs will differ in between tasks
-      fsm: Number,
-      lsm: Number,
-      del: Number,
-    },
+// const processSWRRun = () => {
+//   return {
+//     // fields that vary between tasks
+//     subScores: {
+//       // These subtask IDs will differ in between tasks
+//       fsm: Number,
+//       lsm: Number,
+//       del: Number,
+//     },
 
-    comparisonPercentile: Number,
-    comparisonType: 'Woodcock Johnson',
-    normedPercentile: Number,
-    classifications: {
-      // Here each field can differ depending on the task
-      support: String,
-      automaticity: String,
-    },
-  };
-};
+//     comparisonPercentile: Number,
+//     comparisonType: 'Woodcock Johnson',
+//     normedPercentile: Number,
+//     classifications: {
+//       // Here each field can differ depending on the task
+//       support: String,
+//       automaticity: String,
+//     },
+//   };
+// };
 
 export function thetaToRoarScore(thetaEstimate) {
   return Math.round(100 * (thetaEstimate + 5));
@@ -256,7 +256,7 @@ const gradeComparator = (a, b) => {
 const getRunScores = (subScoresForThisRun) => {
   const taskId = [...new Set(subScoresForThisRun.map((subScore) => subScore.runInfoOrig.taskId))][0];
   switch (taskId) {
-    case 'pa':
+    case 'pa': {
       const paSubScores = subScoresForThisRun
         .map((subScore) => subScore.runInfoOrig)
         .filter((subScore) => ['FSM', 'LSM', 'DEL'].includes(subScore.blockId.toUpperCase()));
@@ -271,12 +271,13 @@ const getRunScores = (subScoresForThisRun) => {
         ...paScore,
         blockId: 'total',
       };
+    }
 
     case 'swr':
       // Assume there is only one subscore for SWR
       return subScoresForThisRun[0];
 
-    case 'sre':
+    case 'sre': {
       // TODO: Confirm SRE blockId names
       const sreSubScores = subScoresForThisRun.filter((subScore) =>
         ['LAB', 'TOSREC'].contains(subScore.blockId.toUpperCase()),
@@ -287,6 +288,7 @@ const getRunScores = (subScoresForThisRun) => {
         sreScore[scoreType] = sreSubScores.reduce((a, b) => a[scoreType] + b[scoreType], 0);
       });
       return sreScore;
+    }
 
     case 'vocab':
       console.log('TODO add sre and vocab cases');

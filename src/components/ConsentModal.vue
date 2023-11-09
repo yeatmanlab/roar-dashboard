@@ -3,6 +3,7 @@
   <PvConfirmDialog group="templating" class="confirm">
     <template #message="slotProps">
       <div class="scrolling-box">
+        // eslint-disable-next-line vue/no-v-html
         <div v-html="markdownToHtml"></div>
       </div>
     </template>

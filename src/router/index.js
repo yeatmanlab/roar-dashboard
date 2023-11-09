@@ -32,37 +32,37 @@ const routes = [
   {
     path: '/game/swr',
     name: 'SWR',
-    component: () => import('../components/tasks/SWR.vue'),
+    component: () => import('../components/tasks/TaskSWR.vue'),
     meta: { pageTitle: 'SWR' },
   },
   {
     path: '/game/swr-es',
     name: 'SWR-ES',
-    component: () => import('../components/tasks/SWR-ES.vue'),
+    component: () => import('../components/tasks/TaskSWR-ES.vue'),
     meta: { pageTitle: 'SWR (ES)' },
   },
   {
     path: '/game/pa',
     name: 'PA',
-    component: () => import('../components/tasks/PA.vue'),
+    component: () => import('../components/tasks/TaskPA.vue'),
     meta: { pageTitle: 'PA' },
   },
   {
     path: '/game/sre',
     name: 'SRE',
-    component: () => import('../components/tasks/SRE.vue'),
+    component: () => import('../components/tasks/TaskSRE.vue'),
     meta: { pageTitle: 'SRE' },
   },
   {
     path: '/game/letter',
     name: 'Letter',
-    component: () => import('../components/tasks/Letter.vue'),
+    component: () => import('../components/tasks/TaskLetter.vue'),
     meta: { pageTitle: 'Letter' },
   },
   {
     path: '/game/multichoice',
     name: 'Multichoice',
-    component: () => import('../components/tasks/Multichoice.vue'),
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
     meta: { pageTitle: 'Multichoice' },
   },
   {
@@ -82,14 +82,14 @@ const routes = [
   {
     path: '/game/cva',
     name: 'Cva',
-    component: () => import('../components/tasks/Multichoice.vue'),
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: { taskId: 'cva' },
     meta: { pageTitle: 'CVA' },
   },
   {
     path: '/game/vocab',
     name: 'Vocab',
-    component: () => import('../components/tasks/Vocab.vue'),
+    component: () => import('../components/tasks/TaskVocab.vue'),
     meta: { pageTitle: 'Vocab' },
   },
   {
