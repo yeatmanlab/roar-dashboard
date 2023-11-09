@@ -24,9 +24,9 @@ id="ms-freeze" :model-value="frozenColumns" :options="inputColumns" option-label
       </span>
     </div>
     <DataTable
-ref="dataTable" v-model:filters="refFilters" :value="computedData" :row-hover="true" :reorderable-columns="true"
-      :resizable-columns="true" :export-filename="exportFilename" removable-sort sort-mode="multiple" show-gridlines
-      filter-display="menu" paginator v-model:selection="selectedRows" :rows="props.pageLimit" :always-show-paginator="true"
+ref="dataTable" v-model:filters="refFilters" v-model:selection="selectedRows" :value="computedData" :row-hover="true"
+      :reorderable-columns="true" :resizable-columns="true" :export-filename="exportFilename" removable-sort sort-mode="multiple"
+      show-gridlines filter-display="menu" paginator :rows="props.pageLimit" :always-show-paginator="true"
       paginator-position="both" :rows-per-page-options="[10, 25, 50, 100]" :total-records="props.totalRecords"
       :lazy="props.lazy" :loading="props.loading" scrollable :select-all="selectAll" @page="onPage($event)"
       @sort="onSort($event)" @select-all-change="onSelectAll" @row-select="onSelectionChange"

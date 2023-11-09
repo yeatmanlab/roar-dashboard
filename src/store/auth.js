@@ -1,14 +1,10 @@
 import { defineStore, acceptHMRUpdate } from 'pinia';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useRouter } from 'vue-router';
+import _isEmpty from 'lodash/isEmpty';
+import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
 import { useGameStore } from '@/store/game';
-
-import _findIndex from 'lodash/findIndex';
-import _assign from 'lodash/assign';
-import _get from 'lodash/get';
-import _isEmpty from 'lodash/isEmpty';
-import _set from 'lodash/set';
-import _union from 'lodash/union';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -136,6 +132,7 @@ export const useAuthStore = () => {
       async initStateFromRedirect() {
         this.spinner = true;
         const enableCookiesCallback = () => {
+          const router = useRouter();
           router.replace({ name: 'EnableCookies' });
         };
         if (this.isFirekitInit) {

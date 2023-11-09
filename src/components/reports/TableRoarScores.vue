@@ -15,8 +15,8 @@ icon="pi pi-external-link" label="Export All" class="flex-none mb-1 ml-2 p-2"
   </div>
   <!-- TODO: Needs to be replaced with RoarDataTable -->
   <DataTable
-ref="runtable" :value="scoreStore.tableRoarScores" :row-hover="true" removable-sort v-model:selection="selectedStudents"
-    sort-mode="multiple" v-model:filters="filters" scroll-height="50vh" :reorderable-columns="true" :resizable-columns="true"
+ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters" :value="scoreStore.tableRoarScores" :row-hover="true"
+    removable-sort sort-mode="multiple" scroll-height="50vh" :reorderable-columns="true" :resizable-columns="true"
     column-resize-mode="fit" show-gridlines :virtual-scroller-options="{ itemSize: 44 }" :row="10"
     data-key="runId" filter-display="menu">
     <template #empty>

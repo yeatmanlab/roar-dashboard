@@ -16,7 +16,7 @@ icon="pi pi-external-link"
       <Button icon="pi pi-external-link" label="Export All Trials" class="flex-none mb-1 ml-2 p-2" @click="exportCSV" />
     </div>
     <DataTable
-ref="trialtable" :value="queryStore.trials" :row-hover="true" removable-sort v-model:selection="selectedTrials"
+ref="trialtable" v-model:selection="selectedTrials" :value="queryStore.trials" :row-hover="true" removable-sort
       sort-mode="multiple" scroll-height="50vh" :reorderable-columns="true" :resizable-columns="true" column-resize-mode="fit"
       show-gridlines :virtual-scroller-options="{ itemSize: 44 }" :row="10" data-key="runId">
       <template #empty>
