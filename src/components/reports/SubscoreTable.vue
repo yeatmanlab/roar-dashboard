@@ -1,6 +1,7 @@
 <template>
   <div v-if="scoresDataQuery?.length ?? 0 > 0">
-    <div>ROAR-{{ _capitalize(taskId) }} Student Score Information</div>
+    <h2 class="header-text">ROAR-{{ _toUpper(taskId) }} STUDENT SCORE INFORMATION</h2>
+    <!-- <div>ROAR-{{ _capitalize(taskId) }} Student Score Information</div> -->
     <RoarDataTable
       :columns="columns"
       :data="tableData"
@@ -8,6 +9,7 @@
       lazy
       :pageLimit="pageLimit"
       @page="onPage($event)"
+      @sort="onSort($event)"
       :loading="isLoadingScores || isFetchingScores"
       @export-all="exportAll"
       @export-selected="exportSelected"
@@ -21,7 +23,8 @@ import _get from "lodash/get";
 import _set from "lodash/set";
 import _map from "lodash/map";
 import _zip from "lodash/zip";
-import _toLower from "lodash/toLower";
+import _isEmpty from "lodash/isEmpty";
+import _toUpper from "lodash/toUpper";
 import { useQuery } from '@tanstack/vue-query';
 import { orderByDefault, fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from "@/helpers/query/assignments";
@@ -48,6 +51,15 @@ const page = ref(0);
 const onPage = (event) => {
   page.value = event.page;
   pageLimit.value = event.rows;
+}
+
+const onSort = (event) => {
+  console.log('sorting subtable')
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
+    field: { fieldPath: item.field },
+    direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
+  }));
+  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
 }
 
 // User Claims
@@ -101,6 +113,7 @@ const columns = computed(() => {
       { field: "scores.pa.firstSound", header: "First Sound", dataType: "text" },
       { field: "scores.pa.lastSound", header: "Last Sound", dataType: "text" },
       { field: "scores.pa.deletion", header: "Deletion", dataType: "text" },
+      { field: "scores.pa.total", header: "Total", dataType: "text" },
       { field: "scores.pa.skills", header: "Skills to work on", dataType: "text"}
     )
   }
@@ -118,7 +131,7 @@ const tableData = computed(() => {
           const incorrectLetters = [
             ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
             ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(',')
-          ].sort((a, b) => _toLower(a) - _toLower(b)).filter(Boolean).join(', ');
+          ].sort((a, b) => _toUpper(a) - _toUpper(b)).filter(Boolean).join(', ');
 
           const incorrectPhonemes = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '').split(',').join(', ')
 
@@ -146,6 +159,7 @@ const tableData = computed(() => {
             firstSound: first,
             lastSound: last,
             deletion: deletion,
+            total: _get(assessment, 'scores.computed.composite.roarScore'),
             skills: skills.join(', ')
           })
         }
@@ -180,6 +194,7 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'))
       _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'))
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'))
+      _set(tableRow, 'Total', _get(scores, 'pa.total'))
       _set(tableRow, 'Skills to Work On', _get(scores, 'pa.skills'))
     }
     return tableRow;
@@ -225,10 +240,11 @@ const exportAll = async () => {
           if(first < 15) skills.push('First Sound Matching')
           if(last < 15) skills.push('Last sound matching')
           if(deletion < 15) skills.push('Deletion')
-          _set(tableRow, '', first)
-          _set(tableRow, '', last)
-          _set(tableRow, '', deletion)
-          _set(tableRow, '', skills.join(', '))
+          _set(tableRow, 'First Sound', first)
+          _set(tableRow, 'Last Sound', last)
+          _set(tableRow, 'Deletion', deletion)
+          _set(tableRow, 'Total', _get(assessment, 'scores.computed.composite.roarScore'))
+          _set(tableRow, 'Skills to Work on', skills.join(', '))
         }
       }
     }
@@ -252,3 +268,9 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) refresh();
 })
 </script>
+<style>
+.header-text {
+  font-size: 2rem;
+  text-align: center;
+}
+</style>
