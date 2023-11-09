@@ -1,20 +1,35 @@
 <template>
-  <div>ROAR-{{ _capitalize(taskId) }} Student Score Information</div>
-  <RoarDataTable :columns="columns" :data="tableData" :totalRecords="totalRecords" lazy :pageLimit="pageLimit" @page="onPage($event)" />
+  <div v-if="scoresDataQuery?.length ?? 0 > 0">
+    <div>ROAR-{{ _capitalize(taskId) }} Student Score Information</div>
+    <RoarDataTable
+      :columns="columns"
+      :data="tableData"
+      :totalRecords="scoresCount"
+      lazy
+      :pageLimit="pageLimit"
+      @page="onPage($event)"
+      :loading="isLoadingScores || isFetchingScores"
+      @export-all="exportAll"
+      @export-selected="exportSelected"
+    />
+  </div>
 </template>
 <script setup>
 import { computed, ref, onMounted } from "vue";
 import _capitalize from "lodash/capitalize"
 import _get from "lodash/get";
 import _set from "lodash/set";
+import _map from "lodash/map";
 import _zip from "lodash/zip";
 import _toLower from "lodash/toLower";
 import { useQuery } from '@tanstack/vue-query';
-import { orderByDefault, exportCsv } from '@/helpers/query/utils';
+import { orderByDefault, fetchDocById, exportCsv } from '@/helpers/query/utils';
+import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from "@/helpers/query/assignments";
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 
 const props = defineProps({
+  taskId: { required: true },
   administrationId: { required: true, default: "" },
   orgType: { required: true, default: "" },
   orgId: { required: true, default: "" },
@@ -53,9 +68,18 @@ let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresData
     enabled: (initialized && claimsLoaded),
     staleTime: 5 * 60 * 1000, // 5 mins
   })
+// Scores count query
+const { isLoading: isLoadingCount, data: scoresCount } =
+  useQuery({
+    queryKey: ['assignments', props.administrationId, props.orgId],
+    queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
+    keepPreviousData: true,
+    enabled: (initialized && claimsLoaded),
+    staleTime: 5 * 60 * 1000,
+  })
 
 const columns = computed(() => {
-  if (props.taskData === undefined) return [];
+  if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
     { field: "user.username", header: "Username", dataType: "text", pinned: true },
     { field: "user.name.first", header: "First Name", dataType: "text" },
@@ -92,11 +116,11 @@ const tableData = computed(() => {
         if(_get(assessment, 'scores')){
           console.log('assessment obj', assessment)
           const incorrectLetters = [
-            ..._get(assessment, 'scores.computed.UppercaseNames.upperIncorrect').split(','),
-            ..._get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect').split(',')
+            ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
+            ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(',')
           ].sort((a, b) => _toLower(a) - _toLower(b)).filter(Boolean).join(', ');
 
-          const incorrectPhonemes = _get(assessment, 'scores.computed.Phonemes.phonemeIncorrect').split(',').join(', ')
+          const incorrectPhonemes = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '').split(',').join(', ')
 
           _set(scores, 'letter', {
             upperCaseScore: _get(assessment, 'scores.computed.LowercaseNames.subScore'),
@@ -134,6 +158,85 @@ const tableData = computed(() => {
     }
   })
 })
+
+const exportSelected = (selectedRows) => {
+  console.log('selected rows', selectedRows)
+  const computedExportData = _map(selectedRows, ({ user, assignment, scores }) => {
+    let tableRow = {
+      Username: _get(user, 'username'),
+      First: _get(user, 'name.first'),
+      Last: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+    }
+    if(props.taskId === 'letter'){
+      _set(tableRow, 'Upper Case', _get(scores, 'letter.upperCaseScore'))
+      _set(tableRow, 'Lower Case', _get(scores, 'letter.lowerCaseScore'))
+      _set(tableRow, 'Phoneme', _get(scores, 'letter.phonemeScore'))
+      _set(tableRow, 'Total', _get(scores, 'letter.totalScore'))
+      _set(tableRow, 'Incorrect Letters', _get(scores, 'letter.incorrectLetters'))
+      _set(tableRow, 'Incorrect Phonemes', _get(scores, 'letter.incorrectPhonemes'))
+    }
+    if(props.taskId === 'pa') {
+      _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'))
+      _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'))
+      _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'))
+      _set(tableRow, 'Skills to Work On', _get(scores, 'pa.skills'))
+    }
+    return tableRow;
+  })
+  exportCsv(computedExportData, 'roar-scores.csv');
+  return;
+}
+
+const exportAll = async () => {
+  const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true)
+  console.log('exportData', exportData)
+  const computedExportData = exportData.map(({ user, assignment }) => {
+    let tableRow = {
+      Username: _get(user, 'username'),
+      First: _get(user, 'name.first'),
+      Last: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+    }
+    for (const assessment of (assignment?.assessments || [])) {
+      if(assessment.taskId === 'letter') {
+        if(_get(assessment, 'scores')){
+          const incorrectLetters = [
+            ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
+            ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(',')
+          ].sort((a, b) => _toLower(a) - _toLower(b)).filter(Boolean).join(', ');
+
+          const incorrectPhonemes = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '').split(',').join(', ')
+
+          _set(tableRow, 'Lower Case', _get(assessment, 'scores.computed.LowercaseNames.subScore'))
+          _set(tableRow, 'Upper Case', _get(assessment, 'scores.computed.UppercaseNames.subScore'))
+          _set(tableRow, 'Phonemes', _get(assessment, 'scores.computed.Phonemes.subScore'))
+          _set(tableRow, 'Total', _get(assessment, 'scores.computed.composite'))
+          _set(tableRow, 'Incorrect Letters', incorrectLetters)
+          _set(tableRow, 'Incorrect Phonemes', incorrectPhonemes)
+        }
+      }
+      if(assessment.taskId === 'pa') {
+        if(_get(assessment, 'scores')) {
+          const first = _get(assessment, 'scores.computed.FSM.roarScore');
+          const last = _get(assessment, 'scores.computed.LSM.roarScore');
+          const deletion = _get(assessment, 'scores.computed.DEL.roarScore');
+          let skills = []
+          if(first < 15) skills.push('First Sound Matching')
+          if(last < 15) skills.push('Last sound matching')
+          if(deletion < 15) skills.push('Deletion')
+          _set(tableRow, '', first)
+          _set(tableRow, '', last)
+          _set(tableRow, '', deletion)
+          _set(tableRow, '', skills.join(', '))
+        }
+      }
+    }
+    return tableRow
+  })
+  exportCsv(computedExportData, 'roar-scores.csv');
+  return;
+}
 
 let unsubscribe;
 const refresh = () => {
