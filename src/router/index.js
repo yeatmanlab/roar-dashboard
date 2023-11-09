@@ -170,7 +170,7 @@ const routes = [
   {
     path: '/administrator',
     name: 'Administrator',
-    component: () => import('../pages/Administrator.vue'),
+    component: () => import('../pages/HomeAdministrator.vue'),
     meta: { pageTitle: 'Administrator', requireAdmin: true },
   },
   {
