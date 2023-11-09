@@ -3,57 +3,64 @@
     <span class="flex-grow-1 flex align-items-start align-content-center text-align-left">
       <b class="align-self-center ml-1">Select students below to export</b>
     </span>
-    <Button icon="pi pi-external-link"
+    <Button
+icon="pi pi-external-link"
       :label="scoreStore.selectedStudents.length !== 0 ? 'Export Selected Students' : 'Select students to enable export'"
       class="flex-none mb-1 ml-2 p-2" :loading="scoreStore.selectedStudents.length === 0"
       :disabled="scoreStore.selectedStudents.length === 0" @click="exportSelectedCSV" />
-    <Button icon="pi pi-external-link" label="Export All" class="flex-none mb-1 ml-2 p-2"
+    <Button
+icon="pi pi-external-link" label="Export All" class="flex-none mb-1 ml-2 p-2"
       :loading="queryStore.selectedRuns.length === 0" :disabled="scoreStore.selectedRuns.length === 0"
       @click="exportAllCSV" />
   </div>
   <!-- TODO: Needs to be replaced with RoarDataTable -->
-  <DataTable :value="scoreStore.tableRoarScores" ref="runtable" :rowHover="true" removableSort sortMode="multiple"
-    scrollHeight="50vh" :reorderableColumns="true" :resizableColumns="true" columnResizeMode="fit" showGridlines
-    :virtualScrollerOptions="{ itemSize: 44 }" :row="10" dataKey="runId" v-model:selection="selectedStudents"
-    v-model:filters="filters" filterDisplay="menu">
+  <DataTable
+ref="runtable" :value="scoreStore.tableRoarScores" :row-hover="true" removable-sort v-model:selection="selectedStudents"
+    sort-mode="multiple" v-model:filters="filters" scroll-height="50vh" :reorderable-columns="true" :resizable-columns="true"
+    column-resize-mode="fit" show-gridlines :virtual-scroller-options="{ itemSize: 44 }" :row="10"
+    data-key="runId" filter-display="menu">
     <template #empty>
       No students found.
     </template>
     <template #loading>
       Loading ROAR scores. Please wait.
     </template>
-    <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+    <Column selection-mode="multiple" header-style="width: 3rem"></Column>
 
     <Column field="studentId" header="Student ID" sortable style="min-width: 8rem">
       <template #body="{ data }">
         {{ data.studentId }}
       </template>
       <template #filter="{ filterModel }">
-        <InputText type="text" v-model="filterModel.value" class="p-column-filter" placeholder="Search by student ID" />
+        <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by student ID" />
       </template>
     </Column>
 
-    <Column header="Grade" field="grade" sortable :showFilterMatchModes="false" :filterMenuStyle="{ 'width': '12rem' }"
+    <Column
+header="Grade" field="grade" sortable :show-filter-match-modes="false" :filter-menu-style="{ 'width': '12rem' }"
       style="min-width: 6rem">
       <template #body="{ data }">
         {{ data.grade }}
       </template>
       <template #filter="{ filterModel }">
         <div class="mb-3 font-bold">Grade Picker</div>
-        <MultiSelect v-model="filterModel.value" :options="grades" optionLabel="id" placeholder="Any"
-          :showToggleAll="false" class="p-column-filter" />
+        <MultiSelect
+v-model="filterModel.value" :options="grades" option-label="id" placeholder="Any"
+          :show-toggle-all="false" class="p-column-filter" />
       </template>
     </Column>
 
-    <Column header="age" field="age" sortable :showFilterMatchModes="false" :filterMenuStyle="{ 'width': '12rem' }"
+    <Column
+header="age" field="age" sortable :show-filter-match-modes="false" :filter-menu-style="{ 'width': '12rem' }"
       style="min-width: 6rem">
       <template #body="{ data }">
         {{ data.age }}
       </template>
       <template #filter="{ filterModel }">
         <div class="mb-3 font-bold">Age Picker</div>
-        <MultiSelect v-model="filterModel.value" :options="ages" optionLabel="id" placeholder="Any"
-          :showToggleAll="false" class="p-column-filter" />
+        <MultiSelect
+v-model="filterModel.value" :options="ages" option-label="id" placeholder="Any"
+          :show-toggle-all="false" class="p-column-filter" />
       </template>
     </Column>
 

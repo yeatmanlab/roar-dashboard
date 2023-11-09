@@ -5,15 +5,17 @@
   <div v-else>
     <div class="flex flex-row flex-wrap w-full gap-2 pt-4 justify-content-end">
       <span class="p-float-label">
-        <MultiSelect id="ms-columns" :modelValue="selectedColumns" :options="inputColumns" optionLabel="header"
-          :maxSelectedLabels="3" @update:modelValue="onColumnToggle" class="w-full md:w-20rem"
-          selectedItemsLabel="{0} columns selected" />
+        <MultiSelect
+id="ms-columns" :model-value="selectedColumns" :options="inputColumns" option-label="header"
+          :max-selected-labels="3" class="w-full md:w-20rem" selected-items-label="{0} columns selected"
+          @update:modelValue="onColumnToggle" />
         <label for="ms-columns">Select Columns</label>
       </span>
       <span class="p-float-label">
-        <MultiSelect id="ms-freeze" :modelValue="frozenColumns" :options="inputColumns" optionLabel="header"
-          :maxSelectedLabels="3" @update:modelValue="onFreezeToggle" class="w-full md:w-20rem"
-          selectedItemsLabel="{0} columns frozen" :showToggleAll="false" />
+        <MultiSelect
+id="ms-freeze" :model-value="frozenColumns" :options="inputColumns" option-label="header"
+          :max-selected-labels="3" class="w-full md:w-20rem" selected-items-label="{0} columns frozen"
+          :show-toggle-all="false" @update:modelValue="onFreezeToggle" />
         <label for="ms-columns">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
@@ -21,21 +23,24 @@
         <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
       </span>
     </div>
-    <DataTable ref="dataTable" :value="computedData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
-      :exportFilename="exportFilename" removableSort sortMode="multiple" showGridlines v-model:filters="refFilters"
-      filterDisplay="menu" paginator :rows="props.pageLimit" :alwaysShowPaginator="true" paginatorPosition="both"
-      :rowsPerPageOptions="[10, 25, 50, 100]" :totalRecords="props.totalRecords" :lazy="props.lazy"
-      :loading="props.loading" scrollable @page="onPage($event)" @sort="onSort($event)" v-model:selection="selectedRows"
-      :selectAll="selectAll" @select-all-change="onSelectAll" @row-select="onSelectionChange"
+    <DataTable
+ref="dataTable" v-model:filters="refFilters" :value="computedData" :row-hover="true" :reorderable-columns="true"
+      :resizable-columns="true" :export-filename="exportFilename" removable-sort sort-mode="multiple" show-gridlines
+      filter-display="menu" paginator v-model:selection="selectedRows" :rows="props.pageLimit" :always-show-paginator="true"
+      paginator-position="both" :rows-per-page-options="[10, 25, 50, 100]" :total-records="props.totalRecords"
+      :lazy="props.lazy" :loading="props.loading" scrollable :select-all="selectAll" @page="onPage($event)"
+      @sort="onSort($event)" @select-all-change="onSelectAll" @row-select="onSelectionChange"
       @row-unselect="onSelectionChange">
-      <Column selectionMode="multiple" headerStyle="width: 3rem" :reorderableColumn="false" frozen />
-      <Column v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
-        :field="col.field" :dataType="col.dataType" :sortable="(col.sort !== false)"
-        :showFilterMatchModes="!col.useMultiSelect" :showFilterOperator="col.allowMultipleFilters === true"
-        :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned" alignFrozen="left">
+      <Column selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
+      <Column
+v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
+        :field="col.field" :data-type="col.dataType" :sortable="(col.sort !== false)"
+        :show-filter-match-modes="!col.useMultiSelect" :show-filter-operator="col.allowMultipleFilters === true"
+        :show-add-button="col.allowMultipleFilters === true" :frozen="col.pinned" align-frozen="left">
         <template #body="{ data }">
           <div v-if="col.tag && _get(data, col.field) !== undefined">
-            <Tag v-if="!col.tagOutlined" :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
+            <Tag
+v-if="!col.tagOutlined" :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
               :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`"
               rounded />
             <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
@@ -44,14 +49,16 @@
             <Chip v-for="chip in _get(data, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
-            <div class="circle" v-if="!col.tagOutlined"
+            <div
+v-if="!col.tagOutlined" class="circle"
                  :style="`background-color: ${_get(data, col.tagColor)};
                           color: ${_get(data, col.tagColor) === 'white' ? 'black' : 'white'}`" />
             <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
           </div>
           <div v-else-if="col.link">
             <router-link :to="{ name: col.routeName, params: data.routeParams }">
-              <Button v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.routeLabel"
+              <Button
+v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.routeLabel"
                 :aria-label="col.routeTooltip" :icon="col.routeIcon" size="small" />
             </router-link>
           </div>
@@ -63,14 +70,17 @@
           </div>
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
-          <InputText v-if="col.dataType === 'text' && !col.useMultiSelect" type="text" v-model="filterModel.value"
+          <InputText
+v-if="col.dataType === 'text' && !col.useMultiSelect" v-model="filterModel.value" type="text"
             class="p-column-filter" placeholder="Search" />
-          <MultiSelect v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
-            placeholder="Any" :showToggleAll="false" class="p-column-filter" />
-          <Calendar v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
-            dateFormat="mm/dd/yy" placeholder="mm/dd/yyyy" />
+          <MultiSelect
+v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
+            placeholder="Any" :show-toggle-all="false" class="p-column-filter" />
+          <Calendar
+v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
+            date-format="mm/dd/yy" placeholder="mm/dd/yyyy" />
           <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
-            <TriStateCheckbox inputId="booleanFilter" v-model="filterModel.value" style="padding-top: 2px;" />
+            <TriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px;" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
           </div>
         </template>

@@ -8,24 +8,27 @@
       <span class="flex-grow-1 flex align-items-start align-content-center text-align-left">
         <b class="align-self-center ml-1">Select trials below to export specific trials</b>
       </span>
-      <Button icon="pi pi-external-link"
+      <Button
+icon="pi pi-external-link"
         :label="queryStore.selectedTrials.length !== 0 ? 'Export Selected Trials' : 'Select trials to enable export'"
         class="flex-none mb-1 ml-2 p-2" :loading="queryStore.selectedTrials.length === 0"
         :disabled="queryStore.selectedTrials.length === 0" @click="exportSelectedCSV" />
       <Button icon="pi pi-external-link" label="Export All Trials" class="flex-none mb-1 ml-2 p-2" @click="exportCSV" />
     </div>
-    <DataTable :value="queryStore.trials" ref="trialtable" :rowHover="true" removableSort sortMode="multiple"
-      scrollHeight="50vh" :reorderableColumns="true" :resizableColumns="true" columnResizeMode="fit" showGridlines
-      :virtualScrollerOptions="{ itemSize: 44 }" :row="10" dataKey="runId" v-model:selection="selectedTrials">
+    <DataTable
+ref="trialtable" :value="queryStore.trials" :row-hover="true" removable-sort v-model:selection="selectedTrials"
+      sort-mode="multiple" scroll-height="50vh" :reorderable-columns="true" :resizable-columns="true" column-resize-mode="fit"
+      show-gridlines :virtual-scroller-options="{ itemSize: 44 }" :row="10" data-key="runId">
       <template #empty>
         No trials found.
       </template>
       <template #loading>
         Loading trial data. Please wait.
       </template>
-      <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+      <Column selection-mode="multiple" header-style="width: 3rem"></Column>
 
-      <Column v-for="col of queryStore.trialColumns" :field="col.field" :header="col.header" :key="col.field"
+      <Column
+v-for="col of queryStore.trialColumns" :key="col.field" :field="col.field" :header="col.header"
         sortable />
     </DataTable>
   </div>

@@ -1,6 +1,6 @@
 <template>
-  <DataTable :value="skeletonData" responsiveLayout="scroll" :scrollable="true" scrollHeight="flex">
-    <Column v-for="col of Object.keys(skeletonData[0])" :field="col" :key="col">
+  <DataTable :value="skeletonData" responsive-layout="scroll" :scrollable="true" scroll-height="flex">
+    <Column v-for="col of Object.keys(skeletonData[0])" :key="col" :field="col">
       <template #header>
         <Skeleton></Skeleton>
       </template>

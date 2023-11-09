@@ -5,13 +5,14 @@
       <div v-if="!created" class="card">
         <h1 class="text-center">Register a new task</h1>
         <!-- <p class="login-title" align="left">Register for ROAR</p> -->
-        <form @submit.prevent="handleNewTaskSubmit(!t$.$invalid)" class="p-fluid">
+        <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!t$.$invalid)">
           <!-- Task name -->
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
               <div class="p-input-icon-right">
                 <label for="taskName">Task Name <span class="required">*</span></label>
-                <InputText v-model="t$.taskName.$model" name="taskName"
+                <InputText
+v-model="t$.taskName.$model" name="taskName"
                   :class="{ 'p-invalid': t$.taskName.$invalid && submitted }" aria-describedby="activation-code-error" />
               </div>
               <span v-if="t$.taskName.$error && submitted">
@@ -27,7 +28,8 @@
             <section class="form-section">
               <div class="p-input-icon-right">
                 <label for="taskId">Task ID <span class="required">*</span></label>
-                <InputText v-model="t$.taskId.$model" name="taskId"
+                <InputText
+v-model="t$.taskId.$model" name="taskId"
                   :class="{ 'p-invalid': t$.taskId.$invalid && submitted }" aria-describedby="activation-code-error" />
               </div>
               <span v-if="t$.taskId.$error && submitted">
@@ -43,7 +45,8 @@
             <section class="form-section">
               <div>
                 <label for="taskURL">Task URL <span class="required">*</span></label>
-                <InputText name="taskURL" v-model="t$.taskURL.$model"
+                <InputText
+v-model="t$.taskURL.$model" name="taskURL"
                   :class="{ 'p-invalid': t$.taskURL.$invalid && submitted }" aria-describedby="first-name-error" />
                 <span v-if="t$.taskURL.$error && submitted">
                   <span v-for="(error, index) of t$.taskURL.$errors" :key="index">
@@ -59,7 +62,7 @@
             <section class="form-section">
               <div>
                 <label for="coverImage">Cover Image (URL)</label>
-                <InputText name="coverImage" v-model="taskFields.coverImage" />
+                <InputText v-model="taskFields.coverImage" name="coverImage" />
               </div>
             </section>
             <!--Description-->
@@ -85,11 +88,11 @@
 
               <InputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <Button icon="pi pi-trash" @click="removeField(taskParams, index)" class="p-button-danger delete-btn" />
+              <Button icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(taskParams, index)" />
             </div>
           </div>
 
-          <Button label="Add Field" @click="addField(taskParams)" class="p-button-success" />
+          <Button label="Add Field" class="p-button-success" @click="addField(taskParams)" />
 
           <div class="form-submit">
             <Button type="submit" label="Submit" class="submit-button" />
@@ -107,7 +110,7 @@
 
     <TabPanel header="Register Variant">
       <div class="card">
-        <form @submit.prevent="handleVariantSubmit(!v$.$invalid)" class="p-fluid">
+        <form class="p-fluid" @submit.prevent="handleVariantSubmit(!v$.$invalid)">
           <h1 class="text-center">Register a new Variant</h1>
 
           <div class="flex flex-column row-gap-3">
@@ -116,10 +119,11 @@
                 <label for="variant-fields">Select an Existing Task (Task ID) <span class="required">*</span></label>
                 <div class="flex gap-2">
                   <label class="ml-7" for="chbx">Search registered tasks only?</label>
-                  <Checkbox inputId="chbx" v-model="registeredTasksOnly" :binary="true" />
+                  <Checkbox v-model="registeredTasksOnly" input-id="chbx" :binary="true" />
                 </div>
               </div>
-              <Dropdown v-model="v$.selectedGame.$model" :options="tasks" optionLabel="id" placeholder="Select a Game"
+              <Dropdown
+v-model="v$.selectedGame.$model" :options="tasks" option-label="id" placeholder="Select a Game"
                 :loading="isFetchingTasks" :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
                 name="variant-fields"></Dropdown>
               <span v-if="v$.selectedGame.$error && submitted">
@@ -127,7 +131,8 @@
                   <small class="p-error">{{ error.$message }}</small>
                 </span>
               </span>
-              <small v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$response"
+              <small
+v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$response"
                 class="p-error">
                 {{ v$.selectedGame.id.required.$message.replace("Value", "Task selection") }}
               </small>
@@ -136,7 +141,8 @@
             <section class="form-section">
               <div class="p-input-icon-right">
                 <label for="variantName">Variant Name <span class="required">*</span></label>
-                <InputText v-model="v$.variantName.$model" name="variantName"
+                <InputText
+v-model="v$.variantName.$model" name="variantName"
                   :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
                   aria-describedby="activation-code-error" />
               </div>
@@ -145,7 +151,8 @@
                   <small class="p-error">{{ error.$message }}</small>
                 </span>
               </span>
-              <small v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$response"
+              <small
+v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$response"
                 class="p-error">
                 {{ v$.variantName.required.$message.replace("Value", "Variant Name") }}
               </small>
@@ -166,11 +173,11 @@
 
               <InputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <Button icon="pi pi-trash" @click="removeField(variantParams, index)" class="p-button-danger delete-btn" />
+              <Button icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(variantParams, index)" />
             </div>
           </div>
 
-          <Button label="Add Field" @click="addField(variantParams)" class="p-button-success" />
+          <Button label="Add Field" class="p-button-success" @click="addField(variantParams)" />
 
           <div class="form-submit">
             <Button type="submit" label="Submit" class="submit-button" />

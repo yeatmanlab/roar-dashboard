@@ -18,8 +18,9 @@
           Upload or drag-and-drop a student list below to begin!
         </Panel>
         <Divider />
-        <FileUpload name="massUploader[]" customUpload @uploader="onFileUpload($event)" accept=".csv" auto
-          :showUploadButton="false" :showCancelButton="false">
+        <FileUpload
+name="massUploader[]" custom-upload accept=".csv" auto :show-upload-button="false"
+          :show-cancel-button="false" @uploader="onFileUpload($event)">
           <template #empty>
             <div class="extra-height">
               <p>Drag and drop files to here to upload.</p>
@@ -49,21 +50,24 @@
           {{ errorMessage }}
         </div>
         <!-- Can't use RoarDataTable to accomodate header dropdowns -->
-        <DataTable ref="dataTable" :value="rawStudentFile" showGridlines :rowHover="true" :resizableColumns="true"
-          paginator :alwaysShowPaginator="false" :rows="10" class="datatable">
+        <DataTable
+ref="dataTable" :value="rawStudentFile" show-gridlines :row-hover="true" :resizable-columns="true"
+          paginator :always-show-paginator="false" :rows="10" class="datatable">
           <Column v-for="col of tableColumns" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <Dropdown v-model="dropdown_model[col.field]" :options="dropdown_options" optionLabel="label"
-                  optionValue="value" optionGroupLabel="label" optionGroupChildren="items"
+                <Dropdown
+v-model="dropdown_model[col.field]" :options="dropdown_options" option-label="label"
+                  option-value="value" option-group-label="label" option-group-children="items"
                   placeholder="What does this column describe?" />
               </div>
             </template>
           </Column>
         </DataTable>
         <div class="submit-container">
-          <Button @click="submitStudents" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
-            :disabled="activeSubmit" />
+          <Button
+label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''" :disabled="activeSubmit"
+            @click="submitStudents" />
         </div>
         <!-- Datatable of error students -->
         <div v-if="showErrorTable" class="error-container">
@@ -74,8 +78,9 @@
             </Button>
           </div>
           <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-          <DataTable ref="errorTable" :value="errorUsers" showGridlines exportFilename="error-datatable-export"
-            :rowHover="true" :resizableColumns="true" paginator :alwaysShowPaginator="false" :rows="10" class="datatable">
+          <DataTable
+ref="errorTable" :value="errorUsers" show-gridlines export-filename="error-datatable-export"
+            :row-hover="true" :resizable-columns="true" paginator :always-show-paginator="false" :rows="10" class="datatable">
             <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
               <template #header>
                 {{ col.header }}

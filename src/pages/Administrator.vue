@@ -1,26 +1,29 @@
 <template>
   <main class="container main">
     <aside class="main-sidebar">
-      <AdministratorSidebar :userInfo="userInfo" :actions="sidebarActions" />
+      <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" />
     </aside>
     <section class="main-body">
       <Panel header="Your administrations">
         <template #icons>
           <label class="mr-2" for="dd-sort">Sort by</label>
-          <Dropdown v-model="sortKey" inputId="dd-sort" :options="sortOptions" optionLabel="label"
+          <Dropdown
+v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
             @change="onSortChange($event)" />
         </template>
 
         <div v-if="initialized && !isLoadingAdministrations">
           <BlockUI :blocked="isFetchingAdministrations">
-            <DataView :key="dataViewKey" :value="administrations" lazy paginator paginatorPosition="top"
-              :totalRecords="totalRecords" :rows="pageLimit" :rowsPerPageOptions="[3, 5, 10, 25]" @page="onPage($event)"
-              dataKey="id">
+            <DataView
+:key="dataViewKey" :value="administrations" lazy paginator paginator-position="top"
+              :total-records="totalRecords" :rows="pageLimit" :rows-per-page-options="[3, 5, 10, 25]" data-key="id"
+              @page="onPage($event)">
               <template #list="slotProps">
                 <div class="mb-2 w-full">
-                  <CardAdministration :key="slotProps.data.id" :id="slotProps.data.id" :title="slotProps.data.name"
+                  <CardAdministration
+:id="slotProps.data.id" :key="slotProps.data.id" :title="slotProps.data.name"
                     :stats="slotProps.data.stats" :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
-                    :assessments="slotProps.data.assessments" :showParams="isSuperAdmin" />
+                    :assessments="slotProps.data.assessments" :show-params="isSuperAdmin" />
                 </div>
               </template>
               <template #empty>

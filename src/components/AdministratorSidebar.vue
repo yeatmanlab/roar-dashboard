@@ -4,7 +4,7 @@
 			<ul v-if="actions" class="sidebar-actions">
 				<li class="sidebar-title"><strong>Actions</strong></li>
 				<li v-for="(action, index) in actions">
-					<router-link :to="action.buttonLink" :key="index">
+					<router-link :key="index" :to="action.buttonLink">
 						<Button :label="action.title" rounded :icon="action.icon" />
 					</router-link>
 				</li>

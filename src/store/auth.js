@@ -52,7 +52,7 @@ export const useAuthStore = () => {
         return state.roarfirekit?.initialized;
       },
       isUserAdmin: (state) => {
-        if (Boolean(state.userClaims?.claims?.super_admin)) return true;
+        if (state.userClaims?.claims?.super_admin) return true;
         if (_isEmpty(_union(...Object.values(state.userClaims?.claims?.minimalAdminOrgs ?? {})))) return false;
         return true;
       },

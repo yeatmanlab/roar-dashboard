@@ -3,10 +3,10 @@
 		<header>
 			<h3 class="class-title">Class Name<br><small class="class-id">{{id}}</small></h3>
 			<router-link
-			  :to="{ name: 'ViewAdministration', params: { id: id } }"
 			  v-slot="{href, route, navigate}"
+			  :to="{ name: 'ViewAdministration', params: { id: id } }"
 			  >
-				<button :href="href" @click="navigate" class='p-button p-button-secondary p-button-outlined'>
+				<button :href="href" class='p-button p-button-secondary p-button-outlined' @click="navigate">
 				  View &rarr;
 				</button>
 			</router-link>

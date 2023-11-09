@@ -47,9 +47,10 @@
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
-            <Dropdown :options="viewOptions" v-model="viewMode" optionLabel="label" optionValue="value" class="ml-2" />
+            <Dropdown v-model="viewMode" :options="viewOptions" option-label="label" option-value="value" class="ml-2" />
           </div>
-          <RoarDataTable :data="tableData" :columns="columns" :totalRecords="scoresCount" lazy :pageLimit="pageLimit"
+          <RoarDataTable
+:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
             @export-all="exportAll" @export-selected="exportSelected" />
         </div>
@@ -256,7 +257,7 @@ let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: scoresData
     queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
     queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page, true),
     keepPreviousData: true,
-    enabled: (initialized && claimsLoaded),
+    enabled: (initialized.value && claimsLoaded),
     staleTime: 5 * 60 * 1000, // 5 mins
   })
 
@@ -266,7 +267,7 @@ const { isLoading: isLoadingCount, data: scoresCount } =
     queryKey: ['assignments', props.administrationId, props.orgId],
     queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
     keepPreviousData: true,
-    enabled: (initialized && claimsLoaded),
+    enabled: (initialized.value && claimsLoaded),
     staleTime: 5 * 60 * 1000,
   })
 

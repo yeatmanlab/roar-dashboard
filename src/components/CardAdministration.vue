@@ -16,11 +16,13 @@
 				<span class="mr-1"><strong>Assessments</strong>:</span>
 				<span v-for="assessmentId in assessmentIds" class="card-inline-list-item">
 					{{ displayNames[assessmentId]?.name ?? assessmentId }}
-					<span v-if="showParams" v-tooltip.top="'Click to view params'" class="pi pi-info-circle cursor-pointer"
+					<span
+v-if="showParams" v-tooltip.top="'Click to view params'" class="pi pi-info-circle cursor-pointer"
 						style="font-size: 1rem" @click="toggleParams($event, assessmentId)" />
 				</span>
-				<OverlayPanel v-if="showParams" v-for="assessmentId in assessmentIds" :ref="paramPanelRefs[assessmentId]">
-					<DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
+				<OverlayPanel v-for="assessmentId in assessmentIds" v-if="showParams" :ref="paramPanelRefs[assessmentId]">
+					<DataTable
+striped-rows class="p-datatable-small" table-style="min-width: 30rem"
 						:value="toEntryObjects(params[assessmentId])">
 						<Column field="key" header="Parameter" style="width: 50%"></Column>
 						<Column field="value" header="Value" style="width: 50%"></Column>
@@ -34,7 +36,8 @@
 				<Button :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
 			</div>
 
-			<TreeTable v-if="showTable" class="mt-3" lazy rowHover :loading="loadingTreeTable" :value="treeTableOrgs"
+			<TreeTable
+v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value="treeTableOrgs"
 				@nodeExpand="onExpand">
 				<Column field="name" header="Name" expander style="width: 20rem"></Column>
 				<Column v-if="props.stats" field="id" header="Completion">
@@ -46,15 +49,17 @@
 					<template #body="{ node }">
 						<span class="p-buttonset m-0">
 							<router-link
-								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
-								v-slot="{ href, route, navigate }">
-								<Button v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
+								v-slot="{ href, route, navigate }"
+								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
+								<Button
+v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
 									aria-label="Completion details" size="small" />
 							</router-link>
 							<router-link
-								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
-								v-slot="{ href, route, navigate }">
-								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
+								v-slot="{ href, route, navigate }"
+								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
+								<Button
+v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
 									size="small" />
 							</router-link>
 						</span>

@@ -7,9 +7,10 @@
       <Panel header="View Users">
         <div v-if="!(isLoading || isLoadingCount)">
           <h2> Users in {{ singularizeFirestoreCollection(orgType) }} {{ orgName }}</h2>
-          <RoarDataTable v-if="users" lazy :columns="columns" :data="users" :pageLimit="pageLimit"
-            :totalRecords="totalRecords" :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
-            @page="onPage($event)" @sort="onSort($event)" :allowExport="false" />
+          <RoarDataTable
+v-if="users" lazy :columns="columns" :data="users" :page-limit="pageLimit"
+            :total-records="totalRecords" :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
+            :allow-export="false" @page="onPage($event)" @sort="onSort($event)" />
         </div>
         <AppSpinner v-else />
       </Panel>

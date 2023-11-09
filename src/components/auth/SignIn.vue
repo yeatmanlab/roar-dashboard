@@ -1,9 +1,10 @@
 <template>
   <div class="card">
-    <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
+    <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <div class="field mt-2">
         <div class="p-input-icon-right">
-          <InputText v-model="v$.email.$model" :class="{ 'p-invalid': invalid }" aria-describedby="email-error"
+          <InputText
+v-model="v$.email.$model" :class="{ 'p-invalid': invalid }" aria-describedby="email-error"
             placeholder="Username or email" />
         </div>
         <small v-if="invalid" class="p-error">Incorrect username/email or password</small>
@@ -16,7 +17,8 @@
           <div v-else-if="allowPassword && allowLink">
             Both allowed
           </div>
-          <Password v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': invalid }" toggleMask
+          <Password
+v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': invalid }" toggle-mask
             show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Password">
             <template #header>
               <h6>Pick a password</h6>

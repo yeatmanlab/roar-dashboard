@@ -2,32 +2,36 @@
   <div class="grid">
     <div class="col-12 md:col-6">
       <Panel class="m-0 p-0" header="Select organizations here">
-        <TabView class="m-0 p-0" v-if="claimsLoaded" lazy v-model:activeIndex="activeIndex">
+        <TabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" class="m-0 p-0" lazy>
           <TabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3">
-              <div class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
-                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'">
+              <div
+v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+                class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
                 <span class="p-float-label">
-                  <Dropdown v-model="selectedDistrict" id="district" inputId="district" :options="allDistricts"
-                    optionLabel="name" optionValue="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts"
+                  <Dropdown
+id="district" v-model="selectedDistrict" input-id="district" :options="allDistricts"
+                    option-label="name" option-value="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts"
                     class="w-full" />
                   <label for="district">Select from district</label>
                 </span>
               </div>
-              <div class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3" v-if="orgType.id === 'classes'">
+              <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
                 <span class="p-float-label">
-                  <Dropdown v-model="selectedSchool" id="school" inputId="school" :options="allSchools" optionLabel="name"
-                    optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
+                  <Dropdown
+id="school" v-model="selectedSchool" input-id="school" :options="allSchools" option-label="name"
+                    option-value="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
                   <label for="school">Select from school</label>
                 </span>
               </div>
             </div>
             <div class="card flex justify-content-center">
-              <Listbox v-model="selectedOrgs[activeOrgType]" :options="orgData" multiple optionLabel="name" class="w-full"
-                listStyle="max-height:20rem">
+              <Listbox
+v-model="selectedOrgs[activeOrgType]" :options="orgData" multiple option-label="name" class="w-full"
+                list-style="max-height:20rem">
                 <template #option="slotProps">
                   <div class="flex align-items-center">
-                    <Checkbox :binary="true" :modelValue="isSelected(activeOrgType, slotProps.option.id)"></Checkbox>
+                    <Checkbox :binary="true" :model-value="isSelected(activeOrgType, slotProps.option.id)"></Checkbox>
                     <div class="ml-2">{{ slotProps.option.name }}</div>
                   </div>
                 </template>
@@ -43,7 +47,8 @@
           <div v-for="orgKey in Object.keys(selectedOrgs)">
             <div v-if="selectedOrgs[orgKey].length > 0">
               <b>{{ _capitalize(orgKey) }}:</b>
-              <Chip class="m-1" v-for="org in selectedOrgs[orgKey]" :key="org.id" removable :label="org.name"
+              <Chip
+v-for="org in selectedOrgs[orgKey]" :key="org.id" class="m-1" removable :label="org.name"
                 @remove="remove(org, orgKey)" />
             </div>
           </div>

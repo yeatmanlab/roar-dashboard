@@ -1,7 +1,7 @@
 <template>
   <main class="container main">
     <aside class="main-sidebar">
-      <AdministratorSidebar :userInfo="userInfo" :actions="sidebarActions" />
+      <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" />
     </aside>
     <section class="main-body">
       <div class="register-container mx-auto md:flex-none">

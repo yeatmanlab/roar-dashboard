@@ -10,8 +10,9 @@
           <p v-if="administrationInfo">Administration: {{ administrationInfo.name }}</p>
         </div>
 
-        <RoarDataTable v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns"
-          :totalRecords="assignmentCount" :loading="isLoadingScores || isFetchingScores" :pageLimit="pageLimit" lazy
+        <RoarDataTable
+v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns"
+          :total-records="assignmentCount" :loading="isLoadingScores || isFetchingScores" :page-limit="pageLimit" lazy
           @page="onPage($event)" @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll" />
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem;" />
@@ -104,7 +105,7 @@ let { isLoading: isLoadingScores, isFetching: isFetchingScores, data: assignment
     queryKey: ['assignments', props.administrationId, props.orgId, pageLimit, page],
     queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
     keepPreviousData: true,
-    enabled: (initialized && claimsLoaded),
+    enabled: (initialized.value && claimsLoaded),
     staleTime: 5 * 60 * 1000, // 5 mins
   })
 
@@ -114,7 +115,7 @@ const { isLoading: isLoadingCount, data: assignmentCount } =
     queryKey: ['assignments', props.administrationId, props.orgId],
     queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
     keepPreviousData: true,
-    enabled: (initialized && claimsLoaded),
+    enabled: (initialized.value && claimsLoaded),
     staleTime: 5 * 60 * 1000,
   })
 

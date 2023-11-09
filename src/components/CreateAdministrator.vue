@@ -14,28 +14,28 @@
           <div class="grid">
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText class="w-full" id="first-name" v-model="firstName" />
+                <InputText id="first-name" v-model="firstName" class="w-full" />
                 <label for="first-name">First Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText class="w-full" id="middle-name" v-model="middleName" />
+                <InputText id="middle-name" v-model="middleName" class="w-full" />
                 <label for="middle-name">Middle Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText class="w-full" id="last-name" v-model="lastName" />
+                <InputText id="last-name" v-model="lastName" class="w-full" />
                 <label for="last-name">Last Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText class="w-full" id="email" v-model="email" />
+                <InputText id="email" v-model="email" class="w-full" />
                 <label for="email">Email</label>
               </span>
             </div>

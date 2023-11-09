@@ -5,8 +5,8 @@
 			<Button label="Add participants" icon="pi pi-user" size="small" class="p-button-rounded p-button-sm" />
 		</template>
 
-		<DataTable v-model:selection="selectedProduct" removableSort :value="products" dataKey="code" tableStyle="min-width: 50rem">
-			<Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+		<DataTable v-model:selection="selectedProduct" removable-sort :value="products" data-key="code" table-style="min-width: 50rem">
+			<Column selection-mode="multiple" header-style="width: 3rem"></Column>
 			<Column field="code" header="Code" sortable></Column>
 			<Column field="name" header="Name"></Column>
 			<Column field="category" header="Category"></Column>

@@ -1,6 +1,6 @@
 <template>
   <div v-if="scoreStore.scoresReady">
-    <MarkdownSWR :scores="scoreStore.scores" :swrStats="scoreStore.swrStats" :columns="tableColumns" />
+    <MarkdownSWR :scores="scoreStore.scores" :swr-stats="scoreStore.swrStats" :columns="tableColumns" />
   </div>
   <AppSpinner v-else />
 </template>

@@ -6,32 +6,37 @@
     <section class="main-body">
       <Panel header="Your organizations">
         <template #icons>
-          <button v-if="isSuperAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-icon mr-2"
+          <button
+v-if="isSuperAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-icon mr-2"
             @click="syncClever">
             <span :class="cleverSyncIcon"></span>
           </button>
         </template>
-        <TabView v-if="claimsLoaded" lazy v-model:activeIndex="activeIndex">
+        <TabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy>
           <TabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3 mt-2">
-              <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
-                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'">
+              <div
+v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
                 <span class="p-float-label">
-                  <Dropdown v-model="selectedDistrict" inputId="district" :options="allDistricts" optionLabel="name"
-                    optionValue="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts" class="w-full" />
+                  <Dropdown
+v-model="selectedDistrict" input-id="district" :options="allDistricts" option-label="name"
+                    option-value="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts" class="w-full" />
                   <label for="district">District</label>
                 </span>
               </div>
-              <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="orgType.id === 'classes'">
+              <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
                 <span class="p-float-label">
-                  <Dropdown v-model="selectedSchool" inputId="school" :options="allSchools" optionLabel="name"
-                    optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
+                  <Dropdown
+v-model="selectedSchool" input-id="school" :options="allSchools" option-label="name"
+                    option-value="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
                   <label for="school">School</label>
                 </span>
               </div>
             </div>
-            <RoarDataTable v-if="tableData" :key="tableKey" lazy :columns="tableColumns" :data="tableData"
-              :pageLimit="pageLimit" :totalRecords="totalRecords"
+            <RoarDataTable
+v-if="tableData" :key="tableKey" lazy :columns="tableColumns" :data="tableData"
+              :page-limit="pageLimit" :total-records="totalRecords"
               :loading="isLoading || isLoadingCount || isFetching || isFetchingCount" @page="onPage($event)"
               @sort="onSort($event)" @export-all="exportAll" />
             <AppSpinner v-else />

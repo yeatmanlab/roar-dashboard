@@ -21,8 +21,9 @@
 
           <div class="field col">
             <span class="p-float-label">
-              <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
-                selectionMode="range" :manualInput="false" showIcon showButtonBar />
+              <Calendar
+v-model="state.dates" :min-date="minStartDate" input-id="dates" :number-of-months="2"
+                selection-mode="range" :manual-input="false" show-icon show-button-bar />
               <label for="dates">Dates</label>
               <small v-if="v$.dates.required.$invalid && submitted" class="p-error">Please select dates.</small>
               <small v-else-if="v$.dates.datesNotNull.$invalid && submitted" class="p-error">Please select both a start
@@ -39,7 +40,7 @@
             <div class="flex flex-row align-items-center justify-content-end">
               <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
               <span>Require sequential?</span>
-              <InputSwitch class="ml-2" v-model="state.sequential" />
+              <InputSwitch v-model="state.sequential" class="ml-2" />
               <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments">
                 <span :class="spinIcon.assessments"></span>
               </button>
@@ -47,8 +48,9 @@
           </template>
 
           <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
-          <PickList v-if="assessments[0].length || assessments[1].length" v-model="assessments"
-            :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id" :stripedRows="true" :pt="{
+          <PickList
+v-if="assessments[0].length || assessments[1].length" v-model="assessments"
+            :show-source-controls="false" list-style="height: 21.375rem" data-key="id" :striped-rows="true" :pt="{
               moveAllToTargetButton: { root: { class: 'hide' } },
               moveAllToSourceButton: { root: { class: 'hide' } },
               targetMoveTopButton: { root: { class: 'hide' } },
@@ -58,7 +60,8 @@
             <template #targetheader>Selected</template>
             <template #item="slotProps">
               <div class="flex flex-wrap p-2 align-items-center gap-3">
-                <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.task.image || backupImage"
+                <img
+class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.task.image || backupImage"
                   :alt="slotProps.item.task.name" />
                 <div class="flex-1 flex flex-column gap-2">
                   <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.task.name }}</span>
@@ -67,10 +70,12 @@
                     <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
                   </div>
                 </div>
-                <Button type="button" v-tooltip.right="'Click to view params'" rounded size="small" icon="pi pi-info"
+                <Button
+v-tooltip.right="'Click to view params'" type="button" rounded size="small" icon="pi pi-info"
                   @click="toggle($event, slotProps.item.id)" />
                 <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
-                  <DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
+                  <DataTable
+striped-rows class="p-datatable-small" table-style="min-width: 30rem"
                     :value="toEntryObjects(slotProps.item.variant.params)">
                     <Column field="key" header="Parameter" style="width: 50%"></Column>
                     <Column field="value" header="Value" style="width: 50%"></Column>

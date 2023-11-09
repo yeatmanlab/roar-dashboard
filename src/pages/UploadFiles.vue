@@ -1,19 +1,22 @@
 <template>
   <div>
     <Toast />
-    <FileUpload class="mt-3" mode="basic" name="scorereport[]" :customUpload="true" @uploader="onScoreUpload"
-      accept=".csv" :multiple="false" :auto="true" chooseLabel="Choose a score file">
+    <FileUpload
+class="mt-3" mode="basic" name="scorereport[]" :custom-upload="true" accept=".csv"
+      :multiple="false" :auto="true" choose-label="Choose a score file" @uploader="onScoreUpload">
       <!-- <template #empty>
         <p>Drag and drop the score file here to upload.</p>
       </template> -->
     </FileUpload>
-    <FileUpload class="my-3" mode="basic" name="adminreport[]" :customUpload="true" @uploader="onAdminUpload"
-      accept=".csv" :multiple="false" :auto="true" chooseLabel="Choose an identifier file">
+    <FileUpload
+class="my-3" mode="basic" name="adminreport[]" :custom-upload="true" accept=".csv"
+      :multiple="false" :auto="true" choose-label="Choose an identifier file" @uploader="onAdminUpload">
       <!-- <template #empty>
         <p>Drag and drop the identifier file here to upload.</p>
       </template> -->
     </FileUpload>
-    <Button icon="pi pi-chart-line" label="View Score Report" class="flex-none mb-1 ml-2"
+    <Button
+icon="pi pi-chart-line" label="View Score Report" class="flex-none mb-1 ml-2"
       :loading="scoreStore.scores.length === 0" :disabled="scoreStore.scores.length === 0" @click="submit" />
   </div>
 </template>

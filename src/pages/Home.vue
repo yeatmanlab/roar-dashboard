@@ -9,7 +9,8 @@
     <Participant v-if="!isAdmin" />
     <Administrator v-else-if="isAdmin" />
   </div>
-  <ConsentModal v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent"
+  <ConsentModal
+v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent"
     @delayed="refreshDocs" />
 </template>
 
@@ -62,7 +63,7 @@ const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.valu
 const isFetching = computed(() => isFetchingClaims.value || isFetchingUserData.value);
 
 const isAdmin = computed(() => {
-  if (Boolean(userClaims.value?.claims?.super_admin)) return true;
+  if (userClaims.value?.claims?.super_admin) return true;
   if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
   return true;
 });

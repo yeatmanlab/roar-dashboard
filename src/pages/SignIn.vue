@@ -1,5 +1,5 @@
 <template>
-  <div class="loading-blur" v-if="spinner">
+  <div v-if="spinner" class="loading-blur">
     <AppSpinner />
   </div>
   <div id="signin-container">
@@ -13,16 +13,16 @@
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">Log in to access your dashboard</h4>
-          <SignIn @submit="authWithEmail" :invalid="incorrect" />
+          <SignIn :invalid="incorrect" @submit="authWithEmail" />
         </section>
         <section class="signin-option-container signin-option-providers">
           <h4 class="signin-option-title">Log in with:</h4>
           <div>
-            <Button @click="authWithGoogle" label="Sign in with Google" class="signin-button">
+            <Button label="Sign in with Google" class="signin-button" @click="authWithGoogle">
               <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Google</span>
             </Button>
-            <Button @click="authWithClever" class="signin-button">
+            <Button class="signin-button" @click="authWithClever">
               <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Clever</span>
             </Button>

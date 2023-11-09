@@ -7,12 +7,12 @@
       </div>
       <div v-else>
         <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
-          <Dropdown :options="adminInfo ?? []" v-model="selectedAdmin" optionLabel="name" inputId="dd-assignment" />
+          <Dropdown v-model="selectedAdmin" :options="adminInfo ?? []" option-label="name" input-id="dd-assignment" />
           <label for="dd-assignment">Select an assignment</label>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <GameTabs :games="assessments" :sequential="isSequential" :userData="userData" />
+          <GameTabs :games="assessments" :sequential="isSequential" :user-data="userData" />
         </div>
       </div>
     </div>
