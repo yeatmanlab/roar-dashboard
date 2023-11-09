@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Administration Progress">
+      <PvPanel header="Administration Progress">
         <div>
           <p v-if="orgInfo">{{ _capitalize(props.orgType) }}: {{ orgInfo.name }}</p>
           <p v-if="administrationInfo">Administration: {{ administrationInfo.name }}</p>
@@ -18,7 +18,7 @@ v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns"
           <AppSpinner style="margin-bottom: 1rem;" />
           <span>Loading Progress Data</span>
         </div>
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>

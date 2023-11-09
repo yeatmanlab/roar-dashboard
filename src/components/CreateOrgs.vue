@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Create a new organization">
+      <PvPanel header="Create a new organization">
         Use this form to create a new organization.
 
         <PvDivider />
@@ -12,7 +12,7 @@
         <div class="grid column-gap-3 mt-5">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
             <span class="p-float-label">
-              <Dropdown
+              <PvDropdown
                 v-model="orgType"
                 input-id="org-type"
                 :options="orgTypes"
@@ -29,7 +29,7 @@
         <div v-if="parentOrgRequired" class="grid mt-4">
           <div class="col-12 md:col-6 lg:col-4">
             <span class="p-float-label">
-              <Dropdown
+              <PvDropdown
                 v-model="state.parentDistrict"
                 input-id="parent-district"
                 :options="districts"
@@ -46,7 +46,7 @@
 
           <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
             <span class="p-float-label">
-              <Dropdown
+              <PvDropdown
                 v-model="state.parentSchool"
                 input-id="parent-school"
                 :options="schools"
@@ -65,7 +65,7 @@
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
-              <InputText id="org-name" v-model="state.orgName" class="w-full" />
+              <PvInputText id="org-name" v-model="state.orgName" class="w-full" />
               <label for="org-name">{{ orgTypeLabel }} Name</label>
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </span>
@@ -73,7 +73,7 @@
 
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
-              <InputText id="org-initial" v-model="state.orgInitials" class="w-full" />
+              <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
               <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
             </span>
@@ -81,7 +81,7 @@
 
           <div v-if="orgType?.singular === 'class'" class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
-              <Dropdown
+              <PvDropdown
                 v-model="state.grade"
                 input-id="grade"
                 :options="grades"
@@ -102,7 +102,7 @@
           <div class="grid column-gap-3">
             <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
               <span class="p-float-label">
-                <InputText v-model="state.ncesId" v-tooltip="ncesTooltip" input-id="nces-id" class="w-full" />
+                <PvInputText v-model="state.ncesId" v-tooltip="ncesTooltip" input-id="nces-id" class="w-full" />
                 <label for="nces-id">NCES ID</label>
               </span>
             </div>
@@ -126,7 +126,7 @@
           <div v-if="state.address?.formattedAddress" class="grid">
             <div class="col-12 mt-3">
               {{ orgTypeLabel }} Address:
-              <Chip :label="state.address.formattedAddress" removable @remove="removeAddress" />
+              <PvChip :label="state.address.formattedAddress" removable @remove="removeAddress" />
             </div>
           </div>
         </div>
@@ -154,10 +154,10 @@
         <div class="grid">
           <div class="col-12">
             <PvConfirmPopup />
-            <Button :label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'" @click="submit" />
+            <PvButton :label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'" @click="submit" />
           </div>
         </div>
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>

@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`">
+      <PvPanel :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`">
         <template #icons>
           <button class="p-panel-header-icon p-link mr-2" @click="refresh">
             <span :class="spinIcon"></span>
@@ -47,7 +47,7 @@
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
-            <Dropdown v-model="viewMode" :options="viewOptions" option-label="label" option-value="value" class="ml-2" />
+            <PvDropdown v-model="viewMode" :options="viewOptions" option-label="label" option-value="value" class="ml-2" />
           </div>
           <RoarDataTable
 :data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
@@ -161,7 +161,7 @@
             By providing classifications for students based on national norms for scoring, you are able to see which
             students can benefit from varying levels of support.</p>
         </div>
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>

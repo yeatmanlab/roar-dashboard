@@ -8,9 +8,9 @@
       </router-link>
       <div class="login-container">
         <!-- <i class="pi pi-bars menu-icon" @click="toggleMenu" /> -->
-        <!-- <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
+        <!-- <PvMenu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
         <router-link :to="{ name: 'SignOut' }" class="signout-button">
-          <Button>Sign Out</Button>
+          <PvButton>Sign Out</PvButton>
         </router-link>
       </div>
     </nav>

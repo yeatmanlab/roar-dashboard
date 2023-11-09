@@ -21,52 +21,52 @@ v-if="showParams" v-tooltip.top="'Click to view params'" class="pi pi-info-circl
 						style="font-size: 1rem" @click="toggleParams($event, assessmentId)" />
 				</span>
 				<div v-if="showParams">
-					<OverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
-						<DataTable
+					<PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+						<PvDataTable
 striped-rows class="p-datatable-small" table-style="min-width: 30rem"
 							:value="toEntryObjects(params[assessmentId])">
-							<Column field="key" header="Parameter" style="width: 50%"></Column>
-							<Column field="value" header="Value" style="width: 50%"></Column>
-						</DataTable>
-					</OverlayPanel>
+							<PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
+							<PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
+						</PvDataTable>
+					</PvOverlayPanel>
 				</div>
 			</div>
 
 			<div class="break my-2"></div>
 
 			<div v-if="isAssigned">
-				<Button :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
+				<PvButton :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
 			</div>
 
 			<PvTreeTable
 v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value="treeTableOrgs"
 				@node-expand="onExpand">
-				<Column field="name" header="Name" expander style="width: 20rem"></Column>
-				<Column v-if="props.stats" field="id" header="Completion">
+				<PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
+				<PvColumn v-if="props.stats" field="id" header="Completion">
 					<template #body="{ node }">
 						<PvChart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
 					</template>
-				</Column>
-				<Column field="id" header="" style="width: 14rem">
+				</PvColumn>
+				<PvColumn field="id" header="" style="width: 14rem">
 					<template #body="{ node }">
 						<span class="p-buttonset m-0">
 							<router-link
 v-slot="{ href, route, navigate }"
 								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
-								<Button
+								<PvButton
 v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
 									aria-label="Completion details" size="small" />
 							</router-link>
 							<router-link
 v-slot="{ href, route, navigate }"
 								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
-								<Button
+								<PvButton
 v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
 									size="small" />
 							</router-link>
 						</span>
 					</template>
-				</Column>
+				</PvColumn>
 			</PvTreeTable>
 		</div>
 	</div>

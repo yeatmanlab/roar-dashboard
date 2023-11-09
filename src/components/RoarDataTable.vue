@@ -5,63 +5,55 @@
   <div v-else>
     <div class="flex flex-row flex-wrap w-full gap-2 pt-4 justify-content-end">
       <span class="p-float-label">
-        <MultiSelect
-id="ms-columns" :model-value="selectedColumns" :options="inputColumns" option-label="header"
+        <PvMultiSelect id="ms-columns" :model-value="selectedColumns" :options="inputColumns" option-label="header"
           :max-selected-labels="3" class="w-full md:w-20rem" selected-items-label="{0} columns selected"
-          @update:modelValue="onColumnToggle" />
+          @update:model-value="onColumnToggle" />
         <label for="ms-columns">Select Columns</label>
       </span>
       <span class="p-float-label">
-        <MultiSelect
-id="ms-freeze" :model-value="frozenColumns" :options="inputColumns" option-label="header"
+        <PvMultiSelect id="ms-freeze" :model-value="frozenColumns" :options="inputColumns" option-label="header"
           :max-selected-labels="3" class="w-full md:w-20rem" selected-items-label="{0} columns frozen"
-          :show-toggle-all="false" @update:modelValue="onFreezeToggle" />
+          :show-toggle-all="false" @update:model-value="onFreezeToggle" />
         <label for="ms-columns">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
-        <Button label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
-        <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
+        <PvButton label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
+        <PvButton label="Export Whole Table" @click="exportCSV(false, $event)" />
       </span>
     </div>
-    <DataTable
-ref="dataTable" v-model:filters="refFilters" v-model:selection="selectedRows" :value="computedData"
+    <PvDataTable ref="dataTable" v-model:filters="refFilters" v-model:selection="selectedRows" :value="computedData"
       :row-hover="true" :reorderable-columns="true" :resizable-columns="true" :export-filename="exportFilename"
       removable-sort sort-mode="multiple" show-gridlines filter-display="menu" paginator :rows="props.pageLimit"
       :always-show-paginator="true" paginator-position="both" :rows-per-page-options="[10, 25, 50, 100]"
       :total-records="props.totalRecords" :lazy="props.lazy" :loading="props.loading" scrollable :select-all="selectAll"
       @page="onPage($event)" @sort="onSort($event)" @select-all-change="onSelectAll" @row-select="onSelectionChange"
       @row-unselect="onSelectionChange">
-      <Column selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
-      <Column
-v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
+      <PvColumn selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
+      <PvColumn v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
         :field="col.field" :data-type="col.dataType" :sortable="(col.sort !== false)"
         :show-filter-match-modes="!col.useMultiSelect" :show-filter-operator="col.allowMultipleFilters === true"
         :show-add-button="col.allowMultipleFilters === true" :frozen="col.pinned" align-frozen="left">
         <template #body="{ colData }">
           <div v-if="col.tag && _get(colData, col.field) !== undefined">
-            <Tag
-v-if="!col.tagOutlined" :severity="_get(colData, col.severityField)" :value="_get(colData, col.field)"
+            <PvTag v-if="!col.tagOutlined" :severity="_get(colData, col.severityField)" :value="_get(colData, col.field)"
               :icon="_get(colData, col.iconField)"
               :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem;`" rounded />
-            <div
-v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
+            <div v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
               style="border: 1px solid black" />
           </div>
           <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
-            <Chip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
+            <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
-            <div
-v-if="!col.tagOutlined" class="circle" :style="`background-color: ${_get(colData, col.tagColor)};
-                          color: ${_get(colData, col.tagColor) === 'white' ? 'black' : 'white'}`" />
-            <div
-v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
+            <div v-if="!col.tagOutlined" class="circle"
+              :style="`background-color: ${_get(colData, col.tagColor)};
+                                                                color: ${_get(colData, col.tagColor) === 'white' ? 'black' : 'white'}`" />
+            <div v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
               style="border: 1px solid black" />
           </div>
           <div v-else-if="col.link">
             <router-link :to="{ name: col.routeName, params: data.routeParams }">
-              <Button
-v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.routeLabel"
+              <PvButton v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.routeLabel"
                 :aria-label="col.routeTooltip" :icon="col.routeIcon" size="small" />
             </router-link>
           </div>
@@ -73,23 +65,20 @@ v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.ro
           </div>
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
-          <InputText
-v-if="col.dataType === 'text' && !col.useMultiSelect" v-model="filterModel.value" type="text"
+          <PvInputText v-if="col.dataType === 'text' && !col.useMultiSelect" v-model="filterModel.value" type="text"
             class="p-column-filter" placeholder="Search" />
-          <MultiSelect
-v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
+          <PvMultiSelect v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
             placeholder="Any" :show-toggle-all="false" class="p-column-filter" />
-          <PvCalendar
-v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
+          <PvCalendar v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
             date-format="mm/dd/yy" placeholder="mm/dd/yyyy" />
           <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
             <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px;" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
           </div>
         </template>
-      </Column>
+      </PvColumn>
       <template #empty> No data found. </template>
-    </DataTable>
+    </PvDataTable>
   </div>
 </template>
 <script setup>

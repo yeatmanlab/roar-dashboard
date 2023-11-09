@@ -6,7 +6,7 @@
         <span class="p-inputgroup-addon">
           <i class="pi pi-database"></i>
         </span>
-        <Dropdown
+        <PvDropdown
 v-model="selectedRootPath" input-id="rootdoc" :options="rootPaths" option-label="label"
           option-group-label="label" option-group-children="items">
           <template #optiongroup="slotProps">
@@ -15,7 +15,7 @@ v-model="selectedRootPath" input-id="rootdoc" :options="rootPaths" option-label=
               <div>{{ slotProps.option.label }}</div>
             </div>
           </template>
-        </Dropdown>
+        </PvDropdown>
       </div>
     </div>
 
@@ -27,7 +27,7 @@ v-model="selectedRootPath" input-id="rootdoc" :options="rootPaths" option-label=
         <span class="p-inputgroup-addon">
           <i class="pi pi-angle-right"></i>
         </span>
-        <MultiSelect
+        <PvMultiSelect
 v-model="selectedTasks" input-id="tasks" :options="queryStore.tasks" option-label="id"
           :loading="!queryStore.tasksReady" :filter="true" filter-placeholder="Filter tasks" placeholder="Select tasks"
           :selection-limit="10" :max-selected-labels="4" :virtual-scroller-options="{ itemSize: 40 }" />
@@ -40,7 +40,7 @@ v-model="selectedTasks" input-id="tasks" :options="queryStore.tasks" option-labe
         <span class="p-inputgroup-addon">
           <i class="pi pi-angle-double-right"></i>
         </span>
-        <MultiSelect
+        <PvMultiSelect
 v-model="selectedVariants" input-id="variants" :options="queryStore.variants" option-label="name"
           option-group-label="task" option-group-children="items" :loading="!queryStore.variantsReady" :filter="true"
           filter-placeholder="Filter variants"
@@ -50,14 +50,14 @@ v-model="selectedVariants" input-id="variants" :options="queryStore.variants" op
     </div>
 
     <div v-if="queryStore.selectedTasks.length === 0" class="field col-12 md:col-12 m-0 p-0">
-      <Message severity="warn" class="text-left m-0" :closable="false">
+      <PvMessage severity="warn" class="text-left m-0" :closable="false">
         Select tasks above to enable to following query fields.
-      </Message>
+      </PvMessage>
     </div>
 
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
-        <MultiSelect
+        <PvMultiSelect
 v-model="queryStore.selectedUsers" input-id="roaruids" :options="queryStore.users"
           option-label="roarUid" :loading="!queryStore.usersReady" :filter="true" filter-placeholder="Filter ROAR UIDs"
           :max-selected-labels="5" :virtual-scroller-options="{ itemSize: 40 }" />
@@ -67,7 +67,7 @@ v-model="queryStore.selectedUsers" input-id="roaruids" :options="queryStore.user
 
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
-        <MultiSelect
+        <PvMultiSelect
 v-model="queryStore.selectedGroups" input-id="groups" :options="queryStore.groups" option-label="id"
           :loading="!queryStore.usersReady" :max-selected-labels="4" />
         <label for="groups">Groups</label>
@@ -76,7 +76,7 @@ v-model="queryStore.selectedGroups" input-id="groups" :options="queryStore.group
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect
+        <PvMultiSelect
 v-model="queryStore.selectedDistricts" input-id="districts" :options="queryStore.districts"
           option-label="id" :loading="!queryStore.usersReady" :max-selected-labels="4" />
         <label for="districts">Districts</label>
@@ -85,7 +85,7 @@ v-model="queryStore.selectedDistricts" input-id="districts" :options="queryStore
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect
+        <PvMultiSelect
 v-model="queryStore.selectedSchools" input-id="schools" :options="queryStore.schools" option-label="id"
           :loading="!queryStore.usersReady" :max-selected-labels="4" />
         <label for="schools">Schools</label>
@@ -94,7 +94,7 @@ v-model="queryStore.selectedSchools" input-id="schools" :options="queryStore.sch
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect
+        <PvMultiSelect
 v-model="queryStore.selectedClasses" input-id="classes" :options="queryStore.classes" option-label="id"
           :loading="!queryStore.usersReady" :max-selected-labels="4" />
         <label for="classes">Classes</label>
@@ -116,7 +116,7 @@ v-model="queryStore.selectedClasses" input-id="classes" :options="queryStore.cla
     </div>
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
-      <Button
+      <PvButton
 class="right-0" :label="queryStore.selectedUsers.length ? 'Submit query' : 'Select users to enable query'"
         icon="pi pi-search" :loading="!queryStore.usersReady || queryStore.selectedUsers.length === 0"
         :disabled="!queryStore.usersReady || queryStore.selectedUsers.length === 0"

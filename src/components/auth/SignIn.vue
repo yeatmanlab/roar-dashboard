@@ -3,7 +3,7 @@
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <div class="field mt-2">
         <div class="p-input-icon-right">
-          <InputText
+          <PvInputText
 v-model="v$.email.$model" :class="{ 'p-invalid': invalid }" aria-describedby="email-error"
             placeholder="Username or email" />
         </div>
@@ -43,7 +43,7 @@ v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': in
           </div>
         </div>
       </div>
-      <Button type="submit" label="Go! &rarr;" class="submit-button" />
+      <PvButton type="submit" label="Go! &rarr;" class="submit-button" />
     </form>
   </div>
 </template>

@@ -18,14 +18,14 @@
         <section class="signin-option-container signin-option-providers">
           <h4 class="signin-option-title">Log in with:</h4>
           <div>
-            <Button label="Sign in with Google" class="signin-button" @click="authWithGoogle">
+            <PvButton label="Sign in with Google" class="signin-button" @click="authWithGoogle">
               <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Google</span>
-            </Button>
-            <Button class="signin-button" @click="authWithClever">
+            </PvButton>
+            <PvButton class="signin-button" @click="authWithClever">
               <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Clever</span>
-            </Button>
+            </PvButton>
           </div>
         </section>
       </section>

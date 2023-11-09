@@ -7,7 +7,7 @@
       </div>
       <div v-else>
         <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
-          <Dropdown v-model="selectedAdmin" :options="adminInfo ?? []" option-label="name" input-id="dd-assignment" />
+          <PvDropdown v-model="selectedAdmin" :options="adminInfo ?? []" option-label="name" input-id="dd-assignment" />
           <label for="dd-assignment">Select an assignment</label>
         </div>
         <div class="tabs-container">
@@ -21,7 +21,7 @@
         <h1>You have no assignments!</h1>
         <p class="text-center">Please contact your administrator to get added to an assignment.</p>
         <router-link :to="{ name: 'SignOut' }">
-          <Button label="Sign out" icon="pi pi-sign-out" />
+          <PvButton label="Sign out" icon="pi pi-sign-out" />
         </router-link>
       </div>
     </div>

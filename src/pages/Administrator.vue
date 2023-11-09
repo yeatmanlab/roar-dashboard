@@ -4,10 +4,10 @@
       <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Your administrations">
+      <PvPanel header="Your administrations">
         <template #icons>
           <label class="mr-2" for="dd-sort">Sort by</label>
-          <Dropdown
+          <PvDropdown
 v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
             @change="onSortChange($event)" />
         </template>
@@ -39,7 +39,7 @@ v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
           <AppSpinner style="margin-bottom: 1rem;" />
           <span>Loading Administrations</span>
         </div>
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>

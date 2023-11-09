@@ -8,8 +8,8 @@
     </div>
     <p style="text-align: center;">Other ways to Login</p>
     <div class="push-top text-center button-container">
-      <Button label="Google" class="signin-button" @click="authWithGoogle" />
-      <Button label="Clever" class="signin-button" @click="authWithGoogle" />
+      <PvButton label="Google" class="signin-button" @click="authWithGoogle" />
+      <PvButton label="Clever" class="signin-button" @click="authWithGoogle" />
     </div>
   </div>
 </template>

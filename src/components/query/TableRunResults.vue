@@ -1,6 +1,6 @@
 <template>
   <div v-if="!queryStore.runsReady">
-    <ProgressBar :value="percentComplete" />
+    <PvProgressBar :value="percentComplete" />
     <SkeletonTable />
   </div>
   <div v-else style="height: 55vh">
@@ -11,10 +11,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { storeToRefs } from 'pinia';
-import _forEach from 'lodash/forEach'
-import _map from 'lodash/map'
-import _get from 'lodash/get'
-import _set from 'lodash/set'
 import { useQueryStore } from "@/store/query";
 import SkeletonTable from "@/components/SkeletonTable.vue";
 
@@ -43,14 +39,14 @@ const endProgress = () => {
 
 const tableColumns = ref([
   {
-    "field": "roarUid", 
-    "header": "Roar Id", 
+    "field": "roarUid",
+    "header": "Roar Id",
     "allowMultipleFilters": true,
     "dataType": "text"
   },
   {
-    "field": "runId", 
-    "header": "Run Id", 
+    "field": "runId",
+    "header": "Run Id",
     "allowMultipleFilters": true,
     "dataType": "text"
   },

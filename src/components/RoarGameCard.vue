@@ -1,12 +1,12 @@
 <template>
-	<Card :id="gameId" :data-completed="completed" class="p-card-game m-4">
+	<PvCard :id="gameId" :data-completed="completed" class="p-card-game m-4">
 		<template #header>
 			<div class="p-card-game-status">
 				<template v-if="completed">
-					<InlineMessage severity="success">Game completed!</InlineMessage>
+					<PvInlineMessage severity="success">Game completed!</PvInlineMessage>
 				</template>
 				<template v-else>
-					<InlineMessage severity="info">Not completed yet</InlineMessage>
+					<PvInlineMessage severity="info">Not completed yet</PvInlineMessage>
 				</template>
 				<div>{{ statusText }}</div>
 			</div>
@@ -20,13 +20,13 @@
 		</template>
 		<template #footer>
 			<router-link :to="{ path: 'game/' + gameId }">
-				<Button :label="playLabel" icon="pi pi-sign-in" />
+				<PvButton :label="playLabel" icon="pi pi-sign-in" />
 			</router-link>
 			<div class="p-card-game-meta">
-				<Tag v-for="(items, index) in metadata" :value="items" />
+				<PvTag v-for="(items, index) in metadata" :key="index" :value="items" />
 			</div>
 		</template>
-	</Card>
+	</PvCard>
 </template>
 
 <script setup>
@@ -101,7 +101,7 @@ const playLabel = ref((props.completed) ? 'Play again' : 'Play');
 		width: 100%;
 		justify-content: space-between;
 
-		// override CSS from <Tag>
+		// override CSS from <PvTag>
 		.p-tag {
 			background: var(--gray);
 			margin-right: .5rem;

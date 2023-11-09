@@ -1,5 +1,5 @@
 <template>
-  <Toast />
+  <PvToast />
   <PvConfirmDialog group="templating" class="confirm">
     <template #message="slotProps">
       <div class="scrolling-box">

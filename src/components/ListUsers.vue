@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="View Users">
+      <PvPanel header="View Users">
         <div v-if="!(isLoading || isLoadingCount)">
           <h2> Users in {{ singularizeFirestoreCollection(orgType) }} {{ orgName }}</h2>
           <RoarDataTable
@@ -13,7 +13,7 @@ v-if="users" lazy :columns="columns" :data="users" :page-limit="pageLimit"
             :allow-export="false" @page="onPage($event)" @sort="onSort($event)" />
         </div>
         <AppSpinner v-else />
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>

@@ -2,15 +2,15 @@
   <AppSpinner v-if="localStorageEmail" />
   <div v-else class="field col">
     <span class="p-float-label">
-      <InputText id="email" v-model="formEmail" />
+      <PvInputText id="email" v-model="formEmail" />
       <label for="email">Email</label>
     </span>
     <div class="col-12 mb-3">
-      <Button label="Finish signing in" @click="loginFromEmailLink(formEmail)" />
+      <PvButton label="Finish signing in" @click="loginFromEmailLink(formEmail)" />
     </div>
   </div>
   <transition-group name="p-message" tag="div">
-    <Message v-for="msg of messages" :key="msg.id" :severity="msg.severity">{{ msg.content }}</Message>
+    <PvMessage v-for="msg of messages" :key="msg.id" :severity="msg.severity">{{ msg.content }}</PvMessage>
   </transition-group>
 </template>
 

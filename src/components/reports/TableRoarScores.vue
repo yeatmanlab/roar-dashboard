@@ -3,18 +3,18 @@
     <span class="flex-grow-1 flex align-items-start align-content-center text-align-left">
       <b class="align-self-center ml-1">Select students below to export</b>
     </span>
-    <Button
+    <PvButton
 icon="pi pi-external-link"
       :label="scoreStore.selectedStudents.length !== 0 ? 'Export Selected Students' : 'Select students to enable export'"
       class="flex-none mb-1 ml-2 p-2" :loading="scoreStore.selectedStudents.length === 0"
       :disabled="scoreStore.selectedStudents.length === 0" @click="exportSelectedCSV" />
-    <Button
+    <PvButton
 icon="pi pi-external-link" label="Export All" class="flex-none mb-1 ml-2 p-2"
       :loading="queryStore.selectedRuns.length === 0" :disabled="scoreStore.selectedRuns.length === 0"
       @click="exportAllCSV" />
   </div>
   <!-- TODO: Needs to be replaced with RoarDataTable -->
-  <DataTable
+  <PvDataTable
 ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters" :value="scoreStore.tableRoarScores" :row-hover="true"
     removable-sort sort-mode="multiple" scroll-height="50vh" :reorderable-columns="true" :resizable-columns="true"
     column-resize-mode="fit" show-gridlines :virtual-scroller-options="{ itemSize: 44 }" :row="10"
@@ -25,18 +25,18 @@ ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters" :v
     <template #loading>
       Loading ROAR scores. Please wait.
     </template>
-    <Column selection-mode="multiple" header-style="width: 3rem"></Column>
+    <PvColumn selection-mode="multiple" header-style="width: 3rem"></PvColumn>
 
-    <Column field="studentId" header="Student ID" sortable style="min-width: 8rem">
+    <PvColumn field="studentId" header="Student ID" sortable style="min-width: 8rem">
       <template #body="{ data }">
         {{ data.studentId }}
       </template>
       <template #filter="{ filterModel }">
-        <InputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by student ID" />
+        <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by student ID" />
       </template>
-    </Column>
+    </PvColumn>
 
-    <Column
+    <PvColumn
 header="Grade" field="grade" sortable :show-filter-match-modes="false" :filter-menu-style="{ 'width': '12rem' }"
       style="min-width: 6rem">
       <template #body="{ data }">
@@ -44,13 +44,13 @@ header="Grade" field="grade" sortable :show-filter-match-modes="false" :filter-m
       </template>
       <template #filter="{ filterModel }">
         <div class="mb-3 font-bold">Grade Picker</div>
-        <MultiSelect
+        <PvMultiSelect
 v-model="filterModel.value" :options="grades" option-label="id" placeholder="Any"
           :show-toggle-all="false" class="p-column-filter" />
       </template>
-    </Column>
+    </PvColumn>
 
-    <Column
+    <PvColumn
 header="age" field="age" sortable :show-filter-match-modes="false" :filter-menu-style="{ 'width': '12rem' }"
       style="min-width: 6rem">
       <template #body="{ data }">
@@ -58,17 +58,17 @@ header="age" field="age" sortable :show-filter-match-modes="false" :filter-menu-
       </template>
       <template #filter="{ filterModel }">
         <div class="mb-3 font-bold">Age Picker</div>
-        <MultiSelect
+        <PvMultiSelect
 v-model="filterModel.value" :options="ages" option-label="id" placeholder="Any"
           :show-toggle-all="false" class="p-column-filter" />
       </template>
-    </Column>
+    </PvColumn>
 
     <!-- <th>SWR Score</th>
     <th>Estimated WJ standard score</th>
     <th>Estimated WJ percentile rank</th>
     <th>Estimated risk level</th> -->
-  </DataTable>
+  </PvDataTable>
 </template>
 
 <script setup>

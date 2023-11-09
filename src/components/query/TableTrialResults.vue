@@ -1,6 +1,6 @@
 <template>
   <div v-if="!queryStore.trialsReady">
-    <ProgressBar :value="percentComplete" />
+    <PvProgressBar :value="percentComplete" />
     <SkeletonTable />
   </div>
   <div v-else style="height: 55vh">
@@ -8,14 +8,14 @@
       <span class="flex-grow-1 flex align-items-start align-content-center text-align-left">
         <b class="align-self-center ml-1">Select trials below to export specific trials</b>
       </span>
-      <Button
+      <PvButton
 icon="pi pi-external-link"
         :label="queryStore.selectedTrials.length !== 0 ? 'Export Selected Trials' : 'Select trials to enable export'"
         class="flex-none mb-1 ml-2 p-2" :loading="queryStore.selectedTrials.length === 0"
         :disabled="queryStore.selectedTrials.length === 0" @click="exportSelectedCSV" />
-      <Button icon="pi pi-external-link" label="Export All Trials" class="flex-none mb-1 ml-2 p-2" @click="exportCSV" />
+      <PvButton icon="pi pi-external-link" label="Export All Trials" class="flex-none mb-1 ml-2 p-2" @click="exportCSV" />
     </div>
-    <DataTable
+    <PvDataTable
 ref="trialtable" v-model:selection="selectedTrials" :value="queryStore.trials" :row-hover="true" removable-sort
       sort-mode="multiple" scroll-height="50vh" :reorderable-columns="true" :resizable-columns="true" column-resize-mode="fit"
       show-gridlines :virtual-scroller-options="{ itemSize: 44 }" :row="10" data-key="runId">
@@ -25,12 +25,12 @@ ref="trialtable" v-model:selection="selectedTrials" :value="queryStore.trials" :
       <template #loading>
         Loading trial data. Please wait.
       </template>
-      <Column selection-mode="multiple" header-style="width: 3rem"></Column>
+      <PvColumn selection-mode="multiple" header-style="width: 3rem"></PvColumn>
 
-      <Column
+      <PvColumn
 v-for="col of queryStore.trialColumns" :key="col.field" :field="col.field" :header="col.header"
         sortable />
-    </DataTable>
+    </PvDataTable>
   </div>
 </template>
 

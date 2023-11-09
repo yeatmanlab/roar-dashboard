@@ -3,7 +3,7 @@
     <h1>Page not found</h1>
     <p>Sorry! We couldn't find that page.</p>
     <router-link :to="{ name: 'Home' }">
-      <Button label="Click here to go to the home page" icon="pi pi-home" />
+      <PvButton label="Click here to go to the home page" icon="pi pi-home" />
     </router-link>
   </div>
 </template>

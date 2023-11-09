@@ -1,5 +1,5 @@
 <template>
-  <Toast />
+  <PvToast />
   <PvTabView>
     <PvTabPanel header="Register Task">
       <div v-if="!created" class="card">
@@ -11,7 +11,7 @@
             <section class="form-section">
               <div class="p-input-icon-right">
                 <label for="taskName">Task Name <span class="required">*</span></label>
-                <InputText
+                <PvInputText
 v-model="t$.taskName.$model" name="taskName"
                   :class="{ 'p-invalid': t$.taskName.$invalid && submitted }" aria-describedby="activation-code-error" />
               </div>
@@ -28,7 +28,7 @@ v-model="t$.taskName.$model" name="taskName"
             <section class="form-section">
               <div class="p-input-icon-right">
                 <label for="taskId">Task ID <span class="required">*</span></label>
-                <InputText
+                <PvInputText
 v-model="t$.taskId.$model" name="taskId"
                   :class="{ 'p-invalid': t$.taskId.$invalid && submitted }" aria-describedby="activation-code-error" />
               </div>
@@ -45,7 +45,7 @@ v-model="t$.taskId.$model" name="taskId"
             <section class="form-section">
               <div>
                 <label for="taskURL">Task URL <span class="required">*</span></label>
-                <InputText
+                <PvInputText
 v-model="t$.taskURL.$model" name="taskURL"
                   :class="{ 'p-invalid': t$.taskURL.$invalid && submitted }" aria-describedby="first-name-error" />
                 <span v-if="t$.taskURL.$error && submitted">
@@ -62,14 +62,14 @@ v-model="t$.taskURL.$model" name="taskURL"
             <section class="form-section">
               <div>
                 <label for="coverImage">Cover Image (URL)</label>
-                <InputText v-model="taskFields.coverImage" name="coverImage" />
+                <PvInputText v-model="taskFields.coverImage" name="coverImage" />
               </div>
             </section>
             <!--Description-->
             <section class="form-section">
               <div class="p-input-icon-right">
                 <label for="description">Description </label>
-                <InputText v-model="taskFields.description" name="description" />
+                <PvInputText v-model="taskFields.description" name="description" />
               </div>
             </section>
           </div>
@@ -78,24 +78,24 @@ v-model="t$.taskURL.$model" name="taskURL"
 
           <div v-for="(param, index) in taskParams" :key="index">
             <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-              <InputText v-model="param.name" placeholder="Name" />
+              <PvInputText v-model="param.name" placeholder="Name" />
 
-              <Dropdown v-model="param.type" :options="typeOptions" />
+              <PvDropdown v-model="param.type" :options="typeOptions" />
 
-              <InputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
+              <PvInputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
 
-              <Dropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
+              <PvDropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
 
-              <InputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
+              <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <Button icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(taskParams, index)" />
+              <PvButton icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(taskParams, index)" />
             </div>
           </div>
 
-          <Button label="Add Field" class="p-button-success" @click="addField(taskParams)" />
+          <PvButton label="Add Field" class="p-button-success" @click="addField(taskParams)" />
 
           <div class="form-submit">
-            <Button type="submit" label="Submit" class="submit-button" />
+            <PvButton type="submit" label="Submit" class="submit-button" />
           </div>
         </form>
       </div>
@@ -119,13 +119,13 @@ v-model="t$.taskURL.$model" name="taskURL"
                 <label for="variant-fields">Select an Existing Task (Task ID) <span class="required">*</span></label>
                 <div class="flex gap-2">
                   <label class="ml-7" for="chbx">Search registered tasks only?</label>
-                  <Checkbox v-model="registeredTasksOnly" input-id="chbx" :binary="true" />
+                  <PvCheckbox v-model="registeredTasksOnly" input-id="chbx" :binary="true" />
                 </div>
               </div>
-              <Dropdown
+              <PvDropdown
 v-model="v$.selectedGame.$model" :options="tasks" option-label="id" placeholder="Select a Game"
                 :loading="isFetchingTasks" :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
-                name="variant-fields"></Dropdown>
+                name="variant-fields"></PvDropdown>
               <span v-if="v$.selectedGame.$error && submitted">
                 <span v-for="(error, index) of v$.selectedGame.$errors" :key="index">
                   <small class="p-error">{{ error.$message }}</small>
@@ -141,7 +141,7 @@ v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$
             <section class="form-section">
               <div class="p-input-icon-right">
                 <label for="variantName">Variant Name <span class="required">*</span></label>
-                <InputText
+                <PvInputText
 v-model="v$.variantName.$model" name="variantName"
                   :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
                   aria-describedby="activation-code-error" />
@@ -163,24 +163,24 @@ v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$re
 
           <div v-for="(param, index) in variantParams" :key="index">
             <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-              <InputText v-model="param.name" placeholder="Name" />
+              <PvInputText v-model="param.name" placeholder="Name" />
 
-              <Dropdown v-model="param.type" :options="typeOptions" />
+              <PvDropdown v-model="param.type" :options="typeOptions" />
 
-              <InputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
+              <PvInputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
 
-              <Dropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
+              <PvDropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
 
-              <InputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
+              <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <Button icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(variantParams, index)" />
+              <PvButton icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(variantParams, index)" />
             </div>
           </div>
 
-          <Button label="Add Field" class="p-button-success" @click="addField(variantParams)" />
+          <PvButton label="Add Field" class="p-button-success" @click="addField(variantParams)" />
 
           <div class="form-submit">
-            <Button type="submit" label="Submit" class="submit-button" />
+            <PvButton type="submit" label="Submit" class="submit-button" />
           </div>
         </form>
       </div>

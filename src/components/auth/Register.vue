@@ -6,18 +6,18 @@
       <div class="mt-4 name-container">
         <div>
           <label for="firstName">First Name</label>
-          <InputText name="firstName" />
+          <PvInputText name="firstName" />
         </div>
         <div>
           <label for="lastName">Last Name</label>
-          <InputText name="lastName" />
+          <PvInputText name="lastName" />
         </div>
       </div>
       <!--Username / Email-->
       <div class="field mt-4">
         <div class="p-input-icon-right">
           <label for="username">Username or Email <span class="required">*</span></label>
-          <InputText
+          <PvInputText
 v-model="v$.email.$model" name="username" :class="{ 'p-invalid': v$.email.$invalid && submitted }"
             aria-describedby="email-error" />
         </div>
@@ -35,7 +35,7 @@ v-model="v$.email.$model" name="username" :class="{ 'p-invalid': v$.email.$inval
         <div class="flex justify-content-between">
           <label>Date of Birth <span class="required">*</span></label>
           <div class="flex align-items-center">
-            <Checkbox v-model="yearOnlyCheck" :binary="true" name="yearOnly" />
+            <PvCheckbox v-model="yearOnlyCheck" :binary="true" name="yearOnly" />
             <label for="yearOnly" class="ml-2">Use Year Only</label>
           </div>
         </div>
@@ -55,21 +55,21 @@ v-model="v$.dob.$model" view="year" date-format="yy" model-value="string" show-i
       <!--Grade-->
       <div class="mt-4 mb-5">
         <label for="grade">Grade <span class="required">*</span></label>
-        <Dropdown
-v-model="v$.grade.$model" :options="gradeOptions" option-label="label" option-value="value" name="grade"
-          :class="{ 'p-invalid': v$.grade.$invalid && submitted }" />
+        <PvDropdown
+v-model="v$.grade.$model" :options="gradeOptions" option-label="label" option-value="value"
+          name="grade" :class="{ 'p-invalid': v$.grade.$invalid && submitted }" />
         <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{
           v$.grade.required.$message.replace("Value", "Grade") }}</small>
       </div>
       <!--English Language Level-->
       <div class="mt-4 mb-5">
         <label for="ell">English Language Level</label>
-        <Dropdown v-model="v$.ell.$model" :options="eLLOptions" option-label="label" option-value="value" name="ell" />
+        <PvDropdown v-model="v$.ell.$model" :options="eLLOptions" option-label="label" option-value="value" name="ell" />
       </div>
       <!--Sex-->
       <div class="mt-4 mb-5">
         <label for="sex">Gender</label>
-        <Dropdown v-model="v$.sex.$model" :options="sexOptions" option-label="label" option-value="value" name="sex" />
+        <PvDropdown v-model="v$.sex.$model" :options="sexOptions" option-label="label" option-value="value" name="sex" />
       </div>
       <!--Password-->
       <div class="field mt-4 mb-5">
@@ -114,13 +114,13 @@ v-model="v$.password.$model" name="password"
       </div>
       <!--Accept Checkbox-->
       <div class="field-checkbox terms-checkbox">
-        <Checkbox
+        <PvCheckbox
 :id="`accept-${isRegistering ? 'register' : 'login'}`" v-model="v$.accept.$model" name="accept"
           value="Accept" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
         <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and
           conditions</label>
       </div>
-      <Button type="submit" label="Submit" class="submit-button" />
+      <PvButton type="submit" label="Submit" class="submit-button" />
     </form>
   </div>
 </template>

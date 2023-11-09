@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Create a new administration">
+      <PvPanel header="Create a new administration">
         Use this form to create a new administration and assign it to organizations.
 
         <PvDivider />
@@ -12,7 +12,7 @@
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
-              <InputText id="administration-name" v-model="state.administrationName" />
+              <PvInputText id="administration-name" v-model="state.administrationName" />
               <label for="administration-name">Administration Name</label>
               <small v-if="v$.administrationName.$invalid && submitted" class="p-error">Please name your
                 administration</small>
@@ -35,12 +35,12 @@ v-model="state.dates" :min-date="minStartDate" input-id="dates" :number-of-month
 
         <OrgPicker @selection="selection($event)" />
 
-        <Panel class="mt-3" header="Select assessments for this administration">
+        <PvPanel class="mt-3" header="Select assessments for this administration">
           <template #icons>
             <div class="flex flex-row align-items-center justify-content-end">
               <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
               <span>Require sequential?</span>
-              <InputSwitch v-model="state.sequential" class="ml-2" />
+              <PvInputSwitch v-model="state.sequential" class="ml-2" />
               <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments">
                 <span :class="spinIcon.assessments"></span>
               </button>
@@ -48,7 +48,7 @@ v-model="state.dates" :min-date="minStartDate" input-id="dates" :number-of-month
           </template>
 
           <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
-          <PickList
+          <PvPickList
 v-if="assessments[0].length || assessments[1].length" v-model="assessments"
             :show-source-controls="false" list-style="height: 21.375rem" data-key="id" :striped-rows="true" :pt="{
               moveAllToTargetButton: { root: { class: 'hide' } },
@@ -70,30 +70,30 @@ class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.task.ima
                     <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
                   </div>
                 </div>
-                <Button
+                <PvButton
 v-tooltip.right="'Click to view params'" type="button" rounded size="small" icon="pi pi-info"
                   @click="toggle($event, slotProps.item.id)" />
-                <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
-                  <DataTable
+                <PvOverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
+                  <PvDataTable
 striped-rows class="p-datatable-small" table-style="min-width: 30rem"
                     :value="toEntryObjects(slotProps.item.variant.params)">
-                    <Column field="key" header="Parameter" style="width: 50%"></Column>
-                    <Column field="value" header="Value" style="width: 50%"></Column>
-                  </DataTable>
-                </OverlayPanel>
+                    <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
+                    <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
+                  </PvDataTable>
+                </PvOverlayPanel>
               </div>
             </template>
-          </PickList>
+          </PvPickList>
           <div v-else class="loading-container">
             <AppSpinner style="margin-bottom: 1rem;" />
             <span>Loading Assessments</span>
           </div>
-        </Panel>
+        </PvPanel>
 
         <div class="col-12 mb-3">
-          <Button label="Create Administration" @click="submit" />
+          <PvButton label="Create Administration" @click="submit" />
         </div>
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>

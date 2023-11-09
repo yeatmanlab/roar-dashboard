@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Your organizations">
+      <PvPanel header="Your organizations">
         <template #icons>
           <button
 v-if="isSuperAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-icon mr-2"
@@ -19,7 +19,7 @@ v-if="isSuperAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-ico
 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
                 class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
                 <span class="p-float-label">
-                  <Dropdown
+                  <PvDropdown
 v-model="selectedDistrict" input-id="district" :options="allDistricts" option-label="name"
                     option-value="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts" class="w-full" />
                   <label for="district">District</label>
@@ -27,7 +27,7 @@ v-model="selectedDistrict" input-id="district" :options="allDistricts" option-la
               </div>
               <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
                 <span class="p-float-label">
-                  <Dropdown
+                  <PvDropdown
 v-model="selectedSchool" input-id="school" :options="allSchools" option-label="name"
                     option-value="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
                   <label for="school">School</label>
@@ -43,7 +43,7 @@ v-if="tableData" :key="tableKey" lazy :columns="tableColumns" :data="tableData"
           </PvTabPanel>
         </PvTabView>
         <AppSpinner v-else />
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>

@@ -6,7 +6,7 @@
     <section class="main-body">
       <!--Upload file section-->
       <div v-if="!isFileUploaded">
-        <Panel header="Add Participants">
+        <PvPanel header="Add Participants">
           The following fields are required for registering a student:
           <ul>
             <li>username</li>
@@ -16,9 +16,9 @@
             <li>Either a group OR a district and school</li>
           </ul>
           Upload or drag-and-drop a student list below to begin!
-        </Panel>
+        </PvPanel>
         <PvDivider />
-        <FileUpload
+        <PvFileUpload
 name="massUploader[]" custom-upload accept=".csv" auto :show-upload-button="false"
           :show-cancel-button="false" @uploader="onFileUpload($event)">
           <template #empty>
@@ -26,12 +26,12 @@ name="massUploader[]" custom-upload accept=".csv" auto :show-upload-button="fals
               <p>Drag and drop files to here to upload.</p>
             </div>
           </template>
-        </FileUpload>
+        </PvFileUpload>
       </div>
       <!--DataTable with raw Student-->
       <div v-if="isFileUploaded">
         <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
-        <Panel header="Assigning participant data" class="mb-4">
+        <PvPanel header="Assigning participant data" class="mb-4">
           <p>Use the dropdowns below to properly assign each column. </p>
           <p>Columns that are not assigned will not be imported. But please note that a column has to be assigned for each
             of the required fields:</p>
@@ -43,29 +43,29 @@ name="massUploader[]" custom-upload accept=".csv" auto :show-upload-button="fals
             <li>Either a group OR a district and school</li>
           </ul>
 
-          <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
-        </Panel>
+          <PvMessage severity="info" :closable="false">You can scroll left-to-right to see more columns</PvMessage>
+        </PvPanel>
 
         <div v-if="errorMessage" class="error-box">
           {{ errorMessage }}
         </div>
         <!-- Can't use RoarDataTable to accomodate header dropdowns -->
-        <DataTable
+        <PvDataTable
 ref="dataTable" :value="rawStudentFile" show-gridlines :row-hover="true" :resizable-columns="true"
           paginator :always-show-paginator="false" :rows="10" class="datatable">
-          <Column v-for="col of tableColumns" :key="col.field" :field="col.field">
+          <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <Dropdown
+                <PvDropdown
 v-model="dropdown_model[col.field]" :options="dropdown_options" option-label="label"
                   option-value="value" option-group-label="label" option-group-children="items"
                   placeholder="What does this column describe?" />
               </div>
             </template>
-          </Column>
-        </DataTable>
+          </PvColumn>
+        </PvDataTable>
         <div class="submit-container">
-          <Button
+          <PvButton
 label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''" :disabled="activeSubmit"
             @click="submitStudents" />
         </div>
@@ -73,21 +73,21 @@ label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''" :
         <div v-if="showErrorTable" class="error-container">
           <div class="error-header">
             <h3>Error Users</h3>
-            <Button @click="downloadErrorTable($event)">
+            <PvButton @click="downloadErrorTable($event)">
               Download Table
-            </Button>
+            </PvButton>
           </div>
           <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-          <DataTable
+          <PvDataTable
 ref="errorTable" :value="errorUsers" show-gridlines export-filename="error-datatable-export"
             :row-hover="true" :resizable-columns="true" paginator :always-show-paginator="false" :rows="10"
             class="datatable">
-            <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+            <PvColumn v-for="col of errorUserColumns" :key="col.field" :field="col.field">
               <template #header>
                 {{ col.header }}
               </template>
-            </Column>
-          </DataTable>
+            </PvColumn>
+          </PvDataTable>
         </div>
       </div>
 

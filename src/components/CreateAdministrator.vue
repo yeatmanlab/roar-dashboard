@@ -4,7 +4,7 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Create a new administrator account">
+      <PvPanel header="Create a new administrator account">
         Use this form to create a new user and give them administrator access to
         selected organizations.
 
@@ -14,28 +14,28 @@
           <div class="grid">
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText id="first-name" v-model="firstName" class="w-full" />
+                <PvInputText id="first-name" v-model="firstName" class="w-full" />
                 <label for="first-name">First Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText id="middle-name" v-model="middleName" class="w-full" />
+                <PvInputText id="middle-name" v-model="middleName" class="w-full" />
                 <label for="middle-name">Middle Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText id="last-name" v-model="lastName" class="w-full" />
+                <PvInputText id="last-name" v-model="lastName" class="w-full" />
                 <label for="last-name">Last Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText id="email" v-model="email" class="w-full" />
+                <PvInputText id="email" v-model="email" class="w-full" />
                 <label for="email">Email</label>
               </span>
             </div>
@@ -47,7 +47,7 @@
 
           <div class="grid">
             <div class="col-12">
-              <Button label="Create Administrator" @click="submit" />
+              <PvButton label="Create Administrator" @click="submit" />
             </div>
           </div>
         </div>
@@ -56,7 +56,7 @@
           <span v-if="initialized">Registering new administrator...</span>
           <span v-else>Initializing...</span>
         </div>
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>
