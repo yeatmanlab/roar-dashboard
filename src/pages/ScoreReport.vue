@@ -273,7 +273,6 @@ const onPage = (event) => {
 }
 
 const onSort = (event) => {
-  console.log('sorting')
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
     field: { fieldPath: item.field },
     direction: item.order === 1 ? "ASCENDING" : "DESCENDING",
