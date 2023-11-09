@@ -156,7 +156,6 @@ import _toUpper from 'lodash/toUpper'
 import _round from 'lodash/round';
 import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
-import _set from 'lodash/set'
 import _map from 'lodash/map'
 import _keys from 'lodash/keys'
 import _pick from 'lodash/pick'
@@ -538,10 +537,6 @@ const tableData = computed(() => {
         raw: rawScore,
         support_level,
         color: tag_color
-      }
-      // Record the subscore information for use in the specialized tables
-      if(assessment.taskId === 'letter') {
-        _set(scores, 'letter.subscores', _get(assessment, 'scores.computed'))
       }
     }
     // If this is a district score report, grab school information
