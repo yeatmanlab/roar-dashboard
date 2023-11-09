@@ -7,7 +7,7 @@
       <Panel header="Create a new organization">
         Use this form to create a new organization.
 
-        <Divider />
+        <PvDivider />
 
         <div class="grid column-gap-3 mt-5">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
@@ -149,11 +149,11 @@
           </div>
         </div>
 
-        <Divider />
+        <PvDivider />
 
         <div class="grid">
           <div class="col-12">
-            <ConfirmPopup></ConfirmPopup>
+            <PvConfirmPopup />
             <Button :label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'" @click="submit" />
           </div>
         </div>

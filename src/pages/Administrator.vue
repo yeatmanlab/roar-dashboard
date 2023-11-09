@@ -14,7 +14,7 @@ v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
 
         <div v-if="initialized && !isLoadingAdministrations">
           <PvBlockUI :blocked="isFetchingAdministrations">
-            <DataView
+            <PvDataView
 :key="dataViewKey" :value="administrations" lazy paginator paginator-position="top"
               :total-records="totalRecords" :rows="pageLimit" :rows-per-page-options="[3, 5, 10, 25]" data-key="id"
               @page="onPage($event)">
@@ -32,7 +32,7 @@ v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
                   administrator to add you as an admin to an administration.
                 </div>
               </template>
-            </DataView>
+            </PvDataView>
           </PvBlockUI>
         </div>
         <div v-else class="loading-container">

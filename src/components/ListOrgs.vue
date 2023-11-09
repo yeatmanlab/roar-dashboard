@@ -12,8 +12,8 @@ v-if="isSuperAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-ico
             <span :class="cleverSyncIcon"></span>
           </button>
         </template>
-        <TabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy>
-          <TabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+        <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy>
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3 mt-2">
               <div
 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -40,8 +40,8 @@ v-if="tableData" :key="tableKey" lazy :columns="tableColumns" :data="tableData"
               :loading="isLoading || isLoadingCount || isFetching || isFetchingCount" @page="onPage($event)"
               @sort="onSort($event)" @export-all="exportAll" />
             <AppSpinner v-else />
-          </TabPanel>
-        </TabView>
+          </PvTabPanel>
+        </PvTabView>
         <AppSpinner v-else />
       </Panel>
     </section>

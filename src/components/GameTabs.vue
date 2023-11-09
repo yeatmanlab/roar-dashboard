@@ -1,7 +1,7 @@
 <template>
   <div id="games">
-    <TabView v-model:activeIndex="currentGameIndex">
-      <TabPanel
+    <PvTabView v-model:activeIndex="currentGameIndex">
+      <PvTabPanel
 v-for="game in games" :key="game.taskId"
         :disabled="(sequential && allGamesComplete && (!game.completedOn || allGamesComplete) && (currentGameId !== game.taskId))">
         <template #header>
@@ -48,8 +48,8 @@ width="42" height="42" viewBox="0 0 42 42" fill="none"
 v-if="!allGamesComplete && !game.taskData?.taskURL && !game.taskData?.variantURL"
             :to="{ path: 'game/' + game.taskId }"></router-link>
         </article>
-      </TabPanel>
-    </TabView>
+      </PvTabPanel>
+    </PvTabView>
   </div>
 </template>
 <script setup>

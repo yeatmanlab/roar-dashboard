@@ -103,14 +103,14 @@ v-model="queryStore.selectedClasses" input-id="classes" :options="queryStore.cla
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
       <span class="p-float-label">
-        <Calendar v-model="queryStore.startDate" input-id="startdate" date-format="mm/dd/yyyy" :show-icon="true" />
+        <PvCalendar v-model="queryStore.startDate" input-id="startdate" date-format="mm/dd/yyyy" :show-icon="true" />
         <label for="startdate">Start date</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
       <span class="p-float-label">
-        <Calendar v-model="queryStore.endDate" input-id="enddate" date-format="mm/dd/yyyy" :show-icon="true" />
+        <PvCalendar v-model="queryStore.endDate" input-id="enddate" date-format="mm/dd/yyyy" :show-icon="true" />
         <label for="enddate">End date</label>
       </span>
     </div>

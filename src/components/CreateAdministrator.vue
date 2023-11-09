@@ -8,7 +8,7 @@
         Use this form to create a new user and give them administrator access to
         selected organizations.
 
-        <Divider />
+        <PvDivider />
 
         <div v-if="initialized && !registering">
           <div class="grid">
@@ -43,7 +43,7 @@
 
           <OrgPicker @selection="selection($event)" />
 
-          <Divider />
+          <PvDivider />
 
           <div class="grid">
             <div class="col-12">

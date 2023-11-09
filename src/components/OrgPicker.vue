@@ -2,8 +2,8 @@
   <div class="grid">
     <div class="col-12 md:col-6">
       <Panel class="m-0 p-0" header="Select organizations here">
-        <TabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" class="m-0 p-0" lazy>
-          <TabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+        <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" class="m-0 p-0" lazy>
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3">
               <div
 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -27,7 +27,7 @@ id="school" v-model="selectedSchool" input-id="school" :options="allSchools"
               </div>
             </div>
             <div class="card flex justify-content-center">
-              <Listbox
+              <PvListbox
 v-model="selectedOrgs[activeOrgType]" :options="orgData" multiple option-label="name"
                 class="w-full" list-style="max-height:20rem">
                 <template #option="slotProps">
@@ -36,10 +36,10 @@ v-model="selectedOrgs[activeOrgType]" :options="orgData" multiple option-label="
                     <div class="ml-2">{{ slotProps.option.name }}</div>
                   </div>
                 </template>
-              </Listbox>
+              </PvListbox>
             </div>
-          </TabPanel>
-        </TabView>
+          </PvTabPanel>
+        </PvTabView>
       </Panel>
     </div>
     <div class="col-12 md:col-6">

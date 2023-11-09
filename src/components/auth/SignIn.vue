@@ -12,12 +12,12 @@ v-model="v$.email.$model" :class="{ 'p-invalid': invalid }" aria-describedby="em
       <div class="field mt-4 mb-5">
         <div>
           <span v-if="evaluatingEmail">
-            <Skeleton height="2.75rem" />
+            <PvSkeleton height="2.75rem" />
           </span>
           <div v-else-if="allowPassword && allowLink">
             Both allowed
           </div>
-          <Password
+          <PvPassword
 v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': invalid }" toggle-mask
             show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Password">
             <template #header>
@@ -25,7 +25,7 @@ v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': in
             </template>
             <template #footer="sp">
               {{ sp.level }}
-              <Divider />
+              <PvDivider />
               <p class="mt-2">Suggestions</p>
               <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
                 <li>At least one lowercase</li>
@@ -34,12 +34,12 @@ v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': in
                 <li>Minimum 8 characters</li>
               </ul>
             </template>
-          </Password>
+          </PvPassword>
           <div v-else-if="allowLink">
-            <Password disabled placeholder="Press Go to sign-in with an email link." />
+            <PvPassword disabled placeholder="Press Go to sign-in with an email link." />
           </div>
           <div v-else>
-            <Password disabled class="p-invalid text-red-600" placeholder="Error: invalid email" />
+            <PvPassword disabled class="p-invalid text-red-600" placeholder="Error: invalid email" />
           </div>
         </div>
       </div>

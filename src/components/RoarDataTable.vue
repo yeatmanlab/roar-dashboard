@@ -79,11 +79,11 @@ v-if="col.dataType === 'text' && !col.useMultiSelect" v-model="filterModel.value
           <MultiSelect
 v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
             placeholder="Any" :show-toggle-all="false" class="p-column-filter" />
-          <Calendar
+          <PvCalendar
 v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
             date-format="mm/dd/yy" placeholder="mm/dd/yyyy" />
           <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
-            <TriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px;" />
+            <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px;" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
           </div>
         </template>

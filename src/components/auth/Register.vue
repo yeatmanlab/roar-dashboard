@@ -40,12 +40,12 @@ v-model="v$.email.$model" name="username" :class="{ 'p-invalid': v$.email.$inval
           </div>
         </div>
         <div v-if="!yearOnlyCheck">
-          <Calendar
+          <PvCalendar
 v-model="v$.dob.$model" view="date" date-format="mm/dd/yy" model-value="string" show-icon
             :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
         </div>
         <div v-else>
-          <Calendar
+          <PvCalendar
 v-model="v$.dob.$model" view="year" date-format="yy" model-value="string" show-icon
             :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
         </div>
@@ -75,7 +75,7 @@ v-model="v$.grade.$model" :options="gradeOptions" option-label="label" option-va
       <div class="field mt-4 mb-5">
         <div>
           <label for="password">Password <span class="required">*</span></label>
-          <Password
+          <PvPassword
 v-model="v$.password.$model" name="password"
             :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggle-mask feedback>
             <template #header>
@@ -83,7 +83,7 @@ v-model="v$.password.$model" name="password"
             </template>
             <template #footer="sp">
               {{ sp.level }}
-              <Divider />
+              <PvDivider />
               <p class="mt-2">Suggestions</p>
               <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
                 <li>At least one lowercase</li>
@@ -92,7 +92,7 @@ v-model="v$.password.$model" name="password"
                 <li>Minimum 8 characters</li>
               </ul>
             </template>
-          </Password>
+          </PvPassword>
         </div>
         <small v-if="(v$.password.$invalid && submitted) || v$.password.$pending.$response" class="p-error">
           {{ v$.password.required.$message.replace("Value", "Password") }}
@@ -102,11 +102,11 @@ v-model="v$.password.$model" name="password"
       <div class="field mt-4 mb-5">
         <div>
           <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-          <Password
+          <PvPassword
 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model"
             name="confirmPassword" :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggle-mask
             :feedback="false">
-          </Password>
+          </PvPassword>
         </div>
         <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
           Passwords must match

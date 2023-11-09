@@ -1,7 +1,7 @@
 <template>
 	<div class="p-card card-administration">
 		<div v-if="props.stats && authStore.isUserSuperAdmin" class="card-admin-chart">
-			<Chart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
+			<PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
 		</div>
 
 		<div class="card-admin-body">
@@ -38,13 +38,13 @@ striped-rows class="p-datatable-small" table-style="min-width: 30rem"
 				<Button :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
 			</div>
 
-			<TreeTable
+			<PvTreeTable
 v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value="treeTableOrgs"
 				@node-expand="onExpand">
 				<Column field="name" header="Name" expander style="width: 20rem"></Column>
 				<Column v-if="props.stats" field="id" header="Completion">
 					<template #body="{ node }">
-						<Chart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
+						<PvChart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
 					</template>
 				</Column>
 				<Column field="id" header="" style="width: 14rem">
@@ -67,7 +67,7 @@ v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" ari
 						</span>
 					</template>
 				</Column>
-			</TreeTable>
+			</PvTreeTable>
 		</div>
 	</div>
 </template>

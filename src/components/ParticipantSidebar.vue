@@ -1,7 +1,7 @@
 <template>
   <div class="sidebar-container">
     <div class="sidebar-progress">
-      <Chart type="doughnut" :data="chartData" :options="chartOptions" />
+      <PvChart type="doughnut" :data="chartData" :options="chartOptions" />
       <div>
         <p class="sidebar-progress-totals">{{ completedGames }}/{{ totalGames }}</p>
         <p>tasks completed!</p>

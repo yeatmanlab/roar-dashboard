@@ -2,10 +2,10 @@
   <DataTable :value="skeletonData" responsive-layout="scroll" :scrollable="true" scroll-height="flex">
     <Column v-for="col of Object.keys(skeletonData[0])" :key="col" :field="col">
       <template #header>
-        <Skeleton></Skeleton>
+        <PvSkeleton></PvSkeleton>
       </template>
       <template #body>
-        <Skeleton></Skeleton>
+        <PvSkeleton></PvSkeleton>
       </template>
     </Column>
   </DataTable>

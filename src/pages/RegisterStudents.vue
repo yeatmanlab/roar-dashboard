@@ -17,7 +17,7 @@
           </ul>
           Upload or drag-and-drop a student list below to begin!
         </Panel>
-        <Divider />
+        <PvDivider />
         <FileUpload
 name="massUploader[]" custom-upload accept=".csv" auto :show-upload-button="false"
           :show-cancel-button="false" @uploader="onFileUpload($event)">

@@ -1,12 +1,12 @@
 <template>
   <Toast />
-  <ConfirmDialog group="templating" class="confirm">
+  <PvConfirmDialog group="templating" class="confirm">
     <template #message="slotProps">
       <div class="scrolling-box">
         <div v-html="markdownToHtml"></div>
       </div>
     </template>
-  </ConfirmDialog>
+  </PvConfirmDialog>
 </template>
 
 <script setup>

@@ -1,7 +1,7 @@
 <template>
   <Toast />
-  <TabView>
-    <TabPanel header="Register Task">
+  <PvTabView>
+    <PvTabPanel header="Register Task">
       <div v-if="!created" class="card">
         <h1 class="text-center">Register a new task</h1>
         <!-- <p class="login-title" align="left">Register for ROAR</p> -->
@@ -106,9 +106,9 @@ v-model="t$.taskURL.$model" name="taskURL"
         </p>
         <p>roar.education/?participantId=[$PARTICIPANT_ID]&completed=[$BOOLEAN]</p>
       </div>
-    </TabPanel>
+    </PvTabPanel>
 
-    <TabPanel header="Register Variant">
+    <PvTabPanel header="Register Variant">
       <div class="card">
         <form class="p-fluid" @submit.prevent="handleVariantSubmit(!v$.$invalid)">
           <h1 class="text-center">Register a new Variant</h1>
@@ -184,8 +184,8 @@ v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$re
           </div>
         </form>
       </div>
-    </TabPanel>
-  </TabView>
+    </PvTabPanel>
+  </PvTabView>
 </template>
   
 <script setup>

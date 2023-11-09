@@ -7,7 +7,7 @@
       <Panel header="Create a new administration">
         Use this form to create a new administration and assign it to organizations.
 
-        <Divider />
+        <PvDivider />
 
         <div class="formgrid grid mt-5">
           <div class="field col">
@@ -21,7 +21,7 @@
 
           <div class="field col">
             <span class="p-float-label">
-              <Calendar
+              <PvCalendar
 v-model="state.dates" :min-date="minStartDate" input-id="dates" :number-of-months="2"
                 selection-mode="range" :manual-input="false" show-icon show-button-bar />
               <label for="dates">Dates</label>
