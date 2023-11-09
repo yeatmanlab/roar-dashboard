@@ -51,14 +51,12 @@ v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value=
 					<template #body="{ node }">
 						<span class="p-buttonset m-0">
 							<router-link
-v-slot="{ href, route, navigate }"
 								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
 								<PvButton
 v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
 									aria-label="Completion details" size="small" />
 							</router-link>
 							<router-link
-v-slot="{ href, route, navigate }"
 								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
 								<PvButton
 v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"

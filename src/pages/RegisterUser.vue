@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="register-container mx-auto md:flex-none">
-      <Register />
+      <RegisterUser />
       <div class="contact-text">
         <span>Already have an account? <router-link :to="{ name: 'SignIn' }" class="text-btn">Sign In</router-link></span>
       </div>
@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import Register from "@/components/auth/Register.vue";
+import RegisterUser from "@/components/auth/RegisterUser.vue";
 import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 

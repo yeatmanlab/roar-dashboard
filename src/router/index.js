@@ -14,7 +14,7 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('../pages/Home.vue'),
+    component: () => import('../pages/HomeSelector.vue'),
     meta: { pageTitle: 'Dashboard' },
   },
   {
@@ -120,7 +120,7 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('../pages/Register.vue'),
+    component: () => import('../pages/RegisterUser.vue'),
   },
   {
     path: '/register-students',

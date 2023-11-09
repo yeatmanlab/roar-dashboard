@@ -6,8 +6,8 @@
     </div>
   </div>
   <div v-else>
-    <Participant v-if="!isAdmin" />
-    <Administrator v-else-if="isAdmin" />
+    <HomeParticipant v-if="!isAdmin" />
+    <HomeAdministrator v-else-if="isAdmin" />
   </div>
   <ConsentModal
 v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent"
@@ -18,8 +18,8 @@ v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @acce
 import { computed, onMounted, ref, toRaw, watch } from "vue";
 import { useQuery } from "@tanstack/vue-query";
 import { useAuthStore } from '@/store/auth';
-import Participant from "@/pages/Participant.vue";
-import Administrator from "@/pages/Administrator.vue";
+import HomeParticipant from "@/pages/HomeParticipant.vue";
+import HomeAdministrator from "@/pages/HomeAdministrator.vue";
 import _get from "lodash/get"
 import _isEmpty from "lodash/isEmpty";
 import _union from "lodash/union";

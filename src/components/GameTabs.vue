@@ -1,13 +1,15 @@
 <template>
   <div id="games">
     <PvTabView v-model:activeIndex="currentGameIndex">
-      <PvTabPanel v-for="game in games" :key="game.taskId"
+      <PvTabPanel
+v-for="game in games" :key="game.taskId"
         :disabled="(sequential && allGamesComplete && (!game.completedOn || allGamesComplete) && (currentGameId !== game.taskId))">
         <template #header>
           <!--Complete Game-->
           <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
           <!--Current Game-->
-          <i v-else-if="game.taskId == currentGameId || !sequential" class="pi pi-circle mr-2"
+          <i
+v-else-if="game.taskId == currentGameId || !sequential" class="pi pi-circle mr-2"
             data-game-status="current" />
           <!--Locked Game-->
           <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
@@ -24,7 +26,8 @@
               <PvTag v-for="(items, index) in game.taskData.meta" :key="index" :value="index + ': ' + items" />
             </div>
             <div class="roar-game-footer">
-              <i v-if="!allGamesComplete" class="pi"><svg width="42" height="42" viewBox="0 0 42 42" fill="none"
+              <i v-if="!allGamesComplete" class="pi"><svg
+width="42" height="42" viewBox="0 0 42 42" fill="none"
                   xmlns="http://www.w3.org/2000/svg">
                   <rect width="42" height="42" rx="21" fill="#A80532" />
                   <path
@@ -41,7 +44,8 @@
             <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
           </div>
 
-          <router-link v-if="!allGamesComplete && !game.taskData?.taskURL && !game.taskData?.variantURL"
+          <router-link
+v-if="!allGamesComplete && !game.taskData?.taskURL && !game.taskData?.variantURL"
             :to="{ path: 'game/' + game.taskId }"></router-link>
         </article>
       </PvTabPanel>
