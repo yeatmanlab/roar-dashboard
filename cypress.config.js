@@ -13,5 +13,7 @@ module.exports = defineConfig({
     googleRefreshToken: process.env.GOOGLE_REFRESH_TOKEN,
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    superAdminUsername: process.env.SUPER_ADMIN_USERNAME,
+    superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
   },
 });
