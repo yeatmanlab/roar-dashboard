@@ -11,7 +11,8 @@
     "emulate:assessment": "source firebase/emulate_assessment.sh",
     "emulate:start": "unset GOOGLE_APPLICATION_CREDENTIALS && npm run emulate:admin && npm run emulate:assessment",
     "emulate:stop": "ps -e | grep 'firebase emulators:start' | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill -s INT",
-    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh"
+    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh",
+    "cypress:open": "cypress open"
   },
   "dependencies": {
     "@bdelab/roar-firekit": "^3.13.2",
@@ -29,6 +30,7 @@
     "axios": "^1.5.1",
     "buffer": "^6.0.3",
     "chart.js": "^4.3.3",
+    "dotenv": "^16.3.1",
     "emailjs-com": "^3.2.0",
     "firebase": "^9.14.0",
     "jose": "^4.14.4",
@@ -56,6 +58,7 @@
     "@types/lodash": "^4.14.196",
     "@vitejs/plugin-basic-ssl": "^1.0.1",
     "@vitejs/plugin-vue": "^4.0.0",
+    "cypress": "^13.5.1",
     "sass": "^1.50.1",
     "vite": "^4.1.4",
     "vite-plugin-favicons-inject": "^2.2.0",
