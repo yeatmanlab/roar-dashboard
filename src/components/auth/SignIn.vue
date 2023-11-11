@@ -9,7 +9,7 @@
             :class="{ 'p-invalid': invalid }"
             aria-describedby="email-error"
             placeholder="Username or email"
-          />
+          data-cy="input-username-email"/>
         </div>
         <small v-if="invalid" class="p-error">Incorrect username/email or password</small>
       </div>
@@ -25,11 +25,7 @@
             v-model="v$.password.$model"
             :class="{ 'p-invalid': invalid }"
             toggle-mask
-            show-icon="pi pi-eye-slash"
-            hide-icon="pi pi-eye"
-            :feedback="false"
-            placeholder="Password"
-          >
+            show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Password" data-cy="input-password">
             <template #header>
               <h6>Pick a password</h6>
             </template>
