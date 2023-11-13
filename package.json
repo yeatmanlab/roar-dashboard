@@ -13,7 +13,8 @@
     "emulate:assessment": "source firebase/emulate_assessment.sh",
     "emulate:start": "unset GOOGLE_APPLICATION_CREDENTIALS && npm run emulate:admin && npm run emulate:assessment",
     "emulate:stop": "ps -e | grep 'firebase emulators:start' | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill -s INT",
-    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh"
+    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh",
+    "precommit": "npm run lint"
   },
   "dependencies": {
     "@bdelab/roar-firekit": "^3.13.2",
@@ -62,6 +63,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-vue": "^9.18.1",
+    "husky": "^8.0.3",
     "prettier": "3.0.3",
     "sass": "^1.50.1",
     "vite": "^4.1.4",
