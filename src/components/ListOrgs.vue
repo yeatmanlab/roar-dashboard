@@ -20,7 +20,7 @@ v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
                 class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
                 <span class="p-float-label">
                   <PvDropdown
-v-model="selectedDistrict" input-id="district" :options="allDistricts" option-label="name"
+                    v-model="selectedDistrict" input-id="district" :options="allDistricts" option-label="name"
                     option-value="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts" class="w-full" />
                   <label for="district">District</label>
                 </span>
@@ -28,14 +28,14 @@ v-model="selectedDistrict" input-id="district" :options="allDistricts" option-la
               <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
                 <span class="p-float-label">
                   <PvDropdown
-v-model="selectedSchool" input-id="school" :options="allSchools" option-label="name"
+                    v-model="selectedSchool" input-id="school" :options="allSchools" option-label="name"
                     option-value="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
                   <label for="school">School</label>
                 </span>
               </div>
             </div>
             <RoarDataTable
-v-if="tableData" :key="tableKey" lazy :columns="tableColumns" :data="tableData"
+              v-if="tableData" :key="tableKey" lazy :columns="tableColumns" :data="tableData"
               :page-limit="pageLimit" :total-records="totalRecords"
               :loading="isLoading || isLoadingCount || isFetching || isFetchingCount" @page="onPage($event)"
               @sort="onSort($event)" @export-all="exportAll" />

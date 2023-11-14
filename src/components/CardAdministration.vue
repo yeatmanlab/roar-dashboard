@@ -14,11 +14,19 @@
 			</div>
 			<div class="card-admin-assessments">
 				<span class="mr-1"><strong>Assessments</strong>:</span>
-				<span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
+				<span
+					v-for="assessmentId in assessmentIds"
+					:key="assessmentId"
+					class="card-inline-list-item"
+				>
 					{{ displayNames[assessmentId]?.name ?? assessmentId }}
 					<span
-v-if="showParams" v-tooltip.top="'Click to view params'" class="pi pi-info-circle cursor-pointer"
-						style="font-size: 1rem" @click="toggleParams($event, assessmentId)" />
+						v-if="showParams"
+						v-tooltip.top="'Click to view params'"
+						class="pi pi-info-circle cursor-pointer"
+						style="font-size: 1rem"
+						@click="toggleParams($event, assessmentId)"
+					/>
 				</span>
 				<div v-if="showParams">
 					<PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
@@ -39,8 +47,14 @@ striped-rows class="p-datatable-small" table-style="min-width: 30rem"
 			</div>
 
 			<PvTreeTable
-v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value="treeTableOrgs"
-				@node-expand="onExpand">
+				v-if="showTable"
+				class="mt-3"
+				lazy
+				row-hover
+				:loading="loadingTreeTable"
+				:value="treeTableOrgs"
+				@node-expand="onExpand"
+			>
 				<PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
 				<PvColumn v-if="props.stats" field="id" header="Completion">
 					<template #body="{ node }">
@@ -49,20 +63,38 @@ v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value=
 				</PvColumn>
 				<PvColumn field="id" header="" style="width: 14rem">
 					<template #body="{ node }">
-						<span class="p-buttonset m-0">
+						<div class="flex m-0">
 							<router-link
-								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
+								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
+								class="no-underline"
+							>
 								<PvButton
-v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
-									aria-label="Completion details" size="small" />
+									v-tooltip.top="'See completion details'"
+									class="m-0"
+									severity="secondary"
+									text
+									raised
+									label="Progress"
+									aria-label="Completion details"
+									size="small"
+								/>
 							</router-link>
 							<router-link
-								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }">
+								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
+								class="no-underline"
+							>
 								<PvButton
-v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
-									size="small" />
+									v-tooltip.top="'See Scores'"
+									class="m-0"
+									severity="secondary"
+									text
+									raised
+									label="Scores"
+									aria-label="Scores"
+									size="small"
+								/>
 							</router-link>
-						</span>
+						</div>
 					</template>
 				</PvColumn>
 			</PvTreeTable>

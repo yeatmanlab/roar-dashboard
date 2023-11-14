@@ -13,17 +13,35 @@
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">Log in to access your dashboard</h4>
-          <SignIn :invalid="incorrect" @submit="authWithEmail" />
+          <SignIn
+            :invalid="incorrect"
+            @submit="authWithEmail"
+          />
         </section>
         <section class="signin-option-container signin-option-providers">
           <h4 class="signin-option-title">Log in with:</h4>
-          <div>
-            <PvButton label="Sign in with Google" class="signin-button" @click="authWithGoogle">
-              <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
+          <div class="flex">
+            <PvButton
+              label="Sign in with Google"
+              class="signin-button"
+              @click="authWithGoogle"
+            >
+              <img
+                src="../assets/provider-google-logo.svg"
+                alt="The ROAR Logo"
+                class="signin-button-icon"
+              />
               <span>Google</span>
             </PvButton>
-            <PvButton class="signin-button" @click="authWithClever">
-              <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
+            <PvButton
+              class="signin-button"
+              @click="authWithClever"
+            >
+              <img
+                src="../assets/provider-clever-logo.svg"
+                alt="The ROAR Logo"
+                class="signin-button-icon"
+              />
               <span>Clever</span>
             </PvButton>
           </div>

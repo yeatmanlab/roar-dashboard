@@ -4,8 +4,12 @@
       <div class="field mt-2">
         <div class="p-input-icon-right">
           <PvInputText
-v-model="v$.email.$model" :class="{ 'p-invalid': invalid }" aria-describedby="email-error"
-            placeholder="Username or email" />
+            id="email"
+            v-model="v$.email.$model"
+            :class="{ 'p-invalid': invalid }"
+            aria-describedby="email-error"
+            placeholder="Username or email"
+          />
         </div>
         <small v-if="invalid" class="p-error">Incorrect username/email or password</small>
       </div>
@@ -18,8 +22,16 @@ v-model="v$.email.$model" :class="{ 'p-invalid': invalid }" aria-describedby="em
             Both allowed
           </div>
           <PvPassword
-v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': invalid }" toggle-mask
-            show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Password">
+            v-else-if="allowPassword"
+            id="password"
+            v-model="v$.password.$model"
+            :class="{ 'p-invalid': invalid }"
+            toggle-mask
+            show-icon="pi pi-eye-slash"
+            hide-icon="pi pi-eye"
+            :feedback="false"
+            placeholder="Password"
+          >
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -36,10 +48,17 @@ v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': in
             </template>
           </PvPassword>
           <div v-else-if="allowLink">
-            <PvPassword disabled placeholder="Press Go to sign-in with an email link." />
+            <PvPassword
+              disabled
+              placeholder="Press Go to sign-in with an email link."
+            />
           </div>
           <div v-else>
-            <PvPassword disabled class="p-invalid text-red-600" placeholder="Error: invalid email" />
+            <PvPassword
+              disabled
+              class="p-invalid text-red-600"
+              placeholder="Error: invalid email"
+            />
           </div>
         </div>
       </div>
@@ -60,6 +79,10 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const emit = defineEmits(['submit']);
+// eslint-disable-next-line no-unused-vars
+const props = defineProps({
+  invalid: { type: Boolean, required: false, default: false },
+})
 
 const state = reactive({
   email: "",
