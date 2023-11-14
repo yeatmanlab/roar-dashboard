@@ -37,6 +37,7 @@ const navbarBlacklist = ref([
   "Letter",
   "Vocab",
   "Multichoice",
+  "Morphology",
   "Cva"
 ]);
 
