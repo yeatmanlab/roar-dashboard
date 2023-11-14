@@ -99,7 +99,7 @@ export const flattenObj = (obj) => {
         result[camelCase(i + '.' + j)] = temp[j] || "";
       }
     } else {
-      result[i] = obj[i] || "";
+      result[i] = (obj[i] || obj[i] === 0) ? obj[i] : "";
     }
   }
   return result;
