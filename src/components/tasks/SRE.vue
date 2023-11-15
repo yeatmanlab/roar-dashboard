@@ -40,7 +40,7 @@ const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: user
     queryKey: ['userData', authStore.uid, "studentData"],
     queryFn: () => fetchDocById('users', authStore.uid, ["studentData"]),
     keepPreviousData: true,
-    enabled: true,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
