@@ -71,6 +71,7 @@
       :select-all="selectAll"
       @page="onPage($event)"
       @sort="onSort($event)"
+      @filter="onFilter($event)"
       @select-all-change="onSelectAll"
       @row-select="onSelectionChange"
       @row-unselect="onSelectionChange"
@@ -82,7 +83,7 @@
         :field="col.field"
         :data-type="col.dataType"
         :sortable="col.sort !== false"
-        :show-filter-match-modes="!col.useMultiSelect"
+        :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
         :show-filter-operator="col.allowMultipleFilters === true"
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
@@ -190,6 +191,10 @@
             <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
           </div>
+          <div v-if="col.dataType === 'score' && !col.useMultiSelect">
+            The Scores Filter
+            <PvDropdown v-model="filterModel.value" :options="['Above', 'Average', 'Needs Extra']" />
+          </div>
         </template>
       </PvColumn>
       <template #empty> No data found. </template>
@@ -290,10 +295,10 @@ const exportCSV = (exportSelected) => {
 };
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN'];
+const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE'];
 let filters = {};
 let options = {};
-_forEach(props.columns, (column) => {
+_forEach(computedColumns.value, (column) => {
   // Check if header text is supplied; if not, generate.
   if (!_get(column, 'header')) {
     column['header'] = _startCase(_get(column, 'field'));
@@ -307,6 +312,9 @@ _forEach(props.columns, (column) => {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
     } else if (dataType === 'DATE') {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
+    } else if (dataType === 'SCORE') {
+      console.log('score filter');
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
     }
 
     if (_get(column, 'useMultiSelect')) {
@@ -419,12 +427,15 @@ const onFreezeToggle = (selected) => {
   });
 };
 
-const emit = defineEmits(['page', 'sort', 'export-all', 'selection']);
+const emit = defineEmits(['page', 'sort', 'export-all', 'selection', 'filter']);
 const onPage = (event) => {
   emit('page', event);
 };
 const onSort = (event) => {
   emit('sort', event);
+};
+const onFilter = (event) => {
+  emit('filter', event);
 };
 </script>
 <style>
