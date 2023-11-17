@@ -298,8 +298,21 @@ service cloud.firestore {
           || isAdminForAssigningOrg('families', adminOrgs));
         }
 
+        function isAdminForReadOrg(orgType, adminOrgs) {
+          return resource.data.get(['readOrgs', orgType], []).hasAny(adminOrgs.get(orgType, ['..']));
+        }
+
+        function isAdminForAnyReadOrg() {
+          let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+          return (isAdminForReadOrg('districts', adminOrgs)
+          || isAdminForReadOrg('schools', adminOrgs)
+          || isAdminForReadOrg('classes', adminOrgs)
+          || isAdminForReadOrg('groups', adminOrgs)
+          || isAdminForReadOrg('families', adminOrgs));
+        }
+
         function canReadRun() {
-          return loggedIn() && (myData() || isAdminForAnyAssigningOrg());
+          return loggedIn() && (myData() || isAdminForAnyAssigningOrg() || isAdminForAnyReadOrg());
         }
 
         function canCreateRun() {
@@ -307,7 +320,7 @@ service cloud.firestore {
         }
 
         function canUpdateRun() {
-          return myData() && keysNotUpdated(['assigningOrgs']);
+          return myData() && keysNotUpdated(['assigningOrgs', 'readOrgs']);
         }
 
         allow read: if canReadRun();
@@ -329,8 +342,17 @@ service cloud.firestore {
               || targetOrgsInAdminList('families', assigningOrgs.get('families', [])));
           }
 
+          function isAdminForAnyReadOrgWithDbRead() {
+            let assigningOrgs = get(/databases/$(database)/documents/users/$(uid)/runs/$(runId)).data.get('readOrgs', []);
+            return (targetOrgsInAdminList('districts', assigningOrgs.get('districts', []))
+              || targetOrgsInAdminList('schools', assigningOrgs.get('schools', []))
+              || targetOrgsInAdminList('classes', assigningOrgs.get('classes', []))
+              || targetOrgsInAdminList('groups', assigningOrgs.get('groups', []))
+              || targetOrgsInAdminList('families', assigningOrgs.get('families', [])));
+          }
+
           function canReadTrial() {
-            return loggedIn() && (myData() || isAdminForAnyAssigningOrgWithDbRead());
+            return loggedIn() && (myData() || isAdminForAnyAssigningOrgWithDbRead() || isAdminForAnyReadOrgWithDbRead());
           }
 
           function canWriteTrial() {
@@ -358,7 +380,20 @@ service cloud.firestore {
         || isAdminForAssigningOrg('families', adminOrgs));
       }
 
-      allow read: if loggedIn() && isAdminForAnyAssigningOrg();
+      function isAdminForReadOrg(orgType, adminOrgs) {
+        return resource.data.get(['readOrgs', orgType], []).hasAny(adminOrgs.get(orgType, ['..']));
+      }
+
+      function isAdminForAnyReadOrg() {
+        let adminOrgs = get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get('claims', {}).get('adminOrgs', {});
+        return (isAdminForReadOrg('districts', adminOrgs)
+        || isAdminForReadOrg('schools', adminOrgs)
+        || isAdminForReadOrg('classes', adminOrgs)
+        || isAdminForReadOrg('groups', adminOrgs)
+        || isAdminForReadOrg('families', adminOrgs));
+      }
+
+      allow read: if loggedIn() && (isAdminForAnyAssigningOrg() || isAdminForAnyReadOrg());
     }
 
     // We allow anonymous guest access so that people can try an individual ROAR
