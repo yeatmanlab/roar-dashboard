@@ -2,7 +2,7 @@ const { defineConfig } = require("cypress");
 require('dotenv').config()
 
 module.exports = defineConfig({
-  projectId: 'krys9o',
+  projectId: 'cobw62',
   e2e: {
     baseUrl: "https://localhost:5173",
     setupNodeEvents(on, config) {
@@ -17,3 +17,5 @@ module.exports = defineConfig({
     superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
   },
 });
+
+
