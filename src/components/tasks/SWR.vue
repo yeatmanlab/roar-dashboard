@@ -40,19 +40,16 @@ const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: user
     queryKey: ['userData', authStore.uid, "studentData"],
     queryFn: () => fetchDocById('users', authStore.uid, ["studentData"]),
     keepPreviousData: true,
-    enabled: true,
+    enabled: initialized,
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
 // Send user back to Home if page is reloaded
 const entries = performance.getEntriesByType("navigation");
 entries.forEach((entry) => {
-  console.log(entry);
   if (entry.type === "reload") {
-    console.log("Reloading detected");
     // Detect if our previous reload was on this page, AND if the last naviagtion was a replace.
     if (entry.name === window.location.href && history.state.replaced === true) {
-      console.log("Replacing to Home");
       router.replace({ name: "Home" })
     }
   }
