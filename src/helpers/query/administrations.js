@@ -64,7 +64,7 @@ const getAdministrationsRequestBody = ({
   if (assigningOrgCollection && assigningOrgIds) {
     requestBody.structuredQuery.where = {
       fieldFilter: {
-        field: { fieldPath: assigningOrgCollection },
+        field: { fieldPath: `readOrgs.${assigningOrgCollection}` },
         op: "ARRAY_CONTAINS_ANY",
         value: {
           arrayValue: {

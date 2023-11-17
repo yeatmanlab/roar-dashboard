@@ -25,6 +25,7 @@ export const getAssignmentsRequestBody = ({
   select = [
     "assessments",
     "assigningOrgs",
+    "readOrgs",
     "completed",
     "dateAssigned",
     "dateClosed",
@@ -72,7 +73,7 @@ export const getAssignmentsRequestBody = ({
           },
           {
             fieldFilter: {
-              field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+              field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
               op: "ARRAY_CONTAINS",
               value: { stringValue: orgId }
             }
@@ -159,7 +160,7 @@ export const getScoresRequestBody = ({
         },
         {
           fieldFilter: {
-            field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
             op: "ARRAY_CONTAINS",
             value: { stringValue: orgId }
           }
