@@ -63,6 +63,7 @@
             :loading="isLoadingScores || isFetchingScores"
             @page="onPage($event)"
             @sort="onSort($event)"
+            @filter="onFilter($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
           />
@@ -225,6 +226,8 @@ import _get from 'lodash/get';
 import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _find from 'lodash/find';
+import _head from 'lodash/head';
+import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -263,6 +266,7 @@ const initialized = ref(false);
 
 // Queries for page
 const orderBy = ref(orderByDefault);
+const filterBy = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
@@ -310,8 +314,19 @@ const {
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
-  queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page, true),
+  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy],
+  queryFn: () =>
+    assignmentPageFetcher(
+      props.administrationId,
+      props.orgType,
+      props.orgId,
+      pageLimit,
+      page,
+      true,
+      undefined,
+      true,
+      filterBy.value,
+    ),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
@@ -337,6 +352,25 @@ const onSort = (event) => {
     direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
   }));
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+};
+
+const onFilter = (event) => {
+  const filters = [];
+  for (const filterKey in _get(event, 'filters')) {
+    const filter = _get(event, 'filters')[filterKey];
+    const constraint = _head(_get(filter, 'constraints'));
+    if (_get(constraint, 'value')) {
+      const path = filterKey.split('.');
+      let collection;
+      if (_head(path) === 'user') {
+        collection = 'user';
+      }
+      // console.log('constraint is', { ...constraint, collection, field: _tail(path).join('.') })
+      filters.push({ ...constraint, collection, field: _tail(path).join('.') });
+    }
+  }
+  // Scores Query
+  filterBy.value = filters;
 };
 
 const viewMode = ref('color');
@@ -603,13 +637,14 @@ const columns = computed(() => {
     });
     for (const taskId of sortedTasks) {
       let colField;
-      if (viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`;
+      // Color needs to include a field to allow sorting.
+      if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
       if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`;
       if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`;
       tableColumns.push({
         field: colField,
         header: displayNames[taskId]?.name ?? taskId,
-        dataType: 'text',
+        dataType: 'score',
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
         emptyTag: viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
         tagColor: `scores.${taskId}.color`,
