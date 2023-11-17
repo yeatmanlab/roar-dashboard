@@ -361,12 +361,8 @@ const onFilter = (event) => {
     const constraint = _head(_get(filter, 'constraints'));
     if (_get(constraint, 'value')) {
       const path = filterKey.split('.');
-      let collection;
-      if (_head(path) === 'user') {
-        collection = 'user';
-      }
       // console.log('constraint is', { ...constraint, collection, field: _tail(path).join('.') })
-      filters.push({ ...constraint, collection, field: _tail(path).join('.') });
+      filters.push({ ...constraint, collection: _head(path), field: _tail(path).join('.') });
     }
   }
   // Scores Query
