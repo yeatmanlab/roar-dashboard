@@ -10,7 +10,8 @@
 				</li>
 			</ul>
 		</Sidebar>
-		<Button v-tooltip.right="'Click to open the menu'" label="Menu" icon="pi pi-bars" @click="visible = true" />
+		<Button v-tooltip.right="'Click to open the menu'" label="Menu" icon="pi pi-bars" data-cy="button-admin-sidebar"
+            @click="visible = true" />
 	</div>
 </template>
 
