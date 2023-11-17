@@ -6,8 +6,10 @@ import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
-import { convertValues, getAxiosInstance, mapFields } from './utils';
+import { convertValues, getAxiosInstance, mapFields, matchMode2Op } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
+
+const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools'];
 
 export const getAssignmentsRequestBody = ({
   adminId,
@@ -101,6 +103,79 @@ export const getAssignmentsRequestBody = ({
       },
     };
   }
+
+  if (aggregationQuery) {
+    return {
+      structuredAggregationQuery: {
+        ...requestBody,
+        aggregations: [
+          {
+            alias: 'count',
+            count: {},
+          },
+        ],
+      },
+    };
+  }
+
+  return requestBody;
+};
+
+export const getUsersByAssignmentIdRequestBody = ({
+  adminId,
+  orgType,
+  orgId,
+  filterBy,
+  aggregationQuery,
+  pageLimit,
+  page,
+  paginate = true,
+  select = userSelectFields,
+}) => {
+  const requestBody = {
+    structuredQuery: {
+      orderBy: {
+        field: { fieldPath: `assignmentsAssigned.${adminId}` },
+        direction: 'ASCENDING',
+      },
+    },
+  };
+
+  if (!aggregationQuery) {
+    if (paginate) {
+      requestBody.structuredQuery.limit = pageLimit;
+      requestBody.structuredQuery.offset = page * pageLimit;
+    }
+
+    if (select.length > 0) {
+      requestBody.structuredQuery.select = {
+        fields: select.map((field) => ({ fieldPath: field })),
+      };
+    }
+  }
+
+  requestBody.structuredQuery.from = [
+    {
+      collectionId: 'users',
+      allDescendants: false,
+    },
+  ];
+
+  requestBody.structuredQuery.where = {
+    compositeFilter: {
+      op: 'AND',
+      filters: [
+        { fieldFilter: filterBy },
+        {
+          fieldFilter: {
+            field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            op: 'ARRAY_CONTAINS',
+            value: { stringValue: orgId },
+          },
+        },
+      ],
+    },
+  };
 
   if (aggregationQuery) {
     return {
@@ -224,6 +299,32 @@ export const assignmentPageFetcher = async (
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
+
+  // Assume that filters has at most length one
+  if (filters.length > 1) {
+    throw new Error('You may specify at most one filter');
+  }
+
+  if (filters.length && filters[0].collection === 'users') {
+    const filterBy = {
+      field: { fieldPath: filters[0].field },
+      op: matchMode2Op[filters[0].matchMode],
+      value: { stringValue: filters[0].value },
+    };
+
+    const requestBody = getUsersByAssignmentIdRequestBody({
+      adminId,
+      orgType,
+      orgId,
+      filterBy,
+      aggregationQuery: false,
+      pageLimit: pageLimit.value,
+      page: page.value,
+      paginate,
+    });
+  }
+
+  console.log('[fetcher] filters', filters);
   if (!_isEmpty(filters)) {
     // handle filter queries
     // Seperate handler for filters case
@@ -258,6 +359,7 @@ export const assignmentPageFetcher = async (
       const batchUserDocs = await adminAxiosInstance
         .post(':batchGet', {
           documents: userDocPaths,
+          mask: { fieldPaths: userSelectFields },
         })
         .then(({ data }) => {
           return _without(
