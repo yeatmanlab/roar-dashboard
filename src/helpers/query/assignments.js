@@ -2,7 +2,6 @@ import _find from 'lodash/find';
 import _flatten from 'lodash/flatten';
 import _get from 'lodash/get';
 import _groupBy from 'lodash/groupBy';
-import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
@@ -165,7 +164,7 @@ export const getUsersByAssignmentIdRequestBody = ({
     compositeFilter: {
       op: 'AND',
       filters: [
-        { fieldFilter: filterBy },
+        { fieldFilter: { ...filterBy, op: 'EQUAL' } },
         {
           fieldFilter: {
             field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
@@ -322,12 +321,11 @@ export const assignmentPageFetcher = async (
       page: page.value,
       paginate,
     });
-  }
-
-  console.log('[fetcher] filters', filters);
-  if (!_isEmpty(filters)) {
-    // handle filter queries
-    // Seperate handler for filters case
+    console.log('users request', requestBody);
+    return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+      const results = mapFields(data);
+      console.log('resulting data', results);
+    });
   } else {
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
