@@ -23,7 +23,8 @@
           <div class="col-12 md:col-6 lg:col-4">
             <span class="p-float-label">
               <Dropdown v-model="state.parentDistrict" inputId="parent-district" :options="districts" showClear
-                optionLabel="name" placeholder="Select a district" :loading="isLoadingDistricts" class="w-full" />
+                optionLabel="name" placeholder="Select a district" :loading="isLoadingDistricts"
+                        class="w-full" data-cy="dropdown-parent-district"/>
               <label for="parent-district">District</label>
               <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error">
                 Please select a district.
@@ -36,7 +37,7 @@
               <Dropdown v-model="state.parentSchool" inputId="parent-school" :options="schools" showClear
                 optionLabel="name"
                 :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
-                :loading="!schoolDropdownEnabled" class="w-full" />
+                :loading="!schoolDropdownEnabled" class="w-full" data-cy="dropdown-parent-school"/>
               <label for="parent-school">School</label>
               <small v-if="v$.parentSchool.$invalid && submitted" class="p-error">
                 Please select a district.

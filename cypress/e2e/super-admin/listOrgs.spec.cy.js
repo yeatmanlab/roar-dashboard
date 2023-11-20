@@ -6,7 +6,7 @@ describe('The admin user can navigate to the list organizations page, ' +
     // cy.login(username, password)
     const tabs = ['Districts', 'Schools', 'Classes', 'Groups']
 
-    cy.navigateToListOrgsPage()
+    cy.navigateTo('/list-orgs')
 
 
     // cy.activateAdminSidebar()
@@ -18,5 +18,6 @@ describe('The admin user can navigate to the list organizations page, ' +
       cy.get("a").contains(tabs[i]).click()
     }
 
+    cy.navigateTo('register-students')
   })
 })

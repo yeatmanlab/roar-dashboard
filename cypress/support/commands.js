@@ -1,79 +1,33 @@
 Cypress.Commands.add('login', (username, password) => {
-    cy.visit('/')
-    cy.get('[data-cy="input-username-email"]').type(username, {log: false})
-    cy.get('[data-cy="input-password"]').type(password, {log: false})
-    cy.get("button").contains("Go!").click()
+    cy.session([username, password],
+() => {
+        cy.visit('/')
+        cy.get('[data-cy="input-username-email"]').type(username, {log: false})
+        cy.get('[data-cy="input-password"]').type(password, {log: false})
+        cy.get("button").contains("Go!").click()
+        cy.log("Login successful.").wait(3000)
+    },
+{
+        validate: () => {
+            cy.getCookie(Cypress.env('sessionCookieName')).should("exist")
+            // Maybe a function to GET and VALIDATE the current cookie between tests?
+            // cy.getCookie(Cypress.env('sessionCookieName')).should('have.property', 'value', Cypress.env('sessionCookieValue'))
+            }
+        }
+    )
 })
+
+Cypress.Commands.add('navigateTo', (page, login = false) => {
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
+    cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`)
+    cy.visit(page)
+})
+
 
 Cypress.Commands.add('activateAdminSidebar', () => {
-    cy.get('[data-cy="button-admin-sidebar"]').click()
+    cy.get('[data-cy="button-admin-sidebar"]').click().wait(1000)
 })
 
-Cypress.Commands.add('navigateToListOrgsPage', () => {
-    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
-    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
-    cy.wait(3000)
-    cy.visit("/list-orgs")
-    cy.wait(3000)
-
-    // cy.activateAdminSidebar()
-    // cy.get("button").contains("List organizations").click()
-})
-
-Cypress.Commands.add('navigateToCreateOrgsPage', () => {
-    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
-    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
-    cy.wait(3000)
-    cy.visit("/create-orgs")
-    cy.wait(3000)
-
-    // cy.activateAdminSidebar()
-    // cy.get("button").contains("Create organizations").click()
-})
-
-Cypress.Commands.add('navigateToRegisterStudentsPage', () => {
-    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
-    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
-    cy.wait(3000)
-    cy.visit("/register-students")
-    cy.wait(3000)
-
-    // cy.activateAdminSidebar()
-    // cy.get("button").contains("Create organizations").click()
-})
-
-Cypress.Commands.add('navigateToRegisterAdministratorPage', () => {
-    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
-    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
-    cy.wait(3000)
-    cy.visit("/register-administrator")
-    cy.wait(3000)
-
-    // cy.activateAdminSidebar()
-    // cy.get("button").contains("Create organizations").click()
-})
-
-Cypress.Commands.add('navigateToCreateAdministrationPage', () => {
-    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
-    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
-    cy.wait(3000)
-    cy.visit("/create-administration")
-    cy.wait(3000)
-
-    // cy.activateAdminSidebar()
-    // cy.get("button").contains("Create organizations").click()
-})
-
-Cypress.Commands.add('navigateToRegisterTaskPage', () => {
-    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
-    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
-    cy.wait(3000)
-    cy.visit("/register-game")
-    cy.wait(3000)
-
-    // cy.activateAdminSidebar()
-    // cy.get("button").contains("Create organizations").click()
-})
 
 Cypress.Commands.add('loginByGoogleApi', () => {
     cy.log('Logging in to Google')
