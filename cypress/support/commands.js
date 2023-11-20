@@ -10,6 +10,73 @@ Cypress.Commands.add("login", (username, password) => {
 Cypress.Commands.add("activateAdminSidebar", () => {
     cy.get('[data-cy="button-admin-sidebar"]').click();
 });
+
+Cypress.Commands.add('navigateToListOrgsPage', () => {
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
+    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
+    cy.wait(3000)
+    cy.visit("/list-orgs")
+    cy.wait(3000)
+
+    // cy.activateAdminSidebar()
+    // cy.get("button").contains("List organizations").click()
+})
+
+Cypress.Commands.add('navigateToCreateOrgsPage', () => {
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
+    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
+    cy.wait(3000)
+    cy.visit("/create-orgs")
+    cy.wait(3000)
+
+    // cy.activateAdminSidebar()
+    // cy.get("button").contains("Create organizations").click()
+})
+
+Cypress.Commands.add('navigateToRegisterStudentsPage', () => {
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
+    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
+    cy.wait(3000)
+    cy.visit("/register-students")
+    cy.wait(3000)
+
+    // cy.activateAdminSidebar()
+    // cy.get("button").contains("Create organizations").click()
+})
+
+Cypress.Commands.add('navigateToRegisterAdministratorPage', () => {
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
+    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
+    cy.wait(3000)
+    cy.visit("/register-administrator")
+    cy.wait(3000)
+
+    // cy.activateAdminSidebar()
+    // cy.get("button").contains("Create organizations").click()
+})
+
+Cypress.Commands.add('navigateToCreateAdministrationPage', () => {
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
+    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
+    cy.wait(3000)
+    cy.visit("/create-administration")
+    cy.wait(3000)
+
+    // cy.activateAdminSidebar()
+    // cy.get("button").contains("Create organizations").click()
+})
+
+Cypress.Commands.add('navigateToRegisterTaskPage', () => {
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
+    // Temporary workaround; waiting for adminSidebar component to properly show all the admin sidebar buttons.
+    cy.wait(3000)
+    cy.visit("/register-game")
+    cy.wait(3000)
+
+    // cy.activateAdminSidebar()
+    // cy.get("button").contains("Create organizations").click()
+})
+
 Cypress.Commands.add("loginByGoogleApi", () => {
     cy.log("Logging in to Google");
     cy.request({
