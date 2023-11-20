@@ -122,7 +122,7 @@
         <div class="grid">
           <div class="col-12">
             <ConfirmPopup></ConfirmPopup>
-            <Button :label="`Create ${orgTypeLabel}`" @click="preSubmit"
+            <Button :label="`Create ${orgTypeLabel}`" @click="submit"
                     :disabled="orgTypeLabel === 'Org'" data-cy="button-create-org"/>
           </div>
         </div>
@@ -339,7 +339,7 @@ const removeAddress = () => {
   state.address = undefined;
 }
 
-const submit = async (event) => {
+const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate()
   if (isFormValid) {
