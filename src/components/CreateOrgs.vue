@@ -13,7 +13,7 @@
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
             <span class="p-float-label">
               <Dropdown v-model="orgType" inputId="org-type" :options="orgTypes" showClear optionLabel="singular"
-                placeholder="Select an org type" class="w-full" />
+                placeholder="Select an org type" class="w-full" data-cy="dropdown-org-type"/>
               <label for="org-type">Org Type</label>
             </span>
           </div>
@@ -48,7 +48,7 @@
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
-              <InputText id="org-name" v-model="state.orgName" class="w-full" />
+              <InputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name"/>
               <label for="org-name">{{ orgTypeLabel }} Name</label>
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </span>
@@ -56,7 +56,7 @@
 
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
-              <InputText id="org-initial" v-model="state.orgInitials" class="w-full" />
+              <InputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials"/>
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
               <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
             </span>
@@ -80,7 +80,7 @@
           <div class="grid column-gap-3">
             <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
               <span class="p-float-label">
-                <InputText v-model="state.ncesId" v-tooltip="ncesTooltip" inputId="nces-id" class="w-full" />
+                <InputText v-model="state.ncesId" v-tooltip="ncesTooltip" inputId="nces-id" class="w-full" data-cy="input-nces-id"/>
                 <label for="nces-id">NCES ID</label>
               </span>
             </div>
@@ -95,23 +95,23 @@
               </span>
               <GMapAutocomplete @place_changed="setAddress" :options="{
                 fields: ['address_components', 'formatted_address', 'place_id', 'url'],
-              }" class="p-inputtext p-component w-full">
+              }" class="p-inputtext p-component w-full" data-cy="input-address">
               </GMapAutocomplete>
             </div>
           </div>
           <div v-if="state.address?.formattedAddress" class="grid">
-            <div class="col-12 mt-3">
+            <div class="col-12 mt-3" data-cy="chip-address">
               {{ orgTypeLabel }} Address:
-              <Chip :label="state.address.formattedAddress" removable @remove="removeAddress" />
+              <Chip :label="state.address.formattedAddress" removable @remove="removeAddress"/>
             </div>
           </div>
         </div>
 
         <div class="grid mt-3">
-          <div class="col-12 md:col-6 lg:col-4 mt-3">
+          <div class="col-12 md:col-6 lg:col-4 mt-3" data-cy="div-auto-complete">
             <span class="p-float-label">
               <AutoComplete v-model="state.tags" multiple dropdown :options="allTags" :suggestions="tagSuggestions"
-                @complete="searchTags" name="tags" class="w-full" />
+                @complete="searchTags" name="tags" class="w-full" data-cy="input-autocomplete"/>
               <label for="tags">Tags</label>
             </span>
           </div>
@@ -122,7 +122,8 @@
         <div class="grid">
           <div class="col-12">
             <ConfirmPopup></ConfirmPopup>
-            <Button :label="`Create ${orgTypeLabel}`" @click="preSubmit" :disabled="orgTypeLabel === 'Org'" />
+            <Button :label="`Create ${orgTypeLabel}`" @click="preSubmit"
+                    :disabled="orgTypeLabel === 'Org'" data-cy="button-create-org"/>
           </div>
         </div>
 
