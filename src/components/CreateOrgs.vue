@@ -34,11 +34,8 @@
                 input-id="parent-district"
                 :options="districts"
                 show-clear
-                option-label="name"
-                placeholder="Select a district"
-                :loading="isLoadingDistricts"
-                class="w-full"
-              />
+                option-label="name" placeholder="Select a district" :loading="isLoadingDistricts"
+                        class="w-full" data-cy="dropdown-parent-district"/>
               <label for="parent-district">District</label>
               <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a district. </small>
             </span>
@@ -55,7 +52,7 @@
                 :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
                 :loading="!schoolDropdownEnabled"
                 class="w-full"
-              />
+              data-cy="dropdown-parent-school"/>
               <label for="parent-school">School</label>
               <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a district. </small>
             </span>
