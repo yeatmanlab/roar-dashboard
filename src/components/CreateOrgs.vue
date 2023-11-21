@@ -66,7 +66,7 @@
           <div class="col-12 md:col-6 lg:col-4 mt-3" v-if="orgType?.singular === 'class'">
             <span class="p-float-label">
               <Dropdown v-model="state.grade" inputId="grade" :options="grades" showClear optionLabel="name"
-                placeholder="Select a grade" class="w-full" />
+                placeholder="Select a grade" class="w-full" data-cy="dropdown-grade"/>
               <label for="grade">Grade</label>
               <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
             </span>

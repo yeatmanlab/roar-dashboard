@@ -18,14 +18,16 @@
                    v-if="activeOrgType === 'schools' || activeOrgType === 'classes'">
                 <span class="p-float-label">
                   <Dropdown v-model="selectedDistrict" inputId="district" :options="allDistricts" optionLabel="name"
-                            optionValue="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts" class="w-full" />
+                            optionValue="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts"
+                            class="w-full" data-cy="dropdown-parent-district"/>
                   <label for="district">District</label>
                 </span>
               </div>
               <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="orgType.id === 'classes'">
                 <span class="p-float-label">
                   <Dropdown v-model="selectedSchool" inputId="school" :options="allSchools" optionLabel="name"
-                            optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
+                            optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools"
+                            class="w-full" data-cy="dropdown-parent-school"/>
                   <label for="school">School</label>
                 </span>
               </div>
