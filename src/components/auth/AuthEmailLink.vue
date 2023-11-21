@@ -19,13 +19,20 @@ import { onMounted, ref } from "vue";
 import { useAuthStore } from '@/store/auth'
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router'
+import { fetchDocById } from "@/helpers/query/utils";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const success = ref(false);
 
-authStore.$subscribe((mutation, state) => {
-  if (state.roarfirekit.userData) {
+authStore.$subscribe(async (mutation, state) => {
+  if (authStore.uid) {
+    const userData = await fetchDocById('users', authStore.uid);
+    const userClaims = await fetchDocById('userClaims', authStore.uid);
+    authStore.userData = userData
+    authStore.userClaims = userClaims
+    success.value = true;
     router.push({ name: "Home" });
   }
 });
@@ -34,14 +41,24 @@ const formEmail = ref();
 const localStorageEmail = ref();
 const messages = ref([]);
 
-const addMessages = () => {
-  messages.value = [
-    {
-      severity: 'warn',
-      content: 'There was an issue with the sign-in link that you clicked on. This can happen when you attempt reuse a sign-in link from a previous email. We are rerouting you to the sign-in page to request another link.',
-      id: 0,
-    }
-  ];
+const addMessages = (errorCode) => {
+  if (errorCode === "auth/invalid-action-code") {
+    messages.value = [
+      {
+        severity: 'warn',
+        content: 'There was an issue with the sign-in link that you clicked on. This can happen when you attempt reuse a sign-in link from a previous email. We are rerouting you to the sign-in page to request another link.',
+        id: 0,
+      }
+    ];
+  } else if (errorCode === "timeout") {
+    messages.value = [
+      {
+        severity: 'warn',
+        content: 'There was an issue with the email sign-in link. We apologize for the inconvenience and are rerouting you to the sign-in page to request another link.',
+        id: 0,
+      }
+    ];
+  }
 };
 
 const loginFromEmailLink = async (email) => {
@@ -49,12 +66,21 @@ const loginFromEmailLink = async (email) => {
   const emailLink = window.location.href;
   await authStore.signInWithEmailLink({ email, emailLink }).catch((error) => {
     if (error.code === "auth/invalid-action-code") {
-      addMessages();
+      addMessages(error.code);
       setTimeout(() => {
         router.replace({ name: "SignIn" });
       }, 5000);
     } else {
       throw error;
+    }
+  }).then(async () => {
+    if (authStore.uid) {
+      const userData = await fetchDocById('users', authStore.uid);
+      const userClaims = await fetchDocById('userClaims', authStore.uid);
+      authStore.userData = userData
+      authStore.userClaims = userClaims
+      success.value = true;
+      router.push({ name: "Home" });
     }
   });
 }

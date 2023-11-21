@@ -1,0 +1,20 @@
+name: Deploy Firestore Rules
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+            args: deploy --only firestore:rules
+        env:
+            FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
+            PROJECT_ID: gse-roar-admin
+            PROJECT_PATH: ./firebase/admin

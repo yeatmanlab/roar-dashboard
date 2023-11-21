@@ -1,6 +1,7 @@
 import { defineStore, storeToRefs } from "pinia";
-import { getTreeTableOrgs } from "@bdelab/roar-firekit";
+import { parse, stringify } from "zipson";
 import { useAuthStore } from "@/store/auth"
+import { pluralizeFirestoreCollection } from "@/helpers";
 
 export const useQueryStore = () => {
   const authStore = useAuthStore();
@@ -11,61 +12,21 @@ export const useQueryStore = () => {
       return {
         allVariants: [],
         adminOrgs: {},
-        hierarchicalAdminOrgs: {},
         administrations: [],
+        users: {},
+        assignmentData: {},
+        administrationInfo: {},
+        orgInfo: {},
+        scoresData: {},
       };
     },
     actions: {
-      async getMyAdministrations() {
-        if (roarfirekit.value?.app?.db) {
-          const administrations = await roarfirekit.value.getMyAdministrations();
-          this.administrations =  administrations.map((administration) => ({
-            ...administration,
-            dates: {
-              start: administration.dateOpened.toDate(),
-              end: administration.dateClosed.toDate(),
-            },
-            assignedOrgs: {
-              districts: administration.districts,
-              schools: administration.schools,
-              classes: administration.classes,
-              groups: administration.groups,
-              families: administration.families,
-            }
-          }));
-        } else {
-          this.administrations = [];
-        }
-      },
       async getOrgs(orgType) {
         if (roarfirekit.value?.app?.db) {
           return roarfirekit.value.getOrgs(orgType);
         } else {
           return []
         }
-      },
-      async getAdminOrgs() {
-        const promises = [
-          this.getOrgs("districts"),
-          this.getOrgs("schools"),
-          this.getOrgs("classes"),
-          this.getOrgs("groups"),
-          this.getOrgs("families"),
-        ]
-      
-        const [_districts, _schools, _classes, _groups, _families] = await Promise.all(promises);
-        this.adminOrgs = {
-          districts: _districts,
-          schools: _schools,
-          classes: _classes,
-          groups: _groups,
-          families: _families,
-        }
-
-        this.hierarchicalAdminOrgs = getTreeTableOrgs(this.adminOrgs);
-      },
-      getTreeTableOrgs(orgs) {
-        return getTreeTableOrgs(orgs);
       },
       async getTasks(requireRegistered = true) {
         this.tasksReady = false;
@@ -84,6 +45,14 @@ export const useQueryStore = () => {
           this.allVariants = [];
         }
         this.variantsReady = true;
+      },
+    },
+    persist: {
+      storage: sessionStorage,
+      debug: false,
+      serializer: {
+        deserialize: parse,
+        serialize: stringify,
       },
     },
   })();

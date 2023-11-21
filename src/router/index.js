@@ -18,7 +18,12 @@ const routes = [
     name: "Home",
     component: () => import("../pages/Home.vue"),
     meta: { pageTitle: "Dashboard" },
-
+  },
+  {
+    path: "/clever-user",
+    name: "CleverLanding",
+    component: () => import("../pages/CleverLanding.vue"),
+    meta: { pageTitle: "Logging You In" },
   },
   // {
   //   path: "/game/:gameId",
@@ -33,6 +38,12 @@ const routes = [
     meta: { pageTitle: "SWR" }
   },
   {
+    path: "/game/swr-es",
+    name: "SWR-ES",
+    component: () => import("../components/tasks/SWR-ES.vue"),
+    meta: { pageTitle: "SWR (ES)" }
+  },
+  {
     path: "/game/pa",
     name: "PA",
     component: () => import("../components/tasks/PA.vue"),
@@ -43,6 +54,44 @@ const routes = [
     name: "SRE",
     component: () => import("../components/tasks/SRE.vue"),
     meta: { pageTitle: "SRE" }
+  },
+  {
+    path: "/game/letter",
+    name: "Letter",
+    component: () => import("../components/tasks/Letter.vue"),
+    meta: { pageTitle: "Letter" }
+  },
+  {
+    path: "/game/multichoice",
+    name: "Multichoice",
+    component: () => import("../components/tasks/Multichoice.vue"),
+    meta: { pageTitle: "Multichoice" }
+  },
+  {
+    path: "/game/morphology",
+    name: "Morphology",
+    component: () => import("../components/tasks/Multichoice.vue"),
+    props: {taskId: "morphology"},
+    meta: { pageTitle: "Morphology" }
+  },
+  {
+    path: "/game/cva",
+    name: "Cva",
+    component: () => import("../components/tasks/Multichoice.vue"),
+    props: {taskId: "cva"},
+    meta: { pageTitle: "CVA" }
+  },
+  {
+    path: "/game/vocab",
+    name: "Vocab",
+    component: () => import("../components/tasks/Vocab.vue"),
+    meta: { pageTitle: "Vocab" }
+  },
+  {
+    path: "/register-game",
+    name: "RegisterGame",
+    component: () => import("../pages/RegisterGame.vue"),
+    meta: { pageTitle: "Register Game", requireAdmin: true, requireSuperAdmin: true }
   },
   {
     path: "/upload-scores",
@@ -56,12 +105,12 @@ const routes = [
     component: () => import("../pages/QueryPage.vue"),
     meta: { pageTitle: "Query", requireAdmin: true, requireSuperAdmin: true },
   },
-  {
-    path: "/score-report",
-    name: "ScoreReport",
-    component: () => import("../pages/ScoreReport.vue"),
-    meta: { pageTitle: "Score Reports" },
-  },
+  // {
+  //   path: "/score-report",
+  //   name: "ScoreReport",
+  //   component: () => import("../pages/ScoreReport.vue"),
+  //   meta: { pageTitle: "Score Reports" },
+  // },
   // We don't support individual registration yet
   {
     path: "/register",
@@ -85,7 +134,7 @@ const routes = [
     path: '/register-students',
     name: 'RegisterStudents',
     component: () => import("../pages/RegisterStudents.vue"),
-    meta: {pageTitle: "Register Students", requireAdmin: true}
+    meta: {pageTitle: "Register Students", requireAdmin: true, requireSuperAdmin: true}
   },
   {
     path: "/signin",
@@ -104,7 +153,6 @@ const routes = [
       return { name: "SignIn" };
     },
     meta: { pageTitle: "Sign Out" },
-
   },
   {
     path: "/auth-clever",
@@ -157,11 +205,26 @@ const routes = [
     component: () => import("../components/ListOrgs.vue"),
     meta: {pageTitle: "List organizations", requireAdmin: true}
   },
+  { 
+    path: "/list-users/:orgType/:orgId/:orgName",
+    name: "ListUsers",
+    props: true,
+    component: () => import("../components/ListUsers.vue"),
+    meta: {pageTitle: "List users", requireAdmin: true}
+  },
   {
-    path: "/administration/:id",
+    path: "/administration/:administrationId/:orgType/:orgId",
     name: "ViewAdministration",
-    component: () => import("../pages/Administration.vue"),
+    props: true,
+    component: () => import("../pages/AdministrationProgress.vue"),
     meta: {pageTitle: "View Administration", requireAdmin: true}
+  },
+  {
+    path: "/scores/:administrationId/:orgType/:orgId",
+    name: "ScoreReport",
+    props: true,
+    component: () => import("../pages/ScoreReport.vue"),
+    meta: {pageTitle: "View Scores", requireAdmin: true}
   },
   {
     path: "/enable-cookies",
@@ -208,12 +271,12 @@ router.beforeEach(async (to, from) => {
     return { name: "SignIn" }
   }
   // Check if user is an admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin()) {
+  if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin) {
     return { name: "Home" }
   }
 
   // Check if user is a super admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin()) {
+  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin) {
     return { name: "Home" }
   }
 })

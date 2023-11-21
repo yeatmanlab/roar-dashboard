@@ -5,67 +5,114 @@
     </aside>
     <section class="main-body">
       <Panel header="Create a new organization">
-        <template #icons>
-          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button>
-        </template>
         Use this form to create a new organization.
 
         <Divider />
 
-        <div class="grid mt-4">
-          <div class="col-12 mb-2">
+        <div class="grid column-gap-3 mt-5">
+          <div class="col-12 md:col-6 lg:col-3 xl:col-3">
             <span class="p-float-label">
               <Dropdown v-model="orgType" inputId="org-type" :options="orgTypes" showClear optionLabel="singular"
-                placeholder="Select an org type" class="w-full md:w-30rem" />
+                placeholder="Select an org type" class="w-full" />
               <label for="org-type">Org Type</label>
             </span>
           </div>
+        </div>
 
-          <div class="col-12" v-if="parentOrgType">
-            <div v-if="parentOrgs.length > 1">
-              <p id="section-heading">Assign this {{ orgTypeLabel.toLowerCase() }} to a {{ parentOrgType.singular }}.</p>
-              <span class="p-float-label my-4">
-                <Dropdown v-model="parentOrg" inputId="parent-org" :options="parentOrgs" showClear optionLabel="name"
-                  :placeholder="`Select a ${parentOrgType.singular}`" class="w-full md:w-14rem" />
-                <label for="parent-org">{{ _capitalize(parentOrgType.singular) }}</label>
-              </span>
-            </div>
-
-            <div v-else-if="parentOrgs.length === 1">
-              <p id="section-heading">
-                This {{ orgTypeLabel.toLowerCase() }} will be created in {{ parentOrgType }} {{ parentOrgs[0].name }}.
-              </p>
-            </div>
-
-            <div v-else class="loading-container">
-              <AppSpinner style="margin-bottom: 1rem;" />
-              <span>Loading {{ parentOrgType.plural }}</span>
-            </div>
+        <div v-if="parentOrgRequired" class="grid mt-4">
+          <div class="col-12 md:col-6 lg:col-4">
+            <span class="p-float-label">
+              <Dropdown v-model="state.parentDistrict" inputId="parent-district" :options="districts" showClear
+                optionLabel="name" placeholder="Select a district" :loading="isLoadingDistricts" class="w-full" />
+              <label for="parent-district">District</label>
+              <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error">
+                Please select a district.
+              </small>
+            </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3">
-            <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
+          <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
+            <span class="p-float-label">
+              <Dropdown v-model="state.parentSchool" inputId="parent-school" :options="schools" showClear
+                optionLabel="name"
+                :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
+                :loading="!schoolDropdownEnabled" class="w-full" />
+              <label for="parent-school">School</label>
+              <small v-if="v$.parentSchool.$invalid && submitted" class="p-error">
+                Please select a district.
+              </small>
+            </span>
+          </div>
+        </div>
+
+        <div class="grid mt-3">
+          <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <InputText id="org-name" v-model="state.orgName" class="w-full" />
               <label for="org-name">{{ orgTypeLabel }} Name</label>
+              <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3">
-            <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
+          <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <InputText id="org-initial" v-model="state.orgInitials" class="w-full" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
+              <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
             </span>
           </div>
 
-          <div class="col-12 md:col-6 lg:col-3" v-if="parentOrgType?.singular === 'school'">
+          <div class="col-12 md:col-6 lg:col-4 mt-3" v-if="orgType?.singular === 'class'">
             <span class="p-float-label">
-              <Dropdown v-model="grade" inputId="grade" :options="grades" showClear optionLabel="name"
+              <Dropdown v-model="state.grade" inputId="grade" :options="grades" showClear optionLabel="name"
                 placeholder="Select a grade" class="w-full" />
               <label for="grade">Grade</label>
+              <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
+            </span>
+          </div>
+        </div>
+
+        <div class="mt-5 mb-0 pb-0">
+          Optional fields:
+        </div>
+
+        <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
+          <div class="grid column-gap-3">
+            <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
+              <span class="p-float-label">
+                <InputText v-model="state.ncesId" v-tooltip="ncesTooltip" inputId="nces-id" class="w-full" />
+                <label for="nces-id">NCES ID</label>
+              </span>
+            </div>
+          </div>
+          <div class="grid mt-3">
+            <div class="col-12">
+              Search for a {{ orgType.singular }} address:
+            </div>
+            <div class="col-12 md:col-6 lg:col-6 xl:col-6 p-inputgroup">
+              <span class="p-inputgroup-addon">
+                <i class="pi pi-map"></i>
+              </span>
+              <GMapAutocomplete @place_changed="setAddress" :options="{
+                fields: ['address_components', 'formatted_address', 'place_id', 'url'],
+              }" class="p-inputtext p-component w-full">
+              </GMapAutocomplete>
+            </div>
+          </div>
+          <div v-if="state.address?.formattedAddress" class="grid">
+            <div class="col-12 mt-3">
+              {{ orgTypeLabel }} Address:
+              <Chip :label="state.address.formattedAddress" removable @remove="removeAddress" />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid mt-3">
+          <div class="col-12 md:col-6 lg:col-4 mt-3">
+            <span class="p-float-label">
+              <AutoComplete v-model="state.tags" multiple dropdown :options="allTags" :suggestions="tagSuggestions"
+                @complete="searchTags" name="tags" class="w-full" />
+              <label for="tags">Tags</label>
             </span>
           </div>
         </div>
@@ -75,7 +122,7 @@
         <div class="grid">
           <div class="col-12">
             <ConfirmPopup></ConfirmPopup>
-            <Button :label="`Create ${orgTypeLabel}`" @click="preSubmit" :disabled="orgTypeLabel === 'Org'" />
+            <Button :label="`Create ${orgTypeLabel}`" @click="submit" :disabled="orgTypeLabel === 'Org'" />
           </div>
         </div>
 
@@ -85,44 +132,140 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from "vue";
-import { useRouter } from 'vue-router';
+import { computed, reactive, ref, toRaw, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
 import { storeToRefs } from "pinia";
 import _capitalize from "lodash/capitalize";
 import _get from "lodash/get";
+import _set from "lodash/set";
+import _union from "lodash/union";
+import _without from "lodash/without";
+import { useQuery } from '@tanstack/vue-query'
 import { useVuelidate } from "@vuelidate/core";
-import { required } from "@vuelidate/validators";
-import { useQueryStore } from "@/store/query";
+import { required, requiredIf } from "@vuelidate/validators";
 import { useAuthStore } from "@/store/auth";
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import { getSidebarActions } from "../router/sidebarActions";
+import { getSidebarActions } from "@/router/sidebarActions";
+import { fetchDocById } from "@/helpers/query/utils";
+import { orgFetcher } from "@/helpers/query/orgs";
+
+const initialized = ref(false);
+const confirm = useConfirm();
+const toast = useToast();
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
 
 const state = reactive({
   orgName: "",
   orgInitials: "",
+  ncesId: undefined,
+  address: undefined,
+  parentDistrict: undefined,
+  parentSchool: undefined,
+  grade: undefined,
+  tags: [],
 })
+
+let unsubscribe;
+const initTable = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+}
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) initTable();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) initTable();
+})
+
+const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
+  useQuery({
+    queryKey: ['userClaims', authStore.uid],
+    queryFn: () => fetchDocById('userClaims', authStore.uid),
+    keepPreviousData: true,
+    enabled: initialized,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
+
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+
+const { isLoading: isLoadingDistricts, data: districts } =
+  useQuery({
+    queryKey: ['districts'],
+    queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
+    keepPreviousData: true,
+    enabled: claimsLoaded,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const { isLoading: isLoadingGroups, data: groups } =
+  useQuery({
+    queryKey: ['groups'],
+    queryFn: () => orgFetcher('groups', undefined, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
+    keepPreviousData: true,
+    enabled: claimsLoaded,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const schoolQueryEnabled = computed(() => {
+  return claimsLoaded.value && state.parentDistrict !== undefined;
+})
+
+const selectedDistrict = computed(() => state.parentDistrict?.id);
+
+const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: schools } =
+  useQuery({
+    queryKey: ['schools', selectedDistrict],
+    queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
+    keepPreviousData: true,
+    enabled: schoolQueryEnabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+const classQueryEnabled = computed(() => {
+  return claimsLoaded.value && state.parentSchool !== undefined;
+})
+
+const schoolDropdownEnabled = computed(() => {
+  return state.parentDistrict && !isFetchingSchools.value;
+})
+
+const selectedSchool = computed(() => state.parentSchool?.id);
+
+const { isLoading: isLoadingClasses, data: classes } =
+  useQuery({
+    queryKey: ['classes', selectedSchool],
+    queryFn: () => orgFetcher('schools', selectedSchool, isSuperAdmin, adminOrgs, ["name", "id", "tags"]),
+    keepPreviousData: true,
+    enabled: classQueryEnabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
 const rules = {
   orgName: { required },
-  orgInitials: { required }
-}
+  orgInitials: { required },
+  parentDistrict: { required: requiredIf(() => ["school", "class"].includes(orgType.value.singular)) },
+  parentSchool: { required: requiredIf(() => orgType.value.singular === "class") },
+  grade: { required: requiredIf(() => orgType.value.singular === "class") }
+};
+
 const v$ = useVuelidate(rules, state);
 const submitted = ref(false);
-
-const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return "pi pi-spin pi-spinner";
-  return "pi pi-refresh";
-});
 
 const orgTypes = [
   { firestoreCollection: 'districts', singular: 'district' },
   { firestoreCollection: 'schools', singular: 'school' },
   { firestoreCollection: 'classes', singular: 'class' },
   { firestoreCollection: 'groups', singular: 'group' },
-  { firestoreCollection: 'families', singular: 'family' },
 ];
+
 const orgType = ref();
 const orgTypeLabel = computed(() => {
   if (orgType.value) {
@@ -131,15 +274,8 @@ const orgTypeLabel = computed(() => {
   return "Org";
 })
 
-const parentOrgType = computed(() => {
-  if (orgType.value?.singular === "school") {
-    return { plural: "districts", singular: "district" };
-  } else if (orgType.value?.singular === "class") {
-    return { plural: "school", singular: "school" };
-  }
-})
+const parentOrgRequired = computed(() => ["school", "class"].includes(orgType.value?.singular))
 
-const grade = ref();
 const grades = [
   { name: 'Pre-K', value: 'PK' },
   { name: 'Transitional Kindergarten', value: 'TK' },
@@ -158,47 +294,51 @@ const grades = [
   { name: 'Grade 12', value: 12 },
 ];
 
-const router = useRouter();
-const confirm = useConfirm();
-const toast = useToast();
-const queryStore = useQueryStore();
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-const { adminOrgs } = storeToRefs(queryStore);
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
-
-const districts = ref(adminOrgs.value.districts || []);
-const schools = ref(adminOrgs.value.schools || []);
-const parentOrgs = computed(() => {
-  if (orgType.value?.singular === "school") {
-    return districts.value;
-  } else if (orgType.value?.singular === "class") {
-    return schools.value;
-  }
-  return [];
+const allTags = computed(() => {
+  const districtTags = (districts.value ?? []).map((org) => org.tags);
+  const schoolTags = (districts.value ?? []).map((org) => org.tags);
+  const classTags = (classes.value ?? []).map((org) => org.tags);
+  const groupTags = (groups.value ?? []).map((org) => org.tags);
+  return _without(_union(
+    ...districtTags, ...schoolTags, ...classTags, ...groupTags
+  ), undefined) || [];
 })
 
-const parentOrg = ref();
+const ncesTooltip = computed(() => {
+  if (orgType.value?.singular === "school") {
+    return "12 digit NCES school identification number";
+  } else if (orgType.value?.singular === "district") {
+    return "7 digit NCES district identification number";
+  }
+  return "";
+})
 
-const preSubmit = (event) => {
-  if (parentOrgType.value && !parentOrg.value) {
-    confirm.require({
-      target: event.currentTarget,
-      message: `You created a ${orgType.value?.singular} without a parent ${parentOrgType.value?.singular}. Are you sure you want to do this?`,
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        submit();
-      },
-      reject: () => {
-        return;
-      }
-    });
+const tagSuggestions = ref([]);
+const searchTags = (event) => {
+  const query = event.query.toLowerCase();
+  let filteredOptions = allTags.value.filter(opt => opt.toLowerCase().includes(query));
+  if (filteredOptions.length === 0 && query) {
+    filteredOptions.push(query);
   } else {
-    submit();
+    filteredOptions = filteredOptions.map(opt => opt);
+  }
+  tagSuggestions.value = filteredOptions;
+}
+
+const setAddress = (place) => {
+  state.address = {
+    addressComponents: place.address_components || [],
+    formattedAddress: place.formatted_address,
+    googlePlacesId: place.place_id,
+    googleMapsUrl: place.url,
   }
 }
 
-const submit = async (event) => {
+const removeAddress = () => {
+  state.address = undefined;
+}
+
+const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate()
   if (isFormValid) {
@@ -207,43 +347,35 @@ const submit = async (event) => {
       abbreviation: state.orgInitials,
     };
 
-    if (parentOrgType.value?.singular === "school") {
-      if (parentOrg.value?.id) {
-        orgData.schoolId = parentOrg.value.id;
-      }
-    } else if (parentOrgType.value?.singular === "district") {
-      if (parentOrg.value?.id) {
-        orgData.districtId = parentOrg.value.id;
-      }
-    }
+    if (state.grade) orgData.grade = toRaw(state.grade).value;
+    if (state.ncesId) orgData.ncesId = state.ncesId;
+    if (state.address) orgData.address = state.address;
+    if (state.tags.length > 0) orgData.tags = state.tags;
 
-    if (grade.value) orgData.grade = grade.value.value;
+    if (orgType.value?.singular === "class") {
+      orgData.schoolId = toRaw(state.parentSchool).id;
+      orgData.districtId = toRaw(state.parentDistrict).id;
+    } else if (orgType.value?.singular === "school") {
+      orgData.districtId = toRaw(state.parentDistrict).id;
+    }
 
     await roarfirekit.value.createOrg(orgType.value.firestoreCollection, orgData).then(() => {
       toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-      router.push({ name: 'ListOrgs' });
+      submitted.value = false;
+      resetForm();
     })
   } else {
     console.log("Form is invalid");
   }
 };
 
-let unsubscribe;
-
-const refresh = async () => {
-  if (unsubscribe) unsubscribe();
-  refreshing.value = true;
-  districts.value = await queryStore.getOrgs("districts");
-  schools.value = await queryStore.getOrgs("schools");
-  refreshing.value = false;
-}
-
-if (districts.value.length === 0 || schools.value.length === 0) {
-  unsubscribe = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-      await refresh();
-    }
-  });
+const resetForm = () => {
+  state.orgName = "";
+  state.orgInitials = "";
+  state.ncesId = undefined;
+  state.address = undefined;
+  state.grade = undefined;
+  state.tags = [];
 }
 </script> 
 

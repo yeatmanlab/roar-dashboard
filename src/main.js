@@ -4,14 +4,17 @@ import { createHead } from '@vueuse/head'
 import router from '@/router/index.js'
 import App from "@/App.vue";
 
-import piniaPluginPersistedState from "pinia-plugin-persistedstate"
+import piniaPluginPersistedState from "pinia-plugin-persistedstate";
+import TextClamp from 'vue3-text-clamp';
 
 import PrimeVue from "primevue/config";
 
 // PrimeVue components
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
+import AutoComplete from "primevue/autocomplete";
 import Badge from 'primevue/badge';
+import BlockUI from "primevue/blockui";
 import Button from "primevue/button";
 import Calendar from 'primevue/calendar';
 import Card from "primevue/card";
@@ -19,6 +22,7 @@ import Carousel from "primevue/carousel"
 import Checkbox from "primevue/checkbox";
 import Chart from 'primevue/chart'
 import Chip from "primevue/chip";
+import Chips from "primevue/chips";
 import ConfirmPopup from "primevue/confirmpopup";
 import ConfirmDialog from "primevue/confirmdialog";
 import DataView from 'primevue/dataview';
@@ -27,9 +31,11 @@ import Divider from "primevue/divider";
 import Dropdown from "primevue/dropdown";
 import FileUpload from 'primevue/fileupload';
 import FocusTrap from "primevue/focustrap";
+import InputNumber from "primevue/inputnumber";
 import InputSwitch from "primevue/inputswitch";
 import InputText from "primevue/inputtext";
 import InlineMessage from 'primevue/inlinemessage';
+import Listbox from 'primevue/listbox';
 import Message from "primevue/message";
 import Menu from "primevue/menu"
 import MultiSelect from "primevue/multiselect";
@@ -38,12 +44,18 @@ import Panel from "primevue/panel";
 import Password from "primevue/password";
 import PickList from 'primevue/picklist';
 import ProgressBar from 'primevue/progressbar';
+import ScrollPanel from 'primevue/scrollpanel';
 import SelectButton from "primevue/selectbutton";
+import Sidebar from "primevue/sidebar";
 import Skeleton from "primevue/skeleton";
+import SpeedDial from "primevue/speeddial";
 import SplitButton from "primevue/splitbutton";
+import Splitter from "primevue/splitter";
+import SplitterPanel from "primevue/splitterpanel";
 import TabPanel from "primevue/tabpanel";
 import TabView from "primevue/tabview";
 import Tag from "primevue/tag";
+import Textarea from "primevue/textarea";
 import Toast from 'primevue/toast';
 import ToastService from 'primevue/toastservice';
 import Toolbar from "primevue/toolbar";
@@ -62,8 +74,12 @@ import Column from 'primevue/column';
 import ColumnGroup from 'primevue/columngroup';     //optional for column grouping
 import Row from 'primevue/row';
 
+import { VueQueryPlugin } from "@tanstack/vue-query";
+
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue'
+
+import VueGoogleMaps from 'vue-google-maps-community-fork'
 
 // Style assets
 import "primevue/resources/primevue.css"; // primevue css
@@ -83,12 +99,21 @@ app.use(ToastService);
 app.use(ConfirmationService);
 app.use(pinia);
 app.use(router);
+app.use(VueGoogleMaps, {
+  load: {
+    key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
+    libraries: 'places',
+  },
+})
 app.use(createHead());
+app.use(TextClamp);
+app.use(VueQueryPlugin);
 
-app.component("AutoComplete", AutoComplete)
 app.component("Accordion", Accordion);
 app.component("AccordionTab", AccordionTab);
+app.component("AutoComplete", AutoComplete);
 app.component("Badge", Badge);
+app.component("BlockUI", BlockUI);
 app.component("Button", Button);
 app.component("Calendar", Calendar);
 app.component("Card", Card);
@@ -96,6 +121,7 @@ app.component("Carousel", Carousel);
 app.component("Checkbox", Checkbox);
 app.component("Chart", Chart);
 app.component("Chip", Chip);
+app.component("Chips", Chips);
 app.component("ConfirmPopup", ConfirmPopup);
 app.component("ConfirmDialog", ConfirmDialog);
 app.component("DataView", DataView);
@@ -104,8 +130,10 @@ app.component("Divider", Divider);
 app.component("Dropdown", Dropdown);
 app.component("FileUpload", FileUpload);
 app.component("InlineMessage", InlineMessage);
+app.component("InputNumber", InputNumber);
 app.component("InputSwitch", InputSwitch);
 app.component("InputText", InputText);
+app.component("Listbox", Listbox);
 app.component("Message", Message);
 app.component("Menu", Menu);
 app.component("MultiSelect", MultiSelect);
@@ -114,21 +142,24 @@ app.component("Panel", Panel);
 app.component("Password", Password);
 app.component("PickList", PickList);
 app.component("ProgressBar", ProgressBar);
+app.component("ScrollPanel", ScrollPanel);
 app.component("SelectButton", SelectButton);
+app.component("Sidebar", Sidebar);
 app.component("Skeleton", Skeleton);
+app.component("SpeedDial", SpeedDial);
 app.component("SplitButton", SplitButton);
+app.component("Splitter", Splitter);
+app.component("SplitterPanel", SplitterPanel);
 app.component("TabPanel", TabPanel);
 app.component("TabView", TabView);
 app.component("Tag", Tag);
+app.component("Textarea", Textarea);
 app.component("Toast", Toast);
 app.component("ToggleButton", ToggleButton);
 app.component("Toolbar", Toolbar);
 app.component("TreeSelect", TreeSelect);
 app.component("TreeTable", TreeTable);
 app.component("TriStateCheckbox", TriStateCheckbox)
-
-app.use(ConfirmationService);
-
 app.component("DataTable", DataTable);
 app.component("Column", Column);
 app.component("ColumnGroup", ColumnGroup);
@@ -150,7 +181,6 @@ Object.entries(appComponentFiles).forEach(([path, m]) => {
 });
 
 import { Buffer } from 'buffer'
-import AutoComplete from "primevue/autocomplete";
 globalThis.Buffer = Buffer
 
 app.mount("#app");

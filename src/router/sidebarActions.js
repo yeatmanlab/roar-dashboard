@@ -6,33 +6,39 @@ export const sidebarActionOptions = [
     requiresSuperAdmin: false,
   },
   {
-    title: "Register students",
-    icon: "pi pi-users",
-    buttonLink: { name: "RegisterStudents" },
-    requiresSuperAdmin: false,
-  },
-  {
-    title: "Register an administrator",
-    icon: "pi pi-user-plus",
-    buttonLink: { name: "CreateAdministrator" },
-    requiresSuperAdmin: true,
-  },
-  {
-    title: "Create an organization",
-    icon: "pi pi-database",
-    buttonLink: { name: "CreateOrgs" },
-    requiresSuperAdmin: true,
-  },
-  {
     title: "List organizations",
     icon: "pi pi-list",
     buttonLink: { name: "ListOrgs" },
     requiresSuperAdmin: false,
   },
   {
-    title: "Create an assignment",
+    title: "Create organization",
+    icon: "pi pi-database",
+    buttonLink: { name: "CreateOrgs" },
+    requiresSuperAdmin: true,
+  },
+  {
+    title: "Register students",
+    icon: "pi pi-users",
+    buttonLink: { name: "RegisterStudents" },
+    requiresSuperAdmin: true,
+  },
+  {
+    title: "Register administrator",
+    icon: "pi pi-user-plus",
+    buttonLink: { name: "CreateAdministrator" },
+    requiresSuperAdmin: true,
+  },
+  {
+    title: "Create administration",
     icon: "pi pi-question-circle",
     buttonLink: { name: "CreateAdministration" },
+    requiresSuperAdmin: true,
+  },
+  {
+    title: "Register Task",
+    icon: "pi pi-pencil",
+    buttonLink: { name: "RegisterGame" },
     requiresSuperAdmin: true,
   },
 ]

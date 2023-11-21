@@ -7,12 +7,13 @@
       <!--Upload file section-->
       <div v-if="!isFileUploaded">
         <Panel header="Add Participants">
-          We need the following information for each student to register:
+          The following fields are required for registering a student:
           <ul>
-            <li>email (required)</li>
-            <li>date of birth (required)</li>
-            <li>grade (required)</li>
+            <li>username</li>
+            <li>date of birth</li>
+            <li>grade</li>
             <li>password</li>
+            <li>Either a group OR a district and school</li>
           </ul>
           Upload or drag-and-drop a student list below to begin!
         </Panel>
@@ -38,6 +39,7 @@
             <li>date of birth</li>
             <li>grade</li>
             <li>password</li>
+            <li>Either a group OR a district and school</li>
           </ul>
 
           <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
@@ -60,9 +62,8 @@
           </Column>
         </DataTable>
         <div class="submit-container">
-          <Button @click="submitStudents">
-            Start Registration
-          </Button>
+          <Button @click="submitStudents" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
+            :disabled="activeSubmit" />
         </div>
         <!-- Datatable of error students -->
         <div v-if="showErrorTable" class="error-container">
@@ -91,31 +92,33 @@
 <script setup>
 import { ref, toRaw } from 'vue';
 import { csvFileToJson } from '@/helpers';
-import _forEach from 'lodash/forEach'
-import _startCase from 'lodash/startCase'
-import _includes from 'lodash/includes'
-import _get from 'lodash/get';
-import _set from 'lodash/set';
-import _isEmpty from 'lodash/isEmpty';
-import _compact from 'lodash/compact';
 import _cloneDeep from 'lodash/cloneDeep';
-import _omit from 'lodash/omit';
+import _chunk from 'lodash/chunk';
+import _compact from 'lodash/compact';
 import _find from 'lodash/find';
+import _forEach from 'lodash/forEach'
+import _includes from 'lodash/includes'
+import _isEmpty from 'lodash/isEmpty';
+import _omit from 'lodash/omit';
+import _pick from 'lodash/pick';
+import _set from 'lodash/set';
+import _uniqBy from 'lodash/uniqBy';
+import _startCase from 'lodash/startCase'
 import { useAuthStore } from '@/store/auth';
-import { useQueryStore } from '@/store/query';
-// import RoarDataTable from '../components/RoarDataTable.vue';
-import { storeToRefs } from 'pinia';
-import AppSpinner from '@/components/AppSpinner.vue';
+import { useRouter } from 'vue-router';
 import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
 import { getSidebarActions } from "../router/sidebarActions";
+import { useToast } from "primevue/usetoast";
+import { pluralizeFirestoreCollection } from '@/helpers';
+import { fetchOrgByName } from '@/helpers/query/orgs';
 
 const authStore = useAuthStore();
-const queryStore = useQueryStore();
-const { roarfirekit, isFirekitInit } = storeToRefs(authStore);
+const router = useRouter();
+const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin(), true));
+const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
@@ -126,7 +129,7 @@ const dropdown_options = ref([
     label: 'Required',
     items: [
       { label: 'Student Username', value: 'username' },
-      { label: 'Student Email', value: 'email' },
+      // { label: 'Student Email', value: 'email' },
       { label: 'Grade', value: 'grade' },
       { label: 'Password', value: 'password' },
       { label: 'Student Date of Birth', value: 'dob' },
@@ -136,9 +139,9 @@ const dropdown_options = ref([
     label: 'Optional',
     items: [
       { label: 'Ignore this column', value: 'ignore' },
-      { label: 'First Name', value: 'first' },
-      { label: 'Middle Name', value: 'middle' },
-      { label: 'Last Name', value: 'last' },
+      { label: 'First Name', value: 'firstName' },
+      { label: 'Middle Name', value: 'middleName' },
+      { label: 'Last Name', value: 'lastName' },
       { label: 'State ID', value: 'state_id' },
       { label: 'Gender', value: 'gender' },
       { label: 'English Language Level', value: 'ell_status' },
@@ -168,28 +171,8 @@ const errorUserColumns = ref([]);
 const errorMessage = ref("");
 const showErrorTable = ref(false);
 
-// Selecting Orgs
-let districts = [];
-let schools = [];
-let classes = [];
-let groups = [];
-
-// Functions supporting Selecting Orgs
-const initFormFields = async () => {
-  console.log('inside init form fields')
-  unsubscribe();
-  // TODO: Optimize this with Promise.all or some such
-  districts = await queryStore.getOrgs("districts");
-  schools = await queryStore.getOrgs("schools");
-  classes = await queryStore.getOrgs("classes");
-  groups = await queryStore.getOrgs("groups");
-}
-
-const unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.getOrgs && state.roarfirekit.isAdmin()) {
-    await initFormFields();
-  }
-});
+const activeSubmit = ref(false);
+let processedUsers = 0;
 
 // Functions supporting the uploader
 const onFileUpload = async (event) => {
@@ -197,6 +180,7 @@ const onFileUpload = async (event) => {
   tableColumns.value = generateColumns(toRaw(rawStudentFile.value[0]))
   populateDropdown(tableColumns.value)
   isFileUploaded.value = true;
+  toast.add({ severity: 'success', summary: 'Success', detail: 'File Successfully Uploaded', life: 3000 });
 }
 
 function populateDropdown(columns) {
@@ -226,31 +210,56 @@ function getKeyByValue(object, value) {
   return Object.keys(object).find(key => object[key] === value);
 }
 
-function submitStudents(rawJson) {
+function checkUniqueStudents(students, field) {
+  const uniqueStudents = _uniqBy(students, (student) => student[field])
+  return (students.length === uniqueStudents.length)
+}
+
+async function submitStudents(rawJson) {
+  // Reset error users
+  errorUsers.value = [];
+  errorUserColumns.value = [];
+  showErrorTable.value = false;
   errorMessage.value = "";
+  activeSubmit.value = true;
   const modelValues = _compact(Object.values(dropdown_model.value))
   // Check that all required values are filled in
   if (!_includes(modelValues, 'email') && !_includes(modelValues, 'username')) {
     // Username / email needs to be filled in
     errorMessage.value = "Please select a column to be user's username or email."
+    activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'dob')) {
     // Date needs to be filled in
     errorMessage.value = "Please select a column to be user's date of birth."
+    activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'grade')) {
     // Grade needs to be filled in
     errorMessage.value = "Please select a column to be user's grade."
+    activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'password')) {
     // Password needs to be filled in 
     errorMessage.value = "Please select a column to be user's password."
+    activeSubmit.value = false;
+    return;
+  }
+  if (
+    ((!_includes(modelValues, 'district') && !_includes(modelValues, 'school')) ||
+      (!_includes(modelValues, 'district') && _includes(modelValues, 'school')) ||
+      (_includes(modelValues, 'district') && !_includes(modelValues, 'school'))) &&
+    !_includes(modelValues, 'group')) {
+    // Requires either district and school, OR group
+    errorMessage.value = "Please assign columns to be either a group OR a pair of district and school."
+    activeSubmit.value = false;
     return;
   }
   let submitObject = []
+  // Construct list of student objects, handle special columns
   _forEach(rawStudentFile.value, student => {
     let studentObj = {}
     let dropdownMap = _cloneDeep(dropdown_model.value)
@@ -274,77 +283,96 @@ function submitStudents(rawJson) {
     })
     submitObject.push(studentObj)
   })
-  _forEach(submitObject, user => {
-    // Handle Email Registration
-    const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
-    const computedEmail = email || `${username}@roar-auth.com`
-    let sendObject = {
-      email: computedEmail,
-      password,
-      userData
-    }
-    if (firstName) _set(sendObject, 'userData.name.first', firstName)
-    if (middleName) _set(sendObject, 'userData.name.middle', middleName)
-    if (lastName) _set(sendObject, 'userData.name.last', lastName)
-
-    // If district is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    if (district) {
-      const id = getDistrictId(district);
-      if (id) {
-        _set(sendObject, 'userData.district', id)
-      } else {
-        addErrorUser(user, `Error: District '${district}' is invalid`)
-        return;
+  // Check for duplicate username / emails 
+  let authField;
+  if (_includes(modelValues, 'username')) authField = 'username';
+  else authField = 'email';
+  const areUnique = checkUniqueStudents(submitObject, authField);
+  if (!areUnique) {
+    errorMessage.value = `One or more of the ${authField}s in this CSV are not unique.`
+    activeSubmit.value = false;
+    return;
+  }
+  // Begin submit process
+  const totalUsers = submitObject.length;
+  const chunkedSubmitObject = _chunk(submitObject, 10)
+  for (const chunk of chunkedSubmitObject) {
+    for (const user of chunk) {
+      // Handle Email Registration
+      const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
+      const computedEmail = email || `${username}@roar-auth.com`
+      let sendObject = {
+        email: computedEmail,
+        password,
+        userData
       }
-    }
+      if (username) _set(sendObject, 'userData.username', username)
+      if (firstName) _set(sendObject, 'userData.name.first', firstName)
+      if (middleName) _set(sendObject, 'userData.name.middle', middleName)
+      if (lastName) _set(sendObject, 'userData.name.last', lastName)
 
-    // If school is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    if (school) {
-      const id = getSchoolId(school);
-      if (id) {
-        _set(sendObject, 'userData.school', id)
-      } else {
-        addErrorUser(user, `Error: School '${school}' is invalid.`)
-        return;
+      const orgNameMap = {
+        "district": district,
+        "school": school,
+        "class": uClass,
+        "group": group,
       }
-    }
 
-    // If class is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    if (uClass) {
-      const id = getClassId(uClass);
-      if (id) {
-        _set(sendObject, 'userData.class', id)
-      } else {
-        addErrorUser(user, `Error: Class '${uClass}' is invalid.`)
-        return;
+      // If orgType is a given column, check if the name is
+      //   associated with a valid id. If so, add the id to
+      //   the sendObject. If not, reject user
+      for (const [orgType, orgName] of Object.entries(orgNameMap)) {
+        if (orgName) {
+          let orgInfo;
+          if (orgType === 'school') {
+            const { id: districtId } = await getOrgId("districts", district);
+            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
+          } else if (orgType === 'class') {
+            const { id: districtId } = await getOrgId("districts", district);
+            const { id: schoolId } = await getOrgId("schools", school);
+            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
+          } else {
+            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
+          }
+
+          if (!_isEmpty(orgInfo)) {
+            _set(sendObject, `userData.${orgType}`, orgInfo)
+          } else {
+            addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`)
+            if (processedUsers >= totalUsers) {
+              activeSubmit.value = false;
+            }
+            return;
+          }
+        }
       }
-    }
 
-    // If group is a given column, check if the name is
-    //   associated with a valid id. If so, add the id to
-    //   the sendObject. If not, reject user
-    if (group) {
-      const id = getGroupId(group);
-      if (id) {
-        _set(sendObject, 'userData.group', id)
-      } else {
-        addErrorUser(user, `Error: Group '${group}' is invalid.`)
-        return;
-      }
+      authStore.registerWithEmailAndPassword(sendObject).then(() => {
+        toast.add({ severity: 'success', summary: 'User Creation Success', detail: `${sendObject.email} was sucessfully created.`, life: 9000 });
+        processedUsers = processedUsers + 1;
+        if (processedUsers >= totalUsers) {
+          activeSubmit.value = false;
+          if (errorUsers.value.length === 0) {
+            // Processing is finished, and there are no error users.
+            router.push({ name: "Home" })
+          }
+        }
+      }).catch((e) => {
+        toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
+        addErrorUser(user, e)
+        if (processedUsers >= totalUsers) {
+          activeSubmit.value = false;
+        }
+      })
     }
+    await delay(1250)
+  }
+}
 
-    authStore.registerWithEmailAndPassword(sendObject).then(() => {
-      console.log('sucessful user creation')
-    }).catch((e) => {
-      addErrorUser(user, e)
-    })
-  })
+function delay(milliseconds) {
+  return new Promise(resolve => {
+    setTimeout(resolve, milliseconds);
+  });
 }
 
 
@@ -366,34 +394,31 @@ function addErrorUser(user, error) {
     ...user,
     error
   })
+  processedUsers = processedUsers + 1;
 }
 
-// Find the district id given the name. undefined if missing.
-function getDistrictId(districtName) {
-  return _get(_find(districts, (district) => {
-    return district.name === districtName;
-  }), 'id')
-}
+const orgIds = ref({
+  districts: {},
+  schools: {},
+  classes: {},
+  groups: {},
+})
 
-// Find the school id given the name. undefined if missing.
-function getSchoolId(schoolName) {
-  return _get(_find(schools, (school) => {
-    return school.name === schoolName;
-  }), 'id')
-}
+const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
+  if (orgIds.value[orgType][orgName]) return orgIds.value[orgType][orgName];
 
-// Find the class id given the name. undefined if missing.
-function getClassId(className) {
-  return _get(_find(classes, (c) => {
-    return c.name === className;
-  }), 'id')
-}
+  // Currently we don't supply selectedDistrict or selectedSchool
+  const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
+  // TODO: If multiple orgs are returned display an org selection modal to the user.
+  if (orgs.length > 1) {
+    throw new Error(`Multiple organizations found for ${orgType} '${orgName}'`)
+  }
+  if (orgs.length === 0) {
+    throw new Error(`No organizations found for ${orgType} '${orgName}'`)
+  }
 
-// Find the group id given the name. undefined if missing.
-function getGroupId(groupName) {
-  return _get(_find(groups, (group) => {
-    return group.name === groupName;
-  }), 'id')
+  orgIds.value[orgType][orgName] = orgs[0];
+  return orgs[0];
 }
 
 // Functions supporting error table

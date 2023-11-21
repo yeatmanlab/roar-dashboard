@@ -1,106 +1,103 @@
-import { defineStore } from "pinia";
-import { onAuthStateChanged } from "firebase/auth";
-import { initNewFirekit } from "../firebaseInit";
+import { defineStore, acceptHMRUpdate } from 'pinia';
+import { onAuthStateChanged } from 'firebase/auth';
+import { initNewFirekit } from '../firebaseInit';
+import { useGameStore } from '@/store/game';
 
-import _get from "lodash/get";
-import _set from "lodash/set";
+import _findIndex from 'lodash/findIndex';
+import _assign from 'lodash/assign';
+import _get from 'lodash/get';
+import _isEmpty from 'lodash/isEmpty';
+import _set from 'lodash/set';
+import _union from 'lodash/union';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
     // id is required so that Pinia can connect the store to the devtools
-    id: "authStore",
+    id: 'authStore',
     state: () => {
       return {
+        spinner: false,
+        consentSpinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
         },
         adminOrgs: null,
         roarfirekit: null,
-        hasUserData: false,
-        firekitUserData: null,
-        firekitAssignments: {
-          assigned: null
-        },
-        firekitAssignmentIds: null,
-        firekitIsAdmin: false,
-        firekitIsSuperAdmin: false,
+        userData: null,
+        userClaims: null,
         cleverOAuthRequested: false,
-        emailForSignInLink: null,
+        authFromClever: false,
+        userQueryKeyIndex: 0,
+        assignmentQueryKeyIndex: 0,
       };
     },
     getters: {
-      uid: (state) => { return state.firebaseUser.adminFirebaseUser?.uid },
-      email: (state) => { return state.firebaseUser.adminFirebaseUser?.email },
-      isUserAuthedAdmin: (state) => { return Boolean(state.firebaseUser.adminFirebaseUser) },
-      isUserAuthedApp: (state) => { return Boolean(state.firebaseUser.appFirebaseUser) },
-      isAuthenticated: (state) => { return (Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser)) },
-      isFirekitInit: (state) => { return state.roarfirekit?.initialized },
+      uid: (state) => {
+        return state.firebaseUser.adminFirebaseUser?.uid;
+      },
+      email: (state) => {
+        return state.firebaseUser.adminFirebaseUser?.email;
+      },
+      isUserAuthedAdmin: (state) => {
+        return Boolean(state.firebaseUser.adminFirebaseUser);
+      },
+      isUserAuthedApp: (state) => {
+        return Boolean(state.firebaseUser.appFirebaseUser);
+      },
+      isAuthenticated: (state) => {
+        return Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser);
+      },
+      isFirekitInit: (state) => {
+        return state.roarfirekit?.initialized;
+      },
+      isUserAdmin: (state) => {
+        if (Boolean(state.userClaims?.claims?.super_admin)) return true;
+        if (_isEmpty(_union(...Object.values(state.userClaims?.claims?.minimalAdminOrgs ?? {})))) return false;
+        return true;
+      },
+      isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
     },
     actions: {
-      isUserAdmin() {
-        if(this.isFirekitInit) {
-          this.firekitIsAdmin = this.roarfirekit.isAdmin();
-        }
-        return this.firekitIsAdmin;
-      },
-      isUserSuperAdmin() {
-        if(this.isFirekitInit) {
-          this.firekitIsSuperAdmin = _get(this.roarfirekit, '_superAdmin');
-        }
-        return this.firekitIsSuperAdmin;
-      },
-      async getAssignments(assignments) {
-        try{
-          const reply = await this.roarfirekit.getAssignments(assignments)
-          this.firekitAssignments = reply
-          this.firekitAssignmentIds = assignments;
-          return reply
-        } catch(e) {
-          return this.firekitAssignments.assigned
-        }
-        
+      async completeAssessment(adminId, taskId) {
+        console.log('inside authStore func');
+        await this.roarfirekit.completeAssessment(adminId, taskId);
+        this.assignmentQueryKeyIndex += 1;
       },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
-          if(user){
-            this.localFirekitInit = true
+          if (user) {
+            this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
           } else {
             this.firebaseUser.adminFirebaseUser = null;
           }
-        })
+        });
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
-          if(user){
+          if (user) {
             this.firebaseUser.appFirebaseUser = user;
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
-        })
+        });
       },
       async initFirekit() {
         this.roarfirekit = await initNewFirekit().then((firekit) => {
-          return firekit
+          return firekit;
         });
       },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
       },
       async updateConsentStatus(docName, consentVersion) {
-        _set(this.firekitUserData, `legal.${docName}.${consentVersion}`, new Date())
         this.roarfirekit.updateConsentStatus(docName, consentVersion);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
       async logInWithEmailAndPassword({ email, password }) {
-        if(this.isFirekitInit){
-          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true;
-              this.firekitUserData = this.roarfirekit.userData;
-            }
-          })
+        if (this.isFirekitInit) {
+          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {});
         }
       },
       async initiateLoginWithEmailLink({ email }) {
@@ -114,65 +111,59 @@ export const useAuthStore = () => {
       async signInWithEmailLink({ email, emailLink }) {
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithEmailLink({ email, emailLink }).then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true
-              this.firekitUserData = this.roarfirekit.userData
-            }
             window.localStorage.removeItem('emailForSignIn');
           });
         }
       },
       async signInWithGooglePopup() {
-        if(this.isFirekitInit){
-          return this.roarfirekit.signInWithPopup('google').then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true
-              this.firekitUserData = this.roarfirekit.userData
-            }
-          })
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup('google');
         }
       },
       async signInWithCleverPopup() {
-        if(this.isFirekitInit){
-          return this.roarfirekit.signInWithPopup('clever').then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true
-              this.firekitUserData = this.roarfirekit.userData
-            }
-          })
+        this.authFromClever = true;
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup('clever');
         }
       },
       async signInWithGoogleRedirect() {
-        return this.roarfirekit.initiateRedirect("google");
+        return this.roarfirekit.initiateRedirect('google');
       },
       async signInWithCleverRedirect() {
-        return this.roarfirekit.initiateRedirect("clever");
+        this.authFromClever = true;
+        return this.roarfirekit.initiateRedirect('clever');
       },
       async initStateFromRedirect() {
+        this.spinner = true;
         const enableCookiesCallback = () => {
           router.replace({ name: 'EnableCookies' });
-        }
-        if(this.isFirekitInit){
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then(() => {
-            if(this.roarfirekit.userData){
-              this.hasUserData = true
-              this.firekitUserData = this.roarfirekit.userData
+        };
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+            // If the result is null, then no redirect operation was called.
+            if (result !== null) {
+              this.spinner = true;
+            } else {
+              this.spinner = false;
             }
           });
         }
       },
       async signOut() {
-        if(this.isAuthenticated && this.isFirekitInit){
+        if (this.isAuthenticated && this.isFirekitInit) {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
-            this.hasUserData = false;
-            console.log('setting firekitIsAdmin to false')
-            this.firekitIsAdmin = false;
-            // this.roarfirekit = initNewFirekit()
+            this.spinner = false;
+            this.authFromClever = false;
+            const gameStore = useGameStore();
+            gameStore.selectedAdmin = undefined;
           });
         } else {
-          console.log('Cant log out while not logged in')
+          console.log('Cant log out while not logged in');
         }
+      },
+      async syncCleverOrgs() {
+        return this.roarfirekit.syncCleverOrgs(false);
       },
       // Used for requesting access when user doesn't have access to page
       // TODO: punt- thinking about moving to a ticket system instead of this solution.
@@ -190,7 +181,7 @@ export const useAuthStore = () => {
       //     (response) => { console.log('Success!', response.status, response.text); },
       //     (error) => { console.log('Error...', error); }
       //   );
-        
+
       //   await roarfirekit.addUserToAdminRequests();
       //   await this.setRoles();
       // },
@@ -199,11 +190,10 @@ export const useAuthStore = () => {
     persist: {
       storage: sessionStorage,
       debug: false,
-      afterRestore: async (ctx) => {
-        if (ctx.store.roarfirekit) {
-          ctx.store.roarfirekit = await initNewFirekit();
-        }
-      }
     },
   })();
 };
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot));
+}

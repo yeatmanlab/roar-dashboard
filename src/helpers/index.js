@@ -1,6 +1,7 @@
 import { arrayUnion, query, where, getDocs, updateDoc, doc, collection } from "firebase/firestore";
 import _fromPairs from "lodash/fromPairs";
 import _intersection from "lodash/intersection";
+import _invert from "lodash/invert";
 import _toPairs from "lodash/toPairs";
 import * as Papa from "papaparse";
 
@@ -95,10 +96,10 @@ export const flattenObj = (obj) => {
     if ((typeof obj[i]) === 'object' && !Array.isArray(obj[i]) && obj[i] !== null) {
       const temp = flattenObj(obj[i]);
       for (const j in temp) {
-        result[camelCase(i + '_' + j)] = temp[j] || "";
+        result[camelCase(i + '.' + j)] = temp[j] || "";
       }
     } else {
-      result[i] = obj[i] || "";
+      result[i] = (obj[i] || obj[i] === 0) ? obj[i] : "";
     }
   }
   return result;
@@ -109,7 +110,9 @@ export const csvFileToJson = (fileObject) =>
     Papa.parse(fileObject, {
       header: true,
       dynamicTyping: true,
-      skipEmptyLines: true,
+      skipEmptyLines: "greedy",
+      transform: (value) => value.trim(),
+      transformHeader: (value) => value.trim(),
       complete: function (results) {
         if (results.errors.length !== 0) {
           reject(results.errors);
@@ -134,7 +137,7 @@ export const standardDeviation = (arr, usePopulation = false) => {
 export const filterAdminOrgs = (adminOrgs, filters) => {
   const filteredOrgPairs = _toPairs(adminOrgs).map(([orgType, orgs]) => [
     orgType,
-    orgs.filter((org) => filters[orgType]?.includes(org.id))
+    orgs.filter((org) => filters[orgType]?.includes(org))
   ]);
 
   return _fromPairs(filteredOrgPairs);
@@ -143,3 +146,35 @@ export const filterAdminOrgs = (adminOrgs, filters) => {
 export const removeEmptyOrgs = (orgs) => {
   return _fromPairs(_toPairs(orgs).filter(([orgType, orgs]) => orgs.length > 0));
 }
+
+const plurals = {
+  group: "groups",
+  district: "districts",
+  school: "schools",
+  class: "classes",
+  family: "families",
+  administration: "administrations",
+  user: "users",
+  assignment: "assignments",
+  run: "runs",
+  trial: "trials",
+}
+
+export const pluralizeFirestoreCollection = (singular) => {
+  if (Object.values(plurals).includes(singular)) return singular;
+
+  const plural = plurals[singular];
+  if (plural) return plural;
+
+  throw new Error(`There is no plural Firestore collection for the ${singular}`);
+}
+
+export const singularizeFirestoreCollection = (plural) => {
+  if (Object.values(_invert(plurals)).includes(plural)) return plural;
+
+  const singular = _invert(plurals)[plural];
+  if (singular) return singular;
+
+  throw new Error(`There is no Firestore collection ${plural}`);
+}
+

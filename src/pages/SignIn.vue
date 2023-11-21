@@ -38,24 +38,29 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, toRaw, onBeforeUnmount } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount } from 'vue';
+import { storeToRefs } from "pinia";
+import { useRouter } from 'vue-router';
+import _get from 'lodash/get'
 import SignIn from "@/components/auth/SignIn.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { useAuthStore } from "@/store/auth";
-import { useRouter } from 'vue-router';
 import { isMobileBrowser } from "@/helpers";
-import AppSpinner from '../components/AppSpinner.vue';
-import _get from 'lodash/get'
-import { storeToRefs } from 'pinia';
+import { fetchDocById } from "../helpers/query/utils";
 
-const spinner = ref(false);
 const incorrect = ref(false);
 const authStore = useAuthStore();
 const router = useRouter();
 
+const { spinner, authFromClever } = storeToRefs(authStore);
+
 authStore.$subscribe((mutation, state) => {
-  if (state.roarfirekit.userData) {
-    router.push({ name: "Home" });
+  if (authStore.uid) {
+    if (authFromClever.value) {
+      router.push({ name: "CleverLanding" })
+    } else {
+      router.push({ name: "Home" });
+    }
   }
 });
 
@@ -64,7 +69,15 @@ const authWithGoogle = () => {
     authStore.signInWithGoogleRedirect();
   } else {
     // authStore.signInWithGoogleRedirect();
-    authStore.signInWithGooglePopup().catch(() => {
+    authStore.signInWithGooglePopup().then(async () => {
+      if (authStore.uid) {
+        const userData = await fetchDocById('users', authStore.uid);
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userData = userData
+        authStore.userClaims = userClaims
+      }
+    }).catch((e) => {
+      console.log('caught error', e)
       spinner.value = false;
     });
 
@@ -76,14 +89,10 @@ const authWithClever = () => {
   if (isMobileBrowser()) {
     authStore.signInWithCleverRedirect();
   } else {
-    // authStore.signInWithCleverRedirect();
-    authStore.signInWithCleverPopup();
+    authStore.signInWithCleverRedirect();
+    // authStore.signInWithCleverPopup();
     spinner.value = true;
   }
-}
-
-function validateEmail(email) {
-  return ref.test('/^\S+@\S+\.\S+$/')
 }
 
 const authWithEmail = (state) => {
@@ -92,9 +101,7 @@ const authWithEmail = (state) => {
   incorrect.value = false;
   let creds = toRaw(state);
   if (creds.useLink) {
-    console.log("creds", creds);
     authStore.initiateLoginWithEmailLink({ email: creds.email }).then(() => {
-      console.log("routing to AuthEmailSent");
       router.push({ name: "AuthEmailSent" })
     });
   } else {
@@ -102,7 +109,13 @@ const authWithEmail = (state) => {
       creds.email = `${creds.email}@roar-auth.com`
     }
 
-    authStore.logInWithEmailAndPassword(creds).then(() => {
+    authStore.logInWithEmailAndPassword(creds).then(async () => {
+      if (authStore.uid) {
+        const userData = await fetchDocById('users', authStore.uid);
+        const userClaims = await fetchDocById('userClaims', authStore.uid);
+        authStore.userData = userData
+        authStore.userClaims = userClaims
+      }
       spinner.value = true;
     }).catch((e) => {
       incorrect.value = true;
@@ -118,6 +131,7 @@ onMounted(() => {
     authWithClever();
   }
 });
+
 onBeforeUnmount(() => {
   document.body.classList.remove('page-signin')
 })
@@ -131,7 +145,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   z-index: 10;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(255, 255, 255, 0.7);
   padding-top: 21vh;
 }
 </style>
