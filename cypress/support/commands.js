@@ -17,6 +17,13 @@ Cypress.Commands.add('login', (username, password) => {
     )
 })
 
+Cypress.Commands.add('logout', () => {
+    cy.get('[data-cy="button-sign-out"]').click()
+    expect(cy.get('h1').should('contain.text', 'Welcome to ROAR!'))
+    expect(cy.url().should('eq', `${Cypress.env('baseUrl')}/signin`))
+    cy.log('Logout successful.')
+})
+
 Cypress.Commands.add('navigateTo', (page, login = false) => {
     cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
     cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`)
@@ -37,6 +44,7 @@ Cypress.Commands.add('inputOrgDetails', (
     orgGrade,
     orgTag ) => {
 
+    // Require orgName and orgInitials
     cy.get('[data-cy="input-org-name"]').type(orgName)
     cy.get('[data-cy="input-org-initials"]').type(orgInitials)
 
@@ -53,7 +61,11 @@ Cypress.Commands.add('inputOrgDetails', (
         expect(cy.get('[data-cy="chip-address"]').should('contain.text', orgAddress))
     }
 
-    cy.get('[data-cy="input-autocomplete"]').type(orgTag).wait(1000).type('{downarrow}{enter}')
+    if (orgTag) {
+        cy.get('[data-cy="input-autocomplete"]').type(orgTag).wait(1000).type('{downarrow}{enter}')
+    }
+
+    // Always input test tag
     cy.get('[data-pc-section="dropdownbutton"]').click()
     cy.get('li').contains('test').click()
 })

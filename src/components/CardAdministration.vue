@@ -5,7 +5,7 @@
 		</div>
 
 		<div class="card-admin-body">
-			<h2 class="card-admin-title">{{ title }}</h2>
+			<h2 class="card-admin-title" data-cy="h2-card-admin-title">{{ title }}</h2>
 			<div class="card-admin-details">
 				<span class="mr-1"><strong>Dates</strong>:</span>
 				<span>

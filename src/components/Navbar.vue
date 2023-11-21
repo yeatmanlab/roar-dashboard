@@ -10,7 +10,7 @@
         <!-- <i class="pi pi-bars menu-icon" @click="toggleMenu" /> -->
         <!-- <Menu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
         <router-link :to="{ name: 'SignOut' }" class="signout-button">
-          <Button>Sign Out</Button>
+          <Button data-cy="button-sign-out">Sign Out</Button>
         </router-link>
       </div>
     </nav>

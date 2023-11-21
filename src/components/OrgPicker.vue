@@ -3,21 +3,22 @@
     <div class="col-12 md:col-6">
       <Panel class="m-0 p-0" header="Select organizations here">
         <TabView class="m-0 p-0" v-if="claimsLoaded" lazy v-model:activeIndex="activeIndex">
-          <TabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+          <TabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header" data-cy="tab-panel-org-header">
             <div class="grid column-gap-3">
               <div class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'">
                 <span class="p-float-label">
                   <Dropdown v-model="selectedDistrict" id="district" inputId="district" :options="allDistricts"
                     optionLabel="name" optionValue="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts"
-                    class="w-full" />
+                    class="w-full" data-cy="dropdown-selected-district"/>
                   <label for="district">Select from district</label>
                 </span>
               </div>
               <div class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3" v-if="orgType.id === 'classes'">
                 <span class="p-float-label">
                   <Dropdown v-model="selectedSchool" id="school" inputId="school" :options="allSchools" optionLabel="name"
-                    optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
+                    optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools"
+                            class="w-full" data-cy="dropdown-selected-school"/>
                   <label for="school">Select from school</label>
                 </span>
               </div>
