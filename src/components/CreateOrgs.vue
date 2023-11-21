@@ -86,7 +86,7 @@
                 option-label="name"
                 placeholder="Select a grade"
                 class="w-full"
-              />
+              data-cy="dropdown-grade"/>
               <label for="grade">Grade</label>
               <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
             </span>

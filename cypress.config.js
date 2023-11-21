@@ -12,6 +12,7 @@ module.exports = defineConfig({
   },
   env: {
     baseUrl: 'https://localhost:5173',
+    stanfordUniversityAddress: process.env.STANFORD_UNIVERSITY_ADDRESS,
     googleRefreshToken: process.env.GOOGLE_REFRESH_TOKEN,
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,

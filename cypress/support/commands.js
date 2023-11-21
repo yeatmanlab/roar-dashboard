@@ -29,8 +29,37 @@ Cypress.Commands.add('activateAdminSidebar', () => {
 })
 
 
-Cypress.Commands.add("loginByGoogleApi", () => {
-    cy.log("Logging in to Google");
+Cypress.Commands.add('inputOrgDetails', (
+    orgName,
+    orgInitials,
+    orgNcesId,
+    orgAddress,
+    orgGrade,
+    orgTag ) => {
+
+    cy.get('[data-cy="input-org-name"]').type(orgName)
+    cy.get('[data-cy="input-org-initials"]').type(orgInitials)
+
+    if (orgNcesId) {
+        cy.get('[data-cy="input-nces-id"]').type(orgNcesId)
+    }
+
+    if (orgGrade) {
+        cy.get('[data-cy="dropdown-grade"').click().get('li').contains(orgGrade).click()
+    }
+
+    if (orgAddress) {
+        cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
+        expect(cy.get('[data-cy="chip-address"]').should('contain.text', orgAddress))
+    }
+
+    cy.get('[data-cy="input-autocomplete"]').type(orgTag).wait(1000).type('{downarrow}{enter}')
+    cy.get('[data-pc-section="dropdownbutton"]').click()
+    cy.get('li').contains('test').click()
+})
+
+Cypress.Commands.add('loginByGoogleApi', () => {
+    cy.log('Logging in to Google')
     cy.request({
         method: "POST",
         url: "https://www.googleapis.com/oauth2/v4/token",
