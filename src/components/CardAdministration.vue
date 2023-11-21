@@ -8,7 +8,7 @@
       <div class="card-admin-body">
         <div class="flex flex-row w-full">
           <div class="flex-grow-1">
-            <h2>{{ title }}</h2>
+            <h2 data-cy="h2-card-admin-title">{{ title }}</h2>
           </div>
           <div v-if="isSuperAdmin" class="flex flex-row flex-grow-0 justify-content-end p-1">
             <PvSpeedDial

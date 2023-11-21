@@ -9,6 +9,9 @@ module.exports = defineConfig({
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },
+    // specPattern: [
+    //
+    // ]
   },
   env: {
     baseUrl: 'https://localhost:5173',
