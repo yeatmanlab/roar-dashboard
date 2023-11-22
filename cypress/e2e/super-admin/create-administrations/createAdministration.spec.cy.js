@@ -1,15 +1,16 @@
+const today = new Date().getDate()
+
+const testAdministrationName = "###TestAdministration"
+const testDistrictName = "###TestDistrict"
+const testSchoolName = "###TestSchool"
+const testClassName = "###TestClass"
+const testGroupNameOne = "###TestGroup"
+const testGroupNameTwo = "Kyle Test Group"
+
 describe('The admin user can create an administration and assign it to a district.', () => {
   it('Logs into the dashboard, navigates to the Create Administrations component,' +
       'creates a new administration, and assigns it to a test district.', () => {
 
-    const today = new Date().getDate()
-
-    const testAdministrationName = "###TestAdministration"
-    const testDistrictName = "###TestDistrict"
-    const testSchoolName = "###TestSchool"
-    const testClassName = "###TestClass"
-    const testGroupNameOne = "###TestGroup"
-    const testGroupNameTwo = "Kyle Test Group"
 
     cy.navigateTo('/create-administration')
     cy.get('[data-cy="input-administration-name"]').type(testAdministrationName)
@@ -36,7 +37,7 @@ describe('The admin user can create an administration and assign it to a distric
     cy.get('span').contains("morphology-default", {timeout: 10000}).dblclick()
     cy.get('[data-cy="button-create-administration"]', {timeout: 10000}).click()
 
-    expect(cy.get('[data-cy="h2-card-admin-title"', {timeout: 10000}).should('contain.text', testAdministrationName))
+    cy.get('[data-cy="h2-card-admin-title"', {timeout: 10000}).should('contain.text', testAdministrationName)
     cy.log("Administration successfully created.")
 
   })
