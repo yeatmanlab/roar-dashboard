@@ -1,7 +1,7 @@
+const username = Cypress.env('superAdminUsername')
+const password = Cypress.env('superAdminPassword')
 describe('The super admin can log out.', () => {
-  it('passes', () => {
-    const username = Cypress.env('superAdminUsername')
-    const password = Cypress.env('superAdminPassword')
+  it('Logs the user out', () => {
 
     cy.login(username, password)
     cy.visit('/')
