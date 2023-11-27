@@ -11,7 +11,6 @@ describe('The admin user can create an administration and assign it to a distric
   it('Logs into the dashboard, navigates to the Create Administrations component,' +
       'creates a new administration, and assigns it to a test district.', () => {
 
-
     cy.navigateTo('/create-administration')
     cy.get('[data-cy="input-administration-name"]').type(testAdministrationName)
     cy.get('[data-cy="input-calendar"]').click().get('span').contains(today).click().type('{rightarrow}{enter}{esc}')
