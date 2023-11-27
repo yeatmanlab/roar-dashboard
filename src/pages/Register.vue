@@ -23,13 +23,35 @@
             <Register />
           </router-view>
         </div>
-        <div v-else="activeIndex === 1">
+        <!-- <div v-else="activeIndex === 1">
           <router-view name="registerStudent">
             <div class="register-title">
               <h1 align="center">Register your child</h1>
               <p align="center">Enter your child's information to create their ROAR account.</p>
             </div>
             <RegisterStudent />
+          </router-view> -->
+        <div v-else="activeIndex === 1">
+          <router-view name="registerStudent">
+            <div class="register-title">
+              <h1 align="center">Register your child</h1>
+              <p align="center">Enter your child's information to create their ROAR account.</p>
+            </div>
+            <div>
+              <!-- Iterate through the list of students -->
+              <div v-for="(student, index) in students" :key="index" class="student-form">
+                <div class="student-form-border">
+                  <RegisterStudent v-model="students[index]" />
+                  <!-- Button to delete the current student -->
+                  <button v-if="index !==0" @click="deleteStudentForm(index)" class="p-button p-component">Delete Student</button>
+                </div>
+              </div>
+              <!-- Button to add another student form -->
+              <button @click="addStudentForm" class="p-button p-component">Add Another Student</button>
+            </div>
+            <section class="form-submit">
+              <Button @click="RegisterStudent.handleFormSubmit()" type="submit" label="Submit" class="submit-button"/>
+            </section>
           </router-view>
         </div>
       </div>
@@ -54,6 +76,8 @@ const activeIndex = ref(0); // Current active step
       { label: 'Step 2' },
     ]);
 
+    const students = ref([{}]); // Initialize with an empty student form
+
     function onStepChange(event) {
       activeIndex.value = event.index;
     }
@@ -67,6 +91,18 @@ const activeIndex = ref(0); // Current active step
     function nextStep() {
       if (activeIndex.value < items.value.length - 1) {
         activeIndex.value++;
+      }
+    }
+
+    function addStudentForm() {
+      students.value.push({}); // Add a new empty student object to the students array
+    }
+
+    function deleteStudentForm(index) {
+      if (students.value.length > 1) {
+        students.value.splice(index, 1); // Remove the student at the specified index
+      } else {
+        alert("At least one student is required."); // Prevent deleting the last student form
       }
     }
     
@@ -90,4 +126,34 @@ onBeforeUnmount(() => {
   width: 26.875rem;
   margin-top: 3rem;
 }
+
+
+.student-form-border {
+  border: 2px solid #ccc; /* Add a border around each student form */
+  padding: 20px; /* Add padding for better spacing */
+  margin: 5px;/* Add margin for better spacing */
+}
+
+  .submit-button {
+  margin: auto;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    background-color: #E5E5E5;
+    color: black;
+    border: none;
+    width: 11.75rem;
+    justify-content: center;
+    align-items: center;
+  }
+  .submit-button:hover {
+    background-color: #8c1515;
+    color: #E5E5E5;
+  }
+  #register .form-submit {
+    justify-content: center;
+    margin-top: 2rem;
+    align-items: center;
+    display: flex;
+  }
 </style>

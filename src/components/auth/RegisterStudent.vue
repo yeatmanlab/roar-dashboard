@@ -153,7 +153,7 @@
       </AccordionTab>
     </Accordion>
     <section class="form-submit">
-      <Button type="submit" label="Submit" class="submit-button"/>
+      <!-- <Button type="submit" label="Submit" class="submit-button"/> Taking this out since we need a global button it is moved to Register.vue-->
     </section>
     </form>
   </div>
