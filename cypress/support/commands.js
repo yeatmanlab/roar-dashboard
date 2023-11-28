@@ -30,6 +30,28 @@ Cypress.Commands.add('navigateTo', (page, login = false) => {
     cy.visit(page)
 })
 
+Cypress.Commands.add('selectTestOrgs', (
+    testDistrictName,
+    testSchoolName,
+    testClassName,
+    testGroupName) => {
+
+    cy.get('span').contains('District').click()
+    cy.get('ul > li').contains(testDistrictName).click()
+
+    cy.get('span').contains('Schools').click()
+    cy.get('[data-cy="dropdown-selected-district"]').click().get('li').contains(testDistrictName).click()
+    cy.get('ul > li').contains(testSchoolName).click()
+
+    cy.get('span').contains('Classes').click()
+    cy.get('[data-cy="dropdown-selected-district"]').click().get('li').contains(testDistrictName).click()
+    cy.get('[data-cy="dropdown-selected-school"]').click().get('li').contains(testSchoolName).click()
+    cy.get('ul > li').contains(testClassName).click()
+
+    cy.get('span').contains('Groups').click()
+    cy.get('ul > li').contains(testGroupName).click()
+    // cy.get('ul > li').contains("Kyle Test Group").click()
+})
 
 Cypress.Commands.add('activateAdminSidebar', () => {
     cy.get('[data-cy="button-admin-sidebar"]').click().wait(1000)
