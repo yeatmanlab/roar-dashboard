@@ -27,14 +27,14 @@ Cypress.Commands.add('logout', () => {
 Cypress.Commands.add('navigateTo', (page, login = false) => {
     cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
     cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`)
-    cy.visit(page)
+    cy.visit(page, {timeout: 10000})
 })
 
 Cypress.Commands.add('selectTestOrgs', (
-    testDistrictName,
-    testSchoolName,
-    testClassName,
-    testGroupName) => {
+    testDistrictName = Cypress.env("testDistrictName"),
+    testSchoolName = Cypress.env("testSchoolName"),
+    testClassName = Cypress.env("testClassName"),
+    testGroupName = Cypress.env("testGroupName")) => {
 
     cy.get('span').contains('District').click()
     cy.get('ul > li').contains(testDistrictName).click()

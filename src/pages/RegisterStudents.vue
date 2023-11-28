@@ -91,6 +91,7 @@
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             @click="submitStudents"
+            data-cy="button-start-registration"
           />
         </div>
         <!-- Datatable of error students -->

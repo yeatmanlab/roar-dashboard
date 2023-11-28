@@ -2,7 +2,7 @@ const { defineConfig } = require("cypress");
 require('dotenv').config()
 
 module.exports = defineConfig({
-  projectId: 'cobw62',
+  projectId: "cobw62",
   e2e: {
     baseUrl: "https://localhost:5173/",
     experimentalRunAllSpecs: true,
@@ -14,15 +14,29 @@ module.exports = defineConfig({
     // ]
   },
   env: {
-    baseUrl: 'https://localhost:5173',
-    stanfordUniversityAddress: process.env.STANFORD_UNIVERSITY_ADDRESS,
-    googleRefreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-    googleClientId: process.env.GOOGLE_CLIENT_ID,
-    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    baseUrl: "https://localhost:5173",
     superAdminUsername: process.env.SUPER_ADMIN_USERNAME,
     superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
+    testAdministrationName: "###testAdministration",
+    testAdministratorFirstName: "###testAdministratorFirstName",
+    testAdministratorMiddleName: "###testAdministratorMiddleName",
+    testAdministratorLastName: "###testAdministratorLastName",
+    testAdministratorEmail: "###testAdministratorEmail",
+    testDistrictName: "###testDistrict",
+    testDistrictInitials: "TD",
+    testDistrictNcesId: "123456789",
+    testSchoolName: "###testSchool",
+    testSchoolInitials: "TS",
+    testSchoolNcesId: "987654321",
+    testClassName: "###testClass",
+    testClassInitials: "TC",
+    testGroupName: "###testGroup",
+    testGroupInitials: "TG",
+    testGrade: "Grade 5",
+    stanfordUniversityAddress: "450 Jane Stanford Way, Stanford, CA 94305, USA",
+    testTag: "stanford university",
   },
 });
 
