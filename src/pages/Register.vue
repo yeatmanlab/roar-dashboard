@@ -20,7 +20,7 @@
               <h1 align="center">Register for ROAR</h1>
               <p align="center">Enter your information to create an account.</p>
             </div>
-            <Register />
+            <Register @submit="handleParentSubmit($event)" />
           </router-view>
         </div>
         <!-- <div v-else="activeIndex === 1">
@@ -50,7 +50,7 @@
               <button @click="addStudentForm" class="p-button p-component">Add Another Student</button>
             </div>
             <section class="form-submit">
-              <Button @click="RegisterStudent.handleFormSubmit()" type="submit" label="Submit" class="submit-button"/>
+              <Button @click="handleFormSubmit()" type="submit" label="Submit" class="submit-button"/>
             </section>
           </router-view>
         </div>
@@ -68,6 +68,7 @@ import Register from "../components/auth/RegisterParent.vue";
 import RegisterStudent from "../components/auth/RegisterStudent.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { ref, onMounted, onBeforeUnmount } from 'vue';
+// import {useAuthStore} from "@/store/auth";
 import Steps from 'primevue/steps';
 
 const activeIndex = ref(0); // Current active step
@@ -76,7 +77,15 @@ const activeIndex = ref(0); // Current active step
       { label: 'Step 2' },
     ]);
 
+    const parentInfo = ref(null);
+
     const students = ref([{}]); // Initialize with an empty student form
+    // const authStore = useAuthStore();
+    // const parentFormData = ref(null);
+
+    // onMounted(() => {
+    //   parentFormData.value = authStore.getParentFormData();
+    // })
 
     function onStepChange(event) {
       activeIndex.value = event.index;
@@ -104,6 +113,17 @@ const activeIndex = ref(0); // Current active step
       } else {
         alert("At least one student is required."); // Prevent deleting the last student form
       }
+    }
+    function handleFormSubmit(event){
+      // students.forEach(s => {
+      //   console.log(s)
+      // });
+
+      // console.log("submit function triggered", event)
+    }
+    function handleParentSubmit(data){
+      // console.log("data: ",data)
+      parentInfo.value = data
     }
     
 onMounted(() => {

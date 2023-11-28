@@ -109,14 +109,14 @@
       </section>
       <ConsentModal v-if="showConsent" :consent-text="consentText" consent-type="consent" @accepted="handleConsentAccept" />
       <div class="form-submit">
-        <Button type="submit" label="Submit" class="submit-button" />
+        <Button type="submit" label="Next" class="submit-button" />
       </div>
     </form>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw, watch } from "vue";
+import { computed, reactive, ref, toRaw, watch, defineEmits } from "vue";
 import { required, sameAs, minLength, } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 import { useRouter } from "vue-router";
@@ -124,13 +124,17 @@ import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 import ConsentModal from "../ConsentModal.vue";
 import _get from 'lodash/get'
+// import { emit } from "process";
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const props = defineProps({
-  isRegistering: {type: Boolean, default: true}
+  isRegistering: {type: Boolean, default: true},
+
 });
+
+const emit = defineEmits(['submit']);
 
 const state = reactive({
   activationCode: "",
@@ -176,10 +180,28 @@ const handleFormSubmit = (isFormValid) => {
   if (!isFormValid) {
     return;
   }
+  // console.log("parent field sumitting ", state, isFormValid)
+  console.log("about to admit: ", state)
+  emit('submit', state)
 
-  resetForm()
+  //saving info
 
-  router.push('/register/student')
+  // const parentFormData = {
+  //   activationCode: state.activationCode,
+  //   firstName: state.firstName,
+  //   lastName: state.lastName,
+  //   usernameOrEmail: state.usernameOrEmail,
+  //   password: state.password,
+  //   confirmPassword: state.confirmPassword,
+  //   accept: state.accept,
+  // }
+
+  //store the data globally
+  // authStore.setParentFormData(parentFormData)
+
+  // resetForm()
+
+  // router.push('/register/student')
   // authStore.registerWithEmailAndPassword(state);
 };
 
