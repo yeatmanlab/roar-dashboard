@@ -254,8 +254,9 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
       const runDocPaths = _flatten(
         _zip(userDocPaths, assignmentData).map(
           ([userPath, assignment]) => {
-            const adminBasePath = adminAxiosInstance.defaults.baseURL.replace("https://firestore.googleapis.com/v1/", "");
-            const appBasePath = appAxiosInstance.defaults.baseURL.replace("https://firestore.googleapis.com/v1/", "");
+            const firestoreBasePath = "https://firestore.googleapis.com/v1/";
+            const adminBasePath = adminAxiosInstance.defaults.baseURL.replace(firestoreBasePath, "");
+            const appBasePath = appAxiosInstance.defaults.baseURL.replace(firestoreBasePath, "");
             return assignment.assessments.map((assessment) => `${userPath.replace(adminBasePath, appBasePath)}/runs/${assessment.runId}`);
           }
         )
@@ -277,7 +278,7 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
       })
 
       // Again the order of batchGet is not guaranteed. This time, we'd like to
-      // group the runDocs by user, in the same order as the userDocPaths
+      // group the runDocs by user's roarUid, in the same order as the userDocPaths
       const runs = _groupBy(batchRunDocs, (runDoc) => runDoc.name.split("/users/")[1].split("/runs/")[0]);
 
       for (const [index, userPath] of userDocPaths.entries()) {
