@@ -249,9 +249,6 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
         user: userData
     }))
 
-    console.log("userDocPaths", userDocPaths);
-    console.log("scoresObj", scoresObj);
-
     if (includeScores) {
       // Use batchGet to get all of the run docs (including their scores)
       const runDocPaths = _flatten(
@@ -282,7 +279,6 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
       // Again the order of batchGet is not guaranteed. This time, we'd like to
       // group the runDocs by user, in the same order as the userDocPaths
       const runs = _groupBy(batchRunDocs, (runDoc) => runDoc.name.split("/users/")[1].split("/runs/")[0]);
-      console.log("userRuns", runs);
 
       for (const [index, userPath] of userDocPaths.entries()) {
         const roarUid = userPath.split("/users/")[1];
@@ -299,7 +295,6 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
 }
 
 export const getUserAssignments = async (roarUid) => {
-  console.log('making request with roarUid ->', roarUid)
   const adminAxiosInstance = getAxiosInstance();
   const assignmentRequest = getAssignmentsRequestBody({
     aggregationQuery: false,
@@ -314,6 +309,5 @@ export const getUserAssignments = async (roarUid) => {
 }
 
 export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {
-  console.log('gathering export data')
   return await assignmentPageFetcher(adminId, orgType, orgId, { value: 2**31 - 1 }, { value: 0 }, includeScores, true, true)
 }
