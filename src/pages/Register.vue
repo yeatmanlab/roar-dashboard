@@ -47,7 +47,7 @@
                 </div>
               </div>
               <!-- Button to add another student form -->
-              <button @click="addStudentForm" class="p-button p-component">Add Another Student</button>
+              <!-- <button @click="addStudentForm" class="p-button p-component">Add Another Student</button> -->
             </div>
             <section class="form-submit">
               <Button @click="handleFormSubmit()" type="submit" label="Submit" class="submit-button"/>
@@ -103,17 +103,17 @@ const activeIndex = ref(0); // Current active step
       }
     }
 
-    function addStudentForm() {
-      students.value.push({}); // Add a new empty student object to the students array
-    }
+    // function addStudentForm() {
+    //   students.value.push({}); // Add a new empty student object to the students array
+    // }
 
-    function deleteStudentForm(index) {
-      if (students.value.length > 1) {
-        students.value.splice(index, 1); // Remove the student at the specified index
-      } else {
-        alert("At least one student is required."); // Prevent deleting the last student form
-      }
-    }
+    // function deleteStudentForm(index) {
+    //   if (students.value.length > 1) {
+    //     students.value.splice(index, 1); // Remove the student at the specified index
+    //   } else {
+    //     alert("At least one student is required."); // Prevent deleting the last student form
+    //   }
+    // }
     function handleFormSubmit(event){
       // students.forEach(s => {
       //   console.log(s)
@@ -148,11 +148,11 @@ onBeforeUnmount(() => {
 }
 
 
-.student-form-border {
-  border: 2px solid #ccc; /* Add a border around each student form */
-  padding: 20px; /* Add padding for better spacing */
-  margin: 5px;/* Add margin for better spacing */
-}
+/* .student-form-border {
+  border: 2px solid #ccc; // Add a border around each student form 
+  padding: 20px; // Add padding for better spacing 
+  margin: 5px;// Add margin for better spacing 
+} */
 
   .submit-button {
   margin: auto;

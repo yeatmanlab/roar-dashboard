@@ -3,7 +3,7 @@
     <!-- <p class="login-title" align="left">Register for ROAR</p> -->
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
       <!-- Activation Code -->
-      <section class="form-section">
+      <!-- <section class="form-section">
         <div class="p-input-icon-right">
           <label for="activationCode">Activation code <span class="required">*</span></label>
           <InputText
@@ -21,7 +21,7 @@
         <small v-else-if="(v$.activationCode.$invalid && submitted) || v$.activationCode.$pending.$response" class="p-error">
           {{ v$.activationCode.required.$message.replace("Value", "Activation Code") }}
         </small>
-      </section>
+      </section> -->
       <!--First / Last Name-->
       <section class="form-section">
         <div>

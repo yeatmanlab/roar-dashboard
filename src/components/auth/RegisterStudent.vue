@@ -2,8 +2,27 @@
   <div class="card">
     <!-- <p class="login-title" align="left">Register for ROAR</p> -->
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
-      <div v-for="(student, index) in state.students" :key="index">
+      <div v-for="(student, index) in state.students" :key="index" class="student-form-border">
       <!-- Student Username -->
+      <section class="form-section">
+        <div class="p-input-icon-right">
+          <label for="activationCode">Activation code <span class="required">*</span></label>
+          <InputText
+            v-model="student.activationCode"
+            name="activationCode"
+            :class="{ 'p-invalid': v$.activationCode.$invalid && submitted }" 
+            aria-describedby="activation-code-error"
+          />
+        </div>
+        <span v-if="v$.activationCode.$error && submitted">
+          <span v-for="(error, index) of v$.activationCode.$errors" :key="index">
+            <small class="p-error">{{ error.$message }}</small>
+          </span>
+        </span>
+        <small v-else-if="(v$.activationCode.$invalid && submitted) || v$.activationCode.$pending.$response" class="p-error">
+          {{ v$.activationCode.required.$message.replace("Value", "Activation Code") }}
+        </small>
+      </section>
       <section class="form-section">
         <div class="p-input-icon-right">
           <label for="studentUsername">Student Username <span class="required">*</span></label>
@@ -153,12 +172,15 @@
         </section>
         </AccordionTab>
       </Accordion>
-      <section class="form-submit">
-        <!-- <Button type="submit" label="Submit" class="submit-button"/> Taking this out since we need a global button it is moved to Register.vue-->
+      <section class="form-section-button">
+        <button v-if="index !==0" @click="deleteStudentForm(index)" class="p-button p-component">Delete Student</button>
       </section>
     </div>
+    
       </form>
-    <button @click="addStudent()" class="p-button p-component">AddStudent</button>
+      <div class="form-section-button2">
+        <button @click="addStudent()" class="p-button p-component">Add a Student</button>
+      </div>
   </div>
   </template>
   
@@ -175,6 +197,7 @@
   // const students = ref([{}]);
   const state = reactive({
     students:[{
+      activationCode:"",
       studentUsername: "",
       password: "",
       confirmPassword: "", 
@@ -195,6 +218,7 @@
   const passwordRef = computed(() => state.password);
   
   const rules = {
+  activationCode: {required},
   studentUsername: { required, },
   password: { required, minLength: minLength(6),},
   confirmPassword: { required, sameAsPassword: sameAs(passwordRef) }, 
@@ -217,6 +241,7 @@
   function addStudent(){
     console.log("adding new student ", state)
     state.students.push({
+      activationCode:"",
       studentUsername: "",
       password: "",
       confirmPassword: "", 
@@ -235,6 +260,14 @@
     });
   }
 
+  function deleteStudentForm(index) {
+    if (state.students.length > 1) {
+      state.students.splice(index, 1); // Remove the student at the specified index
+    } else {
+      alert("At least one student is required."); // Prevent deleting the last student form
+    }
+  }
+
   const submitted = ref(false);
   
   const v$ = useVuelidate(rules, state);
@@ -250,6 +283,7 @@
   };
   
   const resetForm = () => {
+  state.activationCode="",
   state.firstName = "";
   state.lastName = "";
   state.middleName;
@@ -389,6 +423,12 @@
   .stepper {
     margin: 2rem 0rem;
   }
+  .p-fluid .p-button {
+    width: 50%;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+  }
   
   .required {
     color: var(--bright-red);
@@ -413,5 +453,25 @@
   .terms-checkbox {
     margin-top: 0;
     margin-bottom: 0.75rem;
+  }
+  .student-form-border {
+  border: 2px solid #ccc; /* Add a border around each student form */
+  padding: 20px; /* Add padding for better spacing */
+  margin: 5px;/* Add margin for better spacing */
+  } 
+  .form-section-button{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .form-section-button2{
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    padding-left: 20px;
+    margin-left: 10px;
+  }
+  .form-section-button2 .p-button{
+    width: 50%;
   }
 </style>
