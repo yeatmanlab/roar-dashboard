@@ -4,7 +4,7 @@ require('dotenv').config()
 module.exports = defineConfig({
   projectId: 'cobw62',
   e2e: {
-    baseUrl: "https://localhost:5173",
+    baseUrl: "https://localhost:5173/",
     experimentalRunAllSpecs: true,
     setupNodeEvents(on, config) {
       // implement node event listeners here
