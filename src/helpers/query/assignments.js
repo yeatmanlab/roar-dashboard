@@ -3,6 +3,7 @@ import _find from "lodash/find";
 import _flatten from "lodash/flatten";
 import _fromPairs from "lodash/fromPairs";
 import _get from "lodash/get";
+import _groupBy from "lodash/groupBy";
 import _head from "lodash/head";
 import _isEmpty from "lodash/isEmpty";
 import _last from "lodash/last";
@@ -242,66 +243,57 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
     const userDocData = batchUserDocs.sort((a, b) => {
       return userDocPaths.indexOf(a.name) - userDocPaths.indexOf(b.name);
     }).map(({ data }) => data);
-    if(includeScores) {
-      // Get scores docs
-      const runIds = []
-      for (const assignment of assignmentData) {
-        for (const task of assignment.assessments) {
-          if(task.runId) runIds.push(task.runId)
-        }
-      }
-      if(!_isEmpty(runIds)){
-        const scorePromises = [];
-        for (const runChunk of _chunk(runIds, 25)) {
-          const scoresRequestBody = getScoresRequestBody({
-            runIds: runChunk,
-            orgType: orgType,
-            orgId: orgId,
-            aggregationQuery: false,
-            pageLimit: pageLimit.value,
-            page: page.value,
-            paginate: false,
-          })
-          scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
-            return mapFields(data);
-          }))
-        }
-        const scoreData = _flatten(await Promise.all(scorePromises));
-        for (const assignment of assignmentData) {
-          for (const task of assignment.assessments) {
-            if(task.runId) runIds.push(task.runId)
-          }
-        }
-        if(!_isEmpty(runIds)){
-          const scorePromises = [];
-          for (const runChunk of _chunk(runIds, 25)) {
-            const scoresRequestBody = getScoresRequestBody({
-              runIds: runChunk,
-              orgType: orgType,
-              orgId: orgId,
-              aggregationQuery: false,
-              pageLimit: pageLimit.value,
-              page: page.value,
-              paginate: false,
-            })
-            scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
-              return mapFields(data);
-            }))
-          }
-          const scoreData = _flatten(await Promise.all(scorePromises));
-          for (const assignment of assignmentData) {
-            for (const task of assignment.assessments) {
-              const runId = task.runId
-              task['scores'] = _get(_find(scoreData, scoreDoc => scoreDoc.id === runId), 'scores')
-            }
-          }
-        }
-      }
-    }
+
     const scoresObj = _zip(userDocData, assignmentData).map(([userData, assignmentData]) => ({
         assignment: assignmentData,
         user: userData
     }))
+
+    console.log("userDocPaths", userDocPaths);
+    console.log("scoresObj", scoresObj);
+
+    if (includeScores) {
+      // Use batchGet to get all of the run docs (including their scores)
+      const runDocPaths = _flatten(
+        _zip(userDocPaths, assignmentData).map(
+          ([userPath, assignment]) => {
+            const adminBasePath = adminAxiosInstance.defaults.baseURL.replace("https://firestore.googleapis.com/v1/", "");
+            const appBasePath = appAxiosInstance.defaults.baseURL.replace("https://firestore.googleapis.com/v1/", "");
+            return assignment.assessments.map((assessment) => `${userPath.replace(adminBasePath, appBasePath)}/runs/${assessment.runId}`);
+          }
+        )
+      );
+
+      const batchRunDocs = await appAxiosInstance.post(":batchGet", {
+        documents: runDocPaths,
+        mask: { fieldPaths: ["scores"] },
+      }).then(({ data }) => {
+        return _without(data.map(({ found }) => {
+          if (found) {
+            return {
+              name: found.name,
+              data: _mapValues(found.fields, (value) => convertValues(value)),
+            };
+          }
+          return undefined;
+        }), undefined);
+      })
+
+      // Again the order of batchGet is not guaranteed. This time, we'd like to
+      // group the runDocs by user, in the same order as the userDocPaths
+      const runs = _groupBy(batchRunDocs, (runDoc) => runDoc.name.split("/users/")[1].split("/runs/")[0]);
+      console.log("userRuns", runs);
+
+      for (const [index, userPath] of userDocPaths.entries()) {
+        const roarUid = userPath.split("/users/")[1];
+        const userRuns = runs[roarUid];
+        for (const task of scoresObj[index].assignment.assessments) {
+          const runId = task.runId
+          task['scores'] = _get(_find(userRuns, runDoc => runDoc.name.includes(runId)), 'data.scores');
+        }
+      }
+    }
+
     return scoresObj
   });
 }
