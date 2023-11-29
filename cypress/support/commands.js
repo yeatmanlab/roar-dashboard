@@ -27,7 +27,8 @@ Cypress.Commands.add('logout', () => {
 Cypress.Commands.add('navigateTo', (page, login = false) => {
     cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
     cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`)
-    cy.visit(page, {timeout: 10000})
+    cy.visit(page, {timeout: Cypress.env('timeout')})
+    cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`)
 })
 
 Cypress.Commands.add('selectTestOrgs', (
@@ -50,7 +51,7 @@ Cypress.Commands.add('selectTestOrgs', (
 
     cy.get('span').contains('Groups').click()
     cy.get('ul > li').contains(testGroupName).click()
-    // cy.get('ul > li').contains("Kyle Test Group").click()
+    cy.get('ul > li').contains("Kyle Test Group").click()
 })
 
 Cypress.Commands.add('activateAdminSidebar', () => {
