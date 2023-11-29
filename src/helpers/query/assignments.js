@@ -1,3 +1,5 @@
+import _isEmpty from 'lodash/isEmpty';
+import _chunk from 'lodash/chunk';
 import _find from 'lodash/find';
 import _flatten from 'lodash/flatten';
 import _get from 'lodash/get';
@@ -132,12 +134,11 @@ export const getUsersByAssignmentIdRequestBody = ({
   select = userSelectFields,
 }) => {
   const requestBody = {
-    structuredQuery: {
-      orderBy: {
-        field: { fieldPath: `assignmentsAssigned.${adminId}` },
-        direction: 'ASCENDING',
-      },
-    },
+    // orderBy: {
+    //   field: { fieldPath: `assignmentsAssigned.${adminId}` },
+    //   direction: "ASCENDING"
+    // }
+    structuredQuery: {},
   };
 
   if (!aggregationQuery) {
@@ -167,9 +168,16 @@ export const getUsersByAssignmentIdRequestBody = ({
         { fieldFilter: { ...filterBy, op: 'EQUAL' } },
         {
           fieldFilter: {
-            field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            field: { fieldPath: `${pluralizeFirestoreCollection(orgType)}.current` },
             op: 'ARRAY_CONTAINS',
             value: { stringValue: orgId },
+          },
+        },
+        {
+          fieldFilter: {
+            field: { fieldPath: `assignmentsAssigned.${adminId}` },
+            op: 'NOT_EQUAL',
+            value: { stringValue: 'null string' }, // Something that we assume will never occur
           },
         },
       ],
@@ -324,7 +332,89 @@ export const assignmentPageFetcher = async (
     console.log('users request', requestBody);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
       const results = mapFields(data);
-      console.log('resulting data', results);
+      // Get assignment docs
+      const assignmentDocs = _without(
+        data.map((userDoc) => {
+          if (userDoc.document?.name) {
+            return `${userDoc.document?.name}/assignments/${adminId}`;
+          }
+        }),
+        undefined,
+      );
+      console.log('assignment docs', assignmentDocs);
+      const batchAssignmentDocs = await adminAxiosInstance
+        .post(':batchGet', {
+          documents: assignmentDocs,
+        })
+        .then(({ data }) => {
+          console.log('data', data);
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                return {
+                  name: found.name,
+                  data: _mapValues(found.fields, (value) => convertValues(value)),
+                };
+              }
+              return undefined;
+            }),
+            undefined,
+          );
+        });
+      console.log('retrieved docs', batchAssignmentDocs);
+
+      // Order the assignment docs to match the userdocs
+      const assignmentData = batchAssignmentDocs
+        .sort((a, b) => {
+          return assignmentDocs.indexOf(a.name) - assignmentDocs.indexOf(b.name);
+        })
+        .map(({ data }) => data);
+
+      // Grab scores doc
+      if (includeScores) {
+        // Get scores docs
+        const runIds = [];
+        for (const assignment of assignmentData) {
+          for (const task of assignment.assessments) {
+            if (task.runId) runIds.push(task.runId);
+          }
+        }
+        if (!_isEmpty(runIds)) {
+          const scorePromises = [];
+          for (const runChunk of _chunk(runIds, 25)) {
+            const scoresRequestBody = getScoresRequestBody({
+              runIds: runChunk,
+              orgType: orgType,
+              orgId: orgId,
+              aggregationQuery: false,
+              pageLimit: pageLimit.value,
+              page: page.value,
+              paginate: false,
+            });
+            scorePromises.push(
+              appAxiosInstance.post(':runQuery', scoresRequestBody).then(async ({ data }) => {
+                return mapFields(data);
+              }),
+            );
+          }
+          const scoreData = _flatten(await Promise.all(scorePromises));
+          for (const assignment of assignmentData) {
+            for (const task of assignment.assessments) {
+              const runId = task.runId;
+              task['scores'] = _get(
+                _find(scoreData, (scoreDoc) => scoreDoc.id === runId),
+                'scores',
+              );
+            }
+          }
+        }
+      }
+      const scoresObj = _zip(results, assignmentData).map(([userData, assignmentData]) => ({
+        assignment: assignmentData,
+        user: userData,
+      }));
+      console.log('scoresObj', scoresObj);
+      return scoresObj;
     });
   } else {
     const requestBody = getAssignmentsRequestBody({
