@@ -3,6 +3,7 @@ import _find from "lodash/find";
 import _flatten from "lodash/flatten";
 import _fromPairs from "lodash/fromPairs";
 import _get from "lodash/get";
+import _groupBy from "lodash/groupBy";
 import _head from "lodash/head";
 import _isEmpty from "lodash/isEmpty";
 import _last from "lodash/last";
@@ -25,6 +26,7 @@ export const getAssignmentsRequestBody = ({
   select = [
     "assessments",
     "assigningOrgs",
+    "readOrgs",
     "completed",
     "dateAssigned",
     "dateClosed",
@@ -72,7 +74,7 @@ export const getAssignmentsRequestBody = ({
           },
           {
             fieldFilter: {
-              field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+              field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
               op: "ARRAY_CONTAINS",
               value: { stringValue: orgId }
             }
@@ -159,7 +161,7 @@ export const getScoresRequestBody = ({
         },
         {
           fieldFilter: {
-            field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
             op: "ARRAY_CONTAINS",
             value: { stringValue: orgId }
           }
@@ -241,72 +243,60 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
     const userDocData = batchUserDocs.sort((a, b) => {
       return userDocPaths.indexOf(a.name) - userDocPaths.indexOf(b.name);
     }).map(({ data }) => data);
-    if(includeScores) {
-      // Get scores docs
-      const runIds = []
-      for (const assignment of assignmentData) {
-        for (const task of assignment.assessments) {
-          if(task.runId) runIds.push(task.runId)
-        }
-      }
-      if(!_isEmpty(runIds)){
-        const scorePromises = [];
-        for (const runChunk of _chunk(runIds, 25)) {
-          const scoresRequestBody = getScoresRequestBody({
-            runIds: runChunk,
-            orgType: orgType,
-            orgId: orgId,
-            aggregationQuery: false,
-            pageLimit: pageLimit.value,
-            page: page.value,
-            paginate: false,
-          })
-          scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
-            return mapFields(data);
-          }))
-        }
-        const scoreData = _flatten(await Promise.all(scorePromises));
-        for (const assignment of assignmentData) {
-          for (const task of assignment.assessments) {
-            if(task.runId) runIds.push(task.runId)
-          }
-        }
-        if(!_isEmpty(runIds)){
-          const scorePromises = [];
-          for (const runChunk of _chunk(runIds, 25)) {
-            const scoresRequestBody = getScoresRequestBody({
-              runIds: runChunk,
-              orgType: orgType,
-              orgId: orgId,
-              aggregationQuery: false,
-              pageLimit: pageLimit.value,
-              page: page.value,
-              paginate: false,
-            })
-            scorePromises.push(appAxiosInstance.post(":runQuery", scoresRequestBody).then(async ({ data }) => {
-              return mapFields(data);
-            }))
-          }
-          const scoreData = _flatten(await Promise.all(scorePromises));
-          for (const assignment of assignmentData) {
-            for (const task of assignment.assessments) {
-              const runId = task.runId
-              task['scores'] = _get(_find(scoreData, scoreDoc => scoreDoc.id === runId), 'scores')
-            }
-          }
-        }
-      }
-    }
+
     const scoresObj = _zip(userDocData, assignmentData).map(([userData, assignmentData]) => ({
         assignment: assignmentData,
         user: userData
     }))
+
+    if (includeScores) {
+      // Use batchGet to get all of the run docs (including their scores)
+      const runDocPaths = _flatten(
+        _zip(userDocPaths, assignmentData).map(
+          ([userPath, assignment]) => {
+            const firestoreBasePath = "https://firestore.googleapis.com/v1/";
+            const adminBasePath = adminAxiosInstance.defaults.baseURL.replace(firestoreBasePath, "");
+            const appBasePath = appAxiosInstance.defaults.baseURL.replace(firestoreBasePath, "");
+            const runIds = _without(assignment.assessments.map((assessment) => assessment.runId), undefined);
+            return runIds.map((runId) => `${userPath.replace(adminBasePath, appBasePath)}/runs/${runId}`);
+          }
+        )
+      );
+
+      const batchRunDocs = await appAxiosInstance.post(":batchGet", {
+        documents: runDocPaths,
+        mask: { fieldPaths: ["scores"] },
+      }).then(({ data }) => {
+        return _without(data.map(({ found }) => {
+          if (found) {
+            return {
+              name: found.name,
+              data: _mapValues(found.fields, (value) => convertValues(value)),
+            };
+          }
+          return undefined;
+        }), undefined);
+      })
+
+      // Again the order of batchGet is not guaranteed. This time, we'd like to
+      // group the runDocs by user's roarUid, in the same order as the userDocPaths
+      const runs = _groupBy(batchRunDocs, (runDoc) => runDoc.name.split("/users/")[1].split("/runs/")[0]);
+
+      for (const [index, userPath] of userDocPaths.entries()) {
+        const roarUid = userPath.split("/users/")[1];
+        const userRuns = runs[roarUid];
+        for (const task of scoresObj[index].assignment.assessments) {
+          const runId = task.runId
+          task['scores'] = _get(_find(userRuns, runDoc => runDoc.name.includes(runId)), 'data.scores');
+        }
+      }
+    }
+
     return scoresObj
   });
 }
 
 export const getUserAssignments = async (roarUid) => {
-  console.log('making request with roarUid ->', roarUid)
   const adminAxiosInstance = getAxiosInstance();
   const assignmentRequest = getAssignmentsRequestBody({
     aggregationQuery: false,
@@ -321,6 +311,5 @@ export const getUserAssignments = async (roarUid) => {
 }
 
 export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {
-  console.log('gathering export data')
   return await assignmentPageFetcher(adminId, orgType, orgId, { value: 2**31 - 1 }, { value: 0 }, includeScores, true, true)
 }
