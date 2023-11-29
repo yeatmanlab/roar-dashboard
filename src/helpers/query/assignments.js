@@ -257,7 +257,8 @@ export const assignmentPageFetcher = async (adminId, orgType, orgId, pageLimit, 
             const firestoreBasePath = "https://firestore.googleapis.com/v1/";
             const adminBasePath = adminAxiosInstance.defaults.baseURL.replace(firestoreBasePath, "");
             const appBasePath = appAxiosInstance.defaults.baseURL.replace(firestoreBasePath, "");
-            return assignment.assessments.map((assessment) => `${userPath.replace(adminBasePath, appBasePath)}/runs/${assessment.runId}`);
+            const runIds = _without(assignment.assessments.map((assessment) => assessment.runId), undefined);
+            return runIds.map((runId) => `${userPath.replace(adminBasePath, appBasePath)}/runs/${runId}`);
           }
         )
       );
