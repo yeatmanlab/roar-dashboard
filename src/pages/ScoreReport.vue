@@ -17,6 +17,10 @@
         <h2>IN THIS REPORT...</h2>
         <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
         <div class="task-overview-container">
+          <div v-if="allTasks.includes('letter')" class="task-blurb">
+            <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names
+            and sounds.
+          </div>
           <div v-if="allTasks.includes('pa')" class="task-blurb">
             <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span> assesses some of the most
             foundational skills for reading: mapping letters to their corresponding sounds. This skill is crucial for
@@ -50,7 +54,6 @@
             @export-all="exportAll" @export-selected="exportSelected" />
         </div>
 
-
         <div class="legend-container">
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${emptyTagColorMap.below};`" />
@@ -76,10 +79,32 @@
         </div>
         <div class="legend-description">Students are classified into three support groups based on nationally-normed
           percentiles. Blank spaces indicate that the assessment was not completed.</div>
-
-        <!-- In depth breakdown of each task-->
+        <!-- Subscores tables -->
+        <SubscoreTable v-if="allTasks.includes('letter')"
+          task-id="letter"
+          :administrationId="administrationId"
+          :orgType="orgType"
+          :orgId="orgId"
+        />
+        <SubscoreTable v-if="allTasks.includes('pa')" 
+          task-id="pa"
+          :administrationId="administrationId"
+          :orgType="orgType"
+          :orgId="orgId"
+        />
+        <!-- In depth breakdown of each task -->
+        <div v-if="allTasks.includes('letter')" class="task-card">
+          <div class="task-title">ROAR-LETTER</div>
+          <span style="text-transform: uppercase;">Letter Names and Letter-Sound Matching</span>
+          <p class="task-description">ROAR-Letter assesses a student’s knowledge of letter names and letter sounds.
+            Knowing letter names supports the learning of letter sounds, and knowing letter sounds supports the learning
+            of letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown
+            to predict success in learning to read. Learning the connection between letters and the sounds they represent
+            is fundamental for learning to decode and spell words. This assessment provides educators with valuable
+            insights to customize instruction and address any gaps in these foundational skills.</p>
+        </div>
         <div v-if="allTasks.includes('pa')" class="task-card">
-          <div class="task-title">ROAR-PHENOME</div>
+          <div class="task-title">ROAR-PHONEME</div>
           <span style="text-transform: uppercase;">Phonological Awareness</span>
           <p class="task-description">ROAR - Phoneme assesses a student's mastery of phonological awareness through
             elision and sound matching tasks. Research indicates that phonological awareness, as a foundational
@@ -164,6 +189,7 @@ import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils'
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from "@/helpers/query/assignments";
 import { orgFetcher } from "@/helpers/query/orgs";
 import { pluralizeFirestoreCollection } from "@/helpers";
+import SubscoreTable from '../components/reports/SubscoreTable.vue';
 
 const authStore = useAuthStore();
 
