@@ -9,35 +9,37 @@
     </div>
     <ul class="sidebar-info">
       <li class="sidebar-title"><strong>Student Info</strong></li>
-      <li>Grade: <span class="sidebar-info-item">{{ studentInfo.grade }}</span></li>
+      <li>
+        Grade: <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
+      </li>
     </ul>
   </div>
 </template>
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed } from 'vue';
 
 const props = defineProps({
   totalGames: { type: Number, required: true, default: 0 },
   completedGames: { type: Number, required: true, default: 0 },
-  studentInfo: { type: Object, required: true }
-})
+  studentInfo: { type: Object, required: true },
+});
 
 const chartData = computed(() => {
   const completed = props.completedGames;
-  const incomplete = (props.totalGames - props.completedGames);
-  return setChartData(completed, incomplete)
+  const incomplete = props.totalGames - props.completedGames;
+  return setChartData(completed, incomplete);
 });
 const chartOptions = ref({
   cutout: '60%',
   showToolTips: false,
   plugins: {
     legend: {
-      display: false
+      display: false,
     },
     tooltip: {
-      enabled: false
-    }
-  }
+      enabled: false,
+    },
+  },
 });
 
 const setChartData = (completed, incomplete) => {
@@ -48,13 +50,10 @@ const setChartData = (completed, incomplete) => {
     datasets: [
       {
         data: [completed, incomplete],
-        backgroundColor: [
-          docStyle.getPropertyValue('--bright-green'),
-          docStyle.getPropertyValue('--surface-d')
-        ],
+        backgroundColor: [docStyle.getPropertyValue('--bright-green'), docStyle.getPropertyValue('--surface-d')],
         // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
-      }
-    ]
+      },
+    ],
   };
 };
 </script>
@@ -69,7 +68,7 @@ const setChartData = (completed, incomplete) => {
 
 .sidebar-progress {
   // text-align: center;
-  padding-bottom: .5rem;
+  padding-bottom: 0.5rem;
 
   p {
     margin-block: 0;
@@ -80,13 +79,12 @@ const setChartData = (completed, incomplete) => {
     padding: 1.25rem;
     pointer-events: none;
     /* don't allow pointer events on chart */
-    margin-bottom: .5rem;
+    margin-bottom: 0.5rem;
   }
 
   .sidebar-progress-totals {
     font-size: 1.25rem;
   }
-
 }
 
 .sidebar-info {
@@ -102,7 +100,7 @@ const setChartData = (completed, incomplete) => {
 
   .sidebar-title {
     border-bottom: 1px solid var(--surface-d);
-    padding-bottom: .5rem;
+    padding-bottom: 0.5rem;
     margin-bottom: 1rem;
   }
 }

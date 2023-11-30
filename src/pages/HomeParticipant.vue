@@ -2,7 +2,7 @@
   <div>
     <div v-if="!noGamesAvailable || consentSpinner">
       <div v-if="isFetching || consentSpinner" class="loading-container">
-        <AppSpinner style="margin-bottom: 1rem;" />
+        <AppSpinner style="margin-bottom: 1rem" />
         <span>Loading Assignments</span>
       </div>
       <div v-else>
@@ -29,26 +29,26 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from "vue";
-import GameTabs from "../components/GameTabs.vue";
-import ParticipantSidebar from "../components/ParticipantSidebar.vue";
-import _filter from 'lodash/filter'
-import _get from 'lodash/get'
-import _head from 'lodash/head'
-import _find from 'lodash/find'
-import { useAuthStore } from "@/store/auth";
-import { useGameStore } from "@/store/game";
+import { onMounted, ref, watch, computed } from 'vue';
+import GameTabs from '../components/GameTabs.vue';
+import ParticipantSidebar from '../components/ParticipantSidebar.vue';
+import _filter from 'lodash/filter';
+import _get from 'lodash/get';
+import _head from 'lodash/head';
+import _find from 'lodash/find';
+import { useAuthStore } from '@/store/auth';
+import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, fetchDocsById } from "../helpers/query/utils";
-import { getUserAssignments } from "../helpers/query/assignments";
+import { fetchDocById, fetchDocsById } from '../helpers/query/utils';
+import { getUserAssignments } from '../helpers/query/assignments';
 
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
-}
+};
 
 const authStore = useAuthStore();
 const { roarfirekit, consentSpinner } = storeToRefs(authStore);
@@ -59,63 +59,79 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
-})
+});
 
 const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
-const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } =
-  useQuery({
-    queryKey: ['userData', authStore.uid, authStore.userQueryKeyIndex],
-    queryFn: () => fetchDocById('users', authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  })
+const {
+  isLoading: isLoadingUserData,
+  isFetching: isFetchingUserData,
+  data: userData,
+} = useQuery({
+  queryKey: ['userData', authStore.uid, authStore.userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
-const { isLoading: isLoadingAssignments, isFetching: isFetchingAssignments, data: assignmentInfo } =
-  useQuery({
-    queryKey: ['assignments', authStore.uid, authStore.assignmentQueryKeyIndex],
-    queryFn: () => getUserAssignments(authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000 // 5 min
-  })
+const {
+  isLoading: isLoadingAssignments,
+  isFetching: isFetchingAssignments,
+  data: assignmentInfo,
+} = useQuery({
+  queryKey: ['assignments', authStore.uid, authStore.assignmentQueryKeyIndex],
+  queryFn: () => getUserAssignments(authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 min
+});
 
 const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));
 const administrationQueryEnabled = computed(() => !isLoadingAssignments.value);
 
-const { isLoading: isLoadingAdmins, isFetching: isFetchingAdmins, data: adminInfo } =
-  useQuery({
-    queryKey: ['administrations', administrationIds],
-    queryFn: () => fetchDocsById(administrationIds.value.map((administrationId) => {
-      return {
-        collection: 'administrations',
-        docId: administrationId,
-        select: ['name', 'sequential', "assessments"]
-      };
-    })),
-    keepPreviousData: true,
-    enabled: administrationQueryEnabled,
-    staleTime: 5 * 60 * 1000,
-  })
+const {
+  isLoading: isLoadingAdmins,
+  isFetching: isFetchingAdmins,
+  data: adminInfo,
+} = useQuery({
+  queryKey: ['administrations', administrationIds],
+  queryFn: () =>
+    fetchDocsById(
+      administrationIds.value.map((administrationId) => {
+        return {
+          collection: 'administrations',
+          docId: administrationId,
+          select: ['name', 'sequential', 'assessments'],
+        };
+      }),
+    ),
+  keepPreviousData: true,
+  enabled: administrationQueryEnabled,
+  staleTime: 5 * 60 * 1000,
+});
 
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
 
-const { isLoading: isLoadingTasks, isFetching: isFetchingTasks, data: taskInfo } =
-  useQuery({
-    queryKey: ['tasks', taskIds],
-    queryFn: () => fetchDocsById(
+const {
+  isLoading: isLoadingTasks,
+  isFetching: isFetchingTasks,
+  data: taskInfo,
+} = useQuery({
+  queryKey: ['tasks', taskIds],
+  queryFn: () =>
+    fetchDocsById(
       taskIds.value.map((taskId) => ({
         collection: 'tasks',
         docId: taskId,
       })),
-      'app'
+      'app',
     ),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000,
-  })
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000,
+});
 
 const isLoading = computed(() => {
   return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
@@ -135,7 +151,7 @@ const noGamesAvailable = computed(() => {
 const assessments = computed(() => {
   console.log('Recomputing assessments');
   if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
-    console.log('Using map to combine assessment data')
+    console.log('Using map to combine assessment data');
     return selectedAdmin.value.assessments.map((assessment) => {
       // Get the matching assessment from assignmentInfo
       const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
@@ -146,12 +162,12 @@ const assessments = computed(() => {
         ...assessment,
         taskData: {
           ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
-          variantURL: _get(assessment, "params.variantURL"),
+          variantURL: _get(assessment, 'params.variantURL'),
         },
       };
-      console.log("combinedAssessment", combinedAssessment);
+      console.log('combinedAssessment', combinedAssessment);
       return combinedAssessment;
-    })
+    });
   }
   console.log('No assessments found');
   return [];
@@ -159,23 +175,28 @@ const assessments = computed(() => {
 
 // Grab the sequential key from the current admin's data object
 const isSequential = computed(() => {
-  return _get(_find(adminInfo.value, admin => {
-    return admin.id === selectedAdmin.value.id
-  }), 'sequential') ?? true
-})
+  return (
+    _get(
+      _find(adminInfo.value, (admin) => {
+        return admin.id === selectedAdmin.value.id;
+      }),
+      'sequential',
+    ) ?? true
+  );
+});
 
 // Total games completed from the current list of assessments
 let totalGames = computed(() => {
-  return assessments.value.length ?? 0
+  return assessments.value.length ?? 0;
 });
 
 // Total games included in the current assessment
 let completeGames = computed(() => {
-  return _filter(assessments.value, (task) => task.completedOn).length ?? 0
+  return _filter(assessments.value, (task) => task.completedOn).length ?? 0;
 });
 
 // Set up studentInfo for sidebar
-const studentInfo = computed(() => ({ grade: _get(userData.value, "studentData.grade") }));
+const studentInfo = computed(() => ({ grade: _get(userData.value, 'studentData.grade') }));
 
 watch(adminInfo, () => {
   const selectedAdminId = selectedAdmin.value?.id;
@@ -183,10 +204,9 @@ watch(adminInfo, () => {
   // If there is no selected admin or if the selected admin is not in the list
   // of all administrations choose the first one from adminInfo
   if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-    selectedAdmin.value = _head(adminInfo.value)
+    selectedAdmin.value = _head(adminInfo.value);
   }
-})
-
+});
 </script>
 <style scoped>
 .tabs-container {

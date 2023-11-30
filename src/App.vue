@@ -1,15 +1,15 @@
 <template>
   <AppHead>
     <title>ROAR: {{ $route.meta.pageTitle }}</title>
-    <meta name="description" content="A web-based tool to query ROAR assessment data!">
+    <meta name="description" content="A web-based tool to query ROAR assessment data!" />
 
     <!-- Social -->
-    <meta property="og:title" content="ROAR Web Query">
-    <meta property="og:description" content="A web-based tool to query ROAR assessment data!">
+    <meta property="og:title" content="ROAR Web Query" />
+    <meta property="og:description" content="A web-based tool to query ROAR assessment data!" />
 
     <!-- Twitter -->
-    <meta name="twitter:title" content="ROAR Web Query">
-    <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
+    <meta name="twitter:title" content="ROAR Web Query" />
+    <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!" />
   </AppHead>
   <div>
     <PvToast />
@@ -22,23 +22,23 @@
 
 <script setup>
 import { onBeforeMount } from 'vue';
-import NavBar from "@/components/NavBar.vue";
-import { useAuthStore } from "@/store/auth";
+import NavBar from '@/components/NavBar.vue';
+import { useAuthStore } from '@/store/auth';
 import { ref } from 'vue';
-import { fetchDocById } from "@/helpers/query/utils";
+import { fetchDocById } from '@/helpers/query/utils';
 
 const navbarBlacklist = ref([
-  "SignIn",
-  "PlayApp",
-  "SWR",
-  "SWR-ES",
-  "SRE",
-  "PA",
-  "Letter",
-  "Vocab",
-  "Multichoice",
-  "Morphology",
-  "Cva"
+  'SignIn',
+  'PlayApp',
+  'SWR',
+  'SWR-ES',
+  'SRE',
+  'PA',
+  'Letter',
+  'Vocab',
+  'Multichoice',
+  'Morphology',
+  'Cva',
 ]);
 
 onBeforeMount(async () => {
@@ -49,10 +49,9 @@ onBeforeMount(async () => {
     if (authStore.uid) {
       const userData = await fetchDocById('users', authStore.uid);
       const userClaims = await fetchDocById('userClaims', authStore.uid);
-      authStore.userData = userData
-      authStore.userClaims = userClaims
+      authStore.userData = userData;
+      authStore.userClaims = userClaims;
     }
   });
 });
-
 </script>

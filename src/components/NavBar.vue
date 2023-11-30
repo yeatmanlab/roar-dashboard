@@ -19,12 +19,12 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router'
-import { storeToRefs } from 'pinia'
-import { useAuthStore } from "@/store/auth";
-import _get from 'lodash/get'
+import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
+import _get from 'lodash/get';
 
-const router = useRouter()
+const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -47,40 +47,44 @@ let dropdownItems = ref([
     label: authStore.isAuthenticated ? 'Home' : 'Log in',
     icon: authStore.isAuthenticated ? 'pi pi-user' : 'pi pi-sign-in',
     command: () => {
-      authStore.isAuthenticated ? router.push({ name: 'Home' }) : router.push({ name: 'SignIn' })
-    }
+      authStore.isAuthenticated ? router.push({ name: 'Home' }) : router.push({ name: 'SignIn' });
+    },
   },
   {
     label: 'Sign Out',
     icon: 'pi pi-sign-out',
     command: () => {
-      router.push({ name: 'SignOut' })
-    }
-  }
-])
-
-if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') === "admin") {
-  dropdownItems.value.splice(1, 0, {
-    label: 'Student Upload',
-    icon: 'pi pi-users',
-    command: () => {
-      router.push({ name: 'RegisterStudents' })
-    }
+      router.push({ name: 'SignOut' });
+    },
   },
+]);
+
+if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') === 'admin') {
+  dropdownItems.value.splice(
+    1,
+    0,
+    {
+      label: 'Student Upload',
+      icon: 'pi pi-users',
+      command: () => {
+        router.push({ name: 'RegisterStudents' });
+      },
+    },
     {
       label: 'Query',
       icon: 'pi pi-cloud-download',
       command: () => {
-        router.push({ name: 'Query' })
-      }
+        router.push({ name: 'Query' });
+      },
     },
     {
       label: 'Score Report',
       icon: 'pi pi-upload',
       command: () => {
-        router.push({ name: 'UploadScores' })
-      }
-    })
+        router.push({ name: 'UploadScores' });
+      },
+    },
+  );
 }
 
 // const toggleMenu = (event) => {
@@ -91,8 +95,7 @@ if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') ==
 // const openInfo = () => displayInfo.value = true;
 // const closeInfo = () => displayInfo.value = false;
 
-import ROARLogo from "@/assets/RoarLogo.vue";
-
+import ROARLogo from '@/assets/RoarLogo.vue';
 </script>
 
 <style scoped></style>

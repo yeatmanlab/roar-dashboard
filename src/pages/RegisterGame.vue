@@ -10,33 +10,31 @@
     </section>
   </main>
 </template>
-  
+
 <script setup>
-import { ref, } from "vue";
-import RegisterTask from "@/components/tasks/RegisterTask.vue";
-import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import { getSidebarActions } from "@/router/sidebarActions";
-import { useAuthStore } from "@/store/auth";
+import { ref } from 'vue';
+import RegisterTask from '@/components/tasks/RegisterTask.vue';
+import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+import { getSidebarActions } from '@/router/sidebarActions';
+import { useAuthStore } from '@/store/auth';
 
 const authStore = useAuthStore();
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
-const userInfo = ref(
-  {
-    name: "Admin name",
-    district: "District Name"
-  }
-)
+const userInfo = ref({
+  name: 'Admin name',
+  district: 'District Name',
+});
 </script>
-  
+
 <style scoped>
 .register-container {
   border-style: solid;
   border-width: 1px;
   border-radius: 5px;
-  border-color: #E5E5E5;
-  background-color: #FCFCFC;
+  border-color: #e5e5e5;
+  background-color: #fcfcfc;
   width: 65%;
   padding-right: 1.5rem;
   padding-left: 1.5rem;
@@ -57,8 +55,8 @@ const userInfo = ref(
 }
 
 .signin-button {
-  background-color: #E5E5E5;
-  border-color: #C4C4C4;
+  background-color: #e5e5e5;
+  border-color: #c4c4c4;
   color: black;
   width: 8rem;
 }

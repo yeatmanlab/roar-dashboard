@@ -4,27 +4,45 @@
       <b class="align-self-center ml-1">Select students below to export</b>
     </span>
     <PvButton
-icon="pi pi-external-link"
-      :label="scoreStore.selectedStudents.length !== 0 ? 'Export Selected Students' : 'Select students to enable export'"
-      class="flex-none mb-1 ml-2 p-2" :loading="scoreStore.selectedStudents.length === 0"
-      :disabled="scoreStore.selectedStudents.length === 0" @click="exportSelectedCSV" />
+      icon="pi pi-external-link"
+      :label="
+        scoreStore.selectedStudents.length !== 0 ? 'Export Selected Students' : 'Select students to enable export'
+      "
+      class="flex-none mb-1 ml-2 p-2"
+      :loading="scoreStore.selectedStudents.length === 0"
+      :disabled="scoreStore.selectedStudents.length === 0"
+      @click="exportSelectedCSV"
+    />
     <PvButton
-icon="pi pi-external-link" label="Export All" class="flex-none mb-1 ml-2 p-2"
-      :loading="queryStore.selectedRuns.length === 0" :disabled="scoreStore.selectedRuns.length === 0"
-      @click="exportAllCSV" />
+      icon="pi pi-external-link"
+      label="Export All"
+      class="flex-none mb-1 ml-2 p-2"
+      :loading="queryStore.selectedRuns.length === 0"
+      :disabled="scoreStore.selectedRuns.length === 0"
+      @click="exportAllCSV"
+    />
   </div>
   <!-- TODO: Needs to be replaced with RoarDataTable -->
   <PvDataTable
-ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters"
-    :value="scoreStore.tableRoarScores" :row-hover="true" removable-sort sort-mode="multiple" scroll-height="50vh"
-    :reorderable-columns="true" :resizable-columns="true" column-resize-mode="fit" show-gridlines
-    :virtual-scroller-options="{ itemSize: 44 }" :row="10" data-key="runId" filter-display="menu">
-    <template #empty>
-      No students found.
-    </template>
-    <template #loading>
-      Loading ROAR scores. Please wait.
-    </template>
+    ref="runtable"
+    v-model:selection="selectedStudents"
+    v-model:filters="filters"
+    :value="scoreStore.tableRoarScores"
+    :row-hover="true"
+    removable-sort
+    sort-mode="multiple"
+    scroll-height="50vh"
+    :reorderable-columns="true"
+    :resizable-columns="true"
+    column-resize-mode="fit"
+    show-gridlines
+    :virtual-scroller-options="{ itemSize: 44 }"
+    :row="10"
+    data-key="runId"
+    filter-display="menu"
+  >
+    <template #empty> No students found. </template>
+    <template #loading> Loading ROAR scores. Please wait. </template>
     <PvColumn selection-mode="multiple" header-style="width: 3rem"></PvColumn>
 
     <PvColumn field="studentId" header="Student ID" sortable style="min-width: 8rem">
@@ -32,35 +50,60 @@ ref="runtable" v-model:selection="selectedStudents" v-model:filters="filters"
         {{ colData.studentId }}
       </template>
       <template #filter="{ filterModel }">
-        <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Search by student ID" />
+        <PvInputText
+          v-model="filterModel.value"
+          type="text"
+          class="p-column-filter"
+          placeholder="Search by student ID"
+        />
       </template>
     </PvColumn>
 
     <PvColumn
-header="Grade" field="grade" sortable :show-filter-match-modes="false"
-      :filter-menu-style="{ 'width': '12rem' }" style="min-width: 6rem">
+      header="Grade"
+      field="grade"
+      sortable
+      :show-filter-match-modes="false"
+      :filter-menu-style="{ width: '12rem' }"
+      style="min-width: 6rem"
+    >
       <template #body="{ colData }">
         {{ colData.grade }}
       </template>
       <template #filter="{ filterModel }">
         <div class="mb-3 font-bold">Grade Picker</div>
         <PvMultiSelect
-v-model="filterModel.value" :options="grades" option-label="id" placeholder="Any"
-          :show-toggle-all="false" class="p-column-filter" />
+          v-model="filterModel.value"
+          :options="grades"
+          option-label="id"
+          placeholder="Any"
+          :show-toggle-all="false"
+          class="p-column-filter"
+        />
       </template>
     </PvColumn>
 
     <PvColumn
-header="age" field="age" sortable :show-filter-match-modes="false" :filter-menu-style="{ 'width': '12rem' }"
-      style="min-width: 6rem">
+      header="age"
+      field="age"
+      sortable
+      :show-filter-match-modes="false"
+      :filter-menu-style="{ width: '12rem' }"
+      style="min-width: 6rem"
+    >
       <template #body="{ colData }">
         {{ colData.age }}
       </template>
       <template #filter="{ filterModel }">
         <div class="mb-3 font-bold">Age Picker</div>
         <PvMultiSelect
-v-model="filterModel.value" :options="ages" option-label="id" placeholder="Any"
-          :show-toggle-all="false" class="p-column-filter" />
+          v-model="filterModel.value"
+          :options="ages"
+          option-label="id"
+          placeholder="Any"
+          :show-toggle-all="false"
+          class="p-column-filter"
+        />
       </template>
     </PvColumn>
 
@@ -73,18 +116,15 @@ v-model="filterModel.value" :options="ages" option-label="id" placeholder="Any"
 
 <script setup>
 import { ref } from 'vue';
-import { FilterMatchMode, FilterOperator } from "primevue/api";
+import { FilterMatchMode, FilterOperator } from 'primevue/api';
 import { storeToRefs } from 'pinia';
-import Papa from "papaparse";
+import Papa from 'papaparse';
 import { flattenObj } from '@/helpers';
-import { useScoreStore } from "@/store/scores";
+import { useScoreStore } from '@/store/scores';
 
 const scoreStore = useScoreStore();
 
-const {
-  tableRoarScores,
-  selectedStudents,
-} = storeToRefs(scoreStore);
+const { tableRoarScores, selectedStudents } = storeToRefs(scoreStore);
 
 const runtable = ref();
 

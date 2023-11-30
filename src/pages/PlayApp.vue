@@ -9,7 +9,7 @@
 import RoarSWR from '@bdelab/roar-swr';
 import RoarPA from '@bdelab/roar-pa';
 import RoarSRE from '@bdelab/roar-sre';
-import { useAuthStore } from "@/store/auth";
+import { useAuthStore } from '@/store/auth';
 import { toRaw, onMounted, ref, watch } from 'vue';
 import AppSpinner from '../components/AppSpinner.vue';
 import { useRouter } from 'vue-router';
@@ -17,7 +17,7 @@ import { storeToRefs } from 'pinia';
 import _head from 'lodash/head';
 
 const router = useRouter();
-const currentGameId = (router.currentRoute).value.params.gameId;
+const currentGameId = router.currentRoute.value.params.gameId;
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const { isFirekitInit } = storeToRefs(authStore);
@@ -26,32 +26,32 @@ onMounted(async () => {
   if (isFirekitInit.value) {
     await startTask();
   }
-})
+});
 
 watch(isFirekitInit, async () => {
   await startTask();
-})
+});
 
 async function startTask() {
-  const currentAssignment = _head(toRaw(authStore.firekitAssignmentIds))
-  const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, currentGameId)
+  const currentAssignment = _head(toRaw(authStore.firekitAssignmentIds));
+  const appKit = await authStore.roarfirekit.startAssessment(currentAssignment, currentGameId);
 
   const userParams = {
     pid: appKit._userInfo.assessmentPid,
-    labId: "yeatmanlab",
-  }
+    labId: 'yeatmanlab',
+  };
 
-  const gameParams = appKit._taskInfo.variantParams
+  const gameParams = appKit._taskInfo.variantParams;
 
   let roarApp = null;
   switch (currentGameId) {
-    case "swr":
+    case 'swr':
       roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
       break;
-    case "pa":
+    case 'pa':
       roarApp = new RoarPA(appKit, gameParams, userParams, 'jspsych-target');
       break;
-    case "sre":
+    case 'sre':
       roarApp = new RoarSRE(appKit, gameParams, userParams, 'jspsych-target');
       break;
   }
@@ -59,20 +59,20 @@ async function startTask() {
   gameStarted.value = true;
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
-    await authStore.roarfirekit.completeAssessment(currentAssignment, currentGameId)
-    router.replace({ name: "Home" });
+    await authStore.roarfirekit.completeAssessment(currentAssignment, currentGameId);
+    router.replace({ name: 'Home' });
   });
 }
-
 </script>
-<style scoped> .game-target {
-   position: absolute;
-   top: 0;
-   left: 0;
-   width: 100%;
- }
+<style scoped>
+.game-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
 
- .game-target:focus {
-   outline: none;
- }
+.game-target:focus {
+  outline: none;
+}
 </style>

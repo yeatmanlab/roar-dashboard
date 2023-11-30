@@ -10,54 +10,56 @@
     <HomeAdministrator v-else-if="isAdmin" />
   </div>
   <ConsentModal
-v-if="showConsent" :consent-text="confirmText" :consent-type="consentType" @accepted="updateConsent"
-    @delayed="refreshDocs" />
+    v-if="showConsent"
+    :consent-text="confirmText"
+    :consent-type="consentType"
+    @accepted="updateConsent"
+    @delayed="refreshDocs"
+  />
 </template>
 
 <script setup>
-import { computed, onMounted, ref, toRaw, watch } from "vue";
-import { useQuery } from "@tanstack/vue-query";
+import { computed, onMounted, ref, toRaw, watch } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
-import HomeParticipant from "@/pages/HomeParticipant.vue";
-import HomeAdministrator from "@/pages/HomeAdministrator.vue";
-import _get from "lodash/get"
-import _isEmpty from "lodash/isEmpty";
-import _union from "lodash/union";
-import { storeToRefs } from "pinia";
-import ConsentModal from "@/components/ConsentModal.vue";
-import { fetchDocById } from "@/helpers/query/utils";
+import HomeParticipant from '@/pages/HomeParticipant.vue';
+import HomeAdministrator from '@/pages/HomeAdministrator.vue';
+import _get from 'lodash/get';
+import _isEmpty from 'lodash/isEmpty';
+import _union from 'lodash/union';
+import { storeToRefs } from 'pinia';
+import ConsentModal from '@/components/ConsentModal.vue';
+import { fetchDocById } from '@/helpers/query/utils';
 
 const authStore = useAuthStore();
-const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore)
+const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
-}
+};
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } =
-  useQuery({
-    queryKey: ['userData', authStore.uid, userQueryKeyIndex],
-    queryFn: () => fetchDocById('users', authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  })
+const { isLoading: isLoadingUserData, data: userData } = useQuery({
+  queryKey: ['userData', authStore.uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
-const { isLoading: isLoadingClaims, data: userClaims } =
-  useQuery({
-    queryKey: ['userClaims', authStore.uid, userQueryKeyIndex],
-    queryFn: () => fetchDocById('userClaims', authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  })
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+  queryKey: ['userClaims', authStore.uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
 
@@ -67,10 +69,10 @@ const isAdmin = computed(() => {
   return true;
 });
 
-const consentType = computed(() => isAdmin.value ? 'tos' : 'assent');
+const consentType = computed(() => (isAdmin.value ? 'tos' : 'assent'));
 const showConsent = ref(false);
-const confirmText = ref("");
-const consentVersion = ref("");
+const confirmText = ref('');
+const consentVersion = ref('');
 
 // authStore.$subscribe((mutation, state) => {
 //   if (!["firekitUserData", "firekitAssignmentIds"].includes(mutation.events?.key)) {
@@ -80,7 +82,7 @@ const consentVersion = ref("");
 // })
 
 async function updateConsent() {
-  await authStore.updateConsentStatus(consentType.value, consentVersion.value)
+  await authStore.updateConsentStatus(consentType.value, consentVersion.value);
   userQueryKeyIndex.value += 1;
 }
 
@@ -90,9 +92,9 @@ function refreshDocs() {
 
 async function checkConsent() {
   // Check for consent
-  const consentStatus = _get(userData.value, `legal.${consentType.value}`)
+  const consentStatus = _get(userData.value, `legal.${consentType.value}`);
   const consentDoc = await authStore.getLegalDoc(consentType.value);
-  consentVersion.value = consentDoc.version
+  consentVersion.value = consentDoc.version;
   if (!_get(toRaw(consentStatus), consentDoc.version)) {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
@@ -105,11 +107,11 @@ onMounted(async () => {
     refreshDocs();
     await checkConsent();
   }
-})
+});
 
 watch(isLoading, async (newValue) => {
   if (!newValue) {
     await checkConsent();
   }
-})
+});
 </script>

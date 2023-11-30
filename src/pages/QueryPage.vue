@@ -30,9 +30,9 @@
 </template>
 
 <script setup>
-import { storeToRefs } from "pinia";
-import { useAuthStore } from "@/store/auth";
-import { useQueryStore } from "@/store/query";
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
+import { useQueryStore } from '@/store/query';
 import QueryRuns from '@/components/query/QueryRuns.vue';
 import TableRunResults from '@/components/query/TableRunResults.vue';
 import RequestPermission from '@/components/auth/RequestPermission.vue';
