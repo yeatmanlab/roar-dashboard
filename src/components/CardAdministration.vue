@@ -31,7 +31,7 @@
 			<div class="break my-2"></div>
 
 			<div v-if="isAssigned">
-				<Button :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
+				<Button :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" data-cy="button-details"/>
 			</div>
 
 			<TreeTable v-if="showTable" class="mt-3" lazy rowHover :loading="loadingTreeTable" :value="treeTableOrgs"
@@ -49,13 +49,13 @@
 								:to="{ name: 'ViewAdministration', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
 								v-slot="{ href, route, navigate }">
 								<Button v-tooltip.top="'See completion details'" severity="secondary" text raised label="Progress"
-									aria-label="Completion details" size="small" />
+									aria-label="Completion details" size="small" data-cy="button-progress"/>
 							</router-link>
 							<router-link
 								:to="{ name: 'ScoreReport', params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType } }"
 								v-slot="{ href, route, navigate }">
 								<Button v-tooltip.top="'See Scores'" severity="secondary" text raised label="Scores" aria-label="Scores"
-									size="small" />
+									size="small" data-cy="button-scores"/>
 							</router-link>
 						</span>
 					</template>

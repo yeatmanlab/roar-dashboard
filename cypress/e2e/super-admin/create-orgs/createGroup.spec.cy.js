@@ -17,7 +17,7 @@ describe('The admin user can navigate to the create organizations page, and crea
   it('Navigates to the create organizations page, creates a new group, and checks that the created ' +
       'group is represented in the list of organizations', () => {
 
-
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
     cy.navigateTo('/create-orgs')
     selectGroupsFromDropdown()
 

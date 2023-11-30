@@ -29,6 +29,7 @@ describe('The admin user can create an administration and assign it to a distric
   it('Logs into the dashboard, navigates to the Create Administrations component,' +
       'creates a new administration, and assigns it to a test district.', () => {
 
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
     cy.navigateTo('/create-administration')
 
     typeAdministrationName();

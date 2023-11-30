@@ -10,6 +10,7 @@ describe('The admin user can navigate to the list organizations page, ' +
     'and can see which they organizations they are associated with', () => {
   it('Activates the admin sidebar, clicks List Orgs, then clicks through the various tabs.', () => {
 
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
     cy.navigateTo('/list-orgs')
     clickOrgTabs()
 
