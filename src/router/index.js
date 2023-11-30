@@ -68,14 +68,7 @@ const routes = [
   {
     path: '/game/morphology',
     name: 'Morphology',
-    component: () => import('../components/tasks/Multichoice.vue'),
-    props: { taskId: 'morphology' },
-    meta: { pageTitle: 'Morphology' },
-  },
-  {
-    path: '/game/morphology',
-    name: 'Morphology',
-    component: () => import('../components/tasks/Multichoice.vue'),
+    component: () => import('../components/tasks/TaskMultichoice.vue'),
     props: { taskId: 'morphology' },
     meta: { pageTitle: 'Morphology' },
   },
