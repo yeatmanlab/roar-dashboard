@@ -6,16 +6,29 @@
     <div class="flex flex-row flex-wrap w-full gap-2 pt-4 justify-content-end">
       <span class="p-float-label">
         <PvMultiSelect
-id="ms-columns" :model-value="selectedColumns" :options="inputColumns" option-label="header"
-          :max-selected-labels="3" class="w-full md:w-20rem" selected-items-label="{0} columns selected"
-          @update:model-value="onColumnToggle" />
+          id="ms-columns"
+          :model-value="selectedColumns"
+          :options="inputColumns"
+          option-label="header"
+          :max-selected-labels="3"
+          class="w-full md:w-20rem"
+          selected-items-label="{0} columns selected"
+          @update:model-value="onColumnToggle"
+        />
         <label for="ms-columns">Select Columns</label>
       </span>
       <span class="p-float-label">
         <PvMultiSelect
-id="ms-freeze" :model-value="frozenColumns" :options="inputColumns" option-label="header"
-          :max-selected-labels="3" class="w-full md:w-20rem" selected-items-label="{0} columns frozen"
-          :show-toggle-all="false" @update:model-value="onFreezeToggle" />
+          id="ms-freeze"
+          :model-value="frozenColumns"
+          :options="inputColumns"
+          option-label="header"
+          :max-selected-labels="3"
+          class="w-full md:w-20rem"
+          selected-items-label="{0} columns frozen"
+          :show-toggle-all="false"
+          @update:model-value="onFreezeToggle"
+        />
         <label for="ms-columns">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
@@ -24,46 +37,93 @@ id="ms-freeze" :model-value="frozenColumns" :options="inputColumns" option-label
       </span>
     </div>
     <PvDataTable
-ref="dataTable" v-model:filters="refFilters" v-model:selection="selectedRows" :value="computedData"
-      :row-hover="true" :reorderable-columns="true" :resizable-columns="true" :export-filename="exportFilename"
-      removable-sort sort-mode="multiple" show-gridlines filter-display="menu" paginator :rows="props.pageLimit"
-      :always-show-paginator="true" paginator-position="both" :rows-per-page-options="[10, 25, 50, 100]"
-      :total-records="props.totalRecords" :lazy="props.lazy" :loading="props.loading" scrollable :select-all="selectAll"
-      @page="onPage($event)" @sort="onSort($event)" @select-all-change="onSelectAll" @row-select="onSelectionChange"
-      @row-unselect="onSelectionChange">
+      ref="dataTable"
+      v-model:filters="refFilters"
+      v-model:selection="selectedRows"
+      :value="computedData"
+      :row-hover="true"
+      :reorderable-columns="true"
+      :resizable-columns="true"
+      :export-filename="exportFilename"
+      removable-sort
+      sort-mode="multiple"
+      show-gridlines
+      filter-display="menu"
+      paginator
+      :rows="props.pageLimit"
+      :always-show-paginator="true"
+      paginator-position="both"
+      :rows-per-page-options="[10, 25, 50, 100]"
+      :total-records="props.totalRecords"
+      :lazy="props.lazy"
+      :loading="props.loading"
+      scrollable
+      :select-all="selectAll"
+      @page="onPage($event)"
+      @sort="onSort($event)"
+      @select-all-change="onSelectAll"
+      @row-select="onSelectionChange"
+      @row-unselect="onSelectionChange"
+    >
       <PvColumn selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
       <PvColumn
-v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
-        :field="col.field" :data-type="col.dataType" :sortable="(col.sort !== false)"
-        :show-filter-match-modes="!col.useMultiSelect" :show-filter-operator="col.allowMultipleFilters === true"
-        :show-add-button="col.allowMultipleFilters === true" :frozen="col.pinned" align-frozen="left">
-        <template #body="{ colData }">
+        v-for="(col, index) of computedColumns"
+        :key="col.field + '_' + index"
+        :header="col.header"
+        :field="col.field"
+        :data-type="col.dataType"
+        :sortable="col.sort !== false"
+        :show-filter-match-modes="!col.useMultiSelect"
+        :show-filter-operator="col.allowMultipleFilters === true"
+        :show-add-button="col.allowMultipleFilters === true"
+        :frozen="col.pinned"
+        align-frozen="left"
+      >
+        <template #body="{ data: colData }">
           <div v-if="col.tag && _get(colData, col.field) !== undefined">
             <PvTag
-v-if="!col.tagOutlined" :severity="_get(colData, col.severityField)" :value="_get(colData, col.field)"
+              v-if="!col.tagOutlined"
+              :severity="_get(colData, col.severityField)"
+              :value="_get(colData, col.field)"
               :icon="_get(colData, col.iconField)"
-              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem;`" rounded />
+              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; border-radius: 50%;`"
+              rounded
+            />
             <div
-v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
-              style="border: 1px solid black" />
+              v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+              class="circle"
+              style="border: 1px solid black"
+            />
           </div>
           <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
             <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
             <div
-v-if="!col.tagOutlined" class="circle"
-              :style="`background-color: ${_get(colData, col.tagColor)};
-                                                                color: ${_get(colData, col.tagColor) === 'white' ? 'black' : 'white'}`" />
+              v-if="!col.tagOutlined"
+              class="circle"
+              :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
+                _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+              }`"
+            />
             <div
-v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
-              style="border: 1px solid black" />
+              v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+              class="circle"
+              style="border: 1px solid black"
+            />
           </div>
           <div v-else-if="col.link">
             <router-link :to="{ name: col.routeName, params: data.routeParams }">
               <PvButton
-v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.routeLabel"
-                :aria-label="col.routeTooltip" :icon="col.routeIcon" size="small" />
+                v-tooltip.top="col.routeTooltip"
+                severity="secondary"
+                text
+                raised
+                :label="col.routeLabel"
+                :aria-label="col.routeTooltip"
+                :icon="col.routeIcon"
+                size="small"
+              />
             </router-link>
           </div>
           <div v-else-if="col.dataType === 'date'">
@@ -75,16 +135,28 @@ v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.ro
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
           <PvInputText
-v-if="col.dataType === 'text' && !col.useMultiSelect" v-model="filterModel.value" type="text"
-            class="p-column-filter" placeholder="Search" />
+            v-if="col.dataType === 'text' && !col.useMultiSelect"
+            v-model="filterModel.value"
+            type="text"
+            class="p-column-filter"
+            placeholder="Search"
+          />
           <PvMultiSelect
-v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
-            placeholder="Any" :show-toggle-all="false" class="p-column-filter" />
+            v-if="col.useMultiSelect"
+            v-model="filterModel.value"
+            :options="_get(refOptions, col.field)"
+            placeholder="Any"
+            :show-toggle-all="false"
+            class="p-column-filter"
+          />
           <PvCalendar
-v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
-            date-format="mm/dd/yy" placeholder="mm/dd/yyyy" />
+            v-if="col.dataType === 'date' && !col.useMultiSelect"
+            v-model="filterModel.value"
+            date-format="mm/dd/yy"
+            placeholder="mm/dd/yyyy"
+          />
           <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
-            <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px;" />
+            <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
           </div>
         </template>
@@ -96,16 +168,16 @@ v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { FilterMatchMode, FilterOperator } from "primevue/api";
-import SkeletonTable from "@/components/SkeletonTable.vue"
-import _get from 'lodash/get'
-import _set from 'lodash/set'
-import _map from 'lodash/map'
-import _forEach from 'lodash/forEach'
-import _find from 'lodash/find'
-import _filter from 'lodash/filter'
-import _toUpper from 'lodash/toUpper'
-import _startCase from 'lodash/startCase'
+import { FilterMatchMode, FilterOperator } from 'primevue/api';
+import SkeletonTable from '@/components/SkeletonTable.vue';
+import _get from 'lodash/get';
+import _set from 'lodash/set';
+import _map from 'lodash/map';
+import _forEach from 'lodash/forEach';
+import _find from 'lodash/find';
+import _filter from 'lodash/filter';
+import _toUpper from 'lodash/toUpper';
+import _startCase from 'lodash/startCase';
 
 /*
 Using the DataTable
@@ -146,10 +218,10 @@ const inputColumns = ref(props.columns);
 const selectedColumns = ref(props.columns);
 // Filter the live data (props.columns) with the selections of selectedColumns
 const computedColumns = computed(() => {
-  return _map(selectedColumns.value, col => {
-    return _find(props.columns, pcol => pcol.header === col.header)
-  })
-})
+  return _map(selectedColumns.value, (col) => {
+    return _find(props.columns, (pcol) => pcol.header === col.header);
+  });
+});
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -160,28 +232,27 @@ const onSelectAll = () => {
     toast.add({
       severity: 'info',
       summary: 'Rows selected',
-      detail:
-        `You selected ${selectedRows.value.length} rows but there are
+      detail: `You selected ${selectedRows.value.length} rows but there are
         ${props.totalRecords} total rows in all of this table's pages. If you
         would like to export all rows, please click the "Export Whole Table"
         button.`,
-      life: 5000
+      life: 5000,
     });
   } else {
     selectedRows.value = [];
   }
-  emit("selection", selectedRows.value);
-}
+  emit('selection', selectedRows.value);
+};
 
 const onSelectionChange = () => {
-  emit("selection", selectedRows.value);
-}
+  emit('selection', selectedRows.value);
+};
 
 const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
   if (exportSelected) {
-    emit('export-selected', selectedRows.value)
+    emit('export-selected', selectedRows.value);
     return;
   }
   emit('export-all');
@@ -191,10 +262,10 @@ const exportCSV = (exportSelected) => {
 const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN'];
 let filters = {};
 let options = {};
-_forEach(props.columns, column => {
+_forEach(props.columns, (column) => {
   // Check if header text is supplied; if not, generate.
   if (!_get(column, 'header')) {
-    column['header'] = _startCase(_get(column, 'field'))
+    column['header'] = _startCase(_get(column, 'field'));
   }
   const dataType = _toUpper(_get(column, 'dataType'));
   let returnMatchMode = null;
@@ -215,28 +286,28 @@ _forEach(props.columns, column => {
   if (returnMatchMode) {
     filters[column.field] = {
       operator: FilterOperator.AND,
-      constraints: [returnMatchMode]
-    }
+      constraints: [returnMatchMode],
+    };
   }
-})
+});
 const refOptions = ref(options);
 const refFilters = ref(filters);
 
 // Grab list of fields defined as dates
-let dateFields = _filter(props.columns, col => _toUpper(col.dataType) === 'DATE');
-dateFields = _map(dateFields, col => col.field);
+let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
+dateFields = _map(dateFields, (col) => col.field);
 
 const computedData = computed(() => {
   const data = JSON.parse(JSON.stringify(props.data));
   _forEach(data, (entry) => {
     // Clean up date fields to use Date objects
-    _forEach(dateFields, field => {
+    _forEach(dateFields, (field) => {
       let dateEntry = _get(entry, field);
       if (dateEntry !== null) {
         const dateObj = new Date(dateEntry);
         _set(entry, field, dateObj);
       }
-    })
+    });
   });
   return data;
 });
@@ -245,18 +316,18 @@ const computedData = computed(() => {
 function getUniqueOptions(column) {
   const field = _get(column, 'field');
   let options = [];
-  _forEach(props.data, entry => {
+  _forEach(props.data, (entry) => {
     if (!options.includes(_get(entry, field))) {
       options.push(_get(entry, field));
     }
   });
-  return options
+  return options;
 }
 
 function getFormattedDate(date) {
   if (date && !isNaN(date)) {
-    return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })
-  } else return ''
+    return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+  } else return '';
 }
 
 const onColumnToggle = (selected) => {
@@ -268,13 +339,17 @@ const onFreezeToggle = (selected) => {
   frozenColumns.value = inputColumns.value.filter((col) => selected.includes(col));
   selectedColumns.value = selectedColumns.value.map((col) => {
     col.pinned = selected.includes(col);
-    return col
-  })
+    return col;
+  });
 };
 
 const emit = defineEmits(['page', 'sort', 'export-all', 'selection']);
-const onPage = (event) => { emit('page', event) };
-const onSort = (event) => { emit('sort', event) };
+const onPage = (event) => {
+  emit('page', event);
+};
+const onSort = (event) => {
+  emit('sort', event);
+};
 </script>
 <style>
 .circle {

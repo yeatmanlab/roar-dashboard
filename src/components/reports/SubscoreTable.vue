@@ -18,6 +18,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import _get from 'lodash/get';
+import _kebabCase from 'lodash/kebabCase';
 import _set from 'lodash/set';
 import _isEmpty from 'lodash/isEmpty';
 import _toUpper from 'lodash/toUpper';
@@ -33,6 +34,8 @@ const props = defineProps({
   administrationId: { type: String, required: true, default: '' },
   orgType: { type: String, required: true, default: '' },
   orgId: { type: String, required: true, default: '' },
+  administrationName: { type: String, required: true, default: '' },
+  orgName: { type: String, required: true, default: '' },
 });
 
 const authStore = useAuthStore();
@@ -188,7 +191,7 @@ const exportSelected = (selectedRows) => {
     }
     return tableRow;
   });
-  exportCsv(computedExportData, 'roar-scores.csv');
+  exportCsv(computedExportData, `roar-scores-${_kebabCase(props.taskId)}-selected.csv`);
   return;
 };
 
@@ -243,7 +246,10 @@ const exportAll = async () => {
     }
     return tableRow;
   });
-  exportCsv(computedExportData, 'roar-scores.csv');
+  exportCsv(
+    computedExportData,
+    `roar-scores-${_kebabCase(props.taskId)}-${_kebabCase(props.administrationName)}-${_kebabCase(props.orgName)}.csv`,
+  );
   return;
 };
 
