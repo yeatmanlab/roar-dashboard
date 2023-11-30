@@ -1,4 +1,4 @@
-import {games } from "./gamesList"
+import { games } from "./gamesList";
 
 describe("Cypress tests to play games as a participant", () => {
     games.forEach((game) => {
@@ -26,9 +26,16 @@ describe("Cypress tests to play games as a participant", () => {
 
             // cy.contains("Preparing your game")
 
-            cy.get(".jspsych-btn", { timeout: 60000 })
+            cy.get(game.startBtn, { timeout: 60000 })
                 .should("be.visible")
                 .click();
+
+            // case for game/pa -- it has two initiation buttons that need to be clicked
+            if (game.startBtn2) {
+                cy.get(game.startBtn2, { timeout: 60000 })
+                    .should("be.visible")
+                    .click();
+            }
 
             // handles error where full screen throws a permissions error
             cy.wait(1000);
@@ -46,30 +53,34 @@ describe("Cypress tests to play games as a participant", () => {
 
             // clicks through first introduction pages
             for (let i = 0; i < game.introIters; i++) {
-                cy.get(game.introBtn).click();
-                cy.wait(1000);
+                cy.get(game.introBtn, { timeout: 10000 })
+                    .should("be.visible")
+                    .click();
+                // cy.wait(400);
             }
 
-            playROARGame(game)
-
+            playROARGame(game);
         });
     });
 });
 
 function playROARGame(game) {
+    let overflow = 0;
     for (let i = 0; i < game.numIter; i++) {
-        chooseStimulusOrContinue(game)
+        chooseStimulusOrContinue(game, overflow);
     }
 }
 
-function chooseStimulusOrContinue(game) {
+function chooseStimulusOrContinue(game, overflow) {
     cy.get("body").then((body) => {
         if (body.find(game.introBtn).length > 0) {
             body.find(game.introBtn).click();
         } else {
             body.find(game.clickableItem).first().click();
-            cy.wait(400);
-            chooseStimulusOrContinue(game);
+            cy.wait(100);
+            if (overflow < 50) {
+                chooseStimulusOrContinue(game, overflow++);
+            }
         }
     });
 }
