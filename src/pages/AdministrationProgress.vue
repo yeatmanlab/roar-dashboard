@@ -16,13 +16,9 @@
           :columns="columns"
           :total-records="assignmentCount"
           :loading="isLoadingScores || isFetchingScores"
-          :page-limit="pageLimit"
-          lazy
-          @page="onPage($event)"
-          @sort="onSort($event)"
-          @export-selected="exportSelected"
-          @export-all="exportAll"
-        />
+          :page-limit="pageLimit" lazy
+          @page="onPage($event)" @sort="onSort($event)" @export-selected="exportSelected" @export-all="exportAll"
+          data-cy="roar-data-table"/>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
           <span>Loading Progress Data</span>

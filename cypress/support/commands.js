@@ -4,7 +4,7 @@ Cypress.Commands.add('login', (username, password) => {
         cy.visit('/')
         cy.get('[data-cy="input-username-email"]').type(username, {log: false})
         cy.get('[data-cy="input-password"]').type(password, {log: false})
-        cy.get("button").contains("Go!").click()
+        cy.get("button").contains("Go!", {timeout: Cypress.env('timeout')}).click()
         cy.log("Login successful.").wait(3000)
     },
 {
@@ -25,7 +25,6 @@ Cypress.Commands.add('logout', () => {
 })
 
 Cypress.Commands.add('navigateTo', (page, login = false) => {
-    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'))
     cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`)
     cy.visit(page, {timeout: Cypress.env('timeout')})
     cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`)
