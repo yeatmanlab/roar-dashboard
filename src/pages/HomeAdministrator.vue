@@ -8,35 +8,54 @@
         <template #icons>
           <label class="mr-2" for="dd-sort">Sort by</label>
           <PvDropdown
-v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
-            @change="onSortChange($event)" />
+            v-model="sortKey"
+            input-id="dd-sort"
+            :options="sortOptions"
+            option-label="label"
+            @change="onSortChange($event)"
+          />
         </template>
 
         <div v-if="initialized && !isLoadingAdministrations">
           <PvBlockUI :blocked="isFetchingAdministrations">
             <PvDataView
-:key="dataViewKey" :value="administrations" lazy paginator paginator-position="top"
-              :total-records="totalRecords" :rows="pageLimit" :rows-per-page-options="[3, 5, 10, 25]" data-key="id"
-              @page="onPage($event)">
+              :key="dataViewKey"
+              :value="administrations"
+              lazy
+              paginator
+              paginator-position="top"
+              :total-records="totalRecords"
+              :rows="pageLimit"
+              :rows-per-page-options="[3, 5, 10, 25]"
+              data-key="id"
+              @page="onPage($event)"
+            >
               <template #list="slotProps">
                 <div class="mb-2 w-full">
                   <CardAdministration
-:id="slotProps.data.id" :key="slotProps.data.id" :title="slotProps.data.name"
-                    :stats="slotProps.data.stats" :dates="slotProps.data.dates" :assignees="slotProps.data.assignedOrgs"
-                    :assessments="slotProps.data.assessments" :show-params="isSuperAdmin" />
+                    v-for="item in slotProps.items"
+                    :id="item.id"
+                    :key="item.id"
+                    :title="item.name"
+                    :stats="item.stats"
+                    :dates="item.dates"
+                    :assignees="item.assignedOrgs"
+                    :assessments="item.assessments"
+                    :show-params="isSuperAdmin"
+                  />
                 </div>
               </template>
               <template #empty>
                 <div>
-                  There are no administrations to display. Please contact a lab
-                  administrator to add you as an admin to an administration.
+                  There are no administrations to display. Please contact a lab administrator to add you as an admin to
+                  an administration.
                 </div>
               </template>
             </PvDataView>
           </PvBlockUI>
         </div>
         <div v-else class="loading-container">
-          <AppSpinner style="margin-bottom: 1rem;" />
+          <AppSpinner style="margin-bottom: 1rem" />
           <span>Loading Administrations</span>
         </div>
       </PvPanel>
@@ -45,18 +64,15 @@ v-model="sortKey" input-id="dd-sort" :options="sortOptions" option-label="label"
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
-import { storeToRefs } from "pinia";
-import {
-  orderByDefault,
-  fetchDocById,
-} from "@/helpers/query/utils";
-import { administrationCounter, administrationPageFetcher } from "../helpers/query/administrations";
-import { getSidebarActions } from "../router/sidebarActions";
-import CardAdministration from "@/components/CardAdministration.vue";
-import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import { useAuthStore } from "@/store/auth";
-import { useQuery } from '@tanstack/vue-query'
+import { computed, ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
+import { administrationCounter, administrationPageFetcher } from '../helpers/query/administrations';
+import { getSidebarActions } from '../router/sidebarActions';
+import CardAdministration from '@/components/CardAdministration.vue';
+import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+import { useAuthStore } from '@/store/auth';
+import { useQuery } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const page = ref(0);
@@ -68,27 +84,24 @@ const { roarfirekit } = storeToRefs(authStore);
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, false));
 
-const userInfo = ref(
-  {
-    name: "Admin name",
-    district: "District Name"
-  }
-)
+const userInfo = ref({
+  name: 'Admin name',
+  district: 'District Name',
+});
 
-const { isLoading: isLoadingClaims, data: userClaims } =
-  useQuery({
-    queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],
-    queryFn: () => fetchDocById('userClaims', authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+  queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 let unsubscribeInitializer;
 const init = () => {
   if (unsubscribeInitializer) unsubscribeInitializer();
   initialized.value = true;
-}
+};
 
 unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -96,7 +109,7 @@ unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
-})
+});
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
@@ -106,85 +119,103 @@ const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
 
-const { data: totalRecords } =
-  useQuery({
-    queryKey: ['countAdministrations', orderBy, isSuperAdmin],
-    queryFn: () => administrationCounter(orderBy, isSuperAdmin, adminOrgs),
-    keepPreviousData: true,
-    enabled: canQueryAdministrations,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+const { data: totalRecords } = useQuery({
+  queryKey: ['countAdministrations', orderBy, isSuperAdmin],
+  queryFn: () => administrationCounter(orderBy, isSuperAdmin, adminOrgs),
+  keepPreviousData: true,
+  enabled: canQueryAdministrations,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
-const { isLoading: isLoadingAdministrations, isFetching: isFetchingAdministrations, data: administrations } =
-  useQuery({
-    queryKey: ['administrations', orderBy, page, pageLimit, isSuperAdmin],
-    queryFn: () => administrationPageFetcher(orderBy, pageLimit, page, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
-    keepPreviousData: true,
-    enabled: canQueryAdministrations,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+const {
+  isLoading: isLoadingAdministrations,
+  isFetching: isFetchingAdministrations,
+  data: administrations,
+} = useQuery({
+  queryKey: ['administrations', orderBy, page, pageLimit, isSuperAdmin],
+  queryFn: () => administrationPageFetcher(orderBy, pageLimit, page, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  keepPreviousData: true,
+  enabled: canQueryAdministrations,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 const onPage = (event) => {
   pageLimit.value = event.rows;
   page.value = event.page;
-}
+};
 
 const sortOptions = ref([
   {
     label: 'Name (ascending)',
-    value: [{
-      field: { fieldPath: "name" },
-      direction: "ASCENDING",
-    }]
+    value: [
+      {
+        field: { fieldPath: 'name' },
+        direction: 'ASCENDING',
+      },
+    ],
   },
   {
     label: 'Name (descending)',
-    value: [{
-      field: { fieldPath: "name" },
-      direction: "DESCENDING",
-    }]
+    value: [
+      {
+        field: { fieldPath: 'name' },
+        direction: 'DESCENDING',
+      },
+    ],
   },
   {
     label: 'Start date (ascending)',
-    value: [{
-      field: { fieldPath: "dateOpened" },
-      direction: "ASCENDING",
-    }]
+    value: [
+      {
+        field: { fieldPath: 'dateOpened' },
+        direction: 'ASCENDING',
+      },
+    ],
   },
   {
     label: 'Start date (descending)',
-    value: [{
-      field: { fieldPath: "dateOpened" },
-      direction: "DESCENDING",
-    }]
+    value: [
+      {
+        field: { fieldPath: 'dateOpened' },
+        direction: 'DESCENDING',
+      },
+    ],
   },
   {
     label: 'End date (ascending)',
-    value: [{
-      field: { fieldPath: "dateClosed" },
-      direction: "ASCENDING",
-    }]
+    value: [
+      {
+        field: { fieldPath: 'dateClosed' },
+        direction: 'ASCENDING',
+      },
+    ],
   },
   {
     label: 'End date (descending)',
-    value: [{
-      field: { fieldPath: "dateClosed" },
-      direction: "DESCENDING",
-    }]
+    value: [
+      {
+        field: { fieldPath: 'dateClosed' },
+        direction: 'DESCENDING',
+      },
+    ],
   },
   {
     label: 'Creation date (ascending)',
-    value: [{
-      field: { fieldPath: "dateCreated" },
-      direction: "ASCENDING",
-    }]
+    value: [
+      {
+        field: { fieldPath: 'dateCreated' },
+        direction: 'ASCENDING',
+      },
+    ],
   },
   {
     label: 'Creation date (descending)',
-    value: [{
-      field: { fieldPath: "dateCreated" },
-      direction: "DESCENDING",
-    }]
+    value: [
+      {
+        field: { fieldPath: 'dateCreated' },
+        direction: 'DESCENDING',
+      },
+    ],
   },
 ]);
 const sortKey = ref(sortOptions.value[0]);
@@ -196,7 +227,6 @@ const onSortChange = (event) => {
   page.value = 0;
   orderBy.value = event.value.value;
 };
-
 </script>
 
 <style scoped>

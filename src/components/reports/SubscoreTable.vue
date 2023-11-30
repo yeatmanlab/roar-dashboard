@@ -23,7 +23,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _toUpper from 'lodash/toUpper';
 import _toLower from 'lodash/toLower';
 import { useQuery } from '@tanstack/vue-query';
-import { orderByDefault, fetchDocById, exportCsv } from '@/helpers/query/utils';
+import { orderByDefault, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
@@ -57,18 +57,7 @@ const onSort = (event) => {
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
 };
 
-// User Claims
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims'],
-  queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const claimsLoaded = computed(() => !isLoadingClaims.value);
-
-let {
+const {
   isLoading: isLoadingScores,
   isFetching: isFetchingScores,
   data: scoresDataQuery,
@@ -76,7 +65,7 @@ let {
   queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
   queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page, true),
   keepPreviousData: true,
-  enabled: initialized.value && claimsLoaded,
+  enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 mins
 });
 // Scores count query
@@ -84,7 +73,7 @@ const { data: scoresCount } = useQuery({
   queryKey: ['assignments', props.administrationId, props.orgId],
   queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
   keepPreviousData: true,
-  enabled: initialized.value && claimsLoaded,
+  enabled: initialized,
   staleTime: 5 * 60 * 1000,
 });
 
