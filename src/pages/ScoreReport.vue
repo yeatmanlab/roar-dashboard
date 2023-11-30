@@ -111,6 +111,8 @@
           :administration-id="administrationId"
           :org-type="orgType"
           :org-id="orgId"
+          :administration-name="administrationInfo.name ?? undefined"
+          :org-name="orgInfo.name ?? undefined"
         />
         <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('letter')" class="task-card">
