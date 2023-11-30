@@ -81,17 +81,19 @@
         <div class="legend-description">Students are classified into three support groups based on nationally-normed
           percentiles. Blank spaces indicate that the assessment was not completed.</div>
         <!-- Subscores tables -->
-        <SubscoreTable v-if="allTasks.includes('letter')"
+        <SubscoreTable
+v-if="allTasks.includes('letter')"
           task-id="letter"
-          :administrationId="administrationId"
-          :orgType="orgType"
-          :orgId="orgId"
+          :administration-id="administrationId"
+          :org-type="orgType"
+          :org-id="orgId"
         />
-        <SubscoreTable v-if="allTasks.includes('pa')" 
+        <SubscoreTable
+v-if="allTasks.includes('pa')" 
           task-id="pa"
-          :administrationId="administrationId"
-          :orgType="orgType"
-          :orgId="orgId"
+          :administration-id="administrationId"
+          :org-type="orgType"
+          :org-id="orgId"
         />
         <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('letter')" class="task-card">
