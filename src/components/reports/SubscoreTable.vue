@@ -210,7 +210,7 @@ const exportAll = async () => {
           const incorrectLetters = [
             ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
             ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(',')
-          ].sort((a, b) => _toLower(a) - _toLower(b)).filter(Boolean).join(', ');
+          ].sort((a, b) => _toUpper(a) - _toUpper(b)).filter(Boolean).join(', ');
 
           const incorrectPhonemes = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '').split(',').join(', ')
 
