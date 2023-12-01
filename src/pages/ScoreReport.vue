@@ -80,18 +80,10 @@
         <div class="legend-description">Students are classified into three support groups based on nationally-normed
           percentiles. Blank spaces indicate that the assessment was not completed.</div>
         <!-- Subscores tables -->
-        <SubscoreTable v-if="allTasks.includes('letter')"
-          task-id="letter"
-          :administrationId="administrationId"
-          :orgType="orgType"
-          :orgId="orgId"
-        />
-        <SubscoreTable v-if="allTasks.includes('pa')" 
-          task-id="pa"
-          :administrationId="administrationId"
-          :orgType="orgType"
-          :orgId="orgId"
-        />
+        <SubscoreTable v-if="allTasks.includes('letter')" task-id="letter" :administrationId="administrationId"
+          :orgType="orgType" :orgId="orgId" />
+        <SubscoreTable v-if="allTasks.includes('pa')" task-id="pa" :administrationId="administrationId" :orgType="orgType"
+          :orgId="orgId" />
         <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('letter')" class="task-card">
           <div class="task-title">ROAR-LETTER</div>
@@ -109,7 +101,7 @@
           <p class="task-description">ROAR - Phoneme assesses a student's mastery of phonological awareness through
             elision and sound matching tasks. Research indicates that phonological awareness, as a foundational
             pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading
-            abilities, students may struggle to catch up in overall reading proficiency. The student's score will range 
+            abilities, students may struggle to catch up in overall reading proficiency. The student's score will range
             between 0-57 and can be viewed by selecting 'Raw Score' on the table above.</p>
         </div>
         <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-card">
@@ -129,7 +121,7 @@
             Poor fluency can make it harder for students to understand what they're reading. Students who don't receive
             support for their basic reading skills may find it challenging to improve their overall reading ability. This
             assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties
-            with decoding words accurately or reading slowly and with effort. The student's score will range between 
+            with decoding words accurately or reading slowly and with effort. The student's score will range between
             0-130 and can be viewed by selecting 'Raw Score' on the table above.</p>
         </div>
 
@@ -187,7 +179,7 @@ import { getSidebarActions } from "@/router/sidebarActions";
 import { getGrade } from "@bdelab/roar-utils";
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from "@/helpers/query/assignments";
-import { orgFetcher } from "@/helpers/query/orgs";
+import { orgFetcher, orgPageFetcher } from "@/helpers/query/orgs";
 import { pluralizeFirestoreCollection } from "@/helpers";
 import SubscoreTable from '../components/reports/SubscoreTable.vue';
 
@@ -247,6 +239,16 @@ const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: school
     queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
     keepPreviousData: true,
     enabled: (props.orgType === 'district' && initialized),
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  })
+
+const { isLoading: isLoadingClasses, isFetching: isFetchingClasses, data: classesInfo} =
+  useQuery({
+    queryKey: ['classes', ref(props.orgId)],
+    // queryFn: () => orgPageFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
+    queryFn: () => orgPageFetcher('classes', ref(props.orgId), ref(null), ref(schoolsInfo.value.map((school) => school.id)), orderBy, pageLimit, page, isSuperAdmin, adminOrgs),
+    keepPreviousData: true,
+    enabled: (props.orgType === 'district' && initialized && schoolsInfo.value),
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
@@ -344,7 +346,7 @@ const exportSelected = (selectedRows) => {
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId) ?
-          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+        _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
@@ -357,11 +359,11 @@ const exportSelected = (selectedRows) => {
 const exportAll = async () => {
   const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true)
   const sortedTasks = allTasks.value.sort((p1, p2) => {
-    if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
-        return displayNames[p1].order - displayNames[p2].order
-      } else {
-        return -1
-      }
+    if (Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)) {
+      return displayNames[p1].order - displayNames[p2].order
+    } else {
+      return -1
+    }
   })
   const computedExportData = _map(exportData, ({ user, assignment }) => {
     let tableRow = {
@@ -387,7 +389,7 @@ const exportAll = async () => {
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId) ?
-          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+        _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
@@ -517,7 +519,7 @@ const columns = computed(() => {
 
   if (tableData.value.length > 0) {
     const sortedTasks = allTasks.value.sort((p1, p2) => {
-      if(Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)){
+      if (Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)) {
         return displayNames[p1].order - displayNames[p2].order
       } else {
         return -1
@@ -552,7 +554,7 @@ const tableData = computed(() => {
       const { percentile, percentileString } = getPercentileScores({ assessment, percentileScoreKey, percentileScoreDisplayKey });
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`)
       const rawScore = rawOnlyTasks.includes(assessment.taskId) ?
-          _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
+        _get(assessment, 'scores.computed.composite') : _get(assessment, `scores.computed.composite.${rawScoreKey}`)
       const { support_level, tag_color } = getSupportLevel(percentile);
       scores[assessment.taskId] = {
         percentile: percentileString,

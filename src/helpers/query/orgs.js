@@ -9,6 +9,7 @@ export const getOrgsRequestBody = ({
   orgName,
   parentDistrict,
   parentSchool,
+  parentSchools,
   orderBy,
   aggregationQuery,
   pageLimit,
@@ -114,7 +115,40 @@ export const getOrgsRequestBody = ({
         }
       }
     }
+  } else if (orgType === "classes" && parentSchools) {
+    if (orgName) {
+      requestBody.structuredQuery.where = {
+        compositeFilter: {
+          op: 'AND',
+          filters: [
+            {
+              fieldFilter: {
+                field: { fieldPath: "name" },
+                op: "EQUAL",
+                value: { stringValue: orgName }
+              }
+            },
+            {
+              fieldFilter: {
+                field: { fieldPath: "schoolId" },
+                op: "IN",
+                value: { arrayValue: parentSchools }
+              }
+            }
+          ]
+        }
+      };
+    } else {
+      requestBody.structuredQuery.where = {
+        fieldFilter: {
+          field: { fieldPath: "schoolId" },
+          op: "IN",
+          value: { arrayValue: parentSchools }
+        }
+      }
+    }
   }
+
 
   if (aggregationQuery) {
     return {
@@ -305,6 +339,7 @@ export const orgPageFetcher = async (
   activeOrgType,
   selectedDistrict,
   selectedSchool,
+  selectedSchools,
   orderBy,
   pageLimit,
   page,
@@ -316,13 +351,14 @@ export const orgPageFetcher = async (
     orgType: activeOrgType.value,
     parentDistrict: selectedDistrict.value,
     parentSchool: selectedSchool.value,
+    parentSchools: selectedSchools.value,
     aggregationQuery: false,
     orderBy: orderBy.value,
     pageLimit: pageLimit.value,
     paginate: true,
     page: page.value,
   });
-
+  console.log("req", requestBody.structuredQuery.orgType)
   console.log(`Fetching page ${page.value} for ${activeOrgType.value}`);
 
   if (isSuperAdmin.value) {
