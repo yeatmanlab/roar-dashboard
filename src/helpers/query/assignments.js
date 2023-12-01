@@ -10,7 +10,7 @@ import _zip from 'lodash/zip';
 import { convertValues, getAxiosInstance, mapFields, matchMode2Op } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
-const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools'];
+const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
 export const getAssignmentsRequestBody = ({
   adminId,
@@ -175,9 +175,9 @@ export const getUsersByAssignmentIdRequestBody = ({
         },
         {
           fieldFilter: {
-            field: { fieldPath: `assignmentsAssigned.${adminId}` },
-            op: 'NOT_EQUAL',
-            value: { stringValue: 'null string' }, // Something that we assume will never occur
+            field: { fieldPath: `assignments.assigned` },
+            op: 'ARRAY_CONTAINS_ANY',
+            value: { arrayValue: [adminId] },
           },
         },
       ],
