@@ -1,13 +1,10 @@
-import { games } from "./gamesList";
+import { keypressGames} from "./keyPressGamesList";
 
-describe("Cypress tests to play games as a participant", () => {
-    games.forEach((game) => {
+describe("Cypress tests to play SWR and SRE as a participant", () => {
+    keypressGames.forEach((game) => {
         it(game.name, () => {
-            // this is a user that has an assignment of roarVocab -- how can we create a user that can
-            // ALWAYS play the game
             let test_login = "testingUser4";
             let test_pw = "password4";
-            // how can we write some logic to reset the already played
 
             cy.login(test_login, test_pw);
 
@@ -15,7 +12,7 @@ describe("Cypress tests to play games as a participant", () => {
                 .should("be.visible")
                 .click();
             cy.get(".p-dropdown-item", { timeout: 10000 })
-                .contains("Vocab numTrialsTotal 3")
+                .contains("ZZZ Test Cypress Play Keypress Games")
                 .should("be.visible")
                 .click();
             // cy.get(".p-dropdown-item").contains("numTrialsTotal").click();
@@ -30,15 +27,20 @@ describe("Cypress tests to play games as a participant", () => {
                 .should("be.visible")
                 .click();
 
-            // case for game/pa -- it has two initiation buttons that need to be clicked
             if (game.startBtn2) {
-                cy.get(game.startBtn2, { timeout: 60000 })
+                cy.wait(500)
+
+                cy.get('b').contains("I agree").click()
+                cy.get(game.startBtn2, { timeout: 10000 })
+                    .should("be.visible")
+                    .click();
+                cy.get(game.startBtn2, { timeout: 10000 })
                     .should("be.visible")
                     .click();
             }
 
             // handles error where full screen throws a permissions error
-            cy.wait(1000);
+            cy.wait(500);
             Cypress.on("uncaught:exception", () => {
                 return false;
             });
@@ -51,33 +53,34 @@ describe("Cypress tests to play games as a participant", () => {
                     .click();
             }
 
-            // clicks through first introduction pages
-            for (let i = 0; i < game.introIters; i++) {
-                cy.get(game.introBtn, { timeout: 10000 })
-                    .should("be.visible")
-                    .click();
-                // cy.wait(400);
-            }
+            // // clicks through first introduction pages
+            // for (let i = 0; i < game.introIters; i++) {
+            //     cy.get(game.introBtn, { timeout: 10000 })
+            //         .should("be.visible")
+            //         .click();
+            //     // cy.wait(400);
+            // }
 
-            playROARGame(game);
+            playROARKeypressGame(game);
         });
     });
 });
 
-function playROARGame(game) {
-    let overflow = 0;
+function playROARKeypressGame(game) {
+    cy.clock()
     for (let i = 0; i < game.numIter; i++) {
-        chooseStimulusOrContinue(game, overflow);
+        cy.get("body").type("{leftarrow}{rightarrow}")
+        // advance by 5s each loop (3 min == 180s/5 = 36)
+        cy.tick(5000)
     }
 }
 
-function chooseStimulusOrContinue(game, overflow) {
+function chooseCorrectKeypress(game, overflow) {
     cy.get("body").then((body) => {
         if (body.find(game.introBtn).length > 0) {
             body.find(game.introBtn).click();
         } else {
             body.find(game.clickableItem).first().click();
-            cy.wait(100);
             if (overflow < 50) {
                 chooseStimulusOrContinue(game, overflow++);
             }
