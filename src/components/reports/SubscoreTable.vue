@@ -177,10 +177,10 @@ const exportSelected = (selectedRows) => {
     if(props.taskId === 'letter'){
       _set(tableRow, 'Upper Case', _get(scores, 'letter.upperCaseScore'))
       _set(tableRow, 'Lower Case', _get(scores, 'letter.lowerCaseScore'))
-      _set(tableRow, 'Phoneme', _get(scores, 'letter.phonemeScore'))
+      _set(tableRow, 'Letter Sounds', _get(scores, 'letter.phonemeScore'))
       _set(tableRow, 'Total', _get(scores, 'letter.totalScore'))
-      _set(tableRow, 'Incorrect Letters', _get(scores, 'letter.incorrectLetters'))
-      _set(tableRow, 'Incorrect Phonemes', _get(scores, 'letter.incorrectPhonemes'))
+      _set(tableRow, 'Letters to Work On', _get(scores, 'letter.incorrectLetters'))
+      _set(tableRow, 'Sounds to Work On', _get(scores, 'letter.incorrectPhonemes'))
     }
     if(props.taskId === 'pa') {
       _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'))
@@ -216,10 +216,10 @@ const exportAll = async () => {
 
           _set(tableRow, 'Lower Case', _get(assessment, 'scores.computed.LowercaseNames.subScore'))
           _set(tableRow, 'Upper Case', _get(assessment, 'scores.computed.UppercaseNames.subScore'))
-          _set(tableRow, 'Phonemes', _get(assessment, 'scores.computed.Phonemes.subScore'))
+          _set(tableRow, 'Letter Sounds', _get(assessment, 'scores.computed.Phonemes.subScore'))
           _set(tableRow, 'Total', _get(assessment, 'scores.computed.composite'))
-          _set(tableRow, 'Incorrect Letters', incorrectLetters)
-          _set(tableRow, 'Incorrect Phonemes', incorrectPhonemes)
+          _set(tableRow, 'Letters to Work On', incorrectLetters)
+          _set(tableRow, 'Sounds to Work On', incorrectPhonemes)
         }
       }
       if(assessment.taskId === 'pa') {
