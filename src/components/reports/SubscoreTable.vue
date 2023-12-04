@@ -109,7 +109,7 @@ const columns = computed(() => {
       { field: "scores.pa.lastSound", header: "Last Sound", dataType: "text" },
       { field: "scores.pa.deletion", header: "Deletion", dataType: "text" },
       { field: "scores.pa.total", header: "Total", dataType: "text" },
-      { field: "scores.pa.skills", header: "Skills To work on", dataType: "text"}
+      { field: "scores.pa.skills", header: "Skills To Work On", dataType: "text"}
     )
   }
   return tableColumns
