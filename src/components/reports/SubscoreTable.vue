@@ -99,8 +99,8 @@ const columns = computed(() => {
       { field: "scores.letter.upperCaseScore", header: "Upper Case", dataType: "text" },
       { field: "scores.letter.phonemeScore", header: "Letter Sounds", dataType: "text" },
       { field: "scores.letter.totalScore", header: "Total", dataType: "text" },
-      { field: "scores.letter.incorrectLetters", header: "Letters to Work On", dataType: "text" },
-      { field: "scores.letter.incorrectPhonemes", header: "Sounds to Work On", dataType: "text"},
+      { field: "scores.letter.incorrectLetters", header: "Letters To Work On", dataType: "text" },
+      { field: "scores.letter.incorrectPhonemes", header: "Sounds To Work On", dataType: "text"},
     )
   }
   if(props.taskId === 'pa') {
@@ -109,7 +109,7 @@ const columns = computed(() => {
       { field: "scores.pa.lastSound", header: "Last Sound", dataType: "text" },
       { field: "scores.pa.deletion", header: "Deletion", dataType: "text" },
       { field: "scores.pa.total", header: "Total", dataType: "text" },
-      { field: "scores.pa.skills", header: "Skills to work on", dataType: "text"}
+      { field: "scores.pa.skills", header: "Skills To work on", dataType: "text"}
     )
   }
   return tableColumns
@@ -179,15 +179,15 @@ const exportSelected = (selectedRows) => {
       _set(tableRow, 'Lower Case', _get(scores, 'letter.lowerCaseScore'))
       _set(tableRow, 'Letter Sounds', _get(scores, 'letter.phonemeScore'))
       _set(tableRow, 'Total', _get(scores, 'letter.totalScore'))
-      _set(tableRow, 'Letters to Work On', _get(scores, 'letter.incorrectLetters'))
-      _set(tableRow, 'Sounds to Work On', _get(scores, 'letter.incorrectPhonemes'))
+      _set(tableRow, 'Letters To Work On', _get(scores, 'letter.incorrectLetters'))
+      _set(tableRow, 'Sounds To Work On', _get(scores, 'letter.incorrectPhonemes'))
     }
     if(props.taskId === 'pa') {
       _set(tableRow, 'First Sound', _get(scores, 'pa.firstSound'))
       _set(tableRow, 'Last Sound', _get(scores, 'pa.lastSound'))
       _set(tableRow, 'Deletion', _get(scores, 'pa.deletion'))
       _set(tableRow, 'Total', _get(scores, 'pa.total'))
-      _set(tableRow, 'Skills to Work On', _get(scores, 'pa.skills'))
+      _set(tableRow, 'Skills To Work On', _get(scores, 'pa.skills'))
     }
     return tableRow;
   })
@@ -218,8 +218,8 @@ const exportAll = async () => {
           _set(tableRow, 'Upper Case', _get(assessment, 'scores.computed.UppercaseNames.subScore'))
           _set(tableRow, 'Letter Sounds', _get(assessment, 'scores.computed.Phonemes.subScore'))
           _set(tableRow, 'Total', _get(assessment, 'scores.computed.composite'))
-          _set(tableRow, 'Letters to Work On', incorrectLetters)
-          _set(tableRow, 'Sounds to Work On', incorrectPhonemes)
+          _set(tableRow, 'Letters To Work On', incorrectLetters)
+          _set(tableRow, 'Sounds To Work On', incorrectPhonemes)
         }
       }
       if(assessment.taskId === 'pa') {
@@ -235,7 +235,7 @@ const exportAll = async () => {
           _set(tableRow, 'Last Sound', last)
           _set(tableRow, 'Deletion', deletion)
           _set(tableRow, 'Total', _get(assessment, 'scores.computed.composite.roarScore'))
-          _set(tableRow, 'Skills to Work on', skills.join(', '))
+          _set(tableRow, 'Skills To Work On', skills.join(', '))
         }
       }
     }
