@@ -16,5 +16,5 @@
     "object-shorthand": 0,
     "implicit-arrow-linebreak": 0
   },
-  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/lib/**"]
+  "ignorePatterns": ["**/node_modules/**", "**/dist/**", "**/lib/**", "roar-firebase-functions"]
 }
