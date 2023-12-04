@@ -7,8 +7,13 @@
           <i class="pi pi-database"></i>
         </span>
         <PvDropdown
-v-model="selectedRootPath" input-id="rootdoc" :options="rootPaths" option-label="label"
-          option-group-label="label" option-group-children="items">
+          v-model="selectedRootPath"
+          input-id="rootdoc"
+          :options="rootPaths"
+          option-label="label"
+          option-group-label="label"
+          option-group-children="items"
+        >
           <template #optiongroup="slotProps">
             <div class="flex align-items-center country-item">
               <i class="pi pi-folder-open mr-2"></i>
@@ -28,9 +33,18 @@ v-model="selectedRootPath" input-id="rootdoc" :options="rootPaths" option-label=
           <i class="pi pi-angle-right"></i>
         </span>
         <PvMultiSelect
-v-model="selectedTasks" input-id="tasks" :options="queryStore.tasks" option-label="id"
-          :loading="!queryStore.tasksReady" :filter="true" filter-placeholder="Filter tasks" placeholder="Select tasks"
-          :selection-limit="10" :max-selected-labels="4" :virtual-scroller-options="{ itemSize: 40 }" />
+          v-model="selectedTasks"
+          input-id="tasks"
+          :options="queryStore.tasks"
+          option-label="id"
+          :loading="!queryStore.tasksReady"
+          :filter="true"
+          filter-placeholder="Filter tasks"
+          placeholder="Select tasks"
+          :selection-limit="10"
+          :max-selected-labels="4"
+          :virtual-scroller-options="{ itemSize: 40 }"
+        />
       </div>
     </div>
 
@@ -41,11 +55,20 @@ v-model="selectedTasks" input-id="tasks" :options="queryStore.tasks" option-labe
           <i class="pi pi-angle-double-right"></i>
         </span>
         <PvMultiSelect
-v-model="selectedVariants" input-id="variants" :options="queryStore.variants" option-label="name"
-          option-group-label="task" option-group-children="items" :loading="!queryStore.variantsReady" :filter="true"
+          v-model="selectedVariants"
+          input-id="variants"
+          :options="queryStore.variants"
+          option-label="name"
+          option-group-label="task"
+          option-group-children="items"
+          :loading="!queryStore.variantsReady"
+          :filter="true"
           filter-placeholder="Filter variants"
           :placeholder="queryStore.variantsReady ? 'Select variants' : 'Choose tasks first to load available variants'"
-          :selection-limit="10" :max-selected-labels="4" :virtual-scroller-options="{ itemSize: 40 }" />
+          :selection-limit="10"
+          :max-selected-labels="4"
+          :virtual-scroller-options="{ itemSize: 40 }"
+        />
       </div>
     </div>
 
@@ -58,9 +81,16 @@ v-model="selectedVariants" input-id="variants" :options="queryStore.variants" op
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
         <PvMultiSelect
-v-model="queryStore.selectedUsers" input-id="roaruids" :options="queryStore.users"
-          option-label="roarUid" :loading="!queryStore.usersReady" :filter="true" filter-placeholder="Filter ROAR UIDs"
-          :max-selected-labels="5" :virtual-scroller-options="{ itemSize: 40 }" />
+          v-model="queryStore.selectedUsers"
+          input-id="roaruids"
+          :options="queryStore.users"
+          option-label="roarUid"
+          :loading="!queryStore.usersReady"
+          :filter="true"
+          filter-placeholder="Filter ROAR UIDs"
+          :max-selected-labels="5"
+          :virtual-scroller-options="{ itemSize: 40 }"
+        />
         <label for="roaruids">ROAR UID / PID</label>
       </span>
     </div>
@@ -68,8 +98,13 @@ v-model="queryStore.selectedUsers" input-id="roaruids" :options="queryStore.user
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
         <PvMultiSelect
-v-model="queryStore.selectedGroups" input-id="groups" :options="queryStore.groups" option-label="id"
-          :loading="!queryStore.usersReady" :max-selected-labels="4" />
+          v-model="queryStore.selectedGroups"
+          input-id="groups"
+          :options="queryStore.groups"
+          option-label="id"
+          :loading="!queryStore.usersReady"
+          :max-selected-labels="4"
+        />
         <label for="groups">Groups</label>
       </span>
     </div>
@@ -77,8 +112,13 @@ v-model="queryStore.selectedGroups" input-id="groups" :options="queryStore.group
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
         <PvMultiSelect
-v-model="queryStore.selectedDistricts" input-id="districts" :options="queryStore.districts"
-          option-label="id" :loading="!queryStore.usersReady" :max-selected-labels="4" />
+          v-model="queryStore.selectedDistricts"
+          input-id="districts"
+          :options="queryStore.districts"
+          option-label="id"
+          :loading="!queryStore.usersReady"
+          :max-selected-labels="4"
+        />
         <label for="districts">Districts</label>
       </span>
     </div>
@@ -86,8 +126,13 @@ v-model="queryStore.selectedDistricts" input-id="districts" :options="queryStore
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
         <PvMultiSelect
-v-model="queryStore.selectedSchools" input-id="schools" :options="queryStore.schools" option-label="id"
-          :loading="!queryStore.usersReady" :max-selected-labels="4" />
+          v-model="queryStore.selectedSchools"
+          input-id="schools"
+          :options="queryStore.schools"
+          option-label="id"
+          :loading="!queryStore.usersReady"
+          :max-selected-labels="4"
+        />
         <label for="schools">Schools</label>
       </span>
     </div>
@@ -95,8 +140,13 @@ v-model="queryStore.selectedSchools" input-id="schools" :options="queryStore.sch
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
         <PvMultiSelect
-v-model="queryStore.selectedClasses" input-id="classes" :options="queryStore.classes" option-label="id"
-          :loading="!queryStore.usersReady" :max-selected-labels="4" />
+          v-model="queryStore.selectedClasses"
+          input-id="classes"
+          :options="queryStore.classes"
+          option-label="id"
+          :loading="!queryStore.usersReady"
+          :max-selected-labels="4"
+        />
         <label for="classes">Classes</label>
       </span>
     </div>
@@ -117,18 +167,21 @@ v-model="queryStore.selectedClasses" input-id="classes" :options="queryStore.cla
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
       <PvButton
-class="right-0" :label="queryStore.selectedUsers.length ? 'Submit query' : 'Select users to enable query'"
-        icon="pi pi-search" :loading="!queryStore.usersReady || queryStore.selectedUsers.length === 0"
+        class="right-0"
+        :label="queryStore.selectedUsers.length ? 'Submit query' : 'Select users to enable query'"
+        icon="pi pi-search"
+        :loading="!queryStore.usersReady || queryStore.selectedUsers.length === 0"
         :disabled="!queryStore.usersReady || queryStore.selectedUsers.length === 0"
-        @click="queryStore.getRuns" />
+        @click="queryStore.getRuns"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import { onMounted, watch } from 'vue';
-import { storeToRefs } from 'pinia'
-import { useQueryStore } from "@/store/query";
+import { storeToRefs } from 'pinia';
+import { useQueryStore } from '@/store/query';
 
 export default {
   setup() {
@@ -137,12 +190,7 @@ export default {
       queryStore.getRootDocs().then(queryStore.getTasks);
     });
 
-    const {
-      rootPaths,
-      selectedRootPath,
-      selectedTasks,
-      selectedVariants
-    } = storeToRefs(queryStore);
+    const { rootPaths, selectedRootPath, selectedTasks, selectedVariants } = storeToRefs(queryStore);
 
     watch(selectedRootPath, () => queryStore.getTasks().then(queryStore.getVariants));
     watch([selectedRootPath, selectedTasks, selectedVariants], queryStore.getUsers);
@@ -152,9 +200,8 @@ export default {
       rootPaths,
       selectedRootPath,
       selectedTasks,
-      selectedVariants
+      selectedVariants,
     };
-  }
-}
-
+  },
+};
 </script>
