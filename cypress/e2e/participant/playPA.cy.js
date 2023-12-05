@@ -12,25 +12,21 @@ let pa = {
     numIter: 2,
 };
 
-describe("Cypress tests to play pa game as a participant", () => {
+describe("Cypress tests to play Phonological Awareness game as a participant", () => {
     it(pa.name, () => {
-        // this is a user that has an assignment of roarVocab -- how can we create a user that can
-        // ALWAYS play the game
         let test_login = "testingUser4";
         let test_pw = "password4";
-        // how can we write some logic to reset the already played
 
         cy.login(test_login, test_pw);
+        cy.visit("/");
 
         cy.get(".p-dropdown-trigger", { timeout: 10000 }).click();
         cy.get(".p-dropdown-item", { timeout: 10000 })
-            .contains("ZZZ Test Cypress Playthrough Button Games")
+            .contains("ZZZ Test Play PA")
             .click();
 
         // cy.get(".p-tabview").contains(pa.name);
         cy.visit(`/game/${pa.id}`);
-
-        // cy.contains("Preparing your game")
 
         cy.get(pa.startBtn, { timeout: 60000 }).should("be.visible").click();
 
@@ -47,14 +43,6 @@ describe("Cypress tests to play pa game as a participant", () => {
             return false;
         });
 
-        // if the game prompts some setup, make the choice
-        if (pa.setUpChoice) {
-            cy.get(pa.setUpChoice, { timeout: 10000 })
-                .should("be.visible")
-                .first()
-                .click();
-        }
-
         // clicks through first introduction pages
         for (let i = 0; i < pa.introIters; i++) {
             cy.get(pa.introBtn, { timeout: 10000 })
@@ -68,77 +56,64 @@ describe("Cypress tests to play pa game as a participant", () => {
 });
 
 function playPA(game) {
-    let overflow = 0;
     // play intro
     playFirstTutorial();
-    chooseStimulusOrContinue(game, overflow);
+    playTrial(6, "Awesome! You have completed the first block.");
     playSecondTutorial();
-    chooseStimulusOrContinue(game, overflow);
+    playTrial(6, "Awesome! You have completed the second block.");
     playThirdTutorial();
-    chooseStimulusOrContinue(game, overflow);
+    playTrial(6, "Awesome! You have completed the last block.");
+}
+
+function playTrial(numTimes, trialFinishPhrase) {
+    // for (let i = 0; i < 6; i++) {
+    if (numTimes > 0) {
+        cy.wait(8500);
+        cy.get(".testImageDown", {
+            timeout: 4000,
+        })
+            .first()
+            .click();
+        cy.log("iteration: ", numTimes);
+        playTrial(numTimes - 1);
+    } else {
+        cy.wait(6000);
+        assert(cy.contains(trialFinishPhrase))
+        cy.get(".continue", { timeout: 14000 }).click();
+    }
 }
 
 function playFirstTutorial() {
     // mouse -> map (index 2)
-    cy.wait(18000);
+    cy.wait(16000);
     cy.get('img[src*="map.webp"]') // get the containing toolbar
         .click();
-    cy.wait(18000);
+    cy.wait(16000);
     cy.get('img[src*="rope.webp"]') // get the containing toolbar
         .click();
-    cy.wait(4000);
+    cy.wait(3000);
     cy.get(".continue").click();
 }
 
 function playSecondTutorial() {
-    cy.get("body").then((body) => {
-        cy.wait(10000);
-        if (body.find(".continue").length > 0) {
-            body.find(".continue").click();
-            playSecondTutorial();
-        } else {
-            cy.wait(18000);
-            cy.get('img[src*="nut.webp"]') // get the containing toolbar
-                .click();
-            cy.wait(18000);
-            cy.get('img[src*="wash.webp"]') // get the containing toolbar
-                .click();
-            cy.wait(4000);
-            cy.get(".continue").click();
-        }
-    });
+    cy.wait(16000);
+    cy.get('img[src*="nut.webp"]') // get the containing toolbar
+        .click();
+    cy.wait(16000);
+    cy.get('img[src*="wash.webp"]') // get the containing toolbar
+        .click();
+    cy.wait(3000);
+    cy.get(".continue").click();
 }
 
 function playThirdTutorial() {
-    cy.wait(18000);
-    cy.get('img[src*="ball.webp"]') // get the containing toolbar
+    cy.wait(12000);
+    cy.get('img[src*="/ball.webp"]') // get the containing toolbar
         .click();
-    cy.wait(18000);
-    cy.get('img[src*="rain.webp"]') // get the containing toolbar
+    cy.wait(12000);
+    cy.get('img[src*="/rain.webp"]') // get the containing toolbar
         .click();
     cy.wait(4000);
     cy.get(".continue").click();
 }
 
-function chooseStimulusOrContinue(game, overflow) {
-    cy.get("body").then((body) => {
-        cy.wait(10000);
-        if (!body.find(".jspsych-audio-button-response-button").length > 0) {
-            if (body.find(".continue").length > 0) {
-                body.find(".continue").click();
-            }
-            else {
-                cy.wait(15000)
-            }
-        }
-         else {
-            cy.get(".jspsych-audio-button-response-button", { timeout: 10000 })
-                .should("be.visible", "")
-                .first()
-                .click();
-            if (overflow < 50) {
-                chooseStimulusOrContinue(game, overflow++);
-            }
-        }
-    });
-}
