@@ -12,17 +12,16 @@ export const keypressGames = [
         numIter: 40,
     },
     // // swr isnt working?
-    // {
-    //     name: "ROAR-Word",
-    //     id: "swr",
-    //     startBtn: ".jspsych--btn",
-    //     introBtn: ".go-button",
-    //     introIters: 3,
-    //     setUpChoice: "",
-    //     clickableItem: "button",
-    //     correctChoice: "",
-    //     numIter: 4,
-    // },
+    {
+        name: "ROAR-Word",
+        id: "swr",
+        startBtn: ".jspsych-btn",
+        introBtn: ".jspsych-btn",
+        introIters: 3,
+        setUpChoice: "",
+        clickableItem: "button",
+        numIter: 20,
+    },
 ];
 
 // variant ids:

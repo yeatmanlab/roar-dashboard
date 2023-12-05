@@ -10,16 +10,16 @@ export const games = [
     //     clickableItem: ".vocab_img",
     //     numIter: 4,
     // },
-    {
-        name: "ROAR Written Vocabulary",
-        id: "cva",
-        startBtn: ".jspsych-btn",
-        introBtn: ".go-button",
-        introIters: 2,
-        setupChoice: "",
-        clickableItem: "button",
-        numIter: 4,
-    },
+    // {
+    //     name: "ROAR Written Vocabulary",
+    //     id: "cva",
+    //     startBtn: ".jspsych-btn",
+    //     introBtn: ".go-button",
+    //     introIters: 2,
+    //     setupChoice: "",
+    //     clickableItem: "button",
+    //     numIter: 4,
+    // },
     // {
     //     name: "Letter",
     //     id: "letter",
@@ -44,18 +44,19 @@ export const games = [
     //     numIter: 4,
     // },
     // // pa has a different start button than the others (.continue i think)
-    // {
-    //     name: "ROAR-Phoneme",
-    //     id: "pa",
-    //     startBtn: ".instructionCanvasNS",
-    //     startBtn2: ".jspsych-btn",
-    //     setUpChoice: "",
-    //     introIters: 2,
-    //     introBtn: ".continue",
-    //     clickableItem: ".jspsych-audio-button-response-button",
-    //     correctChoice: "",
-    //     numIter: 2,
-    // },
+    {
+        name: "ROAR-Phoneme",
+        id: "pa",
+        startBtn: ".instructionCanvasNS",
+        startBtn2: ".jspsych-btn",
+        setUpChoice: "",
+        introIters: 2,
+        preAnswerDelay: 6000,
+        introBtn: ".continue",
+        clickableItem: ".jspsych-audio-button-response-button",
+        correctChoice: "",
+        numIter: 2,
+    },
 ]
 
 // variant IDS
