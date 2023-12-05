@@ -4,7 +4,7 @@
       <div class="field mt-2">
         <div class="p-input-icon-right">
           <InputText v-model="v$.email.$model" :class="{ 'p-invalid': invalid }" aria-describedby="email-error"
-                     placeholder="Username or email" data-cy="input-username-email"/>
+            placeholder="Username or email" data-cy="input-username-email"/>
         </div>
         <small v-if="invalid" class="p-error">Incorrect username/email or password</small>
       </div>
@@ -17,7 +17,7 @@
             Both allowed
           </div>
           <Password v-else-if="allowPassword" v-model="v$.password.$model" :class="{ 'p-invalid': invalid }" toggleMask
-                    show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Password" data-cy="input-password">
+            show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false" placeholder="Password" data-cy="input-password">
             <template #header>
               <h6>Pick a password</h6>
             </template>
