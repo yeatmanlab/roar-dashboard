@@ -1,16 +1,29 @@
-import _isEmpty from 'lodash/isEmpty';
 import _chunk from 'lodash/chunk';
 import _find from 'lodash/find';
 import _flatten from 'lodash/flatten';
 import _get from 'lodash/get';
 import _groupBy from 'lodash/groupBy';
+import _head from 'lodash/head';
+import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
+import _replace from 'lodash/replace';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
 import { convertValues, getAxiosInstance, mapFields, matchMode2Op } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
+
+const assignmentSelectFields = [
+  'assessments',
+  'assigningOrgs',
+  'completed',
+  'dateAssigned',
+  'dateClosed',
+  'dateOpened',
+  'started',
+  'id',
+];
 
 export const getAssignmentsRequestBody = ({
   adminId,
@@ -177,7 +190,7 @@ export const getUsersByAssignmentIdRequestBody = ({
           fieldFilter: {
             field: { fieldPath: `assignments.assigned` },
             op: 'ARRAY_CONTAINS_ANY',
-            value: { arrayValue: [adminId] },
+            value: { arrayValue: { values: [{ stringValue: adminId }] } },
           },
         },
       ],
@@ -199,6 +212,115 @@ export const getUsersByAssignmentIdRequestBody = ({
   }
 
   return requestBody;
+};
+
+export const getFilteredScoresRequestBody = ({
+  adminId,
+  orgId,
+  orgType,
+  filter,
+  select = ['scores'],
+  aggregationQuery,
+  paginate = true,
+  page,
+  pageLimit,
+}) => {
+  const requestBody = {
+    structuredQuery: {},
+  };
+  if (!aggregationQuery) {
+    if (paginate) {
+      requestBody.structuredQuery.limit = pageLimit;
+      requestBody.structuredQuery.offset = page * pageLimit;
+    }
+    requestBody.structuredQuery.select = {
+      fields: select.map((field) => ({ fieldPath: field })),
+    };
+    requestBody.structuredQuery.from = [
+      {
+        collectionId: 'runs',
+        allDescendants: true,
+      },
+    ];
+    requestBody.structuredQuery.where = {
+      compositeFilter: {
+        op: 'AND',
+        filters: [
+          {
+            fieldFilter: {
+              field: { fieldPath: 'assignmentId' },
+              op: 'EQUAL',
+              value: { stringValue: adminId },
+            },
+          },
+          {
+            fieldFilter: {
+              field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+              op: 'ARRAY_CONTAINS',
+              value: { stringValue: orgId },
+            },
+          },
+          {
+            fieldFilter: {
+              field: { fieldPath: 'taskId' },
+              op: 'EQUAL',
+              value: { stringValue: filter.taskId },
+            },
+          },
+        ],
+      },
+    };
+    if (filter) {
+      if (filter.value === 'Above') {
+        requestBody.structuredQuery.where.compositeFilter.filters.push({
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'GREATER_THAN_OR_EQUAL',
+            value: { doubleValue: 50 },
+          },
+        });
+      } else if (filter.value === 'Average') {
+        requestBody.structuredQuery.where.compositeFilter.filters.push(
+          {
+            fieldFilter: {
+              field: { fieldPath: filter.field },
+              op: 'LESS_THAN',
+              value: { doubleValue: 50 },
+            },
+          },
+          {
+            fieldFilter: {
+              field: { fieldPath: filter.field },
+              op: 'GREATER_THAN_OR_EQUAL',
+              value: { doubleValue: 25 },
+            },
+          },
+        );
+      } else if (filter.value === 'Needs Extra') {
+        requestBody.structuredQuery.where.compositeFilter.filters.push({
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'LESS_THAN',
+            value: { doubleValue: 25 },
+          },
+        });
+      }
+    }
+    if (aggregationQuery) {
+      return {
+        structuredAggregationQuery: {
+          ...requestBody,
+          aggregations: [
+            {
+              alias: 'count',
+              count: {},
+            },
+          ],
+        },
+      };
+    }
+    return requestBody;
+  }
 };
 
 export const getScoresRequestBody = ({
@@ -306,7 +428,7 @@ export const assignmentPageFetcher = async (
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
-
+  console.log('filters', filters);
   // Assume that filters has at most length one
   if (filters.length > 1) {
     throw new Error('You may specify at most one filter');
@@ -415,6 +537,88 @@ export const assignmentPageFetcher = async (
       }));
       console.log('scoresObj', scoresObj);
       return scoresObj;
+    });
+  } else if (filters.length && filters[0].collection === 'scores') {
+    console.log('scores filter', filters);
+    const requestBody = getFilteredScoresRequestBody({
+      adminId: adminId,
+      orgType: orgType,
+      orgId: orgId,
+      filter: _head(filters),
+      aggregationQuery: false,
+      paginate: true,
+      page: page.value,
+      pageLimit: pageLimit.value,
+    });
+    console.log('requestBody', requestBody);
+    return appAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+      const scoresData = mapFields(data);
+
+      // Generate a list of user docs paths
+      const userDocPaths = _without(
+        data.map((scoreDoc) => {
+          if (scoreDoc.document?.name) {
+            return _replace(scoreDoc.document.name.split('/runs/')[0], 'gse-roar-assessment', 'gse-roar-admin');
+          } else {
+            return undefined;
+          }
+        }),
+        undefined,
+      );
+
+      // Use a batch get to grab the user docs
+      const batchUserDocs = await adminAxiosInstance
+        .post(':batchGet', {
+          documents: userDocPaths,
+          mask: { fieldPaths: userSelectFields },
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                return {
+                  name: found.name,
+                  data: _mapValues(found.fields, (value) => convertValues(value)),
+                };
+              }
+              return undefined;
+            }),
+            undefined,
+          );
+        });
+      console.log('batch get users', batchUserDocs);
+
+      // Generate a list of assignment doc paths
+      const assignmentDocPaths = userDocPaths.map((userDocPath) => {
+        return `${userDocPath}/assignments/${adminId}`;
+      });
+
+      // Batch get assignment docs
+      const batchAssignmentDocs = await adminAxiosInstance
+        .post(':batchGet', {
+          documents: assignmentDocPaths,
+          mask: { fieldPaths: assignmentSelectFields },
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                return {
+                  name: found.name,
+                  data: _mapValues(found.fields, (value) => convertValues(value)),
+                };
+              }
+              return undefined;
+            }),
+            undefined,
+          );
+        });
+      console.log('batch get assignments', batchAssignmentDocs);
+
+      // Integrate the assignment ans scores objects
+
+      // Match the user doc to the assignment doc
+      // note: maybe sort both by id then
     });
   } else {
     const requestBody = getAssignmentsRequestBody({

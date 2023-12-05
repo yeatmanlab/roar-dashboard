@@ -364,9 +364,22 @@ const onFilter = (event) => {
       let collection;
       if (_head(path) === 'user') {
         collection = 'users';
+        filters.push({ ...constraint, collection, field: _tail(path).join('.') });
+      }
+      if (_head(path) === 'scores') {
+        let fieldPath;
+        const taskId = path[1];
+        if (taskId === 'pa') fieldPath = 'scores.computed.composite.percentile';
+        if (taskId === 'swr' || taskId === 'swr-es') fieldPath = 'scores.computed.composite.wjPercentile';
+        if (taskId === 'sre') fieldPath = 'scores.computed.composite.sprPercentile';
+        filters.push({
+          ...constraint,
+          collection: 'scores',
+          taskId: taskId,
+          field: fieldPath,
+        });
       }
       // console.log('constraint is', { ...constraint, collection, field: _tail(path).join('.') })
-      filters.push({ ...constraint, collection, field: _tail(path).join('.') });
     }
   }
   // Scores Query
