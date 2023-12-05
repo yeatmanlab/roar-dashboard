@@ -165,6 +165,7 @@ import _toUpper from 'lodash/toUpper'
 import _round from 'lodash/round';
 import _forEach from 'lodash/forEach'
 import _get from 'lodash/get'
+import _set from 'lodash/set'
 import _map from 'lodash/map'
 import _keys from 'lodash/keys'
 import _pick from 'lodash/pick'
@@ -242,11 +243,11 @@ const { isLoading: isLoadingSchools, isFetching: isFetchingSchools, data: school
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
-const { isLoading: isLoadingClasses, isFetching: isFetchingClasses, data: classesInfo} =
+const { isLoading: isLoadingClasses, isFetching: isFetchingClasses, data: classesInfo } =
   useQuery({
     queryKey: ['classes', ref(props.orgId)],
     // queryFn: () => orgPageFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
-    queryFn: () => orgPageFetcher('classes', ref(props.orgId), ref(null), ref(schoolsInfo.value.map((school) => school.id)), orderBy, pageLimit, page, isSuperAdmin, adminOrgs),
+    queryFn: () => orgPageFetcher(ref('classes'), ref(props.orgId), ref(null), orderBy, pageLimit, page, isSuperAdmin, adminOrgs, ref(schoolsInfo.value.map((school) => school.id)), ["id", "name", "subject"]),
     keepPreviousData: true,
     enabled: (props.orgType === 'district' && initialized && schoolsInfo.value),
     staleTime: 5 * 60 * 1000 // 5 minutes
@@ -571,15 +572,36 @@ const tableData = computed(() => {
       if (currentSchools.length) {
         const schoolId = currentSchools[0]
         const schoolName = _get(_find(schoolsInfo.value, school => school.id === schoolId), 'name')
-        return {
-          user: {
-            ...user,
-            schoolName
-          },
-          assignment,
-          scores,
+        user = { ...user, schoolName }
+      }
+    }
+    if (props.orgType === 'district' || props.orgType === 'school') {
+      const currentClasses = _get(user, 'classes.current')
+      console.log("currclasses", currentClasses)
+      let className = ""
+      if (currentClasses?.length === 1) {
+        const classId = currentClasses[0]
+        console.log("idclass", classId)
+        className = _get(_find(classesInfo.value, c => c.id === classId), "name")
+      }
+      else {
+        let englishClass = currentClasses.map(c => {
+          return _find(classesInfo.value, { id: c.id, subject: "english/language arts" })
+        })
+        if (!englishClass) {
+          let homeroomClass = currentClasses.map(c => {
+            return _find(classesInfo.value, { id: c.id, subject: "homeroom/advisory" })
+          })
+          if (homeroomClass) {
+            className = _get(homeroomClass, "name");
+          }
+        }
+        else {
+          className = _get(englishClass, "name");
         }
       }
+      console.log("classnam", className)
+      user = { ...user, className }
     }
     return {
       user,
