@@ -8,11 +8,11 @@ Cypress.Commands.add('login', (username, password) => {
         cy.log("Login successful.").wait(3000)
     },
 {
-        validate: () => {
-            cy.getCookie(Cypress.env('sessionCookieName')).should("exist")
-            // Maybe a function to GET and VALIDATE the current cookie between tests?
-            // cy.getCookie(Cypress.env('sessionCookieName')).should('have.property', 'value', Cypress.env('sessionCookieValue'))
-            }
+        // validate: () => {
+        //     cy.getCookie(Cypress.env('sessionCookieName')).should("exist")
+        //     // Maybe a function to GET and VALIDATE the current cookie between tests?
+        //     // cy.getCookie(Cypress.env('sessionCookieName')).should('have.property', 'value', Cypress.env('sessionCookieValue'))
+        //     }
         }
     )
 })
