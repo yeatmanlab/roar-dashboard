@@ -22,8 +22,7 @@ describe("Cypress tests to play pa game as a participant", () => {
 
         cy.login(test_login, test_pw);
 
-        cy.get(".p-dropdown-trigger", { timeout: 10000 })
-            .click();
+        cy.get(".p-dropdown-trigger", { timeout: 10000 }).click();
         cy.get(".p-dropdown-item", { timeout: 10000 })
             .contains("ZZZ Test Cypress Playthrough Button Games")
             .click();
@@ -73,9 +72,7 @@ function playPA(game) {
     // play intro
     playFirstTutorial();
     chooseStimulusOrContinue(game, overflow);
-    chooseStimulusOrContinue(game, overflow);
     playSecondTutorial();
-    chooseStimulusOrContinue(game, overflow);
     chooseStimulusOrContinue(game, overflow);
     playThirdTutorial();
     chooseStimulusOrContinue(game, overflow);
@@ -94,14 +91,22 @@ function playFirstTutorial() {
 }
 
 function playSecondTutorial() {
-    cy.wait(18000);
-    cy.get('img[src*="nut.webp"]') // get the containing toolbar
-        .click();
-    cy.wait(18000);
-    cy.get('img[src*="wash.webp"]') // get the containing toolbar
-        .click();
-    cy.wait(4000);
-    cy.get(".continue").click();
+    cy.get("body").then((body) => {
+        cy.wait(10000);
+        if (body.find(".continue").length > 0) {
+            body.find(".continue").click();
+            playSecondTutorial();
+        } else {
+            cy.wait(18000);
+            cy.get('img[src*="nut.webp"]') // get the containing toolbar
+                .click();
+            cy.wait(18000);
+            cy.get('img[src*="wash.webp"]') // get the containing toolbar
+                .click();
+            cy.wait(4000);
+            cy.get(".continue").click();
+        }
+    });
 }
 
 function playThirdTutorial() {
@@ -118,11 +123,15 @@ function playThirdTutorial() {
 function chooseStimulusOrContinue(game, overflow) {
     cy.get("body").then((body) => {
         cy.wait(10000);
-        if (body.find(".continue").length > 0) {
-            body.find(".continue").click();
-        } else if (body.find("#jspsych-loading-progress-bar-container").length > 0) {
-            cy.wait(15000);
-        } else {
+        if (!body.find(".jspsych-audio-button-response-button").length > 0) {
+            if (body.find(".continue").length > 0) {
+                body.find(".continue").click();
+            }
+            else {
+                cy.wait(15000)
+            }
+        }
+         else {
             cy.get(".jspsych-audio-button-response-button", { timeout: 10000 })
                 .should("be.visible", "")
                 .first()
