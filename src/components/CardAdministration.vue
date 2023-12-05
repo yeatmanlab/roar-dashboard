@@ -1,11 +1,22 @@
 <template>
-  <div class="p-card card-administration">
+  <div class="p-card card-administration mb-2">
     <div v-if="props.stats && authStore.isUserSuperAdmin" class="card-admin-chart">
       <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
 
     <div class="card-admin-body">
-      <h2 class="card-admin-title">{{ title }}</h2>
+      <div class="card-admin-title flex flex-row justify-content-between">
+        <h2>{{ title }}</h2>
+        <PvSpeedDial
+          class="flex-grow-0"
+          :model="speedDialItems"
+          direction="down"
+          :transition-delay="80"
+          show-icon="pi pi-cog"
+          hide-icon="pi pi-times"
+          button-class="p-button-outlined"
+        />
+      </div>
       <div class="card-admin-details">
         <span class="mr-1"><strong>Dates</strong>:</span>
         <span> {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }} </span>
@@ -129,6 +140,23 @@ const props = defineProps({
   assessments: { type: Array, required: true },
   showParams: { type: Boolean, required: true },
 });
+
+const speedDialItems = ref([
+  {
+    label: 'Edit',
+    icon: 'pi pi-pencil',
+    command: () => {
+      console.log('Edit administration');
+    },
+  },
+  {
+    label: 'Delete',
+    icon: 'pi pi-trash',
+    command: () => {
+      console.log('Delete administration');
+    },
+  },
+]);
 
 const processedDates = computed(() => {
   return _mapValues(props.dates, (date) => {
