@@ -12,7 +12,7 @@
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
-              <InputText id="administration-name" v-model="state.administrationName" />
+              <InputText id="administration-name" v-model="state.administrationName" data-cy="input-administration-name"/>
               <label for="administration-name">Administration Name</label>
               <small v-if="v$.administrationName.$invalid && submitted" class="p-error">Please name your
                 administration</small>
@@ -22,7 +22,7 @@
           <div class="field col">
             <span class="p-float-label">
               <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
-                selectionMode="range" :manualInput="false" showIcon showButtonBar />
+                selectionMode="range" :manualInput="false" showIcon showButtonBar data-cy="input-calendar"/>
               <label for="dates">Dates</label>
               <small v-if="v$.dates.required.$invalid && submitted" class="p-error">Please select dates.</small>
               <small v-else-if="v$.dates.datesNotNull.$invalid && submitted" class="p-error">Please select both a start
@@ -40,14 +40,15 @@
               <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
               <span>Require sequential?</span>
               <InputSwitch class="ml-2" v-model="state.sequential" />
-              <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments">
+              <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments"
+                      data-cy="button-refresh-assessments">
                 <span :class="spinIcon.assessments"></span>
               </button>
             </div>
           </template>
 
           <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
-          <PickList v-if="assessments[0].length || assessments[1].length" v-model="assessments"
+          <PickList v-if="assessments[0].length || assessments[1].length" v-model="assessments" data-cy="list-pick-list"
             :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id" :stripedRows="true" :pt="{
               moveAllToTargetButton: { root: { class: 'hide' } },
               moveAllToSourceButton: { root: { class: 'hide' } },
@@ -86,7 +87,7 @@
         </Panel>
 
         <div class="col-12 mb-3">
-          <Button label="Create Administration" @click="submit" />
+          <Button label="Create Administration" @click="submit" data-cy="button-create-administration"/>
         </div>
       </Panel>
     </section>

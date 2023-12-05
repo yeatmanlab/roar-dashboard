@@ -2,18 +2,58 @@ const { defineConfig } = require("cypress");
 require('dotenv').config()
 
 module.exports = defineConfig({
-  projectId: 'krys9o',
+  projectId: "cobw62",
   e2e: {
-    baseUrl: "https://localhost:5173",
+    baseUrl: "https://localhost:5173/",
+    experimentalRunAllSpecs: true,
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },
+    // specPattern: [
+    //
+    // ]
   },
   env: {
-    googleRefreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-    googleClientId: process.env.GOOGLE_CLIENT_ID,
-    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    baseUrl: "https://localhost:5173",
+    timeout: 10000,
+    sessionCookieName: process.env.SESSION_COOKIE_NAME,
+    sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
     superAdminUsername: process.env.SUPER_ADMIN_USERNAME,
     superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
+    superAdminId: process.env.SUPER_ADMIN_ID,
+    partnerAdminUsername: process.env.PARTNER_ADMIN_USERNAME,
+    partnerAdminPassword: process.env.PARTNER_ADMIN_PASSWORD,
+    partnerAdminId: process.env.PARTNER_ADMIN_ID,
+    testAdministrationName: "###testAdministration",
+    testAdministratorFirstName: "###testAdministratorFirstName",
+    testAdministratorMiddleName: "###testAdministratorMiddleName",
+    testAdministratorLastName: "###testAdministratorLastName",
+    testAdministratorEmail: "###testAdministratorEmail",
+    testDistrictName: "###testDistrict",
+    testDistrictInitials: "TD",
+    testDistrictNcesId: "123456789",
+    testSchoolName: "###testSchool",
+    testSchoolInitials: "TS",
+    testSchoolNcesId: "987654321",
+    testClassName: "###testClass",
+    testClassInitials: "TC",
+    testGroupName: "###testGroup",
+    testGroupInitials: "TG",
+    testPartnerAdministrationName: "###cypressTestAdministration",
+    testPartnerDistrictName: "###cypressTestDistrict",
+    testPartnerDistrictInitials: "CTD",
+    testPartnerDistrictNcesId: "123456789",
+    testPartnerSchoolName: "###cypressTestSchool",
+    testPartnerSchoolInitials: "CTS",
+    testPartnerSchoolNcesId: "123456789",
+    testPartnerClassName: "###cypressTestClass",
+    testPartnerClassInitials: "CTC",
+    testPartnerGroupName: "###cypressTestGroup",
+    testPartnerGroupInitials: "CTG",
+    testGrade: "Grade 5",
+    stanfordUniversityAddress: "450 Jane Stanford Way, Stanford, CA 94305, USA",
+    testTag: "stanford university",
   },
 });
+
+

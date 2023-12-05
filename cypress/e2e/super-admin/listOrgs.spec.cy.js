@@ -1,19 +1,18 @@
-describe('The admin user can list organizations ', () => {
+function clickOrgTabs() {
+  const tabs = ['Districts', 'Schools', 'Classes', 'Groups']
+  for (let i = 0; i < tabs.length; i++) {
+      cy.get('span.p-tabview-title', {timeout: 1000}).should('contain.text', tabs[i]).click({multiple: true})
+      cy.log("Tab " + tabs[i] + " found.")
+    }
+}
+
+describe('The admin user can navigate to the list organizations page, ' +
+    'and can see which they organizations they are associated with', () => {
   it('Activates the admin sidebar, clicks List Orgs, then clicks through the various tabs.', () => {
-    const username = Cypress.env('superAdminUsername')
-    const password = Cypress.env('superAdminPassword')
-    const tabs = ['districts', 'schools', 'classes', 'groups']
-    cy.login(username, password)
-    // cy.visit("/list-orgs")
-    cy.activateAdminSidebar()
-    // for (let = 0; i < 4; i += 1)
-    cy.wait(1000)
-    cy.get("button").contains("List organizations").click()
-    cy.wait(1000)
-    cy.get("a").contains("Schools").click()
-    cy.wait(1000)
-    cy.get("a").contains("Classes").click()
-    cy.wait(1000)
-    cy.get("a").contains("Groups").click()
+
+    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+    cy.navigateTo('/list-orgs')
+    clickOrgTabs()
+
   })
 })

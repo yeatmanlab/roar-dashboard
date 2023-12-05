@@ -63,7 +63,7 @@
         </DataTable>
         <div class="submit-container">
           <Button @click="submitStudents" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
-            :disabled="activeSubmit" />
+            :disabled="activeSubmit" data-cy="button-start-registration"/>
         </div>
         <!-- Datatable of error students -->
         <div v-if="showErrorTable" class="error-container">

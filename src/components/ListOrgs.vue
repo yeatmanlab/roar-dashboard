@@ -7,7 +7,7 @@
       <Panel header="Your organizations">
         <template #icons>
           <button v-if="isSuperAdmin" v-tooltip.top="'Sync Clever orgs'" class="p-panel-header-icon mr-2"
-            @click="syncClever">
+                  @click="syncClever">
             <span :class="cleverSyncIcon"></span>
           </button>
         </template>
@@ -15,25 +15,27 @@
           <TabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3 mt-2">
               <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
-                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'">
+                   v-if="activeOrgType === 'schools' || activeOrgType === 'classes'">
                 <span class="p-float-label">
                   <Dropdown v-model="selectedDistrict" inputId="district" :options="allDistricts" optionLabel="name"
-                    optionValue="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts" class="w-full" />
+                            optionValue="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts"
+                            class="w-full" data-cy="dropdown-parent-district"/>
                   <label for="district">District</label>
                 </span>
               </div>
               <div class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3" v-if="orgType.id === 'classes'">
                 <span class="p-float-label">
                   <Dropdown v-model="selectedSchool" inputId="school" :options="allSchools" optionLabel="name"
-                    optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools" class="w-full" />
+                            optionValue="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools"
+                            class="w-full" data-cy="dropdown-parent-school"/>
                   <label for="school">School</label>
                 </span>
               </div>
             </div>
             <RoarDataTable v-if="tableData" :key="tableKey" lazy :columns="tableColumns" :data="tableData"
-              :pageLimit="pageLimit" :totalRecords="totalRecords"
-              :loading="isLoading || isLoadingCount || isFetching || isFetchingCount" @page="onPage($event)"
-              @sort="onSort($event)" @export-all="exportAll" />
+                           :pageLimit="pageLimit" :totalRecords="totalRecords"
+                           :loading="isLoading || isLoadingCount || isFetching || isFetchingCount" @page="onPage($event)"
+                           @sort="onSort($event)" @export-all="exportAll" />
             <AppSpinner v-else />
           </TabPanel>
         </TabView>
@@ -100,13 +102,13 @@ const cleverSyncIcon = computed(() => {
 });
 
 const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
-  useQuery({
-    queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
-    queryFn: () => fetchDocById('userClaims', authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    useQuery({
+      queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+      queryFn: () => fetchDocById('userClaims', authStore.uid),
+      keepPreviousData: true,
+      enabled: initialized,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
@@ -149,53 +151,53 @@ const activeOrgType = computed(() => {
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 
 const { isLoading: isLoadingDistricts, data: allDistricts } =
-  useQuery({
-    queryKey: ['districts'],
-    queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
-    keepPreviousData: true,
-    enabled: claimsLoaded,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    useQuery({
+      queryKey: ['districts'],
+      queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
+      keepPreviousData: true,
+      enabled: claimsLoaded,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 })
 
 const { isLoading: isLoadingSchools, data: allSchools } =
-  useQuery({
-    queryKey: ['schools', selectedDistrict],
-    queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
-    keepPreviousData: true,
-    enabled: schoolQueryEnabled,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    useQuery({
+      queryKey: ['schools', selectedDistrict],
+      queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
+      keepPreviousData: true,
+      enabled: schoolQueryEnabled,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 
 const { isLoading: isLoadingCount, isFetching: isFetchingCount, data: totalRecords } =
-  useQuery({
-    queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy],
-    queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs),
-    keepPreviousData: true,
-    enabled: claimsLoaded,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    useQuery({
+      queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy],
+      queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs),
+      keepPreviousData: true,
+      enabled: claimsLoaded,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 
 const { isLoading, isFetching, data: orgData } =
-  useQuery({
-    queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page],
-    queryFn: () => orgPageFetcher(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
-      orderBy,
-      pageLimit,
-      page,
-      isSuperAdmin,
-      adminOrgs,
-    ),
-    keepPreviousData: true,
-    enabled: claimsLoaded,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    useQuery({
+      queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page],
+      queryFn: () => orgPageFetcher(
+          activeOrgType,
+          selectedDistrict,
+          selectedSchool,
+          orderBy,
+          pageLimit,
+          page,
+          isSuperAdmin,
+          adminOrgs,
+      ),
+      keepPreviousData: true,
+      enabled: claimsLoaded,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 
 const exportAll = async () => {
   const exportData = await orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs);
@@ -213,14 +215,14 @@ const tableColumns = computed(() => {
 
   if (["districts", "schools"].includes(activeOrgType.value)) {
     columns.push(
-      { field: "mdrNumber", header: "MDR Number", dataType: "string" },
-      { field: "ncesId", header: "NCES ID", dataType: "string" },
+        { field: "mdrNumber", header: "MDR Number", dataType: "string" },
+        { field: "ncesId", header: "NCES ID", dataType: "string" },
     )
   }
 
   if (["districts", "schools", "classes"].includes(activeOrgType.value)) {
     columns.push(
-      { field: "clever", header: "Clever", dataType: "boolean" },
+        { field: "clever", header: "Clever", dataType: "boolean" },
     )
   }
 
