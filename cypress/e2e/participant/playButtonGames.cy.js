@@ -18,10 +18,8 @@ describe("Cypress tests to play vocab, cva, letter, and multichoice games as a p
                 .contains("ZZZ Test Cypress Playthrough Button Games")
                 .should("be.visible")
                 .click();
-            // cy.get(".p-dropdown-item").contains("numTrialsTotal").click();
-            // cy.get('.p-dropdown-item', {timeout: 10000}).should('be.visible').click();
 
-            cy.get(".p-tabview").contains(game.name);
+            // cy.get(".p-tabview").contains(game.name);
             cy.visit(`/game/${game.id}`);
 
             // cy.contains("Preparing your game")
@@ -76,8 +74,11 @@ function chooseStimulusOrContinue(game, overflow) {
         if (body.find(game.introBtn).length > 0) {
             body.find(game.introBtn).click();
         } else {
-            body.find(game.clickableItem).first().click();
-            cy.wait(100);
+            if(game.preAnswerDelay) {
+                cy.wait(game.preAnswerDelay);
+            }
+            cy.wait(400);
+            cy.get(game.clickableItem, {timeout: 10000}).should("be.visible", "").first().click();
             if (overflow < 50) {
                 chooseStimulusOrContinue(game, overflow++);
             }
