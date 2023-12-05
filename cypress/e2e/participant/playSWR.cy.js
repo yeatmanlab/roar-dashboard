@@ -49,12 +49,12 @@ function playSWRGame() {
     playSWRBlock("You are halfway through the second block");
     playSWRBlock("You have completed the second block");
     playSWRBlock("You are halfway through the third block");
-    playSWRBlock("You have completed the Single Word Recognition activity");
+    finishSWR("Congratulations");
 }
 
 function playIntro() {
     for (let i = 0; i < 5; i++) {
-        cy.wait(5000)
+        cy.wait(5500)
         // cy.get(".stimulus", {timeout: 8000});
         cy.get("body").type("{leftarrow}{rightarrow}");
         cy.wait(1000);
@@ -64,42 +64,14 @@ function playIntro() {
             Cypress.on("uncaught:exception", () => {
                 return false;
             });
-    // cy.get("body").then((body) => {
-    //     cy.wait(500);
-    //     if (!body.find(".stimulus").length > 0) {
-    //         // handle fullscreen
-    //         if (cy.contains("to continue")) {
-    //             cy.get("body").type("{leftarrow}{rightarrow}");
-    //             playIntro();
-    //         } else {
-    //             assert(
-    //                 cy.contains(
-    //                     "Great work, you are ready to begin the real activity!"
-    //                 )
-    //             );
-    //             cy.get("body").type("{rightarrow}");
-    //             cy.get(".jspsych-btn").contains("Continue").click();
-    //             Cypress.on("uncaught:exception", () => {
-    //                 return false;
-    //             });
-    //         }
-    //     } else {
-    //         // cy.get(".stimulus").should("be.visible");
-    //         cy.wait(4000);
-    //         cy.get(".stimulus", { timeout: 20000 }).should("be.visible");
-    //         cy.get("body").type("{leftarrow}{rightarrow}");
-    //         cy.wait(4000);
-    //         cy.get("body").type("{leftarrow}{rightarrow}");
-    //         playIntro();
-    //     }
-    // });
 }
 
 function playSWRBlock(block_termination_phrase) {
     cy.get("body").then((body) => {
-        cy.wait(4000);
+        cy.wait(5500);
         if (!body.find(".stimulus").length > 0) {
             // assert(cy.contains(block_termination_phrase));
+            cy.wait(400)
             cy.get("body").type("{leftarrow}");
             cy.get(".jspsych-btn").contains("Continue").click();
             Cypress.on("uncaught:exception", () => {
@@ -111,6 +83,22 @@ function playSWRBlock(block_termination_phrase) {
             cy.wait(400);
             cy.get("body").type("{leftarrow}");
             playSWRBlock(block_termination_phrase);
+        }
+    });
+}
+
+function finishSWR(block_termination_phrase) {
+    cy.get("body").then((body) => {
+        cy.wait(4000);
+        if (!body.find(".stimulus").length > 0) {
+            cy.wait(400)
+            assert(cy.contains(block_termination_phrase));
+            cy.get("body").type("{leftarrow}");
+            cy.wait(400)
+        } else {
+            // cy.get(".stimulus").should("be.visible");
+            cy.get("body").type("{rightarrow}");
+            finishSWR(block_termination_phrase);
         }
     });
 }
