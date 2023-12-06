@@ -1,0 +1,33 @@
+clever,name,id,districtContact.district,districtContact.name.last,districtContact.name.first,districtContact.id,districtContact.title,districtContact.email,address.googleMapsUrl,address.formattedAddress,address.addressComponents,address.googlePlacesId,ncesId,abbreviation,tags,mdrNumber
+true,#DEMO ROAR Stanford,61e8aee84cf0e71b14295d45,61e8aee84cf0e71b14295d45,Guimaraes,Daniel,61e8aee804c3490001159b7a,,hello@danielucas.com,,,,,,,,
+,Ascend,Yz4ncrKuxzMaT4nqBShz,,,,,,,"https://maps.google.com/?q=205+Rockaway+Pkwy+2nd+fl,+Brooklyn,+NY+11212,+USA&ftid=0x89c25c8ecd84f2b9:0x2829374b265c538e","205 Rockaway Pkwy 2nd fl, Brooklyn, NY 11212, USA","[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]",EjEyMDUgUm9ja2F3YXkgUGt3eSAybmQgZmwsIEJyb29rbHluLCBOWSAxMTIxMiwgVVNBIiIaIAoWChQKEgm58oTNjlzCiRHrMEli92VcFhIGMm5kIGZs,3600966,asc,reading reimagined,
+true,Belmont-Redwood Shores School District,54f625646904140100000002,54f625646904140100000002,Simon,Jerome,54f625646241730100000002,,support@brssd.org,,,,,0604530,brs,,121410
+true,Catalyst Charter Schools,5ee2ff39f1eae600014d2a20,5ee2ff39f1eae600014d2a20,Wagner,LeAnne,5ee2ff39cb04e90001ac48b7,,lwagner@catalystschools.org,,,,,,,,11912606
+,Executive Function Schools,MuJT3cezNUxBGMmjD3Yj,,,,,,,,,,,,efschl,,
+,Friends of the Children He Sapa,5tbzyMZYaZsh9yxHuhT9,,,,,,,,,,,,foc,reading reimagined,
+,Gimnasio Sabio Caldas,GulJYoov4WKvaRjFz4a0,,,,,,,,,,,,gsc,,
+,Good Tutors,IUL1eRTyqe5a4kd1b84p,,,,,,,,,,,,gt,reading reimagined,
+,IA Choice Charter,Tmhm9rxxMRnzKsfTxmB3,,,,,,,,,,,,iach,,
+true,KIPP Public Schools: Northern California,5203e8097d1f316c47004564,5203e8097d1f316c47004564,Support,Tech,57bf35255acfcc000137576f,Tech Support,pl@kippnorcal.org,,,,,,,,11916054
+true,Menlo Park City School District,5785582a0d98e001000002ea,5785582a0d98e001000002ea,Mann,Carol,5787c1a831ccfb0001feff77,Data Admin,cmann@mpcsd.org,,,,,0624570,,,122282
+,New City Kids,xxyQpstXCkIABeXCbmBi,,,,,,,,,,,,nck,,
+true,North Tippah Consolidated School District,570c268edbfe7d0100000169,570c268edbfe7d0100000169,Eaton,John,62bdd016e120a80607251529,Director of Technology,john.eaton@ntippah.k12.ms.us,,,,,2803270,,,597364
+,PROPEL,HQFjwzLOBIgZmNlK4f0q,,,,,,,"https://maps.google.com/?q=615+Main+St,+Nashville,+TN+37206,+USA&ftid=0x8864663566a65da7:0x5c1fb00a94c88da2","615 Main St, Nashville, TN 37206, USA","[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]",ChIJp12mZjVmZIgRoo3IlAqwH1w,,pro,reading reimagined,
+,Private Schools,iW1BMSqKW3weNAKTeVMb,,,,,,,,,,,,priv,,
+,SMFC,hYrwUmIJymUlITwZesl2,,,,,,,,,,,,smfc,,
+true,San Carlos School District,561444ced072ab01000004f9,561444ced072ab01000004f9,Gutierrez,Alejandro,561444ced0df6d010000050d,Data Systems Manager,agutierrez@scsdk8.org,,,,,0634290,,,122842
+true,Springfield Public Schools,504749ec9eae523827013c8b,504749ec9eae523827013c8b,St. Lawrence,Bob,61c381e20fa7e20001560e4f,Director of Information Management,st.lawrencer@springfieldpublicschools.com,,,,,2511130,,,425785
+,TEST NFAR,x3OgZQK9NRLa5hkjpaTR,,,,,,,,,,,,testnf,,
+,TEST Tonya IA Choice,zHezbB3WkQ8FtDyUZCrC,,,,,,,,,,,,iach,,
+,TEST Tonya Rapid City,MtLkvZGc8TDtZKEVDFuw,,,,,,,,,,,,tstrc,test,
+,Test - MA,5JEii1roHs6wYxBefH7i,,,,,,,,,,,,testma,test,
+,Test - ROAR Preview,US4pYG1gdxbztTweBUDF,,,,,,,,,,,,testrp,test,
+,Test School,jjNaHJalCbP8Hl3sSVom,,,,,,,,,,,,ts,"test,elijah",
+,Union County Public Schools,ebrBKaNdlmYRKXJ1ghPI,,,,,,,"https://maps.google.com/?q=400+N+Church+St,+Monroe,+NC+28112,+USA&ftid=0x885430d3856d4861:0xa337ba87f48b8710","400 N Church St, Monroe, NC 28112, USA","[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]",ChIJYUhthdMwVIgREIeL9Ie6N6M,3704620,ucps,reading reimagined,
+,test-brssd,igMn4c109PdqRoYOpLv2,,,,,,,,,,,,test,test,
+,zzzDeleteThis,NaOzrQEhm9kxE4APOctg,,,,,,,,,,,,TDDDD,,
+,zzzDeleteThis,uj3cg0nci5F4RzSrWx6w,,,,,,,,,,,123456789,DT,,
+,zzzTestDistrict,1H2eUAdWsx5Z66AtZIMn,,,,,,,"https://maps.google.com/?q=450+Jane+Stanford+Way,+Stanford,+CA+94305,+USA&ftid=0x808fbb8b78b5170b:0x6e9f1ad3512cdf2c","450 Jane Stanford Way, Stanford, CA 94305, USA","[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]",ChIJCxe1eIu7j4ARLN8sUdMan24,123456789,TD,"stanford university,test",
+,zzzTestDistrict,1UbsG2Oyc4RvP3r1zgbQ,,,,,,,"https://maps.google.com/?q=450+Jane+Stanford+Way,+Stanford,+CA+94305,+USA&ftid=0x808fbb8b78b5170b:0x6e9f1ad3512cdf2c","450 Jane Stanford Way, Stanford, CA 94305, USA","[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]",ChIJCxe1eIu7j4ARLN8sUdMan24,123456789,TD,"stanford university,test",
+,zzzTestDistrict,QQRFm8LWV21fWKuyAtDn,,,,,,,"https://maps.google.com/?q=450+Jane+Stanford+Way,+Stanford,+CA+94305,+USA&ftid=0x808fbb8b78b5170b:0x6e9f1ad3512cdf2c","450 Jane Stanford Way, Stanford, CA 94305, USA","[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]",ChIJCxe1eIu7j4ARLN8sUdMan24,123456789,TD,"stanford university,test",
+,zzzTestDistrict,Wc5zpV5zR8kLIEXrgluv,,,,,,,"https://maps.google.com/?q=450+Jane+Stanford+Way,+Stanford,+CA+94305,+USA&ftid=0x808fbb8b78b5170b:0x6e9f1ad3512cdf2c","450 Jane Stanford Way, Stanford, CA 94305, USA","[object Object],[object Object],[object Object],[object Object],[object Object],[object Object],[object Object]",ChIJCxe1eIu7j4ARLN8sUdMan24,123456789,TD,"stanford university,test",

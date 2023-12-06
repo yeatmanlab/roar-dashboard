@@ -18,13 +18,13 @@ Cypress.Commands.add('login', (username, password) => {
 })
 
 Cypress.Commands.add('logout', () => {
-    cy.get('[data-cy="button-sign-out"]').click()
-    expect(cy.get('h1').should('contain.text', 'Welcome to ROAR!'))
-    expect(cy.url().should('eq', `${Cypress.env('baseUrl')}/signin`))
+    cy.get('[data-cy="button-sign-out"]', {timeout: Cypress.env('timeout')}).click()
+    cy.get('h1', {timeout: Cypress.env('timeout')}).should('contain.text', 'Welcome to ROAR!')
+    cy.url({timeout: Cypress.env('timeout')}).should('eq', `${Cypress.env('baseUrl')}/signin`)
     cy.log('Logout successful.')
 })
 
-Cypress.Commands.add('navigateTo', (page, login = false) => {
+Cypress.Commands.add('navigateTo', (page) => {
     cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`)
     cy.visit(page, {timeout: Cypress.env('timeout')})
     cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`)
@@ -79,7 +79,8 @@ Cypress.Commands.add('inputOrgDetails', (
     }
 
     if (orgAddress) {
-        cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
+        // cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
+        cy.get('input[placeholder="Enter a location"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
         expect(cy.get('[data-cy="chip-address"]').should('contain.text', orgAddress))
     }
 
