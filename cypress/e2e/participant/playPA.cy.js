@@ -12,7 +12,7 @@ let pa = {
     numIter: 2,
 };
 
-describe("Cypress tests to play Phonological Awareness game as a participant", () => {
+describe("Testing playthrough of ROAR-Phoneme as a participant", () => {
     it(pa.name, () => {
         let test_login = "testingUser4";
         let test_pw = "password4";
@@ -48,10 +48,10 @@ describe("Cypress tests to play Phonological Awareness game as a participant", (
             cy.get(pa.introBtn, { timeout: 10000 })
                 .should("be.visible")
                 .click();
-            // cy.wait(400);
         }
 
         playPA();
+
         // check if game completed
         cy.visit("/");
         cy.get(".p-dropdown-trigger", { timeout: 20000 })
@@ -93,12 +93,13 @@ function playTrial(numTimes, trialFinishPhrase) {
         numTimes = numTimes - 1
         playTrial(numTimes);
     } else {
+        // leaving this out because there are some issues with timing -- we'll have to knock down this assert at a different time
         // assert(cy.get("div").contains(trialFinishPhrase))
+        
     }
 }
 
 function playFirstTutorial() {
-    // mouse -> map (index 2)
     cy.wait(16000);
     cy.get('img[src*="map.webp"]') 
         .click();
