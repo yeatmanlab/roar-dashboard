@@ -13,6 +13,7 @@
             :options="sortOptions"
             option-label="label"
             @change="onSortChange($event)"
+            data-cy="dropdown-sort-administrations"
           />
         </template>
 
@@ -43,6 +44,7 @@
                     :assessments="item.assessments"
                     :show-params="isSuperAdmin"
                     :is-super-admin="isSuperAdmin"
+                    data-cy="h2-card-admin-title"
                   />
                 </div>
               </template>

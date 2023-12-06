@@ -10,9 +10,10 @@ function createAdministrator() {
   cy.get('[data-cy="button-create-administrator"]').click()
 }
 
-function checkAdministrationCreated() {
+function checkAdministratorCreated() {
   cy.url({timeout: 2 * Cypress.env('timeout')}).should('eq', `${Cypress.env('baseUrl')}/`)
   cy.log("Administrator successfully created.")
+//   Need to expand the checks on this spec
 }
 
 describe('The admin user can create a new administrator and assign them to a group(s).', () => {
@@ -24,6 +25,6 @@ describe('The admin user can create a new administrator and assign them to a gro
     inputAdministatorDetails()
     cy.selectTestOrgs()
     createAdministrator()
-    checkAdministrationCreated()
+    checkAdministratorCreated()
   })
 })

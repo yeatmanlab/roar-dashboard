@@ -11,7 +11,7 @@ function inputParentOrgDetails() {
 }
 
 function createSchool() {
-  cy.get('[data-cy="button-create-org"]', {timeout: Cypress.env('timeout')}).click()
+  cy.get('[data-cy="button-create-org"]', {timeout: Cypress.env('timeout')}).click().wait(3000)
 }
 
 function checkSchoolCreated() {

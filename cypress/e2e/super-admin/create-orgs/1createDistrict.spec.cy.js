@@ -8,8 +8,7 @@ function createDistrict() {
 }
 
 function checkDistrictCreated() {
-  // sort by name descending to capture zzz test district 
-  cy.get("div", {timeout: 30000}).find(".p-paginator", {timeout: 30000}).find('.p-paginator-last', {timeout: 30000}).first().click();
+  cy.get('.p-paginator-last', {timeout: Cypress.env('timeout')}).first().click()
   cy.get('div', {timeout: Cypress.env('timeout')}).should('contain.text', Cypress.env('testDistrictName'))
   cy.log("District successfully created.")
 }

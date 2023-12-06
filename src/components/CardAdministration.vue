@@ -76,47 +76,49 @@
     >
       <PvColumn field="name" header="Name" expander style="width: min-content"></PvColumn>
       <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
-        <template #body="{ node }">
-          <PvChart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
-        </template>
-      </PvColumn>
-      <PvColumn field="id" header="" style="width: 14rem">
-        <template #body="{ node }">
-          <div class="flex m-0">
-            <router-link
-              :to="{
-                name: 'ViewAdministration',
-                params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
-              }"
-              class="no-underline"
-            >
-              <PvButton
-                v-tooltip.top="'See completion details'"
-                class="m-0"
-                severity="secondary"
-                text
-                raised
-                label="Progress"
-                aria-label="Completion details"
-                size="small"
-              data-cy="button-progress"/>
-            </router-link>
-            <router-link
-              :to="{
-                name: 'ScoreReport',
-                params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
-              }"
-              class="no-underline"
-            >
-              <PvButton
-                v-tooltip.top="'See Scores'"
-                class="m-0"
-                severity="secondary"
-                text
-                raised
-                label="Scores"
-                aria-label="Scores"
-                size="small"
+          <template #body="{ node }">
+            <PvChart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
+          </template>
+        </PvColumn>
+        <PvColumn field="id" header="" style="width: 14rem">
+          <template #body="{ node }">
+            <div class="flex m-0">
+              <router-link
+                :to="{
+                  name: 'ViewAdministration',
+                  params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
+                }"
+                class="no-underline"
+              >
+                <PvButton
+                  v-tooltip.top="'See completion details'"
+                  class="m-0"
+                  severity="secondary"
+                  text
+                  raised
+                  label="Progress"
+                  aria-label="Completion details"
+                  size="small"
+                  data-cy="button-progress"
+                />
+              </router-link>
+              <router-link
+                :to="{
+                  name: 'ScoreReport',
+                  params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
+                }"
+                class="no-underline"
+              >
+                <PvButton
+                  v-tooltip.top="'See Scores'"
+                  class="m-0"
+                  severity="secondary"
+                  text
+                  raised
+                  label="Scores"
+                  aria-label="Scores"
+                  size="small"
+                  data-cy="button-scores"
               data-cy="button-scores"/>
             </router-link>
           </div>

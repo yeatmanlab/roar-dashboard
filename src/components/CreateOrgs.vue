@@ -20,7 +20,8 @@
                 option-label="singular"
                 placeholder="Select an org type"
                 class="w-full"
-              data-cy="dropdown-org-type"/>
+                data-cy="dropdown-org-type"
+              />
               <label for="org-type">Org Type</label>
             </span>
           </div>
@@ -34,8 +35,12 @@
                 input-id="parent-district"
                 :options="districts"
                 show-clear
-                option-label="name" placeholder="Select a district" :loading="isLoadingDistricts"
-                        class="w-full" data-cy="dropdown-parent-district"/>
+                option-label="name"
+                placeholder="Select a district"
+                :loading="isLoadingDistricts"
+                class="w-full"
+                data-cy="dropdown-parent-district"
+              />
               <label for="parent-district">District</label>
               <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a district. </small>
             </span>
@@ -52,7 +57,8 @@
                 :placeholder="schoolDropdownEnabled ? 'Select a school' : 'Please select a district first'"
                 :loading="!schoolDropdownEnabled"
                 class="w-full"
-              data-cy="dropdown-parent-school"/>
+                data-cy="dropdown-parent-school"
+              />
               <label for="parent-school">School</label>
               <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a district. </small>
             </span>
@@ -62,7 +68,7 @@
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
-              <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name"/>
+              <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name" />
               <label for="org-name">{{ orgTypeLabel }} Name</label>
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </span>
@@ -86,7 +92,8 @@
                 option-label="name"
                 placeholder="Select a grade"
                 class="w-full"
-              data-cy="dropdown-grade"/>
+                data-cy="dropdown-grade"
+              />
               <label for="grade">Grade</label>
               <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
             </span>
@@ -99,7 +106,7 @@
           <div class="grid column-gap-3">
             <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
               <span class="p-float-label">
-                <PvInputText v-model="state.ncesId" v-tooltip="ncesTooltip" input-id="nces-id" class="w-full" data-cy="input-nces-id"/>
+                <PvInputText v-model="state.ncesId" v-tooltip="ncesTooltip" input-id="nces-id" class="w-full" data-cy="input-nces-id" />
                 <label for="nces-id">NCES ID</label>
               </span>
             </div>
@@ -110,16 +117,21 @@
               <span class="p-inputgroup-addon">
                 <i class="pi pi-map"></i>
               </span>
-              <GMapAutocomplete @place_changed="setAddress" :options="{
-                fields: ['address_components', 'formatted_address', 'place_id', 'url'],
-              }" class="p-inputtext p-component w-full" data-cy="input-address">
+              <GMapAutocomplete
+                :options="{
+                  fields: ['address_components', 'formatted_address', 'place_id', 'url'],
+                }"
+                class="p-inputtext p-component w-full"
+                @place_changed="setAddress"
+                data-cy="input-address"
+              >
               </GMapAutocomplete>
             </div>
           </div>
           <div v-if="state.address?.formattedAddress" class="grid">
             <div class="col-12 mt-3" data-cy="chip-address">
               {{ orgTypeLabel }} Address:
-              <PvChip :label="state.address.formattedAddress" removable @remove="removeAddress"/>
+              <PvChip :label="state.address.formattedAddress" removable @remove="removeAddress"data-cy="chip-address" />
             </div>
           </div>
         </div>
@@ -127,8 +139,17 @@
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3" data-cy="div-auto-complete">
             <span class="p-float-label">
-              <AutoComplete v-model="state.tags" multiple dropdown :options="allTags" :suggestions="tagSuggestions"
-                @complete="searchTags" name="tags" class="w-full" data-cy="input-autocomplete"/>
+              <PvAutoComplete
+                v-model="state.tags"
+                multiple
+                dropdown
+                :options="allTags"
+                :suggestions="tagSuggestions"
+                name="tags"
+                class="w-full"
+                data-cy="input-autocomplete"
+                @complete="searchTags"
+              />
               <label for="tags">Tags</label>
             </span>
           </div>
@@ -138,7 +159,8 @@
 
         <div class="grid">
           <div class="col-12">
-            <PvButton :label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'" @click="submit" data-cy="button-create-org"/>
+            <PvButton :label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'"
+                      data-cy="button-create-org" @click="submit" data-cy="button-create-org"/>
           </div>
         </div>
       </PvPanel>

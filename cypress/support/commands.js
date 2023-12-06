@@ -45,7 +45,7 @@ Cypress.Commands.add('selectTestOrgs', (
 
     cy.get('span').contains('Classes').click()
     cy.get('[data-cy="dropdown-selected-district"]').click().get('li').contains(testDistrictName).click()
-    cy.get('[data-cy="dropdown-selected-school"]').click().get('li').contains(testSchoolName).click()
+    cy.get('[data-cy="dropdown-selected-school"]').click().get('ul > li').contains(testSchoolName).click()
     cy.get('ul > li').contains(testClassName).click()
 
     cy.get('span').contains('Groups').click()

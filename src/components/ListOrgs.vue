@@ -27,8 +27,12 @@
                     input-id="district"
                     :options="allDistricts"
                     option-label="name"
-                            option-value="id" :placeholder="districtPlaceholder" :loading="isLoadingDistricts"
-                            class="w-full" data-cy="dropdown-parent-district"/>
+                    option-value="id"
+                    :placeholder="districtPlaceholder"
+                    :loading="isLoadingDistricts"
+                    class="w-full"
+                    data-cy="dropdown-parent-district"
+                  />
                   <label for="district">District</label>
                 </span>
               </div>
@@ -39,8 +43,12 @@
                     input-id="school"
                     :options="allSchools"
                     option-label="name"
-                            option-value="id" :placeholder="schoolPlaceholder" :loading="isLoadingSchools"
-                            class="w-full" data-cy="dropdown-parent-school"/>
+                    option-value="id"
+                    :placeholder="schoolPlaceholder"
+                    :loading="isLoadingSchools"
+                    class="w-full"
+                    data-cy="dropdown-parent-school"
+                  />
                   <label for="school">School</label>
                 </span>
               </div>
