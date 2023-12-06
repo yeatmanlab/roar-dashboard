@@ -26,6 +26,7 @@ export const useAuthStore = () => {
         authFromClever: false,
         userQueryKeyIndex: 0,
         assignmentQueryKeyIndex: 0,
+        administrationQueryKeyIndex: 0,
       };
     },
     getters: {

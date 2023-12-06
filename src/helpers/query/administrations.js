@@ -2,7 +2,7 @@ import _chunk from 'lodash/chunk';
 import _flatten from 'lodash/flatten';
 import _mapValues from 'lodash/mapValues';
 import _uniqBy from 'lodash/uniqBy';
-import _zip from 'lodash/zip';
+import _without from 'lodash/without';
 import { convertValues, getAxiosInstance, mapFields, orderByDefault } from './utils';
 import { filterAdminOrgs } from '@/helpers';
 
@@ -138,22 +138,36 @@ export const administrationCounter = async (orderBy, isSuperAdmin, adminOrgs) =>
 const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
   const axiosInstance = getAxiosInstance();
   const administrationData = mapFields(data);
-  const statsPaths = administrationData.map(
-    (administration) => `/administrations/${administration.id}/stats/completion`,
-  );
-  const statsPromises = [];
-  for (const docPath of statsPaths) {
-    statsPromises.push(
-      axiosInstance.get(docPath).then(({ data }) => {
-        return _mapValues(data.fields, (value) => convertValues(value));
-      }),
-    );
-  }
-  const statsData = await Promise.all(statsPromises);
-  const administrations = _zip(administrationData, statsData).map(([administration, stats]) => ({
-    ...administration,
-    stats,
-  }));
+
+  const statsPaths = data
+    .filter((item) => item.document !== undefined)
+    .map(({ document }) => `${document.name}/stats/completion`);
+  const batchStatsDocs = await axiosInstance
+    .post(':batchGet', {
+      documents: statsPaths,
+    })
+    .then(({ data }) => {
+      return _without(
+        data.map(({ found }) => {
+          if (found) {
+            return {
+              name: found.name,
+              data: _mapValues(found.fields, (value) => convertValues(value)),
+            };
+          }
+          return undefined;
+        }),
+        undefined,
+      );
+    });
+
+  const administrations = administrationData.map((administration) => {
+    const stats = batchStatsDocs.find((statsDoc) => statsDoc.name.includes(administration.id));
+    return {
+      ...administration,
+      stats: stats?.data,
+    };
+  });
 
   return administrations.map((a) => {
     let assignedOrgs = {
