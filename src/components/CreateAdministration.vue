@@ -148,7 +148,7 @@ const toast = useToast();
 const initialized = ref(false);
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 const { data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid],
@@ -305,6 +305,7 @@ const submit = async () => {
 
         await roarfirekit.value.createAdministration(args).then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+          administrationQueryKeyIndex.value += 1;
 
           router.push({ name: 'Home' });
         });

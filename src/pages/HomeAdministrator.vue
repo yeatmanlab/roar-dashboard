@@ -42,6 +42,7 @@
                     :assignees="item.assignedOrgs"
                     :assessments="item.assessments"
                     :show-params="isSuperAdmin"
+                    :is-super-admin="isSuperAdmin"
                   />
                 </div>
               </template>
@@ -76,11 +77,11 @@ import { useQuery } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const page = ref(0);
-const pageLimit = ref(3);
+const pageLimit = ref(10);
 
 const authStore = useAuthStore();
 
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, false));
 
@@ -120,7 +121,7 @@ const canQueryAdministrations = computed(() => {
 });
 
 const { data: totalRecords } = useQuery({
-  queryKey: ['countAdministrations', orderBy, isSuperAdmin],
+  queryKey: ['countAdministrations', orderBy, isSuperAdmin, administrationQueryKeyIndex],
   queryFn: () => administrationCounter(orderBy, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
@@ -132,7 +133,7 @@ const {
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
-  queryKey: ['administrations', orderBy, page, pageLimit, isSuperAdmin],
+  queryKey: ['administrations', orderBy, page, pageLimit, isSuperAdmin, administrationQueryKeyIndex],
   queryFn: () => administrationPageFetcher(orderBy, pageLimit, page, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
   keepPreviousData: true,
   enabled: canQueryAdministrations,

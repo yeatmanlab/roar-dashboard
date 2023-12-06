@@ -1,21 +1,26 @@
 <template>
   <div class="p-card card-administration mb-2">
-    <div v-if="props.stats && authStore.isUserSuperAdmin" class="card-admin-chart">
+    <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
       <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
 
     <div class="card-admin-body">
-      <div class="card-admin-title flex flex-row justify-content-between">
-        <h2>{{ title }}</h2>
-        <PvSpeedDial
-          class="flex-grow-0"
-          :model="speedDialItems"
-          direction="down"
-          :transition-delay="80"
-          show-icon="pi pi-cog"
-          hide-icon="pi pi-times"
-          button-class="p-button-outlined"
-        />
+      <div class="flex flex-row w-full">
+        <div class="flex-grow-1">
+          <h2>{{ title }}</h2>
+        </div>
+        <div v-if="isSuperAdmin" class="flex flex-row flex-grow-0 justify-content-end">
+          <PvSpeedDial
+            :model="speedDialItems"
+            direction="left"
+            :transition-delay="80"
+            show-icon="pi pi-cog"
+            hide-icon="pi pi-times"
+            button-class="p-button-outlined"
+            :pt="{ button: { size: 'small' } }"
+          />
+          <PvConfirmPopup />
+        </div>
       </div>
       <div class="card-admin-details">
         <span class="mr-1"><strong>Dates</strong>:</span>
@@ -119,6 +124,9 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
+import { useConfirm } from 'primevue/useconfirm';
+import { useToast } from 'primevue/usetoast';
+import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
 import { removeEmptyOrgs } from '@/helpers';
@@ -130,30 +138,53 @@ import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
 
 const authStore = useAuthStore();
+const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },
   title: { type: String, required: true },
-  stats: { type: Object, required: true },
+  stats: { type: Object, required: false, default: () => ({}) },
   dates: { type: Object, required: true },
   assignees: { type: Object, required: true },
   assessments: { type: Array, required: true },
   showParams: { type: Boolean, required: true },
+  isSuperAdmin: { type: Boolean, required: true },
 });
 
+const confirm = useConfirm();
+const toast = useToast();
+
 const speedDialItems = ref([
-  {
-    label: 'Edit',
-    icon: 'pi pi-pencil',
-    command: () => {
-      console.log('Edit administration');
-    },
-  },
+  // {
+  //   label: 'Edit',
+  //   icon: 'pi pi-pencil',
+  //   command: () => {
+  //     console.log('Edit administration');
+  //   },
+  // },
   {
     label: 'Delete',
     icon: 'pi pi-trash',
-    command: () => {
-      console.log('Delete administration');
+    command: (event) => {
+      confirm.require({
+        target: event.originalEvent.currentTarget,
+        message: 'Are you sure you want to delete this administration?',
+        icon: 'pi pi-exclamation-triangle',
+        accept: async () => {
+          await roarfirekit.value.deleteAdministration(props.id).then(() => {
+            toast.add({
+              severity: 'info',
+              summary: 'Confirmed',
+              detail: `Deleted administration ${props.title}`,
+              life: 3000,
+            });
+            administrationQueryKeyIndex.value += 1;
+          });
+        },
+        reject: () => {
+          toast.add({ severity: 'error', summary: 'Rejected', detail: 'Deletion aborted', life: 3000 });
+        },
+      });
     },
   },
 ]);
