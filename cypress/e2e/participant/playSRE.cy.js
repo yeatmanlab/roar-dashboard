@@ -4,6 +4,7 @@ describe("Cypress test to play SRE as a participant", () => {
         let test_pw = "password4";
 
         cy.login(test_login, test_pw);
+        cy.visit("/")
 
         cy.get(".p-dropdown-trigger", { timeout: 10000 })
             .should("be.visible")
@@ -52,7 +53,7 @@ function playSREGame() {
     cy.get("body").type("{leftarrow}");
 
     for (let i = 0; i < 7; i++) {
-        cy.get(".stimulus").should("be.visible");
+        assert(cy.get(".stimulus").should("be.visible"));
         cy.get("body").type("{leftarrow}");
         cy.wait(10000);
         cy.get(".stimulus").should("be.visible");

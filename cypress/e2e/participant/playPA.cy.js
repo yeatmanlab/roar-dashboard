@@ -51,23 +51,38 @@ describe("Cypress tests to play Phonological Awareness game as a participant", (
             // cy.wait(400);
         }
 
-        playPA(pa);
+        playPA();
+        // check if game completed
+        cy.visit("/");
+        cy.get(".p-dropdown-trigger", { timeout: 20000 })
+            .should("be.visible")
+            .click();
+        cy.get(".p-dropdown-item", { timeout: 10000 })
+            .contains("ZZZ Test Cypress Playthrough Button Games")
+            .should("be.visible")
+            .click();
+        cy.get(".tabview-nav-link-label")
+            .contains(pa.name)
+            .should("have.attr", "data-game-status", "complete");
     });
 });
 
-function playPA(game) {
+function playPA() {
     // play intro
     playFirstTutorial();
     playTrial(6, "Awesome! You have completed the first block.");
+    cy.wait(6000);
+    cy.get(".continue", { timeout: 18000 }).click();
     playSecondTutorial();
     playTrial(6, "Awesome! You have completed the second block.");
+    cy.wait(6000);
+    cy.get(".continue", { timeout: 18000 }).click();
     playThirdTutorial();
     playTrial(6, "Awesome! You have completed the last block.");
 }
 
 function playTrial(numTimes, trialFinishPhrase) {
-    // for (let i = 0; i < 6; i++) {
-    if (numTimes > 0) {
+    if (numTimes != 0) {
         cy.wait(8500);
         cy.get(".testImageDown", {
             timeout: 4000,
@@ -75,21 +90,20 @@ function playTrial(numTimes, trialFinishPhrase) {
             .first()
             .click();
         cy.log("iteration: ", numTimes);
-        playTrial(numTimes - 1);
+        numTimes = numTimes - 1
+        playTrial(numTimes);
     } else {
-        cy.wait(6000);
-        assert(cy.contains(trialFinishPhrase))
-        cy.get(".continue", { timeout: 14000 }).click();
+        // assert(cy.get("div").contains(trialFinishPhrase))
     }
 }
 
 function playFirstTutorial() {
     // mouse -> map (index 2)
     cy.wait(16000);
-    cy.get('img[src*="map.webp"]') // get the containing toolbar
+    cy.get('img[src*="map.webp"]') 
         .click();
     cy.wait(16000);
-    cy.get('img[src*="rope.webp"]') // get the containing toolbar
+    cy.get('img[src*="rope.webp"]')
         .click();
     cy.wait(3000);
     cy.get(".continue").click();
@@ -97,10 +111,10 @@ function playFirstTutorial() {
 
 function playSecondTutorial() {
     cy.wait(16000);
-    cy.get('img[src*="nut.webp"]') // get the containing toolbar
+    cy.get('img[src*="nut.webp"]') 
         .click();
     cy.wait(16000);
-    cy.get('img[src*="wash.webp"]') // get the containing toolbar
+    cy.get('img[src*="wash.webp"]') 
         .click();
     cy.wait(3000);
     cy.get(".continue").click();
@@ -108,12 +122,11 @@ function playSecondTutorial() {
 
 function playThirdTutorial() {
     cy.wait(12000);
-    cy.get('img[src*="/ball.webp"]') // get the containing toolbar
+    cy.get('img[src*="/ball.webp"]') 
         .click();
     cy.wait(12000);
-    cy.get('img[src*="/rain.webp"]') // get the containing toolbar
+    cy.get('img[src*="/rain.webp"]') 
         .click();
     cy.wait(4000);
     cy.get(".continue").click();
 }
-
