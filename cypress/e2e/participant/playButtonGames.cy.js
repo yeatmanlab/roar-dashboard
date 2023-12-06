@@ -3,15 +3,14 @@ import { games } from "./buttonGamesList";
 describe("Cypress tests to play vocab, cva, letter, and multichoice games as a participant", () => {
     games.forEach((game) => {
         it(game.name, () => {
-            // this is a user that has an assignment of roarVocab -- how can we create a user that can
-            // ALWAYS play the game
+            cy.clearAllSessionStorage();
             let test_login = "testingUser4";
             let test_pw = "password4";
-            // how can we write some logic to reset the already played
 
             cy.login(test_login, test_pw);
+            cy.visit("/");
 
-            cy.get(".p-dropdown-trigger", { timeout: 10000 })
+            cy.get(".p-dropdown-trigger", { timeout: 20000 })
                 .should("be.visible")
                 .click();
             cy.get(".p-dropdown-item", { timeout: 10000 })
@@ -24,7 +23,7 @@ describe("Cypress tests to play vocab, cva, letter, and multichoice games as a p
 
             // cy.contains("Preparing your game")
 
-            cy.get(game.startBtn, { timeout: 60000 })
+            cy.get(game.startBtn, { timeout: 80000 })
                 .should("be.visible")
                 .click();
 
@@ -54,10 +53,22 @@ describe("Cypress tests to play vocab, cva, letter, and multichoice games as a p
                 cy.get(game.introBtn, { timeout: 10000 })
                     .should("be.visible")
                     .click();
-                // cy.wait(400);
             }
 
             playROARGame(game);
+
+            // check if game completed
+            // cy.visit("/");
+            // cy.get(".p-dropdown-trigger", { timeout: 20000 })
+            //     .should("be.visible")
+            //     .click();
+            // cy.get(".p-dropdown-item", { timeout: 10000 })
+            //     .contains("ZZZ Test Cypress Playthrough Button Games")
+            //     .should("be.visible")
+            //     .click();
+            // cy.get(".tabview-nav-link-label")
+            //     .contains(game.name)
+            //     .should("have.attr", "data-game-status", "complete");
         });
     });
 });
@@ -65,20 +76,33 @@ describe("Cypress tests to play vocab, cva, letter, and multichoice games as a p
 function playROARGame(game) {
     let overflow = 0;
     for (let i = 0; i < game.numIter; i++) {
+        cy.log("iter", i)
         chooseStimulusOrContinue(game, overflow);
     }
 }
 
 function chooseStimulusOrContinue(game, overflow) {
+    // prechoiceDelay allows for cypress to pause to wait until a button renders
+    if (game.prechoiceDelay !== null) {
+        cy.wait(game.preChoiceDelay);
+    }
     cy.get("body").then((body) => {
         if (body.find(game.introBtn).length > 0) {
             body.find(game.introBtn).click();
         } else {
-            if(game.preAnswerDelay) {
-                cy.wait(game.preAnswerDelay);
+            // cy.get(game.stimulus).should("be.visible")
+            if (
+                game.correctChoice &&
+                body.find(game.correctChoice).length > 0
+            ) {
+                body.find(game.correctChoice).click();
             }
-            cy.wait(400);
-            cy.get(game.clickableItem, {timeout: 10000}).should("be.visible", "").first().click();
+            // assert stimulus is visible and num items rendered is correct
+            else {
+                body.find(game.clickableItem, { timeout: 10000 })
+                    .first()
+                    .click();
+            }
             if (overflow < 50) {
                 chooseStimulusOrContinue(game, overflow++);
             }

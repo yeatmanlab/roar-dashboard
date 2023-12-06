@@ -4,6 +4,7 @@ describe("Cypress tests to play SWR as a participant", () => {
         let test_pw = "password4";
 
         cy.login(test_login, test_pw);
+        cy.visit("/");
 
         cy.get(".p-dropdown-trigger", { timeout: 10000 })
             .should("be.visible")
@@ -54,31 +55,30 @@ function playSWRGame() {
 
 function playIntro() {
     for (let i = 0; i < 5; i++) {
-        cy.wait(5500)
+        cy.wait(5500);
         // cy.get(".stimulus", {timeout: 8000});
         cy.get("body").type("{leftarrow}{rightarrow}");
         cy.wait(1000);
         cy.get("body").type("{leftarrow}{rightarrow}");
     }
-            cy.get(".jspsych-btn").contains("Continue").click();
-            Cypress.on("uncaught:exception", () => {
-                return false;
-            });
+    cy.get(".jspsych-btn").contains("Continue").click();
+    Cypress.on("uncaught:exception", () => {
+        return false;
+    });
 }
 
 function playSWRBlock(block_termination_phrase) {
     cy.get("body").then((body) => {
         cy.wait(5500);
+        cy.log("entering stage: ", block_termination_phrase)
         if (!body.find(".stimulus").length > 0) {
-            // assert(cy.contains(block_termination_phrase));
-            cy.wait(400)
+            cy.wait(400);
             cy.get("body").type("{leftarrow}");
             cy.get(".jspsych-btn").contains("Continue").click();
             Cypress.on("uncaught:exception", () => {
                 return false;
             });
         } else {
-            // cy.get(".stimulus").should("be.visible");
             cy.get("body").type("{rightarrow}");
             cy.wait(400);
             cy.get("body").type("{leftarrow}");
@@ -91,10 +91,10 @@ function finishSWR(block_termination_phrase) {
     cy.get("body").then((body) => {
         cy.wait(4000);
         if (!body.find(".stimulus").length > 0) {
-            cy.wait(400)
+            cy.wait(400);
             assert(cy.contains(block_termination_phrase));
             cy.get("body").type("{leftarrow}");
-            cy.wait(400)
+            cy.wait(400);
         } else {
             // cy.get(".stimulus").should("be.visible");
             cy.get("body").type("{rightarrow}");
