@@ -4,38 +4,37 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Create a new administrator account">
-        Use this form to create a new user and give them administrator access to
-        selected organizations.
+      <PvPanel header="Create a new administrator account">
+        Use this form to create a new user and give them administrator access to selected organizations.
 
-        <Divider />
+        <PvDivider />
 
         <div v-if="initialized && !registering">
           <div class="grid">
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText class="w-full" id="first-name" v-model="firstName" data-cy="input-administrator-first-name"/>
+                <PvInputText id="first-name" v-model="firstName" class="w-full" />
                 <label for="first-name">First Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText class="w-full" id="middle-name" v-model="middleName" data-cy="input-administrator-middle-name"/>
+                <PvInputText id="middle-name" v-model="middleName" class="w-full" />
                 <label for="middle-name">Middle Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText class="w-full" id="last-name" v-model="lastName" data-cy="input-administrator-last-name"/>
+                <PvInputText id="last-name" v-model="lastName" class="w-full" />
                 <label for="last-name">Last Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <InputText class="w-full" id="email" v-model="email" data-cy="input-administrator-email"/>
+                <PvInputText id="email" v-model="email" class="w-full" />
                 <label for="email">Email</label>
               </span>
             </div>
@@ -43,37 +42,37 @@
 
           <OrgPicker @selection="selection($event)" />
 
-          <Divider />
+          <PvDivider />
 
           <div class="grid">
             <div class="col-12">
-              <Button label="Create Administrator" @click="submit" data-cy="button-create-administrator"/>
+              <PvButton label="Create Administrator" @click="submit" />
             </div>
           </div>
         </div>
         <div v-else class="loading-container">
-          <AppSpinner style="margin-bottom: 1rem;" />
+          <AppSpinner style="margin-bottom: 1rem" />
           <span v-if="initialized">Registering new administrator...</span>
           <span v-else>Initializing...</span>
         </div>
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import { useQuery } from "@tanstack/vue-query"
-import _cloneDeep from "lodash/cloneDeep";
-import _union from "lodash/union";
-import { useAuthStore } from "@/store/auth";
-import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import OrgPicker from "@/components/OrgPicker.vue";
-import { getSidebarActions } from "@/router/sidebarActions";
-import { fetchDocById } from "@/helpers/query/utils";
+import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
+import { useQuery } from '@tanstack/vue-query';
+import _cloneDeep from 'lodash/cloneDeep';
+import _union from 'lodash/union';
+import { useAuthStore } from '@/store/auth';
+import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+import OrgPicker from '@/components/OrgPicker.vue';
+import { getSidebarActions } from '@/router/sidebarActions';
+import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const toast = useToast();
@@ -88,14 +87,13 @@ const email = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
-  useQuery({
-    queryKey: ['userClaims', authStore.uid],
-    queryFn: () => fetchDocById('userClaims', authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+const { data: userClaims } = useQuery({
+  queryKey: ['userClaims', authStore.uid],
+  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
@@ -104,7 +102,7 @@ let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
-}
+};
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -112,20 +110,20 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
-})
+});
 
 const selectedOrgs = ref();
 
 const selection = (selected) => {
   selectedOrgs.value = selected;
-}
+};
 
 const submit = async () => {
   const validEmail = await roarfirekit.value.isEmailAvailable(email.value);
   if (!validEmail) {
     toast.add({
-      severity: "error",
-      summary: "Error",
+      severity: 'error',
+      summary: 'Error',
       detail: `Email ${email.value} is already in use. Please enter a different email address.`,
       life: 5000,
     });
@@ -138,19 +136,19 @@ const submit = async () => {
     first: firstName.value,
     middle: middleName.value,
     last: lastName.value,
-  }
+  };
 
   const adminOrgs = {
-    districts: selectedOrgs.value.districts.map(o => o.id),
-    schools: selectedOrgs.value.schools.map(o => o.id),
-    classes: selectedOrgs.value.classes.map(o => o.id),
-    groups: selectedOrgs.value.groups.map(o => o.id),
-    families: selectedOrgs.value.families.map(o => o.id),
-  }
+    districts: selectedOrgs.value.districts.map((o) => o.id),
+    schools: selectedOrgs.value.schools.map((o) => o.id),
+    classes: selectedOrgs.value.classes.map((o) => o.id),
+    groups: selectedOrgs.value.groups.map((o) => o.id),
+    families: selectedOrgs.value.families.map((o) => o.id),
+  };
 
   // Build orgs from admin orgs. Orgs should contain all of the admin orgs. And
   // also their parents.
-  const orgs = _cloneDeep(adminOrgs)
+  const orgs = _cloneDeep(adminOrgs);
   for (const school of selectedOrgs.value.schools) {
     orgs.districts = _union(orgs.districts, [school.districtId]);
   }
@@ -162,10 +160,10 @@ const submit = async () => {
 
   await roarfirekit.value.createAdministrator(email.value, name, orgs, adminOrgs).then(() => {
     toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
-    router.push({ name: "Home" });
+    router.push({ name: 'Home' });
   });
-}
-</script> 
+};
+</script>
 
 <style lang="scss">
 .return-button {
@@ -174,11 +172,11 @@ const submit = async () => {
 }
 
 #rectangle {
-  background: #FCFCFC;
+  background: #fcfcfc;
   border-radius: 0.3125rem;
   border-style: solid;
   border-width: 0.0625rem;
-  border-color: #E5E5E5;
+  border-color: #e5e5e5;
   margin: 0 1.75rem;
   padding-top: 1.75rem;
   padding-left: 1.875rem;
@@ -210,7 +208,7 @@ const submit = async () => {
     height: 100%;
     border-radius: 0.3125rem;
     border-width: 0.0625rem;
-    border-color: #E5E5E5;
+    border-color: #e5e5e5;
   }
 
   #section {
@@ -233,7 +231,7 @@ const submit = async () => {
 
   ::placeholder {
     font-family: 'Source Sans Pro', sans-serif;
-    color: #C4C4C4;
+    color: #c4c4c4;
   }
 
   // .p-button {

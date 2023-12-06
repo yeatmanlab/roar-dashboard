@@ -5,94 +5,179 @@
   <div v-else>
     <div class="flex flex-row flex-wrap w-full gap-2 pt-4 justify-content-end">
       <span class="p-float-label">
-        <MultiSelect id="ms-columns" :modelValue="selectedColumns" :options="inputColumns" optionLabel="header"
-          :maxSelectedLabels="3" @update:modelValue="onColumnToggle" class="w-full md:w-20rem"
-          selectedItemsLabel="{0} columns selected" />
+        <PvMultiSelect
+          id="ms-columns"
+          :model-value="selectedColumns"
+          :options="inputColumns"
+          option-label="header"
+          :max-selected-labels="3"
+          class="w-full md:w-20rem"
+          selected-items-label="{0} columns selected"
+          @update:model-value="onColumnToggle"
+        />
         <label for="ms-columns">Select Columns</label>
       </span>
       <span class="p-float-label">
-        <MultiSelect id="ms-freeze" :modelValue="frozenColumns" :options="inputColumns" optionLabel="header"
-          :maxSelectedLabels="3" @update:modelValue="onFreezeToggle" class="w-full md:w-20rem"
-          selectedItemsLabel="{0} columns frozen" :showToggleAll="false" />
+        <PvMultiSelect
+          id="ms-freeze"
+          :model-value="frozenColumns"
+          :options="inputColumns"
+          option-label="header"
+          :max-selected-labels="3"
+          class="w-full md:w-20rem"
+          selected-items-label="{0} columns frozen"
+          :show-toggle-all="false"
+          @update:model-value="onFreezeToggle"
+        />
         <label for="ms-columns">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
-        <Button label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
-        <Button label="Export Whole Table" @click="exportCSV(false, $event)" />
+        <PvButton label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
+        <PvButton label="Export Whole Table" @click="exportCSV(false, $event)" />
       </span>
     </div>
-    <DataTable ref="dataTable" :value="computedData" :rowHover="true" :reorderableColumns="true" :resizableColumns="true"
-      :exportFilename="exportFilename" removableSort sortMode="multiple" showGridlines v-model:filters="refFilters"
-      filterDisplay="menu" paginator :rows="props.pageLimit" :alwaysShowPaginator="true" paginatorPosition="both"
-      :rowsPerPageOptions="[10, 25, 50, 100]" :totalRecords="props.totalRecords" :lazy="props.lazy"
-      :loading="props.loading" scrollable @page="onPage($event)" @sort="onSort($event)" v-model:selection="selectedRows"
-      :selectAll="selectAll" @select-all-change="onSelectAll" @row-select="onSelectionChange"
-      @row-unselect="onSelectionChange">
-      <Column selectionMode="multiple" headerStyle="width: 3rem" :reorderableColumn="false" frozen />
-      <Column v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :header="col.header"
-        :field="col.field" :dataType="col.dataType" :sortable="(col.sort !== false)"
-        :showFilterMatchModes="!col.useMultiSelect" :showFilterOperator="col.allowMultipleFilters === true"
-        :showAddButton="col.allowMultipleFilters === true" :frozen="col.pinned" alignFrozen="left">
-        <template #body="{ data }">
-          <div v-if="col.tag && _get(data, col.field) !== undefined">
-            <Tag v-if="!col.tagOutlined" :severity="_get(data, col.severityField)" :value="_get(data, col.field)"
-              :icon="_get(data, col.iconField)" :style="`background-color: ${_get(data, col.tagColor)}; min-width: 2rem;`"
-              rounded />
-            <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
+    <PvDataTable
+      ref="dataTable"
+      v-model:filters="refFilters"
+      v-model:selection="selectedRows"
+      :value="computedData"
+      :row-hover="true"
+      :reorderable-columns="true"
+      :resizable-columns="true"
+      :export-filename="exportFilename"
+      removable-sort
+      sort-mode="multiple"
+      show-gridlines
+      filter-display="menu"
+      paginator
+      :rows="props.pageLimit"
+      :always-show-paginator="true"
+      paginator-position="both"
+      :rows-per-page-options="[10, 25, 50, 100]"
+      :total-records="props.totalRecords"
+      :lazy="props.lazy"
+      :loading="props.loading"
+      scrollable
+      :select-all="selectAll"
+      @page="onPage($event)"
+      @sort="onSort($event)"
+      @select-all-change="onSelectAll"
+      @row-select="onSelectionChange"
+      @row-unselect="onSelectionChange"
+    >
+      <PvColumn selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
+      <PvColumn
+        v-for="(col, index) of computedColumns"
+        :key="col.field + '_' + index"
+        :header="col.header"
+        :field="col.field"
+        :data-type="col.dataType"
+        :sortable="col.sort !== false"
+        :show-filter-match-modes="!col.useMultiSelect"
+        :show-filter-operator="col.allowMultipleFilters === true"
+        :show-add-button="col.allowMultipleFilters === true"
+        :frozen="col.pinned"
+        align-frozen="left"
+      >
+        <template #body="{ data: colData }">
+          <div v-if="col.tag && _get(colData, col.field) !== undefined">
+            <PvTag
+              v-if="!col.tagOutlined"
+              :severity="_get(colData, col.severityField)"
+              :value="_get(colData, col.field)"
+              :icon="_get(colData, col.iconField)"
+              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem;`"
+              rounded
+            />
+            <div
+              v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+              class="circle"
+              style="border: 1px solid black"
+            />
           </div>
-          <div v-else-if="col.chip && col.dataType === 'array' && _get(data, col.field) !== undefined">
-            <Chip v-for="chip in _get(data, col.field)" :key="chip" :label="chip" />
+          <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
+            <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
           </div>
           <div v-else-if="col.emptyTag">
-            <div class="circle" v-if="!col.tagOutlined"
-                 :style="`background-color: ${_get(data, col.tagColor)};
-                          color: ${_get(data, col.tagColor) === 'white' ? 'black' : 'white'}`" />
-            <div v-else-if="col.tagOutlined && _get(data, col.tagColor)" class="circle" style="border: 1px solid black" />
+            <div
+              v-if="!col.tagOutlined"
+              class="circle"
+              :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
+                _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+              }`"
+            />
+            <div
+              v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+              class="circle"
+              style="border: 1px solid black"
+            />
           </div>
           <div v-else-if="col.link">
-            <router-link :to="{ name: col.routeName, params: data.routeParams }">
-              <Button v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.routeLabel"
-                :aria-label="col.routeTooltip" :icon="col.routeIcon" size="small" />
+            <router-link :to="{ name: col.routeName, params: colData.routeParams }">
+              <PvButton
+                v-tooltip.top="col.routeTooltip"
+                severity="secondary"
+                text
+                raised
+                :label="col.routeLabel"
+                :aria-label="col.routeTooltip"
+                :icon="col.routeIcon"
+                size="small"
+              />
             </router-link>
           </div>
           <div v-else-if="col.dataType === 'date'">
-            {{ getFormattedDate(_get(data, col.field)) }}
+            {{ getFormattedDate(_get(colData, col.field)) }}
           </div>
           <div v-else>
-            {{ _get(data, col.field) }}
+            {{ _get(colData, col.field) }}
           </div>
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
-          <InputText v-if="col.dataType === 'text' && !col.useMultiSelect" type="text" v-model="filterModel.value"
-            class="p-column-filter" placeholder="Search" />
-          <MultiSelect v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
-            placeholder="Any" :showToggleAll="false" class="p-column-filter" />
-          <Calendar v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
-            dateFormat="mm/dd/yy" placeholder="mm/dd/yyyy" />
+          <PvInputText
+            v-if="col.dataType === 'text' && !col.useMultiSelect"
+            v-model="filterModel.value"
+            type="text"
+            class="p-column-filter"
+            placeholder="Search"
+          />
+          <PvMultiSelect
+            v-if="col.useMultiSelect"
+            v-model="filterModel.value"
+            :options="_get(refOptions, col.field)"
+            placeholder="Any"
+            :show-toggle-all="false"
+            class="p-column-filter"
+          />
+          <PvCalendar
+            v-if="col.dataType === 'date' && !col.useMultiSelect"
+            v-model="filterModel.value"
+            date-format="mm/dd/yy"
+            placeholder="mm/dd/yyyy"
+          />
           <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
-            <TriStateCheckbox inputId="booleanFilter" v-model="filterModel.value" style="padding-top: 2px;" />
+            <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
           </div>
         </template>
-      </Column>
+      </PvColumn>
       <template #empty> No data found. </template>
-    </DataTable>
+    </PvDataTable>
   </div>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { FilterMatchMode, FilterOperator } from "primevue/api";
-import SkeletonTable from "@/components/SkeletonTable.vue"
-import _get from 'lodash/get'
-import _set from 'lodash/set'
-import _map from 'lodash/map'
-import _forEach from 'lodash/forEach'
-import _find from 'lodash/find'
-import _filter from 'lodash/filter'
-import _toUpper from 'lodash/toUpper'
-import _startCase from 'lodash/startCase'
-import _flatMap from 'lodash/flatMap'
+import { FilterMatchMode, FilterOperator } from 'primevue/api';
+import SkeletonTable from '@/components/SkeletonTable.vue';
+import _get from 'lodash/get';
+import _set from 'lodash/set';
+import _map from 'lodash/map';
+import _forEach from 'lodash/forEach';
+import _find from 'lodash/find';
+import _filter from 'lodash/filter';
+import _toUpper from 'lodash/toUpper';
+import _startCase from 'lodash/startCase';
 
 /*
 Using the DataTable
@@ -124,7 +209,7 @@ const props = defineProps({
   allowExport: { type: Boolean, default: true },
   exportFilename: { type: String, default: 'datatable-export' },
   pageLimit: { type: Number, default: 15 },
-  totalRecords: { type: Number, required: false },
+  totalRecords: { type: Number, required: false, default: 0 },
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
 });
@@ -133,10 +218,10 @@ const inputColumns = ref(props.columns);
 const selectedColumns = ref(props.columns);
 // Filter the live data (props.columns) with the selections of selectedColumns
 const computedColumns = computed(() => {
-  return _map(selectedColumns.value, col => {
-    return _find(props.columns, pcol => pcol.header === col.header)
-  })
-})
+  return _map(selectedColumns.value, (col) => {
+    return _find(props.columns, (pcol) => pcol.header === col.header);
+  });
+});
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -147,27 +232,27 @@ const onSelectAll = () => {
     toast.add({
       severity: 'info',
       summary: 'Rows selected',
-      detail:
-        `You selected ${selectedRows.value.length} rows but there are
+      detail: `You selected ${selectedRows.value.length} rows but there are
         ${props.totalRecords} total rows in all of this table's pages. If you
         would like to export all rows, please click the "Export Whole Table"
         button.`,
-      life: 5000
+      life: 5000,
     });
   } else {
     selectedRows.value = [];
   }
-  emit("selection", selectedRows.value);
-}
-const onSelectionChange = (event) => {
-  emit("selection", selectedRows.value);
-}
+  emit('selection', selectedRows.value);
+};
+
+const onSelectionChange = () => {
+  emit('selection', selectedRows.value);
+};
 
 const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
   if (exportSelected) {
-    emit('export-selected', selectedRows.value)
+    emit('export-selected', selectedRows.value);
     return;
   }
   emit('export-all');
@@ -177,10 +262,10 @@ const exportCSV = (exportSelected) => {
 const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN'];
 let filters = {};
 let options = {};
-_forEach(props.columns, column => {
+_forEach(props.columns, (column) => {
   // Check if header text is supplied; if not, generate.
   if (!_get(column, 'header')) {
-    column['header'] = _startCase(_get(column, 'field'))
+    column['header'] = _startCase(_get(column, 'field'));
   }
   const dataType = _toUpper(_get(column, 'dataType'));
   let returnMatchMode = null;
@@ -201,28 +286,28 @@ _forEach(props.columns, column => {
   if (returnMatchMode) {
     filters[column.field] = {
       operator: FilterOperator.AND,
-      constraints: [returnMatchMode]
-    }
+      constraints: [returnMatchMode],
+    };
   }
-})
+});
 const refOptions = ref(options);
 const refFilters = ref(filters);
 
 // Grab list of fields defined as dates
-let dateFields = _filter(props.columns, col => _toUpper(col.dataType) === 'DATE');
-dateFields = _map(dateFields, col => col.field);
+let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
+dateFields = _map(dateFields, (col) => col.field);
 
 const computedData = computed(() => {
   const data = JSON.parse(JSON.stringify(props.data));
   _forEach(data, (entry) => {
     // Clean up date fields to use Date objects
-    _forEach(dateFields, field => {
+    _forEach(dateFields, (field) => {
       let dateEntry = _get(entry, field);
       if (dateEntry !== null) {
         const dateObj = new Date(dateEntry);
         _set(entry, field, dateObj);
       }
-    })
+    });
   });
   return data;
 });
@@ -231,18 +316,18 @@ const computedData = computed(() => {
 function getUniqueOptions(column) {
   const field = _get(column, 'field');
   let options = [];
-  _forEach(props.data, entry => {
+  _forEach(props.data, (entry) => {
     if (!options.includes(_get(entry, field))) {
       options.push(_get(entry, field));
     }
   });
-  return options
+  return options;
 }
 
 function getFormattedDate(date) {
   if (date && !isNaN(date)) {
-    return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })
-  } else return ''
+    return date.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+  } else return '';
 }
 
 const onColumnToggle = (selected) => {
@@ -254,13 +339,17 @@ const onFreezeToggle = (selected) => {
   frozenColumns.value = inputColumns.value.filter((col) => selected.includes(col));
   selectedColumns.value = selectedColumns.value.map((col) => {
     col.pinned = selected.includes(col);
-    return col
-  })
+    return col;
+  });
 };
 
 const emit = defineEmits(['page', 'sort', 'export-all', 'selection']);
-const onPage = (event) => { emit('page', event) };
-const onSort = (event) => { emit('sort', event) };
+const onPage = (event) => {
+  emit('page', event);
+};
+const onSort = (event) => {
+  emit('sort', event);
+};
 </script>
 <style>
 .circle {

@@ -1,6 +1,6 @@
 <template>
   <div class="loading-container">
-    <AppSpinner style="margin-bottom: 1rem;" />
+    <AppSpinner style="margin-bottom: 1rem" />
     <span>Loading your data from Clever...</span>
   </div>
 </template>
@@ -21,15 +21,15 @@ async function checkForUserType() {
     const userData = await fetchDocById('users', authStore.uid);
     const userType = _get(userData, 'userType');
     if (userType && userType !== 'guest') {
-      clearInterval(userDataCheckInterval)
-      router.push({ name: "Home" })
+      clearInterval(userDataCheckInterval);
+      router.push({ name: 'Home' });
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {
       throw error;
     }
   }
-};
+}
 
 userDataCheckInterval = setInterval(checkForUserType, 500);
 </script>

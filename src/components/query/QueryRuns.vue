@@ -6,15 +6,21 @@
         <span class="p-inputgroup-addon">
           <i class="pi pi-database"></i>
         </span>
-        <Dropdown inputId="rootdoc" v-model="selectedRootPath" :options="rootPaths" optionLabel="label"
-          optionGroupLabel="label" optionGroupChildren="items">
+        <PvDropdown
+          v-model="selectedRootPath"
+          input-id="rootdoc"
+          :options="rootPaths"
+          option-label="label"
+          option-group-label="label"
+          option-group-children="items"
+        >
           <template #optiongroup="slotProps">
             <div class="flex align-items-center country-item">
               <i class="pi pi-folder-open mr-2"></i>
               <div>{{ slotProps.option.label }}</div>
             </div>
           </template>
-        </Dropdown>
+        </PvDropdown>
       </div>
     </div>
 
@@ -26,9 +32,19 @@
         <span class="p-inputgroup-addon">
           <i class="pi pi-angle-right"></i>
         </span>
-        <MultiSelect inputId="tasks" v-model="selectedTasks" :options="queryStore.tasks" optionLabel="id"
-          :loading="!queryStore.tasksReady" :filter="true" filterPlaceholder="Filter tasks" placeholder="Select tasks"
-          :selectionLimit="10" :maxSelectedLabels="4" :virtualScrollerOptions="{ itemSize: 40 }" />
+        <PvMultiSelect
+          v-model="selectedTasks"
+          input-id="tasks"
+          :options="queryStore.tasks"
+          option-label="id"
+          :loading="!queryStore.tasksReady"
+          :filter="true"
+          filter-placeholder="Filter tasks"
+          placeholder="Select tasks"
+          :selection-limit="10"
+          :max-selected-labels="4"
+          :virtual-scroller-options="{ itemSize: 40 }"
+        />
       </div>
     </div>
 
@@ -38,88 +54,134 @@
         <span class="p-inputgroup-addon">
           <i class="pi pi-angle-double-right"></i>
         </span>
-        <MultiSelect inputId="variants" v-model="selectedVariants" :options="queryStore.variants" optionLabel="name"
-          optionGroupLabel="task" optionGroupChildren="items" :loading="!queryStore.variantsReady" :filter="true"
-          filterPlaceholder="Filter variants"
+        <PvMultiSelect
+          v-model="selectedVariants"
+          input-id="variants"
+          :options="queryStore.variants"
+          option-label="name"
+          option-group-label="task"
+          option-group-children="items"
+          :loading="!queryStore.variantsReady"
+          :filter="true"
+          filter-placeholder="Filter variants"
           :placeholder="queryStore.variantsReady ? 'Select variants' : 'Choose tasks first to load available variants'"
-          :selectionLimit="10" :maxSelectedLabels="4" :virtualScrollerOptions="{ itemSize: 40 }" />
+          :selection-limit="10"
+          :max-selected-labels="4"
+          :virtual-scroller-options="{ itemSize: 40 }"
+        />
       </div>
     </div>
 
     <div v-if="queryStore.selectedTasks.length === 0" class="field col-12 md:col-12 m-0 p-0">
-      <Message severity="warn" class="text-left m-0" :closable="false">
+      <PvMessage severity="warn" class="text-left m-0" :closable="false">
         Select tasks above to enable to following query fields.
-      </Message>
+      </PvMessage>
     </div>
 
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="roaruids" v-model="queryStore.selectedUsers" :options="queryStore.users"
-          optionLabel="roarUid" :loading="!queryStore.usersReady" :filter="true" filterPlaceholder="Filter ROAR UIDs"
-          :maxSelectedLabels="5" :virtualScrollerOptions="{ itemSize: 40 }" />
+        <PvMultiSelect
+          v-model="queryStore.selectedUsers"
+          input-id="roaruids"
+          :options="queryStore.users"
+          option-label="roarUid"
+          :loading="!queryStore.usersReady"
+          :filter="true"
+          filter-placeholder="Filter ROAR UIDs"
+          :max-selected-labels="5"
+          :virtual-scroller-options="{ itemSize: 40 }"
+        />
         <label for="roaruids">ROAR UID / PID</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-6 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="groups" v-model="queryStore.selectedGroups" :options="queryStore.groups" optionLabel="id"
-          :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
+        <PvMultiSelect
+          v-model="queryStore.selectedGroups"
+          input-id="groups"
+          :options="queryStore.groups"
+          option-label="id"
+          :loading="!queryStore.usersReady"
+          :max-selected-labels="4"
+        />
         <label for="groups">Groups</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="districts" v-model="queryStore.selectedDistricts" :options="queryStore.districts"
-          optionLabel="id" :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
+        <PvMultiSelect
+          v-model="queryStore.selectedDistricts"
+          input-id="districts"
+          :options="queryStore.districts"
+          option-label="id"
+          :loading="!queryStore.usersReady"
+          :max-selected-labels="4"
+        />
         <label for="districts">Districts</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="schools" v-model="queryStore.selectedSchools" :options="queryStore.schools" optionLabel="id"
-          :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
+        <PvMultiSelect
+          v-model="queryStore.selectedSchools"
+          input-id="schools"
+          :options="queryStore.schools"
+          option-label="id"
+          :loading="!queryStore.usersReady"
+          :max-selected-labels="4"
+        />
         <label for="schools">Schools</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2">
       <span class="p-float-label">
-        <MultiSelect inputId="classes" v-model="queryStore.selectedClasses" :options="queryStore.classes" optionLabel="id"
-          :loading="!queryStore.usersReady" :maxSelectedLabels="4" />
+        <PvMultiSelect
+          v-model="queryStore.selectedClasses"
+          input-id="classes"
+          :options="queryStore.classes"
+          option-label="id"
+          :loading="!queryStore.usersReady"
+          :max-selected-labels="4"
+        />
         <label for="classes">Classes</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
       <span class="p-float-label">
-        <Calendar inputId="startdate" v-model="queryStore.startDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
+        <PvCalendar v-model="queryStore.startDate" input-id="startdate" date-format="mm/dd/yyyy" :show-icon="true" />
         <label for="startdate">Start date</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
       <span class="p-float-label">
-        <Calendar inputId="enddate" v-model="queryStore.endDate" dateFormat="mm/dd/yyyy" :showIcon="true" />
+        <PvCalendar v-model="queryStore.endDate" input-id="enddate" date-format="mm/dd/yyyy" :show-icon="true" />
         <label for="enddate">End date</label>
       </span>
     </div>
 
     <div class="field col-12 md:col-4 mt-2 mb-0 align-self-end">
-      <Button class="right-0" :label="queryStore.selectedUsers.length ? 'Submit query' : 'Select users to enable query'"
-        icon="pi pi-search" @click="queryStore.getRuns"
+      <PvButton
+        class="right-0"
+        :label="queryStore.selectedUsers.length ? 'Submit query' : 'Select users to enable query'"
+        icon="pi pi-search"
         :loading="!queryStore.usersReady || queryStore.selectedUsers.length === 0"
-        :disabled="!queryStore.usersReady || queryStore.selectedUsers.length === 0" />
+        :disabled="!queryStore.usersReady || queryStore.selectedUsers.length === 0"
+        @click="queryStore.getRuns"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import { onMounted, watch } from 'vue';
-import { storeToRefs } from 'pinia'
-import { useQueryStore } from "@/store/query";
+import { storeToRefs } from 'pinia';
+import { useQueryStore } from '@/store/query';
 
 export default {
   setup() {
@@ -128,12 +190,7 @@ export default {
       queryStore.getRootDocs().then(queryStore.getTasks);
     });
 
-    const {
-      rootPaths,
-      selectedRootPath,
-      selectedTasks,
-      selectedVariants
-    } = storeToRefs(queryStore);
+    const { rootPaths, selectedRootPath, selectedTasks, selectedVariants } = storeToRefs(queryStore);
 
     watch(selectedRootPath, () => queryStore.getTasks().then(queryStore.getVariants));
     watch([selectedRootPath, selectedTasks, selectedVariants], queryStore.getUsers);
@@ -143,9 +200,8 @@ export default {
       rootPaths,
       selectedRootPath,
       selectedTasks,
-      selectedVariants
+      selectedVariants,
     };
-  }
-}
-
+  },
+};
 </script>

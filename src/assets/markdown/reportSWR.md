@@ -2,11 +2,11 @@
 
 ## Introduction to ROAR - Single Word Recognition
 
-***ROAR - Single Word Recognition*** examines the ability to **quickly and automatically recognize individual words**. Students need to achieve both mastery of decoding and automaticity in word recognition in order to achieve fluency in reading. Research shows that poor word recognition is a barrier to comprehension for many students. Students not receiving support for their foundational reading skills may struggle to catch up in overall reading ability. This assessment is intended to help identify students who need intensive support for decoding individual words.
+**_ROAR - Single Word Recognition_** examines the ability to **quickly and automatically recognize individual words**. Students need to achieve both mastery of decoding and automaticity in word recognition in order to achieve fluency in reading. Research shows that poor word recognition is a barrier to comprehension for many students. Students not receiving support for their foundational reading skills may struggle to catch up in overall reading ability. This assessment is intended to help identify students who need intensive support for decoding individual words.
 
 **This score report** provides information about the distribution of scores across each grade and how each student's skills compare to the national norms for their age group.
 
-**The assessment** provides a measure of orthographic mapping, the automatic use of sound-symbol correspondence. During the test, a word flashes on the screen, and students categorize the word as real or made-up, e.g., *'lake'* is a real word, and *'xop'* is a made-up word. The assessment takes most students fewer than 10 minutes.
+**The assessment** provides a measure of orthographic mapping, the automatic use of sound-symbol correspondence. During the test, a word flashes on the screen, and students categorize the word as real or made-up, e.g., _'lake'_ is a real word, and _'xop'_ is a made-up word. The assessment takes most students fewer than 10 minutes.
 
 ## Overview
 
@@ -18,7 +18,7 @@ This score report presents information from the recent administration of the ROA
 
 - The average age of the students was {{ swrStats.ageMean }}.
 
-- The average ROAR score was {{ swrStats.roarScoreMean }} on a scale of 100 - 900 
+- The average ROAR score was {{ swrStats.roarScoreMean }} on a scale of 100 - 900
 - Scores ranged from {{ swrStats.roarScoreMin }} to {{ swrStats.roarScoreMax }}, with a standard deviation of {{ swrStats.roarScoreStandardDev }}.
 
 ## Identifying Students who could Benefit from Support
@@ -27,17 +27,17 @@ The Woodcock-Johnson Basic Reading Skills Index WJ is a standardized test that w
 
 <div id='viz-normed-percentile-distribution'></div>
 
-The vertical cut scores represent thresholds for classifying students into three categories: *At or Above Average*, *Some Support Needed*, or * Extra Support Needed*
+The vertical cut scores represent thresholds for classifying students into three categories: _At or Above Average_, _Some Support Needed_, or _ Extra Support Needed_
+
 - {{ swrStats.support.High }} students are classified as 'At or Above Average', with word recognition above the 50th percentile.
 
 - {{ swrStats.support.Medium }} students are classified as 'Some Support Needed', word recognition between the 25th and 50th percentile.
 
 - {{ swrStats.support.Low }} students are classified as 'Extra Support Needed', word recognition below the 25th percentile.
 
-
 <div id='viz-stacked-support-by-grade'></div>
 
-<div v-if="swrStats.hasFirstOrK"> 
+<div v-if="swrStats.hasFirstOrK">
 
 ### Identifying Automaticity in First Grade
 
@@ -50,7 +50,6 @@ According to these classifications:
 - {{ swrStats.automaticity.High }} students displayed 'At or Above Average Automaticity.'
 
 - {{ swrStats.automaticity.Low }} students displayed 'Limited Automaticity.'
-
 
 <div id='viz-automaticity-distributions-first-grade'></div>
 
@@ -68,9 +67,9 @@ Below is an interactive data table of the de-identified students that can be fil
 
 - Students who are flagged as needing extra support with single-word recognition need intensive support with decoding skills before they will become fluent with reading.
 
-- For English Language Learners, *ROAR Single Word Recognition* scores should be considered along with knowledge about the student's current level of English vocabulary. Words that are not in their oral vocabulary may be correctly decoded but not recognized as real words.
+- For English Language Learners, _ROAR Single Word Recognition_ scores should be considered along with knowledge about the student's current level of English vocabulary. Words that are not in their oral vocabulary may be correctly decoded but not recognized as real words.
 
-- The scores on the 10-minute single-word recognition assessment predict students' scores on the Woodcock-Johnson Basic Reading Skills Index with high accuracy, thus, *ROAR Single Word Recognition* provides a highly efficient way to screen a group of students for acute literacy needs and strengths without expending the time and resources to individually administer lengthy assessments. For more information on how ROAR relates to the Woodcock-Johnson Basic Reading Skills Index see [**https://www.nature.com/articles/s41598-021-85907-x**](https://www.nature.com/articles/s41598-021-85907-x).
+- The scores on the 10-minute single-word recognition assessment predict students' scores on the Woodcock-Johnson Basic Reading Skills Index with high accuracy, thus, _ROAR Single Word Recognition_ provides a highly efficient way to screen a group of students for acute literacy needs and strengths without expending the time and resources to individually administer lengthy assessments. For more information on how ROAR relates to the Woodcock-Johnson Basic Reading Skills Index see [**https://www.nature.com/articles/s41598-021-85907-x**](https://www.nature.com/articles/s41598-021-85907-x).
 
 - Ongoing research continues to refine thresholds for identifying students who may benefit from additional support. Defining thresholds for identifying students who may benefit from additional support is part of our ongoing research. As part of this research collaborative, we invite your feedback about the information you see here.
 
@@ -81,7 +80,6 @@ Below is an interactive data table of the de-identified students that can be fil
 ### Invitation to Collaborate
 
 Please reach out to [Jasmine Tran](jasetran@stanford.edu) and [Tonya Murray](tonyamur@stanford.edu) for questions or clarification on this score report and/or recommendations for how to improve future score reports.
-
 
 <script setup>
 const props = defineProps({

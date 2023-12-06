@@ -102,7 +102,9 @@
   background-color: var(--surface-a);
 }
 .p-button.p-button-raised {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 .p-button.p-button-rounded {
   border-radius: 2rem;
@@ -140,7 +142,6 @@
   margin-right: 0;
 }
 
-
 .p-fluid .p-button {
   width: 100%;
 }
@@ -153,4 +154,3 @@
 .p-fluid .p-buttonset .p-button {
   flex: 1;
 }
-

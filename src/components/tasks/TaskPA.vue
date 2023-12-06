@@ -6,18 +6,17 @@
   </div>
 </template>
 <script setup>
-import RoarSRE from '@bdelab/roar-sre';
-import { toRaw, onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import RoarPA from '@bdelab/roar-pa';
+import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { onBeforeRouteLeave, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import _head from 'lodash/head';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
-const taskId = "sre"
+const taskId = 'pa';
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -29,28 +28,27 @@ let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
-}
+};
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, isFetching: isFetchingUserData, data: userData } =
-  useQuery({
-    queryKey: ['userData', authStore.uid, "studentData"],
-    queryFn: () => fetchDocById('users', authStore.uid, ["studentData"]),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000 // 5 minutes
-  })
+const { isLoading: isLoadingUserData, data: userData } = useQuery({
+  queryKey: ['userData', authStore.uid, 'studentData'],
+  queryFn: () => fetchDocById('users', authStore.uid, ['studentData']),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 // Send user back to Home if page is reloaded
-const entries = performance.getEntriesByType("navigation");
+const entries = performance.getEntriesByType('navigation');
 entries.forEach((entry) => {
-  if (entry.type === "reload") {
+  if (entry.type === 'reload') {
     // Detect if our previous reload was on this page, AND if the last naviagtion was a replace.
     if (entry.name === window.location.href && history.state.replaced === true) {
-      router.replace({ name: "Home" })
+      router.replace({ name: 'Home' });
     }
   }
 });
@@ -60,7 +58,7 @@ entries.forEach((entry) => {
 // only want to intercept this the first time.
 let preventBack = true;
 onBeforeRouteLeave((to, from, next) => {
-  if (window.event.type === "popstate" && preventBack) {
+  if (window.event.type === 'popstate' && preventBack) {
     preventBack = false;
     // router.go(router.currentRoute);
     router.go(0);
@@ -74,11 +72,11 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
-})
+});
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
   if (newFirekitInitValue && !newLoadingUserData) await startTask();
-})
+});
 
 let roarApp;
 
@@ -89,8 +87,8 @@ const selectBestRun = async () => {
   await authStore.roarfirekit.selectBestRun({
     assignmentId: selectedAdmin.value.id,
     taskId,
-  })
-}
+  });
+};
 
 window.addEventListener('beforeunload', selectBestRun, { once: true });
 onBeforeUnmount(async () => {
@@ -101,41 +99,41 @@ onBeforeUnmount(async () => {
 });
 
 async function startTask() {
-  const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId)
+  const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
 
-  const userDob = _get(userData.value, 'studentData.dob')
+  const userDob = _get(userData.value, 'studentData.dob');
   const userDateObj = new Date(userDob);
 
   const userParams = {
-    grade: _get(userData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
-  }
+  };
 
-  const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true }
-  roarApp = new RoarSRE(appKit, gameParams, userParams, 'jspsych-target');
+  const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true };
+  roarApp = new RoarPA(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
-    await authStore.completeAssessment(selectedAdmin.value.id, taskId)
+    await authStore.completeAssessment(selectedAdmin.value.id, taskId);
     completed.value = true;
     // Here we refresh instead of routing home, with the knowledge that a
     // refresh is intercepted above and sent home.
     router.go(0);
+    // router.replace({ name: "Home" });
   });
 }
 </script>
+<style scoped>
+.game-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
 
-<style scoped> .game-target {
-   position: absolute;
-   top: 0;
-   left: 0;
-   width: 100%;
-   height: 100%;
- }
-
- .game-target:focus {
-   outline: none;
- }
+.game-target:focus {
+  outline: none;
+}
 </style>

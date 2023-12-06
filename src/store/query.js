@@ -1,13 +1,12 @@
-import { defineStore, storeToRefs } from "pinia";
-import { parse, stringify } from "zipson";
-import { useAuthStore } from "@/store/auth"
-import { pluralizeFirestoreCollection } from "@/helpers";
+import { defineStore, storeToRefs } from 'pinia';
+import { parse, stringify } from 'zipson';
+import { useAuthStore } from '@/store/auth';
 
 export const useQueryStore = () => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   return defineStore({
-    id: "queryStore",
+    id: 'queryStore',
     state: () => {
       return {
         allVariants: [],
@@ -25,15 +24,15 @@ export const useQueryStore = () => {
         if (roarfirekit.value?.app?.db) {
           return roarfirekit.value.getOrgs(orgType);
         } else {
-          return []
+          return [];
         }
       },
       async getTasks(requireRegistered = true) {
         this.tasksReady = false;
         if (roarfirekit.value?.app?.db) {
-          this.tasks = await roarfirekit.value.getTasks(requireRegistered)
+          this.tasks = await roarfirekit.value.getTasks(requireRegistered);
         } else {
-          this.tasks = []
+          this.tasks = [];
         }
         this.tasksReady = true;
       },

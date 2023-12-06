@@ -12,7 +12,11 @@
 .p-datepicker:not(.p-datepicker-inline) {
   background: var(--surface-a);
   border: 0 none;
-  box-shadow: 0 0 #0000, 0 0 #0000, 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 0 #0000,
+    0 0 #0000,
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 .p-datepicker:not(.p-datepicker-inline) .p-datepicker-header {
   background: var(--surface-a);
@@ -211,7 +215,8 @@
 }
 
 @media screen and (max-width: 769px) {
-  .p-datepicker table th, .p-datepicker table td {
-	padding: 0;
+  .p-datepicker table th,
+  .p-datepicker table td {
+    padding: 0;
   }
 }

@@ -2,25 +2,25 @@
   <AppSpinner />
 </template>
 <script setup>
-import { watch } from 'vue'
-import { useAuthStore } from '@/store/auth'
+import { watch } from 'vue';
+import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router';
 
 const props = defineProps({
-  code: { required: true, default: false },
-})
+  code: { type: String, required: true },
+});
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { isFirekitInit } = storeToRefs(authStore);
 
-watch(isFirekitInit, async (newValue, oldValue) => {
+watch(isFirekitInit, async () => {
   if (props.code) {
     authStore.cleverOAuthRequested = true;
-    router.replace({ name: "SignIn" });
+    router.replace({ name: 'SignIn' });
   } else {
-    router.push({ name: "Home" });
+    router.push({ name: 'Home' });
   }
-})
+});
 </script>
