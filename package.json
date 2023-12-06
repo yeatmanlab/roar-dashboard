@@ -17,7 +17,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@bdelab/roar-firekit": "^3.13.2",
+    "@bdelab/roar-firekit": "^4.1.1",
     "@bdelab/roar-letter": "^1.1.10",
     "@bdelab/roar-multichoice": "^1.2.0",
     "@bdelab/roar-pa": "^1.1.12",
