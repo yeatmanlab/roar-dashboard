@@ -267,6 +267,13 @@ export const getFilteredScoresRequestBody = ({
               value: { stringValue: filter.taskId },
             },
           },
+          {
+            fieldFilter: {
+              field: { fieldPath: 'bestRun' },
+              op: 'EQUAL',
+              value: { booleanValue: true },
+            },
+          },
         ],
       },
     };
@@ -553,11 +560,14 @@ export const assignmentPageFetcher = async (
     console.log('requestBody', requestBody);
     return appAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
       const scoresData = mapFields(data);
+      console.log('raw data', data);
+      console.log('scoresData', scoresData);
 
       // Generate a list of user docs paths
       const userDocPaths = _without(
         data.map((scoreDoc) => {
           if (scoreDoc.document?.name) {
+            console.log(scoreDoc.document.name);
             return _replace(scoreDoc.document.name.split('/runs/')[0], 'gse-roar-assessment', 'gse-roar-admin');
           } else {
             return undefined;
@@ -587,6 +597,7 @@ export const assignmentPageFetcher = async (
             undefined,
           );
         });
+      console.log('user docs', batchUserDocs);
 
       // Generate a list of assignment doc paths
       const assignmentDocPaths = userDocPaths.map((userDocPath) => {
@@ -614,14 +625,22 @@ export const assignmentPageFetcher = async (
             undefined,
           );
         });
+      console.log('assignment docs', batchAssignmentDocs);
 
       // Merge the scores into the assignment object
-      const scoredAssignments = batchAssignmentDocs.map((assignment) => {
-        const scoredAssessments = assignment.data.assessments.map((assignment) => {
-          const runId = assignment.runId;
+      const unretrievedScores = [];
+      const initialScoredAssignments = batchAssignmentDocs.map((assignment) => {
+        const scoredAssessments = assignment.data.assessments.map((assessment) => {
+          const runId = assessment.runId;
+          const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
+          if (!scoresObject) {
+            // console.log('assignment obj', assignment)
+            const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
+            unretrievedScores.push(runPath);
+          }
           return {
-            ...assignment,
-            scores: _get(_find(scoresData, { id: runId }), 'scores'),
+            ...assessment,
+            scores: scoresObject,
           };
         });
         return {
@@ -632,30 +651,71 @@ export const assignmentPageFetcher = async (
           },
         };
       });
+      console.log('scored assessments', initialScoredAssignments);
 
       // Use the list of unretrieved scores and batchGet
+      // console.log('unretrived scores', unretrievedScores)
+      const otherScores = await appAxiosInstance
+        .post(':batchGet', {
+          documents: unretrievedScores,
+          mask: { fieldPaths: ['scores'] },
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                return {
+                  id: found.name.split('/runs/')[1],
+                  ..._mapValues(found.fields, (value) => convertValues(value)),
+                };
+              }
+              return undefined;
+            }),
+            undefined,
+          );
+        });
+      console.log('other scores', otherScores);
 
       // Merge the newly retrieved scores with the scoredAssignments object
+      const scoredAssignments = initialScoredAssignments.map((assignment) => {
+        const scoredAssessments = assignment.data.assessments.map((assessment) => {
+          const runId = assessment.runId;
+          console.log('raw find', _find(otherScores, { id: runId }));
+          const runScores = _get(_find(otherScores, { id: runId }), 'scores');
+          console.log('other scores', runScores);
+          if (runScores) {
+            return {
+              ...assessment,
+              scores: runScores,
+            };
+          } else {
+            return assessment;
+          }
+        });
+        return {
+          userId: assignment.userId,
+          data: {
+            ...assignment.data,
+            assessments: scoredAssessments,
+          },
+        };
+      });
+      console.log('scored assignments', scoredAssignments);
 
       // Integrate the assignment and scores objects
       return data.map((score) => {
+        console.log('score doc (checking for document.name)', score);
         const userId = score.document.name.split('/users/')[1].split('/runs/')[0];
         const assignmentDoc = _find(scoredAssignments, { userId: userId });
         const scoreData = _mapValues(score.document.fields, (value) => convertValues(value));
         const userDoc = _find(batchUserDocs, { userId: userId });
         console.log({
           user: userDoc.data,
-          assignment: {
-            ...assignmentDoc.data,
-            scores: scoreData.scores,
-          },
+          assignment: assignmentDoc.data,
         });
         return {
           user: userDoc.data,
-          assignment: {
-            ...assignmentDoc.data,
-            scores: scoreData.scores,
-          },
+          assignment: assignmentDoc.data,
         };
       });
     });
