@@ -1,6 +1,6 @@
 import { games } from "./buttonGamesList";
 
-describe("Cypress tests to play vocab, cva, letter, and multichoice games as a participant", () => {
+describe("Testing playthrough of vocab, cva, letter, and multichoice games as a participant", () => {
     games.forEach((game) => {
         it(game.name, () => {
             cy.clearAllSessionStorage();
@@ -17,11 +17,11 @@ describe("Cypress tests to play vocab, cva, letter, and multichoice games as a p
                 .contains("ZZZ Test Cypress Playthrough Button Games")
                 .should("be.visible")
                 .click();
+            cy.get(".tabview-nav-link-label")
+                .contains(game.name)
 
-            // cy.get(".p-tabview").contains(game.name);
             cy.visit(`/game/${game.id}`);
 
-            // cy.contains("Preparing your game")
 
             cy.get(game.startBtn, { timeout: 80000 })
                 .should("be.visible")
@@ -58,17 +58,17 @@ describe("Cypress tests to play vocab, cva, letter, and multichoice games as a p
             playROARGame(game);
 
             // check if game completed
-            // cy.visit("/");
-            // cy.get(".p-dropdown-trigger", { timeout: 20000 })
-            //     .should("be.visible")
-            //     .click();
-            // cy.get(".p-dropdown-item", { timeout: 10000 })
-            //     .contains("ZZZ Test Cypress Playthrough Button Games")
-            //     .should("be.visible")
-            //     .click();
-            // cy.get(".tabview-nav-link-label")
-            //     .contains(game.name)
-            //     .should("have.attr", "data-game-status", "complete");
+            cy.visit("/");
+            cy.get(".p-dropdown-trigger", { timeout: 20000 })
+                .should("be.visible")
+                .click();
+            cy.get(".p-dropdown-item", { timeout: 10000 })
+                .contains("ZZZ Test Cypress Playthrough Button Games")
+                .should("be.visible")
+                .click();
+            cy.get(".tabview-nav-link-label")
+                .contains(game.name)
+                .should("have.attr", "data-game-status", "complete");
         });
     });
 });

@@ -1,10 +1,10 @@
-describe("Cypress test to play SRE as a participant", () => {
+describe("Test playthrough of SRE as a participant", () => {
     it("ROAR-Sentence", () => {
         let test_login = "testingUser4";
         let test_pw = "password4";
 
         cy.login(test_login, test_pw);
-        cy.visit("/")
+        cy.visit("/");
 
         cy.get(".p-dropdown-trigger", { timeout: 10000 })
             .should("be.visible")
@@ -13,13 +13,9 @@ describe("Cypress test to play SRE as a participant", () => {
             .contains("ZZZ Test Cypress Play Keypress Games")
             .should("be.visible")
             .click();
-        // cy.get(".p-dropdown-item").contains("numTrialsTotal").click();
-        // cy.get('.p-dropdown-item', {timeout: 10000}).should('be.visible').click();
 
         cy.get(".p-tabview").contains("ROAR-Sentence");
         cy.visit(`/game/sre`);
-
-        // cy.contains("Preparing your game")
 
         cy.get(".jspsych-btn", { timeout: 60000 }).should("be.visible").click();
 
@@ -36,6 +32,18 @@ describe("Cypress test to play SRE as a participant", () => {
         });
 
         playSREGame();
+        // check if game completed
+        cy.visit("/");
+        cy.get(".p-dropdown-trigger", { timeout: 20000 })
+            .should("be.visible")
+            .click();
+        cy.get(".p-dropdown-item", { timeout: 10000 })
+            .contains("ZZZ Test Shortened SRE")
+            .should("be.visible")
+            .click();
+        cy.get(".tabview-nav-link-label")
+            .contains("ROAR-Sentence")
+            .should("have.attr", "data-game-status", "complete");
     });
 });
 
