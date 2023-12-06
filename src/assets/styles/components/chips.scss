@@ -3,7 +3,7 @@
   color: var(--text-color);
   border-radius: 16px;
   padding: 0 var(--inline-spacing-larger);
-  
+
   .p-chip-text {
     line-height: 1.5;
     margin-top: var(--border-radius);
@@ -28,11 +28,9 @@
       box-shadow: 0 0 0 1px var(--indigo-500);
     }
   }
-
 }
- 
-.p-chips { 
-  
+
+.p-chips {
   .p-chips-multiple-container {
     padding: var(--border-radius) var(--inline-spacing-larger);
   }
@@ -54,14 +52,12 @@
     padding: var(--border-radius) 0;
   }
   .p-chips-multiple-container .p-chips-input-token input {
-    
     font-size: 1rem;
     color: var(--text-color);
     padding: 0;
     margin: 0;
   }
-  
-  
+
   &.p-invalid.p-component > .p-inputtext {
     border-color: var(--red-100);
   }

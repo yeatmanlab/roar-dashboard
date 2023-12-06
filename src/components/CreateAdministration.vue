@@ -4,42 +4,51 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <Panel header="Create a new administration">
+      <PvPanel header="Create a new administration">
         Use this form to create a new administration and assign it to organizations.
 
-        <Divider />
+        <PvDivider />
 
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
-              <InputText id="administration-name" v-model="state.administrationName" />
+              <PvInputText id="administration-name" v-model="state.administrationName" />
               <label for="administration-name">Administration Name</label>
-              <small v-if="v$.administrationName.$invalid && submitted" class="p-error">Please name your
-                administration</small>
+              <small v-if="v$.administrationName.$invalid && submitted" class="p-error"
+                >Please name your administration</small
+              >
             </span>
           </div>
 
           <div class="field col">
             <span class="p-float-label">
-              <Calendar v-model="state.dates" :minDate="minStartDate" inputId="dates" :numberOfMonths="2"
-                selectionMode="range" :manualInput="false" showIcon showButtonBar />
+              <PvCalendar
+                v-model="state.dates"
+                :min-date="minStartDate"
+                input-id="dates"
+                :number-of-months="2"
+                selection-mode="range"
+                :manual-input="false"
+                show-icon
+                show-button-bar
+              />
               <label for="dates">Dates</label>
               <small v-if="v$.dates.required.$invalid && submitted" class="p-error">Please select dates.</small>
-              <small v-else-if="v$.dates.datesNotNull.$invalid && submitted" class="p-error">Please select both a start
-                and end
-                date.</small>
+              <small v-else-if="v$.dates.datesNotNull.$invalid && submitted" class="p-error"
+                >Please select both a start and end date.</small
+              >
             </span>
           </div>
         </div>
 
         <OrgPicker @selection="selection($event)" />
 
-        <Panel class="mt-3" header="Select assessments for this administration">
+        <PvPanel class="mt-3" header="Select assessments for this administration">
           <template #icons>
             <div class="flex flex-row align-items-center justify-content-end">
               <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
               <span>Require sequential?</span>
-              <InputSwitch class="ml-2" v-model="state.sequential" />
+              <PvInputSwitch v-model="state.sequential" class="ml-2" />
               <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments">
                 <span :class="spinIcon.assessments"></span>
               </button>
@@ -47,19 +56,29 @@
           </template>
 
           <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
-          <PickList v-if="assessments[0].length || assessments[1].length" v-model="assessments"
-            :showSourceControls="false" listStyle="height: 21.375rem" dataKey="id" :stripedRows="true" :pt="{
+          <PvPickList
+            v-if="assessments[0].length || assessments[1].length"
+            v-model="assessments"
+            :show-source-controls="false"
+            list-style="height: 21.375rem"
+            data-key="id"
+            :striped-rows="true"
+            :pt="{
               moveAllToTargetButton: { root: { class: 'hide' } },
               moveAllToSourceButton: { root: { class: 'hide' } },
               targetMoveTopButton: { root: { class: 'hide' } },
               targetMoveBottomButton: { root: { class: 'hide' } },
-            }">
+            }"
+          >
             <template #sourceheader>Available</template>
             <template #targetheader>Selected</template>
             <template #item="slotProps">
               <div class="flex flex-wrap p-2 align-items-center gap-3">
-                <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="slotProps.item.task.image || backupImage"
-                  :alt="slotProps.item.task.name" />
+                <img
+                  class="w-4rem shadow-2 flex-shrink-0 border-round"
+                  :src="slotProps.item.task.image || backupImage"
+                  :alt="slotProps.item.task.name"
+                />
                 <div class="flex-1 flex flex-column gap-2">
                   <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.task.name }}</span>
                   <div class="flex align-items-center gap-2">
@@ -67,52 +86,62 @@
                     <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
                   </div>
                 </div>
-                <Button type="button" v-tooltip.right="'Click to view params'" rounded size="small" icon="pi pi-info"
-                  @click="toggle($event, slotProps.item.id)" />
-                <OverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
-                  <DataTable stripedRows class="p-datatable-small" tableStyle="min-width: 30rem"
-                    :value="toEntryObjects(slotProps.item.variant.params)">
-                    <Column field="key" header="Parameter" style="width: 50%"></Column>
-                    <Column field="value" header="Value" style="width: 50%"></Column>
-                  </DataTable>
-                </OverlayPanel>
+                <PvButton
+                  v-tooltip.right="'Click to view params'"
+                  type="button"
+                  rounded
+                  size="small"
+                  icon="pi pi-info"
+                  @click="toggle($event, slotProps.item.id)"
+                />
+                <PvOverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
+                  <PvDataTable
+                    striped-rows
+                    class="p-datatable-small"
+                    table-style="min-width: 30rem"
+                    :value="toEntryObjects(slotProps.item.variant.params)"
+                  >
+                    <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
+                    <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
+                  </PvDataTable>
+                </PvOverlayPanel>
               </div>
             </template>
-          </PickList>
+          </PvPickList>
           <div v-else class="loading-container">
-            <AppSpinner style="margin-bottom: 1rem;" />
+            <AppSpinner style="margin-bottom: 1rem" />
             <span>Loading Assessments</span>
           </div>
-        </Panel>
+        </PvPanel>
 
         <div class="col-12 mb-3">
-          <Button label="Create Administration" @click="submit" />
+          <PvButton label="Create Administration" @click="submit" />
         </div>
-      </Panel>
+      </PvPanel>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, toRaw } from "vue";
+import { computed, onMounted, reactive, ref, toRaw } from 'vue';
 import { useRouter } from 'vue-router';
-import { storeToRefs } from "pinia";
-import { useToast } from "primevue/usetoast";
-import { useQuery } from "@tanstack/vue-query";
-import _filter from "lodash/filter";
-import _fromPairs from "lodash/fromPairs";
-import _isEmpty from "lodash/isEmpty";
-import _toPairs from "lodash/toPairs";
-import _uniqBy from "lodash/uniqBy";
-import { useVuelidate } from "@vuelidate/core";
-import { maxLength, minLength, required } from "@vuelidate/validators";
-import { useQueryStore } from "@/store/query";
-import { useAuthStore } from "@/store/auth";
-import AppSpinner from "@/components/AppSpinner.vue";
-import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import OrgPicker from "@/components/OrgPicker.vue";
-import { getSidebarActions } from "@/router/sidebarActions";
-import { fetchDocById } from "@/helpers/query/utils";
+import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
+import { useQuery } from '@tanstack/vue-query';
+import _filter from 'lodash/filter';
+import _fromPairs from 'lodash/fromPairs';
+import _isEmpty from 'lodash/isEmpty';
+import _toPairs from 'lodash/toPairs';
+import _uniqBy from 'lodash/uniqBy';
+import { useVuelidate } from '@vuelidate/core';
+import { maxLength, minLength, required } from '@vuelidate/validators';
+import { useQueryStore } from '@/store/query';
+import { useAuthStore } from '@/store/auth';
+import AppSpinner from '@/components/AppSpinner.vue';
+import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+import OrgPicker from '@/components/OrgPicker.vue';
+import { getSidebarActions } from '@/router/sidebarActions';
+import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const toast = useToast();
@@ -121,14 +150,13 @@ const initialized = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, isFetching: isFetchingClaims, data: userClaims } =
-  useQuery({
-    queryKey: ['userClaims', authStore.uid],
-    queryFn: () => fetchDocById('userClaims', authStore.uid),
-    keepPreviousData: true,
-    enabled: initialized,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+const { data: userClaims } = useQuery({
+  queryKey: ['userClaims', authStore.uid],
+  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
@@ -137,19 +165,19 @@ const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 // -----| Form state and validation rules |-----
 //      +---------------------------------+
 const state = reactive({
-  administrationName: "",
+  administrationName: '',
   dates: [],
   sequential: true,
   districts: [],
   schools: [],
   classes: [],
   groups: [],
-  families: []
-})
+  families: [],
+});
 
 const datesNotNull = (value) => {
-  return (value[0] && value[1]);
-}
+  return value[0] && value[1];
+};
 
 const minStartDate = ref(new Date());
 
@@ -161,8 +189,8 @@ const rules = {
     maxLength: maxLength(2),
     datesNotNull,
   },
-  sequential: { required }
-}
+  sequential: { required },
+};
 const v$ = useVuelidate(rules, state);
 const pickListError = ref('');
 const orgError = ref('');
@@ -175,7 +203,7 @@ const selection = (selected) => {
   for (const [key, value] of _toPairs(selected)) {
     state[key] = value;
   }
-}
+};
 
 //      +---------------------------------+
 // -----|       Assessment Selection      |-----
@@ -185,36 +213,36 @@ const refreshing = reactive({
 });
 
 const spinIcon = computed(() => ({
-  assessments: refreshing.assessments ? "pi pi-spin pi-spinner" : "pi pi-refresh",
+  assessments: refreshing.assessments ? 'pi pi-spin pi-spinner' : 'pi pi-refresh',
 }));
 
 let paramPanelRefs = {};
 
 const toEntryObjects = (inputObj) => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
-}
+};
 
 const toggle = (event, id) => {
-  paramPanelRefs[id].value.toggle(event)
-}
+  paramPanelRefs[id].value.toggle(event);
+};
 
 const queryStore = useQueryStore();
 
 const { allVariants } = storeToRefs(queryStore);
-const assessments = ref([[], []])
+const assessments = ref([[], []]);
 
-const backupImage = "/src/assets/swr-icon.jpeg";
+const backupImage = '/src/assets/swr-icon.jpeg';
 
 const checkForUniqueTasks = (assignments) => {
   if (_isEmpty(assignments)) return false;
-  const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId)
-  return (uniqueTasks.length === assignments.length)
-}
+  const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId);
+  return uniqueTasks.length === assignments.length;
+};
 
 const checkForRequiredOrgs = (orgs) => {
-  const filtered = _filter(orgs, org => !_isEmpty(org))
-  return Boolean(filtered.length)
-}
+  const filtered = _filter(orgs, (org) => !_isEmpty(org));
+  return Boolean(filtered.length);
+};
 
 let unsubscribeAssessments;
 
@@ -229,7 +257,7 @@ const refreshAssessments = async () => {
     paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
     refreshing.assessments = false;
   });
-}
+};
 
 if (allVariants.value.length === 0) {
   unsubscribeAssessments = authStore.$subscribe(async (mutation, state) => {
@@ -245,16 +273,16 @@ if (allVariants.value.length === 0) {
 // -----|         Form submission         |-----
 //      +---------------------------------+
 const submit = async () => {
-  pickListError.value = ''
+  pickListError.value = '';
   submitted.value = true;
-  const isFormValid = await v$.value.$validate()
+  const isFormValid = await v$.value.$validate();
   if (isFormValid) {
     const submittedAssessments = assessments.value[1].map((assessment) => ({
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
     }));
 
-    const tasksUnique = checkForUniqueTasks(submittedAssessments)
+    const tasksUnique = checkForUniqueTasks(submittedAssessments);
     if (tasksUnique && !_isEmpty(submittedAssessments)) {
       const orgs = {
         districts: toRaw(state.districts).map((org) => org.id),
@@ -262,7 +290,7 @@ const submit = async () => {
         classes: toRaw(state.classes).map((org) => org.id),
         groups: toRaw(state.groups).map((org) => org.id),
         families: toRaw(state.families).map((org) => org.id),
-      }
+      };
 
       const orgsValid = checkForRequiredOrgs(orgs);
       if (orgsValid) {
@@ -273,22 +301,22 @@ const submit = async () => {
           dateClose: toRaw(state).dates[1],
           sequential: toRaw(state).sequential,
           orgs: orgs,
-        }
+        };
 
         await roarfirekit.value.createAdministration(args).then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
 
-          router.push({ name: "Home" });
+          router.push({ name: 'Home' });
         });
       } else {
-        console.log('need at least one org')
-        orgError.value = 'At least one organization needs to be selected.'
+        console.log('need at least one org');
+        orgError.value = 'At least one organization needs to be selected.';
       }
     } else {
-      pickListError.value = 'Task selections must not be empty and must be unique.'
+      pickListError.value = 'Task selections must not be empty and must be unique.';
     }
   } else {
-    console.log('form is invalid')
+    console.log('form is invalid');
   }
 };
 
@@ -299,7 +327,7 @@ let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
-}
+};
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -310,8 +338,8 @@ onMounted(async () => {
   if (roarfirekit.value.getVariants && roarfirekit.value.isAdmin()) {
     await refreshAssessments();
   }
-})
-</script> 
+});
+</script>
 
 <style lang="scss">
 .return-button {
@@ -338,11 +366,11 @@ onMounted(async () => {
 }
 
 #rectangle {
-  background: #FCFCFC;
+  background: #fcfcfc;
   border-radius: 0.3125rem;
   border-style: solid;
   border-width: 0.0625rem;
-  border-color: #E5E5E5;
+  border-color: #e5e5e5;
   margin: 0 1.75rem;
   padding-top: 1.75rem;
   padding-left: 1.875rem;
@@ -374,7 +402,7 @@ onMounted(async () => {
     height: 100%;
     border-radius: 0.3125rem;
     border-width: 0.0625rem;
-    border-color: #E5E5E5;
+    border-color: #e5e5e5;
   }
 
   #section {
@@ -392,12 +420,12 @@ onMounted(async () => {
 
   .p-dropdown-label {
     font-family: 'Source Sans Pro', sans-serif;
-    color: #C4C4C4;
+    color: #c4c4c4;
   }
 
   ::placeholder {
     font-family: 'Source Sans Pro', sans-serif;
-    color: #C4C4C4;
+    color: #c4c4c4;
   }
 
   // .p-button {

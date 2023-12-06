@@ -2,13 +2,12 @@
   <div class="col-full text-center">
     <h1>Almost done...</h1>
     <p>
-      We'll send you an email within the next few minutes. Please open it up and
-      click on the activation link to finish signing in.
+      We'll send you an email within the next few minutes. Please open it up and click on the activation link to finish
+      signing in.
     </p>
   </div>
 </template>
 
-<script setup>
-</script>
+<script setup></script>
 
 <style scoped></style>

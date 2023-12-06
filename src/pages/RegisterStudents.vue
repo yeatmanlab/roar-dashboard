@@ -6,7 +6,7 @@
     <section class="main-body">
       <!--Upload file section-->
       <div v-if="!isFileUploaded">
-        <Panel header="Add Participants">
+        <PvPanel header="Add Participants">
           The following fields are required for registering a student:
           <ul>
             <li>username</li>
@@ -16,24 +16,33 @@
             <li>Either a group OR a district and school</li>
           </ul>
           Upload or drag-and-drop a student list below to begin!
-        </Panel>
-        <Divider />
-        <FileUpload name="massUploader[]" customUpload @uploader="onFileUpload($event)" accept=".csv" auto
-          :showUploadButton="false" :showCancelButton="false">
+        </PvPanel>
+        <PvDivider />
+        <PvFileUpload
+          name="massUploader[]"
+          custom-upload
+          accept=".csv"
+          auto
+          :show-upload-button="false"
+          :show-cancel-button="false"
+          @uploader="onFileUpload($event)"
+        >
           <template #empty>
             <div class="extra-height">
               <p>Drag and drop files to here to upload.</p>
             </div>
           </template>
-        </FileUpload>
+        </PvFileUpload>
       </div>
       <!--DataTable with raw Student-->
       <div v-if="isFileUploaded">
         <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
-        <Panel header="Assigning participant data" class="mb-4">
-          <p>Use the dropdowns below to properly assign each column. </p>
-          <p>Columns that are not assigned will not be imported. But please note that a column has to be assigned for each
-            of the required fields:</p>
+        <PvPanel header="Assigning participant data" class="mb-4">
+          <p>Use the dropdowns below to properly assign each column.</p>
+          <p>
+            Columns that are not assigned will not be imported. But please note that a column has to be assigned for
+            each of the required fields:
+          </p>
           <ul>
             <li>email</li>
             <li>date of birth</li>
@@ -42,51 +51,76 @@
             <li>Either a group OR a district and school</li>
           </ul>
 
-          <Message severity="info" :closable="false">You can scroll left-to-right to see more columns</Message>
-        </Panel>
+          <PvMessage severity="info" :closable="false">You can scroll left-to-right to see more columns</PvMessage>
+        </PvPanel>
 
         <div v-if="errorMessage" class="error-box">
           {{ errorMessage }}
         </div>
         <!-- Can't use RoarDataTable to accomodate header dropdowns -->
-        <DataTable ref="dataTable" :value="rawStudentFile" showGridlines :rowHover="true" :resizableColumns="true"
-          paginator :alwaysShowPaginator="false" :rows="10" class="datatable">
-          <Column v-for="col of tableColumns" :key="col.field" :field="col.field">
+        <PvDataTable
+          ref="dataTable"
+          :value="rawStudentFile"
+          show-gridlines
+          :row-hover="true"
+          :resizable-columns="true"
+          paginator
+          :always-show-paginator="false"
+          :rows="10"
+          class="datatable"
+        >
+          <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <Dropdown v-model="dropdown_model[col.field]" :options="dropdown_options" optionLabel="label"
-                  optionValue="value" optionGroupLabel="label" optionGroupChildren="items"
-                  placeholder="What does this column describe?" />
+                <PvDropdown
+                  v-model="dropdown_model[col.field]"
+                  :options="dropdown_options"
+                  option-label="label"
+                  option-value="value"
+                  option-group-label="label"
+                  option-group-children="items"
+                  placeholder="What does this column describe?"
+                />
               </div>
             </template>
-          </Column>
-        </DataTable>
+          </PvColumn>
+        </PvDataTable>
         <div class="submit-container">
-          <Button @click="submitStudents" label="Start Registration" :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
-            :disabled="activeSubmit" />
+          <PvButton
+            label="Start Registration"
+            :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
+            :disabled="activeSubmit"
+            @click="submitStudents"
+          />
         </div>
         <!-- Datatable of error students -->
         <div v-if="showErrorTable" class="error-container">
           <div class="error-header">
             <h3>Error Users</h3>
-            <Button @click="downloadErrorTable($event)">
-              Download Table
-            </Button>
+            <PvButton @click="downloadErrorTable($event)"> Download Table </PvButton>
           </div>
           <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-          <DataTable ref="errorTable" :value="errorUsers" showGridlines exportFilename="error-datatable-export"
-            :rowHover="true" :resizableColumns="true" paginator :alwaysShowPaginator="false" :rows="10" class="datatable">
-            <Column v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+          <PvDataTable
+            ref="errorTable"
+            :value="errorUsers"
+            show-gridlines
+            export-filename="error-datatable-export"
+            :row-hover="true"
+            :resizable-columns="true"
+            paginator
+            :always-show-paginator="false"
+            :rows="10"
+            class="datatable"
+          >
+            <PvColumn v-for="col of errorUserColumns" :key="col.field" :field="col.field">
               <template #header>
                 {{ col.header }}
               </template>
-            </Column>
-          </DataTable>
+            </PvColumn>
+          </PvDataTable>
         </div>
       </div>
-
     </section>
-
   </main>
 </template>
 <script setup>
@@ -95,20 +129,18 @@ import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
 import _chunk from 'lodash/chunk';
 import _compact from 'lodash/compact';
-import _find from 'lodash/find';
-import _forEach from 'lodash/forEach'
-import _includes from 'lodash/includes'
+import _forEach from 'lodash/forEach';
+import _includes from 'lodash/includes';
 import _isEmpty from 'lodash/isEmpty';
 import _omit from 'lodash/omit';
-import _pick from 'lodash/pick';
 import _set from 'lodash/set';
 import _uniqBy from 'lodash/uniqBy';
-import _startCase from 'lodash/startCase'
+import _startCase from 'lodash/startCase';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'vue-router';
-import AdministratorSidebar from "@/components/AdministratorSidebar.vue";
-import { getSidebarActions } from "../router/sidebarActions";
-import { useToast } from "primevue/usetoast";
+import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+import { getSidebarActions } from '../router/sidebarActions';
+import { useToast } from 'primevue/usetoast';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
 
@@ -122,8 +154,8 @@ const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
-const tableColumns = ref([])
-const dropdown_model = ref({})
+const tableColumns = ref([]);
+const dropdown_model = ref({});
 const dropdown_options = ref([
   {
     label: 'Required',
@@ -133,7 +165,7 @@ const dropdown_options = ref([
       { label: 'Grade', value: 'grade' },
       { label: 'Password', value: 'password' },
       { label: 'Student Date of Birth', value: 'dob' },
-    ]
+    ],
   },
   {
     label: 'Optional',
@@ -151,7 +183,7 @@ const dropdown_options = ref([
       { label: 'Race', value: 'race' },
       { label: 'Home Language', value: 'home_language' },
       { label: 'Pid', value: 'pid' },
-    ]
+    ],
   },
   {
     label: 'Organizations',
@@ -159,16 +191,16 @@ const dropdown_options = ref([
       { label: 'District', value: 'district' },
       { label: 'School', value: 'school' },
       { label: 'Class', value: 'uClass' }, // 'class' is a javascript keyword.
-      { label: 'Group', value: 'group' }
-    ]
-  }
-])
+      { label: 'Group', value: 'group' },
+    ],
+  },
+]);
 
 // Error Users Table refs
 const errorTable = ref();
 const errorUsers = ref([]);
 const errorUserColumns = ref([]);
-const errorMessage = ref("");
+const errorMessage = ref('');
 const showErrorTable = ref(false);
 
 const activeSubmit = ref(false);
@@ -176,75 +208,75 @@ let processedUsers = 0;
 
 // Functions supporting the uploader
 const onFileUpload = async (event) => {
-  rawStudentFile.value = await csvFileToJson(event.files[0])
-  tableColumns.value = generateColumns(toRaw(rawStudentFile.value[0]))
-  populateDropdown(tableColumns.value)
+  rawStudentFile.value = await csvFileToJson(event.files[0]);
+  tableColumns.value = generateColumns(toRaw(rawStudentFile.value[0]));
+  populateDropdown(tableColumns.value);
   isFileUploaded.value = true;
   toast.add({ severity: 'success', summary: 'Success', detail: 'File Successfully Uploaded', life: 3000 });
-}
+};
 
 function populateDropdown(columns) {
-  _forEach(columns, col => {
-    dropdown_model.value[col.field] = ''
-  })
+  _forEach(columns, (col) => {
+    dropdown_model.value[col.field] = '';
+  });
 }
 
 function generateColumns(rawJson) {
   let columns = [];
-  const columnValues = Object.keys(rawJson)
-  _forEach(columnValues, col => {
-    let dataType = (typeof rawJson[col])
+  const columnValues = Object.keys(rawJson);
+  _forEach(columnValues, (col) => {
+    let dataType = typeof rawJson[col];
     if (dataType === 'object') {
-      if (rawJson[col] instanceof Date) dataType = 'date'
+      if (rawJson[col] instanceof Date) dataType = 'date';
     }
     columns.push({
       field: col,
       header: _startCase(col),
-      dataType: dataType
-    })
-  })
-  return columns
+      dataType: dataType,
+    });
+  });
+  return columns;
 }
 
 function getKeyByValue(object, value) {
-  return Object.keys(object).find(key => object[key] === value);
+  return Object.keys(object).find((key) => object[key] === value);
 }
 
 function checkUniqueStudents(students, field) {
-  const uniqueStudents = _uniqBy(students, (student) => student[field])
-  return (students.length === uniqueStudents.length)
+  const uniqueStudents = _uniqBy(students, (student) => student[field]);
+  return students.length === uniqueStudents.length;
 }
 
-async function submitStudents(rawJson) {
+async function submitStudents() {
   // Reset error users
   errorUsers.value = [];
   errorUserColumns.value = [];
   showErrorTable.value = false;
-  errorMessage.value = "";
+  errorMessage.value = '';
   activeSubmit.value = true;
-  const modelValues = _compact(Object.values(dropdown_model.value))
+  const modelValues = _compact(Object.values(dropdown_model.value));
   // Check that all required values are filled in
   if (!_includes(modelValues, 'email') && !_includes(modelValues, 'username')) {
     // Username / email needs to be filled in
-    errorMessage.value = "Please select a column to be user's username or email."
+    errorMessage.value = "Please select a column to be user's username or email.";
     activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'dob')) {
     // Date needs to be filled in
-    errorMessage.value = "Please select a column to be user's date of birth."
+    errorMessage.value = "Please select a column to be user's date of birth.";
     activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'grade')) {
     // Grade needs to be filled in
-    errorMessage.value = "Please select a column to be user's grade."
+    errorMessage.value = "Please select a column to be user's grade.";
     activeSubmit.value = false;
     return;
   }
   if (!_includes(modelValues, 'password')) {
-    // Password needs to be filled in 
-    errorMessage.value = "Please select a column to be user's password."
+    // Password needs to be filled in
+    errorMessage.value = "Please select a column to be user's password.";
     activeSubmit.value = false;
     return;
   }
@@ -252,71 +284,84 @@ async function submitStudents(rawJson) {
     ((!_includes(modelValues, 'district') && !_includes(modelValues, 'school')) ||
       (!_includes(modelValues, 'district') && _includes(modelValues, 'school')) ||
       (_includes(modelValues, 'district') && !_includes(modelValues, 'school'))) &&
-    !_includes(modelValues, 'group')) {
+    !_includes(modelValues, 'group')
+  ) {
     // Requires either district and school, OR group
-    errorMessage.value = "Please assign columns to be either a group OR a pair of district and school."
+    errorMessage.value = 'Please assign columns to be either a group OR a pair of district and school.';
     activeSubmit.value = false;
     return;
   }
-  let submitObject = []
+  let submitObject = [];
   // Construct list of student objects, handle special columns
-  _forEach(rawStudentFile.value, student => {
-    let studentObj = {}
-    let dropdownMap = _cloneDeep(dropdown_model.value)
-    _forEach(modelValues, col => {
-      const columnMap = getKeyByValue(dropdownMap, col)
+  _forEach(rawStudentFile.value, (student) => {
+    let studentObj = {};
+    let dropdownMap = _cloneDeep(dropdown_model.value);
+    _forEach(modelValues, (col) => {
+      const columnMap = getKeyByValue(dropdownMap, col);
       if (['ignore'].includes(col)) {
         return;
       }
       // Special fields will accept multiple columns, and concat the values in each column
       if (['race', 'home_language'].includes(col)) {
         if (!studentObj[col] && student[columnMap]) {
-          studentObj[col] = [student[columnMap]]
-          dropdownMap = _omit(dropdownMap, columnMap)
+          studentObj[col] = [student[columnMap]];
+          dropdownMap = _omit(dropdownMap, columnMap);
         } else if (student[columnMap]) {
-          studentObj[col].push(student[columnMap])
-          dropdownMap = _omit(dropdownMap, columnMap)
+          studentObj[col].push(student[columnMap]);
+          dropdownMap = _omit(dropdownMap, columnMap);
         }
       } else {
-        studentObj[col] = student[columnMap]
+        studentObj[col] = student[columnMap];
       }
-    })
-    submitObject.push(studentObj)
-  })
-  // Check for duplicate username / emails 
+    });
+    submitObject.push(studentObj);
+  });
+  // Check for duplicate username / emails
   let authField;
   if (_includes(modelValues, 'username')) authField = 'username';
   else authField = 'email';
   const areUnique = checkUniqueStudents(submitObject, authField);
   if (!areUnique) {
-    errorMessage.value = `One or more of the ${authField}s in this CSV are not unique.`
+    errorMessage.value = `One or more of the ${authField}s in this CSV are not unique.`;
     activeSubmit.value = false;
     return;
   }
   // Begin submit process
   const totalUsers = submitObject.length;
-  const chunkedSubmitObject = _chunk(submitObject, 10)
+  const chunkedSubmitObject = _chunk(submitObject, 10);
   for (const chunk of chunkedSubmitObject) {
     for (const user of chunk) {
       // Handle Email Registration
-      const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } = user;
-      const computedEmail = email || `${username}@roar-auth.com`
+      const {
+        email,
+        username,
+        password,
+        firstName,
+        middleName,
+        lastName,
+        district,
+        school,
+        uClass,
+        group,
+        ...userData
+      } = user;
+      const computedEmail = email || `${username}@roar-auth.com`;
       let sendObject = {
         email: computedEmail,
         password,
-        userData
-      }
-      if (username) _set(sendObject, 'userData.username', username)
-      if (firstName) _set(sendObject, 'userData.name.first', firstName)
-      if (middleName) _set(sendObject, 'userData.name.middle', middleName)
-      if (lastName) _set(sendObject, 'userData.name.last', lastName)
+        userData,
+      };
+      if (username) _set(sendObject, 'userData.username', username);
+      if (firstName) _set(sendObject, 'userData.name.first', firstName);
+      if (middleName) _set(sendObject, 'userData.name.middle', middleName);
+      if (lastName) _set(sendObject, 'userData.name.last', lastName);
 
       const orgNameMap = {
-        "district": district,
-        "school": school,
-        "class": uClass,
-        "group": group,
-      }
+        district: district,
+        school: school,
+        class: uClass,
+        group: group,
+      };
 
       // If orgType is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
@@ -325,20 +370,20 @@ async function submitStudents(rawJson) {
         if (orgName) {
           let orgInfo;
           if (orgType === 'school') {
-            const { id: districtId } = await getOrgId("districts", district);
+            const { id: districtId } = await getOrgId('districts', district);
             orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
           } else if (orgType === 'class') {
-            const { id: districtId } = await getOrgId("districts", district);
-            const { id: schoolId } = await getOrgId("schools", school);
+            const { id: districtId } = await getOrgId('districts', district);
+            const { id: schoolId } = await getOrgId('schools', school);
             orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
           } else {
             orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
           }
 
           if (!_isEmpty(orgInfo)) {
-            _set(sendObject, `userData.${orgType}`, orgInfo)
+            _set(sendObject, `userData.${orgType}`, orgInfo);
           } else {
-            addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`)
+            addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
             if (processedUsers >= totalUsers) {
               activeSubmit.value = false;
             }
@@ -347,53 +392,65 @@ async function submitStudents(rawJson) {
         }
       }
 
-      authStore.registerWithEmailAndPassword(sendObject).then(() => {
-        toast.add({ severity: 'success', summary: 'User Creation Success', detail: `${sendObject.email} was sucessfully created.`, life: 9000 });
-        processedUsers = processedUsers + 1;
-        if (processedUsers >= totalUsers) {
-          activeSubmit.value = false;
-          if (errorUsers.value.length === 0) {
-            // Processing is finished, and there are no error users.
-            router.push({ name: "Home" })
+      authStore
+        .registerWithEmailAndPassword(sendObject)
+        .then(() => {
+          toast.add({
+            severity: 'success',
+            summary: 'User Creation Success',
+            detail: `${sendObject.email} was sucessfully created.`,
+            life: 9000,
+          });
+          processedUsers = processedUsers + 1;
+          if (processedUsers >= totalUsers) {
+            activeSubmit.value = false;
+            if (errorUsers.value.length === 0) {
+              // Processing is finished, and there are no error users.
+              router.push({ name: 'Home' });
+            }
           }
-        }
-      }).catch((e) => {
-        toast.add({ severity: 'error', summary: 'User Creation Failed', detail: 'Please see error table below.', life: 3000 });
-        addErrorUser(user, e)
-        if (processedUsers >= totalUsers) {
-          activeSubmit.value = false;
-        }
-      })
+        })
+        .catch((e) => {
+          toast.add({
+            severity: 'error',
+            summary: 'User Creation Failed',
+            detail: 'Please see error table below.',
+            life: 3000,
+          });
+          addErrorUser(user, e);
+          if (processedUsers >= totalUsers) {
+            activeSubmit.value = false;
+          }
+        });
     }
-    await delay(1250)
+    await delay(1250);
   }
 }
 
 function delay(milliseconds) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     setTimeout(resolve, milliseconds);
   });
 }
-
 
 // Support functions for submitStudents process
 function addErrorUser(user, error) {
   // If there are no error users yet, generate the
   //  columns before displaying the table.
   if (_isEmpty(errorUserColumns.value)) {
-    errorUserColumns.value = generateColumns(user)
+    errorUserColumns.value = generateColumns(user);
     errorUserColumns.value.unshift({
       dataType: 'string',
       field: 'error',
       header: 'Cause of Error',
-    })
-    showErrorTable.value = true
+    });
+    showErrorTable.value = true;
   }
   // Concat the userObject with the error reason.
   errorUsers.value.push({
     ...user,
-    error
-  })
+    error,
+  });
   processedUsers = processedUsers + 1;
 }
 
@@ -402,7 +459,7 @@ const orgIds = ref({
   schools: {},
   classes: {},
   groups: {},
-})
+});
 
 const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   if (orgIds.value[orgType][orgName]) return orgIds.value[orgType][orgName];
@@ -411,19 +468,19 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
   // TODO: If multiple orgs are returned display an org selection modal to the user.
   if (orgs.length > 1) {
-    throw new Error(`Multiple organizations found for ${orgType} '${orgName}'`)
+    throw new Error(`Multiple organizations found for ${orgType} '${orgName}'`);
   }
   if (orgs.length === 0) {
-    throw new Error(`No organizations found for ${orgType} '${orgName}'`)
+    throw new Error(`No organizations found for ${orgType} '${orgName}'`);
   }
 
   orgIds.value[orgType][orgName] = orgs[0];
   return orgs[0];
-}
+};
 
 // Functions supporting error table
 function downloadErrorTable() {
-  errorTable.value.exportCSV()
+  errorTable.value.exportCSV();
 }
 
 // Event listener for the 'beforeunload' event

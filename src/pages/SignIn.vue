@@ -1,5 +1,5 @@
 <template>
-  <div class="loading-blur" v-if="spinner">
+  <div v-if="spinner" class="loading-blur">
     <AppSpinner />
   </div>
   <div id="signin-container">
@@ -13,19 +13,19 @@
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">Log in to access your dashboard</h4>
-          <SignIn @submit="authWithEmail" :invalid="incorrect" />
+          <SignIn :invalid="incorrect" @submit="authWithEmail" />
         </section>
         <section class="signin-option-container signin-option-providers">
           <h4 class="signin-option-title">Log in with:</h4>
-          <div>
-            <Button @click="authWithGoogle" label="Sign in with Google" class="signin-button">
+          <div class="flex">
+            <PvButton label="Sign in with Google" class="signin-button" @click="authWithGoogle">
               <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Google</span>
-            </Button>
-            <Button @click="authWithClever" class="signin-button">
+            </PvButton>
+            <PvButton class="signin-button" @click="authWithClever">
               <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Clever</span>
-            </Button>
+            </PvButton>
           </div>
         </section>
       </section>
@@ -39,14 +39,13 @@
 
 <script setup>
 import { onMounted, ref, toRaw, onBeforeUnmount } from 'vue';
-import { storeToRefs } from "pinia";
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
-import _get from 'lodash/get'
-import SignIn from "@/components/auth/SignIn.vue";
-import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
-import { useAuthStore } from "@/store/auth";
-import { isMobileBrowser } from "@/helpers";
-import { fetchDocById } from "../helpers/query/utils";
+import SignIn from '@/components/auth/SignIn.vue';
+import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import { useAuthStore } from '@/store/auth';
+import { isMobileBrowser } from '@/helpers';
+import { fetchDocById } from '../helpers/query/utils';
 
 const incorrect = ref(false);
 const authStore = useAuthStore();
@@ -54,12 +53,12 @@ const router = useRouter();
 
 const { spinner, authFromClever } = storeToRefs(authStore);
 
-authStore.$subscribe((mutation, state) => {
+authStore.$subscribe(() => {
   if (authStore.uid) {
     if (authFromClever.value) {
-      router.push({ name: "CleverLanding" })
+      router.push({ name: 'CleverLanding' });
     } else {
-      router.push({ name: "Home" });
+      router.push({ name: 'Home' });
     }
   }
 });
@@ -69,17 +68,20 @@ const authWithGoogle = () => {
     authStore.signInWithGoogleRedirect();
   } else {
     // authStore.signInWithGoogleRedirect();
-    authStore.signInWithGooglePopup().then(async () => {
-      if (authStore.uid) {
-        const userData = await fetchDocById('users', authStore.uid);
-        const userClaims = await fetchDocById('userClaims', authStore.uid);
-        authStore.userData = userData
-        authStore.userClaims = userClaims
-      }
-    }).catch((e) => {
-      console.log('caught error', e)
-      spinner.value = false;
-    });
+    authStore
+      .signInWithGooglePopup()
+      .then(async () => {
+        if (authStore.uid) {
+          const userData = await fetchDocById('users', authStore.uid);
+          const userClaims = await fetchDocById('userClaims', authStore.uid);
+          authStore.userData = userData;
+          authStore.userClaims = userClaims;
+        }
+      })
+      .catch((e) => {
+        console.log('caught error', e);
+        spinner.value = false;
+      });
 
     spinner.value = true;
   }
@@ -93,7 +95,7 @@ const authWithClever = () => {
     // authStore.signInWithCleverPopup();
     spinner.value = true;
   }
-}
+};
 
 const authWithEmail = (state) => {
   // If username is supplied instead of email
@@ -102,30 +104,37 @@ const authWithEmail = (state) => {
   let creds = toRaw(state);
   if (creds.useLink) {
     authStore.initiateLoginWithEmailLink({ email: creds.email }).then(() => {
-      router.push({ name: "AuthEmailSent" })
+      router.push({ name: 'AuthEmailSent' });
     });
   } else {
-    if (!creds.email.includes("@")) {
-      creds.email = `${creds.email}@roar-auth.com`
+    if (!creds.email.includes('@')) {
+      creds.email = `${creds.email}@roar-auth.com`;
     }
 
-    authStore.logInWithEmailAndPassword(creds).then(async () => {
-      if (authStore.uid) {
-        const userData = await fetchDocById('users', authStore.uid);
-        const userClaims = await fetchDocById('userClaims', authStore.uid);
-        authStore.userData = userData
-        authStore.userClaims = userClaims
-      }
-      spinner.value = true;
-    }).catch((e) => {
-      incorrect.value = true;
-      return;
-    });
+    authStore
+      .logInWithEmailAndPassword(creds)
+      .then(async () => {
+        if (authStore.uid) {
+          const userData = await fetchDocById('users', authStore.uid);
+          const userClaims = await fetchDocById('userClaims', authStore.uid);
+          authStore.userData = userData;
+          authStore.userClaims = userClaims;
+        }
+        spinner.value = true;
+      })
+      .catch((e) => {
+        incorrect.value = true;
+        if (['auth/user-not-found', 'auth/wrong-password'].includes(e.code)) {
+          return;
+        } else {
+          throw e;
+        }
+      });
   }
-}
+};
 
 onMounted(() => {
-  document.body.classList.add('page-signin')
+  document.body.classList.add('page-signin');
   if (authStore.cleverOAuthRequested) {
     authStore.cleverOAuthRequested = false;
     authWithClever();
@@ -133,8 +142,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  document.body.classList.remove('page-signin')
-})
+  document.body.classList.remove('page-signin');
+});
 </script>
 
 <style scoped>
