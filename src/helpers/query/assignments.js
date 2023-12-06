@@ -578,6 +578,7 @@ export const assignmentPageFetcher = async (
               if (found) {
                 return {
                   name: found.name,
+                  userId: found.name.split('/users/')[1],
                   data: _mapValues(found.fields, (value) => convertValues(value)),
                 };
               }
@@ -586,7 +587,6 @@ export const assignmentPageFetcher = async (
             undefined,
           );
         });
-      console.log('batch get users', batchUserDocs);
 
       // Generate a list of assignment doc paths
       const assignmentDocPaths = userDocPaths.map((userDocPath) => {
@@ -605,6 +605,7 @@ export const assignmentPageFetcher = async (
               if (found) {
                 return {
                   name: found.name,
+                  userId: found.name.split('/users/')[1].split('/')[0],
                   data: _mapValues(found.fields, (value) => convertValues(value)),
                 };
               }
@@ -613,12 +614,50 @@ export const assignmentPageFetcher = async (
             undefined,
           );
         });
-      console.log('batch get assignments', batchAssignmentDocs);
 
-      // Integrate the assignment ans scores objects
+      // Merge the scores into the assignment object
+      const scoredAssignments = batchAssignmentDocs.map((assignment) => {
+        const scoredAssessments = assignment.data.assessments.map((assignment) => {
+          const runId = assignment.runId;
+          return {
+            ...assignment,
+            scores: _get(_find(scoresData, { id: runId }), 'scores'),
+          };
+        });
+        return {
+          userId: assignment.userId,
+          data: {
+            ...assignment.data,
+            assessments: scoredAssessments,
+          },
+        };
+      });
 
-      // Match the user doc to the assignment doc
-      // note: maybe sort both by id then
+      // Use the list of unretrieved scores and batchGet
+
+      // Merge the newly retrieved scores with the scoredAssignments object
+
+      // Integrate the assignment and scores objects
+      return data.map((score) => {
+        const userId = score.document.name.split('/users/')[1].split('/runs/')[0];
+        const assignmentDoc = _find(scoredAssignments, { userId: userId });
+        const scoreData = _mapValues(score.document.fields, (value) => convertValues(value));
+        const userDoc = _find(batchUserDocs, { userId: userId });
+        console.log({
+          user: userDoc.data,
+          assignment: {
+            ...assignmentDoc.data,
+            scores: scoreData.scores,
+          },
+        });
+        return {
+          user: userDoc.data,
+          assignment: {
+            ...assignmentDoc.data,
+            scores: scoreData.scores,
+          },
+        };
+      });
     });
   } else {
     const requestBody = getAssignmentsRequestBody({
