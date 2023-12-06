@@ -20,6 +20,7 @@
                     :placeholder="districtPlaceholder"
                     :loading="isLoadingDistricts"
                     class="w-full"
+                    data-cy="dropdown-selected-district"
                   />
                   <label for="district">Select from district</label>
                 </span>
@@ -36,6 +37,7 @@
                     :placeholder="schoolPlaceholder"
                     :loading="isLoadingSchools"
                     class="w-full"
+                    data-cy="dropdown-selected-school"
                   />
                   <label for="school">Select from school</label>
                 </span>

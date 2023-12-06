@@ -4,11 +4,12 @@ function selectGroupsFromDropdown() {
 }
 
 function createGroup() {
-  cy.get('[data-cy="button-create-org"]', {timeout: Cypress.env('timeout')}).click()
+  cy.get('[data-cy="button-create-org"]', {timeout: Cypress.env('timeout')}).click().wait(1000)
 }
 
 function checkGroupCreated() {
   cy.get("a").contains('Groups').click()
+  cy.get('.p-paginator-last', {timeout: Cypress.env('timeout')}).first().click()
   cy.get('div', {timeout: Cypress.env('timeout')}).should('contain.text', Cypress.env('testGroupName'))
   cy.log("Group successfully created.")
 }

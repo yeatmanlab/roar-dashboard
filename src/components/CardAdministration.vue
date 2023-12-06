@@ -56,7 +56,7 @@
       <div class="break my-2"></div>
 
       <div v-if="isAssigned">
-        <PvButton :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
+        <PvButton :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" data-cy="button-details" />
       </div>
 
       <PvTreeTable
@@ -93,6 +93,7 @@
                   label="Progress"
                   aria-label="Completion details"
                   size="small"
+                  data-cy="button-progress"
                 />
               </router-link>
               <router-link
@@ -111,6 +112,7 @@
                   label="Scores"
                   aria-label="Scores"
                   size="small"
+                  data-cy="button-scores"
                 />
               </router-link>
             </div>

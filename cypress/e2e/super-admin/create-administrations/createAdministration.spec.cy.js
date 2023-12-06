@@ -14,12 +14,14 @@ function refreshAssessments() {
 }
 
 function selectAndAssignAdministration(variant) {
-  cy.get('span').contains(variant, {timeout: Cypress.env('timeout')}).dblclick();
+  cy.get('span').contains(variant, {timeout: 2 * Cypress.env('timeout')}).dblclick();
   cy.get('[data-cy="button-create-administration"]', {timeout: 2 * Cypress.env('timeout')}).click();
 }
 
 function checkAdministrationCreated() {
   cy.url({timeout: 2 * Cypress.env('timeout')}).should('eq', `${Cypress.env('baseUrl')}/`)
+  cy.get('[data-cy="dropdown-sort-administrations"]', {timeout: 2 * Cypress.env('timeout')}).click()
+  cy.get('ul > li', {timeout: Cypress.env('timeout')}).contains('Name (descending)').click()
   cy.get('[data-cy="h2-card-admin-title"', {timeout: 2 * Cypress.env('timeout')})
     .should('contain.text', Cypress.env('testAdministrationName'));
   cy.log("Administration successfully created.");

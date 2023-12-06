@@ -90,6 +90,7 @@
             label="Start Registration"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
+            data-cy="button-start-registration"
             @click="submitStudents"
           />
         </div>

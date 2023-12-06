@@ -8,6 +8,7 @@ function createDistrict() {
 }
 
 function checkDistrictCreated() {
+  cy.get('.p-paginator-last', {timeout: Cypress.env('timeout')}).first().click()
   cy.get('div', {timeout: Cypress.env('timeout')}).should('contain.text', Cypress.env('testDistrictName'))
   cy.log("District successfully created.")
 }
