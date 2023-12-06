@@ -139,7 +139,9 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
   const axiosInstance = getAxiosInstance();
   const administrationData = mapFields(data);
 
-  const statsPaths = data.map(({ document }) => `${document.name}/stats/completion`);
+  const statsPaths = data
+    .filter((item) => item.document !== undefined)
+    .map(({ document }) => `${document.name}/stats/completion`);
   const batchStatsDocs = await axiosInstance
     .post(':batchGet', {
       documents: statsPaths,
