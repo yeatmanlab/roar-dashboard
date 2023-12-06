@@ -86,7 +86,7 @@
               :severity="_get(colData, col.severityField)"
               :value="_get(colData, col.field)"
               :icon="_get(colData, col.iconField)"
-              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; border-radius: 50%;`"
+              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem;`"
               rounded
             />
             <div

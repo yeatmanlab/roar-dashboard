@@ -22,7 +22,6 @@ import _kebabCase from 'lodash/kebabCase';
 import _set from 'lodash/set';
 import _isEmpty from 'lodash/isEmpty';
 import _toUpper from 'lodash/toUpper';
-import _toLower from 'lodash/toLower';
 import { useQuery } from '@tanstack/vue-query';
 import { orderByDefault, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';

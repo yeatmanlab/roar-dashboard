@@ -103,17 +103,20 @@ const { data: orgInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+const schoolInfoQueryEnabled = computed(() => props.orgType === 'district' && initialized.value);
+
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
   queryKey: ['schools', ref(props.orgId)],
   queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
   keepPreviousData: true,
-  enabled: props.orgType === 'district' && initialized,
+  enabled: schoolInfoQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+const scoreQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
 // Scores Query
-let {
+const {
   isLoading: isLoadingScores,
   isFetching: isFetchingScores,
   data: assignmentData,
@@ -121,7 +124,7 @@ let {
   queryKey: ['assignments', props.administrationId, props.orgId, pageLimit, page],
   queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
   keepPreviousData: true,
-  enabled: initialized.value && claimsLoaded,
+  enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
 });
 
@@ -130,7 +133,7 @@ const { data: assignmentCount } = useQuery({
   queryKey: ['assignments', props.administrationId, props.orgId],
   queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
   keepPreviousData: true,
-  enabled: initialized.value && claimsLoaded,
+  enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000,
 });
 
@@ -149,7 +152,7 @@ const onSort = (event) => {
 
 const exportSelected = (selectedRows) => {
   const computedExportData = _map(selectedRows, ({ user, assignment }) => {
-    let tableRow = {
+    const tableRow = {
       Username: _get(user, 'username'),
       First: _get(user, 'name.first'),
       Last: _get(user, 'name.last'),
@@ -186,7 +189,7 @@ const exportSelected = (selectedRows) => {
 const exportAll = async () => {
   const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId);
   const computedExportData = _map(exportData, ({ user, assignment }) => {
-    let tableRow = {
+    const tableRow = {
       Username: _get(user, 'username'),
       First: _get(user, 'name.first'),
       Last: _get(user, 'name.last'),
