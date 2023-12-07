@@ -79,7 +79,8 @@ Cypress.Commands.add('inputOrgDetails', (
     }
 
     if (orgAddress) {
-        cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
+        // cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
+        cy.get('input[placeholder="Enter a location"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
         expect(cy.get('[data-cy="chip-address"]').should('contain.text', orgAddress))
     }
 

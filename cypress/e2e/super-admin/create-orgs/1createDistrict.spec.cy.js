@@ -4,10 +4,13 @@ function selectDistrictsFromDropdown() {
 }
 
 function createDistrict() {
-  cy.get('[data-cy="button-create-org"]', {timeout: Cypress.env('timeout')}).click()
+  cy.get('.p-button-label', {timeout: Cypress.env('timeout')}).contains("Create District").click()
 }
 
 function checkDistrictCreated() {
+  // sort by name descending to capture zzz test district 
+  cy.get('.p-column-header-content').contains("Name").get('.p-sortable-column-icon').click();
+  cy.get('.p-column-header-content').contains("Name").get('.p-sortable-column-icon').click();
   cy.get('div', {timeout: Cypress.env('timeout')}).should('contain.text', Cypress.env('testDistrictName'))
   cy.log("District successfully created.")
 }
