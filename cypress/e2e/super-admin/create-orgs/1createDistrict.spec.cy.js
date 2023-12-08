@@ -9,8 +9,7 @@ function createDistrict() {
 
 function checkDistrictCreated() {
   // sort by name descending to capture zzz test district 
-  cy.get('.p-column-header-content').contains("Name").get('.p-sortable-column-icon').click();
-  cy.get('.p-column-header-content').contains("Name").get('.p-sortable-column-icon').click();
+  cy.get("div", {timeout: 30000}).find(".p-paginator", {timeout: 30000}).find('.p-paginator-last', {timeout: 30000}).first().click();
   cy.get('div', {timeout: Cypress.env('timeout')}).should('contain.text', Cypress.env('testDistrictName'))
   cy.log("District successfully created.")
 }
