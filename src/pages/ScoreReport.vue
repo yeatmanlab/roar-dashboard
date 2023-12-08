@@ -64,6 +64,7 @@
             @page="onPage($event)"
             @sort="onSort($event)"
             @export-all="exportAll"
+            data-cy="roar-data-table"
             @export-selected="exportSelected"
           />
         </div>

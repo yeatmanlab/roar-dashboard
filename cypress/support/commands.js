@@ -93,6 +93,15 @@ Cypress.Commands.add('inputOrgDetails', (
     cy.get('li').contains('test').click()
 })
 
+Cypress.Commands.add('checkUserList', (userList) => {
+    cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
+    cy.wrap(row).find('td.p-frozen-column').then((cell) => {
+      const cellText = cell.text();
+      expect(userList).to.include(cellText);
+    });
+  });
+})
+
 Cypress.Commands.add('loginByGoogleApi', () => {
     cy.log('Logging in to Google')
     cy.request({

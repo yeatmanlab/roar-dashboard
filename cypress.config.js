@@ -25,6 +25,7 @@ module.exports = defineConfig({
     partnerAdminPassword: process.env.PARTNER_ADMIN_PASSWORD,
     partnerAdminId: process.env.PARTNER_ADMIN_ID,
     testAdministrationName: "zzzTestAdministration",
+    testAdministrationId: "pdOfQuakqN4re3cI5mr5",
     testAdministratorFirstName: "zzzTestAdministratorFirstName",
     testAdministratorMiddleName: "zzzTestAdministratorMiddleName",
     testAdministratorLastName: "zzzTestAdministratorLastName",
@@ -32,6 +33,7 @@ module.exports = defineConfig({
     testDistrictName: "zzzTestDistrict",
     testDistrictInitials: "TD",
     testDistrictNcesId: "123456789",
+    testDistrictId: "yGGlUDTB5xzzCecoYucj",
     testSchoolName: "zzzTestSchool",
     testSchoolInitials: "TS",
     testSchoolNcesId: "987654321",
@@ -54,5 +56,17 @@ module.exports = defineConfig({
     stanfordUniversityAddress: "450 Jane Stanford Way, Stanford, CA 94305, USA",
     testTag: "stanford university",
     cypressDownloads: "cypress/Downloads",
+    testUserList: [
+    "zzzCypressTestStudent0",
+    "zzzCypressTestStudent1",
+    "zzzCypressTestStudent2",
+    "zzzCypressTestStudent3",
+    "zzzCypressTestStudent4",
+    "zzzCypressTestStudent5",
+    "zzzCypressTestStudent6",
+    "zzzCypressTestStudent7",
+    "zzzCypressTestStudent8",
+    "zzzCypressTestStudent9",
+    ]
   },
 });

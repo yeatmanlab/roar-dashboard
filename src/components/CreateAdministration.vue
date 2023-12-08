@@ -116,7 +116,7 @@
         </PvPanel>
 
         <div class="col-12 mb-3">
-          <PvButton label="Create Administration" @click="submit" data-cy="button-create-administration" />
+          <PvButton label="Create Administration" data-cy="button-create-administration" @click="submit" />
         </div>
       </PvPanel>
     </section>
