@@ -46,7 +46,7 @@
 
           <div class="grid">
             <div class="col-12">
-              <PvButton label="Create Administrator" @click="submit" data-cy="button-create-administrator" />
+              <PvButton label="Create Administrator" data-cy="button-create-administrator" @click="submit" />
             </div>
           </div>
         </div>

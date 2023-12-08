@@ -12,8 +12,8 @@
             input-id="dd-sort"
             :options="sortOptions"
             option-label="label"
-            @change="onSortChange($event)"
             data-cy="dropdown-sort-administrations"
+            @change="onSortChange($event)"
           />
         </template>
 

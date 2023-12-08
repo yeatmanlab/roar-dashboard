@@ -122,8 +122,8 @@
                   fields: ['address_components', 'formatted_address', 'place_id', 'url'],
                 }"
                 class="p-inputtext p-component w-full"
-                @place_changed="setAddress"
                 data-cy="input-address"
+                @place_changed="setAddress"
               >
               </GMapAutocomplete>
             </div>
@@ -131,7 +131,7 @@
           <div v-if="state.address?.formattedAddress" class="grid">
             <div class="col-12 mt-3" data-cy="chip-address">
               {{ orgTypeLabel }} Address:
-              <PvChip :label="state.address.formattedAddress" removable @remove="removeAddress"data-cy="chip-address" />
+              <PvChip :label="state.address.formattedAddress" removable data-cy="chip-address" @remove="removeAddress" />
             </div>
           </div>
         </div>
@@ -159,7 +159,8 @@
 
         <div class="grid">
           <div class="col-12">
-            <PvButton :label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'"
+            <PvButton
+:label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'"
                       data-cy="button-create-org" @click="submit" data-cy="button-create-org"/>
           </div>
         </div>

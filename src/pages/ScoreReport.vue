@@ -102,6 +102,7 @@
             @sort="onSort($event)"
             @filter="onFilter($event)"
             @export-all="exportAll"
+            data-cy="roar-data-table"
             @export-selected="exportSelected"
           />
         </div>
