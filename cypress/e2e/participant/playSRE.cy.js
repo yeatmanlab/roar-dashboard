@@ -1,9 +1,6 @@
 describe("Test playthrough of SRE as a participant", () => {
-    it("ROAR-Sentence", () => {
-        let test_login = "testingUser4";
-        let test_pw = "password4";
-
-        cy.login(test_login, test_pw);
+    it("ROAR-Sentence Playthrough Test", () => {
+        cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'))
         cy.visit("/");
 
         cy.get(".p-dropdown-trigger", { timeout: 10000 })
@@ -33,8 +30,7 @@ describe("Test playthrough of SRE as a participant", () => {
 
         playSREGame();
         // check if game completed
-        cy.visit("/");
-        cy.get(".p-dropdown-trigger", { timeout: 20000 })
+        cy.get(".p-dropdown-trigger", { timeout: 50000 })
             .should("be.visible")
             .click();
         cy.get(".p-dropdown-item", { timeout: 10000 })

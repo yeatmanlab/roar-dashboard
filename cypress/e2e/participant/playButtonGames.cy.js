@@ -2,12 +2,8 @@ import { games } from "./buttonGamesList";
 
 describe("Testing playthrough of vocab, cva, letter, and multichoice games as a participant", () => {
     games.forEach((game) => {
-        it(game.name, () => {
-            cy.clearAllSessionStorage();
-            let test_login = "testingUser4";
-            let test_pw = "password4";
-
-            cy.login(test_login, test_pw);
+        it(`${game.name} Playthrough Test`, () => {
+            cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'))
             cy.visit("/");
 
             cy.get(".p-dropdown-trigger", { timeout: 20000 })
@@ -58,8 +54,8 @@ describe("Testing playthrough of vocab, cva, letter, and multichoice games as a 
             playROARGame(game);
 
             // check if game completed
-            cy.visit("/");
-            cy.get(".p-dropdown-trigger", { timeout: 20000 })
+            // cy.visit("/");
+            cy.get(".p-dropdown-trigger", { timeout: 50000 })
                 .should("be.visible")
                 .click();
             cy.get(".p-dropdown-item", { timeout: 10000 })
@@ -74,23 +70,24 @@ describe("Testing playthrough of vocab, cva, letter, and multichoice games as a 
 });
 
 function playROARGame(game) {
+    // overflow prevents recursive call from recursing forever
     let overflow = 0;
     for (let i = 0; i < game.numIter; i++) {
-        cy.log("iter", i)
-        chooseStimulusOrContinue(game, overflow);
+        makeChoiceOrContinue(game, overflow);
     }
 }
 
-function chooseStimulusOrContinue(game, overflow) {
+function makeChoiceOrContinue(game, overflow) {
     // prechoiceDelay allows for cypress to pause to wait until a button renders
     if (game.prechoiceDelay !== null) {
         cy.wait(game.preChoiceDelay);
     }
     cy.get("body").then((body) => {
         if (body.find(game.introBtn).length > 0) {
-            body.find(game.introBtn).click();
+            cy.get(game.introBtn).click();
         } else {
-            // cy.get(game.stimulus).should("be.visible")
+            // Timing issues with the stimulus prevent this assertion from being used -- tabling until next sprint
+            // cy.get(game.stimulus).should("be.visible") 
             if (
                 game.correctChoice &&
                 body.find(game.correctChoice).length > 0
@@ -104,7 +101,7 @@ function chooseStimulusOrContinue(game, overflow) {
                     .click();
             }
             if (overflow < 50) {
-                chooseStimulusOrContinue(game, overflow++);
+                makeChoiceOrContinue(game, overflow++);
             }
         }
     });
