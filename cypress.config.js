@@ -53,5 +53,6 @@ module.exports = defineConfig({
     testGrade: "Grade 5",
     stanfordUniversityAddress: "450 Jane Stanford Way, Stanford, CA 94305, USA",
     testTag: "stanford university",
+    cypressDownloads: "cypress/Downloads",
   },
 });
