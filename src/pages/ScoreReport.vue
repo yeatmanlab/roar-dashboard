@@ -43,6 +43,7 @@
         </div>
 
         <!-- Main table -->
+        <div v-else-if="scoresCount === 0">No Scores available!</div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
@@ -367,16 +368,14 @@ const onFilter = (event) => {
         filters.push({ ...constraint, collection, field: _tail(path).join('.') });
       }
       if (_head(path) === 'scores') {
-        let fieldPath;
         const taskId = path[1];
-        if (taskId === 'pa') fieldPath = 'scores.computed.composite.percentile';
-        if (taskId === 'swr' || taskId === 'swr-es') fieldPath = 'scores.computed.composite.wjPercentile';
-        if (taskId === 'sre') fieldPath = 'scores.computed.composite.sprPercentile';
+        const grade = _get(constraint, 'isBelowSixth') ? 1 : 10;
+        const { percentileScoreKey } = getScoreKeys({ taskId: taskId }, grade);
         filters.push({
           ...constraint,
           collection: 'scores',
           taskId: taskId,
-          field: fieldPath,
+          field: `scores.computed.composite.${percentileScoreKey}`,
         });
       }
       // console.log('constraint is', { ...constraint, collection, field: _tail(path).join('.') })
