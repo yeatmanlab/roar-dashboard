@@ -62,7 +62,6 @@ onBeforeRouteLeave((to, from, next) => {
     preventBack = false;
     // router.go(router.currentRoute);
     router.go(0);
-    
   } else {
     next();
   }
