@@ -1,24 +1,28 @@
 <template>
   <div class="card">
     <p class="login-title" align="left">Register for ROAR</p>
-    <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
+    <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <!--First / Last Name-->
       <div class="mt-4 name-container">
         <div>
           <label for="firstName">First Name</label>
-          <InputText name="firstName" />
+          <PvInputText name="firstName" />
         </div>
         <div>
           <label for="lastName">Last Name</label>
-          <InputText name="lastName" />
+          <PvInputText name="lastName" />
         </div>
       </div>
       <!--Username / Email-->
       <div class="field mt-4">
         <div class="p-input-icon-right">
           <label for="username">Username or Email <span class="required">*</span></label>
-          <InputText v-model="v$.email.$model" name="username" :class="{ 'p-invalid': v$.email.$invalid && submitted }"
-            aria-describedby="email-error" />
+          <PvInputText
+            v-model="v$.email.$model"
+            name="username"
+            :class="{ 'p-invalid': v$.email.$invalid && submitted }"
+            aria-describedby="email-error"
+          />
         </div>
         <span v-if="v$.email.$error && submitted">
           <span v-for="(error, index) of v$.email.$errors" :key="index">
@@ -26,7 +30,7 @@
           </span>
         </span>
         <small v-else-if="(v$.email.$invalid && submitted) || v$.email.$pending.$response" class="p-error">
-          {{ v$.email.required.$message.replace("Value", "Email") }}
+          {{ v$.email.required.$message.replace('Value', 'Email') }}
         </small>
       </div>
       <!--Age / DOB-->
@@ -34,51 +38,88 @@
         <div class="flex justify-content-between">
           <label>Date of Birth <span class="required">*</span></label>
           <div class="flex align-items-center">
-            <Checkbox v-model="yearOnlyCheck" :binary="true" name="yearOnly" />
+            <PvCheckbox v-model="yearOnlyCheck" :binary="true" name="yearOnly" />
             <label for="yearOnly" class="ml-2">Use Year Only</label>
           </div>
         </div>
         <div v-if="!yearOnlyCheck">
-          <Calendar v-model="v$.dob.$model" view="date" dateFormat="mm/dd/yy" modelValue="string" showIcon
-            :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
+          <PvCalendar
+            v-model="v$.dob.$model"
+            view="date"
+            date-format="mm/dd/yy"
+            model-value="string"
+            show-icon
+            :class="{ 'p-invalid': v$.dob.$invalid && submitted }"
+          />
         </div>
         <div v-else>
-          <Calendar v-model="v$.dob.$model" view="year" dateFormat="yy" modelValue="string" showIcon
-            :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
+          <PvCalendar
+            v-model="v$.dob.$model"
+            view="year"
+            date-format="yy"
+            model-value="string"
+            show-icon
+            :class="{ 'p-invalid': v$.dob.$invalid && submitted }"
+          />
         </div>
         <small v-if="(v$.dob.$invalid && submitted) || v$.dob.$pending.$response" class="p-error">{{
-          v$.dob.required.$message.replace("Value", "Date of Birth") }}</small>
+          v$.dob.required.$message.replace('Value', 'Date of Birth')
+        }}</small>
       </div>
       <!--Grade-->
       <div class="mt-4 mb-5">
         <label for="grade">Grade <span class="required">*</span></label>
-        <Dropdown v-model="v$.grade.$model" :options="gradeOptions" optionLabel="label" optionValue="value" name="grade"
-          :class="{ 'p-invalid': v$.grade.$invalid && submitted }" />
+        <PvDropdown
+          v-model="v$.grade.$model"
+          :options="gradeOptions"
+          option-label="label"
+          option-value="value"
+          name="grade"
+          :class="{ 'p-invalid': v$.grade.$invalid && submitted }"
+        />
         <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{
-          v$.grade.required.$message.replace("Value", "Grade") }}</small>
+          v$.grade.required.$message.replace('Value', 'Grade')
+        }}</small>
       </div>
       <!--English Language Level-->
       <div class="mt-4 mb-5">
         <label for="ell">English Language Level</label>
-        <Dropdown v-model="v$.ell.$model" :options="eLLOptions" optionLabel="label" optionValue="value" name="ell" />
+        <PvDropdown
+          v-model="v$.ell.$model"
+          :options="eLLOptions"
+          option-label="label"
+          option-value="value"
+          name="ell"
+        />
       </div>
       <!--Sex-->
       <div class="mt-4 mb-5">
         <label for="sex">Gender</label>
-        <Dropdown :options="sexOptions" optionLabel="label" optionValue="value" v-model="v$.sex.$model" name="sex" />
+        <PvDropdown
+          v-model="v$.sex.$model"
+          :options="sexOptions"
+          option-label="label"
+          option-value="value"
+          name="sex"
+        />
       </div>
       <!--Password-->
       <div class="field mt-4 mb-5">
         <div>
           <label for="password">Password <span class="required">*</span></label>
-          <Password v-model="v$.password.$model" name="password"
-            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask feedback>
+          <PvPassword
+            v-model="v$.password.$model"
+            name="password"
+            :class="{ 'p-invalid': v$.password.$invalid && submitted }"
+            toggle-mask
+            feedback
+          >
             <template #header>
               <h6>Pick a password</h6>
             </template>
             <template #footer="sp">
               {{ sp.level }}
-              <Divider />
+              <PvDivider />
               <p class="mt-2">Suggestions</p>
               <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
                 <li>At least one lowercase</li>
@@ -87,61 +128,67 @@
                 <li>Minimum 8 characters</li>
               </ul>
             </template>
-          </Password>
+          </PvPassword>
         </div>
         <small v-if="(v$.password.$invalid && submitted) || v$.password.$pending.$response" class="p-error">
-          {{ v$.password.required.$message.replace("Value", "Password") }}
+          {{ v$.password.required.$message.replace('Value', 'Password') }}
         </small>
       </div>
       <!--Confirm Password-->
       <div class="field mt-4 mb-5">
         <div>
           <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-          <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model"
-            name="confirmPassword" :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask
-            :feedback="false">
-          </Password>
+          <PvPassword
+            :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
+            v-model="v$.confirmPassword.$model"
+            name="confirmPassword"
+            :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
+            toggle-mask
+            :feedback="false"
+          >
+          </PvPassword>
         </div>
-        <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
+        <small
+          v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response"
+          class="p-error"
+        >
           Passwords must match
         </small>
       </div>
       <!--Accept Checkbox-->
       <div class="field-checkbox terms-checkbox">
-        <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
-          v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
-        <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and
-          conditions</label>
+        <PvCheckbox
+          :id="`accept-${isRegistering ? 'register' : 'login'}`"
+          v-model="v$.accept.$model"
+          name="accept"
+          value="Accept"
+          :class="{ 'p-invalid': v$.accept.$invalid && submitted }"
+        />
+        <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
+          >I agree to the terms and conditions</label
+        >
       </div>
-      <Button type="submit" label="Submit" class="submit-button" />
+      <PvButton type="submit" label="Submit" class="submit-button" />
     </form>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from "vue";
-import { required, sameAs } from "@vuelidate/validators";
-import { useVuelidate } from "@vuelidate/core";
-import { useAuthStore } from "@/store/auth";
-import { isMobileBrowser } from "@/helpers";
-
-const props = defineProps({
-  isRegistering: { type: Boolean, default: true }
-});
-
-const authStore = useAuthStore();
+import { computed, reactive, ref } from 'vue';
+import { required, sameAs } from '@vuelidate/validators';
+import { useVuelidate } from '@vuelidate/core';
 
 // TODO: Include middle
 const state = reactive({
-  firstName: "",
-  lastName: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-  dob: "",
-  ell: "",
-  sex: "",
-  grade: ""
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  dob: '',
+  ell: '',
+  sex: '',
+  grade: '',
 });
 const passwordRef = computed(() => state.password);
 const rules = {
@@ -166,29 +213,15 @@ const handleFormSubmit = (isFormValid) => {
   if (!isFormValid) {
     return;
   }
-  console.log('to submit:', state)
-  // authStore.registerWithEmailAndPassword(state);
+  console.log('to submit:', state);
 };
 
-const resetForm = () => {
-  state.firstName = "";
-  state.lastName = "";
-  state.email = "";
-  state.password = "";
-  state.confirmPassword = "";
-  state.dob = "";
-  state.ell = "";
-  state.sex = "";
-  state.grade = "";
-  submitted.value = false;
-  yearOnlyCheck.value = false;
-};
 const yearOnlyCheck = ref(false);
 
 // Dropdown Options
 const eLLOptions = ref([
   { label: 'English as a First Language', value: 'EFL' },
-  { label: 'English as a Second Language', value: 'ESL' }
+  { label: 'English as a Second Language', value: 'ESL' },
 ]);
 
 const gradeOptions = ref([
@@ -212,7 +245,7 @@ const gradeOptions = ref([
 const sexOptions = ref([
   { label: 'Male', value: 'male' },
   { label: 'Female', value: 'female' },
-  { label: 'Nonbinary / Do not want to specify', value: 'dns' }
+  { label: 'Nonbinary / Do not want to specify', value: 'dns' },
 ]);
 </script>
 <style scoped>
@@ -231,9 +264,9 @@ const sexOptions = ref([
 }
 
 .submit-button {
-  margin-top: .5rem;
+  margin-top: 0.5rem;
   display: flex;
-  background-color: #E5E5E5;
+  background-color: #e5e5e5;
   color: black;
   border: none;
   width: 11.75rem;

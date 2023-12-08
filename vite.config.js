@@ -1,10 +1,10 @@
-import { fileURLToPath, URL } from "url";
-import { defineConfig } from "vite";
+import { fileURLToPath, URL } from 'url';
+import { defineConfig } from 'vite';
 import vitePluginFaviconsInject from 'vite-plugin-favicons-inject';
-import Vue from "@vitejs/plugin-vue";
-import Markdown from "vite-plugin-vue-markdown";
-import basicSsl from '@vitejs/plugin-basic-ssl'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import Vue from '@vitejs/plugin-vue';
+import Markdown from 'vite-plugin-vue-markdown';
+import basicSsl from '@vitejs/plugin-basic-ssl';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -13,17 +13,17 @@ export default defineConfig({
       include: [/\.vue$/, /\.md$/],
     }),
     Markdown(),
-    vitePluginFaviconsInject("./src/assets/roar-icon.svg"),
+    vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
     basicSsl(),
     nodePolyfills({
       globals: {
-        process: true
-      }
-    })
+        process: true,
+      },
+    }),
   ],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
       vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
@@ -31,10 +31,6 @@ export default defineConfig({
     cssCodeSplit: false,
   },
   optimizeDeps: {
-    include: [
-      '@bdelab/roar-firekit',
-      "vue-google-maps-community-fork",
-      "fast-deep-equal",
-    ],
+    include: ['@bdelab/roar-firekit', 'vue-google-maps-community-fork', 'fast-deep-equal'],
   },
 });

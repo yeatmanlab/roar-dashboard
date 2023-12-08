@@ -1,23 +1,25 @@
 <template>
   <div>
     <div class="register-container mx-auto md:flex-none">
-      <Register />
+      <RegisterUser />
       <div class="contact-text">
-        <span>Already have an account? <router-link :to="{ name: 'SignIn' }" class="text-btn">Sign In</router-link></span>
+        <span
+          >Already have an account? <router-link :to="{ name: 'SignIn' }" class="text-btn">Sign In</router-link></span
+        >
       </div>
     </div>
-    <p style="text-align: center;">Other ways to Login</p>
+    <p style="text-align: center">Other ways to Login</p>
     <div class="push-top text-center button-container">
-      <Button @click="authWithGoogle" label="Google" class="signin-button" />
-      <Button @click="authWithGoogle" label="Clever" class="signin-button" />
+      <PvButton label="Google" class="signin-button" @click="authWithGoogle" />
+      <PvButton label="Clever" class="signin-button" @click="authWithGoogle" />
     </div>
   </div>
 </template>
 
 <script setup>
-import Register from "@/components/auth/Register.vue";
-import { useAuthStore } from "@/store/auth";
-import { isMobileBrowser } from "@/helpers";
+import RegisterUser from '@/components/auth/RegisterUser.vue';
+import { useAuthStore } from '@/store/auth';
+import { isMobileBrowser } from '@/helpers';
 
 const authStore = useAuthStore();
 const authWithGoogle = () => {
@@ -34,8 +36,8 @@ const authWithGoogle = () => {
   border-style: solid;
   border-width: 1px;
   border-radius: 5px;
-  border-color: #E5E5E5;
-  background-color: #FCFCFC;
+  border-color: #e5e5e5;
+  background-color: #fcfcfc;
   width: 26.875rem;
   padding-right: 1.5rem;
   padding-left: 1.5rem;
@@ -57,8 +59,8 @@ const authWithGoogle = () => {
 }
 
 .signin-button {
-  background-color: #E5E5E5;
-  border-color: #C4C4C4;
+  background-color: #e5e5e5;
+  border-color: #c4c4c4;
   color: black;
   width: 8rem;
 }

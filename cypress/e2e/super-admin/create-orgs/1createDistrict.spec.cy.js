@@ -4,7 +4,7 @@ function selectDistrictsFromDropdown() {
 }
 
 function createDistrict() {
-  cy.get('.p-button-label', {timeout: Cypress.env('timeout')}).contains("Create District").click()
+  cy.get('[data-cy="button-create-org"]', {timeout: Cypress.env('timeout')}).click()
 }
 
 function checkDistrictCreated() {

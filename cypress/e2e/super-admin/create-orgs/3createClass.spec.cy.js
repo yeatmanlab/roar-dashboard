@@ -4,11 +4,14 @@ function selectClassesFromDropdown() {
 }
 
 function inputParentOrgDetails() {
-  cy.get('[data-cy="dropdown-parent-district"]').click().get('li').contains(Cypress.env("testDistrictName")).click()
-  cy.get('[data-cy="dropdown-parent-school"]').click().get('li').contains(Cypress.env("testSchoolName")).click()
+  cy.get('[data-cy="dropdown-parent-district"]', {timeout: Cypress.env('timeout')}).wait(1000).click()
+  cy.get('ul > li', {timeout: Cypress.env('timeout')}).contains(Cypress.env("testDistrictName")).click()
+  cy.get('[data-cy="dropdown-parent-school"]', {timeout: Cypress.env('timeout')}).wait(1000).click()
+  cy.get('ul > li', {timeout: Cypress.env('timeout')}).contains(Cypress.env("testSchoolName")).click()
 }
+
 function createClass() {
-  cy.get('[data-cy="button-create-org"]', {timeout: Cypress.env('timeout')}).click()
+  cy.get('[data-cy="button-create-org"]', {timeout: Cypress.env('timeout')}).click().wait(3000)
 }
 
 function checkClassCreated() {

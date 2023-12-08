@@ -1,5 +1,5 @@
-const testDistrictId = "7jVdHAcyqf8XQ7wS2Fxr"
-const testAdministrationId = "TnCqCLxjjeisUQrpPoBA"
+const testDistrictId = "yGGlUDTB5xzzCecoYucj"
+const testAdministrationId = "pdOfQuakqN4re3cI5mr5"
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');

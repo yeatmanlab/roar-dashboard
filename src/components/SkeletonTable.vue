@@ -1,14 +1,14 @@
 <template>
-  <DataTable :value="skeletonData" responsiveLayout="scroll" :scrollable="true" scrollHeight="flex">
-    <Column v-for="col of Object.keys(skeletonData[0])" :field="col" :key="col">
+  <PvDataTable :value="skeletonData" responsive-layout="scroll" :scrollable="true" scroll-height="flex">
+    <PvColumn v-for="col of Object.keys(skeletonData[0])" :key="col" :field="col">
       <template #header>
-        <Skeleton></Skeleton>
+        <PvSkeleton></PvSkeleton>
       </template>
       <template #body>
-        <Skeleton></Skeleton>
+        <PvSkeleton></PvSkeleton>
       </template>
-    </Column>
-  </DataTable>
+    </PvColumn>
+  </PvDataTable>
 </template>
 
 <script setup>

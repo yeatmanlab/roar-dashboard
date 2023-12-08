@@ -15,7 +15,7 @@ module.exports = defineConfig({
   },
   env: {
     baseUrl: "https://localhost:5173",
-    timeout: 30000,
+    timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
     superAdminUsername: process.env.SUPER_ADMIN_USERNAME,
