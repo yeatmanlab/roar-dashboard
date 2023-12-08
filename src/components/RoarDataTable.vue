@@ -194,6 +194,8 @@
           <div v-if="col.dataType === 'score' && !col.useMultiSelect">
             The Scores Filter
             <PvDropdown v-model="filterModel.value" :options="['Above', 'Average', 'Needs Extra']" />
+            <label for="isSixthCheckbox">Below 6th Grade</label>
+            <PvCheckbox id="isSixthCheckbox" v-model="filterModel.isBelowSixth" binary />
           </div>
         </template>
       </PvColumn>
@@ -314,7 +316,7 @@ _forEach(computedColumns.value, (column) => {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
     } else if (dataType === 'SCORE') {
       console.log('score filter');
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH, isBelowSixth: false };
     }
 
     if (_get(column, 'useMultiSelect')) {
