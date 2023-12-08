@@ -18,9 +18,6 @@
 <script setup>
 import { ref, computed } from 'vue';
 
-
-
-
 const props = defineProps({
   totalGames: { type: Number, required: true, default: 0 },
   completedGames: { type: Number, required: true, default: 0 },

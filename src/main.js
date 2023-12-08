@@ -149,8 +149,6 @@ Object.entries(appComponentFiles).forEach(([path, m]) => {
   app.component(componentName, m.default);
 });
 
-
-
 import { Buffer } from 'buffer';
 // eslint-disable-next-line no-undef
 globalThis.Buffer = Buffer;
