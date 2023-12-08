@@ -53,5 +53,7 @@ onBeforeMount(async () => {
       authStore.userClaims = userClaims;
     }
   });
+  
+
 });
 </script>
