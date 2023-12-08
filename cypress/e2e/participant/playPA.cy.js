@@ -13,11 +13,8 @@ let pa = {
 };
 
 describe("Testing playthrough of ROAR-Phoneme as a participant", () => {
-    it(pa.name, () => {
-        let test_login = "testingUser4";
-        let test_pw = "password4";
-
-        cy.login(test_login, test_pw);
+    it(`${pa.name} Playthrough Test`, () => {
+        cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'))
         cy.visit("/");
 
         cy.get(".p-dropdown-trigger", { timeout: 10000 }).click();
