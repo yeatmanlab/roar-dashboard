@@ -334,8 +334,8 @@ const {
 
 // Scores count query
 const { data: scoresCount } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId],
-  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
+  queryKey: ['assignments', props.administrationId, props.orgId, filterBy],
+  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000,
