@@ -12,7 +12,11 @@
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
-              <PvInputText id="administration-name" v-model="state.administrationName" data-cy="input-administration-name" />
+              <PvInputText
+                id="administration-name"
+                v-model="state.administrationName"
+                data-cy="input-administration-name"
+              />
               <label for="administration-name">Administration Name</label>
               <small v-if="v$.administrationName.$invalid && submitted" class="p-error"
                 >Please name your administration</small
@@ -50,7 +54,11 @@
               <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
               <span>Require sequential?</span>
               <PvInputSwitch v-model="state.sequential" class="ml-2" />
-              <button class="p-panel-header-icon p-link ml-6 mr-2" data-cy="button-refresh-assessments" @click="refreshAssessments">
+              <button
+                class="p-panel-header-icon p-link ml-6 mr-2"
+                data-cy="button-refresh-assessments"
+                @click="refreshAssessments"
+              >
                 <span :class="spinIcon.assessments"></span>
               </button>
             </div>
