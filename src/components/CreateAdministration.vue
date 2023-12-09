@@ -12,7 +12,11 @@
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
-              <PvInputText id="administration-name" v-model="state.administrationName" data-cy="input-administration-name" />
+              <PvInputText
+                id="administration-name"
+                v-model="state.administrationName"
+                data-cy="input-administration-name"
+              />
               <label for="administration-name">Administration Name</label>
               <small v-if="v$.administrationName.$invalid && submitted" class="p-error"
                 >Please name your administration</small

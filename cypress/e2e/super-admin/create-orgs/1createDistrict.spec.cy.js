@@ -1,10 +1,10 @@
 function selectDistrictsFromDropdown() {
-  cy.get('[data-cy="dropdown-org-type"]', {timeout: Cypress.env('timeout')}).click()
-  cy.get('li').contains('district').click()
+  cy.get('[data-cy="dropdown-org-type"]', { timeout: Cypress.env('timeout') }).click();
+  cy.get('li').contains('district').click();
 }
 
 function createDistrict() {
-  cy.get('.p-button-label', {timeout: Cypress.env('timeout')}).contains("Create District").click()
+  cy.get('.p-button-label', { timeout: Cypress.env('timeout') }).contains("Create District").click();
 }
 
 function checkDistrictCreated() {
@@ -14,24 +14,31 @@ function checkDistrictCreated() {
 }
 
 describe('The admin user can navigate to the create organizations page, and create a new district.', () => {
-  it('Navigates to the create organizations page, creates a new district, and checks that the created ' +
-      'district is represented in the list of organizations', () => {
+  it(
+    'Navigates to the create organizations page, creates a new district, and checks that the created ' +
+      'district is represented in the list of organizations',
+    () => {
+      cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+      cy.navigateTo('/create-orgs');
 
-    cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
-    cy.navigateTo('/create-orgs')
+      selectDistrictsFromDropdown();
 
-    selectDistrictsFromDropdown()
+      cy.inputOrgDetails(
+        Cypress.env('testDistrictName'),
+        Cypress.env('testDistrictInitials'),
+        Cypress.env('testDistrictNcesId'),
+        Cypress.env('stanfordUniversityAddress'),
+        null,
+        Cypress.env('testTag'),
+      );
 
-    cy.inputOrgDetails(Cypress.env('testDistrictName'), Cypress.env('testDistrictInitials'),
-        Cypress.env('testDistrictNcesId'), Cypress.env('stanfordUniversityAddress'), null, Cypress.env('testTag'))
+      createDistrict();
 
-    createDistrict()
+      cy.navigateTo('/list-orgs');
 
-    cy.navigateTo('/list-orgs')
+      checkDistrictCreated();
 
-    checkDistrictCreated()
-
-  //   Need a programmatic way to delete the created district.
-
-  })
-})
+      //   Need a programmatic way to delete the created district.
+    },
+  );
+});

@@ -12,19 +12,20 @@ const testAssignments = ['vocab', 'Multichoice', 'cva'];
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
   cy.navigateTo('/');
-  cy.url({timeout: timeout}).should('eq', `${baseUrl}/`);
+  cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
 }
 
 function checkAdministrationCardTitle() {
-  cy.get('[data-cy="h2-card-admin-title"]', {timeout: timeout})
-    .should('contain', testPartnerAdministrationName);
+  cy.get('[data-cy="h2-card-admin-title"]', { timeout: timeout }).should('contain', testPartnerAdministrationName);
 }
 
 function clickProgressButton() {
-  cy.get('[data-cy="button-details"]', {timeout: timeout}).click();
-    cy.get('[data-cy="button-progress"]', {timeout: timeout}).first().click();
-    cy.url({timeout: timeout})
-        .should('eq', `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`);
+  cy.get('[data-cy="button-details"]', { timeout: timeout }).click();
+  cy.get('[data-cy="button-progress"]', { timeout: timeout }).first().click();
+  cy.url({ timeout: timeout }).should(
+    'eq',
+    `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`,
+  );
 }
 
 function checkProgressTags(headers) {
@@ -50,10 +51,10 @@ function checkProgressTags(headers) {
 
 describe('The partner admin can view progress reports for a given administration.', () => {
   it('Selects an administration and views its progress report', () => {
-    checkUrl()
+    checkUrl();
     checkAdministrationCardTitle()
-    clickProgressButton()
+    clickProgressButton();
     cy.checkUserList(testUserList)
-    checkProgressTags(testAssignments)
+    checkProgressTags(testAssignments);
   });
 });

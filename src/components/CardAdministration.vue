@@ -60,8 +60,8 @@
 
         <div class="break my-2"></div>
 
-        <div v-if="isAssigned">
-          <PvButton :icon="toggleIcon" size="small" :label="toggleLabel" data-cy="button-details" @click="toggleTable" /></div>
+      <div v-if="isAssigned">
+        <PvButton :icon="toggleIcon" size="small" :label="toggleLabel" data-cy="button-details" @click="toggleTable" />
       </div>
     </div>
     <PvTreeTable
