@@ -18,11 +18,11 @@
           :loading="isLoadingScores || isFetchingScores"
           :page-limit="pageLimit"
           lazy
+          data-cy="roar-data-table"
           @page="onPage($event)"
           @sort="onSort($event)"
           @export-selected="exportSelected"
           @export-all="exportAll"
-          data-cy="roar-data-table"
         />
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />

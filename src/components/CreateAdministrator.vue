@@ -13,14 +13,24 @@
           <div class="grid">
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <PvInputText id="first-name" v-model="firstName" class="w-full" data-cy="input-administrator-first-name" />
+                <PvInputText
+                  id="first-name"
+                  v-model="firstName"
+                  class="w-full"
+                  data-cy="input-administrator-first-name"
+                />
                 <label for="first-name">First Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <PvInputText id="middle-name" v-model="middleName" class="w-full" data-cy="input-administrator-middle-name" />
+                <PvInputText
+                  id="middle-name"
+                  v-model="middleName"
+                  class="w-full"
+                  data-cy="input-administrator-middle-name"
+                />
                 <label for="middle-name">Middle Name</label>
               </span>
             </div>
@@ -46,7 +56,7 @@
 
           <div class="grid">
             <div class="col-12">
-              <PvButton label="Create Administrator" @click="submit" data-cy="button-create-administrator" />
+              <PvButton label="Create Administrator" data-cy="button-create-administrator" @click="submit" />
             </div>
           </div>
         </div>
