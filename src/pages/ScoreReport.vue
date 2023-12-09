@@ -98,11 +98,11 @@
             lazy
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
+            data-cy="roar-data-table"
             @page="onPage($event)"
             @sort="onSort($event)"
             @filter="onFilter($event)"
             @export-all="exportAll"
-            data-cy="roar-data-table"
             @export-selected="exportSelected"
           />
         </div>
