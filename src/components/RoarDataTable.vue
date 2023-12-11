@@ -191,11 +191,16 @@
             <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
           </div>
-          <div v-if="col.dataType === 'score' && !col.useMultiSelect">
-            The Scores Filter
-            <PvDropdown v-model="filterModel.value" :options="['Above', 'Average', 'Needs Extra']" />
-            <label for="isSixthCheckbox">Below 6th Grade</label>
-            <PvCheckbox id="isSixthCheckbox" v-model="filterModel.isBelowSixth" binary />
+          <div v-if="col.dataType === 'score'">
+            <PvDropdown
+              v-model="filterModel.value"
+              :options="['Above', 'Average', 'Needs Extra']"
+              style="margin-bottom: 0.5rem"
+            />
+            <div class="flex justify-content-between">
+              <label for="isSixthCheckbox" style="margin-right: 0.5rem">Below 6th Grade</label>
+              <PvCheckbox id="isSixthCheckbox" v-model="filterModel.isBelowSixth" binary />
+            </div>
           </div>
         </template>
       </PvColumn>
@@ -315,7 +320,8 @@ _forEach(computedColumns.value, (column) => {
     } else if (dataType === 'DATE') {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
     } else if (dataType === 'SCORE') {
-      console.log('score filter');
+      // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
+      //   so the filter event is being handled in an external handler.
       returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH, isBelowSixth: false };
     }
 

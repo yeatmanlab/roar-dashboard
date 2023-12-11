@@ -628,7 +628,7 @@ const columns = computed(() => {
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text' },
     { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text' },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'number' },
   ];
 
   if (props.orgType === 'district') {
