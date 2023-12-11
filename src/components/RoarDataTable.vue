@@ -198,8 +198,8 @@
               style="margin-bottom: 0.5rem"
             />
             <div class="flex justify-content-between">
-              <label for="isSixthCheckbox" style="margin-right: 0.5rem">Below 6th Grade</label>
-              <PvCheckbox id="isSixthCheckbox" v-model="filterModel.isBelowSixth" binary />
+              <label for="nationalNormsCheckbox" style="margin-right: 0.5rem">National Norms</label>
+              <PvCheckbox id="nationalNormsCheckbox" v-model="filterModel.nationalNorms" binary />
             </div>
           </div>
         </template>
@@ -322,7 +322,7 @@ _forEach(computedColumns.value, (column) => {
     } else if (dataType === 'SCORE') {
       // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
       //   so the filter event is being handled in an external handler.
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH, isBelowSixth: false };
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH, nationalNorms: false };
     }
 
     if (_get(column, 'useMultiSelect')) {
@@ -435,6 +435,7 @@ const onFreezeToggle = (selected) => {
   });
 };
 
+// Pass through data table events
 const emit = defineEmits(['page', 'sort', 'export-all', 'selection', 'filter']);
 const onPage = (event) => {
   emit('page', event);

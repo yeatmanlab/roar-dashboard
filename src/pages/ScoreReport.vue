@@ -369,7 +369,7 @@ const onFilter = (event) => {
       }
       if (_head(path) === 'scores') {
         const taskId = path[1];
-        const grade = _get(constraint, 'isBelowSixth') ? 1 : 10;
+        const grade = _get(constraint, 'nationalNorms') ? 1 : 10;
         const { percentileScoreKey } = getScoreKeys({ taskId: taskId }, grade);
         filters.push({
           ...constraint,
