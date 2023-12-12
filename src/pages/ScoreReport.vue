@@ -22,9 +22,9 @@
             and sounds.
           </div>
           <div v-if="allTasks.includes('pa')" class="task-blurb">
-            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span> assesses some of the most
-            foundational skills for reading: mapping letters to their corresponding sounds. This skill is crucial for
-            building further reading fluency skills, such as decoding.
+            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span>
+            measures the ability to hear and manipulate the individual sounds within words (sound matching and elision).
+            This skill is crucial for building further reading skills, such as decoding.
           </div>
           <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
             <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
@@ -99,6 +99,7 @@
         <SubscoreTable
           v-if="allTasks.includes('letter')"
           task-id="letter"
+          :task-name="displayNames['letter'].name"
           :administration-id="administrationId"
           :org-type="orgType"
           :org-id="orgId"
@@ -108,6 +109,7 @@
         <SubscoreTable
           v-if="allTasks.includes('pa')"
           task-id="pa"
+          :task-name="displayNames['pa'].name"
           :administration-id="administrationId"
           :org-type="orgType"
           :org-id="orgId"
@@ -330,7 +332,7 @@ const onSort = (event) => {
 const viewMode = ref('color');
 
 const viewOptions = ref([
-  { label: 'Color', value: 'color' },
+  { label: 'Support Level', value: 'color' },
   { label: 'Percentile', value: 'percentile' },
   { label: 'Standard Score', value: 'standard' },
   { label: 'Raw Score', value: 'raw' },
