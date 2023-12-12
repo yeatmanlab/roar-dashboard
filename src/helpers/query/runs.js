@@ -1,3 +1,7 @@
+import _get from 'lodash/get';
+import _mapValues from 'lodash/mapValues';
+import _without from 'lodash/without';
+import _zip from 'lodash/zip';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
@@ -5,11 +9,13 @@ export const getRunsRequestBody = ({
   administrationId,
   orgType,
   orgId,
+  taskId,
   aggregationQuery,
   pageLimit,
   page,
   paginate = true,
-  select = ['scores.computed'],
+  select = 'scores.computed.composite',
+  requireCompleted = false,
 }) => {
   const requestBody = {
     structuredQuery: {},
@@ -23,7 +29,7 @@ export const getRunsRequestBody = ({
 
     if (select.length > 0) {
       requestBody.structuredQuery.select = {
-        fields: select.map((field) => ({ fieldPath: field })),
+        fields: [{ fieldPath: select }],
       };
     }
   }
@@ -42,7 +48,7 @@ export const getRunsRequestBody = ({
         filters: [
           {
             fieldFilter: {
-              field: { fieldPath: 'id' },
+              field: { fieldPath: 'assignmentId' },
               op: 'EQUAL',
               value: { stringValue: administrationId },
             },
@@ -61,17 +67,48 @@ export const getRunsRequestBody = ({
               value: { booleanValue: true },
             },
           },
+          {
+            fieldFilter: {
+              field: { fieldPath: 'taskId' },
+              op: 'EQUAL',
+              value: { stringValue: taskId },
+            },
+          },
         ],
       },
     };
   } else {
     requestBody.structuredQuery.where = {
+      compositeFilter: {
+        op: 'AND',
+        filters: [
+          {
+            fieldFilter: {
+              field: { fieldPath: 'bestRun' },
+              op: 'EQUAL',
+              value: { booleanValue: true },
+            },
+          },
+          {
+            fieldFilter: {
+              field: { fieldPath: 'taskId' },
+              op: 'EQUAL',
+              value: { stringValue: taskId },
+            },
+          },
+        ],
+      },
+    };
+  }
+
+  if (requireCompleted) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
-        field: { fieldPath: 'bestRun' },
+        field: { fieldPath: 'completed' },
         op: 'EQUAL',
         value: { booleanValue: true },
       },
-    };
+    });
   }
 
   if (aggregationQuery) {
@@ -104,30 +141,78 @@ export const runCounter = (administrationId, orgType, orgId) => {
   });
 };
 
-export const runPageFetcher = async (
+export const runPageFetcher = async ({
   administrationId,
   orgType,
   orgId,
+  taskId,
   pageLimit,
   page,
-  select = undefined,
+  select = 'scores.computed.composite',
   paginate = true,
-) => {
+}) => {
   const appAxiosInstance = getAxiosInstance('app');
   const requestBody = getRunsRequestBody({
     administrationId,
     orgType,
     orgId,
+    taskId,
     aggregationQuery: false,
-    pageLimit: pageLimit.value,
-    page: page.value,
+    pageLimit: paginate ? pageLimit.value : undefined,
+    page: paginate ? page.value : undefined,
     paginate: paginate,
     select: select,
   });
+  console.log('requestBody', requestBody);
   console.log(`Fetching scores page ${page.value} for ${administrationId}`);
   return appAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
     const runData = mapFields(data);
 
-    return runData;
+    const userDocPaths = _without(
+      data.map((runDoc) => {
+        if (runDoc.document?.name) {
+          return runDoc.document.name.split('/runs/')[0];
+        } else {
+          return undefined;
+        }
+      }),
+      undefined,
+    );
+
+    // Use batchGet to get all user docs with one post request
+    const batchUserDocs = await appAxiosInstance
+      .post(':batchGet', {
+        documents: userDocPaths,
+        mask: { fieldPaths: ['grade', 'birthMonth', 'birthYear'] },
+      })
+      .then(({ data }) => {
+        return _without(
+          data.map(({ found }) => {
+            if (found) {
+              return {
+                name: found.name,
+                data: _mapValues(found.fields, (value) => convertValues(value)),
+              };
+            }
+            return undefined;
+          }),
+          undefined,
+        );
+      });
+
+    // But the order of batchGet is not guaranteed, so we need to order the docs
+    // by the order of userDocPaths
+    const userDocData = batchUserDocs
+      .sort((a, b) => {
+        return userDocPaths.indexOf(a.name) - userDocPaths.indexOf(b.name);
+      })
+      .map(({ data }) => data);
+
+    const scores = _zip(userDocData, runData).map(([userData, run]) => ({
+      scores: _get(run, select),
+      user: userData,
+    }));
+
+    return scores;
   });
 };
