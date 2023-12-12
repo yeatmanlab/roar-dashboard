@@ -138,7 +138,9 @@
             <div
               v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
               class="circle"
-              style="border: 1px solid black"
+              :style="`border: 1px solid black; ${
+                returnScoreTooltip(col.header, colData).length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'
+              }`"
             />
           </div>
           <div v-else-if="col.link">
