@@ -39,9 +39,10 @@
                   <path
                     d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
                     fill="white"
-                  /></svg
-              ></i>
-              <span v-if="!allGamesComplete">Click to start</span>
+                  />
+                </svg>
+              </i>
+              <span v-if="!allGamesComplete && !game.completedOn">Click to start</span>
               <span v-else>Task Completed!</span>
             </div>
           </div>
@@ -52,7 +53,7 @@
           </div>
 
           <router-link
-            v-if="!allGamesComplete && !game.taskData?.taskURL && !game.taskData?.variantURL"
+            v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
             :to="{ path: 'game/' + game.taskId }"
           ></router-link>
         </article>
