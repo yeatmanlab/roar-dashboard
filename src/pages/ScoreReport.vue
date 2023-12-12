@@ -43,7 +43,13 @@
         </div>
 
         <!-- Main table -->
-        <div v-else-if="scoresCount === 0">No Scores available!</div>
+        <div v-else-if="scoresCount === 0" class="no-scores-container">
+          <h3>No scores found.</h3>
+          <span
+            >The filters applied have no matching scores.
+            <PvButton text @click="resetFilters">Reset filters</PvButton></span
+          >
+        </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
@@ -92,10 +98,10 @@
               <div>(At or above 50th percentile)</div>
             </div>
           </div>
-        </div>
-        <div class="legend-description">
-          Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-          indicate that the assessment was not completed.
+          <div class="legend-description">
+            Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
+            indicate that the assessment was not completed.
+          </div>
         </div>
         <!-- Subscores tables -->
         <SubscoreTable
@@ -385,6 +391,9 @@ const onFilter = (event) => {
   filterBy.value = filters;
 };
 
+const resetFilters = () => {
+  filterBy.value = [];
+};
 const viewMode = ref('color');
 
 const viewOptions = ref([
@@ -741,7 +750,7 @@ onMounted(async () => {
 });
 </script>
 
-<style>
+<style lang="scss">
 .report-title {
   font-size: 3.5rem;
   margin-top: 0;
@@ -819,5 +828,18 @@ onMounted(async () => {
 
 .extra-info-title {
   font-size: 2rem;
+}
+
+.no-scores-container {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  h3 {
+    font-weight: bold;
+  }
+  span {
+    display: flex;
+    align-items: center;
+  }
 }
 </style>
