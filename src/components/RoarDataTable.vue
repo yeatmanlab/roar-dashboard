@@ -93,7 +93,7 @@
             v-tooltip.top="`${toolTipByHeader(col.header)}`"
             :style="[
               toolTipByHeader(col.header).length > 0
-                ? 'outline: 1px dotted #0000CD; outline-offset: 3px; border-radius: 7px'
+                ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
                 : null,
             ]"
           >
