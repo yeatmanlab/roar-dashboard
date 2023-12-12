@@ -6,7 +6,7 @@
 import { computed, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import embed from 'vega-embed';
-import _camelCase from 'lodash/camelcase';
+import _camelCase from 'lodash/camelCase';
 import { runPageFetcher } from '@/helpers/query/runs';
 
 const props = defineProps({
