@@ -634,18 +634,18 @@ const emptyTagColorMap = {
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text' },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'number' },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'number', sort: false },
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text' });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: false });
   }
 
   if (authStore.isUserSuperAdmin) {
-    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text' });
+    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
   if (tableData.value.length > 0) {
@@ -666,6 +666,7 @@ const columns = computed(() => {
         field: colField,
         header: displayNames[taskId]?.name ?? taskId,
         dataType: 'score',
+        sort: false,
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
         emptyTag: viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
         tagColor: `scores.${taskId}.color`,
