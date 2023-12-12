@@ -10,11 +10,11 @@ queries.
 This repository publishes three different kinds of releases:
 
 - Development releases are published with temporary unique URLs for each
-submitted pull request (PR).
+  submitted pull request (PR).
 - Staging releases are published to roar-staging.web.app on every commit to the
-main branch.
+  main branch.
 - Production releases are published on every version tag. So in order to publish
-a production release, you must run
+  a production release, you must run
 
 ```bash
 npm version <major|minor|patch>
