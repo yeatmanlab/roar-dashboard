@@ -114,6 +114,15 @@
           :administration-name="administrationInfo.name ?? undefined"
           :org-name="orgInfo.name ?? undefined"
         />
+        <DistributionChart
+          v-for="task in allTasks"
+          :key="task"
+          :initialized="initialized"
+          :administration-id="administrationId"
+          :org-type="orgType"
+          :org-id="orgId"
+          :task-id="task"
+        />
         <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('letter')" class="task-card">
           <div class="task-title">ROAR-LETTER</div>
@@ -218,6 +227,7 @@ import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+import DistributionChart from '@/components/reports/DistributionChart.vue';
 import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
