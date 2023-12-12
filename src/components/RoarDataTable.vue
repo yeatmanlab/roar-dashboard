@@ -137,7 +137,6 @@
 
             <div
               v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-              v-tooltip.right="`${returnScoreTooltip(col.header, colData)}`"
               class="circle"
               style="border: 1px solid black"
             />
