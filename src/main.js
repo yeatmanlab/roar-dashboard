@@ -88,11 +88,16 @@ import "primeflex/primeflex.scss"; // primeflex
 
 import "./assets/styles/theme-tailwind.css"; // base theme (pulled from Primevue)
 import "./assets/styles/theme.scss" // ROAR theme
+import { VueRecaptchaPlugin } from 'vue-recaptcha';
 
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedState);
+
+app.use(VueRecaptchaPlugin, {
+  v3SiteKey: "6Lf8ESUpAAAAAP6R4mi-4ZJO7aMGR6mppFV19YWW",
+})
 
 app.use(PrimeVue, {ripple: true});
 app.use(ToastService);
@@ -181,6 +186,7 @@ Object.entries(appComponentFiles).forEach(([path, m]) => {
 });
 
 import { Buffer } from 'buffer'
+// import { VueRecaptchaPlugin } from "vue-recaptcha";
 globalThis.Buffer = Buffer
 
 app.mount("#app");

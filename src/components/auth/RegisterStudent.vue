@@ -1,8 +1,13 @@
 <template>
   <div class="card">
     <!-- <p class="login-title" align="left">Register for ROAR</p> -->
-    <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
+    <form class="p-fluid">
       <div v-for="(student, index) in state.students" :key="index" class="student-form-border">
+        <section class="form-section">
+          <div class="p-input-icon-right">
+            <label for="student">Student {{ index+1 }}</label>
+          </div>
+        </section>
       <!-- Student Username -->
       <section class="form-section">
         <div class="p-input-icon-right">
@@ -10,18 +15,15 @@
           <InputText
             v-model="student.activationCode"
             name="activationCode"
-            :class="{ 'p-invalid': v$.activationCode.$invalid && submitted }" 
+            :class="{ 'p-invalid': v$.students.$each.$response.$data[index].activationCode.$invalid && submitted }" 
             aria-describedby="activation-code-error"
           />
         </div>
-        <span v-if="v$.activationCode.$error && submitted">
-          <span v-for="(error, index) of v$.activationCode.$errors" :key="index">
-            <small class="p-error">{{ error.$message }}</small>
+        <span v-if="v$.students.$each.$response.$data[index].activationCode.$invalid && submitted">
+          <span v-for="error in v$.students.$each.$response.$errors[index].activationCode" :key="index">
+            <small class="p-error">{{ error.$message.replace("Value", "Activation Code")  }}</small>
           </span>
         </span>
-        <small v-else-if="(v$.activationCode.$invalid && submitted) || v$.activationCode.$pending.$response" class="p-error">
-          {{ v$.activationCode.required.$message.replace("Value", "Activation Code") }}
-        </small>
       </section>
       <section class="form-section">
         <div class="p-input-icon-right">
@@ -29,44 +31,53 @@
           <InputText
           v-model="student.studentUsername"
           name="studentUsername"
-          :class="{ 'p-invalid': v$.studentUsername.$invalid && submitted }" 
+          :class="{ 'p-invalid': v$.students.$each.$response.$data[index].studentUsername.$invalid && submitted }" 
           aria-describedby="username-or-email-error"
           />
         </div>
-        <span v-if="v$.studentUsername.$error && submitted">
+        <span v-if="v$.students.$each.$response.$data[index].studentUsername.$invalid && submitted " class="p-error">
         <small class="p-error">Please enter a valid email address.</small>
-        </span>
-        <small v-else-if="(v$.studentUsername.$invalid && submitted) || v$.studentUsername.$pending.$response" class="p-error">
-        {{ v$.studentUsername.required.$message.replace("Value", "Username") }}
-        </small>
+        </span> 
       </section>
-       <!--Password-->
+      <!-- Password -->
       <section class="form-section">
         <div>
           <div>
             <label for="password">Password <span class="required">*</span></label>
-            <Password v-model="student.password" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></Password>
+            <Password
+              v-model="student.password"
+              name="password"
+              :class="{'p-invalid': v$.students.$each.$response.$data[index].password.$invalid && submitted }"
+              toggleMask
+              show-icon="pi pi-eye-slash"
+              hide-icon="pi pi-eye"
+              :feedback="false"
+            ></Password>
           </div>
-          <span v-if="v$.password.$error && submitted">
-            <span v-for="(error, index) of v$.password.$errors" :key="index">
-              <small class="p-error">{{ error.$message }}</small>
+          <span v-if="v$.students.$each.$response.$data[index].password.$invalid && submitted">
+            <span v-for="error in v$.students.$each.$response.$errors[index].password" :key="index">
+              <small class="p-error">{{ error.$message.replace("Value", "Password") }}</small>
             </span>
           </span>
-          <small v-else-if="(v$.password.$invalid && submitted) || v$.password.$pending.$response" class="p-error">
-            {{ v$.password.required.$message.replace("Value", "Password") }}
-          </small>
         </div>
-        <!--Confirm Password-->
+        <!-- Confirm Password -->
         <div>
           <div>
-          <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-          <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="student.confirmPassword" name="confirmPassword"
-            :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false">
-          </Password>
+            <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+            <Password
+              :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
+              v-model="student.confirmPassword"
+              name="confirmPassword"
+              :class="{'p-invalid': isPasswordMismatch(index) && submitted}"
+              toggleMask
+              show-icon="pi pi-eye-slash"
+              hide-icon="pi pi-eye"
+              :feedback="false"
+            ></Password>
           </div>
-          <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
-          Passwords must match
-          </small>
+          <span v-if="isPasswordMismatch(index) && submitted" class="p-error">
+            Passwords must match
+          </span>
         </div>
       </section>
       <section class="form-section">
@@ -80,12 +91,12 @@
             </div>
           </div>
           <div v-if="!yearOnlyCheck">
-          <Calendar v-model="student.dob" view="date" dateFormat="mm/dd/yy" modelValue="string" showIcon :class="{ 'p-invalid': v$.dob.$invalid && submitted }"/>
+          <Calendar v-model="student.dob" view="date" dateFormat="mm/dd/yy" modelValue="string" showIcon />
           </div>
           <div v-else>
-          <Calendar v-model="student.dob" view="year" dateFormat="yy" modelValue="string" showIcon :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
+          <Calendar v-model="student.dob" view="year" dateFormat="yy" modelValue="string" showIcon  />
           </div>
-          <small v-if="(v$.dob.$invalid && submitted) || v$.dob.$pending.$response" class="p-error">{{ v$.dob.required.$message.replace("Value", "Date of Birth") }}</small>
+          <small v-if="(v$.students.$each.$response.$data[index].dob.$invalid && submitted)" class="p-error">{{ v$.students.$each.$response.$errors[index].dob.$message.replace("Value", "Date of Birth") }}</small>
         </div>
       </section>
       <section class="form-section">
@@ -98,9 +109,9 @@
           optionLabel="label" 
           optionValue="value" 
           name="grade"
-          :class="{ 'p-invalid': v$.grade.$invalid && submitted }"
+
           />
-          <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{ v$.grade.required.$message.replace("Value", "Grade") }}</small>
+          <!-- <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{ v$.grade.required.$message.replace("Value", "Grade") }}</small> -->
         </div>
       </section>
       <Accordion>
@@ -109,7 +120,7 @@
         <section class="form-section">
             <div>
               <label for="firstName">First Name </label>
-              <InputText name="firstName" v-model="student.firstName" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
+              <InputText name="firstName" v-model="student.firstName" :class="{'p-invalid': v$.students.$each.$response.$data[index].firstName.$invalid}" aria-describedby="first-name-error"/>
             </div>
             <!-- Middle Name -->
             <div>
@@ -117,14 +128,14 @@
               <InputText 
               v-model="student.middleName"
               name="middleName"
-              :class="{ 'p-invalid': v$.middleName.$invalid && submitted }"
+
               />
             </div>
         </section>
         <section class="form-section">
           <div>
             <label for="lastName">Last Name </label>
-            <InputText name="lastName" v-model="student.lastName" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
+            <InputText name="lastName" v-model="student.lastName" :class="{'p-invalid': v$.students.$each.$response.$data[index].lastName.$invalid}" aria-describedby="first-name-error"/>
           </div>  
         </section>
         <section class="form-section">
@@ -173,7 +184,7 @@
         </AccordionTab>
       </Accordion>
       <section class="form-section-button">
-        <button v-if="index !==0" @click="deleteStudentForm(index)" class="p-button p-component">Delete Student</button>
+        <button v-if="index !==0" @click="deleteStudentForm(student)" class="p-button p-component">Delete Student</button>
       </section>
     </div>
     
@@ -181,19 +192,25 @@
       <div class="form-section-button2">
         <button @click="addStudent()" class="p-button p-component">Add a Student</button>
       </div>
+      <section class="form-submit">
+        <Button @click="handleFormSubmit(!v$.$invalid)" type="submit" label="Submit" class="submit-button"/>
+      </section>
   </div>
   </template>
   
   <script setup>
-  import { computed, reactive, ref, toRaw, watch } from "vue";
-  import { required, sameAs, minLength, } from "@vuelidate/validators";
+  import { computed, reactive, ref, toRaw, watch, defineEmits } from "vue";
+  import { required, sameAs, minLength, helpers} from "@vuelidate/validators";
   import { useVuelidate } from "@vuelidate/core";
+
   // import {RegisterStudentSingle} from "../auth/RegisterStudentSingle.vue"
   
   
   const props = defineProps({
   isRegistering: {type: Boolean, default: true}
   });
+
+  const emit = defineEmits(['submit']);
   // const students = ref([{}]);
   const state = reactive({
     students:[{
@@ -215,29 +232,32 @@
       homeLanguage: [],
     }],
   });
-  const passwordRef = computed(() => state.password);
-  
+
+
   const rules = {
-  activationCode: {required},
-  studentUsername: { required, },
-  password: { required, minLength: minLength(6),},
-  confirmPassword: { required, sameAsPassword: sameAs(passwordRef) }, 
-  firstName: {},
-  lastName: {},
-  middleName: {},
-  dob: { required },
-  grade: { required },
-  ell: {},
-  gender: {},
-  freeReducedLunch: {}, 
-  IEPStatus: {},
-  race: {},
-  hispanicEthnicity: {},
-  homeLanguage: {},
-  };
+      students: {
+        $each: helpers.forEach({
+          activationCode: {required},
+          studentUsername: { required, },
+          password: { required, minLength: minLength(6),},
+          confirmPassword: { required }, 
+          firstName: {},
+          lastName: {},
+          middleName: {},
+          dob: { required },
+          grade: { required },
+          ell: {},
+          gender: {},
+          freeReducedLunch: {}, 
+          IEPStatus: {},
+          race: {},
+          hispanicEthnicity: {},
+          homeLanguage: {},
+        })
+      }
+    }
   
-  // const rules={};
-  
+ 
   function addStudent(){
     console.log("adding new student ", state)
     state.students.push({
@@ -260,12 +280,15 @@
     });
   }
 
-  function deleteStudentForm(index) {
+  function deleteStudentForm(student) {
     if (state.students.length > 1) {
-      state.students.splice(index, 1); // Remove the student at the specified index
+      state.students.splice(student, 1); // Remove the student at the specified index
     } else {
       alert("At least one student is required."); // Prevent deleting the last student form
     }
+  }
+  function isPasswordMismatch(index) {
+    return state.students[index].password !== state.students[index].confirmPassword;
   }
 
   const submitted = ref(false);
@@ -273,13 +296,15 @@
   const v$ = useVuelidate(rules, state);
   
   const handleFormSubmit = (isFormValid) => {
+    console.log("about to admit: ", state)
   submitted.value = true
   if (!isFormValid) {
     return;
   }
-  resetForm()
+  console.log("student field sumitting ", state, isFormValid)
+  
+  emit('submit', state)
 
-  // signup logic
   };
   
   const resetForm = () => {
@@ -463,6 +488,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 10px;
   }
   .form-section-button2{
     display: flex;

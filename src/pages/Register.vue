@@ -1,12 +1,6 @@
 <template>
   
-  <div id="register-container">
-    <!-- <div class="step-container">
-      <div class="card stepper">
-        <Steps :model="items" :readonly="true" :activeIndex="activeIndex" @change="onStepChange" aria-label="Form Steps" />
-      </div>
-    </div> -->
-    
+  <div id="register-container">  
     <section id="register">
       <header>
         <div class="signin-logo">
@@ -21,16 +15,9 @@
               <p align="center">Enter your information to create an account.</p>
             </div>
             <Register @submit="handleParentSubmit($event)" />
+          
           </router-view>
         </div>
-        <!-- <div v-else="activeIndex === 1">
-          <router-view name="registerStudent">
-            <div class="register-title">
-              <h1 align="center">Register your child</h1>
-              <p align="center">Enter your child's information to create their ROAR account.</p>
-            </div>
-            <RegisterStudent />
-          </router-view> -->
         <div v-else="activeIndex === 1">
           <router-view name="registerStudent">
             <div class="register-title">
@@ -39,19 +26,12 @@
             </div>
             <div>
               <!-- Iterate through the list of students -->
-              <div v-for="(student, index) in students" :key="index" class="student-form">
+              <div class="student-form">
                 <div class="student-form-border">
-                  <RegisterStudent v-model="students[index]" />
-                  <!-- Button to delete the current student -->
-                  <button v-if="index !==0" @click="deleteStudentForm(index)" class="p-button p-component">Delete Student</button>
+                  <RegisterStudent @submit="handleStudentSubmit($event)"/>
                 </div>
               </div>
-              <!-- Button to add another student form -->
-              <!-- <button @click="addStudentForm" class="p-button p-component">Add Another Student</button> -->
             </div>
-            <section class="form-submit">
-              <Button @click="handleFormSubmit()" type="submit" label="Submit" class="submit-button"/>
-            </section>
           </router-view>
         </div>
       </div>
@@ -67,9 +47,22 @@
 import Register from "../components/auth/RegisterParent.vue";
 import RegisterStudent from "../components/auth/RegisterStudent.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useQueryStore } from "@/store/query";
+import { useAuthStore } from "@/store/auth";
+import { useToast } from "primevue/usetoast";
+import { storeToRefs } from "pinia";
+import VueRecaptcha from 'vue-recaptcha';
+
 // import {useAuthStore} from "@/store/auth";
-import Steps from 'primevue/steps';
+// import Steps from 'primevue/steps';
+
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+const toast = useToast();
+
+
+
 
 const activeIndex = ref(0); // Current active step
     const items = ref([
@@ -78,18 +71,8 @@ const activeIndex = ref(0); // Current active step
     ]);
 
     const parentInfo = ref(null);
+    const studentInfo = ref(null);
 
-    const students = ref([{}]); // Initialize with an empty student form
-    // const authStore = useAuthStore();
-    // const parentFormData = ref(null);
-
-    // onMounted(() => {
-    //   parentFormData.value = authStore.getParentFormData();
-    // })
-
-    function onStepChange(event) {
-      activeIndex.value = event.index;
-    }
 
     function prevStep() {
       if (activeIndex.value > 0) {
@@ -103,28 +86,62 @@ const activeIndex = ref(0); // Current active step
       }
     }
 
-    // function addStudentForm() {
-    //   students.value.push({}); // Add a new empty student object to the students array
-    // }
-
-    // function deleteStudentForm(index) {
-    //   if (students.value.length > 1) {
-    //     students.value.splice(index, 1); // Remove the student at the specified index
-    //   } else {
-    //     alert("At least one student is required."); // Prevent deleting the last student form
-    //   }
-    // }
-    function handleFormSubmit(event){
-      // students.forEach(s => {
-      //   console.log(s)
-      // });
-
-      // console.log("submit function triggered", event)
-    }
-    function handleParentSubmit(data){
-      // console.log("data: ",data)
+    async function handleParentSubmit(data){
+      console.log("Parent data: ",data)
       parentInfo.value = data
+
+      const SendParentObject={
+        email: data.usernameOrEmail,
+        password: data.password,
+        UserData:{
+          name:{
+            first: data.firstName,
+            last: data.lastName,
+          }
+        },
+        children:[],
+      }
+
+      try {
+        await roarfirekit.value.createNewFamily(
+          SendParentObject.email,
+          SendParentObject.password,
+          SendParentObject.UserData
+        );
+        
+        toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Parent account created',
+          life: 3000
+        });
+      } catch (error) {
+        // Handle any potential errors here
+        console.error("Error creating parent account:", error);
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to create parent account',
+          life: 3000
+        });
+      }
+      
+
+
     }
+
+    function handleStudentSubmit(data){
+      console.log("Student data: ",data)
+      studentInfo.value = data
+    }
+
+
+    // watch([parentInfo, studentInfo], ([newParentInfo,newStudentInfo],[oldParentInfo, oldStudentInfo])=>{
+    //   if(newParentInfo && newStudentInfo){
+    //     console.log(newParentInfo)
+    //   }
+    //   // console.log(oldParentInfo,oldStudentInfo,newParentInfo, newStudentInfo)
+    // })
     
 onMounted(() => {
   document.body.classList.add('page-register')
@@ -133,6 +150,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.body.classList.remove('page-register')
 });
+
 
 </script>
 
@@ -148,13 +166,7 @@ onBeforeUnmount(() => {
 }
 
 
-/* .student-form-border {
-  border: 2px solid #ccc; // Add a border around each student form 
-  padding: 20px; // Add padding for better spacing 
-  margin: 5px;// Add margin for better spacing 
-} */
-
-  .submit-button {
+ .submit-button {
   margin: auto;
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;

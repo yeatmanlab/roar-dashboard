@@ -1,28 +1,6 @@
 <template>
   <div class="card">
-    <!-- <p class="login-title" align="left">Register for ROAR</p> -->
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
-      <!-- Activation Code -->
-      <!-- <section class="form-section">
-        <div class="p-input-icon-right">
-          <label for="activationCode">Activation code <span class="required">*</span></label>
-          <InputText
-            v-model="v$.activationCode.$model"
-            name="activationCode"
-            :class="{ 'p-invalid': v$.activationCode.$invalid && submitted }" 
-            aria-describedby="activation-code-error"
-          />
-        </div>
-        <span v-if="v$.activationCode.$error && submitted">
-          <span v-for="(error, index) of v$.activationCode.$errors" :key="index">
-            <small class="p-error">{{ error.$message }}</small>
-          </span>
-        </span>
-        <small v-else-if="(v$.activationCode.$invalid && submitted) || v$.activationCode.$pending.$response" class="p-error">
-          {{ v$.activationCode.required.$message.replace("Value", "Activation Code") }}
-        </small>
-      </section> -->
-      <!--First / Last Name-->
       <section class="form-section">
         <div>
           <label for="firstName">First Name <span class="required">*</span></label>
@@ -98,25 +76,28 @@
       </section>
       <!--Accept Checkbox-->
       <section class="form-section">
-        <div class="field-checkbox terms-checkbox">
-          <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" binary :disabled="showConsent"
-            v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" @change="getConsent"/>
-          <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and conditions<span class="required">*</span></label>
-        </div>
-        <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
-            You must agree to the terms and conditions
-        </small>
+        <!-- Recaptcha + consent -->
+        <ChallengeV3 v-model="response" action="submit">
+          <div class="field-checkbox terms-checkbox">
+            <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" binary :disabled="showConsent"
+              v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" @change="getConsent"/>
+            <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and conditions<span class="required">*</span></label>
+          </div>
+          <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
+              You must agree to the terms and conditions
+          </small>
+        </ChallengeV3>
       </section>
       <ConsentModal v-if="showConsent" :consent-text="consentText" consent-type="consent" @accepted="handleConsentAccept" />
       <div class="form-submit">
-        <Button type="submit" label="Next" class="submit-button" />
+        <Button type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled"/>
       </div>
     </form>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw, watch, defineEmits } from "vue";
+import { computed, reactive, ref, toRaw, watch, defineEmits, defineComponent } from "vue";
 import { required, sameAs, minLength, } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 import { useRouter } from "vue-router";
@@ -124,10 +105,12 @@ import { useAuthStore } from "@/store/auth";
 import { isMobileBrowser } from "@/helpers";
 import ConsentModal from "../ConsentModal.vue";
 import _get from 'lodash/get'
-// import { emit } from "process";
+// import ChallengeV3 from "../admin/reCaptcha.vue"
+import { ChallengeV3 } from 'vue-recaptcha';
 
 const router = useRouter()
 const authStore = useAuthStore()
+const isCaptchaverified = ref(null);
 
 const props = defineProps({
   isRegistering: {type: Boolean, default: true},
@@ -137,7 +120,7 @@ const props = defineProps({
 const emit = defineEmits(['submit']);
 
 const state = reactive({
-  activationCode: "",
+  // activationCode: "",
   firstName: "",
   lastName: "",
   password: "",
@@ -145,6 +128,7 @@ const state = reactive({
   accept: false,
 });
 const passwordRef = computed(() => state.password);
+
 
 
 const isUsernameOrEmail = (value) => {
@@ -155,7 +139,7 @@ const isUsernameOrEmail = (value) => {
 } 
 
 const rules = {
-  activationCode: { required },
+  // activationCode: { required },
   firstName: { required },
   lastName: { required },
   usernameOrEmail: { 
@@ -166,44 +150,41 @@ const rules = {
     required,
     minLength: minLength(6),
   },
-  confirmPassword: { required, sameAsPassword: sameAs(passwordRef) }, 
+  confirmPassword: { required, sameAsPassword: sameAs(passwordRef) },
   accept: { sameAs: sameAs(true) },
 };
 
+const response = ref(null);
+
+
+async function handleCheckCaptcha() {
+    await new Promise(resolve => {
+      // Simulate a delay to ensure the reCAPTCHA value is updated
+      setTimeout(() => {
+        console.log("Recaptcha response:", response.value);
+        resolve();
+        handleCaptcha();
+      }, 500); // You might adjust the delay time if needed
+    });
+  
+}
 
 const submitted = ref(false);
 
 const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = (isFormValid) => {
+  console.log("about to admit: ", state)
   submitted.value = true
   if (!isFormValid) {
     return;
   }
-  // console.log("parent field sumitting ", state, isFormValid)
-  console.log("about to admit: ", state)
   emit('submit', state)
-
-  //saving info
-
-  // const parentFormData = {
-  //   activationCode: state.activationCode,
-  //   firstName: state.firstName,
-  //   lastName: state.lastName,
-  //   usernameOrEmail: state.usernameOrEmail,
-  //   password: state.password,
-  //   confirmPassword: state.confirmPassword,
-  //   accept: state.accept,
-  // }
-
-  //store the data globally
-  // authStore.setParentFormData(parentFormData)
-
-  // resetForm()
-
-  // router.push('/register/student')
-  // authStore.registerWithEmailAndPassword(state);
 };
+
+function handleCaptcha(){
+  isCaptchaverified.value = response.value;
+}
 
 const resetForm = () => {
   state.firstName = "";
@@ -228,7 +209,14 @@ async function getConsent() {
   consentText.value = consentDoc.text;
   consentVersion = consentDoc.version;
   showConsent.value = true
+  handleCheckCaptcha();
 }
+
+const isNextButtonDisabled = computed(() => {
+  // Return true (button disabled) if isCaptchaverified is null or undefined
+  return isCaptchaverified.value === null || isCaptchaverified.value === undefined;
+});
+
 
 </script>
 
@@ -251,4 +239,5 @@ async function getConsent() {
   margin-top: 0;
   margin-bottom: 0.75rem;
 }
+
 </style>

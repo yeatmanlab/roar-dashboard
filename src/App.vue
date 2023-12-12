@@ -10,6 +10,8 @@
     <!-- Twitter -->
     <meta name="twitter:title" content="ROAR Web Query">
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!">
+
+    
   </AppHead>
   <div>
     <Toast />
@@ -26,6 +28,9 @@ import Navbar from "@/components/Navbar.vue";
 import { useAuthStore } from "@/store/auth";
 import { ref } from 'vue';
 import { fetchDocById } from "@/helpers/query/utils";
+import { useRecaptchaProvider } from 'vue-recaptcha';
+
+useRecaptchaProvider();
 
 const navbarBlacklist = ref([
   "SignIn",
