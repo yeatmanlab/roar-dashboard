@@ -6,8 +6,11 @@
   "targets": {
     "gse-roar-admin": {
       "hosting": {
-        "dashboard": [
+        "production": [
           "gse-roar-admin"
+        ],
+        "staging": [
+          "roar-staging"
         ]
       }
     }
