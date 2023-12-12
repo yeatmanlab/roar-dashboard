@@ -3,18 +3,21 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
-    "format": "prettier . --write",
-    "dev:emulate": "export VITE_FIREBASE_EMULATOR=true && vite --force --host",
-    "dev": "vite --force --host",
     "build": "vite build",
-    "preview": "vite preview",
+    "dev": "vite --force --host",
+    "dev:emulate": "export VITE_FIREBASE_EMULATOR=true && vite --force --host",
     "emulate:admin": "source firebase/emulate_admin.sh",
     "emulate:assessment": "source firebase/emulate_assessment.sh",
+    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh",
     "emulate:start": "unset GOOGLE_APPLICATION_CREDENTIALS && npm run emulate:admin && npm run emulate:assessment",
     "emulate:stop": "ps -e | grep 'firebase emulators:start' | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill -s INT",
-    "emulate:export": "source firebase/export_admin.sh && source firebase/export_assessment.sh",
-    "prepare": "husky install"
+    "format": "prettier . --write",
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
+    "postversion": "GIT_REMOTE=$(git remote -v | grep \"yeatmanlab/roar-dashboard.git \\(push\\)\" | cut -f 1) && git push $GIT_REMOTE && git push $GIT_REMOTE --tags",
+    "prepare": "husky install",
+    "preversion": "npm run lint",
+    "preview": "vite preview",
+    "version": "npm run format && git add -A"
   },
   "dependencies": {
     "@bdelab/roar-firekit": "^4.2.0",
