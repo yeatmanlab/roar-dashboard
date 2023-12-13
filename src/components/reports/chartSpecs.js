@@ -29,7 +29,7 @@ function returnGradeCount(scores) {
     { grade: '12', support_levels: [0, 0, 0], totalStudents: 0 },
   ];
   for (let score of scores.value) {
-    let gradeCounter = gradeCount.find((grade) => grade.grade === score.user.grade.toString());
+    let gradeCounter = gradeCount.find((grade) => grade.grade === score?.user?.grade?.toString());
     if (gradeCounter) {
       gradeCounter.totalStudents++;
       if (score?.scores?.support_level === 'Needs Extra Support' && gradeCounter) {
@@ -39,7 +39,7 @@ function returnGradeCount(scores) {
       } else if (score?.scores?.support_level === 'At or Above Average' && gradeCounter) {
         gradeCounter.support_levels[2]++;
       } else {
-        console.log('support level not matched', score);
+        // score not counted (support level null)
       }
     }
   }
@@ -86,12 +86,11 @@ function returnSupportLevelValues(scores) {
   return values;
 }
 
-export const distBySupportLevel = (taskId, scores ) => {
+export const distBySupport = (taskId, scores) => {
   return {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
     mark: 'bar',
-    height: 500,
-    width: 600,
+    height: 300,
+    width: 300,
     title: {
       text: `Distribution of Support Level for ROAR-${taskId.toUpperCase()}`,
       anchor: 'middle',
@@ -102,39 +101,28 @@ export const distBySupportLevel = (taskId, scores ) => {
     },
     encoding: {
       y: {
-        field: 'category',
-        title: 'By Grade',
-        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
-        spacing: 1,
-        header: {
-          titleColor: 'navy',
-          titleFontSize: 12,
-          titleAlign: 'top',
-          titleAnchor: 'middle',
-          labelColor: 'navy',
-          labelFontSize: 10,
-          labelFontStyle: 'bold',
-          labelAnchor: 'middle',
-          labelAngle: 0,
-          labelAlign: 'left',
-          labelOrient: 'left',
-          // labelExpr: "join(['Grade ',if(category == 'Kindergarten', 'K', datum.value ), ], '')",
-          labelExpr: "Grade ",
-        },
-      },
-      x: {
         field: 'value',
         title: 'Percentage (%)',
         type: 'quantitative',
         spacing: 1,
       },
-      yOffset: { field: 'group' },
+      x: {
+        field: 'category',
+        type: 'ordinal',
+        title: 'By Grade',
+        spacing: 1,
+      },
+      xOffset: {
+        field: 'group',
+        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+      },
       color: {
         field: 'group',
         title: 'Support Level',
-        type: 'ordinal',
-        scale: { range: ['green', 'rgb(237, 192, 55', 'rgb(201, 61, 130)'] },
+        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+        scale: { range: [ 'rgb(201, 61, 130)','rgb(237, 192, 55)', 'green'] },
       },
+      tooltip: {field: "value", type: "quantitative" }
     },
   };
 };
@@ -149,7 +137,7 @@ export const distByGrade = (taskId, scores, scoreField) => {
 
     mark: 'bar',
     height: 50,
-    width: 600,
+    width: 500,
 
     encoding: {
       facet: {

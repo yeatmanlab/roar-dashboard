@@ -1,4 +1,21 @@
 <template>
+  <div class="flex flex-row flex-wrap">
+  <DistributionChart
+    :initialized="initialized"
+    :administration-id="administrationId"
+    :org-type="orgType"
+    :org-id="orgId"
+    task-id="swr"
+    graph-type="distByGrade"
+  />
+  <DistributionChart
+    :initialized="initialized"
+    :administration-id="administrationId"
+    :org-type="orgType"
+    :org-id="orgId"
+    task-id="swr"
+    graph-type="distBySupport"
+  />
   <div class="task-card">
     <div class="task-title">ROAR-MORPHOLOGY (WIP)</div>
     <span style="text-transform: uppercase">Single Word Recognition</span>
@@ -10,14 +27,7 @@
       above.
     </p>
   </div>
-  <DistributionChart
-    :initialized="initialized"
-    :administration-id="administrationId"
-    :org-type="orgType"
-    :org-id="orgId"
-    task-id="swr"
-    graph-type="distByGrade"
-  />
+  </div>
 </template>
 <script setup>
 import DistributionChart from '../DistributionChart.vue';

@@ -1,5 +1,5 @@
 <template>
-  <div :id="`roar-dist-chart-support`"></div>
+  <div :id="`roar-dist-chart-support-${taskId}`"></div>
   <div :id="`roar-dist-chart-${taskId}`"></div>
 </template>
 
@@ -9,7 +9,7 @@ import { computed, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import embed from 'vega-embed';
 import { runPageFetcher } from '@/helpers/query/runs';
-import { distByGrade, distBySupportLevel } from './chartSpecs.js';
+import { distByGrade, distBySupport} from './chartSpecs.js';
 import { getSupportLevel } from '@/helpers/reports';
 
 const props = defineProps({
@@ -89,11 +89,9 @@ const draw = async () => {
   let chartSpec;
   let chartSpec2;
   if (props.graphType === 'distByGrade') chartSpec = distByGrade(props.taskId, computedScores, scoreField);
-  else if (props.graphType === 'distBySupportLevel') {
-    if(props.taskId === "swr") {
-    chartSpec2 = distBySupportLevel(props.taskId, computedScores, scoreField);
-    await embed(`#roar-dist-chart-support`, chartSpec2);
-    }
+  else if (props.graphType === 'distBySupport') {
+    chartSpec2 = distBySupport(props.taskId, computedScores, scoreField);
+    await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpec2);
   }
   // Other chart types can be added via this if/then pattern
 
