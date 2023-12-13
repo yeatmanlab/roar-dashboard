@@ -70,21 +70,21 @@
 
         <div class="legend-container">
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${emptyTagColorMap.below};`" />
+            <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
               <div>Needs extra support</div>
               <div>(Below 25th percentile)</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${emptyTagColorMap.some};`" />
+            <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
             <div>
               <div>Needs some support</div>
               <div>(Below 50th percentile)</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${emptyTagColorMap.above};`" />
+            <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
             <div>
               <div>At or above average</div>
               <div>(At or above 50th percentile)</div>
@@ -237,6 +237,7 @@ import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils'
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 
 const authStore = useAuthStore();
@@ -538,27 +539,6 @@ function getScoreKeys(row, grade) {
   };
 }
 
-function getSupportLevel(percentile) {
-  let support_level = null;
-  let tag_color = null;
-  if (percentile !== undefined) {
-    if (percentile >= 50) {
-      support_level = 'At or Above Average';
-      tag_color = emptyTagColorMap.above;
-    } else if (percentile > 25 && percentile < 50) {
-      support_level = 'Needs Some Support';
-      tag_color = emptyTagColorMap.some;
-    } else {
-      support_level = 'Needs Extra Support';
-      tag_color = emptyTagColorMap.below;
-    }
-  }
-  return {
-    support_level,
-    tag_color,
-  };
-}
-
 const refreshing = ref(false);
 const spinIcon = computed(() => {
   if (refreshing.value) return 'pi pi-spin pi-spinner';
@@ -570,12 +550,6 @@ const allTasks = computed(() => {
     return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
   } else return [];
 });
-
-const emptyTagColorMap = {
-  above: 'green',
-  some: '#edc037',
-  below: '#c93d82',
-};
 
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];

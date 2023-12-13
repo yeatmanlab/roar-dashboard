@@ -3,11 +3,13 @@
 </template>
 
 <script setup>
+import _get from 'lodash/get';
 import { computed, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import embed from 'vega-embed';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { distByGrade } from './chartSpecs.js';
+import { getSupportLevel } from '@/helpers/reports';
 
 const props = defineProps({
   initialized: {
@@ -55,12 +57,20 @@ const { data: scores, isLoading } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-// const computedScores = computed(() => {
-//   if (scores.value === undefined) return [];
-//   return scores.value.map(({ user, scores }) => {
-
-//   })
-// })
+const computedScores = computed(() => {
+  if (scores.value === undefined) return [];
+  return scores.value.map(({ user, scores }) => {
+    const percentScore = _get(scores, scoreField.value);
+    const { support_level } = getSupportLevel(percentScore);
+    return {
+      user,
+      scores: {
+        ...scores,
+        support_level,
+      },
+    };
+  });
+});
 
 const scoreField = computed(() => {
   if (props.taskId === 'swr') {
@@ -76,7 +86,7 @@ const scoreField = computed(() => {
 
 const draw = async () => {
   let chartSpec;
-  if (props.graphType === 'distByGrade') chartSpec = distByGrade(props.taskId, scores, scoreField);
+  if (props.graphType === 'distByGrade') chartSpec = distByGrade(props.taskId, computedScores, scoreField);
   // Other chart types can be added via this if/then pattern
 
   await embed(`#roar-dist-chart-${props.taskId}`, chartSpec);
