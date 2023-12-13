@@ -124,6 +124,7 @@
           :org-type="orgType"
           :org-id="orgId"
           :task-id="task"
+          graph-type="distByGrade"
         />
         <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('letter')" class="task-card">

@@ -6,8 +6,8 @@
 import { computed, ref, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import embed from 'vega-embed';
-import _camelCase from 'lodash/camelCase';
 import { runPageFetcher } from '@/helpers/query/runs';
+import { distByGrade } from './chartSpecs.js';
 
 const props = defineProps({
   initialized: {
@@ -30,6 +30,11 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  graphType: {
+    type: String,
+    required: true,
+    default: 'distByGrade',
+  },
 });
 
 const { data: scores, isLoading } = useQuery({
@@ -50,6 +55,13 @@ const { data: scores, isLoading } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// const computedScores = computed(() => {
+//   if (scores.value === undefined) return [];
+//   return scores.value.map(({ user, scores }) => {
+
+//   })
+// })
+
 const scoreField = computed(() => {
   if (props.taskId === 'swr') {
     return 'wjPercentile';
@@ -62,72 +74,12 @@ const scoreField = computed(() => {
   return 'percentile';
 });
 
-const graphColorType = {
-  mediumPink: '#cc79a7',
-  mediumYellow: '#f0e442',
-  mediumBlue: '#0072b2',
-  lightBlueGreen: '#44aa99',
-  darkPurple: '#342288',
-  black: '#000000',
-};
-
 const draw = async () => {
-  const distributionByGrade = {
-    description: 'ROAR Score Distribution by Grade Level',
-    title: { text: `${props.taskId.toUpperCase()} Score Distribution`, anchor: 'middle', fontSize: 18 },
-    config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
+  let chartSpec;
+  if (props.graphType === 'distByGrade') chartSpec = distByGrade(props.taskId, scores, scoreField);
+  // Other chart types can be added via this if/then pattern
 
-    data: { values: scores.value },
-
-    mark: 'bar',
-    height: 50,
-    width: 600,
-
-    encoding: {
-      facet: {
-        field: 'user.grade',
-        type: 'nominal',
-        columns: 1,
-        title: 'By Grade',
-        header: {
-          titleColor: 'navy',
-          titleFontSize: 12,
-          titleAlign: 'top',
-          titleAnchor: 'middle',
-          labelColor: 'navy',
-          labelFontSize: 10,
-          labelFontStyle: 'bold',
-          labelAnchor: 'middle',
-          labelAngle: 0,
-          labelAlign: 'left',
-          labelOrient: 'left',
-          labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
-        },
-        spacing: 7,
-      },
-
-      color: {
-        field: 'user.grade',
-        type: 'ordinal',
-        sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-        legend: null,
-      },
-
-      x: {
-        field: `scores.${scoreField.value}`,
-        title: _camelCase(scoreField.value),
-        bin: { step: 5, extent: [0, 100] },
-      },
-
-      y: {
-        aggregate: 'count',
-        title: 'count',
-        axis: { orient: 'right' },
-      },
-    },
-  };
-
-  await embed(`#roar-dist-chart-${props.taskId}`, distributionByGrade);
+  await embed(`#roar-dist-chart-${props.taskId}`, chartSpec);
 };
 
 watch(isLoading, (val) => {
