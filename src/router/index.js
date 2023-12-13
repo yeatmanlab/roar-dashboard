@@ -285,6 +285,13 @@ const routes = [
     meta: { pageTitle: 'View Scores', requireAdmin: true },
   },
   {
+    path: '/scores/:administrationId/users/:userId',
+    name: 'StudentReport',
+    props: true,
+    component: () => import('../pages/IndividualReport.vue'),
+    meta: { pageTitle: 'Student Score Report', requireAdmin: true },
+  },
+  {
     path: '/enable-cookies',
     name: 'EnableCookies',
     component: () => import('../pages/EnableCookies.vue'),

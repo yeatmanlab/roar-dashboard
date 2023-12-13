@@ -994,6 +994,15 @@ const columns = computed(() => {
       });
     }
   }
+  tableColumns.push({
+    header: 'Student Report',
+    link: true,
+    routeName: 'StudentReport',
+    routeTooltip: 'Student Score Report',
+    routeLabel: 'Individual Report',
+    routeIcon: 'pi pi-user',
+    sort: false,
+  });
   return tableColumns;
 });
 
@@ -1062,9 +1071,9 @@ const tableData = computed(() => {
           assignment,
           scores,
           routeParams: {
-            administrationId: props.administrationId,
-            userId: _get(user, 'userId'),
-          },
+          administrationId: props.administrationId,
+          userId: _get(user, 'userId'),
+          }
         };
       }
     }
@@ -1072,6 +1081,10 @@ const tableData = computed(() => {
       user,
       assignment,
       scores,
+      routeParams: {
+        administrationId: props.administrationId,
+        userId: _get(user, 'userId'),
+      }
     };
   });
 });
