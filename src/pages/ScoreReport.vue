@@ -124,6 +124,16 @@
           :org-type="orgType"
           :org-id="orgId"
           :task-id="task"
+          graph-type="distBySupportLevel"
+        />
+        <DistributionChart
+          v-for="task in allTasks"
+          :key="task"
+          :initialized="initialized"
+          :administration-id="administrationId"
+          :org-type="orgType"
+          :org-id="orgId"
+          :task-id="task"
           graph-type="distByGrade"
         />
         <!-- In depth breakdown of each task -->

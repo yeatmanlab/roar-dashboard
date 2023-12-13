@@ -9,6 +9,136 @@ const graphColorType = {
   black: '#000000',
 };
 
+function returnGradeCount(scores) {
+  // gradecount should be an obj of {{grade:{} count}}
+  let gradeCount = [
+    { grade: 'Pre-K', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: 'T-K', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: 'Kindergarten', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '1', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '2', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '3', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '4', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '5', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '6', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '7', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '8', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '9', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '10', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '11', support_levels: [0, 0, 0], totalStudents: 0 },
+    { grade: '12', support_levels: [0, 0, 0], totalStudents: 0 },
+  ];
+  for (let score of scores.value) {
+    let gradeCounter = gradeCount.find((grade) => grade.grade === score.user.grade.toString());
+    if (gradeCounter) {
+      gradeCounter.totalStudents++;
+      if (score?.scores?.support_level === 'Needs Extra Support' && gradeCounter) {
+        gradeCounter.support_levels[0]++;
+      } else if (score?.scores?.support_level === 'Needs Some Support' && gradeCounter) {
+        gradeCounter.support_levels[1]++;
+      } else if (score?.scores?.support_level === 'At or Above Average' && gradeCounter) {
+        gradeCounter.support_levels[2]++;
+      } else {
+        console.log('support level not matched', score);
+      }
+    }
+  }
+
+  return gradeCount;
+}
+
+function returnValueByIndex(index, grade) {
+  if (index >= 0 && index <= 2) {
+    // 0 => needs extra support
+    // 1 => needs some support
+    // 2 => at or above average
+    let valsByIndex = [
+      { group: 'Needs Extra Support', color: 'rgb(201, 61, 130)' },
+      { group: 'Needs Some Support', color: 'rgb(237, 192, 55)' },
+      { group: 'At or Above Average', color: 'green' },
+    ];
+    let value = {
+      category: grade.grade,
+      group: valsByIndex[index].group,
+      color: valsByIndex[index].color,
+      value: (grade?.support_levels[index] / grade.totalStudents) * 100,
+    };
+    return value;
+  } else {
+    throw new Error('Index out of range');
+  }
+}
+
+function returnSupportLevelValues(scores) {
+  let gradeCounts = returnGradeCount(scores);
+  let values = [];
+
+  // generates values for bar chart
+  for (let grade of gradeCounts) {
+    if (grade?.totalStudents > 0) {
+      for (let i = 0; i < grade?.support_levels.length; i++) {
+        let value = returnValueByIndex(i, grade);
+        values.push(value);
+      }
+    }
+  }
+
+  return values;
+}
+
+export const distBySupportLevel = (taskId, scores ) => {
+  return {
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    mark: 'bar',
+    height: 500,
+    width: 600,
+    title: {
+      text: `Distribution of Support Level for ROAR-${taskId.toUpperCase()}`,
+      anchor: 'middle',
+      fontSize: 18,
+    },
+    data: {
+      values: returnSupportLevelValues(scores),
+    },
+    encoding: {
+      y: {
+        field: 'category',
+        title: 'By Grade',
+        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+        spacing: 1,
+        header: {
+          titleColor: 'navy',
+          titleFontSize: 12,
+          titleAlign: 'top',
+          titleAnchor: 'middle',
+          labelColor: 'navy',
+          labelFontSize: 10,
+          labelFontStyle: 'bold',
+          labelAnchor: 'middle',
+          labelAngle: 0,
+          labelAlign: 'left',
+          labelOrient: 'left',
+          // labelExpr: "join(['Grade ',if(category == 'Kindergarten', 'K', datum.value ), ], '')",
+          labelExpr: "Grade ",
+        },
+      },
+      x: {
+        field: 'value',
+        title: 'Percentage (%)',
+        type: 'quantitative',
+        spacing: 1,
+      },
+      yOffset: { field: 'group' },
+      color: {
+        field: 'group',
+        title: 'Support Level',
+        type: 'ordinal',
+        scale: { range: ['green', 'rgb(237, 192, 55', 'rgb(201, 61, 130)'] },
+      },
+    },
+  };
+};
+
 export const distByGrade = (taskId, scores, scoreField) => {
   return {
     description: 'ROAR Score Distribution by Grade Level',
