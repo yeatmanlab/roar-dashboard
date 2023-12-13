@@ -582,6 +582,10 @@ const tableData = computed(() => {
           },
           assignment,
           scores,
+          routeParams: {
+            administrationId: props.administrationId,
+            userId: _get(user, 'userId'),
+          },
         };
       }
     }

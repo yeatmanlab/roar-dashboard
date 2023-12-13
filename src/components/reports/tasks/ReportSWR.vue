@@ -23,11 +23,13 @@
   <div class="flex flex-row flex-wrap">
     <div>
       <SelectButton v-model="mode" :options="modes" aria-labelledby="basic"/>
-      <DistributionChart :initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+      <DistributionChart
+:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
         :org-id="orgId" task-id="swr" graph-type="distByGrade" />
     </div>
     <div>
-      <DistributionChart :initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+      <DistributionChart
+:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
         :org-id="orgId" task-id="swr" graph-type="distBySupport" :mode="mode"/>
     </div>
   </div>
