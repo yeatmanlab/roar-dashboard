@@ -99,7 +99,7 @@
         <SubscoreTable
           v-if="allTasks.includes('letter')"
           task-id="letter"
-          :task-name="displayNames['letter'].name"
+          :task-name="taskDisplayNames['letter'].name"
           :administration-id="administrationId"
           :org-type="orgType"
           :org-id="orgId"
@@ -109,7 +109,7 @@
         <SubscoreTable
           v-if="allTasks.includes('pa')"
           task-id="pa"
-          :task-name="displayNames['pa'].name"
+          :task-name="taskDisplayNames['pa'].name"
           :administration-id="administrationId"
           :org-type="orgType"
           :org-id="orgId"
@@ -237,7 +237,7 @@ import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils'
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
+import { taskDisplayNames, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 
 const authStore = useAuthStore();
@@ -350,17 +350,6 @@ const viewOptions = ref([
   { label: 'Raw Score', value: 'raw' },
 ]);
 
-const displayNames = {
-  swr: { name: 'Word', order: 3 },
-  'swr-es': { name: 'Palabra', order: 4 },
-  pa: { name: 'Phoneme', order: 2 },
-  sre: { name: 'Sentence', order: 5 },
-  letter: { name: 'Letter', order: 1 },
-  multichoice: { name: 'Multichoice', order: 6 },
-  mep: { name: 'MEP', order: 7 },
-  ExternalTask: { name: 'External Task', order: 8 },
-  ExternalTest: { name: 'External Test', order: 9 },
-};
 const rawOnlyTasks = ['letter'];
 
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
@@ -407,16 +396,16 @@ const exportSelected = (selectedRows) => {
         percentileScoreKey,
         percentileScoreDisplayKey,
       });
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
         assessment,
         `scores.computed.composite.${standardScoreDisplayKey}`,
       );
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
       const { support_level } = getSupportLevel(percentile);
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow;
   });
@@ -457,16 +446,16 @@ const exportAll = async () => {
         percentileScoreKey,
         percentileScoreDisplayKey,
       });
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
         assessment,
         `scores.computed.composite.${standardScoreDisplayKey}`,
       );
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
       const { support_level } = getSupportLevel(percentile);
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow;
   });
@@ -570,8 +559,8 @@ const columns = computed(() => {
 
   if (tableData.value.length > 0) {
     const sortedTasks = allTasks.value.toSorted((p1, p2) => {
-      if (Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)) {
-        return displayNames[p1].order - displayNames[p2].order;
+      if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
+        return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
       } else {
         return -1;
       }
@@ -583,7 +572,7 @@ const columns = computed(() => {
       if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`;
       tableColumns.push({
         field: colField,
-        header: displayNames[taskId]?.name ?? taskId,
+        header: taskDisplayNames[taskId]?.name ?? taskId,
         dataType: 'text',
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
         emptyTag: viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
