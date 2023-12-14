@@ -49,9 +49,6 @@
               <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
               <span>Require sequential?</span>
               <PvInputSwitch v-model="state.sequential" class="ml-2" />
-              <button class="p-panel-header-icon p-link ml-6 mr-2" @click="refreshAssessments">
-                <span :class="spinIcon.assessments"></span>
-              </button>
             </div>
           </template>
 
@@ -123,7 +120,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, toRaw } from 'vue';
+import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -135,13 +132,13 @@ import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
-import { useQueryStore } from '@/store/query';
 import { useAuthStore } from '@/store/auth';
 import AppSpinner from '@/components/AppSpinner.vue';
 import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { getSidebarActions } from '@/router/sidebarActions';
 import { fetchDocById } from '@/helpers/query/utils';
+import { variantsFetcher } from '@/helpers/query/tasks';
 
 const router = useRouter();
 const toast = useToast();
@@ -160,6 +157,14 @@ const { data: userClaims } = useQuery({
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
+
+const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
+  queryKey: ['variants', 'all'],
+  queryFn: () => variantsFetcher(),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 //      +---------------------------------+
 // -----| Form state and validation rules |-----
@@ -208,14 +213,6 @@ const selection = (selected) => {
 //      +---------------------------------+
 // -----|       Assessment Selection      |-----
 //      +---------------------------------+
-const refreshing = reactive({
-  assessments: false,
-});
-
-const spinIcon = computed(() => ({
-  assessments: refreshing.assessments ? 'pi pi-spin pi-spinner' : 'pi pi-refresh',
-}));
-
 let paramPanelRefs = {};
 
 const toEntryObjects = (inputObj) => {
@@ -226,9 +223,6 @@ const toggle = (event, id) => {
   paramPanelRefs[id].value.toggle(event);
 };
 
-const queryStore = useQueryStore();
-
-const { allVariants } = storeToRefs(queryStore);
 const assessments = ref([[], []]);
 
 const backupImage = '/src/assets/swr-icon.jpeg';
@@ -244,30 +238,12 @@ const checkForRequiredOrgs = (orgs) => {
   return Boolean(filtered.length);
 };
 
-let unsubscribeAssessments;
-
-const refreshAssessments = async () => {
-  refreshing.assessments = true;
-  if (unsubscribeAssessments) unsubscribeAssessments();
-  assessments.value = [[], []];
-
-  const requireRegisteredTasks = !isSuperAdmin.value;
-  queryStore.getVariants(requireRegisteredTasks).then(() => {
+watch(isLoadingVariants, (value) => {
+  if (!value && allVariants.value.length > 0) {
     assessments.value = [allVariants.value, []];
     paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
-    refreshing.assessments = false;
-  });
-};
-
-if (allVariants.value.length === 0) {
-  unsubscribeAssessments = authStore.$subscribe(async (mutation, state) => {
-    if (state.roarfirekit.getVariants && state.roarfirekit.isAdmin()) {
-      await refreshAssessments();
-    }
-  });
-} else {
-  assessments.value = [allVariants.value, []];
-}
+  }
+});
 
 //      +---------------------------------+
 // -----|         Form submission         |-----
@@ -336,9 +312,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
-  if (roarfirekit.value.getVariants && roarfirekit.value.isAdmin()) {
-    await refreshAssessments();
-  }
 });
 </script>
 
