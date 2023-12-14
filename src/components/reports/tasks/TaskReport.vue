@@ -74,18 +74,6 @@ const props = defineProps({
         type: String,
         required: true,
     },
-    taskHeader: {
-        type: String,
-        required: true,
-    },
-    taskSubHeader: {
-        type: String,
-        required: true,
-    },
-    taskDescription: {
-        type: String,
-        required: true,
-    }
 });
 
 let tasksInfoById = {

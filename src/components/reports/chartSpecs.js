@@ -1,4 +1,3 @@
-import _camelCase from 'lodash/camelCase';
 const graphColorType = {
   mediumPink: '#cc79a7',
   mediumYellow: '#f0e442',
@@ -30,13 +29,15 @@ function returnGradeCount(scores) {
   for (let score of scores.value) {
     let gradeCounter = gradeCount.find((grade) => grade.grade === score?.user?.grade?.toString());
     if (gradeCounter) {
-      gradeCounter.totalStudents++;
       if (score?.scores?.support_level === 'Needs Extra Support' && gradeCounter) {
         gradeCounter.support_levels[0]++;
+        gradeCounter.totalStudents++;
       } else if (score?.scores?.support_level === 'Needs Some Support' && gradeCounter) {
         gradeCounter.support_levels[1]++;
+        gradeCounter.totalStudents++;
       } else if (score?.scores?.support_level === 'At or Above Average' && gradeCounter) {
         gradeCounter.support_levels[2]++;
+        gradeCounter.totalStudents++;
       } else {
         // score not counted (support level null)
       }
@@ -52,9 +53,9 @@ function returnValueByIndex(index, grade, mode) {
     // 1 => needs some support
     // 2 => at or above average
     let valsByIndex = [
-      { group: 'Needs Extra Support', color: 'rgb(201, 61, 130)' },
-      { group: 'Needs Some Support', color: 'rgb(237, 192, 55)' },
-      { group: 'At or Above Average', color: 'green' },
+      { group: 'Needs Extra Support' },
+      { group: 'Needs Some Support' },
+      { group: 'At or Above Average' },
     ];
     let value;
     if (mode === 'percentage') {
@@ -82,7 +83,7 @@ function returnValueByIndex(index, grade, mode) {
 function returnSupportLevelValues(scores, mode) {
   let gradeCounts = returnGradeCount(scores);
   let values = [];
-
+  console.log('grade', gradeCounts);
   // generates values for bar chart
   for (let grade of gradeCounts) {
     if (grade?.totalStudents > 0) {
@@ -92,7 +93,7 @@ function returnSupportLevelValues(scores, mode) {
       }
     }
   }
-
+  console.log('val', values);
   return values;
 }
 
@@ -138,17 +139,33 @@ export const distBySupport = (taskId, scores, mode = 'percentage') => {
   };
 };
 
-export const distByGrade = (taskId, scores, scoreField) => {
+function returnDistByGrade(scores, scoreFieldBelowSixth, scoreFieldAboveSixth) {
+  for (let score of scores) {
+    let stdPercentile;
+    if (score.user.grade >= 6) {
+      stdPercentile = score.scores[scoreFieldAboveSixth];
+    }
+    else {
+      stdPercentile = score.scores[scoreFieldBelowSixth];
+    }
+    score.scores.stdPercentile = stdPercentile;
+  }
+  console.log('scores', scores);
+  return scores;
+}
+
+export const distByGrade = (taskId, scores, scoreFieldBelowSixth, scoreFieldAboveSixth) => {
+  console.log('scores.value', scores.value);
   return {
     description: 'ROAR Score Distribution by Grade Level',
     title: { text: `${taskId.toUpperCase()} Score Distribution`, anchor: 'middle', fontSize: 18 },
     config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
 
-    data: { values: scores.value },
+    data: { values: returnDistByGrade(scores.value, scoreFieldBelowSixth.value, scoreFieldAboveSixth.value) },
 
     mark: 'bar',
     height: 50,
-    width: 500,
+    width: 400,
 
     encoding: {
       facet: {
@@ -171,20 +188,22 @@ export const distByGrade = (taskId, scores, scoreField) => {
           labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
         },
         spacing: 7,
+        sort: 'ascending',
+        // sort: ['Grade K', 'Grade 1', 'Grade 2', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       },
 
       color: {
-        field: 'user.grade',
-        type: 'ordinal',
+        field: 'scores.stdPercentile',
+        type: 'quantitative',
         sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         legend: null,
       },
 
       x: {
-        field: `scores.${scoreField.value}`,
-        title: _camelCase(scoreField.value),
-        bin: { step: 5, extent: [0, 100] },
-        sort: ['K', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        field: `scores.stdPercentile`,
+        title: `Percentile`,
+        bin: { step: 10, extent: [0, 100] },
+        sort: "ascending"
       },
 
       y: {

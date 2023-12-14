@@ -16,7 +16,7 @@ export const supportLevelColors = {
   below: '#c93d82',
 };
 
-export const getSupportLevel = (percentile) => {
+export const getSupportLevel = (percentile ) => {
   let support_level = null;
   let tag_color = null;
   if (percentile !== undefined) {

@@ -66,7 +66,13 @@ const { data: scores, isLoading } = useQuery({
 const computedScores = computed(() => {
   if (scores.value === undefined) return [];
   return scores.value.map(({ user, scores }) => {
-    const percentScore = _get(scores, scoreField.value);
+    let percentScore;
+    if(user.grade >= 6) {
+      percentScore = _get(scores, scoreFieldAboveSixth.value);
+    }
+    else {
+      percentScore = _get(scores, scoreFieldBelowSixth.value);
+    }
     const { support_level } = getSupportLevel(percentScore);
     return {
       user,
@@ -78,7 +84,7 @@ const computedScores = computed(() => {
   });
 });
 
-const scoreField = computed(() => {
+const scoreFieldBelowSixth = computed(() => {
   if (props.taskId === 'swr') {
     return 'wjPercentile';
   } else if (props.taskId === 'sre') {
@@ -90,10 +96,22 @@ const scoreField = computed(() => {
   return 'percentile';
 });
 
+const scoreFieldAboveSixth = computed(() => {
+  if (props.taskId === 'swr') {
+    return 'sprPercentile';
+  } else if (props.taskId === 'sre') {
+    return 'sprPercentile';
+  } else if (props.taskId === 'pa') {
+    return 'sprpercentile';
+  }
+
+  return 'percentile';
+});
+
 const draw = async () => {
   let chartSpec;
   let chartSpec2;
-  if (props.graphType === 'distByGrade') chartSpec = distByGrade(props.taskId, computedScores, scoreField);
+  if (props.graphType === 'distByGrade') chartSpec = distByGrade(props.taskId, computedScores, scoreFieldBelowSixth, scoreFieldAboveSixth);
   else if (props.graphType === 'distBySupport') {
     chartSpec2 = distBySupport(props.taskId, computedScores, props.mode);
     await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpec2);
