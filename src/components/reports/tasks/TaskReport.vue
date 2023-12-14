@@ -76,7 +76,7 @@ const props = defineProps({
     required: true,
   },
   administrationInfo: {
-    type: String,
+    type: Object,
     required: true,
   },
   orgType: {
@@ -88,7 +88,7 @@ const props = defineProps({
     required: true,
   },
   orgInfo: {
-    type: String,
+    type: Object,
     required: true,
   },
   taskId: {
