@@ -1,41 +1,22 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
+    <!-- <aside class="main-sidebar"> -->
+      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
+    <!-- </aside> -->
     <section class="main-body">
-      <PvPanel :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`">
-        <template #icons>
-          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
+      <!-- :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`" -->
+      <PvPanel >
+        <!-- <template #icons>
+          <div class="w-full align-items-end">
+            <button class="p-panel-header-icon p-link mr-2 w-full" @click="refresh">
+            <span :class="spinIcon"> Refresh</span>
           </button>
-        </template>
+          </div>
+        </template> -->
 
-        <h2 v-if="orgInfo" class="report-title">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
+        <h2 v-if="orgInfo" class="report-title text-2xl surface-ground w-full">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
 
-        <!-- Header blurbs about tasks -->
-        <h2>IN THIS REPORT...</h2>
-        <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
-        <div class="task-overview-container">
-          <div v-if="allTasks.includes('letter')" class="task-blurb">
-            <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names
-            and sounds.
-          </div>
-          <div v-if="allTasks.includes('pa')" class="task-blurb">
-            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span> assesses some of the most
-            foundational skills for reading: mapping letters to their corresponding sounds. This skill is crucial for
-            building further reading fluency skills, such as decoding.
-          </div>
-          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
-            <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
-            word level.
-          </div>
-          <div v-if="allTasks.includes('sre')" class="task-blurb">
-            <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
-            at the sentence level.
-          </div>
-        </div>
-
+        
         <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -95,6 +76,29 @@
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
           indicate that the assessment was not completed.
         </div>
+        <!-- Header blurbs about tasks -->
+        <h2 class="text-xl">IN THIS REPORT...</h2>
+        <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
+        <div class="task-overview-container">
+          <div v-if="allTasks.includes('letter')" class="task-blurb">
+            <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names
+            and sounds.
+          </div>
+          <div v-if="allTasks.includes('pa')" class="task-blurb">
+            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span> assesses some of the most
+            foundational skills for reading: mapping letters to their corresponding sounds. This skill is crucial for
+            building further reading fluency skills, such as decoding.
+          </div>
+          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
+            <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
+            word level.
+          </div>
+          <div v-if="allTasks.includes('sre')" class="task-blurb">
+            <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
+            at the sentence level.
+          </div>
+        </div>
+
         <!-- Subscores tables -->
         <SubscoreTable
           v-if="allTasks.includes('letter')"
@@ -217,8 +221,8 @@ import _find from 'lodash/find';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
+// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+// import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
@@ -230,7 +234,7 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
+// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: {
@@ -547,10 +551,10 @@ function getSupportLevel(percentile) {
 }
 
 const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return 'pi pi-spin pi-spinner';
-  return 'pi pi-refresh';
-});
+// const spinIcon = computed(() => {
+//   if (refreshing.value) return 'pi pi-spin pi-spinner';
+//   return 'pi pi-refresh';
+// });
 
 const allTasks = computed(() => {
   if (tableData.value.length > 0) {
@@ -683,8 +687,13 @@ onMounted(async () => {
 </script>
 
 <style>
+/* delete if we want to show the name */
+/* .p-panel-header {
+    justify-content: end;
+} */
+
 .report-title {
-  font-size: 3.5rem;
+  /* font-size: 3.5rem; */
   margin-top: 0;
 }
 
@@ -761,4 +770,5 @@ onMounted(async () => {
 .extra-info-title {
   font-size: 2rem;
 }
+
 </style>

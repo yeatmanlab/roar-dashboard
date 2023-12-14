@@ -24,7 +24,7 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-full md:w-20rem"
+          class="w-full md:w-20rem "
           selected-items-label="{0} columns frozen"
           :show-toggle-all="false"
           @update:model-value="onFreezeToggle"
@@ -32,14 +32,19 @@
         <label for="ms-columns">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
-        <PvButton label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
-        <PvButton label="Export Whole Table" @click="exportCSV(false, $event)" />
+        <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
+        <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
+        <!-- New button to toggle row height -->
+          <!-- <Checkbox v-model="checked"  name="Compact view" value="Compact view"/> -->
+            <!-- <label class="ml-2"> Compact view </label> -->
+        <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" />
       </span>
     </div>
     <PvDataTable
       ref="dataTable"
       v-model:filters="refFilters"
       v-model:selection="selectedRows"
+      :class="{ 'compressed': compressedRows }"
       :value="computedData"
       :row-hover="true"
       :reorderable-columns="true"
@@ -64,8 +69,10 @@
       @select-all-change="onSelectAll"
       @row-select="onSelectionChange"
       @row-unselect="onSelectionChange"
+      
+      
     >
-      <PvColumn selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
+      <PvColumn selection-mode="multiple" header-style="width:3rem; " :reorderable-column="false" frozen />
       <PvColumn
         v-for="(col, index) of computedColumns"
         :key="col.field + '_' + index"
@@ -78,6 +85,7 @@
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
         align-frozen="left"
+        header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
       >
         <template #body="{ data: colData }">
           <div v-if="col.tag && _get(colData, col.field) !== undefined">
@@ -86,7 +94,7 @@
               :severity="_get(colData, col.severityField)"
               :value="_get(colData, col.field)"
               :icon="_get(colData, col.iconField)"
-              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem;`"
+              :style="`min-width: 2rem; color:white`"
               rounded
             />
             <div
@@ -123,6 +131,7 @@
                 :aria-label="col.routeTooltip"
                 :icon="col.routeIcon"
                 size="small"
+                class="color:white"
               />
             </router-link>
           </div>
@@ -165,6 +174,7 @@
     </PvDataTable>
   </div>
 </template>
+
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
@@ -178,6 +188,7 @@ import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
+// import Checkbox from 'primevue/checkbox';
 
 /*
 Using the DataTable
@@ -202,6 +213,9 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column. 
 */
+
+const nameForVisualize =ref("Expand view"); 
+const countForVisualize = ref(2);
 
 const props = defineProps({
   columns: { type: Array, required: true },
@@ -258,6 +272,8 @@ const exportCSV = (exportSelected) => {
   emit('export-all');
 };
 
+
+
 // Generate filters and options objects
 const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN'];
 let filters = {};
@@ -312,6 +328,20 @@ const computedData = computed(() => {
   return data;
 });
 
+// let compressedRows = ref(false);
+
+// // Method to toggle row height
+// const toggleColumnWidth = () => {
+//   const columns = document.querySelectorAll('.p-datatable-scrollable-body td[role="cell"]');
+//   columns.forEach(column => {
+//     if (compressedRows.value) {
+//       column.style.width = '50px'; // Adjust the width as needed
+//     } else {
+//       column.style.width = ''; // Reset the width
+//     }
+//   });
+// };
+
 // Generate list of options given a column
 function getUniqueOptions(column) {
   const field = _get(column, 'field');
@@ -350,7 +380,30 @@ const onPage = (event) => {
 const onSort = (event) => {
   emit('sort', event);
 };
+
+// const compressedRows = ref(false);
+
+// const toggleRowHeight = () => {
+//   compressedRows.value = !compressedRows.value;
+// };
+
+const padding='1rem 1.5rem'
+
+function increasePadding() {
+  if(this.countForVisualize%2 ===0){
+    document.documentElement.style.setProperty('--padding-value', padding);
+    this.nameForVisualize = "Compact view";
+  }
+  else{
+    this.nameForVisualize = "Expand view";
+    document.documentElement.style.setProperty('--padding-value', '0px 1.5rem 0px 1.5rem');
+  }
+  this.countForVisualize = this.countForVisualize+1;
+}
+
+
 </script>
+
 <style>
 .circle {
   border-color: white;
@@ -362,4 +415,30 @@ const onSort = (event) => {
   vertical-align: middle;
   margin-right: 10px;
 }
+button.p-button.p-component.softer {
+  background:#f3adad;
+  color: black;
+}
+button.p-column-filter-menu-button.p-link, g{
+  color: white;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: left;
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 1px 0;
+  padding: var(--padding-value, '1rem 1.5rem');
+}
+
+/* .compressed .p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.5rem 1rem;} /* Adjust the padding values as needed */
+
+/* .compressed .p-datatable .p-datatable-tbody > tr > td {
+  text-align: left;
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 1px 0;
+  // padding: 1rem 1.5rem;
+} */
+
+
 </style>

@@ -1142,14 +1142,14 @@
   padding: var(--inline-spacing) 0;
 }
 
-.p-panel .p-panel-header {
+/* .p-panel .p-panel-header {
   border: 1px solid var(--surface-d);
   padding: 1.25rem;
   background: var(--surface-b);
   color: var(--text-color);
   border-top-right-radius: var(--border-radius);
   border-top-left-radius: var(--border-radius);
-}
+} */
 .p-panel .p-panel-header .p-panel-title {
   font-weight: 700;
 }

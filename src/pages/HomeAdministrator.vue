@@ -1,14 +1,15 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" />
-    </aside>
-    <section class="main-body">
-      <PvPanel header="Your administrations">
+    <!-- <aside class="main-sidebar"> -->
+      <!-- <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" /> -->
+    <!-- </aside> -->
+    <section class="main-body ">
+      <PvPanel header="  Your administrations" class="lg:text-3xl sm:text-lg surface-ground">
         <template #icons>
-          <label class="mr-2" for="dd-sort">Sort by</label>
+          <label class="mr-2 text-lg" for="dd-sort">Sort by</label>
           <PvDropdown
             v-model="sortKey"
+            class="mr-3"
             input-id="dd-sort"
             :options="sortOptions"
             option-label="label"
@@ -69,9 +70,9 @@ import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
 import { administrationCounter, administrationPageFetcher } from '../helpers/query/administrations';
-import { getSidebarActions } from '../router/sidebarActions';
+// import { getSidebarActions } from '../router/sidebarActions';
 import CardAdministration from '@/components/CardAdministration.vue';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 
@@ -83,12 +84,12 @@ const authStore = useAuthStore();
 
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, false));
+// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, false));
 
-const userInfo = ref({
-  name: 'Admin name',
-  district: 'District Name',
-});
+// const userInfo = ref({
+//   name: 'Admin name',
+//   district: 'District Name',
+// });
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],
