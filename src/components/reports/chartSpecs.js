@@ -144,8 +144,7 @@ function returnDistByGrade(scores, scoreFieldBelowSixth, scoreFieldAboveSixth) {
     let stdPercentile;
     if (score.user.grade >= 6) {
       stdPercentile = score.scores[scoreFieldAboveSixth];
-    }
-    else {
+    } else {
       stdPercentile = score.scores[scoreFieldBelowSixth];
     }
     score.scores.stdPercentile = stdPercentile;
@@ -155,7 +154,9 @@ function returnDistByGrade(scores, scoreFieldBelowSixth, scoreFieldAboveSixth) {
 }
 
 export const distByGrade = (taskId, scores, scoreFieldBelowSixth, scoreFieldAboveSixth) => {
-  console.log('scores.value', scores.value);
+  if (taskId === 'pa') {
+    console.log('scores.value', scores.value);
+  }
   return {
     description: 'ROAR Score Distribution by Grade Level',
     title: { text: `${taskId.toUpperCase()} Score Distribution`, anchor: 'middle', fontSize: 18 },
@@ -203,7 +204,7 @@ export const distByGrade = (taskId, scores, scoreFieldBelowSixth, scoreFieldAbov
         field: `scores.stdPercentile`,
         title: `Percentile`,
         bin: { step: 10, extent: [0, 100] },
-        sort: "ascending"
+        sort: 'ascending',
       },
 
       y: {

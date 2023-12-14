@@ -102,7 +102,7 @@ const scoreFieldAboveSixth = computed(() => {
   } else if (props.taskId === 'sre') {
     return 'sprPercentile';
   } else if (props.taskId === 'pa') {
-    return 'sprpercentile';
+    return 'sprPercentile';
   }
 
   return 'percentile';
