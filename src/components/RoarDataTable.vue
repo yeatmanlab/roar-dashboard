@@ -3,7 +3,7 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div class="flex flex-row flex-wrap w-full gap-2 pt-4 justify-content-end">
+    <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap">
       <span class="p-float-label">
         <PvMultiSelect
           id="ms-columns"
@@ -11,7 +11,7 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-full md:w-20rem"
+          class="w-2 md:w-10rem"
           selected-items-label="{0} columns selected"
           @update:model-value="onColumnToggle"
         />
@@ -24,19 +24,31 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-full md:w-20rem "
+          class="w-full md:w-10rem "
           selected-items-label="{0} columns frozen"
           :show-toggle-all="false"
           @update:model-value="onFreezeToggle"
         />
         <label for="ms-columns">Freeze Columns</label>
       </span>
+      <span>
+        <div class="relative">
+          <!-- <span>View</span> -->
+          <label for="ms-columns" class="view-label">View</label>
+          <PvDropdown
+            id="view-columns"
+            v-model="viewMode"
+            :options="viewOptions"
+            option-label="label"
+            option-value="value"
+            class="ml-2"
+          />
+          
+        </div>
+      </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
         <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
-        <!-- New button to toggle row height -->
-          <!-- <Checkbox v-model="checked"  name="Compact view" value="Compact view"/> -->
-            <!-- <label class="ml-2"> Compact view </label> -->
         <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" />
       </span>
     </div>
@@ -227,6 +239,13 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
 });
+
+const viewOptions = ref([
+  { label: 'Color', value: 'color' },
+  { label: 'Percentile', value: 'percentile' },
+  { label: 'Standard Score', value: 'standard' },
+  { label: 'Raw Score', value: 'raw' },
+]);
 
 const inputColumns = ref(props.columns);
 const selectedColumns = ref(props.columns);
@@ -427,7 +446,19 @@ button.p-column-filter-menu-button.p-link, g{
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
-  padding: var(--padding-value, '1rem 1.5rem');
+  padding: var(--padding-value, '0px 1.5rem 0px 1.5rem');
+}
+
+.view-label {
+  position: absolute;
+  top: -25px; /* Adjust this value to your desired position */
+  left: 5px;
+  /* Additional styling for the label */
+  background-color: white;
+  padding: 0 5px;
+  z-index: 1; /* Ensures the label is displayed above the dropdown */
+  font-size: smaller;
+  color: var(--surface-500)
 }
 
 /* .compressed .p-datatable .p-datatable-tbody > tr > td {

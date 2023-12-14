@@ -25,16 +25,7 @@
 
         <!-- Main table -->
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
-          <div class="toggle-container">
-            <span>View</span>
-            <PvDropdown
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
-          </div>
+          
           <RoarDataTable
             :data="tableData"
             :columns="columns"
@@ -333,12 +324,7 @@ const onSort = (event) => {
 
 const viewMode = ref('color');
 
-const viewOptions = ref([
-  { label: 'Color', value: 'color' },
-  { label: 'Percentile', value: 'percentile' },
-  { label: 'Standard Score', value: 'standard' },
-  { label: 'Raw Score', value: 'raw' },
-]);
+
 
 const displayNames = {
   swr: { name: 'Word', order: 3 },
