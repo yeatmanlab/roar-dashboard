@@ -46,13 +46,25 @@
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
-              class="ml-2" />
+              v-model="viewMode"
+              :options="viewOptions"
+              option-label="label"
+              option-value="value"
+              class="ml-2"
+            />
           </div>
           <RoarDataTable
-:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
-            @export-all="exportAll" @export-selected="exportSelected" />
+            :data="tableData"
+            :columns="columns"
+            :total-records="scoresCount"
+            lazy
+            :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @export-all="exportAll"
+            @export-selected="exportSelected"
+          />
         </div>
 
         <div class="legend-container">
@@ -87,8 +99,15 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
         <PvTabView>
           <PvTabPanel v-for="task in allTasks" :key="task" :header="taskDisplayNames[task].name">
             <TaskReport
-v-if="task" :task-id="task" :initialized="initialized" :administration-id="administrationId"
-              :org-type="orgType" :org-id="orgId" :org-info="orgInfo" :administration-info="administrationInfo"/>
+              v-if="task"
+              :task-id="task"
+              :initialized="initialized"
+              :administration-id="administrationId"
+              :org-type="orgType"
+              :org-id="orgId"
+              :org-info="orgInfo"
+              :administration-info="administrationInfo"
+            />
           </PvTabPanel>
         </PvTabView>
         <div>

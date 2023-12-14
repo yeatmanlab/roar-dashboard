@@ -42,7 +42,7 @@ const props = defineProps({
     type: String,
     required: false,
     default: 'percentage',
-  }
+  },
 });
 
 const { data: scores, isLoading } = useQuery({
@@ -67,10 +67,9 @@ const computedScores = computed(() => {
   if (scores.value === undefined) return [];
   return scores.value.map(({ user, scores }) => {
     let percentScore;
-    if(user.grade >= 6) {
+    if (user.grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth.value);
-    }
-    else {
+    } else {
       percentScore = _get(scores, scoreFieldBelowSixth.value);
     }
     const { support_level } = getSupportLevel(percentScore);
@@ -111,7 +110,8 @@ const scoreFieldAboveSixth = computed(() => {
 const draw = async () => {
   let chartSpec;
   let chartSpec2;
-  if (props.graphType === 'distByGrade') chartSpec = distByGrade(props.taskId, computedScores, scoreFieldBelowSixth, scoreFieldAboveSixth);
+  if (props.graphType === 'distByGrade')
+    chartSpec = distByGrade(props.taskId, computedScores, scoreFieldBelowSixth, scoreFieldAboveSixth);
   else if (props.graphType === 'distBySupport') {
     chartSpec2 = distBySupport(props.taskId, computedScores, props.mode);
     await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpec2);
