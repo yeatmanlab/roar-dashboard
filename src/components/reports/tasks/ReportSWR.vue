@@ -21,20 +21,27 @@
     </Accordion>
   </div>
   <div class="flex flex-row flex-wrap">
-    <DistributionChart
-:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
-      :org-id="orgId" task-id="swr" graph-type="distByGrade" />
-    <DistributionChart
-:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
-      :org-id="orgId" task-id="swr" graph-type="distBySupport" />
+    <div>
+      <SelectButton v-model="mode" :options="modes" aria-labelledby="basic"/>
+      <DistributionChart :initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+        :org-id="orgId" task-id="swr" graph-type="distByGrade" />
+    </div>
+    <div>
+      <DistributionChart :initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+        :org-id="orgId" task-id="swr" graph-type="distBySupport" :mode="mode"/>
+    </div>
   </div>
-  <!-- <div class="task-card">
-  </div> -->
 </template>
 <script setup>
 import DistributionChart from '../DistributionChart.vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
+import SelectButton from 'primevue/selectbutton';
+import { ref } from 'vue';
+
+const modes = ref(['percentage', 'count']);
+let mode = ref(modes.value[0])
+
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({

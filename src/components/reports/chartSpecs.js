@@ -1,5 +1,4 @@
 import _camelCase from 'lodash/camelCase';
-
 const graphColorType = {
   mediumPink: '#cc79a7',
   mediumYellow: '#f0e442',
@@ -47,7 +46,7 @@ function returnGradeCount(scores) {
   return gradeCount;
 }
 
-function returnValueByIndex(index, grade) {
+function returnValueByIndex(index, grade, mode) {
   if (index >= 0 && index <= 2) {
     // 0 => needs extra support
     // 1 => needs some support
@@ -57,19 +56,30 @@ function returnValueByIndex(index, grade) {
       { group: 'Needs Some Support', color: 'rgb(237, 192, 55)' },
       { group: 'At or Above Average', color: 'green' },
     ];
-    let value = {
-      category: grade.grade,
-      group: valsByIndex[index].group,
-      color: valsByIndex[index].color,
-      value: (grade?.support_levels[index] / grade.totalStudents) * 100,
-    };
+    let value;
+    if (mode === 'percentage') {
+      value = {
+        category: grade.grade,
+        group: valsByIndex[index].group,
+        color: valsByIndex[index].color,
+        value: (grade?.support_levels[index] / grade.totalStudents) * 100,
+      };
+    }
+    if (mode === 'count') {
+      value = {
+        category: grade.grade,
+        group: valsByIndex[index].group,
+        color: valsByIndex[index].color,
+        value: grade?.support_levels[index],
+      };
+    }
     return value;
   } else {
     throw new Error('Index out of range');
   }
 }
 
-function returnSupportLevelValues(scores) {
+function returnSupportLevelValues(scores, mode) {
   let gradeCounts = returnGradeCount(scores);
   let values = [];
 
@@ -77,7 +87,7 @@ function returnSupportLevelValues(scores) {
   for (let grade of gradeCounts) {
     if (grade?.totalStudents > 0) {
       for (let i = 0; i < grade?.support_levels.length; i++) {
-        let value = returnValueByIndex(i, grade);
+        let value = returnValueByIndex(i, grade, mode);
         values.push(value);
       }
     }
@@ -86,7 +96,32 @@ function returnSupportLevelValues(scores) {
   return values;
 }
 
-export const distBySupport = (taskId, scores) => {
+export const distOverview = () => {
+  return {
+    data: {
+      values: [
+        { category: 'A', group: 'x', value: 0.1 },
+        { category: 'A', group: 'y', value: 0.6 },
+        { category: 'A', group: 'z', value: 0.9 },
+        { category: 'B', group: 'x', value: 0.7 },
+        { category: 'B', group: 'y', value: 0.2 },
+        { category: 'B', group: 'z', value: 1.1 },
+        { category: 'C', group: 'x', value: 0.6 },
+        { category: 'C', group: 'y', value: 0.1 },
+        { category: 'C', group: 'z', value: 0.2 },
+      ],
+    },
+    mark: 'bar',
+    encoding: {
+      x: { field: 'category' },
+      y: { field: 'value', type: 'quantitative' },
+      xOffset: { field: 'group' },
+      color: { field: 'group' },
+    },
+  };
+};
+
+export const distBySupport = (taskId, scores, mode = 'percentage') => {
   return {
     mark: 'bar',
     height: 300,
@@ -97,12 +132,12 @@ export const distBySupport = (taskId, scores) => {
       fontSize: 18,
     },
     data: {
-      values: returnSupportLevelValues(scores),
+      values: returnSupportLevelValues(scores, mode),
     },
     encoding: {
       y: {
         field: 'value',
-        title: 'Percentage (%)',
+        title: `${mode}`,
         type: 'quantitative',
         spacing: 1,
       },
@@ -111,6 +146,7 @@ export const distBySupport = (taskId, scores) => {
         type: 'ordinal',
         title: 'By Grade',
         spacing: 1,
+        sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       },
       xOffset: {
         field: 'group',
@@ -120,9 +156,9 @@ export const distBySupport = (taskId, scores) => {
         field: 'group',
         title: 'Support Level',
         sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
-        scale: { range: [ 'rgb(201, 61, 130)','rgb(237, 192, 55)', 'green'] },
+        scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
       },
-      tooltip: {field: "value", type: "quantitative" }
+      tooltip: { field: 'value', type: 'quantitative' },
     },
   };
 };
@@ -173,6 +209,7 @@ export const distByGrade = (taskId, scores, scoreField) => {
         field: `scores.${scoreField.value}`,
         title: _camelCase(scoreField.value),
         bin: { step: 5, extent: [0, 100] },
+        sort: ['K', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       },
 
       y: {

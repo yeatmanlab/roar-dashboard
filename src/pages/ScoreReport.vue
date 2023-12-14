@@ -35,6 +35,13 @@
             at the sentence level.
           </div>
         </div>
+        <div>
+          <h1> Scores at Glance</h1>
+
+          <DistributionChart
+:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+            :org-id="orgId" task-id="intro" graph-type="distOverview" />
+        </div>
 
         <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
@@ -47,25 +54,13 @@
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
+v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
+              class="ml-2" />
           </div>
           <RoarDataTable
-            :data="tableData"
-            :columns="columns"
-            :total-records="scoresCount"
-            lazy
-            :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
-            @page="onPage($event)"
-            @sort="onSort($event)"
-            @export-all="exportAll"
-            @export-selected="exportSelected"
-          />
+:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
+            @export-all="exportAll" @export-selected="exportSelected" />
         </div>
 
         <div class="legend-container">
@@ -97,70 +92,34 @@
         </div>
         <!-- Subscores tables -->
         <SubscoreTable
-          v-if="allTasks.includes('letter')"
-          task-id="letter"
-          :task-name="taskDisplayNames['letter'].name"
-          :administration-id="administrationId"
-          :org-type="orgType"
-          :org-id="orgId"
-          :administration-name="administrationInfo.name ?? undefined"
-          :org-name="orgInfo.name ?? undefined"
-        />
+v-if="allTasks.includes('letter')" task-id="letter" :task-name="taskDisplayNames['letter'].name"
+          :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
+          :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
         <SubscoreTable
-          v-if="allTasks.includes('pa')"
-          task-id="pa"
-          :task-name="taskDisplayNames['pa'].name"
-          :administration-id="administrationId"
-          :org-type="orgType"
-          :org-id="orgId"
-          :administration-name="administrationInfo.name ?? undefined"
-          :org-name="orgInfo.name ?? undefined"
-        />
+v-if="allTasks.includes('pa')" task-id="pa" :task-name="taskDisplayNames['pa'].name"
+          :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
+          :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
         <!-- Task Breakdown TabView (TODO: try accordian as well) -->
         <PvTabView>
           <PvTabPanel v-for="task in allTasks" :key="task" :header="taskDisplayNames[task].name">
             <ReportSWR
-              v-if="task === 'swr'"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :org-type="orgType"
-              :org-id="orgId"
-            />
+v-if="task === 'swr'" :initialized="initialized" :administration-id="administrationId"
+              :org-type="orgType" :org-id="orgId" />
             <ReportPA
-              v-if="task === 'pa'"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :org-type="orgType"
-              :org-id="orgId"
-            />
+v-if="task === 'pa'" :initialized="initialized" :administration-id="administrationId"
+              :org-type="orgType" :org-id="orgId" />
             <ReportSRE
-              v-if="task === 'sre'"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :org-type="orgType"
-              :org-id="orgId"
-            />
+v-if="task === 'sre'" :initialized="initialized" :administration-id="administrationId"
+              :org-type="orgType" :org-id="orgId" />
             <ReportLetter
-              v-if="task === 'letter'"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :org-type="orgType"
-              :org-id="orgId"
-            />
+v-if="task === 'letter'" :initialized="initialized" :administration-id="administrationId"
+              :org-type="orgType" :org-id="orgId" />
             <ReportCVA
-              v-if="task === 'cva'"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :org-type="orgType"
-              :org-id="orgId"
-            />
+v-if="task === 'cva'" :initialized="initialized" :administration-id="administrationId"
+              :org-type="orgType" :org-id="orgId" />
             <ReportMorph
-              v-if="task === 'morph'"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :org-type="orgType"
-              :org-id="orgId"
-            />
+v-if="task === 'morph'" :initialized="initialized" :administration-id="administrationId"
+              :org-type="orgType" :org-id="orgId" />
           </PvTabPanel>
         </PvTabView>
         <div>
@@ -232,6 +191,7 @@ import ReportPA from '@/components/reports/tasks/ReportPA.vue';
 import ReportLetter from '@/components/reports/tasks/ReportLetter.vue';
 import ReportCVA from '@/components/reports/tasks/ReportCVA.vue';
 import ReportMorph from '@/components/reports/tasks/ReportMorph.vue';
+import DistributionChart from '@/components/reports/DistributionChart.vue';
 
 const authStore = useAuthStore();
 
