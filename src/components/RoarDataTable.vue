@@ -48,18 +48,14 @@
         </div>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
-        <PvButton
-          v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
-          label="Export Selected"
-          :disabled="selectedRows.length === 0"
-          @click="exportCSV(true, $event)"
-        />
-        <PvButton
-          v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
-          label="Export Whole Table"
-          @click="exportCSV(false, $event)"
-        />
-        <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" />
+        <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
+        <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
+        <div class="relative">
+          <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
+          <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
+        
+        </div>
+        <!-- <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" /> -->
       </span>
     </div>
     <PvDataTable
@@ -107,7 +103,7 @@
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
         align-frozen="left"
-        header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+        header-style="background:#7F2D48; color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
       >
         <template #header>
           <div
@@ -243,6 +239,7 @@ import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
+import InputSwitch from 'primevue/inputswitch';
 // import Checkbox from 'primevue/checkbox';
 
 /*
@@ -289,6 +286,8 @@ const viewOptions = ref([
   { label: 'Standard Score', value: 'standard' },
   { label: 'Raw Score', value: 'raw' },
 ]);
+
+const viewMode =ref(false);
 
 const inputColumns = ref(props.columns);
 const selectedColumns = ref(props.columns);
@@ -497,6 +496,7 @@ const onFilter = (event) => {
   emit('filter', event);
 };
 
+const compressedRows = ref(false);
 
 
 const padding='1rem 1.5rem'
@@ -508,7 +508,7 @@ function increasePadding() {
   }
   else{
     this.nameForVisualize = "Expand view";
-    document.documentElement.style.setProperty('--padding-value', '0px 1.5rem 0px 1.5rem');
+    document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
   this.countForVisualize = this.countForVisualize+1;
 }
@@ -542,8 +542,9 @@ button.p-column-filter-menu-button.p-link, g{
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
-  padding: var(--padding-value, '0px 1.5rem 0px 1.5rem');
-  margin-top: 10px;
+  padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 .view-label {
@@ -552,10 +553,12 @@ button.p-column-filter-menu-button.p-link, g{
   left: 5px;
   /* Additional styling for the label */
   background-color: white;
-  padding: 0 5px;
+  /* padding: 0 3px; */
+  text-align: center;
   z-index: 1; /* Ensures the label is displayed above the dropdown */
   font-size: smaller;
-  color: var(--surface-500)
+  color: var(--surface-500);
+  width: 100px;
 }
 
 /* .compressed .p-datatable .p-datatable-tbody > tr > td {
