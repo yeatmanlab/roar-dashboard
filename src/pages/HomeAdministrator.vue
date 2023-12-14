@@ -4,7 +4,7 @@
       <!-- <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" /> -->
     <!-- </aside> -->
     <section class="main-body ">
-      <PvPanel header="  Your administrations" class="lg:text-3xl sm:text-lg surface-ground">
+      <PvPanel header="  Your administrations" class="lg:text-3xl sm:text-lg surface-ground text-700">
         <template #icons>
           <label class="mr-2 text-lg" for="dd-sort">Sort by</label>
           <PvDropdown
