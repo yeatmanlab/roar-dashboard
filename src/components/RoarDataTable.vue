@@ -55,12 +55,7 @@
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
         <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
-        <div class="relative mt-5">
-          <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
-          <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
-        
-        </div>
-        <!-- <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" /> -->
+        <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" />
       </span>
     </div>
     <PvDataTable
@@ -108,7 +103,7 @@
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
         align-frozen="left"
-        header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+        header-style="background:#7F2D48; color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
       >
         <template #header>
           <div
@@ -244,8 +239,6 @@ import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
-import _without from 'lodash/without';
-import InputSwitch from 'primevue/inputswitch';
 // import Checkbox from 'primevue/checkbox';
 
 /*
@@ -292,6 +285,8 @@ const viewOptions = ref([
   { label: 'Standard Score', value: 'standard' },
   { label: 'Raw Score', value: 'raw' },
 ]);
+
+const viewMode =ref(false);
 
 const inputColumns = ref(props.columns);
 const selectedColumns = ref(
@@ -505,11 +500,7 @@ const onSort = (event) => {
   emit('sort', event);
 };
 
-const onFilter = (event) => {
-  emit('filter', event);
-};
-
-const compressedRows = ref(false);
+// const compressedRows = ref(false);
 
 
 const padding='1rem 1.5rem'
@@ -520,8 +511,8 @@ function increasePadding() {
     nameForVisualize.value = "Compact view";
   }
   else{
-    nameForVisualize.value = "Expand view";
-    document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
+    this.nameForVisualize = "Expand view";
+    document.documentElement.style.setProperty('--padding-value', '0px 1.5rem 0px 1.5rem');
   }
     countForVisualize.value = countForVisualize.value+1;
 }
@@ -555,8 +546,9 @@ button.p-column-filter-menu-button.p-link, g{
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
-  padding: var(--padding-value, '0px 1.5rem 0px 1.5rem');
-  margin-top: 10px;
+  padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 .view-label {
@@ -565,10 +557,12 @@ button.p-column-filter-menu-button.p-link, g{
   left: 5px;
   /* Additional styling for the label */
   background-color: white;
-  padding: 0 5px;
+  /* padding: 0 3px; */
+  text-align: center;
   z-index: 1; /* Ensures the label is displayed above the dropdown */
   font-size: smaller;
-  color: var(--surface-500)
+  color: var(--surface-500);
+  width: 100px;
 }
 
 .view-label {
