@@ -124,15 +124,17 @@
           :administration-name="administrationInfo.name ?? undefined"
           :org-name="orgInfo.name ?? undefined"
         />
-        <DistributionChart
-          v-for="task in allTasks"
-          :key="task"
-          :initialized="initialized"
-          :administration-id="administrationId"
-          :org-type="orgType"
-          :org-id="orgId"
-          :task-id="task"
-        />
+        <div v-if="authStore.isUserSuperAdmin">
+          <DistributionChart
+            v-for="task in allTasks"
+            :key="task"
+            :initialized="initialized"
+            :administration-id="administrationId"
+            :org-type="orgType"
+            :org-id="orgId"
+            :task-id="task"
+          />
+        </div>
         <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('letter')" class="task-card">
           <div class="task-title">ROAR-LETTER</div>
