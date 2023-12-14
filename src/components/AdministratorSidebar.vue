@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-container">
-    <PvSidebar v-model:visible="visible">
+    <Menu v-model:visible="visible" popup="true">
       <ul v-if="actions" class="sidebar-actions">
         <li class="sidebar-title"><strong>Actions</strong></li>
         <li v-for="(action, index) in actions" :key="index">
@@ -9,7 +9,7 @@
           </router-link>
         </li>
       </ul>
-    </PvSidebar>
+    </Menu>
     <PvButton v-tooltip.right="'Click to open the menu'" label="Menu" icon="pi pi-bars" @click="visible = true" />
   </div>
 </template>
@@ -25,3 +25,35 @@ const props = defineProps({
 
 const visible = ref(false);
 </script>
+
+<!-- 
+<template>
+  <div class="sidebar-container">
+    <PvSidebar v-model:visible="visible">
+      <ul v-if="actions" class="sidebar-actions">
+        <li class="sidebar-title"><strong>Actions</strong></li>
+        <li v-for="(action, index) in actions" :key="index">
+          <router-link :key="index" :to="action.buttonLink">
+            <PvButton :label="action.title" rounded :icon="action.icon" />
+          </router-link>
+        </li>
+      </ul>
+    </PvSidebar>
+    <PvButton v-tooltip.right="'Click to open the menu'" label="Menu" icon="pi pi-bars" @click="visible = true" />
+  </div>
+</template>
+
+<script setup>
+import { ref, defineProps } from 'vue';
+
+const props = defineProps({
+  userInfo: { type: Object, required: false, default: () => ({}) },
+  actions: { type: Array, required: false, default: () => [] },
+});
+
+const visible = ref(false);
+</script>
+
+<style scoped>
+/* Add scoped styles specific to this component */
+</style> -->

@@ -1,8 +1,8 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
+    <!-- <aside class="main-sidebar"> -->
+      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
+    <!-- </aside> -->
     <section class="main-body">
       <PvPanel header="Create a new organization">
         Use this form to create a new organization.
@@ -173,8 +173,8 @@ import { useQuery } from '@tanstack/vue-query';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
+// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+// import { getSidebarActions } from '@/router/sidebarActions';
 import { fetchDocById } from '@/helpers/query/utils';
 import { orgFetcher } from '@/helpers/query/orgs';
 
@@ -218,7 +218,7 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
+// const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 

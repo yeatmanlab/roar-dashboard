@@ -1,8 +1,8 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" />
-    </aside>
+    <!-- <aside class="main-sidebar"> -->
+      <!-- <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" /> -->
+    <!-- </aside> -->
     <section class="main-body">
       <div class="register-container mx-auto md:flex-none">
         <RegisterTask />
@@ -12,20 +12,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+// import { ref } from 'vue';
 import RegisterTask from '@/components/tasks/RegisterTask.vue';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
-import { useAuthStore } from '@/store/auth';
+// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+// import { getSidebarActions } from '@/router/sidebarActions';
+// import { useAuthStore } from '@/store/auth';
 
-const authStore = useAuthStore();
+// const authStore = useAuthStore();
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
+// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
-const userInfo = ref({
-  name: 'Admin name',
-  district: 'District Name',
-});
+// const userInfo = ref({
+//   name: 'Admin name',
+//   district: 'District Name',
+// });
 </script>
 
 <style scoped>
