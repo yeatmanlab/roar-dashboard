@@ -1,22 +1,22 @@
 <template>
-  <div class="p-card card-administration mb-2">
+  <div class="p-card card-administration mb-1 w-full">
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
       <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
     </div>
 
-    <div class="card-admin-body">
-      <div class="flex flex-row w-full">
-        <div class="flex-grow-1">
-          <h2>{{ title }}</h2>
+    <div class="card-admin-body w-full">
+      <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
+        <div class="flex-grow-1 pr-3 mr-2 p-0 m-0 ">
+          <h2 class="sm:text-lg lg:text-lx m-0">{{ title }}</h2>
         </div>
-        <div v-if="isSuperAdmin" class="flex flex-row flex-grow-0 justify-content-end">
+        <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
           <PvSpeedDial
             :model="speedDialItems"
             direction="left"
             :transition-delay="80"
             show-icon="pi pi-cog"
             hide-icon="pi pi-times"
-            button-class="p-button-outlined"
+            button-class="p-button-outlined p-button-sm w-3rem h-3rem"
             :pt="{ button: { size: 'small' } }"
           />
           <PvConfirmPopup />
@@ -24,7 +24,7 @@
       </div>
       <div class="card-admin-details">
         <span class="mr-1"><strong>Dates</strong>:</span>
-        <span> {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }} </span>
+        <span class="mr-1"> {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }} </span>
       </div>
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Assessments</strong>:</span>
@@ -43,21 +43,21 @@
             <PvDataTable
               striped-rows
               class="p-datatable-small"
-              table-style="min-width: 30rem"
+             
               :value="toEntryObjects(params[assessmentId])"
             >
               <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
               <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
             </PvDataTable>
           </PvOverlayPanel>
-        </div>
+        </div>  
       </div>
-
-      <div class="break my-2"></div>
 
       <div v-if="isAssigned">
-        <PvButton :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
+          <PvButton class="mt-2 ml-0" :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
       </div>
+
+      
 
       <PvTreeTable
         v-if="showTable"
@@ -611,20 +611,18 @@ onMounted(() => {
   padding: 1rem;
 
   .card-admin-chart {
-    padding: 1rem;
-    width: 23ch;
+    // padding: 1rem;
+    width: 14ch;
   }
 
   .card-admin-body {
-    flex: 1 1 auto;
+    // flex: 1 1 auto;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     flex-wrap: wrap;
     align-content: start;
 
-    p {
-      margin-block: 0.5rem;
-    }
+
   }
 
   .break {
@@ -640,9 +638,7 @@ onMounted(() => {
     flex: 1 1 100%;
   }
 
-  .card-admin-details {
-    width: 45%;
-  }
+
 
   .card-admin-link {
     margin-top: 2rem;

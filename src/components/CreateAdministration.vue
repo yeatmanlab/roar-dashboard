@@ -1,8 +1,8 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
+    <!-- <aside class="main-sidebar"> -->
+      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
+    <!-- </aside> -->
     <section class="main-body">
       <PvPanel header="Create a new administration">
         Use this form to create a new administration and assign it to organizations.
@@ -134,9 +134,9 @@ import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import AppSpinner from '@/components/AppSpinner.vue';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
+// import { getSidebarActions } from '@/router/sidebarActions';
 import { fetchDocById } from '@/helpers/query/utils';
 import { variantsFetcher } from '@/helpers/query/tasks';
 
@@ -156,7 +156,7 @@ const { data: userClaims } = useQuery({
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
+// const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
   queryKey: ['variants', 'all'],

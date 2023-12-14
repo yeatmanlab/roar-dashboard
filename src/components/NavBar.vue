@@ -7,9 +7,16 @@
         </div>
       </router-link>
       <div class="login-container">
-        <!-- <i class="pi pi-bars menu-icon" @click="toggleMenu" /> -->
-        <!-- <PvMenu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
-        <router-link :to="{ name: 'SignOut' }" class="signout-button">
+        <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
+        <PvMenu ref="menu" :model="dropDownActions" :popup="true">
+          <template #item="{ item }" >
+            <div class="cursor-pointer hover:surface-200">
+              <i :class="item.icon" class="p-1 pb-3 cursor-pointer"></i> {{ item.label }}
+            </div>
+          </template>       
+        </PvMenu>
+        <!-- <AdministratorSidebar :actions="sidebarActions"/> -->
+        <router-link :to="{ name: 'SignOut' }" class="signout-button no-underline">
           <PvButton>Sign Out</PvButton>
         </router-link>
       </div>
@@ -18,15 +25,38 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref,computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
+// import AdministratorSidebar from './AdministratorSidebar.vue';
+ import {getSidebarActions} from '@/router/sidebarActions'
+//  import { fetchDocById } from '@/helpers/query/utils';
+//  import { useQuery } from '@tanstack/vue-query';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+// const initialized = ref(false);
+
+// const { data: userClaims } = useQuery({
+//   queryKey: ['userClaims', authStore.uid],
+//   queryFn: () => fetchDocById('userClaims', authStore.uid),
+//   keepPreviousData: true,
+//   enabled: initialized,
+//   staleTime: 5 * 60 * 1000, // 5 minutes
+// });
+//
+//  const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+// const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
+
+
+
+// const menuItems = [
+
+//   `<li>${}</li>`
+// ]
 
 // const loggedInItems = [
 //   {
@@ -41,7 +71,29 @@ const { roarfirekit } = storeToRefs(authStore);
 //   }
 // ];
 
-// const menu = ref();
+const isAtHome = computed(()=>{
+  return router.currentRoute.value.fullPath === '/'
+});
+
+// const getActions = computed(()=>{
+//   return getSidebarActions(isSuperAdmin.value, !isAtHome.value)
+// })
+// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, !isAtHome.value));
+
+const dropDownActions = computed(() => {
+  const rawActions = getSidebarActions(authStore.isUserSuperAdmin, !isAtHome.value);
+  return rawActions.map((action) => {
+    return {
+      label: action.title,
+      icon: action.icon,
+      command: () => {
+        router.push(action.buttonLink);
+      },
+    };
+  });
+});
+
+const menu = ref();
 let dropdownItems = ref([
   {
     label: authStore.isAuthenticated ? 'Home' : 'Log in',
@@ -87,9 +139,10 @@ if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') ==
   );
 }
 
-// const toggleMenu = (event) => {
-//   menu.value.toggle(event);
-// };
+const toggleMenu = (event) => {
+  menu.value.toggle(event);
+  
+};
 
 // const displayInfo = ref(false);
 // const openInfo = () => displayInfo.value = true;
