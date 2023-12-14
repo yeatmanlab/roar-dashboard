@@ -7,7 +7,7 @@
       <template #expandicon>
         <i class="pi pi-info-circle mr-4" />
       </template>
-      <AccordionTab :header="tasksInfoById[taskId].header">
+      <AccordionTab :header="tasksInfoById[taskId]?.header">
         <div style="text-transform: uppercase" class="text-2xl">{{ tasksInfoById[taskId]?.subheader }}</div>
         <p class="mt-2">
           {{ tasksInfoById[taskId]?.desc }}

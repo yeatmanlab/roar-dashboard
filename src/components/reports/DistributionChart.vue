@@ -108,17 +108,16 @@ const scoreFieldAboveSixth = computed(() => {
 });
 
 const draw = async () => {
-  let chartSpec;
-  let chartSpec2;
-  if (props.graphType === 'distByGrade')
-    chartSpec = distByGrade(props.taskId, computedScores, scoreFieldBelowSixth, scoreFieldAboveSixth);
+  if (props.graphType === 'distByGrade') {
+    let chartSpecDist = distByGrade(props.taskId, computedScores, scoreFieldBelowSixth, scoreFieldAboveSixth);
+    await embed(`#roar-dist-chart-${props.taskId}`, chartSpecDist);
+  }
   else if (props.graphType === 'distBySupport') {
-    chartSpec2 = distBySupport(props.taskId, computedScores, props.mode);
-    await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpec2);
+    let chartSpecSupport = distBySupport(props.taskId, computedScores, props.mode);
+    await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpecSupport);
   }
   // Other chart types can be added via this if/then pattern
 
-  await embed(`#roar-dist-chart-${props.taskId}`, chartSpec);
 };
 
 watch(isLoading, (val) => {

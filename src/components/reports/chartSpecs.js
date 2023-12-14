@@ -184,7 +184,6 @@ export const distByGrade = (taskId, scores, scoreFieldBelowSixth, scoreFieldAbov
         },
         spacing: 7,
         sort: 'ascending',
-        // sort: ['Grade K', 'Grade 1', 'Grade 2', 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       },
 
       color: {
