@@ -28,14 +28,14 @@
   background: var(--surface-400);
 }
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
-  background: #7F2D48;
+  background: #8C1515;
 }
 .p-inputswitch.p-inputswitch-checked .p-inputswitch-slider:before {
   background: var(--surface-a);
 }
 .p-inputswitch.p-inputswitch-checked:not(.p-disabled):hover .p-inputswitch-slider {
-  background: #7F2D48;
+  background: #8C1515;
 }
 .p-inputswitch.p-invalid {
-  border-color: #7F2D48;
+  border-color: #8C1515;
 }
