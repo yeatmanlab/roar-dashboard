@@ -91,35 +91,12 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
           indicate that the assessment was not completed.
         </div>
         <!-- Subscores tables -->
-        <SubscoreTable
-v-if="allTasks.includes('letter')" task-id="letter" :task-name="taskDisplayNames['letter'].name"
-          :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
-          :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
-        <SubscoreTable
-v-if="allTasks.includes('pa')" task-id="pa" :task-name="taskDisplayNames['pa'].name"
-          :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
-          :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
         <!-- Task Breakdown TabView (TODO: try accordian as well) -->
         <PvTabView>
           <PvTabPanel v-for="task in allTasks" :key="task" :header="taskDisplayNames[task].name">
-            <ReportSWR
-v-if="task === 'swr'" :initialized="initialized" :administration-id="administrationId"
-              :org-type="orgType" :org-id="orgId" />
-            <ReportPA
-v-if="task === 'pa'" :initialized="initialized" :administration-id="administrationId"
-              :org-type="orgType" :org-id="orgId" />
-            <ReportSRE
-v-if="task === 'sre'" :initialized="initialized" :administration-id="administrationId"
-              :org-type="orgType" :org-id="orgId" />
-            <ReportLetter
-v-if="task === 'letter'" :initialized="initialized" :administration-id="administrationId"
-              :org-type="orgType" :org-id="orgId" />
-            <ReportCVA
-v-if="task === 'cva'" :initialized="initialized" :administration-id="administrationId"
-              :org-type="orgType" :org-id="orgId" />
-            <ReportMorph
-v-if="task === 'morph'" :initialized="initialized" :administration-id="administrationId"
-              :org-type="orgType" :org-id="orgId" />
+            <TaskReport
+v-if="task" :task-id="task" :initialized="initialized" :administration-id="administrationId"
+              :org-type="orgType" :org-id="orgId" :org-info="orgInfo" :administration-info="administrationInfo"/>
           </PvTabPanel>
         </PvTabView>
         <div>
@@ -184,14 +161,9 @@ import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
-import SubscoreTable from '@/components/reports/SubscoreTable.vue';
-import ReportSWR from '@/components/reports/tasks/ReportSWR.vue';
-import ReportSRE from '@/components/reports/tasks/ReportSRE.vue';
-import ReportPA from '@/components/reports/tasks/ReportPA.vue';
-import ReportLetter from '@/components/reports/tasks/ReportLetter.vue';
-import ReportCVA from '@/components/reports/tasks/ReportCVA.vue';
-import ReportMorph from '@/components/reports/tasks/ReportMorph.vue';
+import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChart from '@/components/reports/DistributionChart.vue';
+// import { runPageFetcher } from '@/helpers/query/runs';
 
 const authStore = useAuthStore();
 
@@ -271,6 +243,50 @@ const {
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
 });
+
+// const { data: scores, scoresIsLoading } = useQuery({
+//   queryKey: ['scores', props.taskId, props.orgType, props.orgId, props.administrationId],
+//   queryFn: () =>
+//     runPageFetcher({
+//       administrationId: props.administrationId,
+//       orgType: props.orgType,
+//       orgId: props.orgId,
+//       taskId: "swr",
+//       pageLimit: ref(0),
+//       page: ref(0),
+//       paginate: false,
+//       select: 'scores.computed.composite',
+//     }),
+//   keepPreviousData: true,
+//   enabled: props.initialized,
+//   staleTime: 5 * 60 * 1000, // 5 minutes
+// });
+
+// const computedScores = computed(() => {
+//   if (scores.value === undefined) return [];
+//   return scores.value.map(({ user, scores }) => {
+//     const percentScore = _get(scores, scoreField.value);
+//     const { support_level } = getSupportLevel(percentScore);
+//     return {
+//       user,
+//       scores: {
+//         ...scores,
+//         support_level,
+//       },
+//     };
+//   });
+// });
+
+// const scoreField = computed(() => {
+//   if (props.taskId === 'swr') {
+//     return 'wjPercentile';
+//   } else if (props.taskId === 'sre') {
+//     return 'tosrecPercentile';
+//   } else if (props.taskId === 'pa') {
+//     return 'percentile';
+//   }
+//   return 'percentile';
+// });
 
 // Scores count query
 const { data: scoresCount } = useQuery({

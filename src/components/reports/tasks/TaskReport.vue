@@ -8,9 +8,9 @@
                 <i class="pi pi-info-circle mr-4" />
             </template>
             <AccordionTab :header="tasksInfoById[taskId].header">
-                <div style="text-transform: uppercase" class="text-2xl">{{ taskInfoById[taskId]?.subheader }}</div>
+                <!-- <div style="text-transform: uppercase" class="text-2xl">{{ taskInfoById[taskId]?.subheader }}</div> -->
                 <p class="mt-2">
-                    {{ taskInfoById[taskId]?.desc }} 
+                    <!-- {{ taskInfoById[taskId]?.desc }}  -->
                 </p>
             </AccordionTab>
         </Accordion>
@@ -23,6 +23,14 @@
 :initialized="initialized" :administration-id="administrationId" :org-type="orgType"
             :org-id="orgId" :task-id="taskId" graph-type="distBySupport" />
     </div>
+    <SubscoreTable
+v-if="taskId ==='letter'" task-id="letter" :task-name="taskDisplayNames['letter'].name"
+        :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
+        :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
+    <SubscoreTable
+v-if="taskId === 'pa'" task-id="pa" :task-name="taskDisplayNames['pa'].name"
+        :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
+        :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
     <!-- <div class="task-card">
     </div> -->
 </template>
@@ -30,6 +38,8 @@
 import DistributionChart from '../DistributionChart.vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
+import { taskDisplayNames} from '@/helpers/reports.js';
+import SubscoreTable from '../SubscoreTable.vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
@@ -41,11 +51,19 @@ const props = defineProps({
         type: String,
         required: true,
     },
+    administrationInfo: {
+        type: String,
+        required: true,
+    },
     orgType: {
         type: String,
         required: true,
     },
     orgId: {
+        type: String,
+        required: true,
+    },
+    orgInfo: {
         type: String,
         required: true,
     },
