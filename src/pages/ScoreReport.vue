@@ -35,14 +35,6 @@
             at the sentence level.
           </div>
         </div>
-        <div>
-          <h1> Scores at Glance</h1>
-
-          <DistributionChart
-:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
-            :org-id="orgId" task-id="intro" graph-type="distOverview" />
-        </div>
-
         <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -162,8 +154,6 @@ import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
-import DistributionChart from '@/components/reports/DistributionChart.vue';
-// import { runPageFetcher } from '@/helpers/query/runs';
 
 const authStore = useAuthStore();
 
@@ -243,50 +233,6 @@ const {
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
 });
-
-// const { data: scores, scoresIsLoading } = useQuery({
-//   queryKey: ['scores', props.taskId, props.orgType, props.orgId, props.administrationId],
-//   queryFn: () =>
-//     runPageFetcher({
-//       administrationId: props.administrationId,
-//       orgType: props.orgType,
-//       orgId: props.orgId,
-//       taskId: "swr",
-//       pageLimit: ref(0),
-//       page: ref(0),
-//       paginate: false,
-//       select: 'scores.computed.composite',
-//     }),
-//   keepPreviousData: true,
-//   enabled: props.initialized,
-//   staleTime: 5 * 60 * 1000, // 5 minutes
-// });
-
-// const computedScores = computed(() => {
-//   if (scores.value === undefined) return [];
-//   return scores.value.map(({ user, scores }) => {
-//     const percentScore = _get(scores, scoreField.value);
-//     const { support_level } = getSupportLevel(percentScore);
-//     return {
-//       user,
-//       scores: {
-//         ...scores,
-//         support_level,
-//       },
-//     };
-//   });
-// });
-
-// const scoreField = computed(() => {
-//   if (props.taskId === 'swr') {
-//     return 'wjPercentile';
-//   } else if (props.taskId === 'sre') {
-//     return 'tosrecPercentile';
-//   } else if (props.taskId === 'pa') {
-//     return 'percentile';
-//   }
-//   return 'percentile';
-// });
 
 // Scores count query
 const { data: scoresCount } = useQuery({
