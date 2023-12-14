@@ -2,7 +2,7 @@
   "projects": {
     "default": "demo-gse-roar-assessment",
     "admin": "demo-gse-roar-admin",
-    "assessment": "demo-gse-roar-assessment"
+    "assessment": "gse-roar-assessment"
   },
   "targets": {},
   "etags": {}
