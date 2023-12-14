@@ -19,6 +19,7 @@ const assignmentSelectFields = [
   'dateAssigned',
   'dateClosed',
   'dateOpened',
+  'readOrgs',
   'started',
   'id',
 ];
@@ -31,19 +32,8 @@ export const getAssignmentsRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  select = [
-    'assessments',
-    'assigningOrgs',
-    'readOrgs',
-    'completed',
-    'dateAssigned',
-    'dateClosed',
-    'dateOpened',
-    'started',
-    'id',
-  ],
+  select = assignmentSelectFields,
   isCollectionGroupQuery = true,
-  filters = [],
 }) => {
   const requestBody = {
     structuredQuery: {},
@@ -145,10 +135,6 @@ export const getUsersByAssignmentIdRequestBody = ({
   select = userSelectFields,
 }) => {
   const requestBody = {
-    // orderBy: {
-    //   field: { fieldPath: `assignmentsAssigned.${adminId}` },
-    //   direction: "ASCENDING"
-    // }
     structuredQuery: {},
   };
 
@@ -254,7 +240,7 @@ export const getFilteredScoresRequestBody = ({
         },
         {
           fieldFilter: {
-            field: { fieldPath: `assigningOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
             op: 'ARRAY_CONTAINS',
             value: { stringValue: orgId },
           },
@@ -609,7 +595,6 @@ export const assignmentPageFetcher = async (
           if (_get(score, 'document')) {
             const userId = score.document.name.split('/users/')[1].split('/runs/')[0];
             const assignmentDoc = _find(scoredAssignments, { userId: userId });
-            const scoreData = _mapValues(score.document.fields, (value) => convertValues(value));
             const userDoc = _find(batchUserDocs, { userId: userId });
             return {
               user: userDoc.data,
