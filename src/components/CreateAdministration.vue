@@ -139,6 +139,7 @@ import OrgPicker from '@/components/OrgPicker.vue';
 // import { getSidebarActions } from '@/router/sidebarActions';
 // import { fetchDocById } from '@/helpers/query/utils';
 import { variantsFetcher } from '@/helpers/query/tasks';
+// import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const toast = useToast();
@@ -165,6 +166,9 @@ const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+// const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+// const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 //      +---------------------------------+
 // -----| Form state and validation rules |-----
