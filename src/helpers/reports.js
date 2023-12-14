@@ -6,8 +6,9 @@ export const taskDisplayNames = {
   letter: { name: 'Letter', order: 1 },
   multichoice: { name: 'Multichoice', order: 6 },
   mep: { name: 'MEP', order: 7 },
-  ExternalTask: { name: 'External Task', order: 8 },
-  ExternalTest: { name: 'External Test', order: 9 },
+  fluency: { name: 'Fluency', order: 9 },
+  ExternalTask: { name: 'External Task', order: 9 },
+  ExternalTest: { name: 'External Test', order: 10 },
 };
 
 export const supportLevelColors = {
