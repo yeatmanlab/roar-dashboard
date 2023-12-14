@@ -527,6 +527,8 @@ function increasePadding() {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 button.p-button.p-component.softer {
   background:#f3adad;
@@ -541,6 +543,7 @@ button.p-column-filter-menu-button.p-link, g{
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
   padding: var(--padding-value, '0px 1.5rem 0px 1.5rem');
+  margin-top: 10px;
 }
 
 .view-label {
