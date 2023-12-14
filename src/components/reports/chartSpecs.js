@@ -83,7 +83,6 @@ function returnValueByIndex(index, grade, mode) {
 function returnSupportLevelValues(scores, mode) {
   let gradeCounts = returnGradeCount(scores);
   let values = [];
-  console.log('grade', gradeCounts);
   // generates values for bar chart
   for (let grade of gradeCounts) {
     if (grade?.totalStudents > 0) {
@@ -93,7 +92,6 @@ function returnSupportLevelValues(scores, mode) {
       }
     }
   }
-  console.log('val', values);
   return values;
 }
 
@@ -149,14 +147,10 @@ function returnDistByGrade(scores, scoreFieldBelowSixth, scoreFieldAboveSixth) {
     }
     score.scores.stdPercentile = stdPercentile;
   }
-  console.log('scores', scores);
   return scores;
 }
 
 export const distByGrade = (taskId, scores, scoreFieldBelowSixth, scoreFieldAboveSixth) => {
-  if (taskId === 'pa') {
-    console.log('scores.value', scores.value);
-  }
   return {
     description: 'ROAR Score Distribution by Grade Level',
     title: { text: `${taskId.toUpperCase()} Score Distribution`, anchor: 'middle', fontSize: 18 },
