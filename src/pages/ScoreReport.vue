@@ -16,6 +16,29 @@
 
         <h2 v-if="orgInfo" class="report-title text-2xl surface-ground w-full">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
 
+        <!-- Header blurbs about tasks -->
+        <h2>IN THIS REPORT...</h2>
+        <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
+        <div class="task-overview-container">
+          <div v-if="allTasks.includes('letter')" class="task-blurb">
+            <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names
+            and sounds.
+          </div>
+          <div v-if="allTasks.includes('pa')" class="task-blurb">
+            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span>
+            measures the ability to hear and manipulate the individual sounds within words (sound matching and elision).
+            This skill is crucial for building further reading skills, such as decoding.
+          </div>
+          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
+            <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
+            word level.
+          </div>
+          <div v-if="allTasks.includes('sre')" class="task-blurb">
+            <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
+            at the sentence level.
+          </div>
+        </div>
+
         
         <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
@@ -103,6 +126,7 @@
         <SubscoreTable
           v-if="allTasks.includes('letter')"
           task-id="letter"
+          :task-name="displayNames['letter'].name"
           :administration-id="administrationId"
           :org-type="orgType"
           :org-id="orgId"
@@ -112,11 +136,21 @@
         <SubscoreTable
           v-if="allTasks.includes('pa')"
           task-id="pa"
+          :task-name="displayNames['pa'].name"
           :administration-id="administrationId"
           :org-type="orgType"
           :org-id="orgId"
           :administration-name="administrationInfo.name ?? undefined"
           :org-name="orgInfo.name ?? undefined"
+        />
+        <DistributionChart
+          v-for="task in allTasks"
+          :key="task"
+          :initialized="initialized"
+          :administration-id="administrationId"
+          :org-type="orgType"
+          :org-id="orgId"
+          :task-id="task"
         />
         <!-- In depth breakdown of each task -->
         <div v-if="allTasks.includes('letter')" class="task-card">
@@ -221,7 +255,9 @@ import _find from 'lodash/find';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
+import DistributionChart from '@/components/reports/DistributionChart.vue';
 // import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+
 // import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
@@ -334,7 +370,7 @@ const onSort = (event) => {
 const viewMode = ref('color');
 
 const viewOptions = ref([
-  { label: 'Color', value: 'color' },
+  { label: 'Support Level', value: 'color' },
   { label: 'Percentile', value: 'percentile' },
   { label: 'Standard Score', value: 'standard' },
   { label: 'Raw Score', value: 'raw' },

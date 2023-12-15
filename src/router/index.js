@@ -86,6 +86,12 @@ const routes = [
     meta: { pageTitle: 'Vocab' },
   },
   {
+    path: '/game/fluency',
+    name: 'Fluency',
+    component: () => import('../components/tasks/TaskFluency.vue'),
+    meta: { pageTitle: 'Fluency' },
+  },
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),

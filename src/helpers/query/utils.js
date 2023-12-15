@@ -45,7 +45,7 @@ export const mapFields = (data, getParentDocId) => {
           id: { stringValue: _last(nameSplit) },
         };
         if (getParentDocId) {
-          result.parentDoc = nameSplit[nameSplit.length - 3];
+          result.parentDoc = { stringValue: nameSplit[nameSplit.length - 3] };
         }
         return result;
       }

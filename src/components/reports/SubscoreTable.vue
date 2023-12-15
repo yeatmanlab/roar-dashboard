@@ -1,6 +1,6 @@
 <template>
   <div v-if="scoresDataQuery?.length ?? 0 > 0">
-    <h2 class="header-text">ROAR-{{ _toUpper(taskId) }} STUDENT SCORE INFORMATION</h2>
+    <h2 class="header-text">ROAR-{{ _toUpper(taskName) }} STUDENT SCORE INFORMATION</h2>
     <RoarDataTable
       :columns="columns"
       :data="tableData"
@@ -30,6 +30,7 @@ import { storeToRefs } from 'pinia';
 
 const props = defineProps({
   taskId: { type: String, required: true },
+  taskName: { type: String, required: true },
   administrationId: { type: String, required: true, default: '' },
   orgType: { type: String, required: true, default: '' },
   orgId: { type: String, required: true, default: '' },

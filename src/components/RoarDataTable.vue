@@ -12,6 +12,7 @@
       <span class="p-float-label">
         <PvMultiSelect
           id="ms-columns"
+          v-tooltip.top="'Show and hide columns'"
           :model-value="selectedColumns"
           :options="inputColumns"
           option-label="header"
@@ -37,14 +38,22 @@
         <label for="ms-freeze" class="view-label">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
-        <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
-        <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
+        <PvButton
+          v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
+          label="Export Selected"
+          :disabled="selectedRows.length === 0"
+          @click="exportCSV(true, $event)"
+        />
+        <PvButton
+          v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
+          label="Export Whole Table"
+          @click="exportCSV(false, $event)"
+        />
         <div class="relative mt-5">
           <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
           <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
         
         </div>
-        <!-- <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" /> -->
       </span>
     </div>
     <PvDataTable
@@ -83,7 +92,6 @@
       <PvColumn
         v-for="(col, index) of computedColumns"
         :key="col.field + '_' + index"
-        :header="col.header"
         :field="col.field"
         :data-type="col.dataType"
         :sortable="col.sort !== false"
@@ -94,14 +102,31 @@
         align-frozen="left"
         header-style="background:#7F2D48; color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
       >
+        <template #header>
+          <div
+            v-tooltip.top="`${toolTipByHeader(col.header)}`"
+            :style="[
+              toolTipByHeader(col.header).length > 0
+                ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
+                : null,
+            ]"
+          >
+            {{ col.header }}
+          </div>
+        </template>
         <template #body="{ data: colData }">
-          <div v-if="col.tag && _get(colData, col.field) !== undefined">
+          <div
+            v-if="col.tag && _get(colData, col.field) !== undefined"
+            v-tooltip.right="`${returnScoreTooltip(col.header, colData)}`"
+          >
             <PvTag
               v-if="!col.tagOutlined"
               :severity="_get(colData, col.severityField)"
               :value="_get(colData, col.field)"
               :icon="_get(colData, col.iconField)"
-              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem;`"
+              :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
+                returnScoreTooltip(col.header, colData).length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'
+              }`"
               rounded
             />
             <div
@@ -113,18 +138,23 @@
           <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
             <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
           </div>
-          <div v-else-if="col.emptyTag">
+          <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData)}`">
             <div
               v-if="!col.tagOutlined"
               class="circle"
               :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
                 _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+              }; ${
+                returnScoreTooltip(col.header, colData).length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'
               }`"
             />
+
             <div
               v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
               class="circle"
-              style="border: 1px solid black"
+              :style="`border: 1px solid black; ${
+                returnScoreTooltip(col.header, colData).length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'
+              }`"
             />
           </div>
           <div v-else-if="col.link">
@@ -330,6 +360,51 @@ const refFilters = ref(filters);
 // Grab list of fields defined as dates
 let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
 dateFields = _map(dateFields, (col) => col.field);
+
+let toolTipByHeader = (header) => {
+  if (header === 'Word') {
+    return 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900';
+  } else if (header === 'Letter') {
+    return 'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90';
+  } else if (header === 'Phoneme') {
+    return 'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57';
+  } else if (header === 'Sentence') {
+    return 'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ';
+  } else if (header === 'Palabra') {
+    return 'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900';
+  }
+  return '';
+};
+
+let returnScoreTooltip = (colHeader, colData) => {
+  let toolTip = '';
+
+  if (colHeader === 'Phoneme' && colData.scores?.pa?.standard) {
+    toolTip += colData.scores.pa?.support_level + '\n' + '\n';
+    toolTip += 'Percentile: ' + colData.scores?.pa?.percentile + '\n';
+    toolTip += 'Raw Score: ' + colData.scores?.pa?.raw + '\n';
+    toolTip += 'Standardized Score: ' + colData.scores?.pa?.standard + '\n';
+  } else if (colHeader === 'Word' && colData.scores?.swr?.standard) {
+    toolTip += colData.scores?.swr?.support_level + '\n' + '\n';
+    toolTip += 'Percentile: ' + colData.scores?.swr?.percentile + '\n';
+    toolTip += 'Raw Score: ' + colData.scores?.swr?.raw + '\n';
+    toolTip += 'Standardized Score: ' + colData.scores?.swr?.standard + '\n';
+  } else if (colHeader === 'Sentence' && colData.scores?.sre.standard) {
+    toolTip += colData.scores?.sre?.support_level + '\n' + '\n';
+    toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
+    toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
+    toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
+  } else if (colHeader === 'Letter' && colData.scores?.letter) {
+    toolTip += 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
+  } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
+    toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
+    toolTip += 'Percentile: ' + colData.scores?.['swr-es']?.percentile + '\n';
+    toolTip += 'Raw Score: ' + colData.scores?.['swr-es']?.raw + '\n';
+    toolTip += 'Standardized Score: ' + colData.scores?.['swr-es']?.standard + '\n';
+  }
+
+  return toolTip;
+};
 
 const computedData = computed(() => {
   const data = JSON.parse(JSON.stringify(props.data));
