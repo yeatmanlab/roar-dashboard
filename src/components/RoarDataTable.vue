@@ -227,7 +227,6 @@ import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _without from 'lodash/without';
 // import InputSwitch from 'primevue/inputswitch';
-// import { property } from 'lodash';
 // import Checkbox from 'primevue/checkbox';
 
 /*
