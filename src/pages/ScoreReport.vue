@@ -95,7 +95,6 @@
           indicate that the assessment was not completed.
         </div>
         <!-- Subscores tables -->
-        <!-- Task Breakdown TabView (TODO: try accordian as well) -->
         <PvTabView>
           <PvTabPanel v-for="task in allTasks" :key="task" :header="taskDisplayNames[task]?.name ? taskDisplayNames[task]?.name : ''">
             <TaskReport
