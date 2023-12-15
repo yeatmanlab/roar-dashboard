@@ -37,7 +37,16 @@
             @sort="onSort($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
-          />
+          >
+          <label for="ms-columns" class="view-label">View</label>
+          <PvDropdown
+            id="view-columns"
+            v-model="viewMode"
+            :options="viewOptions"
+            option-label="label"
+            option-value="value"
+            class="ml-2"
+          /></RoarDataTable>
         </div>
 
         <div class="legend-container">
@@ -324,6 +333,13 @@ const onSort = (event) => {
 
 const viewMode = ref('color');
 
+const viewOptions = ref([
+  { label: 'Color', value: 'color' },
+  { label: 'Percentile', value: 'percentile' },
+  { label: 'Standard Score', value: 'standard' },
+  { label: 'Raw Score', value: 'raw' },
+]);
+
 
 
 const displayNames = {
@@ -557,7 +573,7 @@ const emptyTagColorMap = {
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true },
+    { field: 'user.username', header: 'Username', dataType: 'text' },
     { field: 'user.name.first', header: 'First Name', dataType: 'text' },
     { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
     { field: 'user.studentData.grade', header: 'Grade', dataType: 'text' },
@@ -581,7 +597,7 @@ const columns = computed(() => {
     });
     for (const taskId of sortedTasks) {
       let colField;
-      if (viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`;
+      if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
       if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`;
       if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`;
       tableColumns.push({
