@@ -361,6 +361,7 @@ const onSort = (event) => {
     direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
   }));
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+  page.value = 0;
 };
 
 const onFilter = (event) => {
@@ -391,6 +392,7 @@ const onFilter = (event) => {
   }
   // Scores Query
   filterBy.value = filters;
+  page.value = 0;
 };
 
 const resetFilters = () => {
