@@ -9,7 +9,7 @@ const graphColorType = {
 
 function returnGradeCount(scores) {
   // gradecount should be an obj of {{grade:{} count}}
-  let gradeCount = [
+  const gradeCount = [
     { grade: 'Pre-K', support_levels: [0, 0, 0], totalStudents: 0 },
     { grade: 'T-K', support_levels: [0, 0, 0], totalStudents: 0 },
     { grade: 'Kindergarten', support_levels: [0, 0, 0], totalStudents: 0 },
@@ -26,7 +26,7 @@ function returnGradeCount(scores) {
     { grade: '11', support_levels: [0, 0, 0], totalStudents: 0 },
     { grade: '12', support_levels: [0, 0, 0], totalStudents: 0 },
   ];
-  for (let score of scores.value) {
+  for (const score of scores.value) {
     let gradeCounter = gradeCount.find((grade) => grade.grade === score?.user?.grade?.toString());
     if (gradeCounter) {
       if (score?.scores?.support_level === 'Needs Extra Support' && gradeCounter) {
@@ -52,39 +52,36 @@ function returnValueByIndex(index, grade, mode) {
     // 0 => needs extra support
     // 1 => needs some support
     // 2 => at or above average
-    let valsByIndex = [
+    const valsByIndex = [
       { group: 'Needs Extra Support' },
       { group: 'Needs Some Support' },
       { group: 'At or Above Average' },
     ];
-    let value;
     if (mode === 'percentage') {
-      value = {
+      return {
         category: grade.grade,
         group: valsByIndex[index].group,
-        color: valsByIndex[index].color,
-        value: (grade?.support_levels[index] / grade.totalStudents) * 100,
+        value: (grade?.support_levels[index] / grade.totalStudents),
       };
     }
     if (mode === 'count') {
-      value = {
+      return {
         category: grade.grade,
         group: valsByIndex[index].group,
-        color: valsByIndex[index].color,
         value: grade?.support_levels[index],
       };
     }
-    return value;
+    throw new Error('Mode not Supported');
   } else {
     throw new Error('Index out of range');
   }
 }
 
 function returnSupportLevelValues(scores, mode) {
-  let gradeCounts = returnGradeCount(scores);
-  let values = [];
+  const gradeCounts = returnGradeCount(scores);
+  const values = [];
   // generates values for bar chart
-  for (let grade of gradeCounts) {
+  for (const grade of gradeCounts) {
     if (grade?.totalStudents > 0) {
       for (let i = 0; i < grade?.support_levels.length; i++) {
         let value = returnValueByIndex(i, grade, mode);
@@ -111,7 +108,7 @@ export const distBySupport = (taskId, scores, mode = 'percentage') => {
     encoding: {
       y: {
         field: 'value',
-        title: `${mode}`,
+        title: `${mode})`,
         type: 'quantitative',
         spacing: 1,
       },
@@ -132,7 +129,7 @@ export const distBySupport = (taskId, scores, mode = 'percentage') => {
         sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
       },
-      tooltip: { field: 'value', type: 'quantitative' },
+      tooltip: { field: 'value', type: 'quantitative', format: '.0%'},
     },
   };
 };
@@ -183,8 +180,6 @@ export const distByGrade = (taskId, scores, scoreFieldBelowSixth, scoreFieldAbov
           labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
         },
         spacing: 7,
-        // sort: 'ascending',
-        // sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         sort: [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ['Kindergarten']],
       },
 
