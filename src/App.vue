@@ -39,6 +39,7 @@ const navbarBlacklist = ref([
   'Multichoice',
   'Morphology',
   'Cva',
+  'Fluency',
 ]);
 
 onBeforeMount(async () => {

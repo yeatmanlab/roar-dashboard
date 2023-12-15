@@ -20,13 +20,6 @@ export const useQueryStore = () => {
       };
     },
     actions: {
-      async getOrgs(orgType) {
-        if (roarfirekit.value?.app?.db) {
-          return roarfirekit.value.getOrgs(orgType);
-        } else {
-          return [];
-        }
-      },
       async getTasks(requireRegistered = true) {
         this.tasksReady = false;
         if (roarfirekit.value?.app?.db) {

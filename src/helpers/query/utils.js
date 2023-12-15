@@ -45,7 +45,7 @@ export const mapFields = (data, getParentDocId) => {
           id: { stringValue: _last(nameSplit) },
         };
         if (getParentDocId) {
-          result.parentDoc = nameSplit[nameSplit.length - 3];
+          result.parentDoc = { stringValue: nameSplit[nameSplit.length - 3] };
         }
         return result;
       }
@@ -119,4 +119,9 @@ export const fetchDocsById = async (documents, db = 'admin') => {
     );
   }
   return Promise.all(promises);
+};
+
+export const matchMode2Op = {
+  equals: 'EQUAL',
+  notEquals: 'NOT_EQUAL',
 };

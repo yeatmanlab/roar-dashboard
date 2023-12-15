@@ -42,6 +42,13 @@
         </div>
 
         <!-- Main table -->
+        <div v-else-if="scoresCount === 0" class="no-scores-container">
+          <h3>No scores found.</h3>
+          <span
+            >The filters applied have no matching scores.
+            <PvButton text @click="resetFilters">Reset filters</PvButton></span
+          >
+        </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
@@ -62,6 +69,7 @@
             :loading="isLoadingScores || isFetchingScores"
             @page="onPage($event)"
             @sort="onSort($event)"
+            @filter="onFilter($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
           />
@@ -89,10 +97,10 @@
               <div>(At or above 50th percentile)</div>
             </div>
           </div>
-        </div>
-        <div class="legend-description">
-          Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-          indicate that the assessment was not completed.
+          <div class="legend-description">
+            Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
+            indicate that the assessment was not completed.
+          </div>
         </div>
         <!-- Subscores tables -->
         <PvTabView>
@@ -160,6 +168,8 @@ import _get from 'lodash/get';
 import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _find from 'lodash/find';
+import _head from 'lodash/head';
+import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -198,6 +208,7 @@ const initialized = ref(false);
 
 // Queries for page
 const orderBy = ref(orderByDefault);
+const filterBy = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
@@ -245,8 +256,19 @@ const {
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page],
-  queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page, true),
+  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy],
+  queryFn: () =>
+    assignmentPageFetcher(
+      props.administrationId,
+      props.orgType,
+      props.orgId,
+      pageLimit,
+      page,
+      true,
+      undefined,
+      true,
+      filterBy.value,
+    ),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
@@ -254,8 +276,8 @@ const {
 
 // Scores count query
 const { data: scoresCount } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId],
-  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
+  queryKey: ['assignments', props.administrationId, props.orgId, filterBy],
+  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000,
@@ -272,8 +294,43 @@ const onSort = (event) => {
     direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
   }));
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+  page.value = 0;
 };
 
+const onFilter = (event) => {
+  const filters = [];
+  for (const filterKey in _get(event, 'filters')) {
+    const filter = _get(event, 'filters')[filterKey];
+    const constraint = _head(_get(filter, 'constraints'));
+    if (_get(constraint, 'value')) {
+      const path = filterKey.split('.');
+      let collection;
+      if (_head(path) === 'user') {
+        collection = 'users';
+        filters.push({ ...constraint, collection, field: _tail(path).join('.') });
+      }
+      if (_head(path) === 'scores') {
+        const taskId = path[1];
+        const grade = _get(constraint, 'nationalNorms') ? 1 : 10;
+        const { percentileScoreKey } = getScoreKeys({ taskId: taskId }, grade);
+        filters.push({
+          ...constraint,
+          collection: 'scores',
+          taskId: taskId,
+          field: `scores.computed.composite.${percentileScoreKey}`,
+        });
+      }
+      // console.log('constraint is', { ...constraint, collection, field: _tail(path).join('.') })
+    }
+  }
+  // Scores Query
+  filterBy.value = filters;
+  page.value = 0;
+};
+
+const resetFilters = () => {
+  filterBy.value = [];
+};
 const viewMode = ref('color');
 
 const viewOptions = ref([
@@ -288,10 +345,13 @@ const rawOnlyTasks = ['letter'];
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
+  const { support_level, tag_color } = getSupportLevel(percentile);
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
   return {
+    support_level,
+    tag_color,
     percentile,
     percentileString,
   };
@@ -324,7 +384,7 @@ const exportSelected = (selectedRows) => {
         assessment,
         getGrade(_get(user, 'studentData.grade')),
       );
-      const { percentile, percentileString } = getPercentileScores({
+      const { percentileString, support_level } = getPercentileScores({
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
@@ -337,7 +397,6 @@ const exportSelected = (selectedRows) => {
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      const { support_level } = getSupportLevel(percentile);
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow;
@@ -374,7 +433,7 @@ const exportAll = async () => {
         assessment,
         getGrade(_get(user, 'studentData.grade')),
       );
-      const { percentile, percentileString } = getPercentileScores({
+      const { percentileString, support_level } = getPercentileScores({
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
@@ -387,7 +446,6 @@ const exportAll = async () => {
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      const { support_level } = getSupportLevel(percentile);
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow;
@@ -476,18 +534,18 @@ const allTasks = computed(() => {
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text' },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text' },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'number', sort: false },
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text' });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: false });
   }
 
   if (authStore.isUserSuperAdmin) {
-    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text' });
+    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
   if (tableData.value.length > 0) {
@@ -500,13 +558,15 @@ const columns = computed(() => {
     });
     for (const taskId of sortedTasks) {
       let colField;
-      if (viewMode.value === 'percentile') colField = `scores.${taskId}.percentile`;
+      // Color needs to include a field to allow sorting.
+      if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
       if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`;
       if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`;
       tableColumns.push({
         field: colField,
         header: taskDisplayNames[taskId]?.name ?? taskId,
-        dataType: 'text',
+        dataType: 'score',
+        sort: false,
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
         emptyTag: viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
         tagColor: `scores.${taskId}.color`,
@@ -527,7 +587,7 @@ const tableData = computed(() => {
         assessment,
         grade,
       );
-      const { percentile, percentileString } = getPercentileScores({
+      const { percentileString, support_level, tag_color } = getPercentileScores({
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
@@ -536,7 +596,6 @@ const tableData = computed(() => {
       const rawScore = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      const { support_level, tag_color } = getSupportLevel(percentile);
       scores[assessment.taskId] = {
         percentile: percentileString,
         standard: standardScore,
@@ -595,7 +654,7 @@ onMounted(async () => {
 });
 </script>
 
-<style>
+<style lang="scss">
 .report-title {
   font-size: 3.5rem;
   margin-top: 0;
@@ -656,5 +715,18 @@ onMounted(async () => {
 
 .extra-info-title {
   font-size: 2rem;
+}
+
+.no-scores-container {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  h3 {
+    font-weight: bold;
+  }
+  span {
+    display: flex;
+    align-items: center;
+  }
 }
 </style>
