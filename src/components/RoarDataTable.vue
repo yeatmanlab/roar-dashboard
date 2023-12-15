@@ -82,6 +82,7 @@
       :select-all="selectAll"
       @page="onPage($event)"
       @sort="onSort($event)"
+      @filter="onFilter($event)"
       @select-all-change="onSelectAll"
       @row-select="onSelectionChange"
       @row-unselect="onSelectionChange"
@@ -95,7 +96,7 @@
         :field="col.field"
         :data-type="col.dataType"
         :sortable="col.sort !== false"
-        :show-filter-match-modes="!col.useMultiSelect"
+        :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
         :show-filter-operator="col.allowMultipleFilters === true"
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
@@ -204,6 +205,17 @@
           <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
             <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
             <label for="booleanFilter">{{ col.header + '?' }}</label>
+          </div>
+          <div v-if="col.dataType === 'score'">
+            <PvDropdown
+              v-model="filterModel.value"
+              :options="['Above', 'Average', 'Needs Extra']"
+              style="margin-bottom: 0.5rem"
+            />
+            <div class="flex justify-content-between">
+              <label for="nationalNormsCheckbox" style="margin-right: 0.5rem">National Norms</label>
+              <PvCheckbox id="nationalNormsCheckbox" v-model="filterModel.nationalNorms" binary />
+            </div>
           </div>
         </template>
       </PvColumn>
@@ -323,10 +335,10 @@ const exportCSV = (exportSelected) => {
 
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN'];
+const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE'];
 let filters = {};
 let options = {};
-_forEach(props.columns, (column) => {
+_forEach(computedColumns.value, (column) => {
   // Check if header text is supplied; if not, generate.
   if (!_get(column, 'header')) {
     column['header'] = _startCase(_get(column, 'field'));
@@ -340,6 +352,10 @@ _forEach(props.columns, (column) => {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
     } else if (dataType === 'DATE') {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
+    } else if (dataType === 'SCORE') {
+      // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
+      //   so the filter event is being handled in an external handler.
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH, nationalNorms: false };
     }
 
     if (_get(column, 'useMultiSelect')) {
@@ -466,7 +482,8 @@ const onFreezeToggle = (selected) => {
   });
 };
 
-const emit = defineEmits(['page', 'sort', 'export-all', 'selection']);
+// Pass through data table events
+const emit = defineEmits(['page', 'sort', 'export-all', 'selection', 'filter']);
 const onPage = (event) => {
   emit('page', event);
 };
@@ -474,11 +491,10 @@ const onSort = (event) => {
   emit('sort', event);
 };
 
+
 const compressedRows = ref(false);
 
-// const toggleRowHeight = () => {
-//   compressedRows.value = !compressedRows.value;
-// };
+
 
 const padding='1rem 1.5rem'
 
@@ -494,6 +510,11 @@ function increasePadding() {
   this.countForVisualize = this.countForVisualize+1;
 }
 
+
+
+const onFilter = (event) => {
+  emit('filter', event);
+};
 
 </script>
 
