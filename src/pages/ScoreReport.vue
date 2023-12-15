@@ -69,7 +69,16 @@
             @filter="onFilter($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
-          />
+          >
+          <label for="ms-columns" class="view-label">View</label>
+          <PvDropdown
+            id="view-columns"
+            v-model="viewMode"
+            :options="viewOptions"
+            option-label="label"
+            option-value="value"
+            class="ml-2"
+          /></RoarDataTable>
         </div>
 
         <div class="legend-container">
@@ -418,6 +427,13 @@ const resetFilters = () => {
   filterBy.value = [];
 };
 const viewMode = ref('color');
+const viewOptions = ref([
+  { label: 'Color', value: 'color' },
+  { label: 'Percentile', value: 'percentile' },
+  { label: 'Standard Score', value: 'standard' },
+  { label: 'Raw Score', value: 'raw' },
+]);
+
 
 
 const displayNames = {
