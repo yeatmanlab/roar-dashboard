@@ -423,10 +423,13 @@ const rawOnlyTasks = ['letter'];
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
+  const { support_level, tag_color } = getSupportLevel(percentile);
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
   return {
+    support_level,
+    tag_color,
     percentile,
     percentileString,
   };
@@ -459,7 +462,7 @@ const exportSelected = (selectedRows) => {
         assessment,
         getGrade(_get(user, 'studentData.grade')),
       );
-      const { percentile, percentileString } = getPercentileScores({
+      const { percentileString, support_level } = getPercentileScores({
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
@@ -472,7 +475,6 @@ const exportSelected = (selectedRows) => {
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow;
@@ -509,7 +511,7 @@ const exportAll = async () => {
         assessment,
         getGrade(_get(user, 'studentData.grade')),
       );
-      const { percentile, percentileString } = getPercentileScores({
+      const { percentileString, support_level } = getPercentileScores({
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
@@ -522,7 +524,6 @@ const exportAll = async () => {
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      const { support_level } = getSupportLevel(percentile);
       tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow;
@@ -691,7 +692,7 @@ const tableData = computed(() => {
         assessment,
         grade,
       );
-      const { percentile, percentileString } = getPercentileScores({
+      const { percentileString, support_level, tag_color } = getPercentileScores({
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
@@ -700,7 +701,6 @@ const tableData = computed(() => {
       const rawScore = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      const { support_level, tag_color } = getSupportLevel(percentile);
       scores[assessment.taskId] = {
         percentile: percentileString,
         standard: standardScore,

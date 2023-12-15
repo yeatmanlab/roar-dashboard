@@ -283,7 +283,7 @@ export const getFilteredScoresRequestBody = ({
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: 'GREATER_THAN_OR_EQUAL',
+            op: 'GREATER_THAN',
             value: { doubleValue: 25 },
           },
         },
@@ -292,7 +292,7 @@ export const getFilteredScoresRequestBody = ({
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: filter.field },
-          op: 'LESS_THAN',
+          op: 'LESS_THAN_OR_EQUAL',
           value: { doubleValue: 25 },
         },
       });
