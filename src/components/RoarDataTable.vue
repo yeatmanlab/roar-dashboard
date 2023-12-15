@@ -21,7 +21,7 @@
           selected-items-label="{0} columns selected"
           @update:model-value="onColumnToggle"
         />
-        <label for="ms-columns">Select Columns</label>
+        <label for="ms-columns" class="view-label">Select Columns</label>
       </span>
       <span class="p-float-label">
         <PvMultiSelect
@@ -35,12 +35,12 @@
           :show-toggle-all="false"
           @update:model-value="onFreezeToggle"
         />
-        <label for="ms-columns">Freeze Columns</label>
+        <label for="ms-freeze" class="view-label">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
         <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
-        <div class="relative">
+        <div class="relative mt-5">
           <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
           <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
         
@@ -545,11 +545,11 @@ button.p-column-filter-menu-button.p-link, g{
   /* Additional styling for the label */
   background-color: white;
   /* padding: 0 3px; */
-  text-align: center;
+  /* text-align: center; */
   z-index: 1; /* Ensures the label is displayed above the dropdown */
   font-size: smaller;
   color: var(--surface-500);
-  width: 100px;
+  width: 110px;
 }
 
 /* .compressed .p-datatable .p-datatable-tbody > tr > td {
