@@ -129,7 +129,7 @@ export const distBySupport = (taskId, scores, mode = 'percentage') => {
         sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
       },
-      tooltip: { field: 'value', type: 'quantitative', format: '.0%'},
+      tooltip: [{ field: 'value', type: 'quantitative', format: '.0%'},{field: 'group' }]
     },
   };
 };
