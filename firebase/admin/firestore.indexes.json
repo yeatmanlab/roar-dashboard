@@ -505,6 +505,42 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "assigningOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "schoolName",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "assignmentsAssigned.wTWJITpjKthvDJ9fSTNW",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "assigningOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "studentData.grade",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "assignmentsAssigned.wTWJITpjKthvDJ9fSTNW",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "classes.current",
           "arrayConfig": "CONTAINS"
         },

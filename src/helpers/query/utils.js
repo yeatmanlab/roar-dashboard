@@ -120,3 +120,8 @@ export const fetchDocsById = async (documents, db = 'admin') => {
   }
   return Promise.all(promises);
 };
+
+export const matchMode2Op = {
+  equals: 'EQUAL',
+  notEquals: 'NOT_EQUAL',
+};
