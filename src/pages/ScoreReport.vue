@@ -435,6 +435,7 @@ const viewOptions = ref([
 
 
 
+
 const displayNames = {
   swr: { name: 'Word', order: 3 },
   'swr-es': { name: 'Palabra', order: 4 },
@@ -667,10 +668,10 @@ const emptyTagColorMap = {
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'number', sort: false },
+    { field: 'user.username', header: 'Username', dataType: 'text' },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text' },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text' },
   ];
 
   if (props.orgType === 'district') {

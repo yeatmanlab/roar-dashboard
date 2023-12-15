@@ -37,21 +37,6 @@
         />
         <label for="ms-freeze" class="view-label">Freeze Columns</label>
       </span>
-      <span>
-        <div class="relative">
-          <!-- <span>View</span> -->
-          <label for="ms-columns" class="view-label">View</label>
-          <PvDropdown
-            id="view-columns"
-            v-model="viewMode"
-            :options="viewOptions"
-            option-label="label"
-            option-value="value"
-            class="ml-2"
-          />
-          
-        </div>
-      </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
         <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
@@ -235,10 +220,14 @@ import _get from 'lodash/get';
 import _set from 'lodash/set';
 import _map from 'lodash/map';
 import _forEach from 'lodash/forEach';
+// import _debounce from 'lodash/debounce';
 import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
+import _without from 'lodash/without';
+// import InputSwitch from 'primevue/inputswitch';
+// import { property } from 'lodash';
 // import Checkbox from 'primevue/checkbox';
 
 /*
@@ -278,15 +267,6 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
 });
-
-const viewOptions = ref([
-  { label: 'Color', value: 'color' },
-  { label: 'Percentile', value: 'percentile' },
-  { label: 'Standard Score', value: 'standard' },
-  { label: 'Raw Score', value: 'raw' },
-]);
-
-const viewMode =ref(false);
 
 const inputColumns = ref(props.columns);
 const selectedColumns = ref(
