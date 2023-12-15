@@ -40,7 +40,12 @@
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
         <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
-        <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" />
+        <div class="relative mt-5">
+          <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
+          <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
+        
+        </div>
+        <!-- <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" /> -->
       </span>
     </div>
     <PvDataTable
@@ -537,11 +542,11 @@ button.p-column-filter-menu-button.p-link, g{
   /* Additional styling for the label */
   background-color: white;
   /* padding: 0 3px; */
-  text-align: center;
+  /* text-align: center; */
   z-index: 1; /* Ensures the label is displayed above the dropdown */
   font-size: smaller;
   color: var(--surface-500);
-  width: 100px;
+  width: 110px;
 }
 
 .view-label {
