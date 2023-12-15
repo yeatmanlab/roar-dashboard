@@ -353,7 +353,7 @@ onMounted(async () => {
 <style>
 .p-button {
   margin: 0px 8px;
-  background: #8C1515;
+  background: #7F2D48;
 }
 
 .loading-container {
