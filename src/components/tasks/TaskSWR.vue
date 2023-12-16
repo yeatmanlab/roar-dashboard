@@ -105,6 +105,7 @@ async function startTask() {
   const userDateObj = new Date(userDob);
 
   const userParams = {
+    grade: _get(userData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
     language: 'en',

@@ -418,7 +418,7 @@ const displayNames = {
   ExternalTask: { name: 'External Task', order: 8 },
   ExternalTest: { name: 'External Test', order: 9 },
 };
-const rawOnlyTasks = ['letter'];
+const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
 
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
@@ -687,7 +687,7 @@ const tableData = computed(() => {
   return scoresDataQuery.value.map(({ user, assignment }) => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
-    for (const assessment of assignment?.assessments || []) {
+    for (const assessment of assignment?.assessments ?? []) {
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         grade,
