@@ -161,8 +161,8 @@ export const variantsFetcher = async (registered = false) => {
                 name: found.name,
                 data: {
                   id: found.name.split('/tasks/')[1],
-                  ..._mapValues(found.fields, (value) => convertValues(value))
-                }
+                  ..._mapValues(found.fields, (value) => convertValues(value)),
+                },
               };
             }
             return undefined;
