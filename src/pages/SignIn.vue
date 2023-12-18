@@ -157,4 +157,12 @@ onBeforeUnmount(() => {
   background-color: rgba(255, 255, 255, 0.7);
   padding-top: 21vh;
 }
+.signin-button {
+    background: var(--surface-a);
+    border: 1px solid var(--surface-d);
+    border-radius: 5rem;
+    color: var(--text-color);
+    padding-inline: 1rem;
+    width: 100%;
+}
 </style>
