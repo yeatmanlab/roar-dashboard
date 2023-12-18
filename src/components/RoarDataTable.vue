@@ -258,7 +258,7 @@ Array of objects consisting of a field and header at minimum.
 */
 
 const nameForVisualize =ref("Expand view"); 
-const countForVisualize = ref(2);
+const countForVisualize = ref(2); //for starting compress
 
 const props = defineProps({
   columns: { type: Array, required: true },
