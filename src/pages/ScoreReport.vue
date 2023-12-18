@@ -79,11 +79,12 @@
               <div>(At or above 50th percentile)</div>
             </div>
           </div>
+        </div>
           <div class="legend-description">
             Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
             indicate that the assessment was not completed.
           </div>
-        </div>
+        
         <!-- Header blurbs about tasks -->
         <h2 class="text-xl">IN THIS REPORT...</h2>
         <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
