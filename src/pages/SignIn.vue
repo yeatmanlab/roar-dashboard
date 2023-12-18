@@ -18,11 +18,11 @@
         <section class="signin-option-container signin-option-providers">
           <h4 class="signin-option-title">Log in with:</h4>
           <div class="flex">
-            <PvButton label="Sign in with Google" class="signin-button" @click="authWithGoogle">
+            <PvButton label="Sign in with Google" class="sign-in" @click="authWithGoogle">
               <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Google</span>
             </PvButton>
-            <PvButton class="signin-button" @click="authWithClever">
+            <PvButton class="sign-in" @click="authWithClever">
               <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Clever</span>
             </PvButton>
@@ -157,12 +157,24 @@ onBeforeUnmount(() => {
   background-color: rgba(255, 255, 255, 0.7);
   padding-top: 21vh;
 }
-button.p-button.p-component.signin-button{
+
+.sign-in {
     background: var(--surface-a);
-    border: 1px solid var(--surface-d);
+    border: 1px solid #7F2D48;
     border-radius: 5rem;
     color: var(--text-color);
-    padding-inline: 1rem;
-    width: 100%;
+    /* padding-inline: 1rem; */
+    /* width: 100%; */
+    /* margin-left: var(--inline-spacing); */
+    min-width: 1rem;
+    height: 1rem;
+    line-height: 1rem;
+    padding: 20px;
+    /* margin-top: 10px; */
+  }
+  img.signin-button-icon[data-v-06417f86] {
+    width: 30px;
+    padding: 5px;
 }
+
 </style>
