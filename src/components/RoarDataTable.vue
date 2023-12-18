@@ -38,9 +38,18 @@
         <label for="ms-freeze" class="view-label">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
-        <PvButton label="Export Selected"  :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)"  />
-        <PvButton label="Export Whole Table"   @click="exportCSV(false, $event)" />
-        <div class="relative mt-5">
+        <PvButton
+          v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
+          label="Export Selected"
+          :disabled="selectedRows.length === 0"
+          @click="exportCSV(true, $event)"
+        />
+        <PvButton
+          v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
+          label="Export Whole Table"
+          @click="exportCSV(false, $event)"
+        />
+        <div class="relative">
           <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
           <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
         
