@@ -1,10 +1,10 @@
 <template>
   <div class="card">
     <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
-      <section class="form-section">
+      <section class="form-section flex lg:flex-row ">
         <div>
-          <label for="firstName">First Name <span class="required">*</span></label>
-          <InputText name="firstName" v-model="v$.firstName.$model" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
+          <label for="firstName">First Name <span class="required p-1">*</span></label>
+          <InputText name="firstName" v-model="v$.firstName.$model"  :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
           <span v-if="v$.firstName.$error && submitted">
             <span v-for="(error, index) of v$.firstName.$errors" :key="index">
               <small class="p-error">{{ error.$message }}</small>
@@ -15,7 +15,7 @@
           </small>
         </div>
         <div>
-          <label for="lastName">Last Name <span class="required">*</span></label>
+          <label for="lastName">Last Name <span class="required p-1">*</span></label>
           <InputText name="lastName" v-model="v$.lastName.$model" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
           <span v-if="v$.lastName.$error && submitted">
             <span v-for="(error, index) of v$.lastName.$errors" :key="index">
@@ -28,9 +28,9 @@
         </div>  
       </section>
       <!--Username / Email-->
-      <section class="form-section">
+      <section class="form-section flex lg:flex-row">
         <div class="p-input-icon-right">
-          <label for="usernameOrEmail">Username or Email <span class="required">*</span></label>
+          <label for="usernameOrEmail">Username or Email <span class="required p-1">*</span></label>
           <InputText
             v-model="v$.usernameOrEmail.$model" 
             name="usernameOrEmail"
@@ -46,10 +46,10 @@
         </small>
       </section>
       <!--Password-->
-      <section class="form-section">
+      <section class="form-section flex lg:flex-row">
         <div>
           <div>
-            <label for="password">Password <span class="required">*</span></label>
+            <label for="password">Password <span class="required p-1">*</span></label>
             <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></Password>
           </div>
           <span v-if="v$.password.$error && submitted">
@@ -64,7 +64,7 @@
         <!--Confirm Password-->
         <div>
           <div>
-            <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+            <label for="confirmPassword">Confirm Password <span class="required p-1">*</span></label>
             <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model" name="confirmPassword"
               :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false">
             </Password>
@@ -75,7 +75,7 @@
         </div>
       </section>
       <!--Accept Checkbox-->
-      <section class="form-section">
+      <section class="form-section flex lg:flex-row">
         <!-- Recaptcha + consent -->
         <ChallengeV3 v-model="response" action="submit">
           <div class="field-checkbox terms-checkbox">
@@ -238,6 +238,19 @@ const isNextButtonDisabled = computed(() => {
 .terms-checkbox {
   margin-top: 0;
   margin-bottom: 0.75rem;
+}
+.required {
+    color: var(--bright-red);
+  }
+  label {
+    width: 100%;
+}
+
+@media screen and (max-width: 580px)
+{
+  section{ flex-direction: column !important;}
+  input.p-inputtext.p-component { width: 200px;  }
+
 }
 
 </style>

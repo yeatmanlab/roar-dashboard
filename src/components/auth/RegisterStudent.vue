@@ -9,7 +9,7 @@
           </div>
         </section>
       <!-- Student Username -->
-      <section class="form-section">
+      <section class="form-section ">
         <div class="p-input-icon-right">
           <label for="activationCode">Activation code <span class="required">*</span></label>
           <InputText
@@ -40,7 +40,7 @@
         </span> 
       </section>
       <!-- Password -->
-      <section class="form-section">
+      <section class="form-section flex lg:flex-row">
         <div>
           <div>
             <label for="password">Password <span class="required">*</span></label>
@@ -500,4 +500,20 @@
   .form-section-button2 .p-button{
     width: 50%;
   }
+  @media screen and (max-width: 580px)
+{
+  section{ flex-direction: column !important;}
+  input.p-inputtext.p-component { width: 200px;  }
+  .p-password.p-component.p-inputwrapper.p-input-icon-right {
+    width: 200px;
+  }
+  div#confirmPassword-register{width: 200px;}
+
+  .p-fluid{
+    padding: 5px;
+    margin: 0px;
+  }
+  .p-dropdown {width: 200px;}
+
+}
 </style>
