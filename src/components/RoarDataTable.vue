@@ -548,6 +548,12 @@ button.p-column-filter-menu-button.p-link, g{
   color: var(--surface-500);
   width: 110px;
 }
+button.p-column-filter-menu-button.p-link:hover {
+    /* color: black; */
+    background: var(--surface-500);
+}
+
+
 
 .view-label {
   position: absolute;

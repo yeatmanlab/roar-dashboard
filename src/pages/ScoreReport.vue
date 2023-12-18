@@ -107,28 +107,6 @@
             at the sentence level.
           </div>
         </div>
-        <!-- Header blurbs about tasks -->
-        <h2 class="text-xl">IN THIS REPORT...</h2>
-        <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
-        <div class="task-overview-container">
-          <div v-if="allTasks.includes('letter')" class="task-blurb">
-            <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names
-            and sounds.
-          </div>
-          <div v-if="allTasks.includes('pa')" class="task-blurb">
-            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span> assesses some of the most
-            foundational skills for reading: mapping letters to their corresponding sounds. This skill is crucial for
-            building further reading fluency skills, such as decoding.
-          </div>
-          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
-            <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
-            word level.
-          </div>
-          <div v-if="allTasks.includes('sre')" class="task-blurb">
-            <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
-            at the sentence level.
-          </div>
-        </div>
 
         <!-- Subscores tables -->
         <SubscoreTable
