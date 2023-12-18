@@ -30,7 +30,7 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-full md:w-10rem "
+          class="w-2 md:w-10rem"
           selected-items-label="{0} columns frozen"
           :show-toggle-all="false"
           @update:model-value="onFreezeToggle"
@@ -49,7 +49,7 @@
           label="Export Whole Table"
           @click="exportCSV(false, $event)"
         />
-        <div class="relative mt-5">
+        <div class="relative">
           <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
           <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
         
@@ -108,7 +108,7 @@
             v-tooltip.top="`${toolTipByHeader(col.header)}`"
             :style="[
               toolTipByHeader(col.header).length > 0
-                ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
+                ? 'text-decoration: none'
                 : null,
             ]"
           >
