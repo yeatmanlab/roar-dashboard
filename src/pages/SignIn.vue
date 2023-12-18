@@ -157,24 +157,12 @@ onBeforeUnmount(() => {
   background-color: rgba(255, 255, 255, 0.7);
   padding-top: 21vh;
 }
-
-.sign-in {
+.signin-button {
     background: var(--surface-a);
-    border: 1px solid #7F2D48;
+    border: 1px solid var(--surface-d);
     border-radius: 5rem;
     color: var(--text-color);
-    /* padding-inline: 1rem; */
-    /* width: 100%; */
-    /* margin-left: var(--inline-spacing); */
-    min-width: 1rem;
-    height: 1rem;
-    line-height: 1rem;
-    padding: 20px;
-    /* margin-top: 10px; */
-  }
-  img.signin-button-icon[data-v-06417f86] {
-    width: 30px;
-    padding: 5px;
+    padding-inline: 1rem;
+    width: 100%;
 }
-
 </style>
