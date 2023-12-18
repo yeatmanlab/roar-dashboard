@@ -507,7 +507,7 @@ function increasePadding() {
     nameForVisualize.value = "Expand view";
     document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
-    countForVisualize.value = this.countForVisualize+1;
+    countForVisualize.value = countForVisualize.value+1;
 }
 
 
