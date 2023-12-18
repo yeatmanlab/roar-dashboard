@@ -612,7 +612,7 @@ onMounted(() => {
 
   .card-admin-chart {
     // padding: 1rem;
-    width: 14ch;
+    width: 12ch;
   }
 
   .card-admin-body {
