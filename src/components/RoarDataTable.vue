@@ -499,15 +499,15 @@ const compressedRows = ref(false);
 const padding='1rem 1.5rem'
 
 function increasePadding() {
-  if(this.countForVisualize%2 ===0){
+  if(countForVisualize.value%2 ===0){
     document.documentElement.style.setProperty('--padding-value', padding);
-    this.nameForVisualize = "Compact view";
+    nameForVisualize.value = "Compact view";
   }
   else{
-    this.nameForVisualize = "Expand view";
+    nameForVisualize.value = "Expand view";
     document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
-  this.countForVisualize = this.countForVisualize+1;
+    countForVisualize.value = this.countForVisualize+1;
 }
 
 
