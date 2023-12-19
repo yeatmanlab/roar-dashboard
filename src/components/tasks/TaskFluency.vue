@@ -16,7 +16,7 @@ import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
-const taskId = 'fluency'
+const taskId = 'fluency';
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();

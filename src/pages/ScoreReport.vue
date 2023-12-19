@@ -16,25 +16,29 @@
           </div>
           <!-- <div class="flex flex-row flex-wrap justify-center w-full"> -->
           <div class="flex w-full items-center justify-center">
-            <div v-if="isLoadingRunResults" class="flex w-full h-full items-center justify-center">
+            <div v-if="isLoadingRunResults" class="flex w-full items-center text-center justify-center">
               <AppSpinner style="margin-bottom: 1rem" />
             </div>
             <div class="grid grid-cols-3 space-around items-center">
               <div v-for="result of Object.keys(computedRunResults)" :key="result" class="px-5">
                 <DistributionChartOverview
-:runs="computedRunResults[result]" :initialized="initialized"
-                  :task-id="result" :org-type="props.orgType" :org-id="props.orgId"
-                  :administration-id="props.administrationId" />
+                  :runs="computedRunResults[result]"
+                  :initialized="initialized"
+                  :task-id="result"
+                  :org-type="props.orgType"
+                  :org-id="props.orgId"
+                  :administration-id="props.administrationId"
+                />
               </div>
             </div>
-
           </div>
         </div>
         <!-- Header blurbs about tasks -->
         <div class="py-5 px-3 mb-2 rounded shadow-md bg-gray-200">
           <div class="font-bold text-2xl">IN THIS REPORT...</div>
-          <span class="text-sm">You will receive a breakdown of your classroom's ROAR scores across each of the domains
-            tested. </span>
+          <span class="text-sm"
+            >You will receive a breakdown of your classroom's ROAR scores across each of the domains tested.
+          </span>
           <div v-if="isLoadingScores">
             <AppSpinner style="margin-bottom: 1rem" />
           </div>
@@ -42,22 +46,20 @@
             <div class="task-overview-container mt-4">
               <div v-if="allTasks.includes('letter')" class="task-blurb">
                 <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter
-                names
-                and sounds.
+                names and sounds.
               </div>
               <div v-if="allTasks.includes('pa')" class="task-blurb">
                 <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span>
                 measures the ability to hear and manipulate the individual sounds within words (sound matching and
-                elision).
-                This skill is crucial for building further reading skills, such as decoding.
+                elision). This skill is crucial for building further reading skills, such as decoding.
               </div>
               <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
-                <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
-                word level.
+                <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at
+                the word level.
               </div>
               <div v-if="allTasks.includes('sre')" class="task-blurb">
-                <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
-                at the sentence level.
+                <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading
+                fluency at the sentence level.
               </div>
             </div>
           </div>
@@ -71,7 +73,8 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span>The filters applied have no matching scores.
+          <span
+            >The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
@@ -79,13 +82,26 @@
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
-              class="ml-2" />
+              v-model="viewMode"
+              :options="viewOptions"
+              option-label="label"
+              option-value="value"
+              class="ml-2"
+            />
           </div>
           <RoarDataTable
-:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
-            @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
+            :data="tableData"
+            :columns="columns"
+            :total-records="scoresCount"
+            lazy
+            :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @filter="onFilter($event)"
+            @export-all="exportAll"
+            @export-selected="exportSelected"
+          />
         </div>
 
         <div class="legend-container grid grid-cols-3">
@@ -118,12 +134,21 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
         <!-- Subscores tables -->
         <PvTabView>
           <PvTabPanel
-v-for="run of Object.keys(computedRunResults)" :key="run"
-            :header="taskDisplayNames[run]?.name ? taskDisplayNames[run]?.name : ''">
+            v-for="run of Object.keys(computedRunResults)"
+            :key="run"
+            :header="taskDisplayNames[run]?.name ? taskDisplayNames[run]?.name : ''"
+          >
             <TaskReport
-v-if="run" :task-id="run" :initialized="initialized" :administration-id="administrationId"
-              :runs="computedRunResults[run]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
-              :administration-info="administrationInfo" />
+              v-if="run"
+              :task-id="run"
+              :initialized="initialized"
+              :administration-id="administrationId"
+              :runs="computedRunResults[run]"
+              :org-type="orgType"
+              :org-id="orgId"
+              :org-info="orgInfo"
+              :administration-info="administrationInfo"
+            />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2">
@@ -192,7 +217,7 @@ import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
-import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue'
+import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
 
 const authStore = useAuthStore();
 
@@ -670,7 +695,7 @@ function scoreFieldBelowSixth(taskId) {
     return 'percentile';
   }
   return 'percentile';
-};
+}
 
 function scoreFieldAboveSixth(taskId) {
   if (taskId === 'swr') {
@@ -683,51 +708,33 @@ function scoreFieldAboveSixth(taskId) {
   return 'percentile';
 }
 
-// let percentScore;
-// if (user?.grade >= 6) {
-//   percentScore = _get(scores, scoreFieldAboveSixth.value);
-// } else {
-//   percentScore = _get(scores, scoreFieldBelowSixth.value);
-// }
-// const { support_level } = getSupportLevel(percentScore);
-// return {
-//   user,
-//   scores: {
-//     ...scores,
-//     support_level,
-//   },
-// };
-// buckets runs entries based on taskid 
 const computedRunResults = computed(() => {
-  if (runResults.value === undefined) return {}
-  let computedScores = {}
+  if (runResults.value === undefined) return {};
+  let computedScores = {};
   for (let { scores, taskId, user } of runResults.value) {
     let percentScore;
     if (user?.grade >= 6) {
-      percentScore = _get(scores, scoreFieldAboveSixth(taskId))
-    }
-    else {
-      percentScore = _get(scores, scoreFieldBelowSixth(taskId))
+      percentScore = _get(scores, scoreFieldAboveSixth(taskId));
+    } else {
+      percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
     const { support_level } = getSupportLevel(percentScore);
     let run = {
       scores: {
         ...scores,
-        support_level: support_level
+        support_level: support_level,
       },
       taskId,
-      user
-    }
+      user,
+    };
     if (run.taskId in computedScores) {
-      computedScores[run.taskId].push(run)
-    }
-    else {
-      computedScores[run.taskId] = [run]
+      computedScores[run.taskId].push(run);
+    } else {
+      computedScores[run.taskId] = [run];
     }
   }
-  console.log("CSCS", computedScores)
   return computedScores;
-})
+});
 
 let unsubscribe;
 const refresh = () => {

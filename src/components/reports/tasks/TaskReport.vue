@@ -1,6 +1,6 @@
 <template>
-  <div className="">
-    <Accordion>
+  <div class="flex flex-col w-full items-center justify-center">
+    <Accordion class="mb-5 w-full">
       <template #collapseicon>
         <i class="pi pi-info-circle mr-4" />
       </template>
@@ -8,35 +8,57 @@
         <i class="pi pi-info-circle mr-4" />
       </template>
       <AccordionTab header="ABOUT THIS ASSESSMENT">
-        <div style="text-transform: uppercase" class="text-2xl text-center mb-2">{{ tasksInfoById[taskId]?.subheader }}
-        </div>
+        <div style="text-transform: uppercase" class="text-2xl mb-2">{{ tasksInfoById[taskId]?.subheader }}</div>
         <p class="mt-3">
           {{ tasksInfoById[taskId]?.desc }}
         </p>
       </AccordionTab>
     </Accordion>
   </div>
-  <div class="flex flex-row flex-wrap w-full space-around p-3">
+  <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
+  <div class="grid grid-cols-2 space-around items-center">
     <div>
       <DistributionChartSupport
-:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
-        :org-id="orgId" :task-id="taskId" :runs="runs" />
+        :initialized="initialized"
+        :administration-id="administrationId"
+        :org-type="orgType"
+        :org-id="orgId"
+        :task-id="taskId"
+        :runs="runs"
+      />
     </div>
     <div>
       <DistributionChartGrade
-:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
-        :org-id="orgId" :task-id="taskId" :runs="runs" />
+        :initialized="initialized"
+        :administration-id="administrationId"
+        :org-type="orgType"
+        :org-id="orgId"
+        :task-id="taskId"
+        :runs="runs"
+      />
     </div>
   </div>
   <div class="my-2 mx-4">
     <SubscoreTable
-v-if="taskId === 'letter'" task-id="letter" :task-name="taskDisplayNames['letter'].name"
-      :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
+      v-if="taskId === 'letter'"
+      task-id="letter"
+      :task-name="taskDisplayNames['letter'].name"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+    />
     <SubscoreTable
-v-if="taskId === 'pa'" task-id="pa" :task-name="taskDisplayNames['pa'].name"
-      :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
+      v-if="taskId === 'pa'"
+      task-id="pa"
+      :task-name="taskDisplayNames['pa'].name"
+      :administration-id="administrationId"
+      :org-type="orgType"
+      :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined"
+      :org-name="orgInfo.name ?? undefined"
+    />
   </div>
   <!-- <div class="task-card">
     </div> -->
@@ -82,7 +104,7 @@ const props = defineProps({
   runs: {
     type: Array,
     required: true,
-  }
+  },
 });
 
 let tasksInfoById = {

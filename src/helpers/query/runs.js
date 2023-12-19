@@ -67,15 +67,14 @@ export const getRunsRequestBody = ({
     };
 
     if (orgId) {
-    requestBody.structuredQuery.where.compositeFilter.filters.push(
-    {
-      fieldFilter: {
-        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-        op: 'ARRAY_CONTAINS',
-        value: { stringValue: orgId },
-      }})
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+          op: 'ARRAY_CONTAINS',
+          value: { stringValue: orgId },
+        },
+      });
     }
-
   } else {
     requestBody.structuredQuery.where = {
       compositeFilter: {

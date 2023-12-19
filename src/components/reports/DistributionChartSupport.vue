@@ -1,5 +1,16 @@
 <template>
+  <!-- <PvSelectButton></PvSelectButton> -->
   <div :id="`roar-dist-chart-support-${taskId}`"></div>
+  <div class="mode-select-wrapper mt-2">
+    <div class="flex uppercase text-xs font-light">view by</div>
+    <PvSelectButton
+      v-model="xMode"
+      class="flex flex-row"
+      :options="xModes"
+      option-label="name"
+      @change="handleXModeChange"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -47,9 +58,16 @@ function returnGradeCount(scores) {
   return gradeCount;
 }
 
-const mode = ref("Percentage")
+const xMode = ref({ name: 'Percentage' });
+const xModes = [{ name: 'Percentage' }, { name: 'Count' }];
 
-function returnValueByIndex(index, grade) {
+const handleXModeChange = () => {
+  // xMode.value = event.target;
+  draw(); // Call your function when the component is mounted
+  console.log('sx', xMode.value);
+};
+
+function returnValueByIndex(index, xMode, grade) {
   if (index >= 0 && index <= 2) {
     // 0 => needs extra support
     // 1 => needs some support
@@ -59,14 +77,14 @@ function returnValueByIndex(index, grade) {
       { group: 'Needs Some Support' },
       { group: 'At or Above Average' },
     ];
-    if (mode.value === 'Percentage') {
+    if (xMode.name === 'Percentage') {
       return {
         category: grade.grade,
         group: valsByIndex[index].group,
         value: grade?.support_levels[index] / grade.totalStudents,
       };
     }
-    if (mode.value === 'Count') {
+    if (xMode.name === 'Count') {
       return {
         category: grade.grade,
         group: valsByIndex[index].group,
@@ -86,22 +104,23 @@ const returnSupportLevelValues = computed(() => {
   for (const grade of gradeCounts) {
     if (grade?.totalStudents > 0) {
       for (let i = 0; i < grade?.support_levels.length; i++) {
-        let value = returnValueByIndex(i, grade);
+        let value = returnValueByIndex(i, xMode.value, grade);
         values.push(value);
       }
     }
   }
   return values;
-})
+});
 
-const distBySupport = (taskId, scores, mode = 'Percentage') => {
+const distBySupport = computed(() => {
+  console.log('calledd computed', xMode.value);
   return {
     mark: 'bar',
     height: 300,
     width: 330,
     background: null,
     title: {
-      text: `ROAR-${taskDisplayNames[taskId].name} Support Level Distribution`,
+      text: `ROAR-${taskDisplayNames[props.taskId].name} Support Level Distribution`,
       anchor: 'middle',
       fontSize: 18,
     },
@@ -111,10 +130,10 @@ const distBySupport = (taskId, scores, mode = 'Percentage') => {
     encoding: {
       x: {
         field: 'value',
-        title: `${mode}`,
+        title: `${xMode.value.name}`,
         type: 'quantitative',
         spacing: 1,
-        format: ".0%",
+        format: '.0%',
       },
       y: {
         field: 'category',
@@ -137,10 +156,13 @@ const distBySupport = (taskId, scores, mode = 'Percentage') => {
         sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
       },
-      tooltip: [{ field: 'value', type: 'quantitative', format: '.0%' }, { field: 'group' }],
+      tooltip: [
+        { field: 'value', type: 'quantitative', format: `${xMode.value.name === 'Percentage' ? '.0%' : '.0f'}` },
+        { field: 'group' },
+      ],
     },
   };
-};
+});
 
 const props = defineProps({
   initialized: {
@@ -166,17 +188,24 @@ const props = defineProps({
   runs: {
     type: Array,
     required: true,
-  }
+  },
 });
 
 const draw = async () => {
-  let chartSpecSupport = distBySupport(props.taskId, props.runs, props.mode);
+  let chartSpecSupport = distBySupport.value;
   await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpecSupport);
   // Other chart types can be added via this if/then pattern
-
 };
 
 onMounted(() => {
   draw(); // Call your function when the component is mounted
 });
 </script>
+
+<style lang="scss">
+.mode-select-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+</style>

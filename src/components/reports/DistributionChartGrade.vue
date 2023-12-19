@@ -46,9 +46,8 @@ const props = defineProps({
   runs: {
     type: Array,
     required: true,
-  }
+  },
 });
-
 
 function returnDistByGrade(runs, scoreFieldBelowSixth, scoreFieldAboveSixth) {
   for (let run of runs) {
@@ -97,7 +96,7 @@ const distByGrade = (taskId, runs, scoreFieldBelowSixth, scoreFieldAboveSixth) =
           labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
         },
         spacing: 7,
-        sort: "ascending",
+        sort: 'ascending',
         // sort: [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ['Kindergarten']],
       },
 
@@ -106,6 +105,23 @@ const distByGrade = (taskId, runs, scoreFieldBelowSixth, scoreFieldAboveSixth) =
         type: 'quantitative',
         sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         legend: null,
+        scale: {
+          // Define custom color ranges for different threshold values
+          range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
+
+          // range: [
+          //   // Color for scores.stdPercentile between 25 and 55
+          //   '#FFD700', // for example, use gold color
+
+          //   // Color for scores.stdPercentile above 55
+          //   '#FF0000', // for example, use red color
+
+          //   // Color for scores.stdPercentile less than 25
+          //   '#00FF00', // for example, use green color
+          // ],
+          // Set domain values corresponding to your threshold values
+          domain: [0, 50, 100],
+        },
       },
 
       x: {
@@ -127,7 +143,6 @@ const distByGrade = (taskId, runs, scoreFieldBelowSixth, scoreFieldAboveSixth) =
     },
   };
 };
-
 
 const computedRuns = computed(() => {
   if (props.runs === undefined) return [];
