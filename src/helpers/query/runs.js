@@ -1,3 +1,4 @@
+import _pick from 'lodash/pick';
 import _get from 'lodash/get';
 import _mapValues from 'lodash/mapValues';
 import _without from 'lodash/without';
@@ -14,7 +15,8 @@ export const getRunsRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  select = 'scores.computed.composite',
+  select = ['scores.computed.composite'],
+  allDescendants = true,
   requireCompleted = false,
 }) => {
   const requestBody = {
@@ -27,9 +29,9 @@ export const getRunsRequestBody = ({
       requestBody.structuredQuery.offset = page * pageLimit;
     }
 
-    if (select.length > 0) {
+    if (select) {
       requestBody.structuredQuery.select = {
-        fields: [{ fieldPath: select }],
+        fields: select.map((field) => ({ fieldPath: field })),
       };
     }
   }
@@ -37,11 +39,11 @@ export const getRunsRequestBody = ({
   requestBody.structuredQuery.from = [
     {
       collectionId: 'runs',
-      allDescendants: true,
+      allDescendants: allDescendants,
     },
   ];
 
-  if (administrationId && orgId) {
+  if (administrationId && (orgId || !allDescendants)) {
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -55,28 +57,25 @@ export const getRunsRequestBody = ({
           },
           {
             fieldFilter: {
-              field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-              op: 'ARRAY_CONTAINS',
-              value: { stringValue: orgId },
-            },
-          },
-          {
-            fieldFilter: {
               field: { fieldPath: 'bestRun' },
               op: 'EQUAL',
               value: { booleanValue: true },
             },
           },
-          {
-            fieldFilter: {
-              field: { fieldPath: 'taskId' },
-              op: 'EQUAL',
-              value: { stringValue: taskId },
-            },
-          },
         ],
       },
     };
+
+    if (orgId) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push(
+    {
+      fieldFilter: {
+        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+        op: 'ARRAY_CONTAINS',
+        value: { stringValue: orgId },
+      }})
+    }
+
   } else {
     requestBody.structuredQuery.where = {
       compositeFilter: {
@@ -89,16 +88,19 @@ export const getRunsRequestBody = ({
               value: { booleanValue: true },
             },
           },
-          {
-            fieldFilter: {
-              field: { fieldPath: 'taskId' },
-              op: 'EQUAL',
-              value: { stringValue: taskId },
-            },
-          },
         ],
       },
     };
+  }
+
+  if (taskId) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: 'taskId' },
+        op: 'EQUAL',
+        value: { stringValue: taskId },
+      },
+    });
   }
 
   if (requireCompleted) {
@@ -143,12 +145,14 @@ export const runCounter = (administrationId, orgType, orgId) => {
 
 export const runPageFetcher = async ({
   administrationId,
+  userId,
   orgType,
   orgId,
   taskId,
   pageLimit,
   page,
-  select = 'scores.computed.composite',
+  select = ['scores.computed.composite'],
+  scoreKey = 'scores.computed.composite',
   paginate = true,
 }) => {
   const appAxiosInstance = getAxiosInstance('app');
@@ -157,15 +161,15 @@ export const runPageFetcher = async ({
     orgType,
     orgId,
     taskId,
+    allDescendants: userId === undefined,
     aggregationQuery: false,
     pageLimit: paginate ? pageLimit.value : undefined,
     page: paginate ? page.value : undefined,
     paginate: paginate,
     select: select,
   });
-  console.log('requestBody', requestBody);
-  console.log(`Fetching scores page ${page.value} for ${administrationId}`);
-  return appAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+  const runQuery = userId === undefined ? ':runQuery' : `/users/${userId}:runQuery`;
+  return appAxiosInstance.post(runQuery, requestBody).then(async ({ data }) => {
     const runData = mapFields(data);
 
     const userDocPaths = _without(
@@ -208,9 +212,12 @@ export const runPageFetcher = async ({
       })
       .map(({ data }) => data);
 
+    const otherKeys = _without(select, scoreKey);
     const scores = _zip(userDocData, runData).map(([userData, run]) => ({
-      scores: _get(run, select),
+      scores: _get(run, scoreKey),
+      taskId: run,
       user: userData,
+      ..._pick(run, otherKeys),
     }));
 
     return scores;

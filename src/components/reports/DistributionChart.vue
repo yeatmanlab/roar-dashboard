@@ -56,7 +56,8 @@ const { data: scores, isLoading } = useQuery({
       pageLimit: ref(0),
       page: ref(0),
       paginate: false,
-      select: 'scores.computed.composite',
+      select: ['scores.computed.composite'],
+      scoreKey: 'scores.computed.composite'
     }),
   keepPreviousData: true,
   enabled: props.initialized,

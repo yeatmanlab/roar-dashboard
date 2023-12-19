@@ -137,7 +137,7 @@ export const distBySupport = (taskId, scores, mode = 'percentage') => {
 function returnDistByGrade(scores, scoreFieldBelowSixth, scoreFieldAboveSixth) {
   for (let score of scores) {
     let stdPercentile;
-    if (score.user.grade >= 6) {
+    if (parseInt(score.user.grade) >= 6) {
       stdPercentile = score.scores[scoreFieldAboveSixth];
     } else {
       stdPercentile = score.scores[scoreFieldBelowSixth];

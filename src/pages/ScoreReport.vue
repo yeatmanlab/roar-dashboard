@@ -10,9 +10,20 @@
             <span :class="spinIcon"></span>
           </button>
         </template>
+        <div v-if="orgInfo" class="report-title">{{ _toUpper(orgInfo.name) }} </div>
 
-        <h2 v-if="orgInfo" class="report-title">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
-
+        <div class="flex-col items-center">
+          <div class="flex items-center justify-center">
+            <div class="report-subheader mb-5 uppercase">Scores at a glance</div>
+          </div>
+          <div class="grid grid-cols-3 justify-center items-center w-full">
+            <div v-for="result of Object.keys(computedRunResults)" :key="result" class="px-5">
+              <DistributionChartOverview
+:scores="computedRunResults[result]" :initialized="initialized" :task-id="result"
+                :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+            </div>
+          </div>
+        </div>
         <!-- Header blurbs about tasks -->
         <h2>IN THIS REPORT...</h2>
         <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
@@ -44,35 +55,21 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span
-            >The filters applied have no matching scores.
-            <PvButton text @click="resetFilters">Reset filters</PvButton></span
-          >
+          <span>The filters applied have no matching scores.
+            <PvButton text @click="resetFilters">Reset filters</PvButton>
+          </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
+v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
+              class="ml-2" />
           </div>
           <RoarDataTable
-            :data="tableData"
-            :columns="columns"
-            :total-records="scoresCount"
-            lazy
-            :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
-            @page="onPage($event)"
-            @sort="onSort($event)"
-            @filter="onFilter($event)"
-            @export-all="exportAll"
-            @export-selected="exportSelected"
-          />
+:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
+            @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
         </div>
 
         <div class="legend-container">
@@ -104,17 +101,12 @@
         </div>
         <!-- Subscores tables -->
         <PvTabView>
-          <PvTabPanel v-for="task in allTasks" :key="task" :header="taskDisplayNames[task]?.name ? taskDisplayNames[task]?.name : ''">
+          <PvTabPanel
+v-for="task in allTasks" :key="task"
+            :header="taskDisplayNames[task]?.name ? taskDisplayNames[task]?.name : ''">
             <TaskReport
-              v-if="task"
-              :task-id="task"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :org-type="orgType"
-              :org-id="orgId"
-              :org-info="orgInfo"
-              :administration-info="administrationInfo"
-            />
+v-if="task" :task-id="task" :initialized="initialized" :administration-id="administrationId"
+              :org-type="orgType" :org-id="orgId" :org-info="orgInfo" :administration-info="administrationInfo" />
           </PvTabPanel>
         </PvTabView>
         <div>
@@ -179,9 +171,11 @@ import { getGrade } from '@bdelab/roar-utils';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
+import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
+import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue'
 
 const authStore = useAuthStore();
 
@@ -525,12 +519,6 @@ const spinIcon = computed(() => {
   return 'pi pi-refresh';
 });
 
-const allTasks = computed(() => {
-  if (tableData.value.length > 0) {
-    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
-  } else return [];
-});
-
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
@@ -636,6 +624,45 @@ const tableData = computed(() => {
   });
 });
 
+const allTasks = computed(() => {
+  if (tableData.value.length > 0) {
+    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
+  } else return [];
+});
+
+// Runs query for all tasks under admin id
+const { data: runResults } = useQuery({
+  queryKey: ['scores', ref(0), props.orgType, props.orgId, props.administrationId],
+  queryFn: () =>
+    runPageFetcher({
+      administrationId: props.administrationId,
+      orgType: props.orgType,
+      orgId: props.orgId,
+      pageLimit: ref(0),
+      page: ref(0),
+      paginate: false,
+      select: ['scores.computed.composite', 'taskId'],
+      scoreKey: 'scores.computed.composite',
+    }),
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// buckets runs entries based on taskid 
+const computedRunResults = computed(() => {
+  if (runResults.value === undefined) return {}
+  let computedScores = {}
+  for (const result of runResults.value) {
+    if ((result.taskId in computedScores)) {
+      computedScores[result.taskId].push(result)
+    }
+    else {
+      computedScores[result.taskId] = [result]
+    }
+  }
+  return computedScores;
+})
+
 let unsubscribe;
 const refresh = () => {
   refreshing.value = true;
@@ -656,7 +683,14 @@ onMounted(async () => {
 
 <style lang="scss">
 .report-title {
-  font-size: 3.5rem;
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-top: 0;
+}
+
+.report-subheader {
+  font-size: 1.5rem;
+  font-weight: light;
   margin-top: 0;
 }
 
@@ -721,9 +755,11 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   padding: 2rem;
+
   h3 {
     font-weight: bold;
   }
+
   span {
     display: flex;
     align-items: center;
