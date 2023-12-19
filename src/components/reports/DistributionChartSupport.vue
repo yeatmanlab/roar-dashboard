@@ -1,11 +1,12 @@
-const graphColorType = {
-  mediumPink: '#cc79a7',
-  mediumYellow: '#f0e442',
-  mediumBlue: '#0072b2',
-  lightBlueGreen: '#44aa99',
-  darkPurple: '#342288',
-  black: '#000000',
-};
+<template>
+  <div :id="`roar-dist-chart-support-${taskId}`"></div>
+</template>
+
+<script setup>
+import _get from 'lodash/get';
+import { computed, onMounted } from 'vue';
+import embed from 'vega-embed';
+import { getSupportLevel, taskDisplayNames } from '@/helpers/reports';
 
 function returnGradeCount(scores) {
   // gradecount should be an obj of {{grade:{} count}}
@@ -61,7 +62,7 @@ function returnValueByIndex(index, grade, mode) {
       return {
         category: grade.grade,
         group: valsByIndex[index].group,
-        value: (grade?.support_levels[index] / grade.totalStudents),
+        value: grade?.support_levels[index] / grade.totalStudents,
       };
     }
     if (mode === 'count') {
@@ -92,13 +93,14 @@ function returnSupportLevelValues(scores, mode) {
   return values;
 }
 
-export const distBySupport = (taskId, scores, mode = 'percentage') => {
+const distBySupport = (taskId, scores, mode = 'percentage') => {
   return {
     mark: 'bar',
     height: 300,
-    width: 300,
+    width: 330,
+    background: null,
     title: {
-      text: `Distribution of Support Level for ROAR-${taskId.toUpperCase()}`,
+      text: `ROAR-${taskDisplayNames[taskId].name} Support Level Distribution`,
       anchor: 'middle',
       fontSize: 18,
     },
@@ -106,20 +108,25 @@ export const distBySupport = (taskId, scores, mode = 'percentage') => {
       values: returnSupportLevelValues(scores, mode),
     },
     encoding: {
-      y: {
+      x: {
         field: 'value',
-        title: `${mode})`,
+        title: `${mode}`,
         type: 'quantitative',
         spacing: 1,
+        format: ".0%",
       },
-      x: {
+      y: {
         field: 'category',
         type: 'ordinal',
         title: 'By Grade',
         spacing: 1,
         sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        axis: {
+          labelAngle: 0,
+          labelAlign: 'center',
+        },
       },
-      xOffset: {
+      yOffset: {
         field: 'group',
         sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
       },
@@ -129,79 +136,106 @@ export const distBySupport = (taskId, scores, mode = 'percentage') => {
         sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
       },
-      tooltip: [{ field: 'value', type: 'quantitative', format: '.0%'},{field: 'group' }]
+      tooltip: [{ field: 'value', type: 'quantitative', format: '.0%' }, { field: 'group' }],
     },
   };
 };
 
-function returnDistByGrade(scores, scoreFieldBelowSixth, scoreFieldAboveSixth) {
-  for (let score of scores) {
-    let stdPercentile;
-    if (parseInt(score.user.grade) >= 6) {
-      stdPercentile = score.scores[scoreFieldAboveSixth];
-    } else {
-      stdPercentile = score.scores[scoreFieldBelowSixth];
-    }
-    score.scores.stdPercentile = stdPercentile;
+const props = defineProps({
+  initialized: {
+    type: Boolean,
+    required: true,
+  },
+  taskId: {
+    type: String,
+    required: true,
+  },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
+  administrationId: {
+    type: String,
+    required: true,
+  },
+  graphType: {
+    type: String,
+    required: true,
+    default: 'distByGrade',
+  },
+  mode: {
+    type: String,
+    required: false,
+    default: 'percentage',
+  },
+  runs: {
+    type: Array,
+    required: true,
   }
-  return scores;
-}
+});
 
-export const distByGrade = (taskId, scores, scoreFieldBelowSixth, scoreFieldAboveSixth) => {
-  return {
-    description: 'ROAR Score Distribution by Grade Level',
-    title: { text: `${taskId.toUpperCase()} Score Distribution`, anchor: 'middle', fontSize: 18 },
-    config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
-
-    data: { values: returnDistByGrade(scores.value, scoreFieldBelowSixth.value, scoreFieldAboveSixth.value) },
-
-    mark: 'bar',
-    height: 50,
-    width: 400,
-
-    encoding: {
-      facet: {
-        field: 'user.grade',
-        type: 'nominal',
-        columns: 1,
-        title: 'By Grade',
-        header: {
-          titleColor: 'navy',
-          titleFontSize: 12,
-          titleAlign: 'top',
-          titleAnchor: 'middle',
-          labelColor: 'navy',
-          labelFontSize: 10,
-          labelFontStyle: 'bold',
-          labelAnchor: 'middle',
-          labelAngle: 0,
-          labelAlign: 'left',
-          labelOrient: 'left',
-          labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
-        },
-        spacing: 7,
-        sort: [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ['Kindergarten']],
+const computedRuns = computed(() => {
+  if (props.runs === undefined) return [];
+  return props.runs.map(({ scores, user }) => {
+    let percentScore;
+    if (user?.grade >= 6) {
+      percentScore = _get(scores, scoreFieldAboveSixth.value);
+    } else {
+      percentScore = _get(scores, scoreFieldBelowSixth.value);
+    }
+    const { support_level } = getSupportLevel(percentScore);
+    return {
+      user,
+      scores: {
+        ...scores,
+        support_level,
       },
+    };
+  });
+});
 
-      color: {
-        field: 'scores.stdPercentile',
-        type: 'quantitative',
-        sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-        legend: null,
-      },
+const scoreFieldBelowSixth = computed(() => {
+  if (props.taskId === 'swr') {
+    return 'wjPercentile';
+  } else if (props.taskId === 'sre') {
+    return 'tosrecPercentile';
+  } else if (props.taskId === 'pa') {
+    return 'percentile';
+  }
 
-      x: {
-        field: `scores.stdPercentile`,
-        title: `Percentile`,
-        bin: { step: 10, extent: [0, 100] },
-        sort: 'ascending',
-      },
+  return 'percentile';
+});
 
-      y: {
-        aggregate: 'count',
-        title: 'count',
-        axis: { orient: 'right' },
-      },
-    },
-  };
+const scoreFieldAboveSixth = computed(() => {
+  if (props.taskId === 'swr') {
+    return 'sprPercentile';
+  } else if (props.taskId === 'sre') {
+    return 'sprPercentile';
+  } else if (props.taskId === 'pa') {
+    return 'sprPercentile';
+  }
+
+  return 'percentile';
+});
+
+const draw = async () => {
+  let chartSpecSupport = distBySupport(props.taskId, computedRuns, props.mode);
+  await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpecSupport);
+  // Other chart types can be added via this if/then pattern
+
 };
+
+// watch(props.scores, (val) => {
+//   if (val && props.initialized) {
+//     draw();
+//   }
+// });
+
+onMounted(() => {
+  draw(); // Call your function when the component is mounted
+});
+</script>

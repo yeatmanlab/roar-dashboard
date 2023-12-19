@@ -4,46 +4,62 @@
       <AdministratorSidebar :actions="sidebarActions" />
     </aside>
     <section class="main-body">
-      <PvPanel :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`">
-        <template #icons>
-          <button class="p-panel-header-icon p-link mr-2" @click="refresh">
-            <span :class="spinIcon"></span>
-          </button>
-        </template>
-        <div v-if="orgInfo" class="report-title">{{ _toUpper(orgInfo.name) }} </div>
-
-        <div class="flex-col items-center">
-          <div class="flex items-center justify-center">
-            <div class="report-subheader mb-5 uppercase">Scores at a glance</div>
-          </div>
-          <div class="grid grid-cols-3 justify-center items-center w-full">
-            <div v-for="result of Object.keys(computedRunResults)" :key="result" class="px-5">
-              <DistributionChartOverview
-:scores="computedRunResults[result]" :initialized="initialized" :task-id="result"
-                :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+      <div>
+        <div class="flex-col p-4 drop-shadow-lg">
+          <div v-if="orgInfo">
+            <div class="report-title">
+              {{ _toUpper(orgInfo.name) }}
             </div>
+            <!-- <div class=""> -->
+            <div class="report-subheader mb-5 uppercase text-gray-500 font-normal">Scores at a glance</div>
+            <!-- </div> -->
+          </div>
+          <!-- <div class="flex flex-row flex-wrap justify-center w-full"> -->
+          <div class="flex w-full items-center justify-center">
+            <div v-if="isLoadingRunResults" class="flex w-full h-full items-center justify-center">
+              <AppSpinner style="margin-bottom: 1rem" />
+            </div>
+            <div class="grid grid-cols-3 justify-center items-center">
+              <div v-for="result of Object.keys(computedRunResults)" :key="result" class="px-5">
+                <DistributionChartOverview
+:scores="computedRunResults[result]" :initialized="initialized"
+                  :task-id="result" :org-type="props.orgType" :org-id="props.orgId"
+                  :administration-id="props.administrationId" />
+              </div>
+            </div>
+
           </div>
         </div>
         <!-- Header blurbs about tasks -->
-        <h2>IN THIS REPORT...</h2>
-        <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
-        <div class="task-overview-container">
-          <div v-if="allTasks.includes('letter')" class="task-blurb">
-            <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names
-            and sounds.
+        <div class="py-5 px-8 mb-2 rounded shadow-md bg-gray-200">
+          <div class="font-bold text-2xl">IN THIS REPORT...</div>
+          <span class="text-sm">You will receive a breakdown of your classroom's ROAR scores across each of the domains
+            tested. </span>
+          <div v-if="isLoadingScores">
+            <AppSpinner style="margin-bottom: 1rem" />
           </div>
-          <div v-if="allTasks.includes('pa')" class="task-blurb">
-            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span>
-            measures the ability to hear and manipulate the individual sounds within words (sound matching and elision).
-            This skill is crucial for building further reading skills, such as decoding.
-          </div>
-          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
-            <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
-            word level.
-          </div>
-          <div v-if="allTasks.includes('sre')" class="task-blurb">
-            <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
-            at the sentence level.
+          <div>
+            <div class="task-overview-container mt-4">
+              <div v-if="allTasks.includes('letter')" class="task-blurb">
+                <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter
+                names
+                and sounds.
+              </div>
+              <div v-if="allTasks.includes('pa')" class="task-blurb">
+                <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span>
+                measures the ability to hear and manipulate the individual sounds within words (sound matching and
+                elision).
+                This skill is crucial for building further reading skills, such as decoding.
+              </div>
+              <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
+                <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
+                word level.
+              </div>
+              <div v-if="allTasks.includes('sre')" class="task-blurb">
+                <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
+                at the sentence level.
+              </div>
+            </div>
           </div>
         </div>
         <!-- Loading data spinner -->
@@ -72,7 +88,7 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
             @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
         </div>
 
-        <div class="legend-container">
+        <div class="legend-container grid grid-cols-3">
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
@@ -102,14 +118,15 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
         <!-- Subscores tables -->
         <PvTabView>
           <PvTabPanel
-v-for="task in allTasks" :key="task"
-            :header="taskDisplayNames[task]?.name ? taskDisplayNames[task]?.name : ''">
+v-for="run of Object.keys(computedRunResults)" :key="run"
+            :header="taskDisplayNames[run]?.name ? taskDisplayNames[run]?.name : ''">
             <TaskReport
-v-if="task" :task-id="task" :initialized="initialized" :administration-id="administrationId"
-              :org-type="orgType" :org-id="orgId" :org-info="orgInfo" :administration-info="administrationInfo" />
+v-if="run" :task-id="run" :initialized="initialized" :administration-id="administrationId"
+              :runs="computedRunResults[run]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
+              :administration-info="administrationInfo" />
           </PvTabPanel>
         </PvTabView>
-        <div>
+        <div class="bg-gray-200 px-4 py-2">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -136,7 +153,7 @@ v-if="task" :task-id="task" :initialized="initialized" :administration-id="admin
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div>
+        <div class="bg-gray-200 px-4 py-2">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
@@ -146,7 +163,7 @@ v-if="task" :task-id="task" :initialized="initialized" :administration-id="admin
             to see which students can benefit from varying levels of support.
           </p>
         </div>
-      </PvPanel>
+      </div>
     </section>
   </main>
 </template>
@@ -514,10 +531,6 @@ function getScoreKeys(row, grade) {
 }
 
 const refreshing = ref(false);
-const spinIcon = computed(() => {
-  if (refreshing.value) return 'pi pi-spin pi-spinner';
-  return 'pi pi-refresh';
-});
 
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
@@ -631,7 +644,7 @@ const allTasks = computed(() => {
 });
 
 // Runs query for all tasks under admin id
-const { data: runResults } = useQuery({
+const { isLoading: isLoadingRunResults, data: runResults } = useQuery({
   queryKey: ['scores', ref(0), props.orgType, props.orgId, props.administrationId],
   queryFn: () =>
     runPageFetcher({
@@ -689,7 +702,7 @@ onMounted(async () => {
 }
 
 .report-subheader {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: light;
   margin-top: 0;
 }
@@ -719,12 +732,14 @@ onMounted(async () => {
 .legend-container {
   display: flex;
   flex-direction: row;
-  gap: 3vw;
+  gap: 1vw;
   justify-content: center;
   margin-top: 3rem;
 }
 
 .legend-entry {
+  font-size: 0.9rem;
+  font-weight: light;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -732,8 +747,8 @@ onMounted(async () => {
 
 .legend-description {
   text-align: center;
-  margin-top: 1rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
+  font-size: 0.7rem;
 }
 
 .circle {
@@ -748,7 +763,8 @@ onMounted(async () => {
 }
 
 .extra-info-title {
-  font-size: 2rem;
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
 .no-scores-container {

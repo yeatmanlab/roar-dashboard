@@ -5,7 +5,7 @@
 <script setup>
 import { computed, onMounted } from 'vue';
 import embed from 'vega-embed';
-import { getSupportLevel } from '@/helpers/reports';
+import { getSupportLevel, taskDisplayNames } from '@/helpers/reports';
 
 const props = defineProps({
     initialized: {
@@ -57,7 +57,9 @@ const supportLevelsOverview = computed(() => {
     }
 
     // transform dictionary into datatype readable to vega
-    return Object.entries(values).map(([support_level, count]) => ({ category: support_level, value: count }));
+    return Object.entries(values)
+        .filter(([support_level]) => support_level !== "null")
+        .map(([support_level, count]) => ({ category: support_level, value: count }));
 })
 
 const overviewDistributionChart = (taskId, scores, mode = 'count') => {
@@ -65,8 +67,9 @@ const overviewDistributionChart = (taskId, scores, mode = 'count') => {
         mark: 'bar',
         height: 200,
         width: 200,
+        background: null,
         title: {
-            text: `ROAR-${taskId.toUpperCase()} Support Levels`,
+            text: `ROAR-${taskDisplayNames[taskId].name} Support Levels`,
             anchor: 'middle',
             fontSize: 18,
             description: 'Support level Count',
@@ -86,8 +89,11 @@ const overviewDistributionChart = (taskId, scores, mode = 'count') => {
                 type: 'ordinal',
                 title: 'Support Level',
                 spacing: 1,
-                sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                 legend: null,
+                axis: {
+                    labelAngle: -30,
+                    labelAlign: "right"
+                }
             },
             color: {
                 field: 'category',

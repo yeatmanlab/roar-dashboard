@@ -1,5 +1,5 @@
 <template>
-  <div className="mb-5">
+  <div className="">
     <Accordion>
       <template #collapseicon>
         <i class="pi pi-info-circle mr-4" />
@@ -7,59 +7,43 @@
       <template #expandicon>
         <i class="pi pi-info-circle mr-4" />
       </template>
-      <AccordionTab :header="tasksInfoById[taskId]?.header">
-        <div style="text-transform: uppercase" class="text-2xl">{{ tasksInfoById[taskId]?.subheader }}</div>
-        <p class="mt-2">
+      <AccordionTab header="ABOUT THIS ASSESSMENT">
+        <div style="text-transform: uppercase" class="text-2xl text-center mb-2">{{ tasksInfoById[taskId]?.subheader }}
+        </div>
+        <p class="mt-3">
           {{ tasksInfoById[taskId]?.desc }}
         </p>
       </AccordionTab>
     </Accordion>
   </div>
-  <div class="flex flex-row flex-wrap">
-    <DistributionChart
-      :initialized="initialized"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :task-id="taskId"
-      graph-type="distByGrade"
-    />
-    <DistributionChart
-      :initialized="initialized"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :task-id="taskId"
-      graph-type="distBySupport"
-    />
+  <div class="flex flex-row flex-wrap w-full items-center justify-center p-3">
+    <div>
+      <DistributionChartSupport
+:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+        :org-id="orgId" :task-id="taskId" :runs="runs" graph-type="distBySupport" />
+    </div>
+    <div>
+      <DistributionChartGrade
+:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+        :org-id="orgId" :task-id="taskId" :runs="runs" graph-type="distByGrade" />
+    </div>
   </div>
   <div class="my-2 mx-4">
     <SubscoreTable
-      v-if="taskId === 'letter'"
-      task-id="letter"
-      :task-name="taskDisplayNames['letter'].name"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-    />
+v-if="taskId === 'letter'" task-id="letter" :task-name="taskDisplayNames['letter'].name"
+      :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
     <SubscoreTable
-      v-if="taskId === 'pa'"
-      task-id="pa"
-      :task-name="taskDisplayNames['pa'].name"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-    />
+v-if="taskId === 'pa'" task-id="pa" :task-name="taskDisplayNames['pa'].name"
+      :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
   </div>
   <!-- <div class="task-card">
     </div> -->
 </template>
 <script setup>
-import DistributionChart from '../DistributionChart.vue';
+import DistributionChartGrade from '../DistributionChartGrade.vue';
+import DistributionChartSupport from '../DistributionChartSupport.vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
 import { taskDisplayNames } from '@/helpers/reports.js';
@@ -95,13 +79,17 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  runs: {
+    type: Array,
+    required: true,
+  }
 });
 
 let tasksInfoById = {
   swr: {
     header: 'ROAR-WORD',
     subheader: 'Single Word Recognition',
-    desc: "ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will rangekkk between 100-900 and can be viewed by selecting 'Raw Score' on the table above.",
+    desc: "ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between 100-900 and can be viewed by selecting 'Raw Score' on the table above.",
   },
   pa: {
     header: 'ROAR-PHONEME',
