@@ -19,10 +19,10 @@
             <div v-if="isLoadingRunResults" class="flex w-full h-full items-center justify-center">
               <AppSpinner style="margin-bottom: 1rem" />
             </div>
-            <div class="grid grid-cols-3 justify-center items-center">
+            <div class="grid grid-cols-3 space-around items-center">
               <div v-for="result of Object.keys(computedRunResults)" :key="result" class="px-5">
                 <DistributionChartOverview
-:scores="computedRunResults[result]" :initialized="initialized"
+:runs="computedRunResults[result]" :initialized="initialized"
                   :task-id="result" :org-type="props.orgType" :org-id="props.orgId"
                   :administration-id="props.administrationId" />
               </div>
@@ -31,7 +31,7 @@
           </div>
         </div>
         <!-- Header blurbs about tasks -->
-        <div class="py-5 px-8 mb-2 rounded shadow-md bg-gray-200">
+        <div class="py-5 px-3 mb-2 rounded shadow-md bg-gray-200">
           <div class="font-bold text-2xl">IN THIS REPORT...</div>
           <span class="text-sm">You will receive a breakdown of your classroom's ROAR scores across each of the domains
             tested. </span>
@@ -661,18 +661,71 @@ const { isLoading: isLoadingRunResults, data: runResults } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+function scoreFieldBelowSixth(taskId) {
+  if (taskId === 'swr') {
+    return 'wjPercentile';
+  } else if (taskId === 'sre') {
+    return 'tosrecPercentile';
+  } else if (taskId === 'pa') {
+    return 'percentile';
+  }
+  return 'percentile';
+};
+
+function scoreFieldAboveSixth(taskId) {
+  if (taskId === 'swr') {
+    return 'sprPercentile';
+  } else if (taskId === 'sre') {
+    return 'sprPercentile';
+  } else if (taskId === 'pa') {
+    return 'sprPercentile';
+  }
+  return 'percentile';
+}
+
+// let percentScore;
+// if (user?.grade >= 6) {
+//   percentScore = _get(scores, scoreFieldAboveSixth.value);
+// } else {
+//   percentScore = _get(scores, scoreFieldBelowSixth.value);
+// }
+// const { support_level } = getSupportLevel(percentScore);
+// return {
+//   user,
+//   scores: {
+//     ...scores,
+//     support_level,
+//   },
+// };
 // buckets runs entries based on taskid 
 const computedRunResults = computed(() => {
   if (runResults.value === undefined) return {}
   let computedScores = {}
-  for (const result of runResults.value) {
-    if ((result.taskId in computedScores)) {
-      computedScores[result.taskId].push(result)
+  for (let { scores, taskId, user } of runResults.value) {
+    let percentScore;
+    if (user?.grade >= 6) {
+      percentScore = _get(scores, scoreFieldAboveSixth(taskId))
     }
     else {
-      computedScores[result.taskId] = [result]
+      percentScore = _get(scores, scoreFieldBelowSixth(taskId))
+    }
+    const { support_level } = getSupportLevel(percentScore);
+    let run = {
+      scores: {
+        ...scores,
+        support_level: support_level
+      },
+      taskId,
+      user
+    }
+    if (run.taskId in computedScores) {
+      computedScores[run.taskId].push(run)
+    }
+    else {
+      computedScores[run.taskId] = [run]
     }
   }
+  console.log("CSCS", computedScores)
   return computedScores;
 })
 

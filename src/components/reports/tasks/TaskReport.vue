@@ -16,16 +16,16 @@
       </AccordionTab>
     </Accordion>
   </div>
-  <div class="flex flex-row flex-wrap w-full items-center justify-center p-3">
+  <div class="flex flex-row flex-wrap w-full space-around p-3">
     <div>
       <DistributionChartSupport
 :initialized="initialized" :administration-id="administrationId" :org-type="orgType"
-        :org-id="orgId" :task-id="taskId" :runs="runs" graph-type="distBySupport" />
+        :org-id="orgId" :task-id="taskId" :runs="runs" />
     </div>
     <div>
       <DistributionChartGrade
 :initialized="initialized" :administration-id="administrationId" :org-type="orgType"
-        :org-id="orgId" :task-id="taskId" :runs="runs" graph-type="distByGrade" />
+        :org-id="orgId" :task-id="taskId" :runs="runs" />
     </div>
   </div>
   <div class="my-2 mx-4">

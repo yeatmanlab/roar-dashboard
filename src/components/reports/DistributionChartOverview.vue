@@ -5,7 +5,7 @@
 <script setup>
 import { computed, onMounted } from 'vue';
 import embed from 'vega-embed';
-import { getSupportLevel, taskDisplayNames } from '@/helpers/reports';
+import {  taskDisplayNames } from '@/helpers/reports';
 
 const props = defineProps({
     initialized: {
@@ -16,7 +16,7 @@ const props = defineProps({
         type: String,
         required: true,
     },
-    scores: {
+    runs: {
         type: Array,
         required: true,
     },
@@ -40,15 +40,16 @@ const props = defineProps({
     mode: {
         type: String,
         required: false,
-        default: 'count',
+        default: 'Count',
     },
 });
 
 const supportLevelsOverview = computed(() => {
-    if (!props.scores) return []
+    if (!props.runs) return []
     let values = {};
-    for (const score of props.scores) {
-        const { support_level } = getSupportLevel(score?.scores?.[(parseInt(score?.user?.grade) >= 6 ? scoreFieldAboveSixth.value : scoreFieldBelowSixth.value)])
+    for (const { scores } of props.runs) {
+        const support_level = scores.support_level
+        // const { support_level } = getSupportLevel(scores?.[(parseInt(user?.grade) >= 6 ? scoreFieldAboveSixth.value : scoreFieldBelowSixth.value)])
         if (support_level in values) {
             values[support_level] += 1;
         } else {
@@ -62,7 +63,7 @@ const supportLevelsOverview = computed(() => {
         .map(([support_level, count]) => ({ category: support_level, value: count }));
 })
 
-const overviewDistributionChart = (taskId, scores, mode = 'count') => {
+const overviewDistributionChart = (taskId, scores, mode = 'Student Count') => {
     const spec = {
         mark: 'bar',
         height: 200,
@@ -108,32 +109,8 @@ const overviewDistributionChart = (taskId, scores, mode = 'count') => {
     return spec;
 };
 
-const scoreFieldBelowSixth = computed(() => {
-    if (props.taskId === 'swr') {
-        return 'wjPercentile';
-    } else if (props.taskId === 'sre') {
-        return 'tosrecPercentile';
-    } else if (props.taskId === 'pa') {
-        return 'percentile';
-    }
-
-    return 'percentile';
-});
-
-const scoreFieldAboveSixth = computed(() => {
-    if (props.taskId === 'swr') {
-        return 'sprPercentile';
-    } else if (props.taskId === 'sre') {
-        return 'sprPercentile';
-    } else if (props.taskId === 'pa') {
-        return 'sprPercentile';
-    }
-
-    return 'percentile';
-});
-
 const draw = async () => {
-    let chartSpecSupport = overviewDistributionChart(props.taskId, props.scores, props.mode);
+    let chartSpecSupport = overviewDistributionChart(props.taskId, props.runs, props.mode);
     await embed(`#roar-dist-chart-overview-${props.taskId}`, chartSpecSupport);
     // Other chart types can be added via this if/then pattern
 

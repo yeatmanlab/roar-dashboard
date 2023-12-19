@@ -3,10 +3,9 @@
 </template>
 
 <script setup>
-import _get from 'lodash/get';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import embed from 'vega-embed';
-import { getSupportLevel, taskDisplayNames } from '@/helpers/reports';
+import { taskDisplayNames } from '@/helpers/reports';
 
 function returnGradeCount(scores) {
   // gradecount should be an obj of {{grade:{} count}}
@@ -27,7 +26,7 @@ function returnGradeCount(scores) {
     { grade: '11', support_levels: [0, 0, 0], totalStudents: 0 },
     { grade: '12', support_levels: [0, 0, 0], totalStudents: 0 },
   ];
-  for (const score of scores.value) {
+  for (const score of scores) {
     let gradeCounter = gradeCount.find((grade) => grade.grade === score?.user?.grade?.toString());
     if (gradeCounter) {
       if (score?.scores?.support_level === 'Needs Extra Support' && gradeCounter) {
@@ -48,7 +47,9 @@ function returnGradeCount(scores) {
   return gradeCount;
 }
 
-function returnValueByIndex(index, grade, mode) {
+const mode = ref("Percentage")
+
+function returnValueByIndex(index, grade) {
   if (index >= 0 && index <= 2) {
     // 0 => needs extra support
     // 1 => needs some support
@@ -58,14 +59,14 @@ function returnValueByIndex(index, grade, mode) {
       { group: 'Needs Some Support' },
       { group: 'At or Above Average' },
     ];
-    if (mode === 'percentage') {
+    if (mode.value === 'Percentage') {
       return {
         category: grade.grade,
         group: valsByIndex[index].group,
         value: grade?.support_levels[index] / grade.totalStudents,
       };
     }
-    if (mode === 'count') {
+    if (mode.value === 'Count') {
       return {
         category: grade.grade,
         group: valsByIndex[index].group,
@@ -78,22 +79,22 @@ function returnValueByIndex(index, grade, mode) {
   }
 }
 
-function returnSupportLevelValues(scores, mode) {
-  const gradeCounts = returnGradeCount(scores);
+const returnSupportLevelValues = computed(() => {
+  const gradeCounts = returnGradeCount(props.runs);
   const values = [];
   // generates values for bar chart
   for (const grade of gradeCounts) {
     if (grade?.totalStudents > 0) {
       for (let i = 0; i < grade?.support_levels.length; i++) {
-        let value = returnValueByIndex(i, grade, mode);
+        let value = returnValueByIndex(i, grade);
         values.push(value);
       }
     }
   }
   return values;
-}
+})
 
-const distBySupport = (taskId, scores, mode = 'percentage') => {
+const distBySupport = (taskId, scores, mode = 'Percentage') => {
   return {
     mark: 'bar',
     height: 300,
@@ -105,7 +106,7 @@ const distBySupport = (taskId, scores, mode = 'percentage') => {
       fontSize: 18,
     },
     data: {
-      values: returnSupportLevelValues(scores, mode),
+      values: returnSupportLevelValues.value,
     },
     encoding: {
       x: {
@@ -123,7 +124,7 @@ const distBySupport = (taskId, scores, mode = 'percentage') => {
         sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         axis: {
           labelAngle: 0,
-          labelAlign: 'center',
+          labelAlign: 'right',
         },
       },
       yOffset: {
@@ -162,78 +163,18 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  graphType: {
-    type: String,
-    required: true,
-    default: 'distByGrade',
-  },
-  mode: {
-    type: String,
-    required: false,
-    default: 'percentage',
-  },
   runs: {
     type: Array,
     required: true,
   }
 });
 
-const computedRuns = computed(() => {
-  if (props.runs === undefined) return [];
-  return props.runs.map(({ scores, user }) => {
-    let percentScore;
-    if (user?.grade >= 6) {
-      percentScore = _get(scores, scoreFieldAboveSixth.value);
-    } else {
-      percentScore = _get(scores, scoreFieldBelowSixth.value);
-    }
-    const { support_level } = getSupportLevel(percentScore);
-    return {
-      user,
-      scores: {
-        ...scores,
-        support_level,
-      },
-    };
-  });
-});
-
-const scoreFieldBelowSixth = computed(() => {
-  if (props.taskId === 'swr') {
-    return 'wjPercentile';
-  } else if (props.taskId === 'sre') {
-    return 'tosrecPercentile';
-  } else if (props.taskId === 'pa') {
-    return 'percentile';
-  }
-
-  return 'percentile';
-});
-
-const scoreFieldAboveSixth = computed(() => {
-  if (props.taskId === 'swr') {
-    return 'sprPercentile';
-  } else if (props.taskId === 'sre') {
-    return 'sprPercentile';
-  } else if (props.taskId === 'pa') {
-    return 'sprPercentile';
-  }
-
-  return 'percentile';
-});
-
 const draw = async () => {
-  let chartSpecSupport = distBySupport(props.taskId, computedRuns, props.mode);
+  let chartSpecSupport = distBySupport(props.taskId, props.runs, props.mode);
   await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpecSupport);
   // Other chart types can be added via this if/then pattern
 
 };
-
-// watch(props.scores, (val) => {
-//   if (val && props.initialized) {
-//     draw();
-//   }
-// });
 
 onMounted(() => {
   draw(); // Call your function when the component is mounted

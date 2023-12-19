@@ -38,11 +38,6 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  graphType: {
-    type: String,
-    required: true,
-    default: 'distByGrade',
-  },
   mode: {
     type: String,
     required: false,
@@ -60,7 +55,6 @@ function returnDistByGrade(runs, scoreFieldBelowSixth, scoreFieldAboveSixth) {
     let stdPercentile;
     if (parseInt(run?.user?.grade) >= 6) {
       stdPercentile = run.scores[scoreFieldAboveSixth];
-      console.log('std percentile', stdPercentile);
     } else {
       stdPercentile = run.scores[scoreFieldBelowSixth];
     }
@@ -103,7 +97,8 @@ const distByGrade = (taskId, runs, scoreFieldBelowSixth, scoreFieldAboveSixth) =
           labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
         },
         spacing: 7,
-        sort: [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ['Kindergarten']],
+        sort: "ascending",
+        // sort: [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ['Kindergarten']],
       },
 
       color: {
