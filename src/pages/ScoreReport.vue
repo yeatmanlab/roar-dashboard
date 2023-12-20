@@ -376,7 +376,18 @@ const viewOptions = ref([
   { label: 'Raw Score', value: 'raw' },
 ]);
 
-const rawOnlyTasks = ['letter'];
+const displayNames = {
+  swr: { name: 'Word', order: 3 },
+  'swr-es': { name: 'Palabra', order: 4 },
+  pa: { name: 'Phoneme', order: 2 },
+  sre: { name: 'Sentence', order: 5 },
+  letter: { name: 'Letter', order: 1 },
+  multichoice: { name: 'Multichoice', order: 6 },
+  mep: { name: 'MEP', order: 7 },
+  ExternalTask: { name: 'External Task', order: 8 },
+  ExternalTest: { name: 'External Test', order: 9 },
+};
+const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
 
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
@@ -608,7 +619,7 @@ const tableData = computed(() => {
   return scoresDataQuery.value.map(({ user, assignment }) => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
-    for (const assessment of assignment?.assessments || []) {
+    for (const assessment of assignment?.assessments ?? []) {
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         grade,
