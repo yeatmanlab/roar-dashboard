@@ -7,15 +7,6 @@ import { onMounted } from 'vue';
 import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
-const graphColorType = {
-  mediumPink: '#cc79a7',
-  mediumYellow: '#f0e442',
-  mediumBlue: '#0072b2',
-  lightBlueGreen: '#44aa99',
-  darkPurple: '#342288',
-  black: '#000000',
-};
-
 const props = defineProps({
   initialized: {
     type: Boolean,
@@ -53,7 +44,7 @@ const distByGrade = (taskId, runs ) => {
     // description: 'ROAR Score Distribution by Grade Level',
     background: null,
     title: { text: `ROAR-${taskDisplayNames[taskId].name} Score Distribution`, anchor: 'middle', fontSize: 18 },
-    config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
+    // config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
 
     // data: { values: returnDistByGrade(runs, scoreFieldBelowSixth.value, scoreFieldAboveSixth.value) },
     data: { values: runs },

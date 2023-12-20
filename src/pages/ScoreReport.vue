@@ -16,31 +16,32 @@
           </div>
           <!-- <div class="flex flex-row flex-wrap justify-center w-full"> -->
           <div class="flex w-full items-center justify-center">
-            <div v-if="isLoadingRunResults" class="flex w-full items-center text-center justify-center">
-              <AppSpinner style="margin-bottom: 1rem" />
+            <div v-if="isLoadingRunResults" class="loading-wrapper">
+              <AppSpinner style="margin: 1rem 0rem" />
+              <div class="uppercase text-sm">
+                Loading Overview Charts
+              </div>
             </div>
-            <div class="grid grid-cols-3 space-around items-center">
+            <div class="chart-wrapper">
               <div v-for="result of Object.keys(computedRunResults)" :key="result" class="px-5">
                 <DistributionChartOverview
-                  :runs="computedRunResults[result]"
-                  :initialized="initialized"
-                  :task-id="result"
-                  :org-type="props.orgType"
-                  :org-id="props.orgId"
-                  :administration-id="props.administrationId"
-                />
+:runs="computedRunResults[result]" :initialized="initialized" :task-id="result"
+                  :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
               </div>
             </div>
           </div>
         </div>
         <!-- Header blurbs about tasks -->
-        <div class="py-5 px-3 mb-2 rounded shadow-md bg-gray-200">
+        <div class="py-5 px-3 mb-2 bg-gray-200">
           <div class="font-bold text-2xl">IN THIS REPORT...</div>
-          <span class="text-sm"
-            >You will receive a breakdown of your classroom's ROAR scores across each of the domains tested.
+          <span class="text-sm">You will receive a breakdown of your classroom's ROAR scores across each of the domains
+            tested.
           </span>
-          <div v-if="isLoadingScores">
-            <AppSpinner style="margin-bottom: 1rem" />
+          <div v-if="isLoadingScores" class="loading-wrapper">
+            <AppSpinner style="margin: 1rem 0rem" />
+            <div class="uppercase text-sm">
+              Loading Datatables
+            </div>
           </div>
           <div>
             <div class="task-overview-container mt-4">
@@ -73,8 +74,7 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span
-            >The filters applied have no matching scores.
+          <span>The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
@@ -82,29 +82,16 @@
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
+v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
+              class="ml-2" />
           </div>
           <RoarDataTable
-            :data="tableData"
-            :columns="columns"
-            :total-records="scoresCount"
-            lazy
-            :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
-            @page="onPage($event)"
-            @sort="onSort($event)"
-            @filter="onFilter($event)"
-            @export-all="exportAll"
-            @export-selected="exportSelected"
-          />
+:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
+            @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
         </div>
 
-        <div class="legend-container grid grid-cols-3">
+        <div class="legend-container">
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
@@ -126,32 +113,29 @@
               <div>(At or above 50th percentile)</div>
             </div>
           </div>
-          <div class="legend-description">
-            Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-            indicate that the assessment was not completed.
-          </div>
+        </div>
+        <div class="legend-description">
+          Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
+          indicate that the assessment was not completed.
         </div>
         <!-- Subscores tables -->
+        <div v-if="isLoadingRunResults" class="loading-wrapper">
+          <AppSpinner style="margin: 1rem 0rem" />
+          <div class="uppercase text-sm">
+            Loading Task Reports
+          </div>
+        </div>
         <PvTabView>
           <PvTabPanel
-            v-for="run of Object.keys(computedRunResults)"
-            :key="run"
-            :header="taskDisplayNames[run]?.name ? taskDisplayNames[run]?.name : ''"
-          >
+v-for="run of Object.keys(computedRunResults)" :key="run"
+            :header="taskDisplayNames[run]?.name ? ('ROAR-' + taskDisplayNames[run]?.name).toUpperCase() : ''" class="task-report-panel">
             <TaskReport
-              v-if="run"
-              :task-id="run"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :runs="computedRunResults[run]"
-              :org-type="orgType"
-              :org-id="orgId"
-              :org-info="orgInfo"
-              :administration-info="administrationInfo"
-            />
+v-if="run" :task-id="run" :initialized="initialized" :administration-id="administrationId"
+              :runs="computedRunResults[run]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
+              :administration-info="administrationInfo" />
           </PvTabPanel>
         </PvTabView>
-        <div class="bg-gray-200 px-4 py-2">
+        <div class="bg-gray-200 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -376,17 +360,6 @@ const viewOptions = ref([
   { label: 'Raw Score', value: 'raw' },
 ]);
 
-const displayNames = {
-  swr: { name: 'Word', order: 3 },
-  'swr-es': { name: 'Palabra', order: 4 },
-  pa: { name: 'Phoneme', order: 2 },
-  sre: { name: 'Sentence', order: 5 },
-  letter: { name: 'Letter', order: 1 },
-  multichoice: { name: 'Multichoice', order: 6 },
-  mep: { name: 'MEP', order: 7 },
-  ExternalTask: { name: 'External Task', order: 8 },
-  ExternalTest: { name: 'External Test', order: 9 },
-};
 const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
 
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
@@ -767,6 +740,26 @@ onMounted(async () => {
 </script>
 
 <style lang="scss">
+.chart-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.task-report-panel {
+  border: 2px solid black !important;
+}
+
+.loading-wrapper {
+  margin: 1rem 0rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
 .report-title {
   font-size: 2.5rem;
   font-weight: bold;
@@ -803,10 +796,10 @@ onMounted(async () => {
 
 .legend-container {
   display: flex;
-  flex-direction: row;
   gap: 1vw;
   justify-content: center;
-  margin-top: 3rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .legend-entry {
