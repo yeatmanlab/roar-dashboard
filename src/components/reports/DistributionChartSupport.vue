@@ -62,9 +62,7 @@ const xMode = ref({ name: 'Percentage' });
 const xModes = [{ name: 'Percentage' }, { name: 'Count' }];
 
 const handleXModeChange = () => {
-  // xMode.value = event.target;
-  draw(); // Call your function when the component is mounted
-  console.log('sx', xMode.value);
+  draw();
 };
 
 function returnValueByIndex(index, xMode, grade) {
@@ -113,7 +111,6 @@ const returnSupportLevelValues = computed(() => {
 });
 
 const distBySupport = computed(() => {
-  console.log('calledd computed', xMode.value);
   return {
     mark: 'bar',
     height: 300,

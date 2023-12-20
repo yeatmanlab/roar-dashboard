@@ -723,6 +723,7 @@ const computedRunResults = computed(() => {
       scores: {
         ...scores,
         support_level: support_level,
+        stdPercentile: percentScore
       },
       taskId,
       user,

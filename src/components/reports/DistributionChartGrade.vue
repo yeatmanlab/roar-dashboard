@@ -3,10 +3,9 @@
 </template>
 
 <script setup>
-import _get from 'lodash/get';
-import { computed, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import embed from 'vega-embed';
-import { getSupportLevel, taskDisplayNames } from '@/helpers/reports';
+import { taskDisplayNames } from '@/helpers/reports';
 
 const graphColorType = {
   mediumPink: '#cc79a7',
@@ -49,27 +48,15 @@ const props = defineProps({
   },
 });
 
-function returnDistByGrade(runs, scoreFieldBelowSixth, scoreFieldAboveSixth) {
-  for (let run of runs) {
-    let stdPercentile;
-    if (parseInt(run?.user?.grade) >= 6) {
-      stdPercentile = run.scores[scoreFieldAboveSixth];
-    } else {
-      stdPercentile = run.scores[scoreFieldBelowSixth];
-    }
-    run.scores.stdPercentile = stdPercentile;
-  }
-  return runs;
-}
-
-const distByGrade = (taskId, runs, scoreFieldBelowSixth, scoreFieldAboveSixth) => {
+const distByGrade = (taskId, runs ) => {
   return {
     // description: 'ROAR Score Distribution by Grade Level',
     background: null,
     title: { text: `ROAR-${taskDisplayNames[taskId].name} Score Distribution`, anchor: 'middle', fontSize: 18 },
     config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
 
-    data: { values: returnDistByGrade(runs.value, scoreFieldBelowSixth.value, scoreFieldAboveSixth.value) },
+    // data: { values: returnDistByGrade(runs, scoreFieldBelowSixth.value, scoreFieldAboveSixth.value) },
+    data: { values: runs },
 
     mark: 'bar',
     height: 50,
@@ -96,8 +83,7 @@ const distByGrade = (taskId, runs, scoreFieldBelowSixth, scoreFieldAboveSixth) =
           labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
         },
         spacing: 7,
-        sort: 'ascending',
-        // sort: [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ['Kindergarten']],
+        sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       },
 
       color: {
@@ -106,20 +92,7 @@ const distByGrade = (taskId, runs, scoreFieldBelowSixth, scoreFieldAboveSixth) =
         sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         legend: null,
         scale: {
-          // Define custom color ranges for different threshold values
           range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
-
-          // range: [
-          //   // Color for scores.stdPercentile between 25 and 55
-          //   '#FFD700', // for example, use gold color
-
-          //   // Color for scores.stdPercentile above 55
-          //   '#FF0000', // for example, use red color
-
-          //   // Color for scores.stdPercentile less than 25
-          //   '#00FF00', // for example, use green color
-          // ],
-          // Set domain values corresponding to your threshold values
           domain: [0, 50, 100],
         },
       },
@@ -140,65 +113,15 @@ const distByGrade = (taskId, runs, scoreFieldBelowSixth, scoreFieldAboveSixth) =
         title: 'count',
         axis: { orient: 'right' },
       },
+      tooltip: [{ field: 'scores.stdPercentile', type: 'quantitative', format: `.0f` }, { field: 'user.grade' }],
     },
   };
 };
 
-const computedRuns = computed(() => {
-  if (props.runs === undefined) return [];
-  return props.runs.map(({ scores, user }) => {
-    let percentScore;
-    if (user?.grade >= 6) {
-      percentScore = _get(scores, scoreFieldAboveSixth.value);
-    } else {
-      percentScore = _get(scores, scoreFieldBelowSixth.value);
-    }
-    const { support_level } = getSupportLevel(percentScore);
-    return {
-      user,
-      scores: {
-        ...scores,
-        support_level,
-      },
-    };
-  });
-});
-
-const scoreFieldBelowSixth = computed(() => {
-  if (props.taskId === 'swr') {
-    return 'wjPercentile';
-  } else if (props.taskId === 'sre') {
-    return 'tosrecPercentile';
-  } else if (props.taskId === 'pa') {
-    return 'percentile';
-  }
-
-  return 'percentile';
-});
-
-const scoreFieldAboveSixth = computed(() => {
-  if (props.taskId === 'swr') {
-    return 'sprPercentile';
-  } else if (props.taskId === 'sre') {
-    return 'sprPercentile';
-  } else if (props.taskId === 'pa') {
-    return 'sprPercentile';
-  }
-
-  return 'percentile';
-});
-
 const draw = async () => {
-  let chartSpecDist = distByGrade(props.taskId, computedRuns, scoreFieldBelowSixth, scoreFieldAboveSixth);
+  let chartSpecDist = distByGrade(props.taskId, props.runs);
   await embed(`#roar-dist-chart-${props.taskId}`, chartSpecDist);
-  // Other chart types can be added via this if/then pattern
 };
-
-// watch(props.scores, (val) => {
-//   if (val && props.initialized) {
-//     draw();
-//   }
-// });
 
 onMounted(() => {
   draw(); // Call your function when the component is mounted
