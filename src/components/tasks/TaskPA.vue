@@ -67,19 +67,32 @@ onBeforeRouteLeave((to, from, next) => {
   }
 });
 
+async function importRoarPAComponent() {
+  try {
+    // Dynamically import the RoarPA component
+    const { default: DynamicRoarPA } = await import('@bdelab/roar-pa');
+    RoarPAWrapper.value = DynamicRoarPA;
+  } catch (error) {
+    console.error('Failed to dynamically import RoarPA component:', error);
+    // Handle errors, if any, during component import
+  }
+}
+
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  await importRoarPAComponent();
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
   if (newFirekitInitValue && !newLoadingUserData) await startTask();
+  importRoarPAComponent();
 });
 
 let roarApp;
-
+const RoarPAWrapper = ref(null);
 const completed = ref(false);
 const { selectedAdmin } = storeToRefs(gameStore);
 
@@ -100,7 +113,7 @@ onBeforeUnmount(async () => {
 
 async function startTask() {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
-
+  roarApp = new RoarPAWrapper.value(appKit, gameParams, userParams, 'jspsych-target');
   const userDob = _get(userData.value, 'studentData.dob');
   const userDateObj = new Date(userDob);
 
@@ -122,6 +135,10 @@ async function startTask() {
     router.go(0);
     // router.replace({ name: "Home" });
   });
+
+
+
+
 }
 </script>
 <style scoped>

@@ -27,15 +27,14 @@ const props = defineProps({
 const chartData = computed(() => {
   const completed = props.completedGames;
   const incomplete = props.totalGames - props.completedGames;
-  // Find and remove the injected style tag based on its content
-  const styleTags = document.querySelectorAll('style[type="text/css"]');
-  styleTags.forEach((tag) => {
-    const content = tag.textContent || tag.innerText;
-    if (content.includes('.isThisAGame')) {
-      // Replace this condition with content that uniquely identifies your injected styles
-      tag.parentNode.removeChild(tag);
-    }
-  });
+  // const removeRoarAppStyling = document.querySelectorAll('style[type="text/css"]');
+  // removeRoarAppStyling.forEach((tag) => {
+  //   const content = tag.textContent || tag.innerText;
+  //   if (content.includes('.this-is-roar')) {
+  //     // Replace this condition with content that uniquely identifies your injected styles
+  //     tag.parentNode.removeChild(tag);
+  //   }
+  // });
   return setChartData(completed, incomplete);
 });
 const chartOptions = ref({

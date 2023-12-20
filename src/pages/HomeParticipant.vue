@@ -60,7 +60,14 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
   // Find and remove the injected style tag based on its content
-  
+  const removeRoarAppStyling = document.querySelectorAll('style[type="text/css"]');
+  removeRoarAppStyling.forEach((tag) => {
+    const content = tag.textContent || tag.innerText;
+    if (content.includes('.this-is-roar')) {
+      // Replace this condition with content that uniquely identifies your injected styles
+      tag.parentNode.removeChild(tag);
+    }
+  });
 });
 
 const gameStore = useGameStore();
