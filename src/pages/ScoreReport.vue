@@ -15,18 +15,21 @@
             <!-- </div> -->
           </div>
           <!-- <div class="flex flex-row flex-wrap justify-center w-full"> -->
-          <div class="flex w-full items-center justify-center">
+          <div class="loading-wrapper">
             <div v-if="isLoadingRunResults" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
-              <div class="uppercase text-sm">
-                Loading Overview Charts
-              </div>
+              <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
             <div class="chart-wrapper">
-              <div v-for="result of Object.keys(computedRunResults)" :key="result" class="px-5">
+              <div v-for="result of Object.keys(computedRunResults)" :key="result" class="">
                 <DistributionChartOverview
-:runs="computedRunResults[result]" :initialized="initialized" :task-id="result"
-                  :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+                  :runs="computedRunResults[result]"
+                  :initialized="initialized"
+                  :task-id="result"
+                  :org-type="props.orgType"
+                  :org-id="props.orgId"
+                  :administration-id="props.administrationId"
+                />
               </div>
             </div>
           </div>
@@ -34,14 +37,12 @@
         <!-- Header blurbs about tasks -->
         <div class="py-5 px-3 mb-2 bg-gray-200">
           <div class="font-bold text-2xl">IN THIS REPORT...</div>
-          <span class="text-sm">You will receive a breakdown of your classroom's ROAR scores across each of the domains
-            tested.
+          <span class="text-sm"
+            >You will receive a breakdown of your classroom's ROAR scores across each of the domains tested.
           </span>
           <div v-if="isLoadingScores" class="loading-wrapper">
             <AppSpinner style="margin: 1rem 0rem" />
-            <div class="uppercase text-sm">
-              Loading Datatables
-            </div>
+            <div class="uppercase text-sm">Loading Datatables</div>
           </div>
           <div>
             <div class="task-overview-container mt-4">
@@ -74,7 +75,8 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span>The filters applied have no matching scores.
+          <span
+            >The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
@@ -82,13 +84,26 @@
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
-              class="ml-2" />
+              v-model="viewMode"
+              :options="viewOptions"
+              option-label="label"
+              option-value="value"
+              class="ml-2"
+            />
           </div>
           <RoarDataTable
-:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
-            @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
+            :data="tableData"
+            :columns="columns"
+            :total-records="scoresCount"
+            lazy
+            :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @filter="onFilter($event)"
+            @export-all="exportAll"
+            @export-selected="exportSelected"
+          />
         </div>
 
         <div class="legend-container">
@@ -121,18 +136,26 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
         <!-- Subscores tables -->
         <div v-if="isLoadingRunResults" class="loading-wrapper">
           <AppSpinner style="margin: 1rem 0rem" />
-          <div class="uppercase text-sm">
-            Loading Task Reports
-          </div>
+          <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
         <PvTabView>
           <PvTabPanel
-v-for="run of Object.keys(computedRunResults)" :key="run"
-            :header="taskDisplayNames[run]?.name ? ('ROAR-' + taskDisplayNames[run]?.name).toUpperCase() : ''" class="task-report-panel">
+            v-for="run of Object.keys(computedRunResults)"
+            :key="run"
+            :header="taskDisplayNames[run]?.name ? ('ROAR-' + taskDisplayNames[run]?.name).toUpperCase() : ''"
+            class="task-report-panel"
+          >
             <TaskReport
-v-if="run" :task-id="run" :initialized="initialized" :administration-id="administrationId"
-              :runs="computedRunResults[run]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
-              :administration-info="administrationInfo" />
+              v-if="run"
+              :task-id="run"
+              :initialized="initialized"
+              :administration-id="administrationId"
+              :runs="computedRunResults[run]"
+              :org-type="orgType"
+              :org-id="orgId"
+              :org-info="orgInfo"
+              :administration-info="administrationInfo"
+            />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
@@ -707,7 +730,7 @@ const computedRunResults = computed(() => {
       scores: {
         ...scores,
         support_level: support_level,
-        stdPercentile: percentScore
+        stdPercentile: percentScore,
       },
       taskId,
       user,
@@ -742,6 +765,7 @@ onMounted(async () => {
 <style lang="scss">
 .chart-wrapper {
   display: flex;
+  width: 100%;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-around;

@@ -39,14 +39,15 @@ const props = defineProps({
   },
 });
 
-const distByGrade = (taskId, runs ) => {
+const distByGrade = (taskId, runs) => {
   return {
-    // description: 'ROAR Score Distribution by Grade Level',
     background: null,
-    title: { text: `ROAR-${taskDisplayNames[taskId].name} Score Distribution`, anchor: 'middle', fontSize: 18 },
-    // config: { view: { stroke: graphColorType.black, strokeWidth: 1 } },
-
-    // data: { values: returnDistByGrade(runs, scoreFieldBelowSixth.value, scoreFieldAboveSixth.value) },
+    title: {
+      text: `ROAR-${taskDisplayNames[taskId].name}`,
+      subtitle: 'Count of Percentile Score by Grade',
+      anchor: 'middle',
+      fontSize: 18,
+    },
     data: { values: runs },
 
     mark: 'bar',
@@ -58,14 +59,14 @@ const distByGrade = (taskId, runs ) => {
         field: 'user.grade',
         type: 'nominal',
         columns: 1,
-        title: 'By Percentile',
+        title: '',
         header: {
           titleColor: 'navy',
           titleFontSize: 12,
           titleAlign: 'top',
           titleAnchor: 'middle',
           labelColor: 'navy',
-          labelFontSize: 10,
+          labelFontSize: 12,
           labelFontStyle: 'bold',
           labelAnchor: 'middle',
           labelAngle: 0,
@@ -73,7 +74,7 @@ const distByGrade = (taskId, runs ) => {
           labelOrient: 'left',
           labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
         },
-        spacing: 7,
+        spacing: 10,
         sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       },
 
@@ -84,27 +85,36 @@ const distByGrade = (taskId, runs ) => {
         legend: null,
         scale: {
           range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
-          domain: [0, 50, 100],
+          domain: [0, 45, 70, 100],
         },
       },
 
       x: {
         field: `scores.stdPercentile`,
-        title: `Percentile`,
+        title: `National Percentile`,
         bin: { step: 10, extent: [0, 100] },
         sort: 'ascending',
         axis: {
           labelAngle: 0,
           labelAlign: 'center',
+          titleFontSize: 12,
+          labelFontSize: 12, // Adjust the font size for the x-axis tick labels
         },
       },
 
       y: {
         aggregate: 'count',
-        title: 'count',
-        axis: { orient: 'right' },
+        title: 'Count',
+        axis: {
+          orient: 'right',
+          titleFontSize: 12,
+          labelFontSize: 12, // Adjust the font size for the x-axis tick labels
+        },
       },
-      tooltip: [{ field: 'scores.stdPercentile', type: 'quantitative', format: `.0f` }, { field: 'user.grade' }],
+      tooltip: [
+        { field: 'scores.stdPercentile', title: 'National Percentile', type: 'quantitative', format: `.0f` },
+        { field: 'user.grade', title: 'Student Grade' },
+      ],
     },
   };
 };

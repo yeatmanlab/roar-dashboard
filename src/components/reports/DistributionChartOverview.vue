@@ -49,7 +49,6 @@ const supportLevelsOverview = computed(() => {
   let values = {};
   for (const { scores } of props.runs) {
     const support_level = scores.support_level;
-    // const { support_level } = getSupportLevel(scores?.[(parseInt(user?.grade) >= 6 ? scoreFieldAboveSixth.value : scoreFieldBelowSixth.value)])
     if (support_level in values) {
       values[support_level] += 1;
     } else {
@@ -63,17 +62,17 @@ const supportLevelsOverview = computed(() => {
     .map(([support_level, count]) => ({ category: support_level, value: count }));
 });
 
-const overviewDistributionChart = (taskId, scores, mode = 'Student Count') => {
+const overviewDistributionChart = (taskId) => {
   const spec = {
     mark: 'bar',
-    height: 200,
-    width: 200,
+    height: 170,
+    width: 170,
     background: null,
     title: {
-      text: `ROAR-${taskDisplayNames[taskId].name} Support Levels`,
+      text: `ROAR-${taskDisplayNames[taskId].name}`,
+      subtitle: `Count by Support Level`,
       anchor: 'middle',
-      fontSize: 18,
-      description: 'Support level Count',
+      fontSize: 16,
     },
     data: {
       values: supportLevelsOverview.value,
@@ -81,19 +80,27 @@ const overviewDistributionChart = (taskId, scores, mode = 'Student Count') => {
     encoding: {
       y: {
         field: 'value',
-        title: `${mode}`,
+        title: `Count of Students`,
         type: 'quantitative',
         spacing: 1,
+        fontSize: 14,
+        axis: {
+          labelFontSize: 12,
+          titleFontSize: 12,
+        },
       },
       x: {
         field: 'category',
         type: 'ordinal',
         title: 'Support Level',
         spacing: 1,
+        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
         legend: null,
         axis: {
           labelAngle: -30,
           labelAlign: 'right',
+          titleFontSize: 12,
+          labelFontSize: 12,
         },
       },
       color: {
@@ -103,7 +110,10 @@ const overviewDistributionChart = (taskId, scores, mode = 'Student Count') => {
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
         legend: null,
       },
-      tooltip: [{ field: 'value', type: 'quantitative', format: '.0f' }, { field: 'category' }],
+      tooltip: [
+        { title: 'Count', field: 'value', type: 'quantitative', format: '.0f' },
+        { field: 'category', title: 'Support Level' },
+      ],
     },
   };
   return spec;
@@ -112,10 +122,11 @@ const overviewDistributionChart = (taskId, scores, mode = 'Student Count') => {
 const draw = async () => {
   let chartSpecSupport = overviewDistributionChart(props.taskId, props.runs, props.mode);
   await embed(`#roar-dist-chart-overview-${props.taskId}`, chartSpecSupport);
-  // Other chart types can be added via this if/then pattern
 };
 
 onMounted(() => {
-  draw(); // Call your function when the component is mounted
+  if (props.taskId !== 'letter') {
+    draw();
+  }
 });
 </script>

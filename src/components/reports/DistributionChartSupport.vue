@@ -19,7 +19,6 @@ import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
 function returnGradeCount(scores) {
-  // gradecount should be an obj of {{grade:{} count}}
   const gradeCount = [
     { grade: 'Pre-K', support_levels: [0, 0, 0], totalStudents: 0 },
     { grade: 'T-K', support_levels: [0, 0, 0], totalStudents: 0 },
@@ -58,8 +57,8 @@ function returnGradeCount(scores) {
   return gradeCount;
 }
 
-const xMode = ref({ name: 'Percentage' });
-const xModes = [{ name: 'Percentage' }, { name: 'Count' }];
+const xMode = ref({ name: 'Percent' });
+const xModes = [{ name: 'Percent' }, { name: 'Count' }];
 
 const handleXModeChange = () => {
   draw();
@@ -75,7 +74,7 @@ function returnValueByIndex(index, xMode, grade) {
       { group: 'Needs Some Support' },
       { group: 'At or Above Average' },
     ];
-    if (xMode.name === 'Percentage') {
+    if (xMode.name === 'Percent') {
       return {
         category: grade.grade,
         group: valsByIndex[index].group,
@@ -111,13 +110,14 @@ const returnSupportLevelValues = computed(() => {
 });
 
 const distBySupport = computed(() => {
-  return {
+  let spec = {
     mark: 'bar',
     height: 300,
     width: 330,
     background: null,
     title: {
-      text: `ROAR-${taskDisplayNames[props.taskId].name} Support Level Distribution`,
+      text: `ROAR-${taskDisplayNames[props.taskId].name}`,
+      subtitle: `Support Level Distribution By Grade`,
       anchor: 'middle',
       fontSize: 18,
     },
@@ -127,11 +127,16 @@ const distBySupport = computed(() => {
     encoding: {
       x: {
         field: 'value',
-        title: `${xMode.value.name}`,
+        title: `${xMode.value.name} of Students`,
         type: 'quantitative',
         spacing: 1,
-        format: '.0%',
+        axis: {
+          format: `${xMode.value.name === 'Percent' ? '.0%' : '.0f'}`,
+          titleFontSize: 12,
+          labelFontSize: 12,
+        },
       },
+
       y: {
         field: 'category',
         type: 'ordinal',
@@ -141,6 +146,8 @@ const distBySupport = computed(() => {
         axis: {
           labelAngle: 0,
           labelAlign: 'right',
+          titleFontSize: 12,
+          labelFontSize: 12,
         },
       },
       yOffset: {
@@ -152,13 +159,23 @@ const distBySupport = computed(() => {
         title: 'Support Level',
         sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
+        legend: {
+          orient: 'bottom',
+        },
       },
       tooltip: [
-        { field: 'value', type: 'quantitative', format: `${xMode.value.name === 'Percentage' ? '.0%' : '.0f'}` },
-        { field: 'group' },
+        {
+          title: `${xMode.value.name === 'Percent' ? 'Percent' : 'Count'}`,
+          field: 'value',
+          type: 'quantitative',
+          format: `${xMode.value.name === 'Percent' ? '.0%' : '.0f'}`,
+        },
+        { field: 'group', title: 'Support Level' },
       ],
     },
   };
+
+  return spec;
 });
 
 const props = defineProps({
@@ -203,6 +220,6 @@ onMounted(() => {
 .mode-select-wrapper {
   display: flex;
   align-items: center;
-  justify-content: space-around;
+  justify-content: flex-end;
 }
 </style>
