@@ -1,8 +1,8 @@
 import _pick from 'lodash/pick';
 import _get from 'lodash/get';
 import _mapValues from 'lodash/mapValues';
+import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
-import _zip from 'lodash/zip';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
@@ -169,17 +169,19 @@ export const runPageFetcher = async ({
   });
   const runQuery = userId === undefined ? ':runQuery' : `/users/${userId}:runQuery`;
   return appAxiosInstance.post(runQuery, requestBody).then(async ({ data }) => {
-    const runData = mapFields(data);
+    const runData = mapFields(data, true);
 
-    const userDocPaths = _without(
-      data.map((runDoc) => {
-        if (runDoc.document?.name) {
-          return runDoc.document.name.split('/runs/')[0];
-        } else {
-          return undefined;
-        }
-      }),
-      undefined,
+    const userDocPaths = _uniq(
+      _without(
+        data.map((runDoc) => {
+          if (runDoc.document?.name) {
+            return runDoc.document.name.split('/runs/')[0];
+          } else {
+            return undefined;
+          }
+        }),
+        undefined,
+      ),
     );
 
     // Use batchGet to get all user docs with one post request
@@ -194,6 +196,7 @@ export const runPageFetcher = async ({
             if (found) {
               return {
                 name: found.name,
+                id: found.name.split('/users/')[1],
                 data: _mapValues(found.fields, (value) => convertValues(value)),
               };
             }
@@ -203,22 +206,18 @@ export const runPageFetcher = async ({
         );
       });
 
-    // But the order of batchGet is not guaranteed, so we need to order the docs
-    // by the order of userDocPaths
-    const userDocData = batchUserDocs
-      .sort((a, b) => {
-        return userDocPaths.indexOf(a.name) - userDocPaths.indexOf(b.name);
-      })
-      .map(({ data }) => data);
-
+    // But the order of batchGet is not guaranteed, so we need to match the user
+    // docs back with their runs.
     const otherKeys = _without(select, scoreKey);
-    const scores = _zip(userDocData, runData).map(([userData, run]) => ({
-      scores: _get(run, scoreKey),
-      taskId: run,
-      user: userData,
-      ..._pick(run, otherKeys),
-    }));
 
-    return scores;
+    return runData.map((run) => {
+      const user = batchUserDocs.find((userDoc) => userDoc.name.includes(run.parentDoc));
+      return {
+        scores: _get(run, scoreKey),
+        taskId: run.taskId,
+        user,
+        ..._pick(run, otherKeys),
+      };
+    });
   });
 };

@@ -5,8 +5,8 @@ import _groupBy from 'lodash/groupBy';
 import _head from 'lodash/head';
 import _mapValues from 'lodash/mapValues';
 import _replace from 'lodash/replace';
+import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
-import _zip from 'lodash/zip';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
@@ -458,18 +458,20 @@ export const assignmentPageFetcher = async (
       `Fetching page ${page.value} for ${adminId} with filter ${filters[0].value} on field ${filters[0].field}`,
     );
     return appAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-      const scoresData = mapFields(data);
+      const scoresData = mapFields(data, true);
 
       // Generate a list of user docs paths
-      const userDocPaths = _without(
-        data.map((scoreDoc) => {
-          if (scoreDoc.document?.name) {
-            return _replace(scoreDoc.document.name.split('/runs/')[0], 'gse-roar-assessment', 'gse-roar-admin');
-          } else {
-            return undefined;
-          }
-        }),
-        undefined,
+      const userDocPaths = _uniq(
+        _without(
+          data.map((scoreDoc) => {
+            if (scoreDoc.document?.name) {
+              return _replace(scoreDoc.document.name.split('/runs/')[0], 'gse-roar-assessment', 'gse-roar-admin');
+            } else {
+              return undefined;
+            }
+          }),
+          undefined,
+        ),
       );
 
       // Use a batch get to grab the user docs
@@ -621,17 +623,20 @@ export const assignmentPageFetcher = async (
     });
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-      const assignmentData = mapFields(data);
+      const assignmentData = mapFields(data, true);
+
       // Get User docs
-      const userDocPaths = _without(
-        data.map((adminDoc) => {
-          if (adminDoc.document?.name) {
-            return adminDoc.document.name.split('/assignments/')[0];
-          } else {
-            return undefined;
-          }
-        }),
-        undefined,
+      const userDocPaths = _uniq(
+        _without(
+          data.map((adminDoc) => {
+            if (adminDoc.document?.name) {
+              return adminDoc.document.name.split('/assignments/')[0];
+            } else {
+              return undefined;
+            }
+          }),
+          undefined,
+        ),
       );
 
       // Use batchGet to get all user docs with one post request
@@ -655,23 +660,21 @@ export const assignmentPageFetcher = async (
           );
         });
 
-      // But the order of batchGet is not guaranteed, so we need to order the docs
-      // by the order of userDocPaths
-      const userDocData = batchUserDocs
-        .sort((a, b) => {
-          return userDocPaths.indexOf(a.name) - userDocPaths.indexOf(b.name);
-        })
-        .map(({ data }) => data);
-
-      const scoresObj = _zip(userDocData, assignmentData).map(([userData, assignmentData]) => ({
-        assignment: assignmentData,
-        user: userData,
-      }));
+      // But the order of batchGet is not guaranteed, so we need to match the user
+      // docs back with their assignments.
+      const scoresObj = assignmentData.map((assignment) => {
+        const user = batchUserDocs.find((userDoc) => userDoc.name.includes(assignment.parentDoc));
+        return {
+          assignment,
+          user: user.data,
+          roarUid: user.name.split('/users/')[1],
+        };
+      });
 
       if (includeScores) {
         // Use batchGet to get all of the run docs (including their scores)
         const runDocPaths = _flatten(
-          _zip(userDocPaths, assignmentData).map(([userPath, assignment]) => {
+          assignmentData.map((assignment) => {
             const firestoreBasePath = 'https://firestore.googleapis.com/v1/';
             const adminBasePath = adminAxiosInstance.defaults.baseURL.replace(firestoreBasePath, '');
             const appBasePath = appAxiosInstance.defaults.baseURL.replace(firestoreBasePath, '');
@@ -679,6 +682,7 @@ export const assignmentPageFetcher = async (
               assignment.assessments.map((assessment) => assessment.runId),
               undefined,
             );
+            const userPath = userDocPaths.find((userDocPath) => userDocPath.includes(assignment.parentDoc));
             return runIds.map((runId) => `${userPath.replace(adminBasePath, appBasePath)}/runs/${runId}`);
           }),
         );
@@ -707,10 +711,9 @@ export const assignmentPageFetcher = async (
         // group the runDocs by user's roarUid, in the same order as the userDocPaths
         const runs = _groupBy(batchRunDocs, (runDoc) => runDoc.name.split('/users/')[1].split('/runs/')[0]);
 
-        for (const [index, userPath] of userDocPaths.entries()) {
-          const roarUid = userPath.split('/users/')[1];
-          const userRuns = runs[roarUid];
-          for (const task of scoresObj[index].assignment.assessments) {
+        for (const score of scoresObj) {
+          const userRuns = runs[score.roarUid];
+          for (const task of score.assignment.assignments) {
             const runId = task.runId;
             task['scores'] = _get(
               _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
