@@ -713,7 +713,7 @@ export const assignmentPageFetcher = async (
 
         for (const score of scoresObj) {
           const userRuns = runs[score.roarUid];
-          for (const task of score.assignment.assignments) {
+          for (const task of score.assignment.assessments) {
             const runId = task.runId;
             task['scores'] = _get(
               _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
