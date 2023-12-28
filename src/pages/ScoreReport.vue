@@ -785,7 +785,9 @@ onMounted(async () => {
 });
 </script>
 
+
 <style lang="scss">
+
 .report-title {
   /* font-size: 3.5rem; */
   margin-top: 0;

@@ -45,7 +45,6 @@
           <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
         
         </div>
-        <!-- <PvButton :label="nameForVisualize"  @click="increasePadding(countForVisualize)" /> -->
       </span>
     </div>
     <PvDataTable
