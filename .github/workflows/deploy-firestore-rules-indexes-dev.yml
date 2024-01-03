@@ -15,7 +15,7 @@ jobs:
         with:
           args: deploy --only firestore:rules
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN_DEV }}
+          GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN_DEV }}
           PROJECT_ID: gse-roar-admin-dev
           PROJECT_PATH: ./firebase/admin
   deploy-assessment-rules:
@@ -28,7 +28,7 @@ jobs:
         with:
           args: deploy --only firestore:rules
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT_DEV }}
+          GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT_DEV }}
           PROJECT_ID: gse-roar-assessment-dev
           PROJECT_PATH: ./firebase/assessment
   deploy-admin-indexes:
@@ -41,7 +41,7 @@ jobs:
         with:
           args: deploy --only firestore:indexes
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN_DEV }}
+          GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN_DEV }}
           PROJECT_ID: gse-roar-admin-dev
           PROJECT_PATH: ./firebase/admin
   deploy-assessment-indexes:
@@ -54,6 +54,6 @@ jobs:
         with:
           args: deploy --only firestore:indexes
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT_DEV }}
+          GCP_SA_KEY: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT_DEV }}
           PROJECT_ID: gse-roar-assessment-dev
           PROJECT_PATH: ./firebase/assessment
