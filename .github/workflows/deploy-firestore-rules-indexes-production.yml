@@ -1,0 +1,61 @@
+name: Deploy Firestore Rules
+'on':
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
+
+jobs:
+  deploy-admin-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
+          PROJECT_ID: gse-roar-admin
+          PROJECT_PATH: ./firebase/admin
+  deploy-assessment-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}
+          PROJECT_ID: gse-roar-assessment
+          PROJECT_PATH: ./firebase/assessment
+  deploy-admin-indexes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:indexes
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
+          PROJECT_ID: gse-roar-admin
+          PROJECT_PATH: ./firebase/admin
+  deploy-assessment-indexes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@master
+      - name: Deploy to Firebase
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:indexes
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIRESTORE_UPDATE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}
+          PROJECT_ID: gse-roar-assessment
+          PROJECT_PATH: ./firebase/assessment

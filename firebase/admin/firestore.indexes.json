@@ -5,175 +5,11 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "classes",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "name",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districts",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "classes",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districts",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "schools",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districts",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "schools",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "classes",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "groups",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "families",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "districts",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "name",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "families",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "name",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "groups",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "name",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
           "fieldPath": "readOrgs.classes",
           "arrayConfig": "CONTAINS"
         },
         {
           "fieldPath": "name",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "classes",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "readOrgs.schools",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "readOrgs.schools",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "readOrgs.classes",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "readOrgs.groups",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "readOrgs.families",
           "order": "ASCENDING"
         }
       ]
@@ -226,20 +62,6 @@
       "fields": [
         {
           "fieldPath": "readOrgs.schools",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "name",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "administrations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "schools",
           "arrayConfig": "CONTAINS"
         },
         {
@@ -1515,9 +1337,29 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sso",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "email",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "assessments",
+      "ttl": false,
+      "indexes": []
+    },
     {
       "collectionGroup": "administrations",
       "fieldPath": "classes",
@@ -1530,22 +1372,120 @@
       ]
     },
     {
+      "collectionGroup": "administrations",
+      "fieldPath": "districts",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "families",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "groups",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "readOrgs.classes",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "readOrgs.districts",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "readOrgs.families",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "readOrgs.groups",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "readOrgs.schools",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "administrations",
+      "fieldPath": "schools",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "fieldPath": "assigningOrgs.classes",
+      "ttl": false,
+      "indexes": [
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
       "collectionGroup": "assignments",
       "fieldPath": "assigningOrgs.groups",
       "ttl": false,
       "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
-        },
         {
           "arrayConfig": "CONTAINS",
           "queryScope": "COLLECTION_GROUP"
@@ -1558,18 +1498,6 @@
       "ttl": false,
       "indexes": [
         {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
-        },
-        {
           "arrayConfig": "CONTAINS",
           "queryScope": "COLLECTION_GROUP"
         }
@@ -1580,18 +1508,6 @@
       "fieldPath": "id",
       "ttl": false,
       "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
-        },
         {
           "order": "ASCENDING",
           "queryScope": "COLLECTION_GROUP"
