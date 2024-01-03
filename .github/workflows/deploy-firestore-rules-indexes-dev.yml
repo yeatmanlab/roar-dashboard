@@ -1,4 +1,4 @@
-name: Deploy Firestore Rules
+name: Deploy Firestore Rules and Indexes (Development)
 'on':
   push:
     branches:
