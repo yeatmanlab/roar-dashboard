@@ -126,6 +126,8 @@ async function startTask() {
 </script>
 
 <style scoped>
+@import '@bdelab/roar-sre/lib/resources/roar-sre.css';
+
 .game-target {
   position: absolute;
   top: 0;

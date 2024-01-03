@@ -130,6 +130,8 @@ async function startTask() {
 }
 </script>
 <style scoped>
+@import '@bdelab/roar-multichoice/lib/resources/roar-multichoice.css';
+
 .game-target {
   position: absolute;
   top: 0;

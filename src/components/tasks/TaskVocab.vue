@@ -126,6 +126,8 @@ async function startTask() {
 }
 </script>
 <style scoped>
+@import '@bdelab/roar-vocab/lib/resources/roar-vocab.css';
+
 .game-target {
   position: absolute;
   top: 0;

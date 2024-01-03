@@ -126,6 +126,8 @@ async function startTask() {
 }
 </script>
 <style scoped>
+@import '@bdelab/roam-fluency/lib/resources/roam-fluency.css';
+
 .game-target {
   position: absolute;
   top: 0;
