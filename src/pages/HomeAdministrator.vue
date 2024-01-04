@@ -23,7 +23,7 @@
               :value="administrations"
               lazy
               paginator
-              paginator-position="top"
+              paginator-position="both"
               :total-records="totalRecords"
               :rows="pageLimit"
               :rows-per-page-options="[3, 5, 10, 25]"
