@@ -125,7 +125,7 @@ async function startTask() {
   });
 }
 </script>
-<style scoped>
+<style>
 @import '@bdelab/roar-vocab/lib/resources/roar-vocab.css';
 
 .game-target {

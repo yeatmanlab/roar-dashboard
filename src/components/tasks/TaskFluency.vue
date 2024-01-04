@@ -125,7 +125,7 @@ async function startTask() {
   });
 }
 </script>
-<style scoped>
+<style>
 @import '@bdelab/roam-fluency/lib/resources/roam-fluency.css';
 
 .game-target {
