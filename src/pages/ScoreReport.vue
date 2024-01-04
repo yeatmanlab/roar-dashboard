@@ -1,19 +1,7 @@
 <template>
   <main class="container main">
-    <!-- <aside class="main-sidebar"> -->
-      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
-    <!-- </aside> -->
     <section class="main-body">
-      <!-- :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`" -->
       <PvPanel >
-        <!-- <template #icons>
-          <div class="w-full align-items-end">
-            <button class="p-panel-header-icon p-link mr-2 w-full" @click="refresh">
-            <span :class="spinIcon"> Refresh</span>
-          </button>
-          </div>
-        </template> -->
-
         <h2 v-if="orgInfo" class="report-title">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
 
         <!-- Header blurbs about tasks -->
@@ -40,7 +28,6 @@
         </div>
         <h2 v-if="orgInfo" class="report-title text-2xl surface-ground w-full">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
 
-        
         <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -269,9 +256,7 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import DistributionChart from '@/components/reports/DistributionChart.vue';
-// import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
@@ -283,7 +268,6 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
-// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: {
