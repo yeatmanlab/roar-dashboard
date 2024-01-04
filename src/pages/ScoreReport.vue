@@ -1,22 +1,33 @@
 <template>
   <main class="container main">
-    <!-- <aside class="main-sidebar"> -->
-      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
-    <!-- </aside> -->
     <section class="main-body">
-      <!-- :header="`Administration Score Report: ${administrationInfo?.name ?? ''}`" -->
       <PvPanel >
-        <!-- <template #icons>
-          <div class="w-full align-items-end">
-            <button class="p-panel-header-icon p-link mr-2 w-full" @click="refresh">
-            <span :class="spinIcon"> Refresh</span>
-          </button>
-          </div>
-        </template> -->
+        <h2 v-if="orgInfo" class="report-title">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
 
+        <!-- Header blurbs about tasks -->
+        <h2>IN THIS REPORT...</h2>
+        <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
+        <div class="task-overview-container">
+          <div v-if="allTasks.includes('letter')" class="task-blurb">
+            <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names
+            and sounds.
+          </div>
+          <div v-if="allTasks.includes('pa')" class="task-blurb">
+            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span>
+            measures the ability to hear and manipulate the individual sounds within words (sound matching and elision).
+            This skill is crucial for building further reading skills, such as decoding.
+          </div>
+          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
+            <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
+            word level.
+          </div>
+          <div v-if="allTasks.includes('sre')" class="task-blurb">
+            <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
+            at the sentence level.
+          </div>
+        </div>
         <h2 v-if="orgInfo" class="report-title text-2xl surface-ground w-full">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
 
-        
         <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -245,9 +256,7 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import DistributionChart from '@/components/reports/DistributionChart.vue';
-// import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
@@ -259,7 +268,6 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
-// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: {

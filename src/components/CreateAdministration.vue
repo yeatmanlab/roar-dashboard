@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <!-- <aside class="main-sidebar"> -->
-      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
-    <!-- </aside> -->
     <section class="main-body">
       <PvPanel header="Create a new administration">
         Use this form to create a new administration and assign it to organizations.

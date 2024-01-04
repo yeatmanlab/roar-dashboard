@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <!-- <aside class="main-sidebar"> -->
-      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
-    <!-- </aside> -->
     <section class="main-body">
       <PvPanel header="Create a new organization">
         Use this form to create a new organization.

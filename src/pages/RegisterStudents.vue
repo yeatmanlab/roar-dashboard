@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <!-- <aside class="main-sidebar"> -->
-      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
-    <!-- </aside> -->
     <section class="main-body">
       <!--Upload file section-->
       <div v-if="!isFileUploaded">

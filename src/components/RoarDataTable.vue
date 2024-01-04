@@ -102,7 +102,7 @@
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
         align-frozen="left"
-        header-style="background:#7F2D48; color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+        header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
       >
         <template #header>
           <div

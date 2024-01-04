@@ -160,7 +160,7 @@ onBeforeUnmount(() => {
 
 .sign-in {
     background: var(--surface-a);
-    border: 1px solid #7F2D48;
+    border: 1px solid var(--primary-color);
     border-radius: 5rem;
     color: var(--text-color);
     /* padding-inline: 1rem; */

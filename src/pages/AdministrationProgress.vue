@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <!-- <aside class="main-sidebar"> -->
-      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
-    <!-- </aside> -->
     <section class="main-body">
       <PvPanel header="Administration Progress">
         <div>
@@ -353,7 +350,7 @@ onMounted(async () => {
 <style>
 .p-button {
   margin: 0px 8px;
-  background: #7F2D48;
+  background: var(--primary-color);
 }
 
 .loading-container {
