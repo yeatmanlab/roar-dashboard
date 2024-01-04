@@ -21,11 +21,11 @@
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
             <div class="chart-wrapper">
-              <div v-for="result of Object.keys(computedRunResults)" :key="result" class="">
+              <div v-for="taskId of Object.keys(runsByTaskId)" :key="taskId" class="">
                 <DistributionChartOverview
-                  :runs="computedRunResults[result]"
+                  :runs="runsByTaskId[taskId]"
                   :initialized="initialized"
-                  :task-id="result"
+                  :task-id="taskId"
                   :org-type="props.orgType"
                   :org-id="props.orgId"
                   :administration-id="props.administrationId"
@@ -140,17 +140,16 @@
         </div>
         <PvTabView>
           <PvTabPanel
-            v-for="run of Object.keys(computedRunResults)"
-            :key="run"
-            :header="taskDisplayNames[run]?.name ? ('ROAR-' + taskDisplayNames[run]?.name).toUpperCase() : ''"
-            class="task-report-panel"
+            v-for="taskId of Object.keys(runsByTaskId)"
+            :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
           >
             <TaskReport
-              v-if="run"
-              :task-id="run"
+              v-if="taskId"
+              :task-id="taskId"
               :initialized="initialized"
               :administration-id="administrationId"
-              :runs="computedRunResults[run]"
+              :runs="runsByTaskId[taskId]"
               :org-type="orgType"
               :org-id="orgId"
               :org-info="orgInfo"
@@ -332,6 +331,7 @@ const onPage = (event) => {
 };
 
 const onSort = (event) => {
+  console.log('onSort');
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
     field: { fieldPath: item.field },
     direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
@@ -341,6 +341,7 @@ const onSort = (event) => {
 };
 
 const onFilter = (event) => {
+  console.log('onFilter');
   const filters = [];
   for (const filterKey in _get(event, 'filters')) {
     const filter = _get(event, 'filters')[filterKey];
@@ -715,10 +716,10 @@ function scoreFieldAboveSixth(taskId) {
   return 'percentile';
 }
 
-const computedRunResults = computed(() => {
+const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
-  let computedScores = {};
-  for (let { scores, taskId, user } of runResults.value) {
+  const computedScores = {};
+  for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
     if (user?.grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
@@ -726,14 +727,14 @@ const computedRunResults = computed(() => {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
     const { support_level } = getSupportLevel(percentScore);
-    let run = {
+    const run = {
       scores: {
         ...scores,
         support_level: support_level,
         stdPercentile: percentScore,
       },
       taskId,
-      user,
+      user: user.data,
     };
     if (run.taskId in computedScores) {
       computedScores[run.taskId].push(run);

@@ -101,7 +101,6 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
 };
 
 export const fetchDocsById = async (documents, db = 'admin') => {
-  console.log('fetching docs', documents);
   const axiosInstance = getAxiosInstance(db);
   const promises = [];
   for (const { collection, docId, select } of documents) {
