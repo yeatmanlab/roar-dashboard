@@ -46,17 +46,6 @@ const { isLoading: isLoadingUserData, data: userData } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-// Send user back to Home if page is reloaded
-const entries = performance.getEntriesByType('navigation');
-entries.forEach((entry) => {
-  if (entry.type === 'reload') {
-    // Detect if our previous reload was on this page, AND if the last naviagtion was a replace.
-    if (entry.name === window.location.href && history.state.replaced === true) {
-      router.replace({ name: 'Home' });
-    }
-  }
-});
-
 // The following code intercepts the back button and instead forces a refresh.
 // We use the ``preventBack`` variable to prevent an infinite loop. I.e., we
 // only want to intercept this the first time.
@@ -64,7 +53,6 @@ let preventBack = true;
 onBeforeRouteLeave((to, from, next) => {
   if (window.event.type === 'popstate' && preventBack) {
     preventBack = false;
-    // router.go(router.currentRoute);
     router.go(0);
   } else {
     next();
@@ -84,7 +72,6 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 
 let roarApp;
 
-const completed = ref(false);
 const { selectedAdmin } = storeToRefs(gameStore);
 
 const selectBestRun = async () => {
@@ -96,9 +83,6 @@ const selectBestRun = async () => {
 
 window.addEventListener('beforeunload', selectBestRun, { once: true });
 onBeforeUnmount(async () => {
-  // if (roarApp && completed.value === false) {
-  //   roarApp.abort();
-  // }
   selectBestRun();
 });
 
@@ -121,11 +105,10 @@ async function startTask() {
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
     await authStore.completeAssessment(selectedAdmin.value.id, taskId);
-    completed.value = true;
-    // Here we refresh instead of routing home, with the knowledge that a
-    // refresh is intercepted above and sent home.
-    router.go(0);
-    // router.replace({ name: "Home" });
+
+    // Navigate to home, but first set the refresh flag to true.
+    gameStore.requireHomeRefresh();
+    router.push({ name: 'Home' });
   });
 }
 </script>

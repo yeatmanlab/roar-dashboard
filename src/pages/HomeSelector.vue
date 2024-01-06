@@ -31,6 +31,7 @@ import { useIdle } from '@vueuse/core';
 import { useConfirm } from 'primevue/useconfirm';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useGameStore } from '@/store/game';
 import HomeParticipant from '@/pages/HomeParticipant.vue';
 import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import _get from 'lodash/get';
@@ -42,6 +43,9 @@ import { fetchDocById } from '@/helpers/query/utils';
 
 const authStore = useAuthStore();
 const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
+
+const gameStore = useGameStore();
+const { requireRefresh } = storeToRefs(gameStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -83,13 +87,6 @@ const showConsent = ref(false);
 const confirmText = ref('');
 const consentVersion = ref('');
 
-// authStore.$subscribe((mutation, state) => {
-//   if (!["firekitUserData", "firekitAssignmentIds"].includes(mutation.events?.key)) {
-//     // TODO: investigate this
-//     authStore.syncFirekitCache(state ?? {});
-//   }
-// })
-
 async function updateConsent() {
   await authStore.updateConsentStatus(consentType.value, consentVersion.value);
   userQueryKeyIndex.value += 1;
@@ -110,7 +107,13 @@ async function checkConsent() {
   }
 }
 
+const router = useRouter();
+
 onMounted(async () => {
+  if (requireRefresh.value) {
+    requireRefresh.value = false;
+    router.go(0);
+  }
   if (roarfirekit.value.restConfig) init();
   if (!isLoading.value) {
     refreshDocs();
@@ -126,7 +129,6 @@ watch(isLoading, async (newValue) => {
 
 const { idle } = useIdle(10 * 60 * 1000); // 10 min
 const confirm = useConfirm();
-const router = useRouter();
 const timeLeft = ref(60);
 
 watch(idle, (idleValue) => {

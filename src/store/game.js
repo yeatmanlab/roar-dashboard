@@ -7,7 +7,13 @@ export const useGameStore = () => {
     state: () => {
       return {
         selectedAdmin: undefined,
+        requireRefresh: false,
       };
+    },
+    actions: {
+      requireHomeRefresh() {
+        this.requireRefresh = true;
+      },
     },
     persist: {
       storage: sessionStorage,
