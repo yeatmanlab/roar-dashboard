@@ -12,8 +12,14 @@
           </div>
           <div v-if="isSuperAdmin" class="flex flex-row flex-grow-0 justify-content-end p-1">
             <PvSpeedDial
-:model="speedDialItems" direction="left" :transition-delay="80" show-icon="pi pi-cog"
-              hide-icon="pi pi-times" button-class="p-button-outlined" :pt="{ button: { size: 'small' } }" />
+              :model="speedDialItems"
+              direction="left"
+              :transition-delay="80"
+              show-icon="pi pi-cog"
+              hide-icon="pi pi-times"
+              button-class="p-button-outlined"
+              :pt="{ button: { size: 'small' } }"
+            />
             <PvConfirmPopup />
           </div>
         </div>
@@ -26,14 +32,25 @@
           <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
             {{ displayNames[assessmentId]?.name ?? assessmentId }}
             <span
-v-if="showParams" v-tooltip.top="'Click to view params'" class="pi pi-info-circle cursor-pointer"
-              style="font-size: 1rem" @click="toggleParams($event, assessmentId)" />
+              v-if="showParams"
+              v-tooltip.top="'Click to view params'"
+              class="pi pi-info-circle cursor-pointer"
+              style="font-size: 1rem"
+              @click="toggleParams($event, assessmentId)"
+            />
           </span>
           <div v-if="showParams">
-            <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+            <PvOverlayPanel
+              v-for="assessmentId in assessmentIds"
+              :key="assessmentId"
+              :ref="paramPanelRefs[assessmentId]"
+            >
               <PvDataTable
-striped-rows class="p-datatable-small" table-style="min-width: 30rem"
-                :value="toEntryObjects(params[assessmentId])">
+                striped-rows
+                class="p-datatable-small"
+                table-style="min-width: 30rem"
+                :value="toEntryObjects(params[assessmentId])"
+              >
                 <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
                 <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
               </PvDataTable>
@@ -47,11 +64,16 @@ striped-rows class="p-datatable-small" table-style="min-width: 30rem"
           <PvButton :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
         </div>
       </div>
-
     </div>
     <PvTreeTable
-v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value="treeTableOrgs"
-      @node-expand="onExpand">
+      v-if="showTable"
+      class="mt-3"
+      lazy
+      row-hover
+      :loading="loadingTreeTable"
+      :value="treeTableOrgs"
+      @node-expand="onExpand"
+    >
       <PvColumn field="name" header="Name" expander style="width: min-content"></PvColumn>
       <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
         <template #body="{ node }">
@@ -62,22 +84,40 @@ v-if="showTable" class="mt-3" lazy row-hover :loading="loadingTreeTable" :value=
         <template #body="{ node }">
           <div class="flex m-0">
             <router-link
-:to="{
-              name: 'ViewAdministration',
-              params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
-            }" class="no-underline">
+              :to="{
+                name: 'ViewAdministration',
+                params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
+              }"
+              class="no-underline"
+            >
               <PvButton
-v-tooltip.top="'See completion details'" class="m-0" severity="secondary" text raised
-                label="Progress" aria-label="Completion details" size="small" />
+                v-tooltip.top="'See completion details'"
+                class="m-0"
+                severity="secondary"
+                text
+                raised
+                label="Progress"
+                aria-label="Completion details"
+                size="small"
+              />
             </router-link>
             <router-link
-:to="{
-              name: 'ScoreReport',
-              params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
-            }" class="no-underline">
+              :to="{
+                name: 'ScoreReport',
+                params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
+              }"
+              class="no-underline"
+            >
               <PvButton
-v-tooltip.top="'See Scores'" class="m-0" severity="secondary" text raised label="Scores"
-                aria-label="Scores" size="small" />
+                v-tooltip.top="'See Scores'"
+                class="m-0"
+                severity="secondary"
+                text
+                raised
+                label="Scores"
+                aria-label="Scores"
+                size="small"
+              />
             </router-link>
           </div>
         </template>
@@ -210,7 +250,7 @@ const toggleTable = () => {
   showTable.value = !showTable.value;
 };
 
-const isWideScreen = computed(()=> {
+const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
 
@@ -573,7 +613,6 @@ onMounted(() => {
   border: 1px solid var(--surface-d);
   border-radius: var(--border-radius);
   gap: 2rem;
-  padding: .5rem;
   margin: 0.5rem 0rem;
 
   .card-administration {
