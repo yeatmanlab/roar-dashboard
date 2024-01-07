@@ -112,7 +112,7 @@ async function startTask() {
   });
 }
 </script>
-<style>
+<style scoped>
 @import '@bdelab/roar-multichoice/lib/resources/roar-multichoice.css';
 
 .game-target {

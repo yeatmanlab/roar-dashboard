@@ -108,7 +108,7 @@ async function startTask() {
   });
 }
 </script>
-<style>
+<style scoped>
 @import '@bdelab/roar-sre/lib/resources/roar-sre.css';
 
 .game-target {
