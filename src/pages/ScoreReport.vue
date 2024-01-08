@@ -394,9 +394,6 @@ const viewOptions = ref([
   { label: 'Raw Score', value: 'raw' },
 ]);
 
-
-
-
 const displayNames = {
   swr: { name: 'Word', order: 3 },
   'swr-es': { name: 'Palabra', order: 4 },
@@ -629,7 +626,7 @@ const emptyTagColorMap = {
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text' },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text' },
     { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
     { field: 'user.studentData.grade', header: 'Grade', dataType: 'text' },
@@ -745,7 +742,7 @@ onMounted(async () => {
 });
 </script>
 
-<style lang="scss">
+<style>
 .report-title {
   /* font-size: 3.5rem; */
   margin-top: 0;
