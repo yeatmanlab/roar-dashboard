@@ -224,6 +224,7 @@ import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
+import _without from 'lodash/without';
 
 /*
 Using the DataTable
@@ -249,8 +250,8 @@ Array of objects consisting of a field and header at minimum.
       the leftmost column. 
 */
 
-const nameForVisualize =ref("Expand view"); 
-const countForVisualize = ref(2); //for starting compress
+// const nameForVisualize =ref("Expand view"); 
+// const countForVisualize = ref(2); //for starting compress
 
 const props = defineProps({
   columns: { type: Array, required: true },
