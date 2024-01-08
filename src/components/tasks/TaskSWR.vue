@@ -1,5 +1,7 @@
 <template>
-  <div id="jspsych-target" class="game-target" translate="no" />
+  <div class="game-target" translate="no">
+    <div id="jspsych-target" translate="no" />
+  </div>
   <div v-if="!gameStarted" class="col-full text-center">
     <h1>Preparing your game!</h1>
     <AppSpinner />
@@ -109,7 +111,7 @@ async function startTask() {
   });
 }
 </script>
-<style scoped>
+<style>
 @import '@bdelab/roar-swr/lib/resources/roar-swr.css';
 
 .game-target {
