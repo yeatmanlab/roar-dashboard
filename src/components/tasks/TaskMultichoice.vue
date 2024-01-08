@@ -8,7 +8,7 @@
 <script setup>
 import RoarMultichoice from '@bdelab/roar-multichoice';
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
-import { onBeforeRouteLeave, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
@@ -47,17 +47,14 @@ const { isLoading: isLoadingUserData, data: userData } = useQuery({
 });
 
 // The following code intercepts the back button and instead forces a refresh.
-// We use the ``preventBack`` variable to prevent an infinite loop. I.e., we
-// only want to intercept this the first time.
-let preventBack = true;
-onBeforeRouteLeave((to, from, next) => {
-  if (window.event.type === 'popstate' && preventBack) {
-    preventBack = false;
+// We add { once: true } to prevent an infinite loop.
+window.addEventListener(
+  'popstate',
+  () => {
     router.go(0);
-  } else {
-    next();
-  }
-});
+  },
+  { once: true },
+);
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
