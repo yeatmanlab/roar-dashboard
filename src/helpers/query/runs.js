@@ -1,7 +1,8 @@
+import _pick from 'lodash/pick';
 import _get from 'lodash/get';
 import _mapValues from 'lodash/mapValues';
+import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
-import _zip from 'lodash/zip';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
@@ -14,7 +15,8 @@ export const getRunsRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  select = 'scores.computed.composite',
+  select = ['scores.computed.composite'],
+  allDescendants = true,
   requireCompleted = false,
 }) => {
   const requestBody = {
@@ -27,9 +29,9 @@ export const getRunsRequestBody = ({
       requestBody.structuredQuery.offset = page * pageLimit;
     }
 
-    if (select.length > 0) {
+    if (select) {
       requestBody.structuredQuery.select = {
-        fields: [{ fieldPath: select }],
+        fields: select.map((field) => ({ fieldPath: field })),
       };
     }
   }
@@ -37,11 +39,11 @@ export const getRunsRequestBody = ({
   requestBody.structuredQuery.from = [
     {
       collectionId: 'runs',
-      allDescendants: true,
+      allDescendants: allDescendants,
     },
   ];
 
-  if (administrationId && orgId) {
+  if (administrationId && (orgId || !allDescendants)) {
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -55,28 +57,24 @@ export const getRunsRequestBody = ({
           },
           {
             fieldFilter: {
-              field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-              op: 'ARRAY_CONTAINS',
-              value: { stringValue: orgId },
-            },
-          },
-          {
-            fieldFilter: {
               field: { fieldPath: 'bestRun' },
               op: 'EQUAL',
               value: { booleanValue: true },
             },
           },
-          {
-            fieldFilter: {
-              field: { fieldPath: 'taskId' },
-              op: 'EQUAL',
-              value: { stringValue: taskId },
-            },
-          },
         ],
       },
     };
+
+    if (orgId) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+          op: 'ARRAY_CONTAINS',
+          value: { stringValue: orgId },
+        },
+      });
+    }
   } else {
     requestBody.structuredQuery.where = {
       compositeFilter: {
@@ -89,16 +87,19 @@ export const getRunsRequestBody = ({
               value: { booleanValue: true },
             },
           },
-          {
-            fieldFilter: {
-              field: { fieldPath: 'taskId' },
-              op: 'EQUAL',
-              value: { stringValue: taskId },
-            },
-          },
         ],
       },
     };
+  }
+
+  if (taskId) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: 'taskId' },
+        op: 'EQUAL',
+        value: { stringValue: taskId },
+      },
+    });
   }
 
   if (requireCompleted) {
@@ -143,12 +144,14 @@ export const runCounter = (administrationId, orgType, orgId) => {
 
 export const runPageFetcher = async ({
   administrationId,
+  userId,
   orgType,
   orgId,
   taskId,
   pageLimit,
   page,
-  select = 'scores.computed.composite',
+  select = ['scores.computed.composite'],
+  scoreKey = 'scores.computed.composite',
   paginate = true,
 }) => {
   const appAxiosInstance = getAxiosInstance('app');
@@ -157,26 +160,28 @@ export const runPageFetcher = async ({
     orgType,
     orgId,
     taskId,
+    allDescendants: userId === undefined,
     aggregationQuery: false,
     pageLimit: paginate ? pageLimit.value : undefined,
     page: paginate ? page.value : undefined,
     paginate: paginate,
     select: select,
   });
-  console.log('requestBody', requestBody);
-  console.log(`Fetching scores page ${page.value} for ${administrationId}`);
-  return appAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-    const runData = mapFields(data);
+  const runQuery = userId === undefined ? ':runQuery' : `/users/${userId}:runQuery`;
+  return appAxiosInstance.post(runQuery, requestBody).then(async ({ data }) => {
+    const runData = mapFields(data, true);
 
-    const userDocPaths = _without(
-      data.map((runDoc) => {
-        if (runDoc.document?.name) {
-          return runDoc.document.name.split('/runs/')[0];
-        } else {
-          return undefined;
-        }
-      }),
-      undefined,
+    const userDocPaths = _uniq(
+      _without(
+        data.map((runDoc) => {
+          if (runDoc.document?.name) {
+            return runDoc.document.name.split('/runs/')[0];
+          } else {
+            return undefined;
+          }
+        }),
+        undefined,
+      ),
     );
 
     // Use batchGet to get all user docs with one post request
@@ -191,6 +196,7 @@ export const runPageFetcher = async ({
             if (found) {
               return {
                 name: found.name,
+                id: found.name.split('/users/')[1],
                 data: _mapValues(found.fields, (value) => convertValues(value)),
               };
             }
@@ -200,19 +206,18 @@ export const runPageFetcher = async ({
         );
       });
 
-    // But the order of batchGet is not guaranteed, so we need to order the docs
-    // by the order of userDocPaths
-    const userDocData = batchUserDocs
-      .sort((a, b) => {
-        return userDocPaths.indexOf(a.name) - userDocPaths.indexOf(b.name);
-      })
-      .map(({ data }) => data);
+    // But the order of batchGet is not guaranteed, so we need to match the user
+    // docs back with their runs.
+    const otherKeys = _without(select, scoreKey);
 
-    const scores = _zip(userDocData, runData).map(([userData, run]) => ({
-      scores: _get(run, select),
-      user: userData,
-    }));
-
-    return scores;
+    return runData.map((run) => {
+      const user = batchUserDocs.find((userDoc) => userDoc.name.includes(run.parentDoc));
+      return {
+        scores: _get(run, scoreKey),
+        taskId: run.taskId,
+        user,
+        ..._pick(run, otherKeys),
+      };
+    });
   });
 };
