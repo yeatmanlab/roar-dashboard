@@ -211,10 +211,6 @@ import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 
-import DistributionChart from '@/components/reports/DistributionChart.vue';
-
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
 
 import { getGrade } from '@bdelab/roar-utils';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
@@ -571,11 +567,11 @@ const allTasks = computed(() => {
   } else return [];
 });
 
-const emptyTagColorMap = {
-  above: 'green',
-  some: '#edc037',
-  below: '#c93d82',
-};
+// const emptyTagColorMap = {
+//   above: 'green',
+//   some: '#edc037',
+//   below: '#c93d82',
+// };
 
 
 const columns = computed(() => {
@@ -683,11 +679,7 @@ const tableData = computed(() => {
   });
 });
 
-const allTasks = computed(() => {
-  if (tableData.value.length > 0) {
-    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
-  } else return [];
-});
+
 
 // Runs query for all tasks under admin id
 const { isLoading: isLoadingRunResults, data: runResults } = useQuery({
