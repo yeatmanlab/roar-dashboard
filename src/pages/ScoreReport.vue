@@ -1,8 +1,68 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel >
-        <h2 v-if="orgInfo" class="report-title">{{ _toUpper(orgInfo.name) }} SCORE REPORT</h2>
+      <div>
+        <div class="flex-col p-4 drop-shadow-lg">
+          <div v-if="orgInfo">
+            <div class="report-title">
+              {{ _toUpper(orgInfo.name) }}
+            </div>
+            <!-- <div class=""> -->
+            <div class="report-subheader mb-5 uppercase text-gray-500 font-normal">Scores at a glance</div>
+            <!-- </div> -->
+          </div>
+          <!-- <div class="flex flex-row flex-wrap justify-center w-full"> -->
+          <div class="loading-wrapper">
+            <div v-if="isLoadingRunResults" class="loading-wrapper">
+              <AppSpinner style="margin: 1rem 0rem" />
+              <div class="uppercase text-sm">Loading Overview Charts</div>
+            </div>
+            <div class="chart-wrapper">
+              <div v-for="taskId of Object.keys(runsByTaskId)" :key="taskId" class="">
+                <DistributionChartOverview
+                  :runs="runsByTaskId[taskId]"
+                  :initialized="initialized"
+                  :task-id="taskId"
+                  :org-type="props.orgType"
+                  :org-id="props.orgId"
+                  :administration-id="props.administrationId"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Header blurbs about tasks -->
+        <div class="py-5 px-3 mb-2 bg-gray-200">
+          <div class="font-bold text-2xl">IN THIS REPORT...</div>
+          <span class="text-sm"
+            >You will receive a breakdown of your classroom's ROAR scores across each of the domains tested.
+          </span>
+          <div v-if="isLoadingScores" class="loading-wrapper">
+            <AppSpinner style="margin: 1rem 0rem" />
+            <div class="uppercase text-sm">Loading Datatables</div>
+          </div>
+          <div>
+            <div class="task-overview-container mt-4">
+              <div v-if="allTasks.includes('letter')" class="task-blurb">
+                <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter
+                names and sounds.
+              </div>
+              <div v-if="allTasks.includes('pa')" class="task-blurb">
+                <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span>
+                measures the ability to hear and manipulate the individual sounds within words (sound matching and
+                elision). This skill is crucial for building further reading skills, such as decoding.
+              </div>
+              <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
+                <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at
+                the word level.
+              </div>
+              <div v-if="allTasks.includes('sre')" class="task-blurb">
+                <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading
+                fluency at the sentence level.
+              </div>
+            </div>
+          </div>
+        </div>
         <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -14,8 +74,8 @@
           <h3>No scores found.</h3>
           <span
             >The filters applied have no matching scores.
-            <PvButton text @click="resetFilters">Reset filters</PvButton></span
-          >
+            <PvButton text @click="resetFilters">Reset filters</PvButton>
+          </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           
@@ -45,137 +105,56 @@
 
         <div class="legend-container">
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${emptyTagColorMap.below};`" />
+            <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
               <div>Needs extra support</div>
               <div>(Below 25th percentile)</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${emptyTagColorMap.some};`" />
+            <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
             <div>
               <div>Needs some support</div>
               <div>(Below 50th percentile)</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${emptyTagColorMap.above};`" />
+            <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
             <div>
               <div>At or above average</div>
               <div>(At or above 50th percentile)</div>
             </div>
           </div>
         </div>
-          <div class="legend-description">
-            Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-            indicate that the assessment was not completed.
-          </div>
-        
-        <!-- Header blurbs about tasks -->
-        <h2 class="text-xl">IN THIS REPORT...</h2>
-        <span>You will receive a breakdown of your classroom's ROAR scores across each of the domains tested. </span>
-        <div class="task-overview-container">
-          <div v-if="allTasks.includes('letter')" class="task-blurb">
-            <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names
-            and sounds.
-          </div>
-          <div v-if="allTasks.includes('pa')" class="task-blurb">
-            <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span> assesses some of the most
-            foundational skills for reading: mapping letters to their corresponding sounds. This skill is crucial for
-            building further reading fluency skills, such as decoding.
-          </div>
-          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
-            <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at the
-            word level.
-          </div>
-          <div v-if="allTasks.includes('sre')" class="task-blurb">
-            <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading fluency
-            at the sentence level.
-          </div>
+        <div class="legend-description">
+          Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
+          indicate that the assessment was not completed.
         </div>
-
         <!-- Subscores tables -->
-        <SubscoreTable
-          v-if="allTasks.includes('letter')"
-          task-id="letter"
-          :task-name="displayNames['letter'].name"
-          :administration-id="administrationId"
-          :org-type="orgType"
-          :org-id="orgId"
-          :administration-name="administrationInfo.name ?? undefined"
-          :org-name="orgInfo.name ?? undefined"
-        />
-        <SubscoreTable
-          v-if="allTasks.includes('pa')"
-          task-id="pa"
-          :task-name="displayNames['pa'].name"
-          :administration-id="administrationId"
-          :org-type="orgType"
-          :org-id="orgId"
-          :administration-name="administrationInfo.name ?? undefined"
-          :org-name="orgInfo.name ?? undefined"
-        />
-        <div v-if="authStore.isUserSuperAdmin">
-          <DistributionChart
-            v-for="task in allTasks"
-            :key="task"
-            :initialized="initialized"
-            :administration-id="administrationId"
-            :org-type="orgType"
-            :org-id="orgId"
-            :task-id="task"
-          />
+        <div v-if="isLoadingRunResults" class="loading-wrapper">
+          <AppSpinner style="margin: 1rem 0rem" />
+          <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
-        <!-- In depth breakdown of each task -->
-        <div v-if="allTasks.includes('letter')" class="task-card">
-          <div class="task-title">ROAR-LETTER</div>
-          <span style="text-transform: uppercase">Letter Names and Letter-Sound Matching</span>
-          <p class="task-description">
-            ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names supports
-            the learning of letter sounds, and knowing letter sounds supports the learning of letter names. Initial
-            knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict success in
-            learning to read. Learning the connection between letters and the sounds they represent is fundamental for
-            learning to decode and spell words. This assessment provides educators with valuable insights to customize
-            instruction and address any gaps in these foundational skills.
-          </p>
-        </div>
-        <div v-if="allTasks.includes('pa')" class="task-card">
-          <div class="task-title">ROAR-PHONEME</div>
-          <span style="text-transform: uppercase">Phonological Awareness</span>
-          <p class="task-description">
-            ROAR - Phoneme assesses a student's mastery of phonological awareness through elision and sound matching
-            tasks. Research indicates that phonological awareness, as a foundational pre-reading skill, is crucial for
-            achieving reading fluency. Without support for their foundational reading abilities, students may struggle
-            to catch up in overall reading proficiency. The student's score will range between 0-57 and can be viewed by
-            selecting 'Raw Score' on the table above.
-          </p>
-        </div>
-        <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-card">
-          <div class="task-title">ROAR-WORD</div>
-          <span style="text-transform: uppercase">Single Word Recognition</span>
-          <p class="task-description">
-            ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read
-            fluently, students must master fundamental skills of decoding and automaticity. This test measures a
-            student's ability to detect real and made-up words, which can then translate to a student's reading levels
-            and need for support. The student's score will range between 100-900 and can be viewed by selecting 'Raw
-            Score' on the table above.
-          </p>
-        </div>
-        <div v-if="allTasks.includes('sre')" class="task-card">
-          <div class="task-title">ROAR-SENTENCE</div>
-          <span style="text-transform: uppercase">Sentence Reading Efficiency</span>
-          <p class="task-description">
-            ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become fluent
-            readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it
-            harder for students to understand what they're reading. Students who don't receive support for their basic
-            reading skills may find it challenging to improve their overall reading ability. This assessment is helpful
-            for identifying students who may struggle with reading comprehension due to difficulties with decoding words
-            accurately or reading slowly and with effort. The student's score will range between 0-130 and can be viewed
-            by selecting 'Raw Score' on the table above.
-          </p>
-        </div>
-
-        <div>
+        <PvTabView>
+          <PvTabPanel
+            v-for="taskId of Object.keys(runsByTaskId)"
+            :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
+          >
+            <TaskReport
+              v-if="taskId"
+              :task-id="taskId"
+              :initialized="initialized"
+              :administration-id="administrationId"
+              :runs="runsByTaskId[taskId]"
+              :org-type="orgType"
+              :org-id="orgId"
+              :org-info="orgInfo"
+              :administration-info="administrationInfo"
+            />
+          </PvTabPanel>
+        </PvTabView>
+        <div class="bg-gray-200 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -202,7 +181,7 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div>
+        <div class="bg-gray-200 px-4 py-2">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
@@ -212,7 +191,7 @@
             to see which students can benefit from varying levels of support.
           </p>
         </div>
-      </PvPanel>
+      </div>
     </section>
   </main>
 </template>
@@ -231,13 +210,17 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import DistributionChart from '@/components/reports/DistributionChart.vue';
+import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
+import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
+import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import SubscoreTable from '@/components/reports/SubscoreTable.vue';
+import { taskDisplayNames, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
+import TaskReport from '@/components/reports/tasks/TaskReport.vue';
+import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
 
 const authStore = useAuthStore();
 
@@ -344,6 +327,7 @@ const onPage = (event) => {
 };
 
 const onSort = (event) => {
+  console.log('onSort');
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
     field: { fieldPath: item.field },
     direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
@@ -353,6 +337,7 @@ const onSort = (event) => {
 };
 
 const onFilter = (event) => {
+  console.log('onFilter');
   const filters = [];
   for (const filterKey in _get(event, 'filters')) {
     const filter = _get(event, 'filters')[filterKey];
@@ -394,19 +379,6 @@ const viewOptions = ref([
   { label: 'Raw Score', value: 'raw' },
 ]);
 
-
-
-const displayNames = {
-  swr: { name: 'Word', order: 3 },
-  'swr-es': { name: 'Palabra', order: 4 },
-  pa: { name: 'Phoneme', order: 2 },
-  sre: { name: 'Sentence', order: 5 },
-  letter: { name: 'Letter', order: 1 },
-  multichoice: { name: 'Multichoice', order: 6 },
-  mep: { name: 'MEP', order: 7 },
-  ExternalTask: { name: 'External Task', order: 8 },
-  ExternalTest: { name: 'External Test', order: 9 },
-};
 const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
 
 const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
@@ -456,15 +428,15 @@ const exportSelected = (selectedRows) => {
         percentileScoreKey,
         percentileScoreDisplayKey,
       });
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
         assessment,
         `scores.computed.composite.${standardScoreDisplayKey}`,
       );
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow;
   });
@@ -505,15 +477,15 @@ const exportAll = async () => {
         percentileScoreKey,
         percentileScoreDisplayKey,
       });
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Standard`] = _get(
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
         assessment,
         `scores.computed.composite.${standardScoreDisplayKey}`,
       );
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      tableRow[`${displayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
+      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
     }
     return tableRow;
   });
@@ -586,27 +558,6 @@ function getScoreKeys(row, grade) {
   };
 }
 
-function getSupportLevel(percentile) {
-  let support_level = null;
-  let tag_color = null;
-  if (percentile !== undefined) {
-    if (percentile >= 50) {
-      support_level = 'At or Above Average';
-      tag_color = emptyTagColorMap.above;
-    } else if (percentile > 25 && percentile < 50) {
-      support_level = 'Needs Some Support';
-      tag_color = emptyTagColorMap.some;
-    } else {
-      support_level = 'Needs Extra Support';
-      tag_color = emptyTagColorMap.below;
-    }
-  }
-  return {
-    support_level,
-    tag_color,
-  };
-}
-
 const refreshing = ref(false);
 // const spinIcon = computed(() => {
 //   if (refreshing.value) return 'pi pi-spin pi-spinner';
@@ -644,8 +595,8 @@ const columns = computed(() => {
 
   if (tableData.value.length > 0) {
     const sortedTasks = allTasks.value.toSorted((p1, p2) => {
-      if (Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)) {
-        return displayNames[p1].order - displayNames[p2].order;
+      if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
+        return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
       } else {
         return -1;
       }
@@ -658,7 +609,7 @@ const columns = computed(() => {
       if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`;
       tableColumns.push({
         field: colField,
-        header: displayNames[taskId]?.name ?? taskId,
+        header: taskDisplayNames[taskId]?.name ?? taskId,
         dataType: 'score',
         sort: false,
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
@@ -715,6 +666,10 @@ const tableData = computed(() => {
           },
           assignment,
           scores,
+          routeParams: {
+            administrationId: props.administrationId,
+            userId: _get(user, 'userId'),
+          },
         };
       }
     }
@@ -724,6 +679,81 @@ const tableData = computed(() => {
       scores,
     };
   });
+});
+
+const allTasks = computed(() => {
+  if (tableData.value.length > 0) {
+    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
+  } else return [];
+});
+
+// Runs query for all tasks under admin id
+const { isLoading: isLoadingRunResults, data: runResults } = useQuery({
+  queryKey: ['scores', ref(0), props.orgType, props.orgId, props.administrationId],
+  queryFn: () =>
+    runPageFetcher({
+      administrationId: props.administrationId,
+      orgType: props.orgType,
+      orgId: props.orgId,
+      pageLimit: ref(0),
+      page: ref(0),
+      paginate: false,
+      select: ['scores.computed.composite', 'taskId'],
+      scoreKey: 'scores.computed.composite',
+    }),
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+function scoreFieldBelowSixth(taskId) {
+  if (taskId === 'swr') {
+    return 'wjPercentile';
+  } else if (taskId === 'sre') {
+    return 'tosrecPercentile';
+  } else if (taskId === 'pa') {
+    return 'percentile';
+  }
+  return 'percentile';
+}
+
+function scoreFieldAboveSixth(taskId) {
+  if (taskId === 'swr') {
+    return 'sprPercentile';
+  } else if (taskId === 'sre') {
+    return 'sprPercentile';
+  } else if (taskId === 'pa') {
+    return 'sprPercentile';
+  }
+  return 'percentile';
+}
+
+const runsByTaskId = computed(() => {
+  if (runResults.value === undefined) return {};
+  const computedScores = {};
+  for (const { scores, taskId, user } of runResults.value) {
+    let percentScore;
+    if (user?.grade >= 6) {
+      percentScore = _get(scores, scoreFieldAboveSixth(taskId));
+    } else {
+      percentScore = _get(scores, scoreFieldBelowSixth(taskId));
+    }
+    const { support_level } = getSupportLevel(percentScore);
+    const run = {
+      scores: {
+        ...scores,
+        support_level: support_level,
+        stdPercentile: percentScore,
+      },
+      taskId,
+      user: user.data,
+    };
+    if (run.taskId in computedScores) {
+      computedScores[run.taskId].push(run);
+    } else {
+      computedScores[run.taskId] = [run];
+    }
+  }
+  return computedScores;
 });
 
 let unsubscribe;
@@ -752,25 +782,41 @@ onMounted(async () => {
   margin-top: 0;
 }
 
+.chart-wrapper {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.task-report-panel {
+  border: 2px solid black !important;
+}
+
+.loading-wrapper {
+  margin: 1rem 0rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-top: 0;
+}
+
+.report-subheader {
+  font-size: 1.3rem;
+  font-weight: light;
+  margin-top: 0;
+}
+
 .task-header {
   font-weight: bold;
-}
-
-.task-card {
-  background: #f6f6fe;
-  padding: 2rem;
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.task-title {
-  font-size: 3.5rem;
-  /* font-weight: bold; */
-}
-
-.task-description {
-  font-size: 1.25rem;
-  text-align: left;
 }
 
 .task-overview-container {
@@ -793,13 +839,15 @@ onMounted(async () => {
 
 .legend-container {
   display: flex;
-  flex-direction: row;
-  gap: 3vw;
+  gap: 1vw;
   justify-content: center;
-  margin-top: 3rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .legend-entry {
+  font-size: 0.9rem;
+  font-weight: light;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -807,8 +855,8 @@ onMounted(async () => {
 
 .legend-description {
   text-align: center;
-  margin-top: 1rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
+  font-size: 0.7rem;
 }
 
 .circle {
@@ -823,16 +871,19 @@ onMounted(async () => {
 }
 
 .extra-info-title {
-  font-size: 2rem;
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
 .no-scores-container {
   display: flex;
   flex-direction: column;
   padding: 2rem;
+
   h3 {
     font-weight: bold;
   }
+
   span {
     display: flex;
     align-items: center;
