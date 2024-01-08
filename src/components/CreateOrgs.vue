@@ -150,7 +150,6 @@
 
         <div class="grid">
           <div class="col-12">
-            <PvConfirmPopup />
             <PvButton :label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'" @click="submit" />
           </div>
         </div>

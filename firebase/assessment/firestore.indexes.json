@@ -5,626 +5,6 @@
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
-          "fieldPath": "readOrgs.classes",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.percentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.classes",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.sprPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.classes",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.tosrecPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.classes",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.wjPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.classes",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.percentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.sprPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.tosrecPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.wjPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.sprPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.wjPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.districts",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.families",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.sprPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.families",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.wjPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.families",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.tosrecPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.families",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.percentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.groups",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.percentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.groups",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.tosrecPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.groups",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.wjPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.groups",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.sprPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.groups",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.schools",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.percentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.schools",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.sprPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.schools",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.tosrecPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.schools",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "assignmentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "bestRun",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scores.computed.composite.wjPercentile",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "readOrgs.schools",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "taskId",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
           "fieldPath": "assignmentId",
           "order": "ASCENDING"
         },
@@ -737,7 +117,125 @@
           "arrayConfig": "CONTAINS"
         },
         {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.percentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.sprPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.tosrecPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.wjPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
           "fieldPath": "id",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "taskId",
           "order": "ASCENDING"
         }
       ]
@@ -765,6 +263,168 @@
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.percentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.sprPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.tosrecPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.wjPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.sprPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.wjPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
           "fieldPath": "readOrgs.families",
           "arrayConfig": "CONTAINS"
         },
@@ -778,6 +438,110 @@
         },
         {
           "fieldPath": "taskId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.percentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.sprPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.tosrecPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.families",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.wjPercentile",
           "order": "ASCENDING"
         }
       ]
@@ -827,7 +591,143 @@
           "arrayConfig": "CONTAINS"
         },
         {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.percentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.sprPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.tosrecPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.wjPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
           "fieldPath": "id",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
           "order": "ASCENDING"
         }
       ]
@@ -863,7 +763,125 @@
           "arrayConfig": "CONTAINS"
         },
         {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.percentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.sprPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.tosrecPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.wjPercentile",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
           "fieldPath": "id",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "taskId",
           "order": "ASCENDING"
         }
       ]
@@ -912,6 +930,60 @@
     }
   ],
   "fieldOverrides": [
+    {
+      "collectionGroup": "runs",
+      "fieldPath": "completed",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "fieldPath": "id",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
     {
       "collectionGroup": "runs",
       "fieldPath": "readOrgs.classes",
@@ -997,60 +1069,6 @@
         {
           "arrayConfig": "CONTAINS",
           "queryScope": "COLLECTION"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "fieldPath": "completed",
-      "ttl": false,
-      "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "runs",
-      "fieldPath": "id",
-      "ttl": false,
-      "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION"
-        },
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION_GROUP"
         },
         {
           "arrayConfig": "CONTAINS",

@@ -1278,8 +1278,8 @@
 }
 .p-tabview .p-tabview-panels {
   background: var(--surface-a);
-  padding: 1.25rem;
-  border: 0 none;
+  padding: 1.25rem 0rem;
+  border: 1px solid var(--surface-d);
   color: var(--text-color);
   border-bottom-right-radius: var(--border-radius);
   border-bottom-left-radius: var(--border-radius);
