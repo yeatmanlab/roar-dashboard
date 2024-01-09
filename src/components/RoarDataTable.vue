@@ -4,11 +4,7 @@
   </div>
   <div v-else>
     <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap">
-      <span>
-        <div class="relative">
-          <slot />
-        </div>
-      </span>
+
       <span class="p-float-label">
         <PvMultiSelect
           id="ms-columns"
