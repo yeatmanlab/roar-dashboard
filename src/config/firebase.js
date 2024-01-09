@@ -5,6 +5,9 @@ let appConfig;
 let adminConfig;
 
 const isEmulated = import.meta.env.VITE_FIREBASE_EMULATOR === 'true';
+const useSandbox = import.meta.env.VITE_FIREBASE_DATA_SOURCE === 'sandbox';
+
+console.log(import.meta.env);
 
 if (isEmulated) {
   console.log('Using firebase emulators in development mode');
@@ -28,28 +31,46 @@ if (isEmulated) {
     },
   };
 } else {
-  appConfig = {
-    apiKey: 'AIzaSyDw0TnTXbvRyoVo5_oa_muhXk9q7783k_g',
-    authDomain: 'roar.education',
-    // authDomain: "gse-roar-assessment.firebaseapp.com",
-    // authDomain: "localhost:5173",
-    projectId: 'gse-roar-assessment',
-    storageBucket: 'gse-roar-assessment.appspot.com',
-    messagingSenderId: '757277423033',
-    appId: '1:757277423033:web:d6e204ee2dd1047cb77268',
-  };
+  if (useSandbox) {
+    console.log('Using sandboxed data for development');
+    appConfig = {
+      apiKey: 'AIzaSyCEUxEgYMp4fg2zORT0lsgn4Q6CCoMVzjU',
+      authDomain: 'gse-roar-assessment-dev.firebaseapp.com',
+      projectId: 'gse-roar-assessment-dev',
+      storageBucket: 'gse-roar-assessment-dev.appspot.com',
+      messagingSenderId: '26086061121',
+      appId: '1:26086061121:web:262163d6c145b7a80bc2c0',
+    };
 
-  adminConfig = {
-    apiKey: 'AIzaSyBz0CTdyfgNXr7VJqcYOPlG609XDs97Tn8',
-    authDomain: 'roar.education',
-    // authDomain: "gse-roar-admin.firebaseapp.com",
-    // authDomain: "localhost:5173",
-    projectId: 'gse-roar-admin',
-    storageBucket: 'gse-roar-admin.appspot.com',
-    messagingSenderId: '1062489366521',
-    appId: '1:1062489366521:web:d0b8b5371a67332d1d2728',
-    measurementId: 'G-YYE3YN0S99',
-  };
+    adminConfig = {
+      apiKey: 'AIzaSyCl-JsYraUfofQZXpzshQ6s-E0nYzlCvvg',
+      authDomain: 'gse-roar-admin-dev.firebaseapp.com',
+      projectId: 'gse-roar-admin-dev',
+      storageBucket: 'gse-roar-admin-dev.appspot.com',
+      messagingSenderId: '401455396681',
+      appId: '1:401455396681:web:859ea073a116d0aececc98',
+    };
+  } else {
+    console.log('You are viewing production data.');
+    appConfig = {
+      apiKey: 'AIzaSyDw0TnTXbvRyoVo5_oa_muhXk9q7783k_g',
+      authDomain: 'roar.education',
+      projectId: 'gse-roar-assessment',
+      storageBucket: 'gse-roar-assessment.appspot.com',
+      messagingSenderId: '757277423033',
+      appId: '1:757277423033:web:d6e204ee2dd1047cb77268',
+    };
+
+    adminConfig = {
+      apiKey: 'AIzaSyBz0CTdyfgNXr7VJqcYOPlG609XDs97Tn8',
+      authDomain: 'roar.education',
+      projectId: 'gse-roar-admin',
+      storageBucket: 'gse-roar-admin.appspot.com',
+      messagingSenderId: '1062489366521',
+      appId: '1:1062489366521:web:d0b8b5371a67332d1d2728',
+      measurementId: 'G-YYE3YN0S99',
+    };
+  }
 }
 
 export default {
