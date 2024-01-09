@@ -6,7 +6,7 @@
         <span>Loading Assignments</span>
       </div>
       <div v-else>
-        <h2 v-if="adminInfo?.length == 1" class="p-float-lable dropdown-container">
+        <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
           {{ adminInfo.at(0).name }}
         </h2>
         <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
