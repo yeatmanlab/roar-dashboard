@@ -128,6 +128,11 @@ const distByGrade = (taskId, runs) => {
 };
 
 const draw = async () => {
+  for(const run of props.runs) {
+    if(!run.user?.grade) {
+    console.log("u1", run)
+    }
+  }
   let chartSpecDist = distByGrade(props.taskId, props.runs);
   await embed(`#roar-dist-chart-${props.taskId}`, chartSpecDist);
 };

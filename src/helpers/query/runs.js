@@ -216,7 +216,8 @@ export const runPageFetcher = async ({
     const otherKeys = _without(select, scoreKey);
 
     return runData.map((run) => {
-      const user = userDocDict[run.parentDoc];
+      // const user = run.parentDoc;
+      const user = userDocDict[run.parentDoc] ?? run.parentDoc;
       return {
         scores: _get(run, scoreKey),
         taskId: run.taskId,
