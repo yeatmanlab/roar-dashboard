@@ -44,7 +44,7 @@ const distByGrade = (taskId, runs) => {
     background: null,
     title: {
       text: `ROAR-${taskDisplayNames[taskId].name}`,
-      subtitle: 'Count of Percentile Score by Grade',
+      subtitle: 'Distribution of Percentile By Grade',
       anchor: 'middle',
       fontSize: 18,
     },
@@ -52,7 +52,7 @@ const distByGrade = (taskId, runs) => {
 
     mark: 'bar',
     height: 50,
-    width: 330,
+    width: 360,
 
     encoding: {
       facet: {
@@ -62,11 +62,11 @@ const distByGrade = (taskId, runs) => {
         title: '',
         header: {
           titleColor: 'navy',
-          titleFontSize: 12,
+          titleFontSize: 14,
           titleAlign: 'top',
           titleAnchor: 'middle',
           labelColor: 'navy',
-          labelFontSize: 12,
+          labelFontSize: 14,
           labelFontStyle: 'bold',
           labelAnchor: 'middle',
           labelAngle: 0,
@@ -93,14 +93,14 @@ const distByGrade = (taskId, runs) => {
 
       x: {
         field: `scores.stdPercentile`,
-        title: `National Percentile`,
+        title: `Percentile`,
         bin: { step: 10, extent: [0, 100] },
         sort: 'ascending',
         axis: {
           labelAngle: 0,
           labelAlign: 'center',
-          titleFontSize: 12,
-          labelFontSize: 12, // Adjust the font size for the x-axis tick labels
+          titleFontSize: 14,
+          labelFontSize: 14, // Adjust the font size for the x-axis tick labels
         },
       },
 
@@ -109,13 +109,13 @@ const distByGrade = (taskId, runs) => {
         title: 'Count',
         axis: {
           orient: 'right',
-          titleFontSize: 12,
-          labelFontSize: 12, // Adjust the font size for the x-axis tick labels
+          titleFontSize: 14,
+          labelFontSize: 14, // Adjust the font size for the x-axis tick labels
           format: '.0f',
         },
       },
       tooltip: [
-        { field: 'scores.stdPercentile', title: 'National Percentile', type: 'quantitative', format: `.0f` },
+        { field: 'scores.stdPercentile', title: 'Percentile', type: 'quantitative', format: `.0f` },
         { field: 'user.grade', title: 'Student Grade' },
       ],
     },

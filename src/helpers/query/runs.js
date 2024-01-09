@@ -207,17 +207,14 @@ export const runPageFetcher = async ({
       });
 
     const userDocDict = batchUserDocs.reduce((acc, user) => {
-      const parts = user.name.split('/');
-      const userId = parts[parts.length - 1];
-      acc[userId] = {data: user.data};
+      acc[user.id] = {...user};
       return acc;
     }, {});
 
     const otherKeys = _without(select, scoreKey);
 
     return runData.map((run) => {
-      // const user = run.parentDoc;
-      const user = userDocDict[run.parentDoc] ?? run.parentDoc;
+      const user = userDocDict[run.parentDoc];
       return {
         scores: _get(run, scoreKey),
         taskId: run.taskId,

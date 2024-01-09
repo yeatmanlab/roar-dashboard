@@ -30,6 +30,9 @@
                   :org-id="props.orgId"
                   :administration-id="props.administrationId"
                 />
+                <div>
+                  {{ descriptionsByTaskId[taskId] }}
+                </div>
               </div>
             </div>
           </div>
@@ -715,6 +718,34 @@ function scoreFieldAboveSixth(taskId) {
   }
   return 'percentile';
 }
+
+//               <div v-if="allTasks.includes('letter')" class="task-blurb">
+//                 <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter
+//                 names and sounds.
+//               </div>
+//               <div v-if="allTasks.includes('pa')" class="task-blurb">
+//                 <span class="task-header">roar-phonological awareness (roar-phoneme)</span>
+//                 measures the ability to hear and manipulate the individual sounds within words (sound matching and
+//                 elision). this skill is crucial for building further reading skills, such as decoding.
+//               </div>
+//               <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
+//                 <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at
+//                 the word level.
+//               </div>
+//               <div v-if="allTasks.includes('sre')" class="task-blurb">
+//                 <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading
+//                 fluency at the sentence level.
+//               </div>
+// const descriptionsByTaskId = {
+//   "letter": "ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names and sounds.",
+//   "pa": "x"
+//                 <span class="task-header">roar-phonological awareness (roar-phoneme)</span>
+//                 measures the ability to hear and manipulate the individual sounds within words (sound matching and
+//                 elision). this skill is crucial for building further reading skills, such as decoding.
+//   "swr": "ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names and sounds.",
+//   "sre": "ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names and sounds.",
+// } 
+  
 
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};

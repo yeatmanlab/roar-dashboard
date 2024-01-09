@@ -4,12 +4,8 @@
   <div class="mode-select-wrapper mt-2">
     <div class="flex uppercase text-xs font-light">view by</div>
     <PvSelectButton
-      v-model="xMode"
-      class="flex flex-row"
-      :options="xModes"
-      option-label="name"
-      @change="handleXModeChange"
-    />
+v-model="xMode" class="flex flex-row" :options="xModes" option-label="name"
+      @change="handleXModeChange" />
   </div>
 </template>
 
@@ -112,8 +108,8 @@ const returnSupportLevelValues = computed(() => {
 const distBySupport = computed(() => {
   let spec = {
     mark: 'bar',
-    height: 300,
-    width: 330,
+    height: 450,
+    width: 360,
     background: null,
     title: {
       text: `ROAR-${taskDisplayNames[props.taskId].name}`,
@@ -132,22 +128,27 @@ const distBySupport = computed(() => {
         spacing: 1,
         axis: {
           format: `${xMode.value.name === 'Percent' ? '.0%' : '.0f'}`,
-          titleFontSize: 12,
-          labelFontSize: 12,
+          titleFontSize: 14,
+          labelFontSize: 14,
+          tickCount: 5,	
+          tickMinStep: 1,
         },
       },
 
       y: {
         field: 'category',
         type: 'ordinal',
-        title: 'By Grade',
+        title: '',
         spacing: 1,
         sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         axis: {
           labelAngle: 0,
           labelAlign: 'right',
-          titleFontSize: 12,
-          labelFontSize: 12,
+          titleFontSize: 16,
+          labelFontSize: 16,
+          labelColor: 'navy',
+          labelFontStyle: 'bold',
+          labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
         },
       },
       yOffset: {
@@ -159,6 +160,7 @@ const distBySupport = computed(() => {
         title: 'Support Level',
         sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
+        labelFontSize: 16,
         legend: {
           orient: 'bottom',
         },
