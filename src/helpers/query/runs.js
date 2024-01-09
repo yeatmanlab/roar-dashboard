@@ -206,12 +206,17 @@ export const runPageFetcher = async ({
         );
       });
 
-    // But the order of batchGet is not guaranteed, so we need to match the user
-    // docs back with their runs.
+    const userDocDict = batchUserDocs.reduce((acc, user) => {
+      const parts = user.name.split('/');
+      const userId = parts[parts.length - 1];
+      acc[userId] = {data: user.data};
+      return acc;
+    }, {});
+
     const otherKeys = _without(select, scoreKey);
 
     return runData.map((run) => {
-      const user = batchUserDocs.find((userDoc) => userDoc.name.includes(run.parentDoc));
+      const user = userDocDict[run.parentDoc];
       return {
         scores: _get(run, scoreKey),
         taskId: run.taskId,
