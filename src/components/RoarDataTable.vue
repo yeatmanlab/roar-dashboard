@@ -510,6 +510,7 @@ const onSort = (event) => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+  margin-left: 10px;
   margin-top: 5px;
   margin-bottom: 5px;
 }
