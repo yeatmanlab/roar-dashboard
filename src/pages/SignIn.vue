@@ -173,7 +173,7 @@ onBeforeUnmount(() => {
     /* margin-top: 10px; */
   }
   img.signin-button-icon[data-v-06417f86] {
-    width: 20px;
+    width: 30px;
     padding: 5px;
 }
 
