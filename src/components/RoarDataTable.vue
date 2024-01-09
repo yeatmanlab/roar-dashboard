@@ -21,7 +21,7 @@
           selected-items-label="{0} columns selected"
           @update:model-value="onColumnToggle"
         />
-        <label for="ms-columns" class="view-label">Select Columns</label>
+        <label for="ms-columns" class="view-label2">Select Columns</label>
       </span>
       <span class="p-float-label">
         <PvMultiSelect
@@ -35,11 +35,15 @@
           :show-toggle-all="false"
           @update:model-value="onFreezeToggle"
         />
-        <label for="ms-freeze" class="view-label">Freeze Columns</label>
+        <label for="ms-freeze" class="view-label2">Freeze Columns</label>
       </span>
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
         <PvButton label="Export Whole Table" @click="exportCSV(false, $event)" />
+        <div class="relative">
+          <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
+          <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
+        </div>
       </span>
     </div>
     <PvDataTable
@@ -225,6 +229,7 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _without from 'lodash/without';
+import InputSwitch from 'primevue/inputswitch';
 
 /*
 Using the DataTable
@@ -250,8 +255,9 @@ Array of objects consisting of a field and header at minimum.
       the leftmost column. 
 */
 
-// const nameForVisualize =ref("Expand view"); 
-// const countForVisualize = ref(2); //for starting compress
+
+const nameForVisualize =ref("Expand view"); 
+const countForVisualize = ref(2); //for starting compress
 
 const props = defineProps({
   columns: { type: Array, required: true },
@@ -316,6 +322,23 @@ const exportCSV = (exportSelected) => {
   }
   emit('export-all');
 };
+
+const compressedRows = ref(false);
+
+
+const padding='1rem 1.5rem'
+
+function increasePadding() {
+  if(countForVisualize.value%2 ===0){
+    document.documentElement.style.setProperty('--padding-value', padding);
+    nameForVisualize.value = "Compact view";
+  }
+  else{
+    nameForVisualize.value = "Expand view";
+    document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
+  }
+    countForVisualize.value = countForVisualize.value+1;
+}
 
 
 
@@ -487,5 +510,70 @@ const onSort = (event) => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
+button.p-button.p-component.softer {
+  background:#f3adad;
+  color: black;
+}
+button.p-column-filter-menu-button.p-link, g{
+  color: white;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: left;
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 1px 0;
+  padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.view-label {
+  position: absolute;
+  top: -25px; /* Adjust this value to your desired position */
+  left: 5px;
+  /* Additional styling for the label */
+  background-color: white;
+  /* padding: 0 3px; */
+  /* text-align: center; */
+  z-index: 1; /* Ensures the label is displayed above the dropdown */
+  font-size: smaller;
+  color: var(--surface-500);
+  width: 110px;
+}
+.view-label2 {
+  position: absolute;
+  top: -15px; /* Adjust this value to your desired position */
+  left: 5px;
+  /* Additional styling for the label */
+  background-color: white;
+  /* padding: 0 3px; */
+  /* text-align: center; */
+  z-index: 1; /* Ensures the label is displayed above the dropdown */
+  font-size: smaller;
+  color: var(--surface-500);
+  width: 110px;
+}
+/* for hovering */
+button.p-column-filter-menu-button.p-link:hover {
+    /* color: black; */
+    background: var(--surface-500);
+}
+
+
+
+/* .compressed .p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.5rem 1rem;} /* Adjust the padding values as needed */
+
+/* .compressed .p-datatable .p-datatable-tbody > tr > td {
+  text-align: left;
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 1px 0;
+  // padding: 1rem 1.5rem;
+} */
+
+
 </style>
+
