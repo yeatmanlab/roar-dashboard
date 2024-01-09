@@ -40,10 +40,10 @@
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
         <PvButton label="Export Whole Table" @click="exportCSV(false, $event)" />
-        <!-- <div class="relative">
-          <InputSwitch v-model="compressedRows"  :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
+        <div class="relative">
+          <PvInputSwitch v-model="compressedRows" input-id="switch2" :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
           <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
-        </div> -->
+        </div>
       </span>
     </div>
     <PvDataTable
@@ -229,7 +229,7 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _without from 'lodash/without';
-// import InputSwitch from 'primevue/inputswitch';
+// import PvInputSwitch from 'primevue/inputswitch';
 
 /*
 Using the DataTable
@@ -256,8 +256,8 @@ Array of objects consisting of a field and header at minimum.
 */
 
 
-// const nameForVisualize =ref("Expand view"); 
-// const countForVisualize = ref(2); //for starting compress
+const nameForVisualize =ref("Expand view"); 
+const countForVisualize = ref(2); //for starting compress
 
 const props = defineProps({
   columns: { type: Array, required: true },
@@ -326,19 +326,19 @@ const exportCSV = (exportSelected) => {
 const compressedRows = ref(false);
 
 
-// const padding='1rem 1.5rem'
+const padding='1rem 1.5rem'
 
-// function increasePadding() {
-//   if(countForVisualize.value%2 ===0){
-//     document.documentElement.style.setProperty('--padding-value', padding);
-//     nameForVisualize.value = "Compact view";
-//   }
-//   else{
-//     nameForVisualize.value = "Expand view";
-//     document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
-//   }
-//     countForVisualize.value = countForVisualize.value+1;
-// }
+function increasePadding() {
+  if(countForVisualize.value%2 ===0){
+    document.documentElement.style.setProperty('--padding-value', padding);
+    nameForVisualize.value = "Compact view";
+  }
+  else{
+    nameForVisualize.value = "Expand view";
+    document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
+  }
+    countForVisualize.value = countForVisualize.value+1;
+}
 
 
 
@@ -565,15 +565,14 @@ button.p-column-filter-menu-button.p-link:hover {
 
 
 
-/* .compressed .p-datatable .p-datatable-tbody > tr > td {
+.compressed .p-datatable .p-datatable-tbody > tr > td {
   padding: 0.5rem 1rem;} /* Adjust the padding values as needed */
 
-/* .compressed .p-datatable .p-datatable-tbody > tr > td {
+.compressed .p-datatable .p-datatable-tbody > tr > td {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
-  // padding: 1rem 1.5rem;
-} */
+}
 
 
 </style>
