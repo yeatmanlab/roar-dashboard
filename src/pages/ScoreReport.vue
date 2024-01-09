@@ -721,7 +721,7 @@ const runsByTaskId = computed(() => {
   const computedScores = {};
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
-    if (user?.grade >= 6) {
+    if (user?.data?.grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));

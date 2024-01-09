@@ -40,6 +40,15 @@ const props = defineProps({
 });
 
 const distByGrade = (taskId, runs) => {
+  const maxCountsByGrade = {};
+  runs.forEach((run) => {
+    const grade = run.user.grade;
+    const count = run.count;
+    if (!maxCountsByGrade[grade] || count > maxCountsByGrade[grade]) {
+      maxCountsByGrade[grade] = count;
+    }
+  });
+
   return {
     background: null,
     title: {
@@ -75,7 +84,7 @@ const distByGrade = (taskId, runs) => {
           labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
         },
         spacing: 10,
-        sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        sort: "ascending",
       },
 
       color: {
@@ -109,6 +118,12 @@ const distByGrade = (taskId, runs) => {
           orient: 'right',
           titleFontSize: 12,
           labelFontSize: 12, // Adjust the font size for the x-axis tick labels
+        },
+        scale: {
+          // domain: { data: 'values', field: 'count' }, // Set the domain dynamically based on the count field
+          nice: true, // Ensures nice axis scaling
+          zero: true, // Include zero in the scale
+          max: 10,
         },
       },
       tooltip: [
