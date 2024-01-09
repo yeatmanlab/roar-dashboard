@@ -418,7 +418,7 @@ function resetVariantForm() {
 }
 </script>
 
-<style scoped>
+<style>
 .submit-button {
   margin: auto;
   margin-top: 1rem;
