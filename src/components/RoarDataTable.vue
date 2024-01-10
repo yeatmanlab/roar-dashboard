@@ -11,8 +11,8 @@
       </span>
       <span class="p-float-label">
         <PvMultiSelect
-          id="ms-columns"
           v-tooltip.top="'Show and hide columns'"
+          input-id="ms-columns"
           :model-value="selectedColumns"
           :options="inputColumns"
           option-label="header"
@@ -25,7 +25,7 @@
       </span>
       <span class="p-float-label">
         <PvMultiSelect
-          id="ms-freeze"
+          input-id="ms-freeze"
           :model-value="frozenColumns"
           :options="inputColumns"
           option-label="header"
@@ -40,10 +40,11 @@
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
         <PvButton label="Export Whole Table" @click="exportCSV(false, $event)" />
-        <div class="relative">
-          <PvInputSwitch v-model="compressedRows" input-id="switch2" :class="{ 'p-invalid': increasePadding(countForVisualize) }"  aria-labelledby="switch2"/>
+        <!-- <div class="relative">
+          <PvInputSwitch v-model="compressedRows" input-id="switch2" :class="{ 'p-invalid': increasePadding(countForVisualize) }"/>
           <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
-        </div>
+        </div> -->
+        <PvButton :label="nameForVisualize" @click="toggleView" />
       </span>
     </div>
     <PvDataTable
@@ -204,7 +205,7 @@
             />
             <div class="flex justify-content-between">
               <label for="nationalNormsCheckbox" style="margin-right: 0.5rem">National Norms</label>
-              <PvCheckbox id="nationalNormsCheckbox" v-model="filterModel.nationalNorms" binary />
+              <PvCheckbox  v-model="filterModel.nationalNorms" input-id="nationalNormsCheckbox" binary />
             </div>
           </div>
         </template>
@@ -258,6 +259,10 @@ Array of objects consisting of a field and header at minimum.
 
 const nameForVisualize =ref("Expand view"); 
 const countForVisualize = ref(2); //for starting compress
+const toggleView = () => {
+  compressedRows.value = !compressedRows.value;
+  increasePadding();
+};
 
 const props = defineProps({
   columns: { type: Array, required: true },
