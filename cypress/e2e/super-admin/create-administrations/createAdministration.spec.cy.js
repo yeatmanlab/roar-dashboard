@@ -15,9 +15,9 @@ function selectDate() {
     .type('{rightarrow}{enter}{esc}');
 }
 
-function refreshAssessments() {
-  cy.get('[data-cy="button-refresh-assessments"]', { timeout: Cypress.env('timeout') }).click();
-}
+// function refreshAssessments() {
+//   cy.get('[data-cy="button-refresh-assessments"]', { timeout: Cypress.env('timeout') }).click();
+// }
 
 function selectAndAssignAdministration(variant) {
   cy.get('span')
@@ -50,7 +50,7 @@ describe('The admin user can create an administration and assign it to a distric
       typeAdministrationName();
       selectDate();
       cy.selectTestOrgs();
-      refreshAssessments();
+      // refreshAssessments();
       selectAndAssignAdministration('morphology-default');
       checkAdministrationCreated();
     },
