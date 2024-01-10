@@ -8,7 +8,7 @@
 <script setup>
 import RoarLetter from '@bdelab/roar-letter';
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
-import { onBeforeRouteLeave, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
@@ -42,30 +42,15 @@ const { isLoading: isLoadingUserData, data: userData } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-// Send user back to Home if page is reloaded
-const entries = performance.getEntriesByType('navigation');
-entries.forEach((entry) => {
-  if (entry.type === 'reload') {
-    // Detect if our previous reload was on this page, AND if the last naviagtion was a replace.
-    if (entry.name === window.location.href && history.state.replaced === true) {
-      router.replace({ name: 'Home' });
-    }
-  }
-});
-
 // The following code intercepts the back button and instead forces a refresh.
-// We use the ``preventBack`` variable to prevent an infinite loop. I.e., we
-// only want to intercept this the first time.
-let preventBack = true;
-onBeforeRouteLeave((to, from, next) => {
-  if (window.event.type === 'popstate' && preventBack) {
-    preventBack = false;
-    // router.go(router.currentRoute);
+// We add { once: true } to prevent an infinite loop.
+window.addEventListener(
+  'popstate',
+  () => {
     router.go(0);
-  } else {
-    next();
-  }
-});
+  },
+  { once: true },
+);
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
@@ -80,7 +65,6 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 
 let roarApp;
 
-const completed = ref(false);
 const { selectedAdmin } = storeToRefs(gameStore);
 
 const selectBestRun = async () => {
@@ -92,9 +76,6 @@ const selectBestRun = async () => {
 
 window.addEventListener('beforeunload', selectBestRun, { once: true });
 onBeforeUnmount(async () => {
-  // if (roarApp && completed.value === false) {
-  //   roarApp.abort();
-  // }
   selectBestRun();
 });
 
@@ -105,6 +86,7 @@ async function startTask() {
   const userDateObj = new Date(userDob);
 
   const userParams = {
+    grade: _get(userData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
   };
@@ -116,15 +98,16 @@ async function startTask() {
   await roarApp.run().then(async () => {
     // Handle any post-game actions.
     await authStore.completeAssessment(selectedAdmin.value.id, taskId);
-    completed.value = true;
-    // Here we refresh instead of routing home, with the knowledge that a
-    // refresh is intercepted above and sent home.
-    router.go(0);
-    // router.replace({ name: "Home" });
+
+    // Navigate to home, but first set the refresh flag to true.
+    gameStore.requireHomeRefresh();
+    router.push({ name: 'Home' });
   });
 }
 </script>
-<style scoped>
+<style>
+@import '@bdelab/roar-letter/lib/resources/roar-letter.css';
+
 .game-target {
   position: absolute;
   top: 0;

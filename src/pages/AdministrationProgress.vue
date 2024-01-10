@@ -184,7 +184,7 @@ const exportSelected = (selectedRows) => {
     }
     return tableRow;
   });
-  exportCsv(computedExportData, 'roar-scores-selected.csv');
+  exportCsv(computedExportData, 'roar-progress-selected.csv');
 };
 
 const exportAll = async () => {

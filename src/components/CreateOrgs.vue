@@ -137,7 +137,11 @@
           <div v-if="state.address?.formattedAddress" class="grid">
             <div class="col-12 mt-3">
               {{ orgTypeLabel }} Address:
-              <PvChip :label="state.address.formattedAddress" removable data-cy="chip-address" @remove="removeAddress"
+              <PvChip
+                :label="state.address.formattedAddress"
+                removable
+                data-cy="chip-address"
+                @remove="removeAddress"
               />
             </div>
           </div>
@@ -168,8 +172,11 @@
           <div class="col-12">
             <PvConfirmPopup />
             <PvButton
-:label="`Create ${orgTypeLabel}`" :disabled="orgTypeLabel === 'Org'"
-                      data-cy="button-create-org" @click="submit" />
+              :label="`Create ${orgTypeLabel}`"
+              :disabled="orgTypeLabel === 'Org'"
+              data-cy="button-create-org"
+              @click="submit"
+            />
           </div>
         </div>
       </PvPanel>

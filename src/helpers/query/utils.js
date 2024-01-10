@@ -45,7 +45,7 @@ export const mapFields = (data, getParentDocId) => {
           id: { stringValue: _last(nameSplit) },
         };
         if (getParentDocId) {
-          result.parentDoc = nameSplit[nameSplit.length - 3];
+          result.parentDoc = { stringValue: nameSplit[nameSplit.length - 3] };
         }
         return result;
       }
@@ -101,7 +101,6 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
 };
 
 export const fetchDocsById = async (documents, db = 'admin') => {
-  console.log('fetching docs', documents);
   const axiosInstance = getAxiosInstance(db);
   const promises = [];
   for (const { collection, docId, select } of documents) {
@@ -119,4 +118,9 @@ export const fetchDocsById = async (documents, db = 'admin') => {
     );
   }
   return Promise.all(promises);
+};
+
+export const matchMode2Op = {
+  equals: 'EQUAL',
+  notEquals: 'NOT_EQUAL',
 };

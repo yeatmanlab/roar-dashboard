@@ -152,9 +152,7 @@ const noGamesAvailable = computed(() => {
 // Assessments to populate the game tabs.
 // Generated based on the current selected admin Id
 const assessments = computed(() => {
-  console.log('Recomputing assessments');
   if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
-    console.log('Using map to combine assessment data');
     return selectedAdmin.value.assessments.map((assessment) => {
       // Get the matching assessment from assignmentInfo
       const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
@@ -168,11 +166,9 @@ const assessments = computed(() => {
           variantURL: _get(assessment, 'params.variantURL'),
         },
       };
-      console.log('combinedAssessment', combinedAssessment);
       return combinedAssessment;
     });
   }
-  console.log('No assessments found');
   return [];
 });
 
