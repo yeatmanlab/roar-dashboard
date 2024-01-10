@@ -1,10 +1,7 @@
-describe('Cypress test to login and play picture vocab as participant', () => {
+describe('Cypress test to login and logout', () => {
   it('passes', () => {
-    // this is a user that has an assignment of roarVocab -- how can we create a user that can
-    // ALWAYS play the game
-    // how can we write some logic to reset the already played
-
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/')
 
     cy.get('button', {timeout: 10000}).contains('Sign Out').click();
 

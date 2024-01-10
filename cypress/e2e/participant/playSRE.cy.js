@@ -56,6 +56,8 @@ function playSREGame() {
     cy.wait(10000);
   }
 
+  cy.wait(1000);
+  cy.get('body').type('{rightarrow}');
   cy.wait(40000);
   cy.get('body').type('{rightarrow}');
   assert(cy.contains('You are halfway through'));
@@ -70,8 +72,12 @@ function playSREGame() {
     cy.wait(10000);
   }
 
+  cy.wait(1000);
+  cy.get('body').type('{rightarrow}');
   cy.wait(40000);
   cy.get('body').type('{rightarrow}{leftarrow}');
   cy.wait(1000);
   assert(cy.contains('Amazing job!'));
+  cy.wait(1000);
+  cy.get('body').type('{rightarrow}{leftarrow}');
 }
