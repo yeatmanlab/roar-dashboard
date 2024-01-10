@@ -6,8 +6,7 @@ describe('Cypress test to login and play picture vocab as participant', () => {
 
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
 
-    cy.wait(1000);
-    cy.get('button').contains('Sign Out').click();
+    cy.get('button', {timeout: 10000}).contains('Sign Out').click();
 
     // successfully back at Login page
     cy.contains('Welcome to ROAR!');
