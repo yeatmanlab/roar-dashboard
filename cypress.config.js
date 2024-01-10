@@ -69,6 +69,17 @@ module.exports = defineConfig({
     "zzzCypressTestStudent7",
     "zzzCypressTestStudent8",
     "zzzCypressTestStudent9",
+    "zzzCypressTestStudent10",
+    "zzzCypressTestStudent11",
+    "zzzCypressTestStudent12",
+    "zzzCypressTestStudent13",
+    "zzzCypressTestStudent14",
+    "zzzCypressTestStudent15",
+    "zzzCypressTestStudent16",
+    "zzzCypressTestStudent17",
+    "zzzCypressTestStudent18",
+    "zzzCypressTestStudent19",
+    "zzzCypressTestStudent20",
     ]
   },
 });
