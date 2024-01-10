@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
     strategy:
       fail-fast: false # https://github.com/cypress-io/github-action/issues/48
       matrix:
