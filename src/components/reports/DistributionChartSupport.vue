@@ -144,8 +144,8 @@ const distBySupport = computed(() => {
         axis: {
           labelAngle: 0,
           labelAlign: 'right',
-          titleFontSize: 16,
-          labelFontSize: 16,
+          titleFontSize: 14,
+          labelFontSize: 14,
           labelColor: 'navy',
           labelFontStyle: 'bold',
           labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
@@ -162,7 +162,8 @@ const distBySupport = computed(() => {
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
         labelFontSize: 16,
         legend: {
-          orient: 'bottom',
+          orient: 'top',
+          labelFontSize: '14',
         },
       },
       tooltip: [

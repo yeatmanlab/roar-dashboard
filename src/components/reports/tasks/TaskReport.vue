@@ -1,7 +1,7 @@
 <template>
   <!-- <div class="flex flex-col items-center justify-center mx-2" style='background-color: taskInfoById[taskId]?.color'> -->
   <div class="flex flex-col items-center justify-center mx-2">
-    <Accordion class="mb-5 w-full">
+    <Accordion v-if="tasksInfoById[taskId]" class="mb-5 w-full">
       <AccordionTab :header="('About ' + tasksInfoById[taskId]?.subheader).toUpperCase()">
         <div style="background-color: {taskInfoById[taskId]?.color}">
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ tasksInfoById[taskId]?.subheader }}</div>

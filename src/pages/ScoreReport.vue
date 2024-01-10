@@ -10,44 +10,41 @@
             <div class="report-title">
               {{ _toUpper(orgInfo.name) }}
             </div>
-            <!-- <div class=""> -->
             <div class="report-subheader mb-5 uppercase text-gray-500 font-normal">Scores at a glance</div>
-            <!-- </div> -->
-          </div>
-          <!-- <div class="flex flex-row flex-wrap justify-center w-full"> -->
-          <div class="loading-wrapper">
-            <div v-if="isLoadingRunResults" class="loading-wrapper">
-              <AppSpinner style="margin: 1rem 0rem" />
-              <div class="uppercase text-sm">Loading Overview Charts</div>
-            </div>
-            <div class="chart-wrapper">
+            <div class="chart-wrapper bg-gray-100 py-3">
+              <div v-if="isLoadingRunResults" class="loading-wrapper">
+                <AppSpinner style="margin: 1rem 0rem" />
+                <div class="uppercase text-sm">Loading Overview Charts</div>
+              </div>
               <div v-for="taskId of Object.keys(runsByTaskId)" :key="taskId" class="">
-                <DistributionChartOverview
-                  :runs="runsByTaskId[taskId]"
-                  :initialized="initialized"
-                  :task-id="taskId"
-                  :org-type="props.orgType"
-                  :org-id="props.orgId"
-                  :administration-id="props.administrationId"
-                />
-                <div>
-                  {{ descriptionsByTaskId[taskId] }}
+                <div class="">
+                  <DistributionChartOverview
+:runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
+                    :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+                  <div className="task-description mt-3">
+                    <span class="font-bold">
+                      {{ descriptionsByTaskId[taskId].header ? descriptionsByTaskId[taskId].header : "" }}
+                    </span>
+                    <span class="font-light">
+                      {{ descriptionsByTaskId[taskId].description ? descriptionsByTaskId[taskId].description : "" }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <!-- Header blurbs about tasks -->
-        <div class="py-5 px-3 mb-2 bg-gray-200">
+        <!-- <div class="py-5 px-3 mb-2 bg-gray-200">
           <div class="font-bold text-2xl">IN THIS REPORT...</div>
-          <span class="text-sm"
-            >You will receive a breakdown of your classroom's ROAR scores across each of the domains tested.
+          <span class="text-sm">You will receive a breakdown of your classroom's ROAR scores across each of the domains
+            tested.
           </span>
           <div v-if="isLoadingScores" class="loading-wrapper">
             <AppSpinner style="margin: 1rem 0rem" />
             <div class="uppercase text-sm">Loading Datatables</div>
-          </div>
-          <div>
+          </div> -->
+          <!-- <div>
             <div class="task-overview-container mt-4">
               <div v-if="allTasks.includes('letter')" class="task-blurb">
                 <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter
@@ -67,8 +64,8 @@
                 fluency at the sentence level.
               </div>
             </div>
-          </div>
-        </div>
+          </div> -->
+        <!-- </div> -->
         <!-- Loading data spinner -->
         <div v-if="refreshing" class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -78,8 +75,7 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span
-            >The filters applied have no matching scores.
+          <span>The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
@@ -87,26 +83,13 @@
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
+v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
+              class="ml-2" />
           </div>
           <RoarDataTable
-            :data="tableData"
-            :columns="columns"
-            :total-records="scoresCount"
-            lazy
-            :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
-            @page="onPage($event)"
-            @sort="onSort($event)"
-            @filter="onFilter($event)"
-            @export-all="exportAll"
-            @export-selected="exportSelected"
-          />
+:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
+            @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
         </div>
 
         <div class="legend-container">
@@ -143,21 +126,12 @@
         </div>
         <PvTabView>
           <PvTabPanel
-            v-for="taskId of Object.keys(runsByTaskId)"
-            :key="taskId"
-            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
-          >
+v-for="taskId of Object.keys(runsByTaskId)" :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
             <TaskReport
-              v-if="taskId"
-              :task-id="taskId"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]"
-              :org-type="orgType"
-              :org-id="orgId"
-              :org-info="orgInfo"
-              :administration-info="administrationInfo"
-            />
+v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
+              :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
+              :administration-info="administrationInfo" />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
@@ -719,33 +693,13 @@ function scoreFieldAboveSixth(taskId) {
   return 'percentile';
 }
 
-//               <div v-if="allTasks.includes('letter')" class="task-blurb">
-//                 <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter
-//                 names and sounds.
-//               </div>
-//               <div v-if="allTasks.includes('pa')" class="task-blurb">
-//                 <span class="task-header">roar-phonological awareness (roar-phoneme)</span>
-//                 measures the ability to hear and manipulate the individual sounds within words (sound matching and
-//                 elision). this skill is crucial for building further reading skills, such as decoding.
-//               </div>
-//               <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
-//                 <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at
-//                 the word level.
-//               </div>
-//               <div v-if="allTasks.includes('sre')" class="task-blurb">
-//                 <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading
-//                 fluency at the sentence level.
-//               </div>
-// const descriptionsByTaskId = {
-//   "letter": "ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names and sounds.",
-//   "pa": "x"
-//                 <span class="task-header">roar-phonological awareness (roar-phoneme)</span>
-//                 measures the ability to hear and manipulate the individual sounds within words (sound matching and
-//                 elision). this skill is crucial for building further reading skills, such as decoding.
-//   "swr": "ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names and sounds.",
-//   "sre": "ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter names and sounds.",
-// } 
-  
+const descriptionsByTaskId = {
+  "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
+  "pa": { header: "ROAR-Phonological Awareness (ROAR-Phoneme)", description: " measures the ability to hear and manipulate the individual sounds within words (sound matching and elision). This skill is crucial for building further reading skills, such as decoding." },
+  "swr": { header: "ROAR-Single Word Recognition (ROAR-Word)", description: " assesses decoding skills at the word level." },
+  "sre": { header: "ROAR-Sentence Reading Efficiency (ROAR-Sentence)", description: " assesses reading fluency at the sentence level." }
+}
+
 
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
@@ -773,6 +727,7 @@ const runsByTaskId = computed(() => {
       computedScores[run.taskId] = [run];
     }
   }
+
   return computedScores;
 });
 
@@ -799,8 +754,14 @@ onMounted(async () => {
   display: flex;
   width: 100%;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-around;
+  border-radius: 0.3rem;
+}
+
+.task-description {
+  width: 300px;
+  font-size: 14px;
 }
 
 .task-report-panel {

@@ -65,8 +65,8 @@ const supportLevelsOverview = computed(() => {
 const overviewDistributionChart = (taskId) => {
   const spec = {
     mark: 'bar',
-    height: 170,
-    width: 170,
+    height: 190,
+    width: 190,
     background: null,
     title: {
       text: `ROAR-${taskDisplayNames[taskId].name}`,
@@ -85,8 +85,8 @@ const overviewDistributionChart = (taskId) => {
         spacing: 1,
         fontSize: 14,
         axis: {
-          labelFontSize: 12,
-          titleFontSize: 12,
+          labelFontSize: 14,
+          titleFontSize: 14,
         },
       },
       x: {
@@ -99,8 +99,8 @@ const overviewDistributionChart = (taskId) => {
         axis: {
           labelAngle: -30,
           labelAlign: 'right',
-          titleFontSize: 12,
-          labelFontSize: 12,
+          titleFontSize: 14,
+          labelFontSize: 14,
         },
       },
       color: {
