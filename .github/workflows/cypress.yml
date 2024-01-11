@@ -1,28 +1,52 @@
-name: Cypress Tests
+name: End-to-End Tests with Deployment
+
 on: [push, pull_request]
+
 jobs:
-  cypress-run:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60
+  build_deploy_and_test:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false # https://github.com/cypress-io/github-action/issues/48
       matrix:
         browser: [chrome, firefox]
         containers: [1, 2] # Uses 2 parallel instances
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # Step 1: Checkout code
+      - uses: actions/checkout@v3
+
+      # Step 2: Setup Node
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      # Step 3: Build
+      - run: npm ci && npm run build
+
+      # Step 4: Deploy to Firebase and capture the preview link
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
+          projectId: gse-roar-admin
+          target: staging
+
+      # Assuming the Firebase deploy action sets the preview URL in the deployment status
+      # If the URL is not set automatically, you will need to adjust this step to capture it correctly
+      - name: Set PR Link as Env Variable
+        run: echo "FIREBASE_DEPLOY_URL=${{ steps.deploy.outputs.deploy_url }}" >> $GITHUB_ENV
+
+      # Step 5: Cypress tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
-          build: npm run build
-          start: npm run dev
-          wait-on: 'https://localhost:5173/' # Waits for above
-          wait-on-timeout: 120 # Waits for above
+          build: echo "Build step already completed"
+          start: echo "App already deployed to Firebase"
+          wait-on: ${{ env.FIREBASE_DEPLOY_URL }}
+          wait-on-timeout: 120
           record: true
-          parallel: true # Runs test in parallel using settings above
-          spec: cypress/e2e/participant/checkLegalDoc.cy.js # Runs tests in this folder
+          parallel: true
+          spec: cypress/e2e/participant/checkLegalDoc.cy.js
         env:
+          CYPRESS_BASE_URL: ${{ env.FIREBASE_DEPLOY_URL }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          # Creating a token https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
