@@ -17,12 +17,12 @@ jobs:
         with:
           build: npm run build
           start: npm run dev
-          wait-on: 'https://localhost:5173/' # Waits for above
-          wait-on-timeout: 120 # Waits for above
+          wait-on: ${{ env.FIREBASE_DEPLOY_URL }}
+          wait-on-timeout: 300 # 5 minutes
           record: true
           parallel: true # Runs test in parallel using settings above
           spec: cypress/e2e/participant/checkLegalDoc.cy.js # Runs tests in this folder
         env:
+          CYPRESS_BASE_URL: ${{ env.FIREBASE_DEPLOY_URL }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          # Creating a token https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
