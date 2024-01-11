@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false # https://github.com/cypress-io/github-action/issues/48
       matrix:
-        browser: [chrome, firefox, edge, safari]
+        browser: [chromium, firefox, edge, electron]
         containers: [1, 2] # Uses 2 parallel instances
     steps:
       - name: Checkout
