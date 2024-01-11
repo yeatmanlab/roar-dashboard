@@ -17,12 +17,11 @@ jobs:
         with:
           build: npm run build
           start: npm run dev
-          wait-on: ${{ env.FIREBASE_DEPLOY_URL }}
+          wait-on: 'https://localhost:5173'
           wait-on-timeout: 300 # 5 minutes
           record: true
           parallel: true # Runs test in parallel using settings above
           spec: cypress/e2e/participant/checkLegalDoc.cy.js # Runs tests in this folder
         env:
-          CYPRESS_BASE_URL: ${{ env.FIREBASE_DEPLOY_URL }}
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
