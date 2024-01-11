@@ -20,7 +20,7 @@ jobs:
           start: npm run dev
           record: true
           parallel: true # Runs test in parallel using settings above
-          spec: cypress/e2e/super-admin/create-administrations/createAdministration.spec.cy.js # Runs tests in this folder
+          spec: cypress/e2e/participant/**/*  # Runs tests in this folder
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
