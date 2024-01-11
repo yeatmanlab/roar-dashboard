@@ -29,6 +29,7 @@ jobs:
       deployUrl: ${{ steps.firebase_deploy.outputs.details_url }}
 
   cypress-run:
+    needs: [build_and_preview]
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     strategy:
