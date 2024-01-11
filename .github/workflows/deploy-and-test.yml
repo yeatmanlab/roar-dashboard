@@ -42,10 +42,9 @@ jobs:
             echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deployURL }}" >> $GITHUB_ENV
             echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployURL }}"
 
-        - uses: actions/checkout@v4
-          with:
-            build: npm run build
-
+        - name: Checkout
+          uses: actions/checkout@v4
+        
         - name: Cypress run
           uses: cypress-io/github-action@v6
           with:
