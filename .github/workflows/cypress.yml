@@ -17,8 +17,7 @@ jobs:
         with:
           browser: ${{ matrix.browser }}
           build: npm run build
-          start: npx vite --host
-          wait-on:  'npx wait-on --timeout 60000 http://localhost:5173'
+          start: npm run dev
           record: true
           parallel: true # Runs test in parallel using settings above
           spec: cypress/e2e/participant/**/*  # Runs tests in this folder
