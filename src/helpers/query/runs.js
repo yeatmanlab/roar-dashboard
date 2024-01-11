@@ -188,7 +188,7 @@ export const runPageFetcher = async ({
     const batchUserDocs = await appAxiosInstance
       .post(':batchGet', {
         documents: userDocPaths,
-        mask: { fieldPaths: ['grade', 'birthMonth', 'birthYear'] },
+        mask: { fieldPaths: ['grade', 'birthMonth', 'birthYear', 'schools.current'] },
       })
       .then(({ data }) => {
         return _without(

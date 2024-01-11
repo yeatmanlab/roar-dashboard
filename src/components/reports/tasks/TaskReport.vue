@@ -61,8 +61,6 @@
       :org-name="orgInfo.name ?? undefined"
     />
   </div>
-  <!-- <div class="task-card">
-    </div> -->
 </template>
 <script setup>
 import DistributionChartGrade from '../DistributionChartGrade.vue';
@@ -174,6 +172,7 @@ let tasksInfoById = {
     desc: 'ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict success in learning to read. Learning the connection between letters and the sounds they represent is fundamental for learning to decode and spell words. This assessment provides educators with valuable insights to customize instruction and address any gaps in these foundational skills.',
   },
 };
+
 </script>
 <style>
 .chart-wrapper {

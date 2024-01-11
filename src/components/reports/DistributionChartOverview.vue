@@ -72,7 +72,7 @@ const overviewDistributionChart = (taskId) => {
       text: `ROAR-${taskDisplayNames[taskId].name}`,
       subtitle: `Count by Support Level`,
       anchor: 'middle',
-      fontSize: 16,
+      fontSize: 20,
     },
     data: {
       values: supportLevelsOverview.value,

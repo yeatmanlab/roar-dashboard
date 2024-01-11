@@ -1,9 +1,15 @@
 <template>
   <div :id="`roar-dist-chart-${taskId}`"></div>
+  <div class="mode-select-wrapper mt-2" v-if="orgType === 'district'">
+    <div class="flex uppercase text-xs font-light">view by</div>
+    <PvSelectButton
+v-model="facetMode" class="flex flex-row" :options="facetModes" option-label="name"
+      @change="handleFacetModeChange" />
+  </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
@@ -39,6 +45,13 @@ const props = defineProps({
   },
 });
 
+const facetMode = ref({ name: 'Grade', key: 'grade' });
+const facetModes = [{ name: 'Grade', key: 'grade' }, { name: 'School', key: 'schoolName' }];
+
+const handleFacetModeChange = () => {
+  draw();
+};
+
 const distByGrade = (taskId, runs) => {
   return {
     background: null,
@@ -56,7 +69,7 @@ const distByGrade = (taskId, runs) => {
 
     encoding: {
       facet: {
-        field: 'user.grade',
+        field: `user.${facetMode.value.key}`,
         type: 'nominal',
         columns: 1,
         title: '',
@@ -72,7 +85,9 @@ const distByGrade = (taskId, runs) => {
           labelAngle: 0,
           labelAlign: 'left',
           labelOrient: 'left',
-          labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
+          labelExpr: facetMode.value.name === "Grade" ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')" : "",
+          labelLimit: 150, 
+          labelSeparation: 5, // Set the spacing between lines in pixels
         },
         spacing: 10,
         sort: "ascending",
@@ -100,7 +115,7 @@ const distByGrade = (taskId, runs) => {
           labelAngle: 0,
           labelAlign: 'center',
           titleFontSize: 14,
-          labelFontSize: 14, // Adjust the font size for the x-axis tick labels
+          labelFontSize: 14,
         },
       },
 
@@ -110,13 +125,14 @@ const distByGrade = (taskId, runs) => {
         axis: {
           orient: 'right',
           titleFontSize: 14,
-          labelFontSize: 14, // Adjust the font size for the x-axis tick labels
+          labelFontSize: 14,
           format: '.0f',
         },
       },
       tooltip: [
         { field: 'scores.stdPercentile', title: 'Percentile', type: 'quantitative', format: `.0f` },
         { field: 'user.grade', title: 'Student Grade' },
+        { aggregate: 'count', title: 'Student Count' },
       ],
     },
     resolve: {
@@ -128,11 +144,6 @@ const distByGrade = (taskId, runs) => {
 };
 
 const draw = async () => {
-  for(const run of props.runs) {
-    if(!run.user?.grade) {
-    console.log("u1", run)
-    }
-  }
   let chartSpecDist = distByGrade(props.taskId, props.runs);
   await embed(`#roar-dist-chart-${props.taskId}`, chartSpecDist);
 };
@@ -141,3 +152,11 @@ onMounted(() => {
   draw(); // Call your function when the component is mounted
 });
 </script>
+
+<style lang="scss">
+.mode-select-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+</style>

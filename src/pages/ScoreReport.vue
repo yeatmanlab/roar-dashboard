@@ -16,17 +16,16 @@
                 <AppSpinner style="margin: 1rem 0rem" />
                 <div class="uppercase text-sm">Loading Overview Charts</div>
               </div>
-              <div v-for="taskId of Object.keys(runsByTaskId)" :key="taskId" class="">
-                <div class="">
-                  <DistributionChartOverview
-:runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
+              <div v-for="taskId of sortedTaskIds" :key="taskId" class="">
+                <div class="m-1">
+                  <DistributionChartOverview :runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
                     :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
                   <div className="task-description mt-3">
                     <span class="font-bold">
-                      {{ descriptionsByTaskId[taskId].header ? descriptionsByTaskId[taskId].header : "" }}
+                      {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : "" }}
                     </span>
                     <span class="font-light">
-                      {{ descriptionsByTaskId[taskId].description ? descriptionsByTaskId[taskId].description : "" }}
+                      {{ descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : "" }}
                     </span>
                   </div>
                 </div>
@@ -44,7 +43,7 @@
             <AppSpinner style="margin: 1rem 0rem" />
             <div class="uppercase text-sm">Loading Datatables</div>
           </div> -->
-          <!-- <div>
+        <!-- <div>
             <div class="task-overview-container mt-4">
               <div v-if="allTasks.includes('letter')" class="task-blurb">
                 <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter
@@ -82,12 +81,10 @@
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
-            <PvDropdown
-v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
+            <PvDropdown v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
               class="ml-2" />
           </div>
-          <RoarDataTable
-:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
+          <RoarDataTable :data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
             @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
         </div>
@@ -125,13 +122,11 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
         <PvTabView>
-          <PvTabPanel
-v-for="taskId of Object.keys(runsByTaskId)" :key="taskId"
+          <PvTabPanel v-for="taskId of sortedTaskIds" :key="taskId"
             :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
-            <TaskReport
-v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
+            <TaskReport v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
               :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
-              :administration-info="administrationInfo" />
+              :schoolsDict="schoolsDict" :administration-info="administrationInfo" />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
@@ -266,6 +261,19 @@ const { data: schoolsInfo } = useQuery({
   enabled: props.orgType === 'district' && initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+const schoolsDict = computed(() => {
+  if (schoolsInfo.value) {
+    return schoolsInfo.value.reduce((acc, school) => {
+      acc[school.id] = school.name
+      return acc;
+    }, {
+    })
+  }
+  else {
+    return {}
+  }
+})
 
 const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
 
@@ -694,12 +702,11 @@ function scoreFieldAboveSixth(taskId) {
 }
 
 const descriptionsByTaskId = {
-  "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
+  // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
   "pa": { header: "ROAR-Phonological Awareness (ROAR-Phoneme)", description: " measures the ability to hear and manipulate the individual sounds within words (sound matching and elision). This skill is crucial for building further reading skills, such as decoding." },
   "swr": { header: "ROAR-Single Word Recognition (ROAR-Word)", description: " assesses decoding skills at the word level." },
   "sre": { header: "ROAR-Sentence Reading Efficiency (ROAR-Sentence)", description: " assesses reading fluency at the sentence level." }
 }
-
 
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
@@ -719,7 +726,10 @@ const runsByTaskId = computed(() => {
         stdPercentile: percentScore,
       },
       taskId,
-      user: user.data,
+      user: {
+        ...user.data,
+        schoolName: schoolsDict.value[user?.data?.schools?.current[0]]
+      },
     };
     if (run.taskId in computedScores) {
       computedScores[run.taskId].push(run);
@@ -730,6 +740,14 @@ const runsByTaskId = computed(() => {
 
   return computedScores;
 });
+
+const sortedTaskIds = computed(() => {
+  const taskIdsInOrder = ["pa", "swr", "sre", "letter", "cva", "fluency", "mep", "morph", "multichoice", "vocab"]
+  const taskIds = taskIdsInOrder.filter((taskId) => {
+    return Object.keys(runsByTaskId.value).includes(taskId)
+  })
+  return taskIds;
+})
 
 let unsubscribe;
 const refresh = () => {
