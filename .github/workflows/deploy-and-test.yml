@@ -43,7 +43,8 @@ jobs:
             echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployURL }}"
 
         - uses: actions/checkout@v4
-          run: npm ci && npm run build
+          with:
+            build: npm run build
 
         - name: Cypress run
           uses: cypress-io/github-action@v6
