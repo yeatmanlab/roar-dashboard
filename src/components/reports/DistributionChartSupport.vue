@@ -1,12 +1,15 @@
 <template>
-  <!-- <PvSelectButton></PvSelectButton> -->
-  <div :id="`roar-dist-chart-support-${taskId}`"></div>
   <div class="mode-select-wrapper mt-2">
     <div class="flex uppercase text-xs font-light">view by</div>
     <PvSelectButton
-v-model="xMode" class="flex flex-row" :options="xModes" option-label="name"
-      @change="handleXModeChange" />
+      v-model="xMode"
+      class="flex flex-row"
+      :options="xModes"
+      option-label="name"
+      @change="handleXModeChange"
+    />
   </div>
+  <div :id="`roar-dist-chart-support-${taskId}`"></div>
 </template>
 
 <script setup>
@@ -130,7 +133,7 @@ const distBySupport = computed(() => {
           format: `${xMode.value.name === 'Percent' ? '.0%' : '.0f'}`,
           titleFontSize: 14,
           labelFontSize: 14,
-          tickCount: 5,	
+          tickCount: 5,
           tickMinStep: 1,
         },
       },

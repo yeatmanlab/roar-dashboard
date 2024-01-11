@@ -1,5 +1,4 @@
 <template>
-  <!-- <div class="flex flex-col items-center justify-center mx-2" style='background-color: taskInfoById[taskId]?.color'> -->
   <div class="flex flex-col items-center justify-center mx-2">
     <Accordion v-if="tasksInfoById[taskId]" class="mb-5 w-full">
       <AccordionTab :header="('About ' + tasksInfoById[taskId]?.subheader).toUpperCase()">
@@ -29,7 +28,7 @@
       />
     </div>
     <div>
-      <DistributionChartGrade
+      <DistributionChartFacet
         :initialized="initialized"
         :administration-id="administrationId"
         :org-type="orgType"
@@ -63,7 +62,7 @@
   </div>
 </template>
 <script setup>
-import DistributionChartGrade from '../DistributionChartGrade.vue';
+import DistributionChartFacet from '../DistributionChartFacet.vue';
 import DistributionChartSupport from '../DistributionChartSupport.vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
@@ -172,7 +171,6 @@ let tasksInfoById = {
     desc: 'ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict success in learning to read. Learning the connection between letters and the sounds they represent is fundamental for learning to decode and spell words. This assessment provides educators with valuable insights to customize instruction and address any gaps in these foundational skills.',
   },
 };
-
 </script>
 <style>
 .chart-wrapper {

@@ -1,11 +1,15 @@
 <template>
-  <div :id="`roar-dist-chart-${taskId}`"></div>
   <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2">
     <div class="flex uppercase text-xs font-light">view by</div>
     <PvSelectButton
-v-model="facetMode" class="flex flex-row" :options="facetModes" option-label="name"
-      @change="handleFacetModeChange" />
+      v-model="facetMode"
+      class="flex flex-row"
+      :options="facetModes"
+      option-label="name"
+      @change="handleFacetModeChange"
+    />
   </div>
+  <div :id="`roar-dist-chart-${taskId}`"></div>
 </template>
 
 <script setup>
@@ -46,7 +50,10 @@ const props = defineProps({
 });
 
 const facetMode = ref({ name: 'Grade', key: 'grade' });
-const facetModes = [{ name: 'Grade', key: 'grade' }, { name: 'School', key: 'schoolName' }];
+const facetModes = [
+  { name: 'Grade', key: 'grade' },
+  { name: 'School', key: 'schoolName' },
+];
 
 const handleFacetModeChange = () => {
   draw();
@@ -61,12 +68,10 @@ const distByGrade = (taskId, runs) => {
       anchor: 'middle',
       fontSize: 18,
     },
-    data: { values: runs },
-
+    data: { values: runs.filter((run) => run.user && run.user.grade !== undefined) },
     mark: 'bar',
     height: 50,
     width: 360,
-
     encoding: {
       facet: {
         field: `user.${facetMode.value.key}`,
@@ -85,14 +90,19 @@ const distByGrade = (taskId, runs) => {
           labelAngle: 0,
           labelAlign: 'left',
           labelOrient: 'left',
-          labelExpr: facetMode.value.name === "Grade" ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')" : "",
-          labelLimit: 150, 
+          labelExpr:
+            facetMode.value.name === 'Grade'
+              ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')"
+              : '',
+          labelLimit: 150,
           labelSeparation: 5, // Set the spacing between lines in pixels
         },
         spacing: 10,
-        sort: "ascending",
-        // sort: {order: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
-        // sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        sort: {
+          // field: 'datum.value',
+          // order: "descending"
+          order: ['K', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        },
       },
 
       color: {
@@ -137,7 +147,7 @@ const distByGrade = (taskId, runs) => {
     },
     resolve: {
       scale: {
-        y: "independent"
+        y: 'independent',
       },
     },
   };
@@ -158,5 +168,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+}
+
+.distribution-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  height: 100%;
 }
 </style>

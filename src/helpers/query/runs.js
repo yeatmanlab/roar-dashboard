@@ -207,7 +207,7 @@ export const runPageFetcher = async ({
       });
 
     const userDocDict = batchUserDocs.reduce((acc, user) => {
-      acc[user.id] = {...user};
+      acc[user.id] = { ...user };
       return acc;
     }, {});
 

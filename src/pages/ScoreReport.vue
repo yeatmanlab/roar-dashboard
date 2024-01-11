@@ -5,29 +5,61 @@
     </aside>
     <section class="main-body">
       <div>
-        <div class="flex-col p-4 drop-shadow-lg">
+        <div class="">
+          <div v-if="isLoadingOrgInfo" class="loading-wrapper">
+            <AppSpinner style="margin: 0.3rem 0rem" />
+            <div class="uppercase text-sm">Loading Org Info</div>
+          </div>
           <div v-if="orgInfo">
             <div class="report-title">
               {{ _toUpper(orgInfo.name) }}
             </div>
-            <div class="report-subheader mb-5 uppercase text-gray-500 font-normal">Scores at a glance</div>
+            <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
             <div class="chart-wrapper bg-gray-100 py-3">
               <div v-if="isLoadingRunResults" class="loading-wrapper">
                 <AppSpinner style="margin: 1rem 0rem" />
                 <div class="uppercase text-sm">Loading Overview Charts</div>
               </div>
               <div v-for="taskId of sortedTaskIds" :key="taskId" class="">
-                <div class="m-1">
+                <div class="distribution-overview-wrapper">
                   <DistributionChartOverview
-:runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
-                    :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+                    :runs="runsByTaskId[taskId]"
+                    :initialized="initialized"
+                    :task-id="taskId"
+                    :org-type="props.orgType"
+                    :org-id="props.orgId"
+                    :administration-id="props.administrationId"
+                  />
                   <div className="task-description mt-3">
                     <span class="font-bold">
-                      {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : "" }}
+                      {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
                     </span>
                     <span class="font-light">
-                      {{ descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : "" }}
+                      {{ descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : '' }}
                     </span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="!isLoadingRunResults" class="legend-container">
+                <div class="legend-entry">
+                  <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+                  <div>
+                    <div>Needs extra support</div>
+                    <div>(Below 25th percentile)</div>
+                  </div>
+                </div>
+                <div class="legend-entry">
+                  <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+                  <div>
+                    <div>Needs some support</div>
+                    <div>(Below 50th percentile)</div>
+                  </div>
+                </div>
+                <div class="legend-entry">
+                  <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+                  <div>
+                    <div>At or above average</div>
+                    <div>(At or above 50th percentile)</div>
                   </div>
                 </div>
               </div>
@@ -75,7 +107,8 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span>The filters applied have no matching scores.
+          <span
+            >The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
@@ -83,16 +116,28 @@
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
-              class="ml-2" />
+              v-model="viewMode"
+              :options="viewOptions"
+              option-label="label"
+              option-value="value"
+              class="ml-2"
+            />
           </div>
           <RoarDataTable
-:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
-            @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
+            :data="tableData"
+            :columns="columns"
+            :total-records="scoresCount"
+            lazy
+            :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @filter="onFilter($event)"
+            @export-all="exportAll"
+            @export-selected="exportSelected"
+          />
         </div>
-
-        <div class="legend-container">
+        <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
@@ -126,12 +171,22 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
         </div>
         <PvTabView>
           <PvTabPanel
-v-for="taskId of sortedTaskIds" :key="taskId"
-            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
+            v-for="taskId of sortedTaskIds"
+            :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
+          >
             <TaskReport
-v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
-              :schools-dict="schoolsDict" :administration-info="administrationInfo" />
+              v-if="taskId"
+              :task-id="taskId"
+              :initialized="initialized"
+              :administration-id="administrationId"
+              :runs="runsByTaskId[taskId]"
+              :org-type="orgType"
+              :org-id="orgId"
+              :org-info="orgInfo"
+              :schools-dict="schoolsDict"
+              :administration-info="administrationInfo"
+            />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
@@ -250,7 +305,7 @@ const { data: administrationInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: orgInfo } = useQuery({
+const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
   queryKey: ['orgInfo', props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
@@ -270,15 +325,13 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = school.name
+      acc[school.id] = school.name;
       return acc;
-    }, {
-    })
+    }, {});
+  } else {
+    return {};
   }
-  else {
-    return {}
-  }
-})
+});
 
 const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
 
@@ -708,10 +761,20 @@ function scoreFieldAboveSixth(taskId) {
 
 const descriptionsByTaskId = {
   // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
-  "pa": { header: "ROAR-Phonological Awareness (ROAR-Phoneme)", description: " measures the ability to hear and manipulate the individual sounds within words (sound matching and elision). This skill is crucial for building further reading skills, such as decoding." },
-  "swr": { header: "ROAR-Single Word Recognition (ROAR-Word)", description: " assesses decoding skills at the word level." },
-  "sre": { header: "ROAR-Sentence Reading Efficiency (ROAR-Sentence)", description: " assesses reading fluency at the sentence level." }
-}
+  pa: {
+    header: 'ROAR-Phonological Awareness (ROAR-Phoneme)',
+    description:
+      ' measures the ability to hear and manipulate the individual sounds within words (sound matching and elision). This skill is crucial for building further reading skills, such as decoding.',
+  },
+  swr: {
+    header: 'ROAR-Single Word Recognition (ROAR-Word)',
+    description: ' assesses decoding skills at the word level.',
+  },
+  sre: {
+    header: 'ROAR-Sentence Reading Efficiency (ROAR-Sentence)',
+    description: ' assesses reading fluency at the sentence level.',
+  },
+};
 
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
@@ -733,7 +796,7 @@ const runsByTaskId = computed(() => {
       taskId,
       user: {
         ...user.data,
-        schoolName: schoolsDict.value[user?.data?.schools?.current[0]]
+        schoolName: schoolsDict.value[user?.data?.schools?.current[0]],
       },
     };
     if (run.taskId in computedScores) {
@@ -747,12 +810,12 @@ const runsByTaskId = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  const taskIdsInOrder = ["pa", "swr", "sre", "letter", "cva", "fluency", "mep", "morph", "multichoice", "vocab"]
+  const taskIdsInOrder = ['pa', 'swr', 'sre', 'letter', 'cva', 'fluency', 'mep', 'morph', 'multichoice', 'vocab'];
   const taskIds = taskIdsInOrder.filter((taskId) => {
-    return Object.keys(runsByTaskId.value).includes(taskId)
-  })
+    return Object.keys(runsByTaskId.value).includes(taskId);
+  });
   return taskIds;
-})
+});
 
 let unsubscribe;
 const refresh = () => {
@@ -782,8 +845,15 @@ onMounted(async () => {
   border-radius: 0.3rem;
 }
 
+.distribution-overview-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+
 .task-description {
-  width: 300px;
+  width: 240px;
   font-size: 14px;
 }
 
