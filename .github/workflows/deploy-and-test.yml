@@ -1,0 +1,66 @@
+name: Firebase deploy preview / e2e test
+on:
+  pull_request:
+    # re-run if new commits are added (synchronize)
+    types: [opened, reopened, synchronize]
+
+# Cancels a workflow process when new commits are made
+concurrency:
+  group: ci-preview-tests-${{ github.ref }}-1
+  cancel-in-progress: true
+
+jobs:
+  build_preview:
+    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies and Build
+        run: npm ci && npm run build:dev
+
+      - id: firebase_deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}'
+          projectId: gse-roar-assessment
+          target: swr
+    outputs:
+      deployUrl: ${{ steps.firebase_deploy.outputs.details_url }}
+
+  cypress-run:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+        fail-fast: false # https://github.com/cypress-io/github-action/issues/48
+        matrix:
+          browser: [chromium, firefox, edge, electron]
+          containers: [1, 2] # Uses 2 parallel instances
+    steps:
+        - name: Set PR Link as Env Variable
+          run: |
+            echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deployURL }}" >> $GITHUB_ENV
+            echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployURL }}"
+
+        - uses: actions/checkout@v4
+          run: npm ci && npm run build
+
+        - name: Cypress run
+          uses: cypress-io/github-action@v6
+          with:
+            browser: ${{ matrix.browser }}
+            build: echo "Build step already completed"
+            start: echo "App already deployed to Firebase"
+            wait-on: ${{ env.FIREBASE_DEPLOY_URL }}
+            wait-on-timeout: 60
+            record: true
+            parallel: true # Runs test in parallel using settings above
+            spec: cypress/e2e/participant/checkLegalDoc.cy.js  # Runs tests in this folder
+            ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+          env:
+            CYPRESS_BASE_URL: ${{ env.FIREBASE_DEPLOY_URL }}
+            CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
