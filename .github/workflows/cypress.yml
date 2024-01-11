@@ -4,12 +4,8 @@ on: [push, pull_request]
 
 jobs:
   build_deploy_and_test:
+    name: Deploy to Firebase PR
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false # https://github.com/cypress-io/github-action/issues/48
-      matrix:
-        browser: [chrome, firefox]
-        containers: [1, 2] # Uses 2 parallel instances
     steps:
       # Step 1: Checkout code
       - uses: actions/checkout@v3
@@ -39,7 +35,14 @@ jobs:
     
 
     # Step 5: Cypress tests
+    Cypress tests:
       - name: Cypress run
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false # https://github.com/cypress-io/github-action/issues/48
+          matrix:
+            browser: [ chrome, firefox ]
+            containers: [ 1, 2 ] # Uses 2 parallel instances
         uses: cypress-io/github-action@v6
         with:
           build: echo "Build step already completed"
