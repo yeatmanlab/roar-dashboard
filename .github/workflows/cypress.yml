@@ -17,8 +17,6 @@ jobs:
         with:
           build: npm run build
           start: npm run dev
-          wait-on: 'npx wait-on --timeout 60000 http://localhost:5173'
-          wait-on-timeout: 120
           record: true
           parallel: true # Runs test in parallel using settings above
           browser: ${{ matrix.browser }}
