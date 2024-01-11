@@ -10,24 +10,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_preview:
+  build_and_preview:
     if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
-
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v3
-
-      - name: Install dependencies and Build
-        run: npm ci && npm run build:dev
-
-      - id: firebase_deploy
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      - run: npm ci && npm run build
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}'
-          projectId: gse-roar-assessment
-          target: swr
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
+          projectId: gse-roar-admin
+          target: staging
     outputs:
       deployUrl: ${{ steps.firebase_deploy.outputs.details_url }}
 
