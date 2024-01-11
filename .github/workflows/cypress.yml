@@ -34,15 +34,20 @@ jobs:
           echo "Captured URL: ${{ steps.firebase_deploy.outputs.deploy_url }}"
     
 
-    # Step 5: Cypress tests
-    Cypress tests:
+  # Step 5: Cypress tests
+  cypess_end_to_end:
+    name: Cypress run
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+        fail-fast: false # https://github.com/cypress-io/github-action/issues/48
+        matrix:
+          browser: [ chrome, firefox ]
+          containers: [ 1, 2 ] # Uses 2 parallel instances
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
       - name: Cypress run
-        runs-on: ubuntu-latest
-        strategy:
-          fail-fast: false # https://github.com/cypress-io/github-action/issues/48
-          matrix:
-            browser: [ chrome, firefox ]
-            containers: [ 1, 2 ] # Uses 2 parallel instances
         uses: cypress-io/github-action@v6
         with:
           build: echo "Build step already completed"
