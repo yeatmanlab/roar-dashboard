@@ -16,8 +16,8 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           build: npm run build
-          wait-on: 'https://localhost:5173'
-          start: npx vite --host
+          start: npm run dev
+          wait-on: 'npx wait-on --timeout 60000 http://localhost:5173'
           wait-on-timeout: 120
           record: true
           parallel: true # Runs test in parallel using settings above
