@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false # https://github.com/cypress-io/github-action/issues/48
       matrix:
-        browser: [chrome, firefox]
+        browser: [chrome, firefox, edge, safari]
         containers: [1, 2] # Uses 2 parallel instances
     steps:
       - name: Checkout
@@ -16,10 +16,13 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           build: npm run build
-          start: npm run dev
+          wait-on: 'https://localhost:5173'
+          start: npx vite --host
+          wait-on-timeout: 120
           record: true
           parallel: true # Runs test in parallel using settings above
-          spec: cypress/e2e/participant/**/* # Runs tests in this folder
+          browser: ${{ matrix.browser }}
+          spec: cypress/e2e/participant/checkLegalDoc.cy.js # Runs tests in this folder
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
