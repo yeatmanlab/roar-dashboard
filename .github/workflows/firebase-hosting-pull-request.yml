@@ -24,3 +24,5 @@ jobs:
         run: |
           echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deploy_url }}" >> $GITHUB_ENV
           echo "Captured URL: ${{ steps.firebase_deploy.outputs.deploy_url }}"
+          
+          
