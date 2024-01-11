@@ -1,6 +1,8 @@
 name: End-to-End Tests with Deployment
 
-on: [push, pull_request]
+on:
+  pull_request:
+    types: [ opened, reopened, synchronize ]
 
 jobs:
   build_deploy_and_test:
@@ -33,9 +35,7 @@ jobs:
       # Assuming the Firebase deploy action sets the preview URL in the deployment status
       # If the URL is not set automatically, you will need to adjust this step to capture it correctly
       - name: Set PR Link as Env Variable
-        run: |
-          echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deploy_url }}" >> $GITHUB_ENV
-          echo "Captured URL: ${{ steps.firebase_deploy.outputs.deploy_url }}"
+        run: echo "FIREBASE_DEPLOY_URL=${{ steps.deploy.outputs.deploy_url }}" >> $GITHUB_ENV
 
       # Step 5: Cypress tests
       - name: Cypress run
@@ -44,7 +44,7 @@ jobs:
           build: echo "Build step already completed"
           start: echo "App already deployed to Firebase"
           wait-on: ${{ env.FIREBASE_DEPLOY_URL }}
-          wait-on-timeout: 120
+          wait-on-timeout: 60
           record: true
           parallel: true
           spec: cypress/e2e/participant/checkLegalDoc.cy.js
