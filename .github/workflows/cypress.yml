@@ -1,11 +1,15 @@
 name: End-to-End Tests with Deployment
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   build_deploy_and_test:
-    name: Deploy to Firebase PR
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # https://github.com/cypress-io/github-action/issues/48
+      matrix:
+        browser: [chrome, firefox]
+        containers: [1, 2] # Uses 2 parallel instances
     steps:
       # Step 1: Checkout code
       - uses: actions/checkout@v3
@@ -32,21 +36,8 @@ jobs:
         run: |
           echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deploy_url }}" >> $GITHUB_ENV
           echo "Captured URL: ${{ steps.firebase_deploy.outputs.deploy_url }}"
-    
 
-  # Step 5: Cypress tests
-  cypess_end_to_end:
-    name: Cypress run
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-        fail-fast: false # https://github.com/cypress-io/github-action/issues/48
-        matrix:
-          browser: [ chrome, firefox ]
-          containers: [ 1, 2 ] # Uses 2 parallel instances
-    steps:
-      - name: checkout
-        uses: actions/checkout@v4
+      # Step 5: Cypress tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
