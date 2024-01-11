@@ -33,9 +33,12 @@ jobs:
       # Assuming the Firebase deploy action sets the preview URL in the deployment status
       # If the URL is not set automatically, you will need to adjust this step to capture it correctly
       - name: Set PR Link as Env Variable
-        run: echo "FIREBASE_DEPLOY_URL=${{ steps.deploy.outputs.deploy_url }}" >> $GITHUB_ENV
+        run: |
+          echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deploy_url }}" >> $GITHUB_ENV
+          echo "Captured URL: ${{ steps.firebase_deploy.outputs.deploy_url }}"
+    
 
-      # Step 5: Cypress tests
+    # Step 5: Cypress tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
