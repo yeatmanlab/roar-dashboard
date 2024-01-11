@@ -1,6 +1,6 @@
 <template>
   <div :id="`roar-dist-chart-${taskId}`"></div>
-  <div class="mode-select-wrapper mt-2" v-if="orgType === 'district'">
+  <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2">
     <div class="flex uppercase text-xs font-light">view by</div>
     <PvSelectButton
 v-model="facetMode" class="flex flex-row" :options="facetModes" option-label="name"

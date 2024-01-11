@@ -660,12 +660,6 @@ export const assignmentPageFetcher = async (
           );
         });
 
-      // const userDocDict = batchUserDocs.reduce((acc, user) => {
-      //   const userId = user.name.split('/user/')[1];
-      //   acc[userId] = { ...user };
-      //   return acc;
-      // }, {});
-
       // But the order of batchGet is not guaranteed, so we need to match the user
       // docs back with their assignments.
       const scoresObj = assignmentData.map((assignment) => {

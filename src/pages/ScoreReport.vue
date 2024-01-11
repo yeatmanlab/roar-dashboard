@@ -18,7 +18,8 @@
               </div>
               <div v-for="taskId of sortedTaskIds" :key="taskId" class="">
                 <div class="m-1">
-                  <DistributionChartOverview :runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
+                  <DistributionChartOverview
+:runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
                     :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
                   <div className="task-description mt-3">
                     <span class="font-bold">
@@ -81,10 +82,12 @@
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
-            <PvDropdown v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
+            <PvDropdown
+v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
               class="ml-2" />
           </div>
-          <RoarDataTable :data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
+          <RoarDataTable
+:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
             @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
         </div>
@@ -122,11 +125,13 @@
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
         <PvTabView>
-          <PvTabPanel v-for="taskId of sortedTaskIds" :key="taskId"
+          <PvTabPanel
+v-for="taskId of sortedTaskIds" :key="taskId"
             :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
-            <TaskReport v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
+            <TaskReport
+v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
               :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
-              :schoolsDict="schoolsDict" :administration-info="administrationInfo" />
+              :schools-dict="schoolsDict" :administration-info="administrationInfo" />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
