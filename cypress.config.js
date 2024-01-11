@@ -14,7 +14,7 @@ module.exports = defineConfig({
     // ]
   },
   env: {
-    baseUrl: 'https://localhost:5173',
+    baseUrl: process.env.CYPRESS_BASE_URL || 'https://localhost:5173',
     timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
