@@ -15,11 +15,13 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          browser: ${{ matrix.browser }}
           build: npm run build
           start: npm run dev
           record: true
           parallel: true # Runs test in parallel using settings above
           spec: cypress/e2e/participant/**/*  # Runs tests in this folder
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
