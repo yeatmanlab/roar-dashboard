@@ -1,6 +1,6 @@
 name: End-to-End Tests with Deployment
 
-on: [pull_request]
+on: [push, pull_request]
 
 jobs:
   build_deploy_and_test:
