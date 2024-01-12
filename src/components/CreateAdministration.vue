@@ -41,7 +41,7 @@
           </div>
         </div>
 
-        <OrgPicker @selection="selection($event)" />
+        <OrgPicker :orgs="orgsList" @selection="selection($event)" />
 
         <PvPanel class="mt-3" header="Select assessments for this administration">
           <template #icons>
@@ -130,6 +130,9 @@ import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
+import _forEach from 'lodash/forEach';
+import _find from 'lodash/find';
+import _isEqual from 'lodash/isEqual';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -137,8 +140,12 @@ import AppSpinner from '@/components/AppSpinner.vue';
 import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { getSidebarActions } from '@/router/sidebarActions';
-import { fetchDocById } from '@/helpers/query/utils';
+import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
 import { variantsFetcher } from '@/helpers/query/tasks';
+
+const props = defineProps({
+  adminId: { type: String, required: false, default: null },
+});
 
 const router = useRouter();
 const toast = useToast();
@@ -165,6 +172,97 @@ const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+//      +------------------------------------------+
+// -----| Queries for grabbing pre-existing admins |-----
+//      +------------------------------------------+
+const { data: preExistingAdminInfo } = useQuery({
+  queryKey: ['administration', props.adminId],
+  queryFn: () => fetchDocById('administrations', props.adminId),
+  keepPreviousData: true,
+  enabled: initialized.value && Boolean(props.adminId),
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+const { data: preDistricts } = useQuery({
+  queryKey: ['districts'], //TODO: add key
+  queryFn: () =>
+    fetchDocsById(
+      preExistingAdminInfo.value.districts.map((id) => {
+        return {
+          collection: 'districts',
+          docId: id,
+          select: ['name', 'schools'],
+        };
+      }),
+    ),
+  keepPreviousData: true,
+  endabled: initialized.value && _isEmpty(preExistingAdminInfo.value),
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+const { data: preSchools } = useQuery({
+  queryKey: ['schools'], //TODO: add key
+  queryFn: () =>
+    fetchDocsById(
+      preExistingAdminInfo.value.schools.map((id) => {
+        return {
+          collection: 'schools',
+          docId: id,
+          select: ['name', 'districtId', 'classes'],
+        };
+      }),
+    ),
+  keepPreviousData: true,
+  endabled: initialized.value && _isEmpty(preExistingAdminInfo.value),
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+// const { data: preClasses, isLoading: isLoadingExistingClasses } = useQuery({
+//   queryKey: ['classes'], //TODO: add key
+//   queryFn: () =>
+//     fetchDocsById(
+//       preExistingAdminInfo.value.classes.map((id) => {
+//         return {
+//           collection: 'classes',
+//           docId: id,
+//           select: ['name'],
+//         };
+//       }),
+//     ),
+//   keepPreviousData: true,
+//   endabled: initialized,
+//   staleTime: 5 * 60 * 1000, // 5 minutes
+// });
+// const { data: preGroups, isLoading: isLoadingExistingGroups } = useQuery({
+//   queryKey: ['groups'], //TODO: add key
+//   queryFn: () =>
+//     fetchDocsById(
+//       preExistingAdminInfo.value.groups.map((id) => {
+//         return {
+//           collection: 'groups',
+//           docId: id,
+//           select: ['name'],
+//         };
+//       }),
+//     ),
+//   keepPreviousData: true,
+//   enabled: initialized.value && _isEmpty(preExistingAdminInfo.value),
+//   staleTime: 5 * 60 * 1000, // 5 minutes
+// });
+// const { data: preFamilies, isLoading: isLoadingExistingFamilies } = useQuery({
+//   queryKey: ['families'], //TODO: add key
+//   queryFn: () =>
+//     fetchDocsById(
+//       preExistingAdminInfo.value.families.map((id) => {
+//         return {
+//           collection: 'families',
+//           docId: id,
+//           select: ['name'],
+//         };
+//       }),
+//     ),
+//   keepPreviousData: true,
+//   enabled: initialized.value && _isEmpty(preExistingAdminInfo.value),
+//   staleTime: 5 * 60 * 1000, // 5 minutes
+// });
 
 //      +---------------------------------+
 // -----| Form state and validation rules |-----
@@ -209,6 +307,13 @@ const selection = (selected) => {
     state[key] = value;
   }
 };
+
+const orgsList = computed(() => {
+  return {
+    districts: preDistricts.value,
+    schools: preSchools.value,
+  };
+});
 
 //      +---------------------------------+
 // -----|       Assessment Selection      |-----
@@ -313,6 +418,37 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
 });
+
+watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
+  if (adminInfo && !_isEmpty(allVariantInfo)) {
+    console.log('grabbed info!', adminInfo);
+    state.administrationName = adminInfo.name;
+    state.dates = [new Date(adminInfo.dateOpened), new Date(adminInfo.dateClosed)];
+    _forEach(adminInfo.assessments, (assessment) => {
+      const assessmentParams = assessment.params;
+      console.log('passing params', assessmentParams);
+      const found = findVariantWithParams(allVariantInfo, assessmentParams);
+      // console.log('found?', found);
+      if (found) {
+        console.log('found -> ', found);
+      }
+    });
+  } else {
+    console.log('not ready yet', adminInfo, allVariantInfo);
+  }
+  // console.log('func returned', found);
+});
+
+function findVariantWithParams(variants, params) {
+  const found = _find(variants, (variant) => {
+    const cleanParams = { ...variant.variant.params };
+    Object.keys(cleanParams).forEach((key) => cleanParams[key] === null && delete cleanParams[key]);
+    return _isEqual(params, cleanParams);
+  });
+  // TODO: implement tie breakers if found.length > 1
+  console.log('found', found);
+  return found;
+}
 </script>
 
 <style lang="scss">
