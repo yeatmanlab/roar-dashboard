@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 
 .firebase/
+cypress/downloads
 
 .env
