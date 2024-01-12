@@ -62,13 +62,13 @@ jobs:
             browser: ${{ matrix.browser }}
             build: echo "Build step already completed"
             start: echo "App already deployed to Firebase"
-            wait-on: ${{ env.FIREBASE_DEPLOY_URL }}
+            wait-on: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0]}}
             wait-on-timeout: 60
             record: true
             parallel: true # Runs test in parallel using settings above
             spec: cypress/e2e/participant/checkLegalDoc.cy.js  # Runs tests in this folder
             ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
           env:
-            CYPRESS_BASE_URL: ${{ env.FIREBASE_DEPLOY_URL }}
+            CYPRESS_BASE_URL: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
             CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
