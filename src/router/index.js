@@ -181,7 +181,7 @@ const routes = [
   {
     path: '/create-administrator',
     name: 'CreateAdministrator',
-    component: () => import(/* webpackChunkName: "CreateAdministration" */ '../components/CreateAdministrator.vue'),
+    component: () => import('../components/CreateAdministrator.vue'),
     meta: { pageTitle: 'Create an administrator account', requireAdmin: true },
   },
   {

@@ -1,4 +1,5 @@
 <template>
+
   <div class="p-card card-administration mb-1 w-full">
     <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
       <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
@@ -117,7 +118,66 @@
           </template>
         </PvColumn>
       </PvTreeTable>
+
     </div>
+    <PvTreeTable
+      v-if="showTable"
+      class="mt-3"
+      lazy
+      row-hover
+      :loading="loadingTreeTable"
+      :value="treeTableOrgs"
+      @node-expand="onExpand"
+    >
+      <PvColumn field="name" header="Name" expander style="width: min-content"></PvColumn>
+      <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
+        <template #body="{ node }">
+          <PvChart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
+        </template>
+      </PvColumn>
+      <PvColumn field="id" header="" style="width: 14rem">
+        <template #body="{ node }">
+          <div class="flex m-0">
+            <router-link
+              :to="{
+                name: 'ViewAdministration',
+                params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
+              }"
+              class="no-underline"
+            >
+              <PvButton
+                v-tooltip.top="'See completion details'"
+                class="m-0"
+                severity="secondary"
+                text
+                raised
+                label="Progress"
+                aria-label="Completion details"
+                size="small"
+              />
+            </router-link>
+            <router-link
+              :to="{
+                name: 'ScoreReport',
+                params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
+              }"
+              class="no-underline"
+            >
+              <PvButton
+                v-tooltip.top="'See Scores'"
+                class="m-0"
+                severity="secondary"
+                text
+                raised
+                label="Scores"
+                aria-label="Scores"
+                size="small"
+              />
+            </router-link>
+          </div>
+        </template>
+      </PvColumn>
+    </PvTreeTable>
   </div>
 </template>
 
@@ -244,6 +304,10 @@ const toggleTable = () => {
   enableQueries.value = true;
   showTable.value = !showTable.value;
 };
+
+const isWideScreen = computed(() => {
+  return window.innerWidth > 768;
+});
 
 const singularOrgTypes = {
   districts: 'district',
@@ -663,3 +727,4 @@ onMounted(() => {
   }
 }
 </style>
+
