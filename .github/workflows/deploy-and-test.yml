@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set PR Link as Env Variable
-        run: echo "FIREBASE_DEPLOY_URL=${{ steps.firebase-deploy.outputs.deployUrl  }}" >> $GITHUB_ENV
+        run: echo "FIREBASE_DEPLOY_URL=${{ needs.build-and-preview.outputs.deployUrl  }}" >> $GITHUB_ENV
 
   cypress-run:
     needs: [set-pr-link]
@@ -62,13 +62,13 @@ jobs:
             browser: ${{ matrix.browser }}
             build: echo "Build step already completed"
             start: echo "App already deployed to Firebase"
-            wait-on: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0]}}
+            wait-on: ${{ env.FIREBASE_DEPLOY_URL }}
             wait-on-timeout: 60
             record: true
             parallel: true # Runs test in parallel using settings above
             spec: cypress/e2e/participant/checkLegalDoc.cy.js  # Runs tests in this folder
             ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
           env:
-            CYPRESS_BASE_URL: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
+            CYPRESS_BASE_URL: ${{ env.FIREBASE_DEPLOY_URL }}
             CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
