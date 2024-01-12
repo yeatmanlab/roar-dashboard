@@ -42,6 +42,8 @@ jobs:
     steps:
       - name: Set PR Link as Env Variable
         run: echo "CYPRESS_BASE_URL=${{ needs.build-and-preview.outputs.deployUrl  }}" >> $GITHUB_ENV
+    outputs:
+        cypressBaseUrl: ${{ needs.build-and-preview.outputs.deployUrl  }}
 
   cypress-run:
     needs: [set-pr-link]
@@ -52,6 +54,8 @@ jobs:
         matrix:
           browser: [chromium, firefox, edge, electron]
           containers: [1, 2] # Uses 2 parallel instances
+    env:
+      CYPRESS_BASE_URL: ${{ needs.set-pr-link.outputs.cypressBaseUrl }}
     steps:
         - name: Checkout
           uses: actions/checkout@v4
@@ -69,6 +73,6 @@ jobs:
             spec: cypress/e2e/participant/checkLegalDoc.cy.js  # Runs tests in this folder
             ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
           env:
-#            CYPRESS_BASE_URL: ${{ env.FIREBASE_DEPLOY_URL }}
+            CYPRESS_BASE_URL: ${{ env.CYPRESS_BASE_URL }}
             CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
