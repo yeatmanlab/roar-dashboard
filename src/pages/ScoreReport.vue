@@ -15,7 +15,7 @@
               {{ _toUpper(orgInfo.name) }}
             </div>
             <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
-            <div class="chart-wrapper bg-gray-100 py-3">
+            <div class="chart-wrapper bg-gray-100 py-3 mb-2">
               <div v-if="isLoadingRunResults" class="loading-wrapper">
                 <AppSpinner style="margin: 1rem 0rem" />
                 <div class="uppercase text-sm">Loading Overview Charts</div>
@@ -788,6 +788,8 @@ const runsByTaskId = computed(() => {
     }
     const { support_level } = getSupportLevel(percentScore);
     const run = {
+      // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
+      grade: user?.data?.grade === "Kindergarten" ? 0 : parseInt(user?.data?.grade),  
       scores: {
         ...scores,
         support_level: support_level,

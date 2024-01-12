@@ -2,12 +2,8 @@
   <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2">
     <div class="flex uppercase text-xs font-light">view by</div>
     <PvSelectButton
-      v-model="facetMode"
-      class="flex flex-row"
-      :options="facetModes"
-      option-label="name"
-      @change="handleFacetModeChange"
-    />
+v-model="facetMode" class="flex flex-row" :options="facetModes" option-label="name"
+      @change="handleFacetModeChange" />
   </div>
   <div :id="`roar-dist-chart-${taskId}`"></div>
 </template>
@@ -59,7 +55,7 @@ const handleFacetModeChange = () => {
   draw();
 };
 
-const distByGrade = (taskId, runs) => {
+const distChartFacet = (taskId, runs) => {
   return {
     background: null,
     title: {
@@ -68,13 +64,15 @@ const distByGrade = (taskId, runs) => {
       anchor: 'middle',
       fontSize: 18,
     },
-    data: { values: runs.filter((run) => run.user && run.user.grade !== undefined) },
+    data: {
+      values: runs
+    },
     mark: 'bar',
     height: 50,
     width: 360,
     encoding: {
       row: {
-        field: `user.${facetMode.value.key}`,
+        field: facetMode.value.key=== 'grade' ? `grade` : `user.${facetMode.value.key}`,
         type: 'ordinal',
         title: '',
         header: {
@@ -91,7 +89,7 @@ const distByGrade = (taskId, runs) => {
           labelOrient: 'left',
           labelExpr:
             facetMode.value.name === 'Grade'
-              ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')"
+              ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
               : '',
           labelLimit: 150,
           labelSeparation: 5, // Set the spacing between lines in pixels
@@ -148,7 +146,7 @@ const distByGrade = (taskId, runs) => {
 };
 
 const draw = async () => {
-  let chartSpecDist = distByGrade(props.taskId, props.runs);
+  let chartSpecDist = distChartFacet(props.taskId, props.runs);
   await embed(`#roar-dist-chart-${props.taskId}`, chartSpecDist);
 };
 
