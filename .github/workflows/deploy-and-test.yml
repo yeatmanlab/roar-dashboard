@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set PR Link as Env Variable
-        run: FIREBASE_DEPLOY_URL=${{ steps.firebase-deploy.outputs.deployUrl  }} >> $GITHUB_ENV
+        run: FIREBASE_DEPLOY_URL=${{ steps.firebase-deploy.outputs.deployUrl  }} >> $GITHUB_ENV | echo $FIREBASE_DEPLOY_URL
 
   cypress-run:
     needs: [set-pr-link]
