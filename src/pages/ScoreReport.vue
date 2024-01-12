@@ -211,6 +211,8 @@ import _find from 'lodash/find';
 import _head from 'lodash/head';
 import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
+import _filter from 'lodash/filter';
+import _pickBy from 'lodash/pickBy';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
@@ -221,7 +223,7 @@ import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/
 import { orgFetcher } from '@/helpers/query/orgs';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { taskDisplayNames, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
+import { taskDisplayNames, excludedTasks, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
 
@@ -672,7 +674,10 @@ const tableData = computed(() => {
 
 const allTasks = computed(() => {
   if (tableData.value.length > 0) {
-    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
+    let ids = tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
+    return _filter(ids, (taskId) => {
+      return !excludedTasks.includes(taskId);
+    });
   } else return [];
 });
 
@@ -742,7 +747,9 @@ const runsByTaskId = computed(() => {
       computedScores[run.taskId] = [run];
     }
   }
-  return computedScores;
+  return _pickBy(computedScores, (scores, taskId) => {
+    return !excludedTasks.includes(taskId);
+  });
 });
 
 let unsubscribe;
