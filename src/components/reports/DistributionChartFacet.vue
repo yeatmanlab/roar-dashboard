@@ -73,10 +73,9 @@ const distByGrade = (taskId, runs) => {
     height: 50,
     width: 360,
     encoding: {
-      facet: {
+      row: {
         field: `user.${facetMode.value.key}`,
-        type: 'nominal',
-        columns: 1,
+        type: 'ordinal',
         title: '',
         header: {
           titleColor: 'navy',
@@ -98,17 +97,12 @@ const distByGrade = (taskId, runs) => {
           labelSeparation: 5, // Set the spacing between lines in pixels
         },
         spacing: 10,
-        sort: {
-          // field: 'datum.value',
-          // order: "descending"
-          order: ['K', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-        },
+        sort: 'ascending',
       },
 
       color: {
         field: 'scores.stdPercentile',
         type: 'quantitative',
-        sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         legend: null,
         scale: {
           range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
