@@ -20,8 +20,8 @@ function checkAdministrationCardTitle() {
 }
 
 function clickProgressButton() {
-  cy.get('[data-cy="button-details"]', { timeout: timeout }).click();
-  cy.get('[data-cy="button-progress"]', { timeout: timeout }).first().click();
+  cy.get('button', { timeout: timeout }).contains("Show details").click();
+  cy.get('button', { timeout: timeout }).contains("Progress").first().click();
   cy.url({ timeout: timeout }).should(
     'eq',
     `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`,

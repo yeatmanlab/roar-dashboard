@@ -20,8 +20,8 @@ function checkAdministrationCardTitle() {
 }
 
 function clickScoreButton() {
-  cy.get('[data-cy="button-details"]', {timeout: timeout}).click();
-    cy.get('[data-cy="button-scores"]', {timeout: timeout}).first().click();
+  cy.get('button', {timeout: timeout}).contains("Show details").click();
+    cy.get('button', {timeout: timeout}).contains("Scores").first().click();
     cy.url({timeout: timeout})
         .should('eq', `${baseUrl}/scores/${testAdministrationId}/district/${testDistrictId}`);
 }

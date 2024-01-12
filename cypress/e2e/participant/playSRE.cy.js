@@ -29,7 +29,7 @@ describe('Test playthrough of SRE as a participant', () => {
     playSREGame();
     // check if game completed
     cy.get('.p-dropdown-trigger', { timeout: 50000 }).should('be.visible').click();
-    cy.get('.p-dropdown-item', { timeout: 10000 }).contains('ZZZ Test Shortened SRE').should('be.visible').click();
+    cy.get('.p-dropdown-item', { timeout: 10000 }).contains('ZZZ Test Cypress Play Keypress Games').should('be.visible').click();
     cy.get('.tabview-nav-link-label').contains('ROAR-Sentence').should('have.attr', 'data-game-status', 'complete');
   });
 });
@@ -56,8 +56,6 @@ function playSREGame() {
     cy.wait(10000);
   }
 
-  cy.wait(1000);
-  cy.get('body').type('{rightarrow}');
   cy.wait(40000);
   cy.get('body').type('{rightarrow}');
   assert(cy.contains('You are halfway through'));
@@ -72,12 +70,8 @@ function playSREGame() {
     cy.wait(10000);
   }
 
-  cy.wait(1000);
-  cy.get('body').type('{rightarrow}');
   cy.wait(40000);
   cy.get('body').type('{rightarrow}{leftarrow}');
   cy.wait(1000);
   assert(cy.contains('Amazing job!'));
-  cy.wait(1000);
-  cy.get('body').type('{rightarrow}{leftarrow}');
 }
