@@ -30,19 +30,19 @@
       <!--Username / Email-->
       <section class="form-section flex lg:flex-row">
         <div class="p-input-icon-right">
-          <label for="usernameOrEmail">Username or Email <span class="required p-1">*</span></label>
+          <label for="ParentEmail">Email <span class="required p-1">*</span></label>
           <InputText
-            v-model="v$.usernameOrEmail.$model" 
-            name="usernameOrEmail"
-            :class="{ 'p-invalid': v$.usernameOrEmail.$invalid && submitted }" 
+            v-model="v$.ParentEmail.$model" 
+            name="ParentEmail"
+            :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }" 
             aria-describedby="username-or-email-error"
           />
         </div>
-        <span v-if="v$.usernameOrEmail.$error && submitted">
+        <span v-if="v$.ParentEmail.$error && submitted">
           <small class="p-error">Please enter a valid email address.</small>
         </span>
-        <small v-else-if="(v$.usernameOrEmail.$invalid && submitted) || v$.usernameOrEmail.$pending.$response" class="p-error">
-          {{ v$.usernameOrEmail.required.$message.replace("Value", "Username or Email") }}
+        <small v-else-if="(v$.ParentEmail.$invalid && submitted) || v$.ParentEmail.$pending.$response" class="p-error">
+          {{ v$.ParentEmail.required.$message.replace("Value", "Email") }}
         </small>
       </section>
       <!--Password-->
@@ -131,7 +131,7 @@ const passwordRef = computed(() => state.password);
 
 
 
-const isUsernameOrEmail = (value) => {
+const ParentEmail = (value) => {
   if (!value.includes('@')) return true;
 
   const emailRegex = /^(?!.*@.*@)[a-zA-Z0-9]+([._]?[a-zA-Z0-9]+)*(@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,7})+)?$/;
@@ -142,9 +142,9 @@ const rules = {
   // activationCode: { required },
   firstName: { required },
   lastName: { required },
-  usernameOrEmail: { 
+  ParentEmail: { 
     required, 
-    isUsernameOrEmail
+    ParentEmail
   },
   password: { 
     required,
