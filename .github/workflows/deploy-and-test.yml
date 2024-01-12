@@ -20,16 +20,20 @@ jobs:
           node-version: 'lts/*'
       - run: npm ci && npm run build
 
-      - id: firebase_deploy
+      - name: Deploy to Firebase Hosting Channel
+        id: firebase-deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
           projectId: gse-roar-admin
           target: staging
+
+      - run: echo ${{ steps.firebase-deploy.outputs.urls }}
+
     outputs:
-      deployUrl: ${{ steps.firebase_deploy.outputs.details_url }}
-      run: echo "Deployed to ${{ steps.firebase_deploy.outputs.details_url }}"
+      deployUrl: ${{ steps.firebase-deploy.outputs.urls }}
+
 
 
   set-pr-link:
@@ -38,8 +42,8 @@ jobs:
     steps:
       - name: Set PR Link as Env Variable
         run: |
-          echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deployURL }}" >> $GITHUB_ENV
-          echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployURL }}"
+          echo "FIREBASE_DEPLOY_URL=${{ steps.firebase-deploy.outputs.deployUrl  }}" >> $GITHUB_ENV
+          echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployUrl }}
 
   cypress-run:
     needs: [set-pr-link]
