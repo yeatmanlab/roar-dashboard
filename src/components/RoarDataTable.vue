@@ -256,6 +256,7 @@ Array of objects consisting of a field and header at minimum.
       the leftmost column. 
 */
 
+//add expand view
 
 const nameForVisualize =ref("Expand view"); 
 const countForVisualize = ref(2); //for starting compress
