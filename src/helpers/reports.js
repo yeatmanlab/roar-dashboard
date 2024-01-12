@@ -9,7 +9,10 @@ export const taskDisplayNames = {
   fluency: { name: 'Fluency', order: 9 },
   ExternalTask: { name: 'External Task', order: 9 },
   ExternalTest: { name: 'External Test', order: 10 },
+  cva: { name: 'Written-Vocab', order: 11 },
 };
+
+export const excludedTasks = ['cva', 'morphology'];
 
 export const supportLevelColors = {
   above: 'green',
