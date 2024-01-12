@@ -1,10 +1,8 @@
-name: Firebase deploy preview / e2e test
+name: Firebase Deploy and Cypress e2e Tests
 on:
   pull_request:
-    # re-run if new commits are added (synchronize)
     types: [opened, reopened, synchronize]
 
-# Cancels a workflow process when new commits are made
 concurrency:
   group: ci-preview-tests-${{ github.ref }}-1
   cancel-in-progress: true
@@ -19,7 +17,6 @@ jobs:
         with:
           node-version: 'lts/*'
       - run: npm ci && npm run build
-
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -28,51 +25,36 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
           projectId: gse-roar-admin
           target: staging
-
       - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
-
     outputs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
-
-
-  set-pr-link:
+  cypress-run:
     needs: [build-and-preview]
     runs-on: ubuntu-latest
-    steps:
-      - name: Set PR Link as Env Variable
-        run: echo "CYPRESS_BASE_URL=${{ needs.build-and-preview.outputs.deployUrl  }}" >> $GITHUB_ENV
-    outputs:
-        cypressBaseUrl: ${{ needs.build-and-preview.outputs.deployUrl  }}
-
-  cypress-run:
-    needs: [set-pr-link]
-    runs-on: ubuntu-22.04
     timeout-minutes: 60
     strategy:
-        fail-fast: false # https://github.com/cypress-io/github-action/issues/48
-        matrix:
-          browser: [chromium, firefox, edge, electron]
-          containers: [1, 2] # Uses 2 parallel instances
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, edge, electron]
+        containers: [1, 2]
     env:
-      CYPRESS_BASE_URL: ${{ needs.set-pr-link.outputs.cypressBaseUrl }}
+      CYPRESS_BASE_URL: ${{ needs.build-and-preview.outputs.deployUrl }}
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-        - name: Checkout
-          uses: actions/checkout@v4
-
-        - name: Cypress run
-          uses: cypress-io/github-action@v6
-          with:
-            browser: ${{ matrix.browser }}
-            build: echo "Build step already completed"
-            start: echo "App already deployed to Firebase"
-            wait-on: ${{ env.CYPRESS_BASE_URL }}
-            wait-on-timeout: 60
-            record: true
-            parallel: true # Runs test in parallel using settings above
-            spec: cypress/e2e/participant/checkLegalDoc.cy.js  # Runs tests in this folder
-            ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
-          env:
-            CYPRESS_BASE_URL: ${{ env.CYPRESS_BASE_URL }}
-            CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          browser: ${{ matrix.browser }}
+          build: echo "Build step already completed"
+          start: echo "App already deployed to Firebase"
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 60
+          record: true
+          parallel: true
+          spec: cypress/e2e/participant/checkLegalDoc.cy.js
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+          
