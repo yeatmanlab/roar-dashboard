@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_and_preview:
+  build-and-preview:
     if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
     runs-on: ubuntu-latest
     steps:
@@ -19,7 +19,9 @@ jobs:
         with:
           node-version: 'lts/*'
       - run: npm ci && npm run build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+
+      - id: firebase_deploy
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
@@ -27,9 +29,20 @@ jobs:
           target: staging
     outputs:
       deployUrl: ${{ steps.firebase_deploy.outputs.details_url }}
+      run: echo "Deployed to ${{ steps.firebase_deploy.outputs.details_url }}"
+
+
+  set-pr-link:
+    needs: [build-and-preview]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set PR Link as Env Variable
+        run: |
+          echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deployURL }}" >> $GITHUB_ENV
+          echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployURL }}"
 
   cypress-run:
-    needs: [build_and_preview]
+    needs: [build-and-preview]
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     strategy:
@@ -38,11 +51,6 @@ jobs:
           browser: [chromium, firefox, edge, electron]
           containers: [1, 2] # Uses 2 parallel instances
     steps:
-        - name: Set PR Link as Env Variable
-          run: |
-            echo "FIREBASE_DEPLOY_URL=${{ steps.firebase_deploy.outputs.deployURL }}" >> $GITHUB_ENV
-            echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployURL }}"
-
         - name: Checkout
           uses: actions/checkout@v4
 
