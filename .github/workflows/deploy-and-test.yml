@@ -29,7 +29,7 @@ jobs:
           projectId: gse-roar-admin
           target: staging
 
-      - run: echo ${{ steps.firebase-deploy.outputs.urls }}
+      - run: echo ${{ (steps.firebase-deploy.outputs.urls) }}[0]
 
     outputs:
       deployUrl: ${{ (steps.firebase-deploy.outputs.urls)[0] }}
@@ -41,9 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set PR Link as Env Variable
-        run: |
-          echo "FIREBASE_DEPLOY_URL=${{ steps.firebase-deploy.outputs.deployUrl  }}" >> $GITHUB_ENV
-          echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployUrl }}"
+        run: FIREBASE_DEPLOY_URL=${{ steps.firebase-deploy.outputs.deployUrl  }} >> $GITHUB_ENV
 
   cypress-run:
     needs: [set-pr-link]
