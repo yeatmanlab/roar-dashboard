@@ -104,13 +104,16 @@ const selectedSchool = ref(undefined);
 
 const props = defineProps({
   orgs: {
+    type: Object,
     required: false,
-    default: {
-      districts: [],
-      schools: [],
-      classes: [],
-      groups: [],
-      families: [],
+    default: () => {
+      return {
+        districts: [],
+        schools: [],
+        classes: [],
+        groups: [],
+        families: [],
+      };
     },
   },
 });
