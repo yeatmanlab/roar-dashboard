@@ -32,7 +32,7 @@ jobs:
       - run: echo ${{ steps.firebase-deploy.outputs.urls }}
 
     outputs:
-      deployUrl: ${{ steps.firebase-deploy.outputs.urls }}
+      deployUrl: ${{ (steps.firebase-deploy.outputs.urls)[0] }}
 
 
 
@@ -43,7 +43,7 @@ jobs:
       - name: Set PR Link as Env Variable
         run: |
           echo "FIREBASE_DEPLOY_URL=${{ steps.firebase-deploy.outputs.deployUrl  }}" >> $GITHUB_ENV
-          echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployUrl }}
+          echo "Captured URL: ${{ steps.firebase_deploy.outputs.deployUrl }}"
 
   cypress-run:
     needs: [set-pr-link]
