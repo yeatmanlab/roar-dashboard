@@ -12,7 +12,7 @@ export const taskDisplayNames = {
   cva: { name: 'Written-Vocab', order: 11 },
 };
 
-export const excludedTasks = ['cva', 'morph'];
+export const excludedTasks = ['cva', 'morphology'];
 
 export const supportLevelColors = {
   above: 'green',
