@@ -4,7 +4,7 @@ require('dotenv').config();
 module.exports = defineConfig({
   projectId: 'cobw62',
   e2e: {
-    baseUrl: process.env.CYPRESS_BASE_URL,
+    baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173/',
     experimentalRunAllSpecs: true,
     setupNodeEvents(on, config) {
       // implement node event listeners here
@@ -14,7 +14,7 @@ module.exports = defineConfig({
     // ]
   },
   env: {
-    baseUrl:  process.env.CYPRESS_BASE_URL,
+    baseUrl:  process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
