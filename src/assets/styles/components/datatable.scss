@@ -186,6 +186,7 @@
 }
 .p-datatable.p-datatable-gridlines .p-datatable-thead > tr > th {
   border-width: 1px 1px 1px 1px;
+   padding-left:10px
 }
 .p-datatable.p-datatable-gridlines .p-datatable-tbody > tr > td {
   border-width: 1px;
@@ -202,6 +203,8 @@
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tbody > tr + tr > td,
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tbody > tr:first-child > td {
   border-top-width: 0;
+  padding-right: 10px;
+  padding-left: 10px;
 }
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tfoot > tr > td + td {
   border-left-width: 0;
