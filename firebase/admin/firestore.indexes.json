@@ -1406,6 +1406,12 @@
     },
     {
       "collectionGroup": "administrations",
+      "fieldPath": "readOrgs",
+      "ttl": false,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "administrations",
       "fieldPath": "readOrgs.classes",
       "ttl": false,
       "indexes": [
@@ -1472,6 +1478,12 @@
     },
     {
       "collectionGroup": "assignments",
+      "fieldPath": "assigningOrgs",
+      "ttl": false,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "assignments",
       "fieldPath": "assigningOrgs.classes",
       "ttl": false,
       "indexes": [
@@ -1513,6 +1525,12 @@
           "queryScope": "COLLECTION_GROUP"
         }
       ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "fieldPath": "readOrgs",
+      "ttl": false,
+      "indexes": []
     }
   ]
 }

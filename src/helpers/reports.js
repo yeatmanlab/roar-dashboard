@@ -1,15 +1,20 @@
 export const taskDisplayNames = {
+  letter: { name: 'Letter', order: 1 },
+  pa: { name: 'Phoneme', order: 2 },
   swr: { name: 'Word', order: 3 },
   'swr-es': { name: 'Palabra', order: 4 },
-  pa: { name: 'Phoneme', order: 2 },
   sre: { name: 'Sentence', order: 5 },
-  letter: { name: 'Letter', order: 1 },
-  multichoice: { name: 'Multichoice', order: 6 },
-  mep: { name: 'MEP', order: 7 },
+  morphology: { name: 'Morphology', order: 6 },
+  cva: { name: 'Written-Vocab', order: 7 },
+  multichoice: { name: 'Multichoice', order: 8 },
   fluency: { name: 'Fluency', order: 9 },
-  ExternalTask: { name: 'External Task', order: 9 },
-  ExternalTest: { name: 'External Test', order: 10 },
+  mep: { name: 'MEP', order: 10 },
+  'mep-pseudo': { name: 'MEP-Pseudo', order: 11 },
+  ExternalTask: { name: 'External Task', order: 12 },
+  ExternalTest: { name: 'External Test', order: 13 },
 };
+
+export const excludedTasks = ['cva', 'morphology'];
 
 export const supportLevelColors = {
   above: 'green',
