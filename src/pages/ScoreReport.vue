@@ -563,11 +563,20 @@ function getScoreKeys(row, grade) {
 const refreshing = ref(false);
 
 
-const allTasks = computed(() => {
-  if (tableData.value.length > 0) {
-    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
-  } else return [];
-});
+// const allTasks = computed(() => {
+//   if (tableData.value.length > 0) {
+//     return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
+//   } else return [];
+// });
+
+// const allTasks = computed(() => {
+//   if (tableData.value.length > 0) {
+//     let ids = tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
+//     return _filter(ids, (taskId) => {
+//       return !excludedTasks.includes(taskId);
+//     });
+//   } else return [];
+// });
 
 // const emptyTagColorMap = {
 //   above: 'green',
