@@ -257,6 +257,7 @@ Array of objects consisting of a field and header at minimum.
 */
 
 //add expand view
+const compressedRows = ref(false);
 
 const nameForVisualize =ref("Expand view"); 
 const countForVisualize = ref(0); //for starting compress
@@ -329,7 +330,7 @@ const exportCSV = (exportSelected) => {
   emit('export-all');
 };
 
-const compressedRows = ref(false);
+
 
 
 const padding='1rem 1.5rem'
@@ -450,21 +451,6 @@ const computedData = computed(() => {
   });
   return data;
 });
-
-// let compressedRows = ref(false);
-
-// // Method to toggle row height
-// const toggleColumnWidth = () => {
-//   const columns = document.querySelectorAll('.p-datatable-scrollable-body td[role="cell"]');
-//   columns.forEach(column => {
-//     if (compressedRows.value) {
-//       column.style.width = '50px'; // Adjust the width as needed
-//     } else {
-//       column.style.width = ''; // Reset the width
-//     }
-//   });
-// };
-
 // Generate list of options given a column
 function getUniqueOptions(column) {
   const field = _get(column, 'field');
