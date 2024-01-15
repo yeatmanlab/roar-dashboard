@@ -46,6 +46,7 @@ import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils'
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { taskDisplayNames } from '@/helpers/reports.js';
 
 const authStore = useAuthStore();
 
@@ -171,11 +172,11 @@ const exportSelected = (selectedRows) => {
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
       if (assessment.completedOn !== undefined) {
-        tableRow[displayNames[taskId]?.name ?? taskId] = 'Completed';
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Completed';
       } else if (assessment.startedOn !== undefined) {
-        tableRow[displayNames[taskId]?.name ?? taskId] = 'Started';
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Started';
       } else {
-        tableRow[displayNames[taskId]?.name ?? taskId] = 'Assigned';
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Assigned';
       }
     }
     return tableRow;
@@ -208,11 +209,11 @@ const exportAll = async () => {
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
       if (assessment.completedOn !== undefined) {
-        tableRow[displayNames[taskId]?.name ?? taskId] = 'Completed';
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Completed';
       } else if (assessment.startedOn !== undefined) {
-        tableRow[displayNames[taskId]?.name ?? taskId] = 'Started';
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Started';
       } else {
-        tableRow[displayNames[taskId]?.name ?? taskId] = 'Assigned';
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Assigned';
       }
     }
     return tableRow;
@@ -221,19 +222,6 @@ const exportAll = async () => {
     computedExportData,
     `roar-progress-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`,
   );
-};
-
-const displayNames = {
-  swr: { name: 'Word', order: 3 },
-  'swr-es': { name: 'Palabra', order: 4 },
-  pa: { name: 'Phoneme', order: 2 },
-  sre: { name: 'Sentence', order: 5 },
-  letter: { name: 'Letter', order: 1 },
-  multichoice: { name: 'Multichoice', order: 6 },
-  anb: { name: 'ANB', order: 7 },
-  mep: { name: 'MEP', order: 8 },
-  'mep-pseudo': { name: 'MEP-Pseudo', order: 9 },
-  morphology: { name: 'Morphology', order: 10 },
 };
 
 const columns = computed(() => {
@@ -256,8 +244,8 @@ const columns = computed(() => {
 
   if (tableData.value.length > 0) {
     const sortedTasks = Object.keys(tableData.value[0].status).sort((p1, p2) => {
-      if (Object.keys(displayNames).includes(p1) && Object.keys(displayNames).includes(p2)) {
-        return displayNames[p1].order - displayNames[p2].order;
+      if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
+        return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
       } else {
         return -1;
       }
@@ -265,7 +253,7 @@ const columns = computed(() => {
     for (const taskId of sortedTasks) {
       tableColumns.push({
         field: `status.${taskId}.value`,
-        header: displayNames[taskId]?.name ?? taskId,
+        header: taskDisplayNames[taskId]?.name ?? taskId,
         dataType: 'text',
         tag: true,
         severityField: `status.${taskId}.severity`,
