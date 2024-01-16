@@ -44,6 +44,7 @@ module.exports = defineConfig({
     testGroupName: 'zzzTestGroup',
     testGroupInitials: 'TG',
     testPartnerAdministrationName: 'zzzCypressTestAdministration',
+    testPartnerAdministrationId: "pdOfQuakqN4re3cI5mr5",
     testPartnerDistrictName: 'zzzCypressTestDistrict',
     testPartnerDistrictInitials: 'CTD',
     testPartnerDistrictNcesId: '123456789',

@@ -15,18 +15,21 @@ function checkUrl() {
   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
 }
 
-function checkAdministrationCardTitle() {
-  cy.get('[data-cy="h2-card-admin-title"]', { timeout: timeout }).should('contain', testPartnerAdministrationName);
+function clickProgressButton() {
+    cy.get('button', {timeout: timeout}).contains("Progress").first().click();
+    cy.url({timeout: timeout})
+        .should('eq', `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`);
 }
 
-function clickProgressButton() {
-  cy.get('button', { timeout: timeout }).contains("Show details").click();
-  cy.get('button', { timeout: timeout }).contains("Progress").first().click();
-  cy.url({ timeout: timeout }).should(
-    'eq',
-    `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`,
-  );
+function getAdministrationCard() {
+  cy.get('[data-cy="h2-card-admin-title"]', {timeout: timeout})
+    .filter((index, element) => {
+      return Cypress.$(element).text().includes(testPartnerAdministrationName);
+    })
+    .should('have.length', 1)
+    .find('button', {timeout: timeout}).contains("Show details").click()
 }
+
 
 function checkProgressTags(headers) {
   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
@@ -51,10 +54,10 @@ function checkProgressTags(headers) {
 
 describe('The partner admin can view progress reports for a given administration.', () => {
   it('Selects an administration and views its progress report', () => {
-    checkUrl();
-    checkAdministrationCardTitle()
-    clickProgressButton();
+    checkUrl()
+    getAdministrationCard()
+    clickProgressButton()
     cy.checkUserList(testUserList)
-    checkProgressTags(testAssignments);
+    checkProgressTags(testAssignments)
   });
 });
