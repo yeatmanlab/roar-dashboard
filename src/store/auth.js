@@ -1,19 +1,19 @@
-import { defineStore, acceptHMRUpdate } from 'pinia';
-import { onAuthStateChanged } from 'firebase/auth';
-import { initNewFirekit } from '../firebaseInit';
-import { useGameStore } from '@/store/game';
+import { defineStore, acceptHMRUpdate } from "pinia";
+import { onAuthStateChanged } from "firebase/auth";
+import { initNewFirekit } from "../firebaseInit";
+import { useGameStore } from "@/store/game";
 
-import _findIndex from 'lodash/findIndex';
-import _assign from 'lodash/assign';
-import _get from 'lodash/get';
-import _isEmpty from 'lodash/isEmpty';
-import _set from 'lodash/set';
-import _union from 'lodash/union';
+import _findIndex from "lodash/findIndex";
+import _assign from "lodash/assign";
+import _get from "lodash/get";
+import _isEmpty from "lodash/isEmpty";
+import _set from "lodash/set";
+import _union from "lodash/union";
 
 export const useAuthStore = () => {
-  return defineStore('authStore', {
+  return defineStore("authStore", {
     // id is required so that Pinia can connect the store to the devtools
-    id: 'authStore',
+    id: "authStore",
     state: () => {
       return {
         spinner: false,
@@ -46,21 +46,32 @@ export const useAuthStore = () => {
         return Boolean(state.firebaseUser.appFirebaseUser);
       },
       isAuthenticated: (state) => {
-        return Boolean(state.firebaseUser.adminFirebaseUser) && Boolean(state.firebaseUser.appFirebaseUser);
+        return (
+          Boolean(state.firebaseUser.adminFirebaseUser) &&
+          Boolean(state.firebaseUser.appFirebaseUser)
+        );
       },
       isFirekitInit: (state) => {
         return state.roarfirekit?.initialized;
       },
       isUserAdmin: (state) => {
         if (Boolean(state.userClaims?.claims?.super_admin)) return true;
-        if (_isEmpty(_union(...Object.values(state.userClaims?.claims?.minimalAdminOrgs ?? {})))) return false;
+        if (
+          _isEmpty(
+            _union(
+              ...Object.values(state.userClaims?.claims?.minimalAdminOrgs ?? {})
+            )
+          )
+        )
+          return false;
         return true;
       },
-      isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
+      isUserSuperAdmin: (state) =>
+        Boolean(state.userClaims?.claims?.super_admin),
     },
     actions: {
       async completeAssessment(adminId, taskId) {
-        console.log('inside authStore func');
+        console.log("inside authStore func");
         await this.roarfirekit.completeAssessment(adminId, taskId);
         this.assignmentQueryKeyIndex += 1;
       },
@@ -93,60 +104,72 @@ export const useAuthStore = () => {
         this.roarfirekit.updateConsentStatus(docName, consentVersion);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
-        return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
+        return this.roarfirekit.createStudentWithEmailPassword(
+          email,
+          password,
+          userData
+        );
       },
       async logInWithEmailAndPassword({ email, password }) {
         if (this.isFirekitInit) {
-          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {});
+          return this.roarfirekit
+            .logInWithEmailAndPassword({ email, password })
+            .then(() => {});
         }
       },
       async initiateLoginWithEmailLink({ email }) {
         if (this.isFirekitInit) {
           const redirectUrl = `${window.location.origin}/auth-email-link`;
-          return this.roarfirekit.initiateLoginWithEmailLink({ email, redirectUrl }).then(() => {
-            window.localStorage.setItem('emailForSignIn', email);
-          });
+          return this.roarfirekit
+            .initiateLoginWithEmailLink({ email, redirectUrl })
+            .then(() => {
+              window.localStorage.setItem("emailForSignIn", email);
+            });
         }
       },
       async signInWithEmailLink({ email, emailLink }) {
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithEmailLink({ email, emailLink }).then(() => {
-            window.localStorage.removeItem('emailForSignIn');
-          });
+          return this.roarfirekit
+            .signInWithEmailLink({ email, emailLink })
+            .then(() => {
+              window.localStorage.removeItem("emailForSignIn");
+            });
         }
       },
       async signInWithGooglePopup() {
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('google');
+          return this.roarfirekit.signInWithPopup("google");
         }
       },
       async signInWithCleverPopup() {
         this.authFromClever = true;
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('clever');
+          return this.roarfirekit.signInWithPopup("clever");
         }
       },
       async signInWithGoogleRedirect() {
-        return this.roarfirekit.initiateRedirect('google');
+        return this.roarfirekit.initiateRedirect("google");
       },
       async signInWithCleverRedirect() {
         this.authFromClever = true;
-        return this.roarfirekit.initiateRedirect('clever');
+        return this.roarfirekit.initiateRedirect("clever");
       },
       async initStateFromRedirect() {
         this.spinner = true;
         const enableCookiesCallback = () => {
-          router.replace({ name: 'EnableCookies' });
+          router.replace({ name: "EnableCookies" });
         };
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
-            // If the result is null, then no redirect operation was called.
-            if (result !== null) {
-              this.spinner = true;
-            } else {
-              this.spinner = false;
-            }
-          });
+          return this.roarfirekit
+            .signInFromRedirectResult(enableCookiesCallback)
+            .then((result) => {
+              // If the result is null, then no redirect operation was called.
+              if (result !== null) {
+                this.spinner = true;
+              } else {
+                this.spinner = false;
+              }
+            });
         }
       },
       async signOut() {
@@ -159,11 +182,24 @@ export const useAuthStore = () => {
             gameStore.selectedAdmin = undefined;
           });
         } else {
-          console.log('Cant log out while not logged in');
+          console.log("Cant log out while not logged in");
         }
       },
       async syncCleverOrgs() {
         return this.roarfirekit.syncCleverOrgs(false);
+      },
+      async createNewFamily(
+        careTakerEmail,
+        careTakerPassword,
+        careTakerData,
+        students
+      ) {
+        return this.roarfirekit.createNewFamily(
+          careTakerEmail,
+          careTakerPassword,
+          careTakerData,
+          students
+        );
       },
       // Used for requesting access when user doesn't have access to page
       // TODO: punt- thinking about moving to a ticket system instead of this solution.
