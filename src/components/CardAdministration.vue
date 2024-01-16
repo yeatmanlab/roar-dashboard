@@ -472,7 +472,7 @@ const setDoughnutChartData = () => {
         data: [completed, started, assigned],
         backgroundColor: [
           docStyle.getPropertyValue('--bright-green'),
-          docStyle.getPropertyValue('--yellow-100'),
+          docStyle.getPropertyValue('--very-bright-yellow'),
           docStyle.getPropertyValue('--surface-d'),
         ],
         // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
@@ -534,7 +534,7 @@ const setBarChartData = (orgId) => {
       {
         type: 'bar',
         label: 'Started',
-        backgroundColor: documentStyle.getPropertyValue('--yellow-100'),
+        backgroundColor: documentStyle.getPropertyValue('--very-bright-yellow'),
         data: [started],
         borderWidth: borderWidth,
         borderSkipped: false,

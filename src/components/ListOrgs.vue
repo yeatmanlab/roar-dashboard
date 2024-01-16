@@ -67,7 +67,7 @@
           </div>
           <div v-else>
             <AppSpinner/>
-            <p class="align to center">Still Loading Organization data</p> 
+            <p class="text-center">Still Loading Organization data</p> 
           </div>
           </PvTabPanel>
         </PvTabView>

@@ -511,7 +511,10 @@ button.p-button.p-component.softer {
   color: black;
 }
 button.p-column-filter-menu-button.p-link, g{
+  background: var(--primary-color);
   color: white;
+  /* align-items: flex-start; */
+  /* justify-content: left */
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
@@ -565,7 +568,10 @@ button.p-column-filter-menu-button.p-link:hover {
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
 }
-
+.p-column-filter-menu {
+    display: inline-flex;
+    margin-left: 10px;
+}
 
 </style>
 
