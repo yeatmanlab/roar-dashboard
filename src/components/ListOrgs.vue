@@ -49,20 +49,26 @@
                 </span>
               </div>
             </div>
-            <RoarDataTable
-              v-if="tableData"
-              :key="tableKey"
-              lazy
-              :columns="tableColumns"
-              :data="tableData"
-              :page-limit="pageLimit"
-              :total-records="totalRecords"
-              :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
-              @page="onPage($event)"
-              @sort="onSort($event)"
-              @export-all="exportAll"
-            />
-            <AppSpinner v-else />
+            <div v-if="orgData?.length ?? 0 > 0">
+              <RoarDataTable
+                v-if="tableData"
+                :key="tableKey"
+                lazy
+                :columns="tableColumns"
+                :data="tableData"
+                :page-limit="pageLimit"
+                :total-records="totalRecords"
+                :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
+                @page="onPage($event)"
+                @sort="onSort($event)"
+                @export-all="exportAll"
+              />
+              <AppSpinner v-else />
+          </div>
+          <div v-else>
+            <AppSpinner/>
+            <p class="align to center">Still Loading Organization data</p> 
+          </div>
           </PvTabPanel>
         </PvTabView>
         <AppSpinner v-else />
