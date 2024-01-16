@@ -133,6 +133,8 @@ import _uniqBy from 'lodash/uniqBy';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
 import _isEqual from 'lodash/isEqual';
+// import _pull from 'lodash/pull';
+import _uniq from 'lodash/uniq';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -179,8 +181,8 @@ const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
 const { data: preExistingAdminInfo } = useQuery({
   queryKey: ['administration', props.adminId],
   queryFn: () => fetchDocById('administrations', props.adminId),
-  keepPreviousData: true,
-  enabled: initialized.value && Boolean(props.adminId),
+  keepPreviousData: false,
+  enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 const { data: preDistricts } = useQuery({
@@ -191,14 +193,16 @@ const { data: preDistricts } = useQuery({
         return {
           collection: 'districts',
           docId: id,
-          select: ['name', 'schools'],
         };
       }),
     ),
   keepPreviousData: true,
-  endabled: initialized.value && _isEmpty(preExistingAdminInfo.value),
+  enabled: initialized.value && !_isEmpty(preExistingAdminInfo.value),
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+// const schoolsToGrab = computed(() => {});
+
 const { data: preSchools } = useQuery({
   queryKey: ['schools'], //TODO: add key
   queryFn: () =>
@@ -212,7 +216,7 @@ const { data: preSchools } = useQuery({
       }),
     ),
   keepPreviousData: true,
-  endabled: initialized.value && _isEmpty(preExistingAdminInfo.value),
+  enabled: initialized.value && !_isEmpty(preExistingAdminInfo.value),
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 // const { data: preClasses, isLoading: isLoadingExistingClasses } = useQuery({
@@ -328,7 +332,7 @@ const toggle = (event, id) => {
   paramPanelRefs[id].value.toggle(event);
 };
 
-const assessments = ref([[], []]);
+let assessments = ref([[], []]);
 
 const backupImage = '/src/assets/swr-icon.jpeg';
 
@@ -431,6 +435,9 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
       // console.log('found?', found);
       if (found) {
         console.log('found -> ', found);
+        // _pull(assessments.value[0], found);
+        assessments.value[1].push(found);
+        assessments.value[1] = _uniq(assessments.value[1]);
       }
     });
   } else {
