@@ -5,6 +5,7 @@ let appConfig;
 let adminConfig;
 
 const isEmulated = import.meta.env.VITE_FIREBASE_EMULATOR === 'true';
+const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
 
 if (isEmulated) {
   console.log('Using firebase emulators in development mode');
@@ -30,9 +31,7 @@ if (isEmulated) {
 } else {
   appConfig = {
     apiKey: 'AIzaSyDw0TnTXbvRyoVo5_oa_muhXk9q7783k_g',
-    authDomain: 'roar.education',
-    // authDomain: "gse-roar-assessment.firebaseapp.com",
-    // authDomain: "localhost:5173",
+    authDomain: isStaging ? 'roar-staging.web.app' : 'roar.education',
     projectId: 'gse-roar-assessment',
     storageBucket: 'gse-roar-assessment.appspot.com',
     messagingSenderId: '757277423033',
@@ -41,9 +40,7 @@ if (isEmulated) {
 
   adminConfig = {
     apiKey: 'AIzaSyBz0CTdyfgNXr7VJqcYOPlG609XDs97Tn8',
-    authDomain: 'roar.education',
-    // authDomain: "gse-roar-admin.firebaseapp.com",
-    // authDomain: "localhost:5173",
+    authDomain: isStaging ? 'roar-staging.web.app' : 'roar.education',
     projectId: 'gse-roar-admin',
     storageBucket: 'gse-roar-admin.appspot.com',
     messagingSenderId: '1062489366521',
