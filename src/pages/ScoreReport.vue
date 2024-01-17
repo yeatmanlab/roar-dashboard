@@ -17,7 +17,7 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div class="chart-wrapper">
+            <div v-if="isSuperAdmin" class="chart-wrapper">
               <div v-for="taskId of Object.keys(runsByTaskId)" :key="taskId" class="">
                 <DistributionChartOverview
                   :runs="runsByTaskId[taskId]"
@@ -135,7 +135,7 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
-        <PvTabView>
+        <PvTabView v-if="isSuperAdmin">
           <PvTabPanel
             v-for="taskId of Object.keys(runsByTaskId)"
             :key="taskId"
@@ -154,6 +154,7 @@
             />
           </PvTabPanel>
         </PvTabView>
+
         <div class="bg-gray-100 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
