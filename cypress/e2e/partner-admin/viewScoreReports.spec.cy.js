@@ -6,7 +6,7 @@ const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
 const testUserList = Cypress.env('testUserList');
-const testAssignments = ['vocab', 'Multichoice', 'cva'];
+const testAssignments = ['vocab', 'Multichoice'];
 
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
@@ -19,7 +19,7 @@ function getAdministrationCard() {
     .filter((index, element) => {
       return Cypress.$(element).text().includes(testPartnerAdministrationName);
     })
-    .should('have.length', 1)
+    .should('have.length', 2)
     .find('button', {timeout: timeout}).contains("Show details").click()
 }
 

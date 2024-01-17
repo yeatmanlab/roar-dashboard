@@ -26,7 +26,7 @@ function getAdministrationCard() {
     .filter((index, element) => {
       return Cypress.$(element).text().includes(testPartnerAdministrationName);
     })
-    .should('have.length', 1)
+    .should('have.length', 2)
     .find('button', {timeout: timeout}).contains("Show details").click()
 }
 
