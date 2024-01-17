@@ -189,7 +189,7 @@
           <p>
             This score report has provided a snapshot of your student's reading performance at the time of administration. By providing classifications for 
             students based on national norms for scoring, you are able to see how your student(s) can benefit from varying levels of support. 
-            To read more about what to do to support your student,<a :href=NextSteps target="_blank">read more.</a>
+            To read more about what to do to support your student, <a :href=NextSteps class="hover:text-red-700" target="_blank">read more.</a>
           </p>
         </div>
       </div>
