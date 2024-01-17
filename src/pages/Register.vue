@@ -149,7 +149,7 @@ watch(
               middle: student.middleName,
               last: student.lastName,
             },
-            activationCode: activationCode,
+            activationCode: student.activationCode,
             grade: student.grade,
             dob: student.dob,
             gender: student.gender,
