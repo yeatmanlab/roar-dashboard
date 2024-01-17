@@ -1,4 +1,4 @@
-name: Firebase Deploy and Cypress e2e Tests
+name: Firebase Deploy to Staging and Cypress e2e Tests
 on:
   pull_request:
     types: [opened, reopened, synchronize]
