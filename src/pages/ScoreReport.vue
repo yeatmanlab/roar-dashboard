@@ -32,7 +32,7 @@
           </div>
         </div>
         <!-- Header blurbs about tasks -->
-        <div class="py-5 px-3 mb-2 bg-gray-200">
+        <div class="py-5 px-3 mb-2 bg-gray-100">
           <div class="font-bold text-2xl">IN THIS REPORT...</div>
           <span class="text-sm"
             >You will receive a breakdown of your classroom's ROAR scores across each of the domains tested.
@@ -154,7 +154,7 @@
             />
           </PvTabPanel>
         </PvTabView>
-        <div class="bg-gray-200 px-4 py-2 mt-4">
+        <div class="bg-gray-100 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -181,7 +181,7 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div class="bg-gray-200 px-4 py-2">
+        <div class="bg-gray-100 px-4 py-2">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
