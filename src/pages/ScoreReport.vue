@@ -15,28 +15,25 @@
               {{ _toUpper(orgInfo.name) }}
             </div>
             <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
-            <div class="chart-wrapper bg-gray-100 py-3 mb-2">
-              <div v-if="isLoadingRunResults" class="loading-wrapper">
-                <AppSpinner style="margin: 1rem 0rem" />
-                <div class="uppercase text-sm">Loading Overview Charts</div>
-              </div>
-              <div v-for="taskId of sortedTaskIds" :key="taskId" class="">
-                <div class="distribution-overview-wrapper">
-                  <DistributionChartOverview
-                    :runs="runsByTaskId[taskId]"
-                    :initialized="initialized"
-                    :task-id="taskId"
-                    :org-type="props.orgType"
-                    :org-id="props.orgId"
-                    :administration-id="props.administrationId"
-                  />
-                  <div className="task-description mt-3">
-                    <span class="font-bold">
-                      {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
-                    </span>
-                    <span class="font-light">
-                      {{ descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : '' }}
-                    </span>
+            <div v-if="isLoadingRunResults" class="loading-wrapper">
+              <AppSpinner style="margin: 1rem 0rem" />
+              <div class="uppercase text-sm">Loading Overview Charts</div>
+            </div>
+            <div class="overview-wrapper bg-gray-100 py-3 mb-2">
+              <div class="chart-wrapper">
+                <div v-for="taskId of sortedTaskIds" :key="taskId" class="">
+                  <div class="distribution-overview-wrapper">
+                    <DistributionChartOverview
+:runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
+                      :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+                    <div className="task-description mt-3">
+                      <span class="font-bold">
+                        {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
+                      </span>
+                      <span class="font-light">
+                        {{ descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : '' }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -107,8 +104,7 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span
-            >The filters applied have no matching scores.
+          <span>The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
@@ -116,26 +112,13 @@
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
+v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
+              class="ml-2" />
           </div>
           <RoarDataTable
-            :data="tableData"
-            :columns="columns"
-            :total-records="scoresCount"
-            lazy
-            :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
-            @page="onPage($event)"
-            @sort="onSort($event)"
-            @filter="onFilter($event)"
-            @export-all="exportAll"
-            @export-selected="exportSelected"
-          />
+:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
+            @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">
@@ -171,22 +154,12 @@
         </div>
         <PvTabView>
           <PvTabPanel
-            v-for="taskId of sortedTaskIds"
-            :key="taskId"
-            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
-          >
+v-for="taskId of sortedTaskIds" :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
             <TaskReport
-              v-if="taskId"
-              :task-id="taskId"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]"
-              :org-type="orgType"
-              :org-id="orgId"
-              :org-info="orgInfo"
-              :schools-dict="schoolsDict"
-              :administration-info="administrationInfo"
-            />
+v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
+              :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
+              :schools-dict="schoolsDict" :administration-info="administrationInfo" />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
@@ -794,7 +767,7 @@ const runsByTaskId = computed(() => {
     const { support_level } = getSupportLevel(percentScore);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
-      grade: user?.data?.grade === "Kindergarten" ? 0 : parseInt(user?.data?.grade),  
+      grade: user?.data?.grade === "Kindergarten" ? 0 : parseInt(user?.data?.grade),
       scores: {
         ...scores,
         support_level: support_level,
@@ -844,6 +817,12 @@ onMounted(async () => {
 </script>
 
 <style lang="scss">
+.overview-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .chart-wrapper {
   display: flex;
   width: 100%;
