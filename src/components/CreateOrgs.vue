@@ -174,8 +174,7 @@
               :label="`Create ${orgTypeLabel}`"
               :disabled="orgTypeLabel === 'Org'"
               data-cy="button-create-org"
-              @click="submit"
-            data-cy="button-create-org"/>
+            @click="submit"/>
           </div>
         </div>
       </PvPanel>

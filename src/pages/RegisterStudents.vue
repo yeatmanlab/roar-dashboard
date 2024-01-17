@@ -92,7 +92,6 @@
             :disabled="activeSubmit"
             data-cy="button-start-registration"
             @click="submitStudents"
-            data-cy="button-start-registration"
           />
         </div>
         <!-- Datatable of error students -->

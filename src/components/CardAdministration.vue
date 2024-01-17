@@ -117,8 +117,7 @@
                   label="Scores"
                   aria-label="Scores"
                   size="small"
-                  data-cy="button-scores"
-              data-cy="button-scores"/>
+                  data-cy="button-scores"/>
             </router-link>
           </div>
         </template>
