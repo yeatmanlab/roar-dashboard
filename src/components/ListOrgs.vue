@@ -17,7 +17,7 @@
             <div class="grid column-gap-3 mt-2">
               <div
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
-                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
+                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3 ml-2"
               >
                 <span class="p-float-label">
                   <PvDropdown
