@@ -189,7 +189,7 @@
           <p>
             This score report has provided a snapshot of your student's reading performance at the time of administration. By providing classifications for 
             students based on national norms for scoring, you are able to see how your student(s) can benefit from varying levels of support. 
-            To read more about what to do to support your student,<a href="../assets/" target="_blank">read more.</a>
+            To read more about what to do to support your student,<a :href=NextSteps target="_blank">read more.</a>
           </p>
         </div>
       </div>
@@ -224,6 +224,7 @@ import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, excludedTasks, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
+import NextSteps from '@/assets/NextSteps.pdf';
 
 const authStore = useAuthStore();
 
