@@ -333,7 +333,7 @@
     </form>
     <div class="form-section-button2">
       <button @click="addStudent()" class="p-button p-component">
-        Add a Student
+        Add another student
       </button>
     </div>
     <section class="form-submit">
@@ -601,6 +601,9 @@ const languageOptions = ref([...languages]);
   align-items: center;
   justify-content: center;
   display: flex;
+  background-color: var(--surface-300);
+  border: var(--surface-300);
+  color: black;
 }
 
 .required {
@@ -614,8 +617,8 @@ const languageOptions = ref([...languages]);
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   display: flex;
-  background-color: #e5e5e5;
-  color: black;
+  background-color: var(--primary-color);
+  color: white;
   border: none;
   width: 11.75rem;
 }
@@ -640,14 +643,25 @@ const languageOptions = ref([...languages]);
 }
 .form-section-button2 {
   display: flex;
-  align-items: center;
-  justify-content: left;
-  padding-left: 20px;
-  margin-left: 10px;
+  width: 90%;
+  justify-content: right;
+  margin-left: 20px;
 }
 .form-section-button2 .p-button {
-  width: 50%;
+  width: 40%;
+    margin-right: 0;
+    justify-content: center;
+    background: var(--surface-300);
+    border: var(--surface-300);
+    color: black;
 }
+
+.form-section-button2 .p-button:hover, .p-fluid .p-button:hover{
+  background-color: var(--primary-color);
+  color: white;
+  border: var(--primary-color);
+}
+
 @media screen and (max-width: 580px) {
   section {
     flex-direction: column !important;

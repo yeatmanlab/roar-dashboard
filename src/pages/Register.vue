@@ -13,7 +13,7 @@
               <h1 align="center">Register for ROAR</h1>
               <p align="center">Enter your information to create an account.</p>
             </div>
-            <Register @submit="handleParentSubmit($event)" />
+            <Register @submit="handleParentSubmit($event)"/>
           </router-view>
         </div>
         <div v-else="activeIndex === 1">
@@ -37,8 +37,8 @@
       </div>
     </section>
 
-    <button @click="prevStep">Previous</button>
-    <button @click="nextStep">Next</button>
+    <!-- <button @click="prevStep">Previous</button>
+    <button @click="nextStep">Next</button> -->
   </div>
 </template>
 
@@ -81,6 +81,7 @@ function nextStep() {
 async function handleParentSubmit(data) {
   console.log("Parent data: ", data);
   parentInfo.value = data;
+  activeIndex.value=1;
 
   // const SendParentObject = {
   //   email: data.usernameOrEmail,
