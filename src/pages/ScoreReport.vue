@@ -850,6 +850,7 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   justify-content: space-around;
+  padding: 50px;
 }
 
 .task-description {
@@ -954,6 +955,14 @@ onMounted(async () => {
   span {
     display: flex;
     align-items: center;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .legend-container{
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 }
 </style>
