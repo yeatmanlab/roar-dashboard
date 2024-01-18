@@ -7,10 +7,10 @@
           <p class="mt-1 text-md font-light">
             {{ tasksInfoById[taskId]?.desc }}
           </p>
-          <div v-for="definition of tasksInfoById[taskId]?.definitions" :key="definition.id" class="my-2">
+          <!-- <div v-for="definition of tasksInfoById[taskId]?.definitions" :key="definition.id" class="my-2">
             <div class="uppercase text-lg font-bold mb-2">{{ definition?.header }}</div>
             <div class="text-md font-light">{{ definition?.desc }}</div>
-          </div>
+          </div> -->
         </div>
       </AccordionTab>
     </Accordion>
@@ -110,7 +110,7 @@ let tasksInfoById = {
     color: '#E97A49',
     header: 'ROAR-WORD',
     subheader: 'Single Word Recognition',
-    desc: "The ROAR - Single Word Recognition test evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support.",
+    desc: "ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between 100-900 and can be viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -126,7 +126,7 @@ let tasksInfoById = {
     header: 'ROAR-PHONEME',
     color: '#52627E',
     subheader: 'Phonological Awareness',
-    desc: "ROAR - Phonological Awareness assesses a student's mastery of phonological awareness through elision and sound matching tasks. Research indicates that phonological awareness, as a foundational pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading abilities, students may struggle to catch up in overall reading proficiency.",
+    desc: "ROAR - Phoneme assesses a student's mastery of phonological awareness through elision and sound matching tasks. Research indicates that phonological awareness, as a foundational pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading abilities, students may struggle to catch up in overall reading proficiency. The student's score will range between 0-57 and can be viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'What Does Elision Mean?',
@@ -142,7 +142,7 @@ let tasksInfoById = {
     header: 'ROAR-SENTENCE',
     color: '#92974C',
     subheader: 'SENTENCE READING EFFICIENCY',
-    desc: "ROAR - Sentence Reading Efficiency examines silent reading fluency and comprehension for individual sentences. To become fluent readers, students need to accurately decode words and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort.",
+    desc: "ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort. The student's score will range between 0-130 and can be viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'WHAT IS FLUENCY?',

@@ -19,7 +19,7 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div class="overview-wrapper bg-gray-100 py-3 mb-2">
+            <div v-if="isSuperAdmin" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
@@ -152,7 +152,7 @@ v-model="viewMode" :options="viewOptions" option-label="label" option-value="val
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
-        <PvTabView>
+        <PvTabView v-if="isSuperAdmin">
           <PvTabPanel
 v-for="taskId of sortedTaskIds" :key="taskId"
             :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
@@ -162,6 +162,56 @@ v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="a
               :schools-dict="schoolsDict" :administration-info="administrationInfo" />
           </PvTabPanel>
         </PvTabView>
+        <div v-else>
+          <!-- In depth breakdown of each task -->
+          <div v-if="allTasks.includes('letter')" class="task-card">
+            <div class="task-title">ROAR-LETTER</div>
+            <span style="text-transform: uppercase">Letter Names and Letter-Sound Matching</span>
+            <p class="task-description">
+              ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names
+              supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names.
+              Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict
+              success in learning to read. Learning the connection between letters and the sounds they represent is
+              fundamental for learning to decode and spell words. This assessment provides educators with valuable
+              insights to customize instruction and address any gaps in these foundational skills.
+            </p>
+          </div>
+          <div v-if="allTasks.includes('pa')" class="task-card">
+            <div class="task-title">ROAR-PHONEME</div>
+            <span style="text-transform: uppercase">Phonological Awareness</span>
+            <p class="task-description">
+              ROAR - Phoneme assesses a student's mastery of phonological awareness through elision and sound matching
+              tasks. Research indicates that phonological awareness, as a foundational pre-reading skill, is crucial for
+              achieving reading fluency. Without support for their foundational reading abilities, students may struggle
+              to catch up in overall reading proficiency. The student's score will range between 0-57 and can be viewed
+              by selecting 'Raw Score' on the table above.
+            </p>
+          </div>
+          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-card">
+            <div class="task-title">ROAR-WORD</div>
+            <span style="text-transform: uppercase">Single Word Recognition</span>
+            <p class="task-description">
+              ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read
+              fluently, students must master fundamental skills of decoding and automaticity. This test measures a
+              student's ability to detect real and made-up words, which can then translate to a student's reading levels
+              and need for support. The student's score will range between 100-900 and can be viewed by selecting 'Raw
+              Score' on the table above.
+            </p>
+          </div>
+          <div v-if="allTasks.includes('sre')" class="task-card">
+            <div class="task-title">ROAR-SENTENCE</div>
+            <span style="text-transform: uppercase">Sentence Reading Efficiency</span>
+            <p class="task-description">
+              ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become
+              fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can
+              make it harder for students to understand what they're reading. Students who don't receive support for
+              their basic reading skills may find it challenging to improve their overall reading ability. This
+              assessment is helpful for identifying students who may struggle with reading comprehension due to
+              difficulties with decoding words accurately or reading slowly and with effort. The student's score will
+              range between 0-130 and can be viewed by selecting 'Raw Score' on the table above.
+            </p>
+          </div>
+        </div>
         <div class="bg-gray-200 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
