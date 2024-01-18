@@ -179,14 +179,18 @@ const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
 //      +------------------------------------------+
 // -----| Queries for grabbing pre-existing admins |-----
 //      +------------------------------------------+
+const shouldGrabAdminInfo = computed(() => {
+  return initialized.value && Boolean(props.adminId);
+});
 const { data: preExistingAdminInfo } = useQuery({
   queryKey: ['administration', props.adminId],
   queryFn: () => fetchDocById('administrations', props.adminId),
-  keepPreviousData: false,
-  enabled: initialized,
+  keepPreviousData: true,
+  enabled: shouldGrabAdminInfo,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 const districtsToGrab = computed(() => {
+  if (!preExistingAdminInfo.value) return null;
   return preExistingAdminInfo.value.districts.map((id) => {
     return {
       collection: 'districts',
@@ -207,6 +211,7 @@ const { data: preDistricts } = useQuery({
 });
 
 const schoolsToGrab = computed(() => {
+  if (!preExistingAdminInfo.value) return [];
   // Grab all schools in preExistingAdminInfo.schools
   // Exclude ones that are already part of districts we included
   const schoolIds = _without(
@@ -240,6 +245,7 @@ const { data: preSchools } = useQuery({
 });
 
 const classesToGrab = computed(() => {
+  if (!preExistingAdminInfo.value) return [];
   // Grab all classes in preExistingAdminInfo.classes
   // Exclude ones that are already part of schools we included
   const classIds = _without(
@@ -272,6 +278,7 @@ const { data: preClasses } = useQuery({
 });
 
 const groupsToGrab = computed(() => {
+  if (!preExistingAdminInfo.value) return null;
   return preExistingAdminInfo.value.groups.map((id) => {
     return {
       collection: 'groups',
@@ -290,6 +297,7 @@ const { data: preGroups } = useQuery({
 });
 
 const familiesToGrab = computed(() => {
+  if (!preExistingAdminInfo.value) return null;
   return preExistingAdminInfo.value.families.map((id) => {
     return {
       collection: 'families',
@@ -476,14 +484,11 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
       const found = findVariantWithParams(allVariantInfo, assessmentParams);
       // console.log('found?', found);
       if (found) {
-        console.log('found -> ', found);
         // _pull(assessments.value[0], found);
         assessments.value[1].push(found);
         assessments.value[1] = _uniq(assessments.value[1]);
       }
     });
-  } else {
-    console.log('not ready yet', adminInfo, allVariantInfo);
   }
   // console.log('func returned', found);
 });
@@ -495,7 +500,6 @@ function findVariantWithParams(variants, params) {
     return _isEqual(params, cleanParams);
   });
   // TODO: implement tie breakers if found.length > 1
-  console.log('found', found);
   return found;
 }
 </script>
