@@ -143,6 +143,8 @@
   color: var(--surface-a);
   background: var(--bright-green);
   border: 1px solid var(--bright-green);
+  margin: 0;
+  width: 50%;
 }
 .p-button.p-button-success:enabled:hover,
 .p-buttonset.p-button-success > .p-button:enabled:hover,

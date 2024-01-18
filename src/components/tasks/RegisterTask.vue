@@ -49,7 +49,7 @@
             </section>
             <!--Task URL-->
             <section class="form-section">
-              <div>
+              <div class="taskURLs">
                 <label for="taskURL">Task URL <span class="required">*</span></label>
                 <PvInputText
                   v-model="t$.taskURL.$model"
@@ -69,7 +69,7 @@
             </section>
             <!-- Cover Image -->
             <section class="form-section">
-              <div>
+              <div class="taskURLs">
                 <label for="coverImage">Cover Image (URL)</label>
                 <PvInputText v-model="taskFields.coverImage" name="coverImage" />
               </div>
@@ -100,8 +100,9 @@
               <PvButton icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(taskParams, index)" />
             </div>
           </div>
-
-          <PvButton label="Add Field" class="p-button-success" @click="addField(taskParams)" />
+          <div class="addField">
+            <PvButton label="Add Field" class="p-button-success" @click="addField(taskParams)" />
+          </div>
 
           <div class="form-submit">
             <PvButton type="submit" label="Submit" class="submit-button" />
@@ -125,10 +126,10 @@
 
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
-              <div class="flex justify-content-between">
+              <div class="flex ml-8 justify-content-between">
                 <label for="variant-fields">Select an Existing Task (Task ID) <span class="required">*</span></label>
-                <div class="flex gap-2">
-                  <label class="ml-7" for="chbx">Search registered tasks only?</label>
+                <div class="flex gap-2 mr-8">
+                  <label class="ml-0" for="chbx">Search registered tasks only?</label>
                   <PvCheckbox v-model="registeredTasksOnly" input-id="chbx" :binary="true" />
                 </div>
               </div>
@@ -181,7 +182,7 @@
           <h3 class="text-center">Parameters / Configuration</h3>
 
           <div v-for="(param, index) in variantParams" :key="index">
-            <div class="flex gap-2 align-content-start flex-grow-0 params-container">
+            <div class="flex align-content-start flex-grow-0 params-container">
               <PvInputText v-model="param.name" placeholder="Name" />
 
               <PvDropdown v-model="param.type" :options="typeOptions" />
@@ -199,8 +200,9 @@
               />
             </div>
           </div>
-
-          <PvButton label="Add Field" class="p-button-success" @click="addField(variantParams)" />
+          <div class="addField">
+            <PvButton label="Add Field" class="p-button-success" @click="addField(variantParams)" />
+          </div>
 
           <div class="form-submit">
             <PvButton type="submit" label="Submit" class="submit-button" />
@@ -427,7 +429,6 @@ function resetVariantForm() {
   background-color: #3db1f9;
   color: black;
   border: none;
-  width: 11.75rem;
 }
 
 .submit-button:hover {
@@ -442,5 +443,30 @@ function resetVariantForm() {
 .params-container {
   display: flex;
   margin-bottom: 1rem;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+.addField, .form-submit  {
+  width: 100%;
+  justify-content: center;
+  display: flex;
+}
+
+.p-fluid .p-button {
+  width: 50%;
+}
+.p-fluid .p-input-icon-left, .p-fluid .p-input-icon-right {
+  display: block;
+  width: 80%;
+  margin-left: 10%;
+  margin-right: 10%;
+}
+.p-dropdown, .taskURLs {
+  margin-left: 10%;
+  margin-right: 10%;
+}
+.p-inputtext {
+  display: flex;
+  align-items: center;
 }
 </style>
