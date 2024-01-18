@@ -62,12 +62,12 @@
   </div>
 </template>
 <script setup>
-import DistributionChartFacet from '../DistributionChartFacet.vue';
-import DistributionChartSupport from '../DistributionChartSupport.vue';
+import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
+import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
 import { taskDisplayNames } from '@/helpers/reports.js';
-import SubscoreTable from '../SubscoreTable.vue';
+import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
