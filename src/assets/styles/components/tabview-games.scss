@@ -3,10 +3,6 @@
     *[data-game-status='complete'] {
       color: var(--green-600);
     }
-
-    *[data-game-status='incomplete'] {
-      color: var(--red-600);
-    }
   }
 
   .p-tabview-panels {

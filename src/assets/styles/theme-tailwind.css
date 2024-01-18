@@ -1222,7 +1222,7 @@
 }
 .p-tabview .p-tabview-nav li {
   margin-right: 0;
-  box-shadow: 0px 5px 5px 2px var(--gray-300);;
+  box-shadow: 0px 1px 1px 1px var(--gray-300);
 }
 .p-tabview .p-tabview-nav li .p-tabview-nav-link {
   border: solid var(--surface-d);

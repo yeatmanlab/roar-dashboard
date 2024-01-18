@@ -34,7 +34,7 @@
         filter: grayscale(0%);
 
         *[data-game-status='incomplete'] {
-          color: var(--text-color-secondary);
+          color: var(--primary-color);
         }
       }
 

@@ -11,7 +11,7 @@
         <PvMenu ref="menu" :model="dropDownActions" :popup="true">
           <template #item="{ item }" >
             <div class="cursor-pointer hover:surface-200">
-              <i :class="item.icon" class="p-1 pb-3 cursor-pointer"></i> {{ item.label }}
+              <i :class="item.icon" class="p-1 pb-2 pt-2 text-sm cursor-pointer"></i> {{ item.label }}
             </div>
           </template>       
         </PvMenu>
