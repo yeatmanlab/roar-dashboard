@@ -100,7 +100,7 @@
               <PvButton icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(taskParams, index)" />
             </div>
           </div>
-          <div class="addField">
+          <div class="add-field">
             <PvButton label="Add Field" class="p-button-success" @click="addField(taskParams)" />
           </div>
 
@@ -200,7 +200,7 @@
               />
             </div>
           </div>
-          <div class="addField">
+          <div class="add-field">
             <PvButton label="Add Field" class="p-button-success" @click="addField(variantParams)" />
           </div>
 
@@ -446,7 +446,7 @@ function resetVariantForm() {
   margin-left: 10%;
   margin-right: 10%;
 }
-.addField, .form-submit  {
+.add-field, .form-submit  {
   width: 100%;
   justify-content: center;
   display: flex;
