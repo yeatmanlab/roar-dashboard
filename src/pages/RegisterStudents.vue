@@ -33,7 +33,6 @@
       </div>
       <!--DataTable with raw Student-->
       <div v-if="isFileUploaded">
-        <!-- <RoarDataTable :columns="tableColumns" :data="rawStudentFile" :allowExport="false" /> -->
         <PvPanel header="Assigning participant data" class="mb-4">
           <p>Use the dropdowns below to properly assign each column.</p>
           <p>

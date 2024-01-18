@@ -1,5 +1,4 @@
 <template>
-  <!-- <PvSelectButton></PvSelectButton> -->
   <div :id="`roar-dist-chart-support-${taskId}`"></div>
   <div class="mode-select-wrapper mt-2">
     <div class="flex uppercase text-xs font-light">view by</div>

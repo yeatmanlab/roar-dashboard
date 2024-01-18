@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <!-- <aside class="main-sidebar"> -->
-      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
-    <!-- </aside> -->
     <section class="main-body">
       <PvPanel header="Create a new administrator account">
         Use this form to create a new user and give them administrator access to selected organizations.

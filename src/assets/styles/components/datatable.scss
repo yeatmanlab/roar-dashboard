@@ -84,18 +84,7 @@
   color: var(--text-color);
   transition: none;
 }
-// .p-datatable .p-datatable-tbody > tr > td {
-//   text-align: left;
-//   border: 1px solid var(--surface-c);
-//   border-width: 0 0 1px 0;
-//   padding: var(--padding)
-// }
-// .compressed .p-datatable .p-datatable-tbody > tr > td {
-//   text-align: left;
-//   border: 1px solid var(--surface-c);
-//   border-width: 0 0 1px 0;
-//   // padding: 1rem 1.5rem;
-// }
+
 .p-datatable .p-datatable-tbody > tr > td .p-row-toggler,
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-init,
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-save,

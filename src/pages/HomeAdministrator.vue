@@ -3,10 +3,10 @@
     <section class="main-body ">
       <PvPanel header="  Your administrations" class="lg:text-3xl sm:text-lg surface-ground text-700">
         <template #icons>
-          <label class="mr-2 text-lg" for="dd-sort">Sort by</label>
+          <label class="mr-2 text-lg mb-2" for="dd-sort">Sort by</label>
           <PvDropdown
             v-model="sortKey"
-            class="mr-3"
+            class="mr-3 mb-2"
             input-id="dd-sort"
             :options="sortOptions"
             option-label="label"
@@ -238,7 +238,6 @@ const onSortChange = (event) => {
 }
 
 .card-wrapper {
-  /* margin-right: 1rem; */
   width: 100%;
   text-decoration: none;
   color: inherit;

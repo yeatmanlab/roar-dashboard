@@ -1138,15 +1138,6 @@
 .p-divider.p-divider-vertical .p-divider-content {
   padding: var(--inline-spacing) 0;
 }
-
-/* .p-panel .p-panel-header {
-  border: 1px solid var(--surface-d);
-  padding: 1.25rem;
-  background: var(--surface-b);
-  color: var(--text-color);
-  border-top-right-radius: var(--border-radius);
-  border-top-left-radius: var(--border-radius);
-} */
 .p-panel .p-panel-header .p-panel-title {
   font-weight: 700;
   font-size: x-large;
@@ -1181,14 +1172,12 @@
   color: var(--text-color);
   border-bottom-right-radius: var(--border-radius);
   border-bottom-left-radius: var(--border-radius);
-  border-top: 0 none;
 }
 .p-panel .p-panel-footer {
   padding: var(--inline-spacing-larger) 1.25rem;
   border: 1px solid var(--surface-d);
   background: var(--surface-a);
   color: var(--text-color);
-  border-top: 0 none;
 }
 
 .p-scrollpanel .p-scrollpanel-bar {

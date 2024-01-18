@@ -7,11 +7,8 @@
             <div class="report-title">
               {{ _toUpper(orgInfo.name) }}
             </div>
-            <!-- <div class=""> -->
             <div class="report-subheader mb-5 uppercase text-gray-500 font-normal">Scores at a glance</div>
-            <!-- </div> -->
           </div>
-          <!-- <div class="flex flex-row flex-wrap justify-center w-full"> -->
           <div class="loading-wrapper">
             <div v-if="isLoadingRunResults" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />

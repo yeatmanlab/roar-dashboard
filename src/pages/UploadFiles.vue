@@ -12,9 +12,6 @@
       choose-label="Choose a score file"
       @uploader="onScoreUpload"
     >
-      <!-- <template #empty>
-        <p>Drag and drop the score file here to upload.</p>
-      </template> -->
     </PvFileUpload>
     <PvFileUpload
       class="my-3"
@@ -27,9 +24,6 @@
       choose-label="Choose an identifier file"
       @uploader="onAdminUpload"
     >
-      <!-- <template #empty>
-        <p>Drag and drop the identifier file here to upload.</p>
-      </template> -->
     </PvFileUpload>
     <PvButton
       icon="pi pi-chart-line"

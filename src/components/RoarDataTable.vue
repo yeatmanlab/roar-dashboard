@@ -40,10 +40,6 @@
       <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
         <PvButton label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
         <PvButton label="Export Whole Table" @click="exportCSV(false, $event)" />
-        <!-- <div class="relative">
-          <PvInputSwitch v-model="compressedRows" input-id="switch2" :class="{ 'p-invalid': increasePadding(countForVisualize) }"/>
-          <label  for="switch2" class="view-label">{{ nameForVisualize }}</label>
-        </div> -->
         <PvButton :label="nameForVisualize" @click="toggleView" />
       </span>
     </div>
@@ -513,8 +509,7 @@ button.p-button.p-component.softer {
 button.p-column-filter-menu-button.p-link, g{
   background: var(--primary-color);
   color: white;
-  /* align-items: flex-start; */
-  /* justify-content: left */
+
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
@@ -532,8 +527,6 @@ button.p-column-filter-menu-button.p-link, g{
   left: 5px;
   /* Additional styling for the label */
   background-color: white;
-  /* padding: 0 3px; */
-  /* text-align: center; */
   z-index: 1; /* Ensures the label is displayed above the dropdown */
   font-size: smaller;
   color: var(--surface-500);
@@ -545,8 +538,6 @@ button.p-column-filter-menu-button.p-link, g{
   left: 5px;
   /* Additional styling for the label */
   background-color: white;
-  /* padding: 0 3px; */
-  /* text-align: center; */
   z-index: 1; /* Ensures the label is displayed above the dropdown */
   font-size: smaller;
   color: var(--surface-500);
@@ -554,7 +545,6 @@ button.p-column-filter-menu-button.p-link, g{
 }
 /* for hovering */
 button.p-column-filter-menu-button.p-link:hover {
-    /* color: black; */
     background: var(--surface-500);
 }
 

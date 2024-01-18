@@ -1,5 +1,4 @@
 <template>
-  <!-- <div class="flex flex-col items-center justify-center mx-2" style='background-color: taskInfoById[taskId]?.color'> -->
   <div class="flex flex-col items-center justify-center mx-2">
     <Accordion class="mb-5 w-full">
       <AccordionTab :header="('About ' + tasksInfoById[taskId]?.subheader).toUpperCase()">
@@ -8,15 +7,10 @@
           <p class="mt-1 text-md font-light">
             {{ tasksInfoById[taskId]?.desc }}
           </p>
-          <!-- <div v-for="definition of tasksInfoById[taskId]?.definitions" :key="definition.id" class="my-2">
-            <div class="uppercase text-lg font-bold mb-2">{{ definition?.header }}</div>
-            <div class="text-md font-light">{{ definition?.desc }}</div>
-          </div> -->
         </div>
       </AccordionTab>
     </Accordion>
   </div>
-  <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
   <div class="chart-wrapper">
     <div>
       <DistributionChartSupport
@@ -61,8 +55,6 @@
       :org-name="orgInfo.name ?? undefined"
     />
   </div>
-  <!-- <div class="task-card">
-    </div> -->
 </template>
 <script setup>
 import DistributionChartGrade from '../DistributionChartGrade.vue';
@@ -192,7 +184,6 @@ let tasksInfoById = {
 
 .task-title {
   font-size: 3.5rem;
-  /* font-weight: bold; */
 }
 
 .task-description {

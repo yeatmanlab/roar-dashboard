@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <!-- <aside class="main-sidebar"> -->
-      <!-- <AdministratorSidebar :actions="sidebarActions" /> -->
-    <!-- </aside> -->
     <section class="main-body">
       <PvPanel header="View Users">
         <div v-if="!(isLoading || isLoadingCount)">
@@ -27,8 +24,6 @@
 </template>
 <script setup>
 import { ref, onMounted } from 'vue';
-// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-// import { getSidebarActions } from '../router/sidebarActions';
 import { useAuthStore } from '@/store/auth';
 import _isEmpty from 'lodash/isEmpty';
 import { useQuery } from '@tanstack/vue-query';
@@ -42,18 +37,6 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
-
-// const { data: userClaims } = useQuery({
-//   queryKey: ['userClaims'],
-//   queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
-//   keepPreviousData: true,
-//   enabled: initialized,
-//   staleTime: 5 * 60 * 1000, // 5 minutes
-// });
-
-// const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-// const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
-
 const pageLimit = ref(10);
 const page = ref(0);
 const orderBy = ref(null);

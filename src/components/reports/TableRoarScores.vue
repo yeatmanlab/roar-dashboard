@@ -106,11 +106,6 @@
         />
       </template>
     </PvColumn>
-
-    <!-- <th>SWR Score</th>
-    <th>Estimated WJ standard score</th>
-    <th>Estimated WJ percentile rank</th>
-    <th>Estimated risk level</th> -->
   </PvDataTable>
 </template>
 
