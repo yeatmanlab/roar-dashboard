@@ -46,40 +46,7 @@ const getRunInfoCommon = (mergedRun) => {
   }
 };
 
-// const getRunInfoTask = (mergedRun) => {
-//   switch (mergedRun.taskId) {
-//     case 'swr':
-//       return processSWRRun(mergedRun);
 
-//     case 'pa':
-//     case 'sre':
-//     case 'vocab':
-//     default:
-//       console.log(mergedRun.taskId, 'missing from switch');
-//       break;
-//   }
-// };
-
-// const processSWRRun = () => {
-//   return {
-//     // fields that vary between tasks
-//     subScores: {
-//       // These subtask IDs will differ in between tasks
-//       fsm: Number,
-//       lsm: Number,
-//       del: Number,
-//     },
-
-//     comparisonPercentile: Number,
-//     comparisonType: 'Woodcock Johnson',
-//     normedPercentile: Number,
-//     classifications: {
-//       // Here each field can differ depending on the task
-//       support: String,
-//       automaticity: String,
-//     },
-//   };
-// };
 
 export function thetaToRoarScore(thetaEstimate) {
   return Math.round(100 * (thetaEstimate + 5));
@@ -329,7 +296,6 @@ export const useScoreStore = () => {
       subScores: (state) => {
         // If identifiers were not uploaded, simply return the appScores
         if (state.identifiers.length === 0) {
-          //return { runInfoOrig: state.appScores};
           return state.appScores.map((run) => {
             const taskId = standardizeTaskId(run.taskId);
             return {
@@ -370,7 +336,6 @@ export const useScoreStore = () => {
                 runInfoCommon: getRunInfoCommon(mergedRun),
 
                 // compute values unique to each task
-                //runInfoTask: getRunInfoTask(mergedRun),
               };
             }
           });
@@ -500,14 +465,6 @@ export const useScoreStore = () => {
         // Do stuff to sectionsData
         // merge with this.identifiers
       },
-      // assignRiskCategories: (scoreField, cutoffs) => {
-      //   // Expect that cutoff is an array of objects with structure
-      //   // { category: string, lowerBound: number, upperBound: number}
-      //   this.scores = this.scores.map((run) => {
-      //     ...run,
-      //     cutoffs.filter((category) => category.lowerBound <= run[scoreField] && category.upperBound > run[scoreField])
-      //   })
-      // }
     },
   })();
 };

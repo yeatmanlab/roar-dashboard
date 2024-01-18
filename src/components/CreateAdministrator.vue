@@ -62,14 +62,10 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-// import { useQuery } from '@tanstack/vue-query';
 import _cloneDeep from 'lodash/cloneDeep';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
-// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
-// import { getSidebarActions } from '@/router/sidebarActions';
-// import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const toast = useToast();
@@ -83,17 +79,6 @@ const email = ref();
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-
-// const { data: userClaims } = useQuery({
-//   queryKey: ['userClaims', authStore.uid],
-//   queryFn: () => fetchDocById('userClaims', authStore.uid),
-//   keepPreviousData: true,
-//   enabled: initialized,
-//   staleTime: 5 * 60 * 1000, // 5 minutes
-// });
-
-// const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-// const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 let unsubscribe;
 const init = () => {
@@ -221,24 +206,12 @@ const submit = async () => {
     margin: 0.625rem 0rem;
   }
 
-  // .p-dropdown-label {
-  //   font-family: 'Source Sans Pro', sans-serif;
-  //   color: #C4C4C4;
-  // }
 
   ::placeholder {
     font-family: 'Source Sans Pro', sans-serif;
     color: #c4c4c4;
   }
 
-  // .p-button {
-  //   width: 11.5625rem;
-  //   height: 2.25rem;
-  //   border-radius: 3.9375rem;
-  //   margin: 1.5rem 0rem;
-  //   margin-right: 1.375rem;
-  //   float: right;
-  // }
 
   .hide {
     display: none;

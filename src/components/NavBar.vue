@@ -17,7 +17,6 @@
             </template>       
           </PvMenu>
         </div>
-        <!-- <AdministratorSidebar :actions="sidebarActions"/> -->
         <router-link :to="{ name: 'SignOut' }" class="signout-button no-underline">
           <PvButton>Sign Out</PvButton>
         </router-link>
@@ -32,7 +31,6 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
-// import AdministratorSidebar from './AdministratorSidebar.vue';
  import {getSidebarActions} from '@/router/sidebarActions'
  import { fetchDocById } from '@/helpers/query/utils';
  import { useQuery } from '@tanstack/vue-query';
@@ -51,36 +49,11 @@ const { data: userClaims } = useQuery({
 });
 
  const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-// const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
-
-
-// const menuItems = [
-
-//   `<li>${}</li>`
-// ]
-
-// const loggedInItems = [
-//   {
-//     label: `Logged in as: ${email.value}`,
-//     icon: 'pi pi-user',
-//     to: '/profile',
-//   },
-//   {
-//     label: 'Log Out',
-//     icon: 'pi pi-sign-out',
-//     to: '/logout',
-//   }
-// ];
 
 const isAtHome = computed(()=>{
   return router.currentRoute.value.fullPath === '/'
 });
-
-// const getActions = computed(()=>{
-//   return getSidebarActions(isSuperAdmin.value, !isAtHome.value)
-// })
-// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, !isAtHome.value));
 
 const dropDownActions = computed(() => {
   const rawActions = getSidebarActions(authStore.isUserSuperAdmin, !isAtHome.value);

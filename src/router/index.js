@@ -23,12 +23,6 @@ const routes = [
     component: () => import('../pages/CleverLanding.vue'),
     meta: { pageTitle: 'Logging You In' },
   },
-  // {
-  //   path: "/game/:gameId",
-  //   name: "PlayApp",
-  //   component: () => import("../pages/PlayApp.vue"),
-  //   meta: { pageTitle: "PlayApp" }
-  // },
   {
     path: '/game/swr',
     name: 'SWR',
@@ -109,12 +103,6 @@ const routes = [
     component: () => import('../pages/QueryPage.vue'),
     meta: { pageTitle: 'Query', requireAdmin: true, requireSuperAdmin: true },
   },
-  // {
-  //   path: "/score-report",
-  //   name: "ScoreReport",
-  //   component: () => import("../pages/ScoreReport.vue"),
-  //   meta: { pageTitle: "Score Reports" },
-  // },
   // We don't support individual registration yet
   {
     path: '/register',

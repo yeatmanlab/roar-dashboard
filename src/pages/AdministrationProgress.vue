@@ -39,8 +39,6 @@ import _isEmpty from 'lodash/isEmpty';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
-// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-// import { getSidebarActions } from '@/router/sidebarActions';
 import { useQuery } from '@tanstack/vue-query';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
@@ -50,7 +48,6 @@ import { taskDisplayNames } from '@/helpers/reports.js';
 
 const authStore = useAuthStore();
 
-// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: {

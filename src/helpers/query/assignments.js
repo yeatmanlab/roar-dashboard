@@ -81,20 +81,6 @@ export const getAssignmentsRequestBody = ({
         ],
       },
     };
-    // if(!_isEmpty(filters)){
-    //   const userFilters = (filters.map(filter => {
-    //     console.log('filter ->', filter)
-    //     return {
-    //       fieldFilter: {
-    //         field: { fieldPath: filter.field },
-    //         op: "EQUAL", // Need more logic here later for different constraints
-    //         value: { stringValue: filter.value }
-    //       }
-    //     }
-    //   }))
-    // } else {
-    //   console.log('skipping filters')
-    // }
   } else {
     const currentDate = new Date().toISOString();
     requestBody.structuredQuery.where = {

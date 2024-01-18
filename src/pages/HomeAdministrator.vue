@@ -67,9 +67,7 @@ import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
 import { administrationCounter, administrationPageFetcher } from '../helpers/query/administrations';
-// import { getSidebarActions } from '../router/sidebarActions';
 import CardAdministration from '@/components/CardAdministration.vue';
-// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 
@@ -80,13 +78,6 @@ const pageLimit = ref(10);
 const authStore = useAuthStore();
 
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
-
-// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, false));
-
-// const userInfo = ref({
-//   name: 'Admin name',
-//   district: 'District Name',
-// });
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],

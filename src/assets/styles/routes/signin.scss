@@ -39,17 +39,14 @@ body.page-signin {
   header {
     text-align: center;
     display: flex;
-    // justify-content: space-around;
     text-align: center;
     flex-direction: column;
 
     width: 100%;
     border-bottom: 1px solid var(--surface-d);
-    // border-bottom: 10px solid var(--surface-d);
     padding-block: 2rem;
 
     .signin-logo {
-      // width: 100%;
 
       svg {
         height: 111px;
@@ -130,7 +127,6 @@ body.page-signin {
     }
 
     .signin-option-title {
-      // width: 100%;
       text-align: center;
       margin-bottom: auto;
       margin-top: auto;

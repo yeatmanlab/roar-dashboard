@@ -30,7 +30,6 @@ import { useQuery } from '@tanstack/vue-query';
 import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
 import { countUsersByOrg, fetchUsersByOrg } from '@/helpers/query/users';
-// import { fetchDocById } from '../helpers/query/utils';
 import { singularizeFirestoreCollection } from '@/helpers';
 
 const authStore = useAuthStore();

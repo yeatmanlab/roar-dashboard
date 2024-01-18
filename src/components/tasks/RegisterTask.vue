@@ -49,7 +49,7 @@
             </section>
             <!--Task URL-->
             <section class="form-section">
-              <div class="taskURLs">
+              <div class="task-urls">
                 <label for="taskURL">Task URL <span class="required">*</span></label>
                 <PvInputText
                   v-model="t$.taskURL.$model"
@@ -69,7 +69,7 @@
             </section>
             <!-- Cover Image -->
             <section class="form-section">
-              <div class="taskURLs">
+              <div class="task-urls">
                 <label for="coverImage">Cover Image (URL)</label>
                 <PvInputText v-model="taskFields.coverImage" name="coverImage" />
               </div>
@@ -461,7 +461,7 @@ function resetVariantForm() {
   margin-left: 10%;
   margin-right: 10%;
 }
-.p-dropdown, .taskURLs {
+.p-dropdown, .task-urls {
   margin-left: 10%;
   margin-right: 10%;
 }

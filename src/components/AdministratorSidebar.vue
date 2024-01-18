@@ -1,6 +1,6 @@
 <template>
   <div class="sidebar-container">
-    <Menu v-model:visible="visible" popup="true">
+    <PvMenu v-model:visible="visible" popup="true">
       <ul v-if="actions" class="sidebar-actions">
         <li class="sidebar-title"><strong>Actions</strong></li>
         <li v-for="(action, index) in actions" :key="index">
@@ -9,7 +9,7 @@
           </router-link>
         </li>
       </ul>
-    </Menu>
+    </PvMenu>
     <PvButton v-tooltip.right="'Click to open the menu'" label="Menu" icon="pi pi-bars" @click="visible = true" />
   </div>
 </template>

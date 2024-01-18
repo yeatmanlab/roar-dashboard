@@ -158,13 +158,7 @@ const confirm = useConfirm();
 const toast = useToast();
 
 const speedDialItems = ref([
-  // {
-  //   label: 'Edit',
-  //   icon: 'pi pi-pencil',
-  //   command: () => {
-  //     console.log('Edit administration');
-  //   },
-  // },
+
   {
     label: 'Delete',
     icon: 'pi pi-trash',
@@ -248,9 +242,6 @@ const toggleTable = () => {
   showTable.value = !showTable.value;
 };
 
-// const isWideScreen = computed(() => {
-//   return window.innerWidth > 768;
-// });
 
 const singularOrgTypes = {
   districts: 'district',
@@ -475,7 +466,6 @@ const setDoughnutChartData = () => {
           docStyle.getPropertyValue('--very-bright-yellow'),
           docStyle.getPropertyValue('--surface-d'),
         ],
-        // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
       },
     ],
   };
@@ -618,12 +608,10 @@ onMounted(() => {
   padding: 1rem;
 
   .card-admin-chart {
-    // padding: 1rem;
     width: 12ch;
   }
 
   .card-admin-body {
-    // flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;

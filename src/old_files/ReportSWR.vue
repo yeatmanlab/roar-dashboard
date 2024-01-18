@@ -85,11 +85,8 @@ const distributionByGrade = {
         labelAlign: 'left',
         labelOrient: 'left',
         labelExpr: "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')",
-        //sort: ['Kindergarten',1,2,3,4,5,6,7,8,9,10,11,12],    // TODO why is sort not working?
-        //sort: "ascending",
       },
 
-      //sort: ["Kindergarten", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
       spacing: 7,
     },
 

@@ -134,8 +134,6 @@ import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'vue-router';
-// import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-// import { getSidebarActions } from '../router/sidebarActions';
 import { useToast } from 'primevue/usetoast';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
@@ -157,7 +155,6 @@ const dropdown_options = ref([
     label: 'Required',
     items: [
       { label: 'Student Username', value: 'username' },
-      // { label: 'Student Email', value: 'email' },
       { label: 'Grade', value: 'grade' },
       { label: 'Password', value: 'password' },
       { label: 'Student Date of Birth', value: 'dob' },
@@ -479,11 +476,6 @@ function downloadErrorTable() {
   errorTable.value.exportCSV();
 }
 
-// Event listener for the 'beforeunload' event
-// window.addEventListener('beforeunload', (e) => {
-//   console.log('handler for beforeunload')
-//   e.preventDefault();
-// });
 </script>
 <style scoped>
 .extra-height {

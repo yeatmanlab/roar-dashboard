@@ -5,8 +5,6 @@
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
     border: 1px solid var(--surface-d);
-    // white-space: nowrap;
-    // width: auto;
 
     .p-tabview-header {
       .p-tabview-nav-link {
@@ -16,8 +14,6 @@
         border-top-right-radius: 4px;
         background: transparent;
         filter: grayscale(45%);
-        // white-space: nowrap;
-
         &:hover {
           border-inline-color: var(--surface-d);
         }

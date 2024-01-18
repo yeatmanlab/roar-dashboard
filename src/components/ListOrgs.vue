@@ -131,7 +131,6 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-// const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 const orgHeaders = computed(() => {
   const headers = {
