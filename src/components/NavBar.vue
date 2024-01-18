@@ -7,14 +7,16 @@
         </div>
       </router-link>
       <div class="login-container">
-        <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
-        <PvMenu ref="menu" :model="dropDownActions" :popup="true">
-          <template #item="{ item }" >
-            <div class="cursor-pointer hover:surface-200">
-              <i :class="item.icon" class="p-1 pb-2 pt-2 text-sm cursor-pointer"></i> {{ item.label }}
-            </div>
-          </template>       
-        </PvMenu>
+        <div v-if="isSuperAdmin">
+          <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
+          <PvMenu ref="menu" :model="dropDownActions" :popup="true">
+            <template #item="{ item }" >
+              <div class="cursor-pointer hover:surface-200">
+                <i :class="item.icon" class="p-1 pb-2 pt-2 text-sm cursor-pointer"></i> {{ item.label }}
+              </div>
+            </template>       
+          </PvMenu>
+        </div>
         <!-- <AdministratorSidebar :actions="sidebarActions"/> -->
         <router-link :to="{ name: 'SignOut' }" class="signout-button no-underline">
           <PvButton>Sign Out</PvButton>
@@ -32,23 +34,23 @@ import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 // import AdministratorSidebar from './AdministratorSidebar.vue';
  import {getSidebarActions} from '@/router/sidebarActions'
-//  import { fetchDocById } from '@/helpers/query/utils';
-//  import { useQuery } from '@tanstack/vue-query';
+ import { fetchDocById } from '@/helpers/query/utils';
+ import { useQuery } from '@tanstack/vue-query';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-// const initialized = ref(false);
+const initialized = ref(true);
 
-// const { data: userClaims } = useQuery({
-//   queryKey: ['userClaims', authStore.uid],
-//   queryFn: () => fetchDocById('userClaims', authStore.uid),
-//   keepPreviousData: true,
-//   enabled: initialized,
-//   staleTime: 5 * 60 * 1000, // 5 minutes
-// });
-//
-//  const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const { data: userClaims } = useQuery({
+  queryKey: ['userClaims', authStore.uid],
+  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 // const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 
