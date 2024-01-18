@@ -1,7 +1,6 @@
 <template>
-  <!-- <div class="flex flex-col items-center justify-center mx-2" style='background-color: taskInfoById[taskId]?.color'> -->
   <div class="flex flex-col items-center justify-center mx-2">
-    <Accordion class="mb-5 w-full">
+    <Accordion v-if="tasksInfoById[taskId]" class="mb-5 w-full">
       <AccordionTab :header="('About ' + tasksInfoById[taskId]?.subheader).toUpperCase()">
         <div style="background-color: {taskInfoById[taskId]?.color}">
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ tasksInfoById[taskId]?.subheader }}</div>
@@ -29,7 +28,7 @@
       />
     </div>
     <div>
-      <DistributionChartGrade
+      <DistributionChartFacet
         :initialized="initialized"
         :administration-id="administrationId"
         :org-type="orgType"
@@ -61,16 +60,14 @@
       :org-name="orgInfo.name ?? undefined"
     />
   </div>
-  <!-- <div class="task-card">
-    </div> -->
 </template>
 <script setup>
-import DistributionChartGrade from '../DistributionChartGrade.vue';
-import DistributionChartSupport from '../DistributionChartSupport.vue';
+import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
+import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
 import { taskDisplayNames } from '@/helpers/reports.js';
-import SubscoreTable from '../SubscoreTable.vue';
+import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({

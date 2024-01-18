@@ -5,63 +5,65 @@
     </aside>
     <section class="main-body">
       <div>
-        <div class="flex-col p-4 drop-shadow-lg">
+        <div class="">
+          <div v-if="isLoadingOrgInfo" class="loading-wrapper">
+            <AppSpinner style="margin: 0.3rem 0rem" />
+            <div class="uppercase text-sm">Loading Org Info</div>
+          </div>
           <div v-if="orgInfo">
             <div class="report-title">
               {{ _toUpper(orgInfo.name) }}
             </div>
-            <!-- <div class=""> -->
-            <div class="report-subheader mb-5 uppercase text-gray-500 font-normal">Scores at a glance</div>
-            <!-- </div> -->
-          </div>
-          <!-- <div class="flex flex-row flex-wrap justify-center w-full"> -->
-          <div class="loading-wrapper">
+            <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div v-if="isSuperAdmin" class="chart-wrapper">
-              <div v-for="taskId of Object.keys(runsByTaskId)" :key="taskId" class="">
-                <DistributionChartOverview
-                  :runs="runsByTaskId[taskId]"
-                  :initialized="initialized"
-                  :task-id="taskId"
-                  :org-type="props.orgType"
-                  :org-id="props.orgId"
-                  :administration-id="props.administrationId"
-                />
+            <div v-if="isSuperAdmin" class="overview-wrapper bg-gray-100 py-3 mb-2">
+              <div class="chart-wrapper">
+                <div v-for="taskId of sortedTaskIds" :key="taskId" class="">
+                  <div class="distribution-overview-wrapper">
+                    <DistributionChartOverview
+                      :runs="runsByTaskId[taskId]"
+                      :initialized="initialized"
+                      :task-id="taskId"
+                      :org-type="props.orgType"
+                      :org-id="props.orgId"
+                      :administration-id="props.administrationId"
+                    />
+                    <div className="task-description mt-3">
+                      <span class="font-bold">
+                        {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
+                      </span>
+                      <span class="font-light">
+                        {{ descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : '' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-        <!-- Header blurbs about tasks -->
-        <div class="py-5 px-3 mb-2 bg-gray-200">
-          <div class="font-bold text-2xl">IN THIS REPORT...</div>
-          <span class="text-sm"
-            >You will receive a breakdown of your classroom's ROAR scores across each of the domains tested.
-          </span>
-          <div v-if="isLoadingScores" class="loading-wrapper">
-            <AppSpinner style="margin: 1rem 0rem" />
-            <div class="uppercase text-sm">Loading Datatables</div>
-          </div>
-          <div>
-            <div class="task-overview-container mt-4">
-              <div v-if="allTasks.includes('letter')" class="task-blurb">
-                <span class="task-header">ROAR-Letter Sound Matching (ROAR-Letter)</span> assesses knowledge of letter
-                names and sounds.
-              </div>
-              <div v-if="allTasks.includes('pa')" class="task-blurb">
-                <span class="task-header">ROAR-Phonological Awareness (ROAR-Phoneme)</span>
-                measures the ability to hear and manipulate the individual sounds within words (sound matching and
-                elision). This skill is crucial for building further reading skills, such as decoding.
-              </div>
-              <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-blurb">
-                <span class="task-header">ROAR-Single Word Recognition (ROAR-Word)</span> assesses decoding skills at
-                the word level.
-              </div>
-              <div v-if="allTasks.includes('sre')" class="task-blurb">
-                <span class="task-header">ROAR-Sentence Reading Efficiency (ROAR-Sentence)</span> assesses reading
-                fluency at the sentence level.
+              <div v-if="!isLoadingRunResults" class="legend-container">
+                <div class="legend-entry">
+                  <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+                  <div>
+                    <div>Needs extra support</div>
+                    <div>(Below 25th percentile)</div>
+                  </div>
+                </div>
+                <div class="legend-entry">
+                  <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+                  <div>
+                    <div>Needs some support</div>
+                    <div>(Below 50th percentile)</div>
+                  </div>
+                </div>
+                <div class="legend-entry">
+                  <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+                  <div>
+                    <div>At or above average</div>
+                    <div>(At or above 50th percentile)</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -105,8 +107,7 @@
             @export-selected="exportSelected"
           />
         </div>
-
-        <div class="legend-container">
+        <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
@@ -140,7 +141,7 @@
         </div>
         <PvTabView v-if="isSuperAdmin">
           <PvTabPanel
-            v-for="taskId of Object.keys(runsByTaskId)"
+            v-for="taskId of sortedTaskIds"
             :key="taskId"
             :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
           >
@@ -153,6 +154,7 @@
               :org-type="orgType"
               :org-id="orgId"
               :org-info="orgInfo"
+              :schools-dict="schoolsDict"
               :administration-info="administrationInfo"
             />
           </PvTabPanel>
@@ -268,12 +270,18 @@ import { useQuery } from '@tanstack/vue-query';
 import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
-import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
+import { orderByDefault, fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { taskDisplayNames, excludedTasks, supportLevelColors, getSupportLevel } from '@/helpers/reports.js';
+import {
+  taskDisplayNames,
+  descriptionsByTaskId,
+  excludedTasks,
+  supportLevelColors,
+  getSupportLevel,
+} from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
 
@@ -325,7 +333,7 @@ const { data: administrationInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: orgInfo } = useQuery({
+const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
   queryKey: ['orgInfo', props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
@@ -340,6 +348,17 @@ const { data: schoolsInfo } = useQuery({
   keepPreviousData: true,
   enabled: props.orgType === 'district' && initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const schoolsDict = computed(() => {
+  if (schoolsInfo.value) {
+    return schoolsInfo.value.reduce((acc, school) => {
+      acc[school.id] = school.name;
+      return acc;
+    }, {});
+  } else {
+    return {};
+  }
 });
 
 const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
@@ -776,20 +795,25 @@ const runsByTaskId = computed(() => {
   const computedScores = {};
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
-    if (user?.grade >= 6) {
+    if (user?.data?.grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
     const { support_level } = getSupportLevel(percentScore);
     const run = {
+      // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
+      grade: user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade),
       scores: {
         ...scores,
         support_level: support_level,
         stdPercentile: percentScore,
       },
       taskId,
-      user: user.data,
+      user: {
+        ...user.data,
+        schoolName: schoolsDict.value[user?.data?.schools?.current[0]],
+      },
     };
     if (run.taskId in computedScores) {
       computedScores[run.taskId].push(run);
@@ -799,6 +823,16 @@ const runsByTaskId = computed(() => {
   }
   return _pickBy(computedScores, (scores, taskId) => {
     return !excludedTasks.includes(taskId);
+  });
+});
+
+const sortedTaskIds = computed(() => {
+  return Object.keys(runsByTaskId.value).toSorted((p1, p2) => {
+    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    } else {
+      return -1;
+    }
   });
 });
 
@@ -821,12 +855,31 @@ onMounted(async () => {
 </script>
 
 <style lang="scss">
+.overview-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .chart-wrapper {
   display: flex;
   width: 100%;
   flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-around;
+  border-radius: 0.3rem;
+}
+
+.distribution-overview-wrapper {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: space-around;
+}
+
+.task-description {
+  width: 240px;
+  font-size: 14px;
 }
 
 .task-report-panel {
