@@ -96,7 +96,7 @@
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
-          <label for="ms-columns" class="view-label">View</label>
+          <label for="view-columns" class="view-label">View</label>
           <PvDropdown
             id="view-columns"
             v-model="viewMode"
