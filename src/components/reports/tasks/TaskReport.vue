@@ -16,7 +16,7 @@
     </Accordion>
   </div>
   <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
-  <div class="chart-wrapper">
+  <div v-if="tasksToDisplayGraphs.includes(taskId)" class="chart-wrapper">
     <div>
       <DistributionChartSupport
         :initialized="initialized"
@@ -66,7 +66,7 @@ import DistributionChartFacet from '@/components/reports/DistributionChartFacet.
 import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
-import { taskDisplayNames } from '@/helpers/reports.js';
+import { taskDisplayNames, tasksToDisplayGraphs } from '@/helpers/reports.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 
 // eslint-disable-next-line no-unused-vars

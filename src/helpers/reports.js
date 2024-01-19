@@ -31,6 +31,8 @@ export const descriptionsByTaskId = {
   },
 };
 
+export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
+
 export const excludedTasks = ['cva', 'morphology'];
 
 export const supportLevelColors = {
