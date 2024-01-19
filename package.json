@@ -51,7 +51,7 @@
     "primevue": "^3.32.1",
     "roar-repackage": "^1.0.11",
     "vega": "^5.26.1",
-    "vega-embed": "^6.23.0",
+    "vega-embed": "^6.24.0",
     "vega-lite": "^5.16.3",
     "vite-plugin-node-polyfills": "^0.9.0",
     "vue": "^3.2.25",
