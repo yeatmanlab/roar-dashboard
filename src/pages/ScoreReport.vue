@@ -21,7 +21,7 @@
             </div>
             <div v-if="isSuperAdmin" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
-                <div v-for="taskId of sortedTaskIds" :key="taskId" class="">
+                <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
                     <DistributionChartOverview
                       :runs="runsByTaskId[taskId]"
@@ -281,6 +281,7 @@ import {
   excludedTasks,
   supportLevelColors,
   getSupportLevel,
+  tasksToDisplayGraphs,
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
@@ -833,6 +834,12 @@ const sortedTaskIds = computed(() => {
     } else {
       return -1;
     }
+  });
+});
+
+const sortedAndFilteredTaskIds = computed(() => {
+  return sortedTaskIds.value.filter((taskId) => {
+    return tasksToDisplayGraphs.includes(taskId);
   });
 });
 
