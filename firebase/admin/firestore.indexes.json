@@ -1531,6 +1531,12 @@
       "fieldPath": "readOrgs",
       "ttl": false,
       "indexes": []
+    },
+    {
+      "collectionGroup": "status",
+      "fieldPath": "completion",
+      "ttl": false,
+      "indexes": []
     }
   ]
 }
