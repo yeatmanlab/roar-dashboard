@@ -76,7 +76,7 @@
       
       
     >
-      <PvColumn selection-mode="multiple" header-style="width:3rem; " :reorderable-column="false" frozen />
+      <PvColumn selection-mode="multiple" header-style="width: 3rem;" :reorderable-column="false" frozen />
       <PvColumn
         v-for="(col, index) of computedColumns"
         :key="col.field + '_' + index"
@@ -88,7 +88,7 @@
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
         align-frozen="left"
-        header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+        header-style="background: var(--primary-color); color: white; padding-top:0; margin-top: 0; padding-bottom: 0; margin-bottom: 0; border: 0; margin-left: 0"
       >
         <template #header>
           <div
@@ -220,13 +220,11 @@ import _get from 'lodash/get';
 import _set from 'lodash/set';
 import _map from 'lodash/map';
 import _forEach from 'lodash/forEach';
-// import _debounce from 'lodash/debounce';
 import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _without from 'lodash/without';
-// import PvInputSwitch from 'primevue/inputswitch';
 
 /*
 Using the DataTable

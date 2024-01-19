@@ -67,7 +67,7 @@
           </div>
           <div v-else>
             <AppSpinner/>
-            <p class="text-center">Still Loading Organization data</p> 
+            <p class="text-center">Loading organization data</p> 
           </div>
           </PvTabPanel>
         </PvTabView>
@@ -227,7 +227,6 @@ const exportAll = async () => {
 };
 
 const tableColumns = computed(() => {
-  console.log("I am loading the name, abbreviation, address and tags")
   const columns = [
     { field: 'name', header: 'Name', dataType: 'string', pinned: true },
     { field: 'abbreviation', header: 'Abbreviation', dataType: 'string' },
@@ -236,7 +235,6 @@ const tableColumns = computed(() => {
   ];
 
   if (['districts', 'schools'].includes(activeOrgType.value)) {
-    console.log("I am loading the districts and schools")
     columns.push(      
       { field: 'mdrNumber', header: 'MDR Number', dataType: 'string' },
       { field: 'ncesId', header: 'NCES ID', dataType: 'string' },
@@ -244,7 +242,6 @@ const tableColumns = computed(() => {
   }
 
   if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
-    console.log("I am loading the districts, schools and classess")
     columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean' });
   }
 

@@ -144,7 +144,6 @@ const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 
-// const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
