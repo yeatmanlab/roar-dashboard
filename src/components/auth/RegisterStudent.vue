@@ -452,9 +452,17 @@ const handleFormSubmit = (isFormValid) => {
     console.log("form is invalid", isFormValid);
     return;
   }
-  console.log("student field sumitting ", state, isFormValid);
+  // format username as an email
+  const computedStudents = state.students.map((student) => {
+    const { studentUsername, ...studentData } = student;
+    return {
+      studentUsername: `${studentUsername}@roar-auth.com`,
+      ...studentData,
+    };
+  });
+  console.log("student field sumitting ", computedStudents, isFormValid);
 
-  emit("submit", state.students);
+  emit("submit", computedStudents);
 };
 
 const resetForm = () => {
@@ -649,14 +657,15 @@ const languageOptions = ref([...languages]);
 }
 .form-section-button2 .p-button {
   width: 40%;
-    margin-right: 0;
-    justify-content: center;
-    background: var(--surface-300);
-    border: var(--surface-300);
-    color: black;
+  margin-right: 0;
+  justify-content: center;
+  background: var(--surface-300);
+  border: var(--surface-300);
+  color: black;
 }
 
-.form-section-button2 .p-button:hover, .p-fluid .p-button:hover{
+.form-section-button2 .p-button:hover,
+.p-fluid .p-button:hover {
   background-color: var(--primary-color);
   color: white;
   border: var(--primary-color);
