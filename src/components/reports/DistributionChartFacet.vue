@@ -1,13 +1,13 @@
 <template>
   <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2">
-    <div class="flex uppercase text-xs font-light">view by</div>
-    <PvSelectButton
-      v-model="facetMode"
-      class="flex flex-row"
-      :options="facetModes"
-      option-label="name"
-      @change="handleFacetModeChange"
-    />
+    <div class="view-by-wrapper">
+      <div class="flex uppercase text-xs font-light">view rows by</div>
+      <PvSelectButton v-model="facetMode" class="flex flex-row my-2" :options="facetModes" option-label="name"
+        @change="handleModeChange" />
+      <div class="flex uppercase text-xs font-light">view scores by</div>
+      <PvSelectButton v-model="scoreMode" class="flex flex-row my-2" :options="scoreModes" option-label="name"
+        @change="handleModeChange" />
+    </div>
   </div>
   <div :id="`roar-dist-chart-${taskId}`"></div>
 </template>
@@ -55,8 +55,38 @@ const facetModes = [
   { name: 'School', key: 'schoolName' },
 ];
 
-const handleFacetModeChange = () => {
+const scoreMode = ref({ name: 'Raw', key: 'rawScore' });
+const scoreModes = [
+  { name: 'Raw', key: 'rawScore' },
+  { name: 'Percentile', key: 'stdPercentile' },
+];
+
+const handleModeChange = () => {
   draw();
+};
+
+const getRangeLow = (scoreMode, taskId) => {
+  if (scoreMode === 'Percentile') {
+    return 0;
+  } else if (scoreMode === 'Raw') {
+    if (taskId === 'pa') return 0;
+
+    else if (taskId === 'sre') return 0;
+    else if (taskId === 'swr') return 100;
+  }
+  return 0;
+};
+
+const getRangeHigh = (scoreMode, taskId) => {
+  if (scoreMode === 'Percentile') {
+    return 100;
+  } else if (scoreMode === 'Raw') {
+    if (taskId === 'pa') return 57;
+
+    else if (taskId === 'sre') return 130;
+    else if (taskId === 'swr') return 900;
+  }
+  return 100;
 };
 
 const distChartFacet = (taskId, runs) => {
@@ -90,30 +120,30 @@ const distChartFacet = (taskId, runs) => {
           labelAnchor: 'middle',
           labelAngle: 0,
           labelAlign: 'left',
-          labelOrient: 'left',
+          labelOrient: 'left',   
           labelExpr:
-            facetMode.value.name === 'Grade' ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')" : '',
+            facetMode.value.name === 'Grade' ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')" : 'slice(datum.value, 1, datum.value.length)',
           labelLimit: 150,
           labelSeparation: 5, // Set the spacing between lines in pixels
         },
         spacing: 10,
-        sort: 'ascending',
+        sort: 'ascending'
       },
 
       color: {
-        field: 'scores.stdPercentile',
+        field: `scores.${scoreMode.value.key}`,
         type: 'quantitative',
         legend: null,
         scale: {
           range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
-          domain: [0, 45, 70, 100],
+          domain: scoreMode.value.name === 'Percentile' ? [0, 45, 70, 100] : "",
         },
       },
 
       x: {
-        field: `scores.stdPercentile`,
-        title: `Percentile`,
-        bin: { step: 10, extent: [0, 100] },
+        field: `scores.${scoreMode.value.key}`,
+        title: `${scoreMode.value.name} Score`,
+        bin: { extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)] },
         sort: 'ascending',
         axis: {
           labelAngle: 0,
@@ -134,7 +164,7 @@ const distChartFacet = (taskId, runs) => {
         },
       },
       tooltip: [
-        { field: 'scores.stdPercentile', title: 'Percentile', type: 'quantitative', format: `.0f` },
+        { field: `scores.${scoreMode.value.key}`, title: `${scoreMode.value.name}`, type: 'quantitative', format: `.0f` },
         { field: 'user.grade', title: 'Student Grade' },
         { aggregate: 'count', title: 'Student Count' },
       ],
@@ -162,6 +192,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+}
+
+.view-by-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: space-around;
 }
 
 .distribution-wrapper {
