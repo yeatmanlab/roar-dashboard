@@ -2,11 +2,21 @@
   <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2">
     <div class="view-by-wrapper">
       <div class="flex uppercase text-xs font-light">view rows by</div>
-      <PvSelectButton v-model="facetMode" class="flex flex-row my-2" :options="facetModes" option-label="name"
-        @change="handleModeChange" />
+      <PvSelectButton
+        v-model="facetMode"
+        class="flex flex-row my-2"
+        :options="facetModes"
+        option-label="name"
+        @change="handleModeChange"
+      />
       <div class="flex uppercase text-xs font-light">view scores by</div>
-      <PvSelectButton v-model="scoreMode" class="flex flex-row my-2" :options="scoreModes" option-label="name"
-        @change="handleModeChange" />
+      <PvSelectButton
+        v-model="scoreMode"
+        class="flex flex-row my-2"
+        :options="scoreModes"
+        option-label="name"
+        @change="handleModeChange"
+      />
     </div>
   </div>
   <div :id="`roar-dist-chart-${taskId}`"></div>
@@ -70,7 +80,6 @@ const getRangeLow = (scoreMode, taskId) => {
     return 0;
   } else if (scoreMode === 'Raw') {
     if (taskId === 'pa') return 0;
-
     else if (taskId === 'sre') return 0;
     else if (taskId === 'swr') return 100;
   }
@@ -82,7 +91,6 @@ const getRangeHigh = (scoreMode, taskId) => {
     return 100;
   } else if (scoreMode === 'Raw') {
     if (taskId === 'pa') return 57;
-
     else if (taskId === 'sre') return 130;
     else if (taskId === 'swr') return 900;
   }
@@ -120,14 +128,16 @@ const distChartFacet = (taskId, runs) => {
           labelAnchor: 'middle',
           labelAngle: 0,
           labelAlign: 'left',
-          labelOrient: 'left',   
+          labelOrient: 'left',
           labelExpr:
-            facetMode.value.name === 'Grade' ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')" : 'slice(datum.value, 1, datum.value.length)',
+            facetMode.value.name === 'Grade'
+              ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
+              : 'slice(datum.value, 1, datum.value.length)',
           labelLimit: 150,
           labelSeparation: 5, // Set the spacing between lines in pixels
         },
         spacing: 10,
-        sort: 'ascending'
+        sort: 'ascending',
       },
 
       color: {
@@ -136,7 +146,7 @@ const distChartFacet = (taskId, runs) => {
         legend: null,
         scale: {
           range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
-          domain: scoreMode.value.name === 'Percentile' ? [0, 45, 70, 100] : "",
+          domain: scoreMode.value.name === 'Percentile' ? [0, 45, 70, 100] : '',
         },
       },
 
@@ -164,7 +174,12 @@ const distChartFacet = (taskId, runs) => {
         },
       },
       tooltip: [
-        { field: `scores.${scoreMode.value.key}`, title: `${scoreMode.value.name}`, type: 'quantitative', format: `.0f` },
+        {
+          field: `scores.${scoreMode.value.key}`,
+          title: `${scoreMode.value.name}`,
+          type: 'quantitative',
+          format: `.0f`,
+        },
         { field: 'user.grade', title: 'Student Grade' },
         { aggregate: 'count', title: 'Student Count' },
       ],

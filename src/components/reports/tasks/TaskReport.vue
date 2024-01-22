@@ -35,7 +35,6 @@
         :org-id="orgId"
         :task-id="taskId"
         :runs="runs"
-        :schoolsInfo="schoolsInfo"
       />
     </div>
   </div>
@@ -103,10 +102,6 @@ const props = defineProps({
   runs: {
     type: Array,
     required: true,
-  },
-  schoolsInfo: {
-    type: Array,
-    required: false,
   },
 });
 

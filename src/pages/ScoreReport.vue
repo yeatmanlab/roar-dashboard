@@ -23,8 +23,14 @@
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
-                    <DistributionChartOverview :runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
-                      :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+                    <DistributionChartOverview
+                      :runs="runsByTaskId[taskId]"
+                      :initialized="initialized"
+                      :task-id="taskId"
+                      :org-type="props.orgType"
+                      :org-id="props.orgId"
+                      :administration-id="props.administrationId"
+                    />
                     <div className="task-description mt-3">
                       <span class="font-bold">
                         {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
@@ -71,19 +77,35 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span>The filters applied have no matching scores.
+          <span
+            >The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <div class="toggle-container">
             <span>View</span>
-            <PvDropdown v-model="viewMode" :options="viewOptions" option-label="label" option-value="value"
-              class="ml-2" />
+            <PvDropdown
+              v-model="viewMode"
+              :options="viewOptions"
+              option-label="label"
+              option-value="value"
+              class="ml-2"
+            />
           </div>
-          <RoarDataTable :data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores" @page="onPage($event)" @sort="onSort($event)"
-            @filter="onFilter($event)" @export-all="exportAll" @export-selected="exportSelected" />
+          <RoarDataTable
+            :data="tableData"
+            :columns="columns"
+            :total-records="scoresCount"
+            lazy
+            :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @filter="onFilter($event)"
+            @export-all="exportAll"
+            @export-selected="exportSelected"
+          />
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">
@@ -118,11 +140,23 @@
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
         <PvTabView v-if="isSuperAdmin">
-          <PvTabPanel v-for="taskId of sortedTaskIds" :key="taskId"
-            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
-            <TaskReport v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
-              :schools-dict="schoolsDict" :schools-info="schoolsInfo" :administration-info="administrationInfo" />
+          <PvTabPanel
+            v-for="taskId of sortedTaskIds"
+            :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
+          >
+            <TaskReport
+              v-if="taskId"
+              :task-id="taskId"
+              :initialized="initialized"
+              :administration-id="administrationId"
+              :runs="runsByTaskId[taskId]"
+              :org-type="orgType"
+              :org-id="orgId"
+              :org-info="orgInfo"
+              :schools-dict="schoolsDict"
+              :administration-info="administrationInfo"
+            />
           </PvTabPanel>
         </PvTabView>
         <div v-else>
@@ -320,7 +354,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = parseLowGrade(school.lowGrade) + " " + school.name;
+      acc[school.id] = parseLowGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -773,7 +807,7 @@ const parseLowGrade = (grade) => {
   else {
     return parseInt(grade);
   }
-}
+};
 
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
