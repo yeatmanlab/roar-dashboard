@@ -14,6 +14,25 @@ export const taskDisplayNames = {
   ExternalTest: { name: 'External Test', order: 13 },
 };
 
+export const descriptionsByTaskId = {
+  // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
+  pa: {
+    header: 'ROAR-Phonological Awareness (ROAR-Phoneme)',
+    description:
+      ' measures the ability to hear and manipulate the individual sounds within words (sound matching and elision). This skill is crucial for building further reading skills, such as decoding.',
+  },
+  swr: {
+    header: 'ROAR-Single Word Recognition (ROAR-Word)',
+    description: ' assesses decoding skills at the word level.',
+  },
+  sre: {
+    header: 'ROAR-Sentence Reading Efficiency (ROAR-Sentence)',
+    description: ' assesses reading fluency at the sentence level.',
+  },
+};
+
+export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
+
 export const excludedTasks = ['cva', 'morphology'];
 
 export const supportLevelColors = {

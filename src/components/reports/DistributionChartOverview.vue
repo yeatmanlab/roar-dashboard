@@ -64,56 +64,45 @@ const supportLevelsOverview = computed(() => {
 
 const overviewDistributionChart = (taskId) => {
   const spec = {
-    mark: 'bar',
-    height: 170,
-    width: 170,
+    mark: 'arc',
+    height: 190,
+    width: 190,
+    spacing: 10,
     background: null,
     title: {
       text: `ROAR-${taskDisplayNames[taskId].name}`,
       subtitle: `Count by Support Level`,
       anchor: 'middle',
-      fontSize: 16,
+      fontSize: 20,
+      offset: 15,
     },
     data: {
       values: supportLevelsOverview.value,
     },
     encoding: {
-      y: {
+      theta: {
         field: 'value',
         title: `Count of Students`,
         type: 'quantitative',
-        spacing: 1,
-        fontSize: 14,
-        axis: {
-          labelFontSize: 12,
-          titleFontSize: 12,
-        },
-      },
-      x: {
-        field: 'category',
-        type: 'ordinal',
-        title: 'Support Level',
-        spacing: 1,
-        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
-        legend: null,
-        axis: {
-          labelAngle: -30,
-          labelAlign: 'right',
-          titleFontSize: 12,
-          labelFontSize: 12,
-        },
+        stack: true,
+        axis: null,
       },
       color: {
         field: 'category',
         title: 'Support Level',
-        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
-        scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
-        legend: null,
+        scale: {
+          domain: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+          range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
+        },
+        legend: false,
       },
       tooltip: [
         { title: 'Count', field: 'value', type: 'quantitative', format: '.0f' },
         { field: 'category', title: 'Support Level' },
       ],
+    },
+    config: {
+      arc: { innerRadius: 0 },
     },
   };
   return spec;
