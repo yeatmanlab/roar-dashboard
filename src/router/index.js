@@ -92,6 +92,15 @@ const routes = [
     meta: { pageTitle: 'Fluency' },
   },
   {
+    path: '/game/:taskId',
+    name: 'Core Tasks',
+    component: () => import('../components/tasks/TaskLevante.vue'),
+    props: true,
+    // Add which specific task?
+    // Code in App.vue overwrites updating it programtically
+    meta: { pageTitle: 'Core Tasks' },
+  },
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),
