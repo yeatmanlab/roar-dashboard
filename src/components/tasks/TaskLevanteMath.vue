@@ -8,18 +8,24 @@
   <script setup>
   import { TaskLauncher } from 'core-tasks'
   import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
-  import { useRouter } from 'vue-router';
+  import { useRouter, useRoute } from 'vue-router';
   import { storeToRefs } from 'pinia';
   import { useQuery } from '@tanstack/vue-query';
   import { useAuthStore } from '@/store/auth';
   import { useGameStore } from '@/store/game';
   import _get from 'lodash/get';
   import { fetchDocById } from '@/helpers/query/utils';
-  import { toRaw } from 'vue';
+  import { toRaw, computed } from 'vue';
   
   const props = defineProps({
-    taskId: { type: String, required: true, default: 'core-tasks' },
+    taskId: { type: String, default: 'core-tasks' },
+    taskName: { type: String },
   });
+
+  const route = useRoute();
+  const recievedTaskName = computed(() => route.params.taskName);
+
+  console.log(recievedTaskName.value)
   
   const taskId = props.taskId;
   const router = useRouter();
@@ -87,7 +93,7 @@
   async function startTask() {
     console.log('selectedAdmin.value:', toRaw(selectedAdmin.value))
     console.log('taskId:', taskId)
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, recievedTaskName.value);
   
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);

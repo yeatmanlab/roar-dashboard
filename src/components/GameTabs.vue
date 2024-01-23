@@ -53,9 +53,29 @@
           </div>
 
           <router-link
-            v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
+            v-if="
+              !allGamesComplete &&
+              !game.completedOn &&
+              !game.taskData?.taskURL &&
+              !game.taskData?.variantURL &&
+              game.taskId !== 'core-tasks'
+            "
             :to="{ path: 'game/' + game.taskId }"
           ></router-link>
+
+          <router-link
+            v-if="
+              !allGamesComplete &&
+              !game.completedOn &&
+              !game.taskData?.taskURL &&
+              !game.taskData?.variantURL
+            "
+            :to="{ 
+              name: 'Core Tasks',
+              params: { taskName: game.params.taskName } 
+            }"
+          ></router-link>
+
         </article>
       </PvTabPanel>
     </PvTabView>

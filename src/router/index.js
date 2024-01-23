@@ -92,10 +92,12 @@ const routes = [
     meta: { pageTitle: 'Fluency' },
   },
   {
-    path: '/game/core-tasks',
-    name: 'core-tasks',
+    path: '/game/:taskName',
+    name: 'Core Tasks',
     component: () => import('../components/tasks/TaskLevanteMath.vue'),
-    props: { taskId: 'core-tasks' },
+    props: true,
+    // Add which specific task?
+    // Code in App.vue overwrites updating it programtically
     meta: { pageTitle: 'Core Tasks' },
   },
   {
