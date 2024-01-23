@@ -19,7 +19,7 @@
       />
     </div>
   </div>
-  <div :id="`roar-dist-chart-${taskId}`"></div>
+  <div :id="`roar-distribution-chart-${taskId}`"></div>
 </template>
 
 <script setup>
@@ -97,7 +97,7 @@ const getRangeHigh = (scoreMode, taskId) => {
   return 100;
 };
 
-const distChartFacet = (taskId, runs) => {
+const distributionChartFacet = (taskId, runs) => {
   return {
     background: null,
     title: {
@@ -193,8 +193,8 @@ const distChartFacet = (taskId, runs) => {
 };
 
 const draw = async () => {
-  let chartSpecDist = distChartFacet(props.taskId, props.runs);
-  await embed(`#roar-dist-chart-${props.taskId}`, chartSpecDist);
+  let chartSpecDist = distributionChartFacet(props.taskId, props.runs);
+  await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
 
 onMounted(() => {

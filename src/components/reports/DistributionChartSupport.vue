@@ -9,7 +9,7 @@
       @change="handleXModeChange"
     />
   </div>
-  <div :id="`roar-dist-chart-support-${taskId}`"></div>
+  <div :id="`roar-distribution-chart-support-${taskId}`"></div>
 </template>
 
 <script setup>
@@ -108,7 +108,7 @@ const returnSupportLevelValues = computed(() => {
   return values;
 });
 
-const distBySupport = computed(() => {
+const distributionBySupport = computed(() => {
   let spec = {
     mark: 'bar',
     height: 450,
@@ -212,8 +212,8 @@ const props = defineProps({
 });
 
 const draw = async () => {
-  let chartSpecSupport = distBySupport.value;
-  await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpecSupport);
+  let chartSpecSupport = distributionBySupport.value;
+  await embed(`#roar-distribution-chart-support-${props.taskId}`, chartSpecSupport);
   // Other chart types can be added via this if/then pattern
 };
 
