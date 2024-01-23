@@ -41,14 +41,28 @@ export const supportLevelColors = {
   below: '#c93d82',
 };
 
-export const getSupportLevel = (percentile) => {
+// function should also accept raw score and grade
+export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
   let support_level = null;
   let tag_color = null;
-  if (percentile !== undefined) {
+  if (percentile !== undefined && grade < 6) {
     if (percentile >= 50) {
       support_level = 'At or Above Average';
       tag_color = supportLevelColors.above;
     } else if (percentile > 25 && percentile < 50) {
+      support_level = 'Needs Some Support';
+      tag_color = supportLevelColors.some;
+    } else {
+      support_level = 'Needs Extra Support';
+      tag_color = supportLevelColors.below;
+    }
+  } else if (rawScore !== undefined && grade >= 6) {
+    const { above, some, below } = getRawScoreThreshold(taskId);
+    console.log(below)
+    if (rawScore >= above) {
+      support_level = 'At or Above Average';
+      tag_color = supportLevelColors.above;
+    } else if (rawScore > some && percentile < above) {
       support_level = 'Needs Some Support';
       tag_color = supportLevelColors.some;
     } else {
@@ -61,3 +75,26 @@ export const getSupportLevel = (percentile) => {
     tag_color,
   };
 };
+
+const getRawScoreThreshold = (taskId) => {
+  if (taskId === 'swr') {
+    return {
+      above: 1,
+      some: 1,
+      below: 1,
+    };
+  } else if (taskId === 'sre') {
+    return {
+      above: 1,
+      some: 1,
+      below: 1,
+    };
+  } else if (taskId === 'pa') {
+    return {
+      above: 1,
+      some: 1,
+      below: 1,
+    };
+  }
+  return null;
+}
