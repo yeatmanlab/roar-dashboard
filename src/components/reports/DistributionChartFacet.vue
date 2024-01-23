@@ -1,29 +1,21 @@
 <template>
-  <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2">
-    <div class="view-by-wrapper">
-      <div class="flex uppercase text-xs font-light">view rows by</div>
-      <PvSelectButton
-        v-model="facetMode"
-        class="flex flex-row my-2"
-        :options="facetModes"
-        option-label="name"
-        @change="handleModeChange"
-      />
-      <div class="flex uppercase text-xs font-light">view scores by</div>
-      <PvSelectButton
-        v-model="scoreMode"
-        class="flex flex-row my-2"
-        :options="scoreModes"
-        option-label="name"
-        @change="handleModeChange"
-      />
-    </div>
+  <!-- <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2"> -->
+  <div v-if="orgType === 'district'" class="view-by-wrapper">
+    <div class="flex uppercase text-xs font-light">view scores by</div>
+    <PvSelectButton
+      v-model="scoreMode"
+      class="flex flex-row my-2"
+      :options="scoreModes"
+      option-label="name"
+      @change="handleModeChange"
+    />
   </div>
+  <!-- </div> -->
   <div :id="`roar-distribution-chart-${taskId}`"></div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
@@ -48,10 +40,12 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  mode: {
-    type: String,
-    required: false,
-    default: 'percentage',
+  facetMode: {
+    type: Object,
+    required: true,
+    default() {
+      return { name: 'Grade', key: 'grade' };
+    },
   },
   runs: {
     type: Array,
@@ -59,21 +53,11 @@ const props = defineProps({
   },
 });
 
-const facetMode = ref({ name: 'Grade', key: 'grade' });
-const facetModes = [
-  { name: 'Grade', key: 'grade' },
-  { name: 'School', key: 'schoolName' },
-];
-
 const scoreMode = ref({ name: 'Raw', key: 'rawScore' });
 const scoreModes = [
   { name: 'Raw', key: 'rawScore' },
   { name: 'Percentile', key: 'stdPercentile' },
 ];
-
-const handleModeChange = () => {
-  draw();
-};
 
 const getRangeLow = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
@@ -114,7 +98,7 @@ const distributionChartFacet = (taskId, runs) => {
     width: 360,
     encoding: {
       row: {
-        field: facetMode.value.key === 'grade' ? `grade` : `user.${facetMode.value.key}`,
+        field: props.facetMode.key === 'grade' ? `grade` : `user.${props.facetMode.key}`,
         type: 'ordinal',
         title: '',
         header: {
@@ -130,7 +114,7 @@ const distributionChartFacet = (taskId, runs) => {
           labelAlign: 'left',
           labelOrient: 'left',
           labelExpr:
-            facetMode.value.name === 'Grade'
+            props.facetMode.name === 'Grade'
               ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
               : 'slice(datum.value, 1, datum.value.length)',
           labelLimit: 150,
@@ -197,6 +181,17 @@ const draw = async () => {
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
 
+watch(
+  () => props.facetMode,
+  () => {
+    draw();
+  },
+);
+
+const handleModeChange = () => {
+  draw();
+};
+
 onMounted(() => {
   draw(); // Call your function when the component is mounted
 });
@@ -205,6 +200,7 @@ onMounted(() => {
 <style lang="scss">
 .mode-select-wrapper {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: flex-end;
 }
