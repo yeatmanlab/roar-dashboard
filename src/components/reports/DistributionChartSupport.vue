@@ -1,6 +1,6 @@
 <template>
-  <div class="view-by-wrapper">
-    <div class="flex uppercase text-xs font-light">view by</div>
+  <div class="view-by-wrapper mx-2">
+    <div class="flex uppercase text-xs font-light">view support levels by</div>
     <PvSelectButton
       v-model="xMode"
       class="flex flex-row my-2"

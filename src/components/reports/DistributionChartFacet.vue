@@ -1,5 +1,5 @@
 <template>
-  <div v-if="orgType === 'district'" class="view-by-wrapper">
+  <div class="view-by-wrapper mx-2">
     <div class="flex uppercase text-xs font-light">view scores by</div>
     <PvSelectButton
       v-model="scoreMode"
@@ -52,16 +52,16 @@ const props = defineProps({
   },
 });
 
-const scoreMode = ref({ name: 'Raw', key: 'rawScore' });
+const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
 const scoreModes = [
-  { name: 'Raw', key: 'rawScore' },
+  { name: 'Raw Score', key: 'rawScore' },
   { name: 'Percentile', key: 'stdPercentile' },
 ];
 
 const getRangeLow = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 0;
-  } else if (scoreMode === 'Raw') {
+  } else if (scoreMode === 'Raw Score') {
     if (taskId === 'pa') return 0;
     else if (taskId === 'sre') return 0;
     else if (taskId === 'swr') return 100;
@@ -72,7 +72,7 @@ const getRangeLow = (scoreMode, taskId) => {
 const getRangeHigh = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 100;
-  } else if (scoreMode === 'Raw') {
+  } else if (scoreMode === 'Raw Score') {
     if (taskId === 'pa') return 57;
     else if (taskId === 'sre') return 130;
     else if (taskId === 'swr') return 900;
@@ -85,7 +85,7 @@ const distributionChartFacet = (taskId, runs) => {
     background: null,
     title: {
       text: `ROAR-${taskDisplayNames[taskId].name}`,
-      subtitle: 'Distribution of Percentile By Grade',
+      subtitle: `${scoreMode.value.name} Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,
     },
@@ -125,17 +125,21 @@ const distributionChartFacet = (taskId, runs) => {
 
       color: {
         field: `scores.${scoreMode.value.key}`,
+        scheme: 'blues',
         type: 'quantitative',
         legend: null,
         scale: {
-          range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
+          range:
+            scoreMode.value.name === 'Percentile'
+              ? ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green']
+              : ['#ADD8E6', '#000080'],
           domain: scoreMode.value.name === 'Percentile' ? [0, 45, 70, 100] : '',
         },
       },
 
       x: {
         field: `scores.${scoreMode.value.key}`,
-        title: `${scoreMode.value.name} Score`,
+        title: scoreMode.value.name === 'Percentile' ? `${scoreMode.value.name} Score` : `${scoreMode.value.name}`,
         bin: { extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)] },
         sort: 'ascending',
         axis: {
