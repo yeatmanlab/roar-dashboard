@@ -3,7 +3,8 @@
     <div class="flex uppercase text-xs font-light">view scores by</div>
     <PvSelectButton
       v-model="scoreMode"
-      class="flex flex-row my-2"
+      :allow-empty="false"
+      class="flex flex-row my-2 select-button"
       :options="scoreModes"
       option-label="name"
       @change="handleModeChange"

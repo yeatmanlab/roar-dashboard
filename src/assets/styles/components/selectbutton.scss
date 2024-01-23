@@ -38,3 +38,15 @@
 .p-selectbutton.p-invalid > .p-button {
   border-color: var(--red-100);
 }
+
+.select-button .p-button {
+  margin: 0px;
+}
+.select-button .p-button:last-of-type:not(:only-of-type) {
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+}
+.select-button .p-button:first-of-type:not(:only-of-type) {
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}

@@ -21,7 +21,8 @@
       <div class="flex uppercase text-xs font-light">view rows by</div>
       <PvSelectButton
         v-model="facetMode"
-        class="flex flex-row my-2"
+        class="flex flex-row my-2 select-button"
+        :allow-empty="false"
         :options="facetModes"
         option-label="name"
         @change="handleModeChange"

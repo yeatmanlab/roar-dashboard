@@ -3,7 +3,8 @@
     <div class="flex uppercase text-xs font-light">view support levels by</div>
     <PvSelectButton
       v-model="xMode"
-      class="flex flex-row my-2"
+      class="flex flex-row my-2 select-button"
+      :allow-empty="false"
       :options="xModes"
       option-label="name"
       @change="handleXModeChange"
