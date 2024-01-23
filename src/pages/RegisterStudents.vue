@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <!--Upload file section-->
       <div v-if="!isFileUploaded">
@@ -138,8 +135,6 @@ import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'vue-router';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '../router/sidebarActions';
 import { useToast } from 'primevue/usetoast';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
@@ -150,7 +145,6 @@ const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
