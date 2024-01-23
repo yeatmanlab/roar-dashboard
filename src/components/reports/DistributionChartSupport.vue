@@ -268,13 +268,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-.mode-select-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: space-around;
-  justify-content: flex-start;
-  // justify-content: flex-end;
-}
 .view-by-wrapper {
   display: flex;
   flex-direction: column;

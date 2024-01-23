@@ -1,5 +1,4 @@
 <template>
-  <!-- <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2"> -->
   <div v-if="orgType === 'district'" class="view-by-wrapper">
     <div class="flex uppercase text-xs font-light">view scores by</div>
     <PvSelectButton
@@ -198,13 +197,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-.mode-select-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-}
-
 .view-by-wrapper {
   display: flex;
   flex-direction: column;
