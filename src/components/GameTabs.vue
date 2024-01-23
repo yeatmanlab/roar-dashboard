@@ -20,12 +20,12 @@
           <!--Locked Game-->
           <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
           <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{
-            game.taskData.name
+            game.taskId === 'core-tasks' ? game.params.taskName : game.taskData.name
           }}</span>
         </template>
         <article class="roar-tabview-game pointer" @click="routeExternalTask(game)">
           <div class="roar-game-content">
-            <h2 class="roar-game-title">{{ game.taskData.name }}</h2>
+            <h2 class="roar-game-title">{{ game.taskId === 'core-tasks' ? game.params.taskName : game.taskData.name }}</h2>
             <div class="roar-game-description">
               <p>{{ game.taskData.description }}</p>
             </div>
@@ -75,6 +75,8 @@ const props = defineProps({
   sequential: { type: Boolean, required: false, default: true },
   userData: { type: Object, required: true },
 });
+
+console.log('games in props:', props.games);
 
 const currentGameId = computed(() => {
   return _get(

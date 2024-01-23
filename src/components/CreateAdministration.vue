@@ -211,8 +211,15 @@ const assessments = ref([[], []]);
 const backupImage = '/src/assets/swr-icon.jpeg';
 
 const checkForUniqueTasks = (assignments) => {
+  console.log('assignments:', assignments);
   if (_isEmpty(assignments)) return false;
-  const uniqueTasks = _uniqBy(assignments, (assignment) => assignment.taskId);
+  let isCoreTasks = false
+  const uniqueTasks = _uniqBy(assignments, (assignment) => {
+    if (assignment.taskId === 'core-tasks') isCoreTasks = true;
+    return assignment.taskId;
+  });
+
+  if (isCoreTasks) return true
   return uniqueTasks.length === assignments.length;
 };
 

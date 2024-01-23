@@ -92,6 +92,13 @@ const routes = [
     meta: { pageTitle: 'Fluency' },
   },
   {
+    path: '/game/core-tasks',
+    name: 'core-tasks',
+    component: () => import('../components/tasks/TaskLevanteMath.vue'),
+    props: { taskId: 'core-tasks' },
+    meta: { pageTitle: 'Core Tasks' },
+  },
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),
