@@ -127,7 +127,7 @@ export const getUsersByAssignmentIdRequestBody = ({
   adminId,
   orgType,
   orgId,
-  filterBy,
+  filter,
   aggregationQuery,
   pageLimit,
   page,
@@ -162,7 +162,6 @@ export const getUsersByAssignmentIdRequestBody = ({
     compositeFilter: {
       op: 'AND',
       filters: [
-        { fieldFilter: { ...filterBy, op: 'EQUAL' } },
         {
           fieldFilter: {
             field: { fieldPath: `${pluralizeFirestoreCollection(orgType)}.current` },
@@ -180,6 +179,17 @@ export const getUsersByAssignmentIdRequestBody = ({
       ],
     },
   };
+
+  if (filter) {
+    console.log('filter in request body', filter);
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: filter[0].field },
+        op: 'EQUAL',
+        value: { stringValue: filter[0].value },
+      },
+    });
+  }
 
   if (aggregationQuery) {
     return {
@@ -443,6 +453,7 @@ export const assignmentPageFetcher = async (
     throw new Error('You may specify at most one filter');
   }
 
+  // Handle filtering based on scores
   if (filters.length && filters[0].collection === 'scores') {
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
@@ -608,6 +619,22 @@ export const assignmentPageFetcher = async (
         }),
         undefined,
       );
+    });
+  } else if (filters.length && filters[0].collection === 'users') {
+    console.log('filtering on users collection!', filters);
+    const requestBody = getUsersByAssignmentIdRequestBody({
+      adminId: adminId,
+      orgType: orgType,
+      orgId: orgId,
+      aggregationQuery: false,
+      pageLimit: pageLimit.value,
+      page: page.value,
+      paginate: paginate,
+      filter: filters,
+    });
+    console.log('Request Body', requestBody);
+    return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+      console.log('Found Data:', data);
     });
   } else {
     const requestBody = getAssignmentsRequestBody({
