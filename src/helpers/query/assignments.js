@@ -7,6 +7,7 @@ import _mapValues from 'lodash/mapValues';
 import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
+import _isEmpty from 'lodash/isEmpty'
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 
@@ -33,6 +34,7 @@ export const getAssignmentsRequestBody = ({
   page,
   paginate = true,
   select = assignmentSelectFields,
+  filter = {},
   isCollectionGroupQuery = true,
 }) => {
   const requestBody = {
@@ -81,20 +83,28 @@ export const getAssignmentsRequestBody = ({
         ],
       },
     };
-    // if(!_isEmpty(filters)){
-    //   const userFilters = (filters.map(filter => {
-    //     console.log('filter ->', filter)
-    //     return {
-    //       fieldFilter: {
-    //         field: { fieldPath: filter.field },
-    //         op: "EQUAL", // Need more logic here later for different constraints
-    //         value: { stringValue: filter.value }
-    //       }
-    //     }
-    //   }))
-    // } else {
-    //   console.log('skipping filters')
-    // }
+    if(!_isEmpty(filter)){
+      console.log('filters are:', filter)
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.${filter.field}` },
+          op: 'EQUAL',
+          value: { stringValue: filter.value }
+        }
+      })
+      // const userFilters = (filters.map(filter => {
+      //   console.log('filter ->', filter)
+      //   return {
+      //     fieldFilter: {
+      //       field: { fieldPath: filter.field },
+      //       op: "EQUAL", // Need more logic here later for different constraints
+      //       value: { stringValue: filter.value }
+      //     }
+      //   }
+      // }))
+    } else {
+      console.log('skipping filters')
+    }
   } else {
     const currentDate = new Date().toISOString();
     requestBody.structuredQuery.where = {
@@ -620,33 +630,45 @@ export const assignmentPageFetcher = async (
         undefined,
       );
     });
-  } else if (filters.length && filters[0].collection === 'users') {
-    console.log('filtering on users collection!', filters);
-    const requestBody = getUsersByAssignmentIdRequestBody({
-      adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
-      aggregationQuery: false,
-      pageLimit: pageLimit.value,
-      page: page.value,
-      paginate: paginate,
-      filter: filters,
-    });
-    console.log('Request Body', requestBody);
-    return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-      console.log('Found Data:', data);
-    });
+  // } else if (filters.length && filters[0].collection === 'users') {
+  //   console.log('filtering on users collection!', filters);
+  //   const requestBody = getUsersByAssignmentIdRequestBody({
+  //     adminId: adminId,
+  //     orgType: orgType,
+  //     orgId: orgId,
+  //     aggregationQuery: false,
+  //     pageLimit: pageLimit.value,
+  //     page: page.value,
+  //     paginate: paginate,
+  //     filter: filters,
+  //   });
+  //   console.log('Request Body', requestBody);
+  //   return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+  //     console.log('Found Data:', data);
+  //   });
   } else {
+    let userFilter = null;
+    let orgFilter = null;
+    if(filters.length && filters[0].collection === 'users'){
+      userFilter = filters[0]
+      console.log('field is', userFilter.field)
+    }
+    if(filters.length && filters[0].collection === 'school'){
+      orgFilter = filters[0].value;
+      console.log('school filter:', filters[0].value)
+    }
+    console.log('using', orgFilter ? orgFilter : orgId)
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
+      orgType: orgFilter ? 'school' : orgType,
+      // orgId: orgId,
+      orgId: orgFilter ? orgFilter : orgId,
       aggregationQuery: false,
       pageLimit: pageLimit.value,
       page: page.value,
       paginate: paginate,
       select: select,
-      filters: filters,
+      filter: userFilter,
     });
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {

@@ -420,10 +420,19 @@ const onFilter = (event) => {
     const constraint = _head(_get(filter, 'constraints'));
     if (_get(constraint, 'value')) {
       const path = filterKey.split('.');
-      let collection;
       if (_head(path) === 'user') {
-        collection = 'users';
-        filters.push({ ...constraint, collection, field: _tail(path).join('.') });
+        // Special case for school 
+        if(path[1] === 'schoolName') {
+          // find ID from given name
+          const schoolName = constraint.value;
+          const schoolEntry = _find(schoolsInfo.value, { name: schoolName })
+          if(!_isEmpty(schoolEntry)){
+            filters.push({ value: schoolEntry.id, collection: 'school', field: 'assigningOrgs.schools' })
+          }
+        } else {
+          filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
+        }
+        
       }
       if (_head(path) === 'scores') {
         const taskId = path[1];
