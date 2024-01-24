@@ -41,6 +41,11 @@ jobs:
     env:
       CYPRESS_BASE_URL: ${{ needs.build-and-preview.outputs.deployUrl }}
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
+      PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
+      PARTNER_ADMIN_ID: ${{ secrets.PARTNER_ADMIN_ID }}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
+      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
