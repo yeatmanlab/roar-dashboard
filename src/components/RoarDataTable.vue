@@ -171,6 +171,13 @@
             v-model="filterModel.value"
             type="text"
             class="p-column-filter"
+            placeholder="Search (Case Sensitive)"
+          />
+          <PvInputNumber
+            v-if="col.dataType === 'number' && !col.useMultiSelect"
+            v-model="filterModel.value"
+            type="text"
+            class="p-column-filter"
             placeholder="Search"
           />
           <PvMultiSelect
@@ -316,7 +323,7 @@ _forEach(computedColumns.value, (column) => {
     if (dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN') {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
     } else if (dataType === 'TEXT' || dataType === 'STRING') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
     } else if (dataType === 'DATE') {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
     } else if (dataType === 'SCORE') {

@@ -154,7 +154,6 @@
               :org-type="orgType"
               :org-id="orgId"
               :org-info="orgInfo"
-              :schools-dict="schoolsDict"
               :administration-info="administrationInfo"
             />
           </PvTabPanel>
@@ -652,7 +651,7 @@ const columns = computed(() => {
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
     { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
     { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'number', sort: false },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: false },
   ];
 
   if (props.orgType === 'district') {

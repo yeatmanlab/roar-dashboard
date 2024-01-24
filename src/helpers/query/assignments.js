@@ -660,13 +660,10 @@ export const assignmentPageFetcher = async (
     let orgFilter = null;
     if(filters.length && filters[0].collection === 'users'){
       userFilter = filters[0]
-      console.log('field is', userFilter.field)
     }
     if(filters.length && filters[0].collection === 'school'){
       orgFilter = filters[0].value;
-      console.log('school filter:', filters[0].value)
     }
-    console.log('using', orgFilter ? orgFilter : orgId)
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
