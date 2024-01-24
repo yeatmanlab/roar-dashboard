@@ -55,5 +55,5 @@ jobs:
           wait-on-timeout: 60
           record: true
           parallel: true
-          spec: cypress/e2e/participant/checkLegalDoc.cy.js
+          spec: 'cypress/e2e/participant/**/*,cypress/e2e/partner-admin/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}

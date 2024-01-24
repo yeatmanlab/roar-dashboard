@@ -79,7 +79,7 @@ function makeChoiceOrContinue(game, overflow) {
       else {
         body.find(game.clickableItem, { timeout: 10000 }).first().click();
       }
-      if (overflow < 50) {
+      if (overflow < 100) {
         makeChoiceOrContinue(game, overflow++);
       }
     }

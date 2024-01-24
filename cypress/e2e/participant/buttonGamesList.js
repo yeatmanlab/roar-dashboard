@@ -37,7 +37,7 @@ export const games = [
     preChoiceDelay: 1500,
     setupChoice: '',
     correctChoice: '.glowingButton',
-    numIter: 4,
+    numIter: 6,
   },
   {
     name: 'Letter',
