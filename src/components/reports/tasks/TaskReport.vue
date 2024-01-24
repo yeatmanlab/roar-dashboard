@@ -188,9 +188,9 @@ let tasksInfoById = {
   },
   letter: {
     color: '#E19834',
-    header: 'ROAR-LETTER',
+    header: 'ROAR-LETTER NAMES AND SOUNDS',
     subheader: 'Single Letter Recognition',
-    desc: 'ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict success in learning to read. Learning the connection between letters and the sounds they represent is fundamental for learning to decode and spell words. This assessment provides educators with valuable insights to customize instruction and address any gaps in these foundational skills.',
+    desc: 'ROAR-Letter Names and Sounds assesses a student’s knowledge of letter names and letter sounds. Knowing letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict success in learning to read. Learning the connection between letters and the sounds they represent is fundamental for learning to decode and spell words. This assessment provides educators with valuable insights to customize instruction and address any gaps in these foundational skills.',
   },
 };
 </script>
