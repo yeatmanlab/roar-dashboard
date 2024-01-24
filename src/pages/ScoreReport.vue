@@ -19,7 +19,7 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div v-if="isSuperAdmin" class="overview-wrapper bg-gray-100 py-3 mb-2">
+            <div v-if="isSuperAdmin && !isLoadingRunResults" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
@@ -42,7 +42,7 @@
                   </div>
                 </div>
               </div>
-              <div v-if="!isLoadingRunResults" class="legend-container">
+              <div v-if="!isLoadingRunResults && sortedAndFilteredTaskIds?.length > 0" class="legend-container">
                 <div class="legend-entry">
                   <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
                   <div>
@@ -345,7 +345,7 @@ const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
   queryKey: ['schools', ref(props.orgId)],
-  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
+  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
   keepPreviousData: true,
   enabled: props.orgType === 'district' && initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -354,7 +354,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = school.name;
+      acc[school.id] = parseLowGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -791,11 +791,30 @@ function scoreFieldAboveSixth(taskId) {
   return 'percentile';
 }
 
+function rawScoreByTaskId(taskId) {
+  if (taskId === 'swr') {
+    return 'roarScore';
+  } else if (taskId === 'sre') {
+    return 'sreScore';
+  } else if (taskId === 'pa') {
+    return 'roarScore';
+  }
+  return 'roarScore';
+}
+
+const parseLowGrade = (grade) => {
+  if (grade === 'PreKindergarten' || grade === 'Kindergarten') return 0;
+  else {
+    return parseInt(grade);
+  }
+};
+
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
   const computedScores = {};
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
+    const rawScore = _get(scores, rawScoreByTaskId(taskId));
     if (user?.data?.grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
@@ -809,6 +828,7 @@ const runsByTaskId = computed(() => {
         ...scores,
         support_level: support_level,
         stdPercentile: percentScore,
+        rawScore: rawScore,
       },
       taskId,
       user: {
