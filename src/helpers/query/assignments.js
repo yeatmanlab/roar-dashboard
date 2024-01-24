@@ -433,11 +433,20 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
     });
   } else {
+    let userFilter = null;
+    let orgFilter = null;
+    if(filters.length && filters[0].collection === 'users'){
+      userFilter = filters[0]
+    }
+    if(filters.length && filters[0].collection === 'school'){
+      orgFilter = filters[0].value
+    }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
+      orgType: orgFilter ? 'school' : orgType,
+      orgId: orgFilter ? orgFilter : orgId,
       aggregationQuery: true,
+      filter: userFilter,
     });
     return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
@@ -661,7 +670,6 @@ export const assignmentPageFetcher = async (
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
-      // orgId: orgId,
       orgId: orgFilter ? orgFilter : orgId,
       aggregationQuery: false,
       pageLimit: pageLimit.value,
