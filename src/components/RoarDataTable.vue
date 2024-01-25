@@ -88,6 +88,7 @@
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
         align-frozen="left"
+        :class="{ 'filter-button-override': hideFilterButtons }"
       >
         <template #header>
           <div
@@ -166,13 +167,10 @@
           </div>
         </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
-          <PvInputText
-            v-if="col.dataType === 'text' && !col.useMultiSelect"
-            v-model="filterModel.value"
-            type="text"
-            class="p-column-filter"
-            placeholder="Search (Case Sensitive)"
-          />
+          <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
+            <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
+            <small>Filter is case sensitive.</small>
+          </div>
           <PvInputNumber
             v-if="col.dataType === 'number' && !col.useMultiSelect"
             v-model="filterModel.value"
@@ -223,6 +221,8 @@ import SkeletonTable from '@/components/SkeletonTable.vue';
 import _get from 'lodash/get';
 import _set from 'lodash/set';
 import _map from 'lodash/map';
+import _head from 'lodash/head';
+import _isEmpty from 'lodash/isEmpty';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
 import _filter from 'lodash/filter';
@@ -272,6 +272,8 @@ const computedColumns = computed(() => {
     return _find(props.columns, (pcol) => pcol.header === col.header);
   });
 });
+const currentFilter = ref([]);
+const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value));
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -451,6 +453,15 @@ const onSort = (event) => {
   emit('sort', event);
 };
 const onFilter = (event) => {
+  const filters = [];
+  for (const filterKey in _get(event, 'filters')) {
+    const filter = _get(event, 'filters')[filterKey];
+    const constraint = _head(_get(filter, 'constraints'));
+    if (_get(constraint, 'value')) {
+      filters.push(filterKey);
+    }
+  }
+  currentFilter.value = filters;
   emit('filter', event);
 };
 </script>
@@ -464,5 +475,17 @@ const onFilter = (event) => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+}
+.filter-content {
+  width: 12rem;
+}
+.filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
+  display: none;
+}
+.p-column-filter-matchmode-dropdown {
+  /* Our current filtering queries do not support options other than equals
+     for strings. To reduce confusion for end users, remove the dropdown
+     offering different matchmodes */
+  display: none;
 }
 </style>

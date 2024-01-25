@@ -7,9 +7,10 @@ import _mapValues from 'lodash/mapValues';
 import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
-import _isEmpty from 'lodash/isEmpty'
+import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { toRaw } from 'vue';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
@@ -35,6 +36,7 @@ export const getAssignmentsRequestBody = ({
   paginate = true,
   select = assignmentSelectFields,
   filter = {},
+  orderBy = [],
   isCollectionGroupQuery = true,
 }) => {
   const requestBody = {
@@ -83,15 +85,20 @@ export const getAssignmentsRequestBody = ({
         ],
       },
     };
-    if(!_isEmpty(filter)){
-      console.log('filters are:', filter)
+
+    if (!_isEmpty(orderBy)) {
+      requestBody.structuredQuery.orderBy = orderBy;
+    }
+
+    if (!_isEmpty(filter)) {
+      console.log('filters are:', filter);
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `userData.${filter.field}` },
           op: 'EQUAL',
-          value: { stringValue: filter.value }
-        }
-      })
+          value: { stringValue: filter.value },
+        },
+      });
       // const userFilters = (filters.map(filter => {
       //   console.log('filter ->', filter)
       //   return {
@@ -103,7 +110,7 @@ export const getAssignmentsRequestBody = ({
       //   }
       // }))
     } else {
-      console.log('skipping filters')
+      console.log('skipping filters');
     }
   } else {
     const currentDate = new Date().toISOString();
@@ -435,11 +442,11 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   } else {
     let userFilter = null;
     let orgFilter = null;
-    if(filters.length && filters[0].collection === 'users'){
-      userFilter = filters[0]
+    if (filters.length && filters[0].collection === 'users') {
+      userFilter = filters[0];
     }
-    if(filters.length && filters[0].collection === 'school'){
-      orgFilter = filters[0].value
+    if (filters.length && filters[0].collection === 'school') {
+      orgFilter = filters[0].value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
@@ -464,6 +471,7 @@ export const assignmentPageFetcher = async (
   select = undefined,
   paginate = true,
   filters = [],
+  orderBy = [],
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
@@ -639,29 +647,29 @@ export const assignmentPageFetcher = async (
         undefined,
       );
     });
-  // } else if (filters.length && filters[0].collection === 'users') {
-  //   console.log('filtering on users collection!', filters);
-  //   const requestBody = getUsersByAssignmentIdRequestBody({
-  //     adminId: adminId,
-  //     orgType: orgType,
-  //     orgId: orgId,
-  //     aggregationQuery: false,
-  //     pageLimit: pageLimit.value,
-  //     page: page.value,
-  //     paginate: paginate,
-  //     filter: filters,
-  //   });
-  //   console.log('Request Body', requestBody);
-  //   return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-  //     console.log('Found Data:', data);
-  //   });
+    // } else if (filters.length && filters[0].collection === 'users') {
+    //   console.log('filtering on users collection!', filters);
+    //   const requestBody = getUsersByAssignmentIdRequestBody({
+    //     adminId: adminId,
+    //     orgType: orgType,
+    //     orgId: orgId,
+    //     aggregationQuery: false,
+    //     pageLimit: pageLimit.value,
+    //     page: page.value,
+    //     paginate: paginate,
+    //     filter: filters,
+    //   });
+    //   console.log('Request Body', requestBody);
+    //   return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+    //     console.log('Found Data:', data);
+    //   });
   } else {
     let userFilter = null;
     let orgFilter = null;
-    if(filters.length && filters[0].collection === 'users'){
-      userFilter = filters[0]
+    if (filters.length && filters[0].collection === 'users') {
+      userFilter = filters[0];
     }
-    if(filters.length && filters[0].collection === 'school'){
+    if (filters.length && filters[0].collection === 'school') {
       orgFilter = filters[0].value;
     }
     const requestBody = getAssignmentsRequestBody({
@@ -674,6 +682,7 @@ export const assignmentPageFetcher = async (
       paginate: paginate,
       select: select,
       filter: userFilter,
+      orderBy: toRaw(orderBy),
     });
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
