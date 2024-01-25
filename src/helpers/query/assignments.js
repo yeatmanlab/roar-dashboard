@@ -315,22 +315,27 @@ export const getFilteredScoresRequestBody = ({
       },
     });
     console.log('requestBody before adding inequalities', requestBody);
-    const aboveFilter = {
-      fieldFilter: {
-        field: { fieldPath: filter.field },
-        op: 'GREATER_THAN_OR_EQUAL',
-        value: { doubleValue: 50 },
-      },
-    };
     if (filter.value === 'Above') {
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
-        aboveFilter,
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'GREATER_THAN_OR_EQUAL',
+            value: { doubleValue: 50 },
+          },
+        },
       );
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
-        aboveFilter,
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.elementaryField },
+            op: 'GREATER_THAN_OR_EQUAL',
+            value: { doubleValue: 50 },
+          },
+        },
       );
     } else if (filter.value === 'Average') {
-      const averageFilters = [
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
@@ -345,26 +350,41 @@ export const getFilteredScoresRequestBody = ({
             value: { doubleValue: 25 },
           },
         },
-      ];
-      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
-        ...averageFilters,
       );
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
-        ...averageFilters,
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.elementaryField },
+            op: 'LESS_THAN',
+            value: { doubleValue: 50 },
+          },
+        },
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.elementaryField },
+            op: 'GREATER_THAN',
+            value: { doubleValue: 25 },
+          },
+        },
       );
     } else if (filter.value === 'Needs Extra') {
-      const belowFilter = {
-        fieldFilter: {
-          field: { fieldPath: filter.field },
-          op: 'LESS_THAN_OR_EQUAL',
-          value: { doubleValue: 25 },
-        },
-      };
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
-        belowFilter,
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'LESS_THAN_OR_EQUAL',
+            value: { doubleValue: 25 },
+          },
+        },
       );
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
-        belowFilter,
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.elementaryField },
+            op: 'LESS_THAN_OR_EQUAL',
+            value: { doubleValue: 25 },
+          },
+        },
       );
     }
   }
