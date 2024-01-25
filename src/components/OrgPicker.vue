@@ -66,11 +66,11 @@
     <div class="col-12 md:col-6">
       <PvPanel class="h-full" header="Selected organizations">
         <PvScrollPanel style="width: 100%; height: 26rem">
-          <div v-for="orgKey in Object.keys(selectedOrgs)" :key="orgKey">
-            <div v-if="selectedOrgs[orgKey].length > 0">
+          <div v-for="orgKey in Object.keys(allSelectedOrgs)" :key="orgKey">
+            <div v-if="allSelectedOrgs[orgKey].length > 0">
               <b>{{ _capitalize(orgKey) }}:</b>
               <PvChip
-                v-for="org in selectedOrgs[orgKey]"
+                v-for="org in allSelectedOrgs[orgKey]"
                 :key="org.id"
                 class="m-1"
                 removable
@@ -92,6 +92,7 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
 import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
@@ -102,12 +103,38 @@ const authStore = useAuthStore();
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 
+const props = defineProps({
+  orgs: {
+    type: Object,
+    required: false,
+    default: () => {
+      return {
+        districts: [],
+        schools: [],
+        classes: [],
+        groups: [],
+        families: [],
+      };
+    },
+  },
+});
+
 const selectedOrgs = reactive({
   districts: [],
   schools: [],
   classes: [],
   groups: [],
   families: [],
+});
+
+const allSelectedOrgs = computed(() => {
+  return {
+    districts: _union(selectedOrgs.districts, props.orgs.districts),
+    schools: _union(selectedOrgs.schools, props.orgs.schools),
+    classes: _union(selectedOrgs.classes, props.orgs.classes),
+    groups: _union(selectedOrgs.groups, props.orgs.groups),
+    families: _union(selectedOrgs.families, props.orgs.families),
+  };
 });
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
@@ -208,11 +235,12 @@ const { data: orgData } = useQuery({
 });
 
 const isSelected = (orgType, orgId) => {
-  return selectedOrgs[orgType].map((org) => org.id).includes(orgId);
+  return allSelectedOrgs.value[orgType].map((org) => org.id).includes(orgId);
 };
 
 const remove = (org, orgKey) => {
-  selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
+  console.log('remove called. trying to remove', org, 'from key', orgKey);
+  selectedOrgs[orgKey] = allSelectedOrgs.value[orgKey].filter((_org) => _org.id !== org.id);
 };
 
 let unsubscribe;
@@ -241,7 +269,7 @@ watch(allSchools, (newValue) => {
 
 const emit = defineEmits(['selection']);
 
-watch(selectedOrgs, (newValue) => {
+watch(allSelectedOrgs, (newValue) => {
   emit('selection', newValue);
 });
 </script>

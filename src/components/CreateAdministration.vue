@@ -41,7 +41,7 @@
           </div>
         </div>
 
-        <OrgPicker @selection="selection($event)" />
+        <OrgPicker :orgs="orgsList" @selection="selection($event)" />
 
         <PvPanel class="mt-3" header="Select assessments for this administration">
           <template #icons>
@@ -130,6 +130,12 @@ import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
+import _forEach from 'lodash/forEach';
+import _find from 'lodash/find';
+import _isEqual from 'lodash/isEqual';
+import _without from 'lodash/without';
+// import _pull from 'lodash/pull';
+import _uniq from 'lodash/uniq';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -137,8 +143,12 @@ import AppSpinner from '@/components/AppSpinner.vue';
 import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { getSidebarActions } from '@/router/sidebarActions';
-import { fetchDocById } from '@/helpers/query/utils';
+import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
 import { variantsFetcher } from '@/helpers/query/tasks';
+
+const props = defineProps({
+  adminId: { type: String, required: false, default: null },
+});
 
 const router = useRouter();
 const toast = useToast();
@@ -163,6 +173,196 @@ const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
   queryFn: () => variantsFetcher(),
   keepPreviousData: true,
   enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+//      +------------------------------------------+
+// -----| Queries for grabbing pre-existing admins |-----
+//      +------------------------------------------+
+const shouldGrabAdminInfo = computed(() => {
+  return initialized.value && Boolean(props.adminId);
+});
+const { data: preExistingAdminInfo } = useQuery({
+  queryKey: ['administration', props.adminId],
+  queryFn: () => fetchDocById('administrations', props.adminId),
+  keepPreviousData: true,
+  enabled: shouldGrabAdminInfo,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+const districtsToGrab = computed(() => {
+  if (!preExistingAdminInfo.value) return null;
+  return preExistingAdminInfo.value.districts.map((id) => {
+    return {
+      collection: 'districts',
+      docId: id,
+      select: ['name', 'schools'],
+    };
+  });
+});
+const shouldGrabDistricts = computed(() => {
+  return initialized.value && !_isEmpty(preExistingAdminInfo.value);
+});
+const { data: preDistricts } = useQuery({
+  queryKey: ['districts', props.adminId],
+  queryFn: () => fetchDocsById(districtsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabDistricts,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const schoolsToGrab = computed(() => {
+  // If the data we need is not present, break
+  if (!preExistingAdminInfo.value || !preDistricts.value) return [];
+
+  // Make a list of all schools associated with given districts
+  const allSchools = [];
+  preDistricts.value.forEach((district) => {
+    allSchools.push(...toRaw(district.schools));
+  });
+
+  // Make a list of all schools not included in the above schools
+  const schoolIds = _without(
+    preExistingAdminInfo.value.schools.map((schoolId) => {
+      if (!allSchools.includes(schoolId)) return schoolId;
+      else return undefined;
+    }),
+    undefined,
+  );
+
+  // Create format ready for fetchDocsById()
+  return schoolIds.map((id) => {
+    return {
+      collection: 'schools',
+      docId: id,
+      select: ['name', 'classes'],
+    };
+  });
+});
+const shouldGrabSchools = computed(() => {
+  return initialized.value && schoolsToGrab.value.length > 0;
+});
+
+const { data: preSchools } = useQuery({
+  queryKey: ['schools', 'minimalOrgs', props.adminId],
+  queryFn: () => fetchDocsById(schoolsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabSchools,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const allSchoolsToGrab = computed(() => {
+  if (!preExistingAdminInfo.value || !preDistricts.value) return [];
+
+  const allSchools = [];
+  preDistricts.value.forEach((district) => {
+    allSchools.push(...toRaw(district).schools);
+  });
+
+  return allSchools.map((schoolId) => {
+    return {
+      collection: 'schools',
+      docId: schoolId,
+      select: ['classes'],
+    };
+  });
+});
+
+const { data: allDistrictSchools } = useQuery({
+  queryKey: ['schools', 'all', props.adminId], //TODO: this queryKey needs to be changed
+  queryFn: () => fetchDocsById(allSchoolsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabSchools,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const classesToGrab = computed(() => {
+  // If the data we need is not present, break
+  if (!preExistingAdminInfo.value || !allDistrictSchools.value) return [];
+
+  //TODO: this list needs to include all classes for given districts as well
+  // Make a list of all schools associated with given districts and schools
+  const allClasses = [];
+  allDistrictSchools.value.forEach((school) => {
+    const classes = toRaw(school).classes;
+    if (classes) {
+      allClasses.push(...classes);
+    }
+  });
+  console.log('allClasses', allClasses);
+
+  // Make a list of all classes not included in the above classes
+  const classIds = _without(
+    preExistingAdminInfo.value.classes.map((classId) => {
+      if (!allClasses.includes(classId)) return classId;
+      else return undefined;
+    }),
+    undefined,
+  );
+
+  // Create format ready for fetchDocsById()
+  return classIds.map((id) => {
+    return {
+      collection: 'classes',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+const shouldGrabClasses = computed(() => {
+  return initialized.value && classesToGrab.value.length > 0;
+});
+
+const { data: preClasses } = useQuery({
+  queryKey: ['classes', 'minimal', props.adminId],
+  queryFn: () => fetchDocsById(classesToGrab.value),
+  keepPreviousData: true,
+  endabled: shouldGrabClasses,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const groupsToGrab = computed(() => {
+  if (!preExistingAdminInfo.value) return [];
+  return preExistingAdminInfo.value.groups.map((id) => {
+    return {
+      collection: 'groups',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabGroups = computed(() => {
+  return initialized.value && groupsToGrab.value.length > 0;
+});
+
+const { data: preGroups } = useQuery({
+  queryKey: ['groups', props.adminId],
+  queryFn: () => fetchDocsById(groupsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabGroups,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const familiesToGrab = computed(() => {
+  if (!preExistingAdminInfo.value) return [];
+  return preExistingAdminInfo.value.families.map((id) => {
+    return {
+      collection: 'families',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabFamilies = computed(() => {
+  return initialized.value && familiesToGrab.value.length > 0;
+});
+
+const { data: preFamilies } = useQuery({
+  queryKey: ['families', props.adminId],
+  queryFn: () => fetchDocsById(familiesToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabFamilies,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
@@ -210,6 +410,16 @@ const selection = (selected) => {
   }
 };
 
+const orgsList = computed(() => {
+  return {
+    districts: preDistricts.value,
+    schools: preSchools.value,
+    classes: preClasses.value,
+    groups: preGroups.value,
+    families: preFamilies.value,
+  };
+});
+
 //      +---------------------------------+
 // -----|       Assessment Selection      |-----
 //      +---------------------------------+
@@ -223,7 +433,7 @@ const toggle = (event, id) => {
   paramPanelRefs[id].value.toggle(event);
 };
 
-const assessments = ref([[], []]);
+let assessments = ref([[], []]);
 
 const backupImage = '/src/assets/swr-icon.jpeg';
 
@@ -313,6 +523,36 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
 });
+
+watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
+  if (adminInfo && !_isEmpty(allVariantInfo)) {
+    console.log('grabbed info!', adminInfo);
+    state.administrationName = adminInfo.name;
+    state.dates = [new Date(adminInfo.dateOpened), new Date(adminInfo.dateClosed)];
+    _forEach(adminInfo.assessments, (assessment) => {
+      const assessmentParams = assessment.params;
+      console.log('passing params', assessmentParams);
+      const found = findVariantWithParams(allVariantInfo, assessmentParams);
+      // console.log('found?', found);
+      if (found) {
+        // _pull(assessments.value[0], found);
+        assessments.value[1].push(found);
+        assessments.value[1] = _uniq(assessments.value[1]);
+      }
+    });
+  }
+  // console.log('func returned', found);
+});
+
+function findVariantWithParams(variants, params) {
+  const found = _find(variants, (variant) => {
+    const cleanParams = { ...variant.variant.params };
+    Object.keys(cleanParams).forEach((key) => cleanParams[key] === null && delete cleanParams[key]);
+    return _isEqual(params, cleanParams);
+  });
+  // TODO: implement tie breakers if found.length > 1
+  return found;
+}
 </script>
 
 <style lang="scss">

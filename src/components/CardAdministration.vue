@@ -136,12 +136,15 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
 import { useAuthStore } from '@/store/auth';
 import { removeEmptyOrgs } from '@/helpers';
+import { useRouter } from 'vue-router';
 import _flattenDeep from 'lodash/flattenDeep';
 import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
+
+const router = useRouter();
 
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
@@ -168,6 +171,13 @@ const speedDialItems = ref([
   //     console.log('Edit administration');
   //   },
   // },
+  {
+    label: 'Edit',
+    icon: 'pi pi-pencil',
+    command: () => {
+      router.push({ name: 'EditAdministration', params: { adminId: props.id } });
+    },
+  },
   {
     label: 'Delete',
     icon: 'pi pi-trash',
