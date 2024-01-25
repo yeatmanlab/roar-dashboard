@@ -56,7 +56,7 @@ const isAtHome = computed(()=>{
   return router.currentRoute.value.fullPath === '/'
 });
 const dropDownActions = computed(() => {
-  const rawActions = getSidebarActions(authStore.isUserSuperAdmin, !isAtHome.value);
+  const rawActions = getSidebarActions(isSuperAdmin.value, !isAtHome.value);
   return rawActions.map((action) => {
     return {
       label: action.title,
