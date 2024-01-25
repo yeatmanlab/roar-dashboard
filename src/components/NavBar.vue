@@ -7,7 +7,7 @@
         </div>
       </router-link>
       <div class="login-container">
-        <div v-if="isSuperAdmin">
+        <div v-if="isAdmin">
           <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
           <PvMenu ref="menu" :model="dropDownActions" :popup="true">
             <template #item="{ item }" >
@@ -31,9 +31,13 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
+import _isEmpty from 'lodash/isEmpty';
+import _union from 'lodash/union';
 import {getSidebarActions} from '@/router/sidebarActions'
- import { fetchDocById } from '@/helpers/query/utils';
+import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
+
+
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -47,6 +51,13 @@ const { data: userClaims } = useQuery({
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+
+const isAdmin = computed(() => {
+  if (userClaims.value?.claims?.super_admin) return true;
+  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
+  return true;
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
