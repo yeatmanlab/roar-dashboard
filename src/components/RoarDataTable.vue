@@ -96,6 +96,7 @@
               toolTipByHeader(col.header).length > 0
                 ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
                 : null,
+                col.header === 'Letter Names and Sounds' ? 'width: 105px; text-wrap: wrap' : ''
             ]"
           >
             {{ col.header }}
