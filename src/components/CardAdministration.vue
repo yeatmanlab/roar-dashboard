@@ -30,7 +30,7 @@
         <div class="card-admin-assessments">
           <span class="mr-1"><strong>Assessments</strong>:</span>
           <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-            <span>{{ displayNames[assessmentId]?.name ?? assessmentId }}</span>
+            <span>{{ taskDisplayNames[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
               v-tooltip.top="'Click to view params'"
@@ -133,6 +133,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
+import { taskDisplayNames } from '@/helpers/reports';
 import { useAuthStore } from '@/store/auth';
 import { removeEmptyOrgs } from '@/helpers';
 import _flattenDeep from 'lodash/flattenDeep';
@@ -200,20 +201,10 @@ const processedDates = computed(() => {
   });
 });
 
-const displayNames = {
-  cva: { name: 'Written Vocabulary', order: 6 },
-  morphology: { name: 'Morphology', order: 7 },
-  swr: { name: 'Word', order: 3 },
-  'swr-es': { name: 'Palabra', order: 4 },
-  pa: { name: 'Phoneme', order: 2 },
-  sre: { name: 'Sentence', order: 5 },
-  letter: { name: 'Letter', order: 1 },
-};
-
 const assessmentIds = props.assessments
   .map((assessment) => assessment.taskId.toLowerCase())
   .sort((p1, p2) => {
-    return (displayNames[p1]?.order ?? 0) - (displayNames[p2]?.order ?? 0);
+    return (taskDisplayNames[p1]?.order ?? 0) - (taskDisplayNames[p2]?.order ?? 0);
   });
 
 const paramPanelRefs = _fromPairs(props.assessments.map((assessment) => [assessment.taskId.toLowerCase(), ref()]));
