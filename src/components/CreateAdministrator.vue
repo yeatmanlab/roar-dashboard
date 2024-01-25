@@ -68,7 +68,6 @@ import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import OrgPicker from '@/components/OrgPicker.vue';
 
-
 const router = useRouter();
 const toast = useToast();
 const initialized = ref(false);
@@ -81,7 +80,6 @@ const email = ref();
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-
 
 let unsubscribe;
 const init = () => {

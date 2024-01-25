@@ -141,7 +141,6 @@ const initialized = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
-
 const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
   queryKey: ['variants', 'all'],
   queryFn: () => variantsFetcher(),

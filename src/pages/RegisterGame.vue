@@ -10,7 +10,6 @@
 
 <script setup>
 import RegisterTask from '@/components/tasks/RegisterTask.vue';
-
 </script>
 
 <style scoped>

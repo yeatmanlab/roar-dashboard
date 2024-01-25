@@ -78,8 +78,6 @@ const authStore = useAuthStore();
 
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
-
-
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', authStore.uid),

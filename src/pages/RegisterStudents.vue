@@ -145,7 +145,6 @@ const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 
-
 // Primary Table & Dropdown refs
 const dataTable = ref();
 const tableColumns = ref([]);

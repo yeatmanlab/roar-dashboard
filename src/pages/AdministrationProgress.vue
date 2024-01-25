@@ -48,7 +48,6 @@ import { taskDisplayNames } from '@/helpers/reports.js';
 
 const authStore = useAuthStore();
 
-
 const props = defineProps({
   administrationId: {
     type: String,

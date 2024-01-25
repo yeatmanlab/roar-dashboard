@@ -285,7 +285,6 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 
-
 const props = defineProps({
   administrationId: {
     type: String,

@@ -23,7 +23,7 @@
   </main>
 </template>
 <script setup>
-import { ref, onMounted} from 'vue';
+import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import _isEmpty from 'lodash/isEmpty';
 import { useQuery } from '@tanstack/vue-query';
@@ -36,8 +36,6 @@ const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
-
-
 
 const pageLimit = ref(10);
 const page = ref(0);
