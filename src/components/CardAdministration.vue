@@ -1,23 +1,22 @@
 <template>
-  <div class="card-administration-wrapper">
-    <div class="p-card card-administration mb-2">
+  <div class="p-card card-administration mb-1 w-full">
       <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
         <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
       </div>
 
-      <div class="card-admin-body">
-        <div class="flex flex-row w-full">
-          <div class="flex-grow-1">
-            <h2>{{ title }}</h2>
+      <div class="card-admin-body w-full">
+        <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
+          <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
+            <h2 class="sm:text-lg lg:text-lx m-0">{{ title }}</h2>
           </div>
-          <div v-if="isSuperAdmin" class="flex flex-row flex-grow-0 justify-content-end p-1">
+          <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
             <PvSpeedDial
               :model="speedDialItems"
               direction="left"
               :transition-delay="80"
               show-icon="pi pi-cog"
               hide-icon="pi pi-times"
-              button-class="p-button-outlined"
+              button-class="p-button-outlined p-button-sm w-3rem h-3rem"
               :pt="{ button: { size: 'small' } }"
             />
             <PvConfirmPopup />
@@ -25,7 +24,7 @@
         </div>
         <div class="card-admin-details">
           <span class="mr-1"><strong>Dates</strong>:</span>
-          <span> {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }} </span>
+          <span class="mr-1"> {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }} </span>
         </div>
         <div class="card-admin-assessments">
           <span class="mr-1"><strong>Assessments</strong>:</span>
@@ -57,14 +56,9 @@
             </PvOverlayPanel>
           </div>
         </div>
-
-        <div class="break my-2"></div>
-
         <div v-if="isAssigned">
-          <PvButton :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
+          <PvButton class="mt-2 ml-0" :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
         </div>
-      </div>
-    </div>
     <PvTreeTable
       v-if="showTable"
       class="mt-3"
@@ -74,7 +68,7 @@
       :value="treeTableOrgs"
       @node-expand="onExpand"
     >
-      <PvColumn field="name" header="Name" expander style="width: min-content"></PvColumn>
+      <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
       <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
         <template #body="{ node }">
           <PvChart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
@@ -123,6 +117,7 @@
         </template>
       </PvColumn>
     </PvTreeTable>
+  </div>
   </div>
 </template>
 
@@ -601,66 +596,57 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-.card-administration-wrapper {
+.card-administration {
+  text-align: left;
+  width: 100%;
   background: var(--surface-b);
   border: 1px solid var(--surface-d);
   border-radius: var(--border-radius);
+  display: flex;
+  flex-direction: row;
   gap: 2rem;
-  margin: 0.5rem 0rem;
+  padding: 1rem;
 
-  .card-administration {
-    text-align: left;
-    width: 100%;
+  .card-admin-chart {
+    width: 12ch;
+  }
+
+  .card-admin-body {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: start;
 
-    .card-admin-chart {
-      padding: 1rem;
-      width: 23ch;
-    }
 
-    .card-admin-body {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-content: start;
+  }
 
-      p {
-        margin-block: 0.5rem;
-      }
-    }
+  .break {
+    flex-basis: 100%;
+    height: 0;
+  }
 
-    .break {
-      flex-basis: 100%;
-      height: 0;
-    }
+  .card-admin-title {
+    font-weight: bold;
+    width: 100%;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--surface-d);
+    flex: 1 1 100%;
+  }
 
-    .card-admin-title {
-      font-weight: bold;
-      width: 100%;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--surface-d);
-      flex: 1 1 100%;
-    }
 
-    .card-admin-details {
-      width: 45%;
-    }
 
-    .card-admin-link {
-      margin-top: 2rem;
-      width: 100%;
-    }
+  .card-admin-link {
+    margin-top: 2rem;
+    width: 100%;
+  }
 
-    .card-admin-class-list {
-      width: 100%;
-      margin-top: 2rem;
-    }
+  .card-admin-class-list {
+    width: 100%;
+    margin-top: 2rem;
+  }
 
-    .cursor-pointer {
-      cursor: pointer;
-    }
+  .cursor-pointer {
+    cursor: pointer;
   }
 }
 
@@ -672,3 +658,4 @@ onMounted(() => {
   }
 }
 </style>
+
