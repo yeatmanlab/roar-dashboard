@@ -7,8 +7,16 @@
         </div>
       </router-link>
       <div class="login-container">
-        <!-- <i class="pi pi-bars menu-icon" @click="toggleMenu" /> -->
-        <!-- <PvMenu ref="menu" id="overlay_menu" :model="dropdownItems" :popup="true" /> -->
+        <div v-if="isAdmin">
+          <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
+          <PvMenu ref="menu" :model="dropDownActions" :popup="true">
+            <template #item="{ item }">
+              <div class="cursor-pointer hover:surface-200">
+                <i :class="item.icon" class="p-1 pb-2 pt-2 text-sm cursor-pointer"></i> {{ item.label }}
+              </div>
+            </template>
+          </PvMenu>
+        </div>
         <router-link :to="{ name: 'SignOut' }" class="signout-button">
           <PvButton>Sign Out</PvButton>
         </router-link>
@@ -18,30 +26,68 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
+import _isEmpty from 'lodash/isEmpty';
+import _union from 'lodash/union';
+import { getSidebarActions } from '@/router/sidebarActions';
+import { fetchDocById } from '@/helpers/query/utils';
+import { useQuery } from '@tanstack/vue-query';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const initialized = ref(false);
+const menu = ref();
+let unsubscribe;
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
 
-// const loggedInItems = [
-//   {
-//     label: `Logged in as: ${email.value}`,
-//     icon: 'pi pi-user',
-//     to: '/profile',
-//   },
-//   {
-//     label: 'Log Out',
-//     icon: 'pi pi-sign-out',
-//     to: '/logout',
-//   }
-// ];
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
 
-// const menu = ref();
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+});
+
+const { data: userClaims } = useQuery({
+  queryKey: ['userClaims', authStore.uid],
+  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const isAdmin = computed(() => {
+  if (userClaims.value?.claims?.super_admin) return true;
+  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
+  return true;
+});
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+
+const isAtHome = computed(() => {
+  return router.currentRoute.value.fullPath === '/';
+});
+const dropDownActions = computed(() => {
+  const rawActions = getSidebarActions(isSuperAdmin.value, !isAtHome.value);
+  return rawActions.map((action) => {
+    return {
+      label: action.title,
+      icon: action.icon,
+      command: () => {
+        router.push(action.buttonLink);
+      },
+    };
+  });
+});
+
 let dropdownItems = ref([
   {
     label: authStore.isAuthenticated ? 'Home' : 'Log in',
@@ -87,13 +133,9 @@ if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') ==
   );
 }
 
-// const toggleMenu = (event) => {
-//   menu.value.toggle(event);
-// };
-
-// const displayInfo = ref(false);
-// const openInfo = () => displayInfo.value = true;
-// const closeInfo = () => displayInfo.value = false;
+const toggleMenu = (event) => {
+  menu.value.toggle(event);
+};
 
 import ROARLogo from '@/assets/RoarLogo.vue';
 </script>
