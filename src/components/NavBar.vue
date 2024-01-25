@@ -49,7 +49,7 @@ const { data: userClaims } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
- const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
 
 const isAtHome = computed(()=>{
