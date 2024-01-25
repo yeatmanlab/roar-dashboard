@@ -69,7 +69,7 @@ function playPA() {
 }
 
 function playTrial(numTimes, trialFinishPhrase) {
-  if (numTimes != 0) {
+  if (numTimes !== 0) {
     cy.wait(8500);
     cy.get('.testImageDown', {
       timeout: 4000,
@@ -78,6 +78,7 @@ function playTrial(numTimes, trialFinishPhrase) {
       .click();
     cy.log('iteration: ', numTimes);
     numTimes = numTimes - 1;
+    cy.log(numTimes)
     playTrial(numTimes);
   } else {
     // leaving this out because there are some issues with timing -- we'll have to knock down this assert at a different time
@@ -90,7 +91,7 @@ function playFirstTutorial() {
   cy.get('img[src*="map.webp"]').click();
   cy.wait(16000);
   cy.get('img[src*="rope.webp"]').click();
-  cy.wait(3000);
+  cy.wait(4000);
   cy.get('.continue').click();
 }
 
@@ -99,7 +100,7 @@ function playSecondTutorial() {
   cy.get('img[src*="nut.webp"]').click();
   cy.wait(16000);
   cy.get('img[src*="wash.webp"]').click();
-  cy.wait(3000);
+  cy.wait(4000);
   cy.get('.continue').click();
 }
 
