@@ -30,11 +30,11 @@
         <div class="card-admin-assessments">
           <span class="mr-1"><strong>Assessments</strong>:</span>
           <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-            {{ displayNames[assessmentId]?.name ?? assessmentId }}
+            <span>{{ displayNames[assessmentId]?.name ?? assessmentId }}</span>
             <span
               v-if="showParams"
               v-tooltip.top="'Click to view params'"
-              class="pi pi-info-circle cursor-pointer"
+              class="pi pi-info-circle cursor-pointer ml-1"
               style="font-size: 1rem"
               @click="toggleParams($event, assessmentId)"
             />
@@ -201,6 +201,8 @@ const processedDates = computed(() => {
 });
 
 const displayNames = {
+  cva: { name: 'Written Vocabulary', order: 6 },
+  morphology: { name: 'Morphology', order: 7 },
   swr: { name: 'Word', order: 3 },
   'swr-es': { name: 'Palabra', order: 4 },
   pa: { name: 'Phoneme', order: 2 },
