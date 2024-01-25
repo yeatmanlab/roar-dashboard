@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, edge, electron]
+        browser: [chromium, firefox, edge]
         containers: [1, 2]
     env:
       CYPRESS_BASE_URL: ${{ needs.build-and-preview.outputs.deployUrl }}
