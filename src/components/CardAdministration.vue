@@ -59,7 +59,6 @@
         <div v-if="isAssigned">
           <PvButton class="mt-2 ml-0" :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
         </div>
-      </div>
     <PvTreeTable
       v-if="showTable"
       class="mt-3"
@@ -118,6 +117,7 @@
         </template>
       </PvColumn>
     </PvTreeTable>
+  </div>
   </div>
 </template>
 
@@ -609,8 +609,6 @@ onMounted(() => {
 
   .card-admin-chart {
     width: 12ch;
-    margin: 0;
-    padding: 0;
   }
 
   .card-admin-body {
@@ -618,6 +616,13 @@ onMounted(() => {
     flex-direction: column;
     flex-wrap: wrap;
     align-content: start;
+
+
+  }
+
+  .break {
+    flex-basis: 100%;
+    height: 0;
   }
 
   .card-admin-title {
@@ -627,6 +632,7 @@ onMounted(() => {
     border-bottom: 1px solid var(--surface-d);
     flex: 1 1 100%;
   }
+
 
 
   .card-admin-link {
@@ -644,7 +650,6 @@ onMounted(() => {
   }
 }
 
-
 .card-inline-list-item {
   position: relative;
 
@@ -653,3 +658,4 @@ onMounted(() => {
   }
 }
 </style>
+
