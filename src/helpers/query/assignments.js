@@ -263,16 +263,74 @@ export const getFilteredScoresRequestBody = ({
     },
   };
   if (filter) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      compositeFilter: {
+        op: 'OR',
+        filters: [
+          {
+            compositeFilter: {
+              op: 'AND',
+              filters: [
+                {
+                  fieldFilter: {
+                    field: { fieldPath: 'schoolLevel' },
+                    op: 'EQUAL',
+                    value: { stringValue: 'elementary' },
+                  },
+                },
+                // Add filter inequalities here
+              ],
+            },
+          },
+          {
+            compositeFilter: {
+              op: 'AND',
+              filters: [
+                {
+                  compositeFilter: {
+                    op: 'OR',
+                    filters: [
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'middle' },
+                        },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'high' },
+                        },
+                      },
+                    ],
+                  },
+                },
+                // Add filter inequalities here
+              ],
+            },
+          },
+        ],
+      },
+    });
+    console.log('requestBody before adding inequalities', requestBody);
+    const aboveFilter = {
+      fieldFilter: {
+        field: { fieldPath: filter.field },
+        op: 'GREATER_THAN_OR_EQUAL',
+        value: { doubleValue: 50 },
+      },
+    };
     if (filter.value === 'Above') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: filter.field },
-          op: 'GREATER_THAN_OR_EQUAL',
-          value: { doubleValue: 50 },
-        },
-      });
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
+        aboveFilter,
+      );
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
+        aboveFilter,
+      );
     } else if (filter.value === 'Average') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push(
+      const averageFilters = [
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
@@ -287,15 +345,27 @@ export const getFilteredScoresRequestBody = ({
             value: { doubleValue: 25 },
           },
         },
+      ];
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
+        ...averageFilters,
+      );
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
+        ...averageFilters,
       );
     } else if (filter.value === 'Needs Extra') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
+      const belowFilter = {
         fieldFilter: {
           field: { fieldPath: filter.field },
           op: 'LESS_THAN_OR_EQUAL',
           value: { doubleValue: 25 },
         },
-      });
+      };
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
+        belowFilter,
+      );
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
+        belowFilter,
+      );
     }
   }
   if (aggregationQuery) {
@@ -454,6 +524,7 @@ export const assignmentPageFetcher = async (
       page: page.value,
       pageLimit: pageLimit.value,
     });
+    console.log('Request Body for filtered score report:', requestBody);
     console.log(
       `Fetching page ${page.value} for ${adminId} with filter ${filters[0].value} on field ${filters[0].field}`,
     );
