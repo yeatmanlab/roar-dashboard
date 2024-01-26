@@ -404,10 +404,19 @@ const onPage = (event) => {
 
 const onSort = (event) => {
   console.log('onSort');
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
-    field: { fieldPath: item.field.replace('user', 'userData') },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-  }));
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => {
+    let field = item.field.replace('user', 'userData');
+    // Due to differences in the document schemas,
+    //   fields found in studentData in the user document are in the
+    //   top level of the assignments.userData object.
+    if (field.split('.')[1] === 'studentData') {
+      field = `userData.${field.split('.').slice(2, field.length)}`;
+    }
+    return {
+      field: { fieldPath: field },
+      direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
+    };
+  });
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
   page.value = 0;
 };
