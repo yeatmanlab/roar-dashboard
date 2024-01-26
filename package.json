@@ -5,6 +5,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite --force --host",
+    "dev:levante": "vite --force --host ",
     "dev:emulate": "export VITE_FIREBASE_EMULATOR=true && vite --force --host",
     "emulate:admin": "source firebase/emulate_admin.sh",
     "emulate:assessment": "source firebase/emulate_assessment.sh",
