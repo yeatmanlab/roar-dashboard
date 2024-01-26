@@ -99,18 +99,6 @@ export const getAssignmentsRequestBody = ({
           value: { stringValue: filter.value },
         },
       });
-      // const userFilters = (filters.map(filter => {
-      //   console.log('filter ->', filter)
-      //   return {
-      //     fieldFilter: {
-      //       field: { fieldPath: filter.field },
-      //       op: "EQUAL", // Need more logic here later for different constraints
-      //       value: { stringValue: filter.value }
-      //     }
-      //   }
-      // }))
-    } else {
-      console.log('skipping filters');
     }
   } else {
     const currentDate = new Date().toISOString();
@@ -647,22 +635,6 @@ export const assignmentPageFetcher = async (
         undefined,
       );
     });
-    // } else if (filters.length && filters[0].collection === 'users') {
-    //   console.log('filtering on users collection!', filters);
-    //   const requestBody = getUsersByAssignmentIdRequestBody({
-    //     adminId: adminId,
-    //     orgType: orgType,
-    //     orgId: orgId,
-    //     aggregationQuery: false,
-    //     pageLimit: pageLimit.value,
-    //     page: page.value,
-    //     paginate: paginate,
-    //     filter: filters,
-    //   });
-    //   console.log('Request Body', requestBody);
-    //   return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-    //     console.log('Found Data:', data);
-    //   });
   } else {
     let userFilter = null;
     let orgFilter = null;
