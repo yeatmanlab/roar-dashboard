@@ -16,7 +16,11 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div v-if="isSuperAdmin && !isLoadingRunResults" class="overview-wrapper bg-gray-100 py-3 mb-2">
+            <!-- <div v-if="isSuperAdmin && !isLoadingRunResults" class="overview-wrapper bg-gray-100 py-3 mb-2"> -->
+            <div
+              v-if="isSuperAdmin && sortedAndFilteredTaskIds?.length > 0"
+              class="overview-wrapper bg-gray-100 py-3 mb-2"
+            >
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
@@ -159,15 +163,15 @@
         <div v-else>
           <!-- In depth breakdown of each task -->
           <div v-if="allTasks.includes('letter')" class="task-card">
-            <div class="task-title">ROAR-LETTER</div>
+            <div class="task-title">ROAR-LETTER NAMES AND SOUNDS</div>
             <span style="text-transform: uppercase">Letter Names and Letter-Sound Matching</span>
             <p class="task-description">
-              ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names
-              supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names.
-              Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict
-              success in learning to read. Learning the connection between letters and the sounds they represent is
-              fundamental for learning to decode and spell words. This assessment provides educators with valuable
-              insights to customize instruction and address any gaps in these foundational skills.
+              ROAR-Letter Names and Sounds assesses a student’s knowledge of letter names and letter sounds. Knowing
+              letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of
+              letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown
+              to predict success in learning to read. Learning the connection between letters and the sounds they
+              represent is fundamental for learning to decode and spell words. This assessment provides educators with
+              valuable insights to customize instruction and address any gaps in these foundational skills.
             </p>
           </div>
           <div v-if="allTasks.includes('pa')" class="task-card">

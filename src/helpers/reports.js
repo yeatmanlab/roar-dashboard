@@ -1,5 +1,5 @@
 export const taskDisplayNames = {
-  letter: { name: 'Letter', order: 1 },
+  letter: { name: 'Letter Names and Sounds', order: 1 },
   pa: { name: 'Phoneme', order: 2 },
   swr: { name: 'Word', order: 3 },
   'swr-es': { name: 'Palabra', order: 4 },

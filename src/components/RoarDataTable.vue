@@ -96,6 +96,7 @@
               toolTipByHeader(col.header).length > 0
                 ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
                 : null,
+                col.header === 'Letter Names and Sounds' ? 'width: 7em; text-wrap: wrap' : ''
             ]"
           >
             {{ col.header }}
@@ -347,7 +348,7 @@ dateFields = _map(dateFields, (col) => col.field);
 let toolTipByHeader = (header) => {
   if (header === 'Word') {
     return 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900';
-  } else if (header === 'Letter') {
+  } else if (header === 'Letter Names and Sounds') {
     return 'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90';
   } else if (header === 'Phoneme') {
     return 'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57';
@@ -377,7 +378,7 @@ let returnScoreTooltip = (colHeader, colData) => {
     toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
-  } else if (colHeader === 'Letter' && colData.scores?.letter) {
+  } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
     toolTip += 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
   } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
     toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
