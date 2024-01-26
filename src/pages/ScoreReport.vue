@@ -429,6 +429,11 @@ const onFilter = (event) => {
           if (!_isEmpty(schoolEntry)) {
             filters.push({ value: schoolEntry.id, collection: 'school', field: 'assigningOrgs.schools' });
           }
+        } else if (path[1] === 'studentData') {
+          // Due to differences in the document schemas,
+          //   fields found in studentData in the user document are in the
+          //   top level of the assignments.userData object.
+          filters.push({ ...constraint, collection: 'users', field: path.slice(2, path.length) });
         } else {
           filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
         }
