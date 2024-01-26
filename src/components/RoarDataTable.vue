@@ -464,4 +464,7 @@ const onFilter = (event) => {
   vertical-align: middle;
   margin-right: 10px;
 }
+.p-column-filter-menu {
+  margin-left: 0.5rem;
+}
 </style>
