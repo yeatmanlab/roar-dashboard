@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <div>
         <div class="">
@@ -19,7 +16,11 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div v-if="isSuperAdmin" class="overview-wrapper bg-gray-100 py-3 mb-2">
+            <!-- <div v-if="isSuperAdmin && !isLoadingRunResults" class="overview-wrapper bg-gray-100 py-3 mb-2"> -->
+            <div
+              v-if="isSuperAdmin && sortedAndFilteredTaskIds?.length > 0"
+              class="overview-wrapper bg-gray-100 py-3 mb-2"
+            >
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
@@ -42,7 +43,7 @@
                   </div>
                 </div>
               </div>
-              <div v-if="!isLoadingRunResults" class="legend-container">
+              <div v-if="!isLoadingRunResults && sortedAndFilteredTaskIds?.length > 0" class="legend-container">
                 <div class="legend-entry">
                   <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
                   <div>
@@ -161,15 +162,15 @@
         <div v-else>
           <!-- In depth breakdown of each task -->
           <div v-if="allTasks.includes('letter')" class="task-card">
-            <div class="task-title">ROAR-LETTER</div>
+            <div class="task-title">ROAR-LETTER NAMES AND SOUNDS</div>
             <span style="text-transform: uppercase">Letter Names and Letter-Sound Matching</span>
             <p class="task-description">
-              ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names
-              supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names.
-              Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict
-              success in learning to read. Learning the connection between letters and the sounds they represent is
-              fundamental for learning to decode and spell words. This assessment provides educators with valuable
-              insights to customize instruction and address any gaps in these foundational skills.
+              ROAR-Letter Names and Sounds assesses a student’s knowledge of letter names and letter sounds. Knowing
+              letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of
+              letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown
+              to predict success in learning to read. Learning the connection between letters and the sounds they
+              represent is fundamental for learning to decode and spell words. This assessment provides educators with
+              valuable insights to customize instruction and address any gaps in these foundational skills.
             </p>
           </div>
           <div v-if="allTasks.includes('pa')" class="task-card">
@@ -240,9 +241,10 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
           <p>
-            This score report has provided a snapshot of your school's reading performance at the time of
+            This score report has provided a snapshot of your student's reading performance at the time of
             administration. By providing classifications for students based on national norms for scoring, you are able
-            to see which students can benefit from varying levels of support.
+            to see how your student(s) can benefit from varying levels of support. To read more about what to do to
+            support your student, <a :href="NextSteps" class="hover:text-red-700" target="_blank">read more.</a>
           </p>
         </div>
       </div>
@@ -266,8 +268,6 @@ import _filter from 'lodash/filter';
 import _pickBy from 'lodash/pickBy';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
 import { fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
@@ -284,12 +284,11 @@ import {
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
+import NextSteps from '@/assets/NextSteps.pdf';
 
 const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
-
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: {
@@ -344,7 +343,7 @@ const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
   queryKey: ['schools', ref(props.orgId)],
-  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
+  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
   keepPreviousData: true,
   enabled: props.orgType === 'district' && initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -353,7 +352,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = school.name;
+      acc[school.id] = parseLowGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -449,7 +448,7 @@ const onFilter = (event) => {
       }
       if (_head(path) === 'scores') {
         const taskId = path[1];
-        const grade = _get(constraint, 'nationalNorms') ? 1 : 10;
+        const grade = _get(constraint, 'gradeRange');
         const { percentileScoreKey } = getScoreKeys({ taskId: taskId }, grade);
         filters.push({
           ...constraint,
@@ -458,7 +457,6 @@ const onFilter = (event) => {
           field: `scores.computed.composite.${percentileScoreKey}`,
         });
       }
-      // console.log('constraint is', { ...constraint, collection, field: _tail(path).join('.') })
     }
   }
   // Scores Query
@@ -813,11 +811,30 @@ function scoreFieldAboveSixth(taskId) {
   return 'percentile';
 }
 
+function rawScoreByTaskId(taskId) {
+  if (taskId === 'swr') {
+    return 'roarScore';
+  } else if (taskId === 'sre') {
+    return 'sreScore';
+  } else if (taskId === 'pa') {
+    return 'roarScore';
+  }
+  return 'roarScore';
+}
+
+const parseLowGrade = (grade) => {
+  if (grade === 'PreKindergarten' || grade === 'Kindergarten') return 0;
+  else {
+    return parseInt(grade);
+  }
+};
+
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
   const computedScores = {};
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
+    const rawScore = _get(scores, rawScoreByTaskId(taskId));
     if (user?.data?.grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
@@ -831,6 +848,7 @@ const runsByTaskId = computed(() => {
         ...scores,
         support_level: support_level,
         stdPercentile: percentScore,
+        rawScore: rawScore,
       },
       taskId,
       user: {

@@ -1,19 +1,21 @@
 <template>
-  <div v-if="orgType === 'district'" class="mode-select-wrapper mt-2">
-    <div class="flex uppercase text-xs font-light">view by</div>
+  <div class="view-by-wrapper mx-2">
+    <div class="flex uppercase text-xs font-light">view scores by</div>
     <PvSelectButton
-      v-model="facetMode"
-      class="flex flex-row"
-      :options="facetModes"
+      v-model="scoreMode"
+      :allow-empty="false"
+      class="flex flex-row my-2 select-button"
+      :options="scoreModes"
       option-label="name"
-      @change="handleFacetModeChange"
+      @change="handleModeChange"
     />
   </div>
-  <div :id="`roar-dist-chart-${taskId}`"></div>
+  <!-- </div> -->
+  <div :id="`roar-distribution-chart-${taskId}`"></div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
@@ -38,10 +40,12 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  mode: {
-    type: String,
-    required: false,
-    default: 'percentage',
+  facetMode: {
+    type: Object,
+    required: true,
+    default() {
+      return { name: 'Grade', key: 'grade' };
+    },
   },
   runs: {
     type: Array,
@@ -49,22 +53,40 @@ const props = defineProps({
   },
 });
 
-const facetMode = ref({ name: 'Grade', key: 'grade' });
-const facetModes = [
-  { name: 'Grade', key: 'grade' },
-  { name: 'School', key: 'schoolName' },
+const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
+const scoreModes = [
+  { name: 'Raw Score', key: 'rawScore' },
+  { name: 'Percentile', key: 'stdPercentile' },
 ];
 
-const handleFacetModeChange = () => {
-  draw();
+const getRangeLow = (scoreMode, taskId) => {
+  if (scoreMode === 'Percentile') {
+    return 0;
+  } else if (scoreMode === 'Raw Score') {
+    if (taskId === 'pa') return 0;
+    else if (taskId === 'sre') return 0;
+    else if (taskId === 'swr') return 100;
+  }
+  return 0;
 };
 
-const distChartFacet = (taskId, runs) => {
+const getRangeHigh = (scoreMode, taskId) => {
+  if (scoreMode === 'Percentile') {
+    return 100;
+  } else if (scoreMode === 'Raw Score') {
+    if (taskId === 'pa') return 57;
+    else if (taskId === 'sre') return 130;
+    else if (taskId === 'swr') return 900;
+  }
+  return 100;
+};
+
+const distributionChartFacet = (taskId, runs) => {
   return {
     background: null,
     title: {
       text: `ROAR-${taskDisplayNames[taskId].name}`,
-      subtitle: 'Distribution of Percentile By Grade',
+      subtitle: `${scoreMode.value.name} Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,
     },
@@ -76,7 +98,7 @@ const distChartFacet = (taskId, runs) => {
     width: 360,
     encoding: {
       row: {
-        field: facetMode.value.key === 'grade' ? `grade` : `user.${facetMode.value.key}`,
+        field: props.facetMode.key === 'grade' ? `grade` : `user.${props.facetMode.key}`,
         type: 'ordinal',
         title: '',
         header: {
@@ -92,7 +114,9 @@ const distChartFacet = (taskId, runs) => {
           labelAlign: 'left',
           labelOrient: 'left',
           labelExpr:
-            facetMode.value.name === 'Grade' ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')" : '',
+            props.facetMode.name === 'Grade'
+              ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
+              : 'slice(datum.value, 1, datum.value.length)',
           labelLimit: 150,
           labelSeparation: 5, // Set the spacing between lines in pixels
         },
@@ -101,19 +125,23 @@ const distChartFacet = (taskId, runs) => {
       },
 
       color: {
-        field: 'scores.stdPercentile',
+        field: `scores.${scoreMode.value.key}`,
+        scheme: 'blues',
         type: 'quantitative',
         legend: null,
         scale: {
-          range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
-          domain: [0, 45, 70, 100],
+          range:
+            scoreMode.value.name === 'Percentile'
+              ? ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green']
+              : ['#ADD8E6', '#000080'],
+          domain: scoreMode.value.name === 'Percentile' ? [0, 45, 70, 100] : '',
         },
       },
 
       x: {
-        field: `scores.stdPercentile`,
-        title: `Percentile`,
-        bin: { step: 10, extent: [0, 100] },
+        field: `scores.${scoreMode.value.key}`,
+        title: scoreMode.value.name === 'Percentile' ? `${scoreMode.value.name} Score` : `${scoreMode.value.name}`,
+        bin: { extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)] },
         sort: 'ascending',
         axis: {
           labelAngle: 0,
@@ -134,7 +162,12 @@ const distChartFacet = (taskId, runs) => {
         },
       },
       tooltip: [
-        { field: 'scores.stdPercentile', title: 'Percentile', type: 'quantitative', format: `.0f` },
+        {
+          field: `scores.${scoreMode.value.key}`,
+          title: `${scoreMode.value.name}`,
+          type: 'quantitative',
+          format: `.0f`,
+        },
         { field: 'user.grade', title: 'Student Grade' },
         { aggregate: 'count', title: 'Student Count' },
       ],
@@ -148,8 +181,19 @@ const distChartFacet = (taskId, runs) => {
 };
 
 const draw = async () => {
-  let chartSpecDist = distChartFacet(props.taskId, props.runs);
-  await embed(`#roar-dist-chart-${props.taskId}`, chartSpecDist);
+  let chartSpecDist = distributionChartFacet(props.taskId, props.runs);
+  await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
+};
+
+watch(
+  () => props.facetMode,
+  () => {
+    draw();
+  },
+);
+
+const handleModeChange = () => {
+  draw();
 };
 
 onMounted(() => {
@@ -158,10 +202,10 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-.mode-select-wrapper {
+.view-by-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: space-around;
 }
 
 .distribution-wrapper {
