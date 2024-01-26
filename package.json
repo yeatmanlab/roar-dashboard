@@ -20,7 +20,7 @@
     "version": "npm run format && git add -A"
   },
   "dependencies": {
-    "@bdelab/roam-fluency": "^1.6.0",
+    "@bdelab/roam-fluency": "^1.7.1",
     "@bdelab/roar-firekit": "^4.3.1",
     "@bdelab/roar-letter": "^1.3.0",
     "@bdelab/roar-multichoice": "^1.4.2",
