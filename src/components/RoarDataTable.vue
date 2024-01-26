@@ -199,7 +199,7 @@
           <div v-if="col.dataType === 'score'">
             <PvDropdown
               v-model="filterModel.value"
-              :options="['Above', 'Average', 'Needs Extra']"
+              :options="['Average', 'Some Support', 'Extra Support']"
               style="margin-bottom: 0.5rem"
             />
             <div class="flex justify-content-between">

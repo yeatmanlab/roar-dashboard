@@ -278,7 +278,7 @@ export const getFilteredScoresRequestBody = ({
     },
   };
   if (filter) {
-    if (filter.value === 'Above') {
+    if (filter.value === 'Average') {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: filter.field },
@@ -286,7 +286,7 @@ export const getFilteredScoresRequestBody = ({
           value: { doubleValue: 50 },
         },
       });
-    } else if (filter.value === 'Average') {
+    } else if (filter.value === 'Some Support') {
       requestBody.structuredQuery.where.compositeFilter.filters.push(
         {
           fieldFilter: {
@@ -303,7 +303,7 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
-    } else if (filter.value === 'Needs Extra') {
+    } else if (filter.value === 'Extra Support') {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: filter.field },
