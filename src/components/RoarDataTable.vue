@@ -168,6 +168,9 @@
             {{ _get(colData, col.field) }}
           </div>
         </template>
+        <template v-if="col.dataType" #filtericon>
+          <i v-if="enableFilter(col.field)" class="pi pi-filter" />
+        </template>
         <template v-if="col.dataType" #filter="{ filterModel }">
           <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
             <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
@@ -359,6 +362,14 @@ _forEach(computedColumns.value, (column) => {
 });
 const refOptions = ref(options);
 const refFilters = ref(filters);
+
+const enableFilter = (field) => {
+  const path = field.split('.');
+  if (path[0] === 'scores') {
+    if (taskFilterBlacklist.includes(path[1])) return false;
+  }
+  return true;
+};
 
 // Grab list of fields defined as dates
 let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
