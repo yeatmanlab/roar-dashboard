@@ -35,6 +35,8 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
 
 export const excludedTasks = ['cva', 'morphology'];
 
+export const taskFilterBlacklist = ['letter'];
+
 export const supportLevelColors = {
   above: 'green',
   some: '#edc037',
