@@ -503,11 +503,20 @@ const setBarChartData = (orgId) => {
   let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId]?.assignment || {};
   const documentStyle = getComputedStyle(document.documentElement);
 
+  // Calculate the maximum value among the 3 values
+  const maxBarValue = Math.max(assigned, started, completed);
+
+  // Calculate the length to make the bars proportional
+  const scaleFactor = maxBarValue > 0 ? 100 / maxBarValue : 1;
+  completed *= scaleFactor;
+  started *= scaleFactor;
+  assigned *= scaleFactor;
+
   started -= completed;
   assigned -= started + completed;
 
   const borderRadii = getBorderRadii(completed, started, assigned);
-  const borderWidth = 0;
+  // const borderWidth = 0;
 
   const chartData = {
     labels: [''],
@@ -517,7 +526,7 @@ const setBarChartData = (orgId) => {
         label: 'Completed',
         backgroundColor: documentStyle.getPropertyValue('--bright-green'),
         data: [completed],
-        borderWidth: borderWidth,
+        // borderWidth: borderWidth,
         borderSkipped: false,
         borderRadius: borderRadii.left,
       },
@@ -526,7 +535,7 @@ const setBarChartData = (orgId) => {
         label: 'Started',
         backgroundColor: documentStyle.getPropertyValue('--yellow-100'),
         data: [started],
-        borderWidth: borderWidth,
+        // borderWidth: borderWidth,
         borderSkipped: false,
         borderRadius: borderRadii.middle,
       },
@@ -535,7 +544,7 @@ const setBarChartData = (orgId) => {
         label: 'Assigned',
         backgroundColor: documentStyle.getPropertyValue('--surface-d'),
         data: [assigned],
-        borderWidth: borderWidth,
+        // borderWidth: borderWidth,
         borderSkipped: false,
         borderRadius: borderRadii.right,
       },
