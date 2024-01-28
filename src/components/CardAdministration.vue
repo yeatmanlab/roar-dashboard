@@ -516,7 +516,6 @@ const setBarChartData = (orgId) => {
   assigned -= started + completed;
 
   const borderRadii = getBorderRadii(completed, started, assigned);
-  // const borderWidth = 0;
 
   const chartData = {
     labels: [''],
@@ -526,7 +525,6 @@ const setBarChartData = (orgId) => {
         label: 'Completed',
         backgroundColor: documentStyle.getPropertyValue('--bright-green'),
         data: [completed],
-        // borderWidth: borderWidth,
         borderSkipped: false,
         borderRadius: borderRadii.left,
       },
@@ -535,7 +533,6 @@ const setBarChartData = (orgId) => {
         label: 'Started',
         backgroundColor: documentStyle.getPropertyValue('--yellow-100'),
         data: [started],
-        // borderWidth: borderWidth,
         borderSkipped: false,
         borderRadius: borderRadii.middle,
       },
@@ -544,7 +541,6 @@ const setBarChartData = (orgId) => {
         label: 'Assigned',
         backgroundColor: documentStyle.getPropertyValue('--surface-d'),
         data: [assigned],
-        // borderWidth: borderWidth,
         borderSkipped: false,
         borderRadius: borderRadii.right,
       },
