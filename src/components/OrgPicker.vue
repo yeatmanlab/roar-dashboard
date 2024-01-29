@@ -48,6 +48,7 @@
                 v-model="selectedOrgs[activeOrgType]"
                 :options="orgData"
                 multiple
+                :meta-key-selection="false"
                 option-label="name"
                 class="w-full"
                 list-style="max-height:20rem"

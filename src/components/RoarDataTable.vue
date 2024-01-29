@@ -96,6 +96,7 @@
               toolTipByHeader(col.header).length > 0
                 ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
                 : null,
+                col.header === 'Letter Names and Sounds' ? 'width: 7em; text-wrap: wrap' : ''
             ]"
           >
             {{ col.header }}
@@ -197,9 +198,15 @@
               :options="['Above', 'Average', 'Needs Extra']"
               style="margin-bottom: 0.5rem"
             />
-            <div class="flex justify-content-between">
-              <label for="nationalNormsCheckbox" style="margin-right: 0.5rem">National Norms</label>
-              <PvCheckbox id="nationalNormsCheckbox" v-model="filterModel.nationalNorms" binary />
+            <div class="flex justify-content-between flex-column gap-2">
+              <div class="flex flex-row align-items-center">
+                <PvRadioButton v-model="filterModel.gradeRange" input-id="k5" name="Grades K-5" value="1" />
+                <label for="Grades K-5" class="ml-2">Grades K-5</label>
+              </div>
+              <div class="flex flex-row align-items-center">
+                <PvRadioButton v-model="filterModel.gradeRange" input-id="612" name="Grades 6-12" value="10" />
+                <label for="Grades 6-12" class="ml-2">Grades 6-12</label>
+              </div>
             </div>
           </div>
         </template>
@@ -322,7 +329,7 @@ _forEach(computedColumns.value, (column) => {
     } else if (dataType === 'SCORE') {
       // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
       //   so the filter event is being handled in an external handler.
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH, nationalNorms: false };
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH, gradeRange: '1' };
     }
 
     if (_get(column, 'useMultiSelect')) {
@@ -347,7 +354,7 @@ dateFields = _map(dateFields, (col) => col.field);
 let toolTipByHeader = (header) => {
   if (header === 'Word') {
     return 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900';
-  } else if (header === 'Letter') {
+  } else if (header === 'Letter Names and Sounds') {
     return 'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90';
   } else if (header === 'Phoneme') {
     return 'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57';
@@ -377,7 +384,7 @@ let returnScoreTooltip = (colHeader, colData) => {
     toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
-  } else if (colHeader === 'Letter' && colData.scores?.letter) {
+  } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
     toolTip += 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
   } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
     toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
@@ -457,5 +464,8 @@ const onFilter = (event) => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+}
+.p-column-filter-menu {
+  margin-left: 0.5rem;
 }
 </style>

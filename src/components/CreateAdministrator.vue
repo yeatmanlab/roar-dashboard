@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <PvPanel header="Create a new administrator account">
         Use this form to create a new user and give them administrator access to selected organizations.
@@ -71,18 +68,15 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery } from '@tanstack/vue-query';
+
 import _cloneDeep from 'lodash/cloneDeep';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
-import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const toast = useToast();
@@ -96,17 +90,6 @@ const email = ref();
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-
-const { data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 let unsubscribe;
 const init = () => {

@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <PvPanel header="Your organizations">
         <template #icons>
@@ -75,10 +72,8 @@
   </main>
 </template>
 <script setup>
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import { orgFetcher, orgCounter, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
-import { getSidebarActions } from '@/router/sidebarActions';
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
@@ -132,7 +127,6 @@ const { isLoading: isLoadingClaims,  data: userClaims } =
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 const orgHeaders = computed(() => {
   const headers = {

@@ -24,7 +24,7 @@
         <h1>You have no assignments!</h1>
         <p class="text-center">Please contact your administrator to get added to an assignment.</p>
         <router-link :to="{ name: 'SignOut' }">
-          <PvButton label="Sign out" icon="pi pi-sign-out" />
+          <PvButton label="Sign out" class="no-underline" icon="pi pi-sign-out" />
         </router-link>
       </div>
     </div>
