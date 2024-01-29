@@ -1,3 +1,5 @@
+import { timeouts } from "retry";
+
 let pa = {
   name: 'ROAR-Phoneme',
   id: 'pa',
@@ -88,27 +90,27 @@ function playTrial(numTimes, trialFinishPhrase) {
 
 function playFirstTutorial() {
   cy.wait(16000);
-  cy.get('img[src*="map.webp"]').click();
+  cy.get('img[src*="map.webp"]', {timeout: 10000}).click();
   cy.wait(16000);
-  cy.get('img[src*="rope.webp"]').click();
+  cy.get('img[src*="rope.webp"]', {timeout: 10000}).click();
   cy.wait(4000);
   cy.get('.continue').click();
 }
 
 function playSecondTutorial() {
   cy.wait(16000);
-  cy.get('img[src*="nut.webp"]').click();
+  cy.get('img[src*="nut.webp"]', {timeout: 10000}).click();
   cy.wait(16000);
-  cy.get('img[src*="wash.webp"]').click();
+  cy.get('img[src*="wash.webp"]', {timeout: 10000}).click();
   cy.wait(4000);
   cy.get('.continue').click();
 }
 
 function playThirdTutorial() {
   cy.wait(12000);
-  cy.get('img[src*="/ball.webp"]').click();
+  cy.get('img[src*="/ball.webp"]', {timeout: 10000}).click();
   cy.wait(12000);
-  cy.get('img[src*="/rain.webp"]').click();
+  cy.get('img[src*="/rain.webp"]' {timeout: 10000}).click();
   cy.wait(4000);
   cy.get('.continue').click();
 }
