@@ -80,7 +80,7 @@ function makeChoiceOrContinue(game, overflow) {
         body.find(game.clickableItem, { timeout: 10000 }).first().click();
       }
       if (overflow < 100) {
-        makeChoiceOrContinue(game, overflow++);
+        makeChoiceOrContinue(game, overflow + 1);
       }
     }
   });
