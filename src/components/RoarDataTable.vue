@@ -6,7 +6,7 @@
     <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap">
       <span>
         <div class="relative">
-          <slot/>
+          <slot />
         </div>
       </span>
       <span class="p-float-label">
@@ -38,7 +38,7 @@
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
       <span class="flex flex-row flex-wrap justify-content-end">
-        <PvButton 
+        <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
           label="Export Selected"
@@ -58,7 +58,7 @@
       ref="dataTable"
       v-model:filters="refFilters"
       v-model:selection="selectedRows"
-      :class="{'compressed': compressedRows}"
+      :class="{ compressed: compressedRows }"
       :value="computedData"
       :row-hover="true"
       :reorderable-columns="true"
@@ -276,7 +276,7 @@ Array of objects consisting of a field and header at minimum.
       the leftmost column.
 */
 // const compressedRows = ref(false);
-const nameForVisualize =ref("Expand view"); 
+const nameForVisualize = ref('Expand view');
 const countForVisualize = ref(2); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
@@ -341,18 +341,17 @@ const exportCSV = (exportSelected) => {
 };
 
 const compressedRows = ref(false);
-const padding='1rem 1.5rem'
+const padding = '1rem 1.5rem';
 
 function increasePadding() {
-  if(countForVisualize.value%2 ===0){
+  if (countForVisualize.value % 2 === 0) {
     document.documentElement.style.setProperty('--padding-value', padding);
-    nameForVisualize.value = "Compact view";
-  }
-  else{
-    nameForVisualize.value = "Expand view";
+    nameForVisualize.value = 'Compact view';
+  } else {
+    nameForVisualize.value = 'Expand view';
     document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
-    countForVisualize.value = countForVisualize.value+1;
+  countForVisualize.value = countForVisualize.value + 1;
 }
 
 // Generate filters and options objects
@@ -536,12 +535,12 @@ const onFilter = (event) => {
   margin-bottom: 5px;
 }
 button.p-button.p-component.softer {
-  background:#f3adad;
+  background: #f3adad;
   color: black;
 }
-button.p-column-filter-menu-button.p-link, g{
+button.p-column-filter-menu-button.p-link,
+g {
   color: white;
-  margin-left: 10px;
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
@@ -575,7 +574,7 @@ button.p-column-filter-menu-button.p-link, g{
 }
 
 button.p-column-filter-menu-button.p-link:hover {
-    background: var(--surface-500);
+  background: var(--surface-500);
 }
 
 .compressed .p-datatable .p-datatable-tbody > tr > td {
