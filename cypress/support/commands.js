@@ -66,7 +66,7 @@ Cypress.Commands.add('activateAdminSidebar', () => {
 
 Cypress.Commands.add('getAdministrationCard', () => {
   cy.get('[data-cy="dropdown-sort-administrations"]', {timeout: Cypress.env('timeout')}).click()
-  cy.get("ul > li").contains("Name (descending").click()
+  cy.get("ul > li").contains("Name (descending)").click()
 
   cy.get('[data-cy="h2-card-admin-title"]', {timeout: Cypress.env('timeout')})
     .filter((index, element) => {
