@@ -7,9 +7,12 @@
             <AppSpinner style="margin: 0.3rem 0rem" />
             <div class="uppercase text-sm">Loading Org Info</div>
           </div>
-          <div v-if="orgInfo">
+          <div v-if="orgInfo && administrationInfo">
             <div class="report-title">
               {{ _toUpper(orgInfo.name) }}
+            </div>
+            <div class="administration-name mb-4">
+              {{ _toUpper(administrationInfo?.name) }}
             </div>
             <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
@@ -925,6 +928,11 @@ onMounted(async () => {
   font-size: 2.5rem;
   font-weight: bold;
   margin-top: 0;
+}
+
+.administration-name {
+  font-size: 1.8rem;
+  font-weight: light;
 }
 
 .report-subheader {
