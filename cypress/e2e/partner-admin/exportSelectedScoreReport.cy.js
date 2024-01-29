@@ -1,22 +1,11 @@
-const timeout = Cypress.env('timeout');
-const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
 const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
-
-function getAdministrationCard() {
-  cy.get('[data-cy="h2-card-admin-title"]', {timeout: timeout})
-    .filter((index, element) => {
-      return Cypress.$(element).text().includes(testPartnerAdministrationName);
-    })
-    .should('have.length', 2)
-    .find('button', {timeout: timeout}).contains("Show details").click()
-}
 
 describe('The partner admin can select and export progress reports for a given administration.', () => {
   it('Selects an administration and views its progress report', () => {
     cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
     cy.navigateTo('/');
-    getAdministrationCard();
+    cy.getAdministrationCard();
     cy.get('button').contains('Score').first().click();
 
     // make a selection

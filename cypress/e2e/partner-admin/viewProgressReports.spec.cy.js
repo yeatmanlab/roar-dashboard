@@ -2,7 +2,6 @@ const testDistrictId = Cypress.env("testDistrictId");
 const testAdministrationId = Cypress.env('testAdministrationId');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
-const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
 const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 const testUserList = Cypress.env('testUserList');
@@ -20,16 +19,6 @@ function clickProgressButton() {
     cy.url({timeout: timeout})
         .should('eq', `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`);
 }
-
-function getAdministrationCard() {
-  cy.get('[data-cy="h2-card-admin-title"]', {timeout: timeout})
-    .filter((index, element) => {
-      return Cypress.$(element).text().includes(testPartnerAdministrationName);
-    })
-    .should('have.length', 2)
-    .find('button', {timeout: timeout}).contains("Show details").click()
-}
-
 
 function checkProgressTags(headers) {
   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
@@ -55,7 +44,7 @@ function checkProgressTags(headers) {
 describe('The partner admin can view progress reports for a given administration.', () => {
   it('Selects an administration and views its progress report', () => {
     checkUrl()
-    getAdministrationCard()
+    cy.getAdministrationCard()
     clickProgressButton()
     cy.checkUserList(testUserList)
     checkProgressTags(testAssignments)

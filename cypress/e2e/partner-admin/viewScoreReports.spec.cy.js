@@ -1,5 +1,4 @@
 const testDistrictId = Cypress.env('testDistrictId');
-const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
 const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
@@ -12,15 +11,6 @@ function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
   cy.navigateTo('/');
   cy.url({timeout: timeout}).should('eq', `${baseUrl}/`);
-}
-
-function getAdministrationCard() {
-  cy.get('[data-cy="h2-card-admin-title"]', {timeout: timeout})
-    .filter((index, element) => {
-      return Cypress.$(element).text().includes(testPartnerAdministrationName);
-    })
-    .should('have.length', 2)
-    .find('button', {timeout: timeout}).contains("Show details").click()
 }
 
 function clickScoreButton() {
@@ -42,7 +32,7 @@ function checkAssignmentColumns() {
 describe('The partner admin can view score reports for a given administration.', () => {
   it('Selects an administration and views its score report.', () => {
     checkUrl()
-    getAdministrationCard()
+    cy.getAdministrationCard()
     clickScoreButton()
     cy.checkUserList(testUserList)
     checkAssignmentColumns(testAssignments)

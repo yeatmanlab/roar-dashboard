@@ -63,6 +63,19 @@ Cypress.Commands.add('activateAdminSidebar', () => {
   cy.get('[data-cy="button-admin-sidebar"]').click().wait(1000);
 });
 
+
+Cypress.Commands.add('getAdministrationCard', () => {
+  cy.get('[data-cy="dropdown-sort-administrations"]', {timeout: Cypress.env('timeout')}).click()
+  cy.get("ul > li").contains("Name (descending").click()
+
+  cy.get('[data-cy="h2-card-admin-title"]', {timeout: Cypress.env('timeout')})
+    .filter((index, element) => {
+      return Cypress.$(element).text().includes(Cypress.env('testPartnerAdministrationName'));
+    })
+    .should('have.length', 2)
+    .find('button', {timeout: Cypress.env('timeout')}).contains("Show details").click()
+})
+
 Cypress.Commands.add('inputOrgDetails', (orgName, orgInitials, orgNcesId, orgAddress, orgGrade, orgTag) => {
   // Require orgName and orgInitials
   cy.get('[data-cy="input-org-name"]').type(orgName);
