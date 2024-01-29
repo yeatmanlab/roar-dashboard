@@ -90,6 +90,7 @@
         :frozen="col.pinned"
         align-frozen="left"
         :class="{ 'filter-button-override': hideFilterButtons }"
+        :filter-menu-style="enableFilter(col.field) ? '' : 'display: none;'"
       >
         <template #header>
           <div
