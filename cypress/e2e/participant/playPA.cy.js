@@ -110,7 +110,7 @@ function playThirdTutorial() {
   cy.wait(12000);
   cy.get('img[src*="/ball.webp"]', {timeout: 10000}).click();
   cy.wait(12000);
-  cy.get('img[src*="/rain.webp"]' {timeout: 10000}).click();
+  cy.get('img[src*="/rain.webp"]', {timeout: 10000}).click();
   cy.wait(4000);
   cy.get('.continue').click();
 }
