@@ -365,6 +365,7 @@ const refOptions = ref(options);
 const refFilters = ref(filters);
 
 const enableFilter = (field) => {
+  if (!field) return false;
   const path = field.split('.');
   if (path[0] === 'scores') {
     if (taskFilterBlacklist.includes(path[1])) return false;
