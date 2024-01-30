@@ -25,7 +25,6 @@
         :allow-empty="false"
         :options="facetModes"
         option-label="name"
-        @change="handleModeChange"
       />
     </div>
     <div class="chart-wrapper">

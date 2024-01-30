@@ -85,7 +85,7 @@
         :sortable="col.sort !== false"
         :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
         :show-filter-operator="col.allowMultipleFilters === true"
-        :filter-field="col.dataType === 'score' ? `scores.${col.field.split('.')[1]}.percentile` : col.field"
+        :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
         :show-add-button="col.allowMultipleFilters === true"
         :frozen="col.pinned"
         align-frozen="left"
