@@ -1,10 +1,12 @@
+const timeout = Cypress.env('timeout')
+
 describe('Testing playthrough of SWR as a participant', () => {
   it('ROAR-Word Playthrough Test', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/');
 
-    cy.get('.p-dropdown-trigger', { timeout: 10000 }).should('be.visible').click();
-    cy.get('.p-dropdown-item', { timeout: 10000 })
+    cy.get('.p-dropdown-trigger', { timeout: 10 * timeout }).should('be.visible').click();
+    cy.get('.p-dropdown-item', { timeout: 10 * timeout })
       .contains('ZZZ Test Cypress Play Keypress Games')
       .should('be.visible')
       .click();
@@ -12,10 +14,10 @@ describe('Testing playthrough of SWR as a participant', () => {
     cy.get('.p-tabview').contains('ROAR-Word');
     cy.visit(`/game/swr`);
 
-    cy.get('.jspsych-btn', { timeout: 60000 }).should('be.visible').click();
+    cy.get('.jspsych-btn', { timeout: 60 * timeout }).should('be.visible').click();
 
     // handles error where full screen throws a permissions error
-    cy.wait(500);
+    cy.wait(0.1 * timeout);
     Cypress.on('uncaught:exception', () => {
       return false;
     });
@@ -26,13 +28,11 @@ describe('Testing playthrough of SWR as a participant', () => {
 
 function playSWRGame() {
   // play tutorial
-  cy.contains('Welcome to the Single Word Recognition activity');
-  cy.wait(500);
+  cy.contains('Welcome to the Single Word Recognition activity', {timeout: timeout});
   for (let i = 0; i < 3; i++) {
-    cy.get('body').type('{leftarrow}');
-    cy.wait(500);
+    cy.get('body', {timeout: timeout}).type('{leftarrow}');
   }
-  cy.get('.jspsych-btn', { timeout: 10000 }).should('be.visible').click();
+  cy.get('.jspsych-btn', { timeout: 10 * timeout }).should('be.visible').click();
   Cypress.on('uncaught:exception', () => {
     return false;
   });
@@ -48,8 +48,8 @@ function playSWRGame() {
   finishSWR('Congratulations');
 
   // check if game completed
-  cy.get('.p-dropdown-trigger', { timeout: 50000 }).should('be.visible').click();
-  cy.get('.p-dropdown-item', { timeout: 10000 })
+  cy.get('.p-dropdown-trigger', { timeout: 50 * timeout }).should('be.visible').click();
+  cy.get('.p-dropdown-item', { timeout: 10 * timeout })
     .contains('ZZZ Test Cypress Play Keypress Games')
     .should('be.visible')
     .click();
@@ -57,49 +57,48 @@ function playSWRGame() {
 }
 
 function playIntro() {
-  for (let i = 0; i < 5; i++) {
-    cy.wait(5500);
-    cy.get('body').type('{leftarrow}{rightarrow}');
-    cy.wait(1000);
-    cy.get('body').type('{leftarrow}{rightarrow}');
+  for (let i = 0; i <= 5; i++) {
+    cy.log(i)
+    cy.wait(0.2 * timeout)
+    cy.get('body').type('{leftarrow}{rightarrow}', {timeout: 5 * timeout});
+    cy.wait(0.2 * timeout)
+    cy.get('body').type('{leftarrow}{rightarrow}', {timeout: 2 * timeout});
+    cy.wait(0.2 * timeout)
   }
-  cy.get('.jspsych-btn').contains('Continue').click();
+  cy.get('.jspsych-btn', {timeout: 5 * timeout}).contains('Continue').click();
   Cypress.on('uncaught:exception', () => {
     return false;
   });
 }
 
 function playSWRBlock(block_termination_phrase) {
-  cy.get('body').then((body) => {
-    cy.wait(5500);
+  cy.get('body', {timeout: 5 * timeout}).then((body) => {
     cy.log('entering stage: ', block_termination_phrase);
     if (!body.find('.stimulus').length > 0) {
-      cy.wait(400);
-      cy.get('body').type('{leftarrow}');
-      cy.get('.jspsych-btn').contains('Continue').click();
+      cy.wait(0.2 * timeout)
+      cy.get('body', {timeout: timeout}).type('{leftarrow}');
+      cy.get('.jspsych-btn', {timeout: 5 * timeout}).contains('Continue').click();
       Cypress.on('uncaught:exception', () => {
         return false;
       });
     } else {
-      cy.get('body').type('{rightarrow}');
-      cy.wait(400);
-      cy.get('body').type('{leftarrow}');
+      cy.get('body', {timeout: timeout}).type('{rightarrow}');
+      cy.get('body', {timeout: timeout}).type('{leftarrow}');
       playSWRBlock(block_termination_phrase);
     }
   });
 }
 
 function finishSWR(block_termination_phrase) {
-  cy.get('body').then((body) => {
-    cy.wait(4000);
-    if (!body.find('.stimulus').length > 0) {
-      cy.wait(400);
+  cy.get('body', {timeout: 5 * timeout}).then((body) => {
+    if (!body.find('.stimulus',).length > 0) {
       assert(cy.contains(block_termination_phrase));
-      cy.get('body').type('{leftarrow}');
-      cy.wait(400);
+      cy.wait(0.2 * timeout)
+      cy.get('body', {timeout: 5 * timeout}).type('{leftarrow}');
     } else {
       // cy.get(".stimulus").should("be.visible");
-      cy.get('body').type('{rightarrow}');
+      cy.wait(0.2 * timeout)
+      cy.get('body', {timeout: 5 * timeout}).type('{rightarrow}');
       finishSWR(block_termination_phrase);
     }
   });
