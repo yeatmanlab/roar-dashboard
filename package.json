@@ -4,8 +4,9 @@
   "version": "1.2.2",
   "scripts": {
     "build": "vite build",
+    "build:levante": "vite build -m LEVANTE",
     "dev": "vite --force --host",
-    "dev:levante": "vite --force --host ",
+    "dev:levante": "vite --force --host -m LEVANTE",
     "dev:emulate": "export VITE_FIREBASE_EMULATOR=true && vite --force --host",
     "emulate:admin": "source firebase/emulate_admin.sh",
     "emulate:assessment": "source firebase/emulate_assessment.sh",
