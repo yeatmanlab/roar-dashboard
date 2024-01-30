@@ -19,7 +19,10 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
+            <div
+              v-if="sortedAndFilteredTaskIds?.length > 0"
+              class="overview-wrapper bg-gray-100 py-3 mb-2"
+            >
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
