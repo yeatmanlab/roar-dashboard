@@ -37,14 +37,16 @@
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
-      <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
-        <PvButton
+      <span class="flex flex-row flex-wrap justify-content-end">
+        <PvButton 
+          v-if="allowExport"
           v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
           label="Export Selected"
           :disabled="selectedRows.length === 0"
           @click="exportCSV(true, $event)"
         />
         <PvButton
+          v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
           @click="exportCSV(false, $event)"
