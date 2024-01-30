@@ -158,7 +158,6 @@
               :org-type="orgType"
               :org-id="orgId"
               :org-info="orgInfo"
-              :schools-dict="schoolsDict"
               :administration-info="administrationInfo"
             />
           </PvTabPanel>
@@ -273,7 +272,7 @@ import _pickBy from 'lodash/pickBy';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
-import { orderByDefault, fetchDocById, exportCsv } from '@/helpers/query/utils';
+import { fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { runPageFetcher } from '@/helpers/query/runs';
@@ -312,7 +311,7 @@ const props = defineProps({
 const initialized = ref(false);
 
 // Queries for page
-const orderBy = ref(orderByDefault);
+const orderBy = ref([]);
 const filterBy = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
@@ -372,7 +371,7 @@ const {
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy],
+  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -384,6 +383,7 @@ const {
       undefined,
       true,
       filterBy.value,
+      orderBy.value,
     ),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
@@ -406,11 +406,20 @@ const onPage = (event) => {
 
 const onSort = (event) => {
   console.log('onSort');
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
-    field: { fieldPath: item.field },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-  }));
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => {
+    let field = item.field.replace('user', 'userData');
+    // Due to differences in the document schemas,
+    //   fields found in studentData in the user document are in the
+    //   top level of the assignments.userData object.
+    if (field.split('.')[1] === 'studentData') {
+      field = `userData.${field.split('.').slice(2, field.length)}`;
+    }
+    return {
+      field: { fieldPath: field },
+      direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
+    };
+  });
+  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
   page.value = 0;
 };
 
@@ -422,10 +431,23 @@ const onFilter = (event) => {
     const constraint = _head(_get(filter, 'constraints'));
     if (_get(constraint, 'value')) {
       const path = filterKey.split('.');
-      let collection;
       if (_head(path) === 'user') {
-        collection = 'users';
-        filters.push({ ...constraint, collection, field: _tail(path).join('.') });
+        // Special case for school
+        if (path[1] === 'schoolName') {
+          // find ID from given name
+          const schoolName = constraint.value;
+          const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
+          if (!_isEmpty(schoolEntry)) {
+            filters.push({ value: schoolEntry.id, collection: 'school', field: 'assigningOrgs.schools' });
+          }
+        } else if (path[1] === 'studentData') {
+          // Due to differences in the document schemas,
+          //   fields found in studentData in the user document are in the
+          //   top level of the assignments.userData object.
+          filters.push({ ...constraint, collection: 'users', field: path.slice(2, path.length) });
+        } else {
+          filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
+        }
       }
       if (_head(path) === 'scores') {
         const taskId = path[1];
@@ -641,10 +663,10 @@ const refreshing = ref(false);
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'number', sort: false },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: true },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true },
   ];
 
   if (props.orgType === 'district') {
