@@ -5,8 +5,7 @@
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
     border: 1px solid var(--surface-d);
-    // white-space: nowrap;
-    // width: auto;
+    border-inline-color: var(--surface-d);
 
     .p-tabview-header {
       .p-tabview-nav-link {
@@ -16,7 +15,6 @@
         border-top-right-radius: 4px;
         background: transparent;
         filter: grayscale(45%);
-        // white-space: nowrap;
 
         &:hover {
           border-inline-color: var(--surface-d);
@@ -46,6 +44,7 @@
     li .p-tabview-nav-link:not(.p-disabled):focus {
       box-shadow: inset 0 0 0 1px var(--primary-color);
       box-shadow: none;
+      box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.2), 0 10px 2px 0 rgba(0, 0, 0, 0.2);
     }
   }
 

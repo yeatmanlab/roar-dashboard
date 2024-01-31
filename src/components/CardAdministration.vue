@@ -1,77 +1,82 @@
 <template>
   <div class="p-card card-administration mb-1 w-full">
-      <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
-        <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
-      </div>
+    <div v-if="props.stats && isSuperAdmin" class="card-admin-chart">
+      <PvChart type="doughnut" :data="doughnutChartData" :options="doughnutChartOptions" />
+    </div>
 
-      <div class="card-admin-body w-full">
-        <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
-          <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
-            <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0">{{ title }}</h2>
-          </div>
-          <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
-            <PvSpeedDial
-              :model="speedDialItems"
-              direction="left"
-              :transition-delay="80"
-              show-icon="pi pi-cog"
-              hide-icon="pi pi-times"
-              button-class="p-button-outlined p-button-sm w-3rem h-3rem"
-              :pt="{ button: { size: 'small' } }"
-            />
-            <PvConfirmPopup />
-          </div>
+    <div class="card-admin-body w-full">
+      <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
+        <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
+          <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0">{{ title }}</h2>
+
         </div>
-        <div class="card-admin-details">
-          <span class="mr-1"><strong>Dates</strong>:</span>
-          <span class="mr-1"> {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }} </span>
+        <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
+          <PvSpeedDial
+            :model="speedDialItems"
+            direction="left"
+            :transition-delay="80"
+            show-icon="pi pi-cog"
+            hide-icon="pi pi-times"
+            button-class="p-button-outlined p-button-sm w-3rem h-3rem"
+            :pt="{ button: { size: 'small' } }"
+          />
+          <PvConfirmPopup />
         </div>
-        <div class="card-admin-assessments">
-          <span class="mr-1"><strong>Assessments</strong>:</span>
-          <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-            <span>{{ taskDisplayNames[assessmentId]?.name ?? assessmentId }}</span>
-            <span
-              v-if="showParams"
-              v-tooltip.top="'Click to view params'"
-              class="pi pi-info-circle cursor-pointer ml-1"
-              style="font-size: 1rem"
-              @click="toggleParams($event, assessmentId)"
-            />
-          </span>
-          <div v-if="showParams">
-            <PvOverlayPanel
-              v-for="assessmentId in assessmentIds"
-              :key="assessmentId"
-              :ref="paramPanelRefs[assessmentId]"
+      </div>
+      <div class="card-admin-details">
+        <span class="mr-1"><strong>Dates</strong>:</span>
+        <span class="mr-1">
+          {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }}
+        </span>
+      </div>
+      <div class="card-admin-assessments">
+        <span class="mr-1"><strong>Assessments</strong>:</span>
+        <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
+          <span>{{ taskDisplayNames[assessmentId]?.name ?? assessmentId }}</span>
+          <span
+            v-if="showParams"
+            v-tooltip.top="'Click to view params'"
+            class="pi pi-info-circle cursor-pointer ml-1"
+            style="font-size: 1rem"
+            @click="toggleParams($event, assessmentId)"
+          />
+        </span>
+        <div v-if="showParams">
+          <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+            <PvDataTable
+              striped-rows
+              class="p-datatable-small"
+              table-style="min-width: 30rem"
+              :value="toEntryObjects(params[assessmentId])"
             >
-              <PvDataTable
-                striped-rows
-                class="p-datatable-small"
-                table-style="min-width: 30rem"
-                :value="toEntryObjects(params[assessmentId])"
-              >
-                <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
-                <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
-              </PvDataTable>
-            </PvOverlayPanel>
-          </div>
+              <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
+              <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
+            </PvDataTable>
+          </PvOverlayPanel>
         </div>
-        <div v-if="isAssigned">
-          <PvButton class="mt-2 ml-0" :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
-        </div>
-    <PvTreeTable
-      v-if="showTable"
-      class="mt-3"
-      lazy
-      row-hover
-      :loading="loadingTreeTable"
-      :value="treeTableOrgs"
-      @node-expand="onExpand"
-    >
-      <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
-      <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
+      </div>
+      <div v-if="isAssigned">
+        <PvButton class="mt-2 ml-0" :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
+      </div>
+      <PvTreeTable
+        v-if="showTable"
+        class="mt-3"
+        lazy
+        row-hover
+        :loading="loadingTreeTable"
+        :value="treeTableOrgs"
+        @node-expand="onExpand"
+      >
+        <PvColumn field="name" header="Name" expander style="width: 20rem"></PvColumn>
+        <PvColumn v-if="props.stats && isWideScreen" field="id" header="Completion">
           <template #body="{ node }">
-            <PvChart type="bar" :data="setBarChartData(node.data.id)" :options="barChartOptions" class="h-3rem" />
+            <PvChart
+              type="bar"
+              :data="setBarChartData(node.data.id)"
+              :options="setBarChartOptions(node.data.id)"
+              class="h-3rem"
+            />
+
           </template>
         </PvColumn>
         <PvColumn field="id" header="" style="width: 14rem">
@@ -119,6 +124,7 @@
       </PvColumn>
     </PvTreeTable>
   </div>
+
   </div>
 </template>
 
@@ -434,7 +440,6 @@ const onExpand = async (node) => {
 
 const doughnutChartData = ref();
 const doughnutChartOptions = ref();
-const barChartOptions = ref();
 
 const setDoughnutChartOptions = () => ({
   cutout: '60%',
@@ -546,7 +551,12 @@ const setBarChartData = (orgId) => {
   return chartData;
 };
 
-const setBarChartOptions = () => {
+const setBarChartOptions = (orgId) => {
+  let { assigned = 0 } = props.stats[orgId]?.assignment || {};
+
+  const min = 0;
+  const max = assigned;
+
   return {
     indexAxis: 'y',
     maintainAspectRatio: false,
@@ -570,6 +580,8 @@ const setBarChartOptions = () => {
         border: {
           display: false,
         },
+        min,
+        max,
       },
       y: {
         stacked: true,
@@ -582,6 +594,8 @@ const setBarChartOptions = () => {
         border: {
           display: false,
         },
+        min,
+        max,
       },
     },
   };
@@ -591,7 +605,6 @@ onMounted(() => {
   if (props.stats) {
     doughnutChartData.value = setDoughnutChartData();
     doughnutChartOptions.value = setDoughnutChartOptions();
-    barChartOptions.value = setBarChartOptions();
   }
 });
 </script>
@@ -617,8 +630,6 @@ onMounted(() => {
     flex-direction: column;
     flex-wrap: wrap;
     align-content: start;
-
-
   }
 
   .break {
@@ -633,8 +644,6 @@ onMounted(() => {
     border-bottom: 1px solid var(--surface-d);
     flex: 1 1 100%;
   }
-
-
 
   .card-admin-link {
     margin-top: 2rem;
@@ -659,4 +668,3 @@ onMounted(() => {
   }
 }
 </style>
-

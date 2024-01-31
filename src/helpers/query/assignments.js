@@ -7,8 +7,10 @@ import _mapValues from 'lodash/mapValues';
 import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
+import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { toRaw } from 'vue';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
@@ -33,6 +35,8 @@ export const getAssignmentsRequestBody = ({
   page,
   paginate = true,
   select = assignmentSelectFields,
+  filter = {},
+  orderBy = [],
   isCollectionGroupQuery = true,
 }) => {
   const requestBody = {
@@ -81,20 +85,21 @@ export const getAssignmentsRequestBody = ({
         ],
       },
     };
-    // if(!_isEmpty(filters)){
-    //   const userFilters = (filters.map(filter => {
-    //     console.log('filter ->', filter)
-    //     return {
-    //       fieldFilter: {
-    //         field: { fieldPath: filter.field },
-    //         op: "EQUAL", // Need more logic here later for different constraints
-    //         value: { stringValue: filter.value }
-    //       }
-    //     }
-    //   }))
-    // } else {
-    //   console.log('skipping filters')
-    // }
+
+    if (!_isEmpty(orderBy)) {
+      requestBody.structuredQuery.orderBy = orderBy;
+    }
+
+    if (!_isEmpty(filter)) {
+      console.log('filters are:', filter);
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.${filter.field}` },
+          op: 'EQUAL',
+          value: { stringValue: filter.value },
+        },
+      });
+    }
   } else {
     const currentDate = new Date().toISOString();
     requestBody.structuredQuery.where = {
@@ -127,7 +132,7 @@ export const getUsersByAssignmentIdRequestBody = ({
   adminId,
   orgType,
   orgId,
-  filterBy,
+  filter,
   aggregationQuery,
   pageLimit,
   page,
@@ -162,7 +167,6 @@ export const getUsersByAssignmentIdRequestBody = ({
     compositeFilter: {
       op: 'AND',
       filters: [
-        { fieldFilter: { ...filterBy, op: 'EQUAL' } },
         {
           fieldFilter: {
             field: { fieldPath: `${pluralizeFirestoreCollection(orgType)}.current` },
@@ -180,6 +184,17 @@ export const getUsersByAssignmentIdRequestBody = ({
       ],
     },
   };
+
+  if (filter) {
+    console.log('filter in request body', filter);
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: filter[0].field },
+        op: 'EQUAL',
+        value: { stringValue: filter[0].value },
+      },
+    });
+  }
 
   if (aggregationQuery) {
     return {
@@ -263,7 +278,7 @@ export const getFilteredScoresRequestBody = ({
     },
   };
   if (filter) {
-    if (filter.value === 'Above') {
+    if (filter.value === 'Average') {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: filter.field },
@@ -271,7 +286,7 @@ export const getFilteredScoresRequestBody = ({
           value: { doubleValue: 50 },
         },
       });
-    } else if (filter.value === 'Average') {
+    } else if (filter.value === 'Some Support') {
       requestBody.structuredQuery.where.compositeFilter.filters.push(
         {
           fieldFilter: {
@@ -288,7 +303,7 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
-    } else if (filter.value === 'Needs Extra') {
+    } else if (filter.value === 'Extra Support') {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: filter.field },
@@ -413,11 +428,20 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
     });
   } else {
+    let userFilter = null;
+    let orgFilter = null;
+    if (filters.length && filters[0].collection === 'users') {
+      userFilter = filters[0];
+    }
+    if (filters.length && filters[0].collection === 'school') {
+      orgFilter = filters[0].value;
+    }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
+      orgType: orgFilter ? 'school' : orgType,
+      orgId: orgFilter ? orgFilter : orgId,
       aggregationQuery: true,
+      filter: userFilter,
     });
     return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
@@ -435,6 +459,7 @@ export const assignmentPageFetcher = async (
   select = undefined,
   paginate = true,
   filters = [],
+  orderBy = [],
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
@@ -443,6 +468,7 @@ export const assignmentPageFetcher = async (
     throw new Error('You may specify at most one filter');
   }
 
+  // Handle filtering based on scores
   if (filters.length && filters[0].collection === 'scores') {
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
@@ -610,16 +636,25 @@ export const assignmentPageFetcher = async (
       );
     });
   } else {
+    let userFilter = null;
+    let orgFilter = null;
+    if (filters.length && filters[0].collection === 'users') {
+      userFilter = filters[0];
+    }
+    if (filters.length && filters[0].collection === 'school') {
+      orgFilter = filters[0].value;
+    }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
+      orgType: orgFilter ? 'school' : orgType,
+      orgId: orgFilter ? orgFilter : orgId,
       aggregationQuery: false,
       pageLimit: pageLimit.value,
       page: page.value,
       paginate: paginate,
       select: select,
-      filters: filters,
+      filter: userFilter,
+      orderBy: toRaw(orderBy),
     });
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {

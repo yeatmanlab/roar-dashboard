@@ -76,15 +76,18 @@ import { orgFetcher, orgCounter, orgFetchAll, orgPageFetcher } from '@/helpers/q
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _isEmpty from 'lodash/isEmpty';
 
+const toast = useToast();
 const initialized = ref(false);
 const page = ref(0);
 const pageLimit = ref(10);
+const orgsQueryKeyIndex = ref(0);
 
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -116,14 +119,22 @@ const cleverSyncIcon = computed(() => {
   }
 });
 
-const { isLoading: isLoadingClaims,  data: userClaims } =
-    useQuery({
-      queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
-      queryFn: () => fetchDocById('userClaims', authStore.uid),
-      keepPreviousData: true,
-      enabled: initialized,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
+const syncClever = async () => {
+  toast.add({ severity: 'info', summary: 'Syncing', detail: 'Clever sync initiated', life: 3000 });
+  syncingClever.value = true;
+  await authStore.syncCleverOrgs();
+  syncingClever.value = false;
+  orgsQueryKeyIndex.value += 0;
+  toast.add({ severity: 'success', summary: 'Success', detail: 'Clever sync successful', life: 5000 });
+};
+
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+  queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
@@ -164,60 +175,53 @@ const activeOrgType = computed(() => {
 
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } =
-    useQuery({
-      queryKey: ['districts'],
-      queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
-      keepPreviousData: true,
-      enabled: claimsLoaded,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
+const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
+  queryKey: ['districts', orgsQueryKeyIndex],
+  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
 
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
 
-const { isLoading: isLoadingSchools, data: allSchools } =
-    useQuery({
-      queryKey: ['schools', selectedDistrict],
-      queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
-      keepPreviousData: true,
-      enabled: schoolQueryEnabled,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
+
+const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
+  queryKey: ['schools', selectedDistrict, orgsQueryKeyIndex],
+  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
+  keepPreviousData: true,
+  enabled: schoolQueryEnabled,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
 
 const {
   isLoading: isLoadingCount,
   isFetching: isFetchingCount,
   data: totalRecords,
-   } = useQuery({
-      queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy],
-      queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs),
-      keepPreviousData: true,
-      enabled: claimsLoaded,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
+} = useQuery({
+  queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
+  queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 const {
   isLoading,
   isFetching,
   data: orgData,
-   } = useQuery({
-      queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page],
-      queryFn: () =>
-          orgPageFetcher(activeOrgType,
-          selectedDistrict,
-          selectedSchool,
-          orderBy,
-          pageLimit,
-          page,
-          isSuperAdmin,
-          adminOrgs),
-
-      keepPreviousData: true,
-      enabled: claimsLoaded,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
+} = useQuery({
+  queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page, orgsQueryKeyIndex],
+  queryFn: () =>
+    orgPageFetcher(activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page, isSuperAdmin, adminOrgs),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 const exportAll = async () => {
   const exportData = await orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs,
