@@ -86,16 +86,6 @@
           </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
-          <div class="toggle-container">
-            <span>View</span>
-            <PvDropdown
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
-          </div>
           <RoarDataTable
             :data="tableData"
             :columns="columns"
@@ -108,7 +98,16 @@
             @filter="onFilter($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
-          />
+          >
+          <label for="view-columns" class="view-label">View</label>
+          <PvDropdown
+            id="view-columns"
+            v-model="viewMode"
+            :options="viewOptions"
+            option-label="label"
+            option-value="value"
+            class="ml-2"
+          /></RoarDataTable>
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">

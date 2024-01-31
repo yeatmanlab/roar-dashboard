@@ -3,7 +3,12 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div class="flex flex-row flex-wrap w-full gap-2 pt-4 justify-content-end">
+    <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap">
+      <span>
+        <div class="relative">
+          <slot />
+        </div>
+      </span>
       <span class="p-float-label">
         <PvMultiSelect
           id="ms-columns"
@@ -12,11 +17,11 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-full md:w-20rem"
+          class="w-2 md:w-20rem"
           selected-items-label="{0} columns selected"
           @update:model-value="onColumnToggle"
         />
-        <label for="ms-columns">Select Columns</label>
+        <label for="ms-columns" class="view-label2">Select Columns</label>
       </span>
       <span class="p-float-label">
         <PvMultiSelect
@@ -25,31 +30,35 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-full md:w-20rem"
+          class="w-2 md:w-20rem"
           selected-items-label="{0} columns frozen"
           :show-toggle-all="false"
           @update:model-value="onFreezeToggle"
         />
-        <label for="ms-columns">Freeze Columns</label>
+        <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
-      <span v-if="allowExport" class="flex flex-row flex-wrap justify-content-end">
+      <span class="flex flex-row flex-wrap justify-content-end">
         <PvButton
+          v-if="allowExport"
           v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
           label="Export Selected"
           :disabled="selectedRows.length === 0"
           @click="exportCSV(true, $event)"
         />
         <PvButton
+          v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
           @click="exportCSV(false, $event)"
         />
+        <PvButton :label="nameForVisualize" @click="toggleView" />
       </span>
     </div>
     <PvDataTable
       ref="dataTable"
       v-model:filters="refFilters"
       v-model:selection="selectedRows"
+      :class="{ compressed: compressedRows }"
       :value="computedData"
       :row-hover="true"
       :reorderable-columns="true"
@@ -91,6 +100,7 @@
         align-frozen="left"
         :class="{ 'filter-button-override': hideFilterButtons }"
         :filter-menu-style="enableFilter(col.field) ? '' : 'display: none;'"
+        header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
       >
         <template #header>
           <div
@@ -265,6 +275,13 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
 */
+// const compressedRows = ref(false);
+const nameForVisualize = ref('Expand view');
+const countForVisualize = ref(2); //for starting compress
+const toggleView = () => {
+  compressedRows.value = !compressedRows.value;
+  increasePadding();
+};
 
 const props = defineProps({
   columns: { type: Array, required: true },
@@ -322,6 +339,20 @@ const exportCSV = (exportSelected) => {
   }
   emit('export-all');
 };
+
+const compressedRows = ref(false);
+const padding = '1rem 1.5rem';
+
+function increasePadding() {
+  if (countForVisualize.value % 2 === 0) {
+    document.documentElement.style.setProperty('--padding-value', padding);
+    nameForVisualize.value = 'Compact view';
+  } else {
+    nameForVisualize.value = 'Expand view';
+    document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
+  }
+  countForVisualize.value = countForVisualize.value + 1;
+}
 
 // Generate filters and options objects
 const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE'];
@@ -499,20 +530,58 @@ const onFilter = (event) => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+  margin-left: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
-.filter-content {
-  width: 12rem;
+button.p-button.p-component.softer {
+  background: #f3adad;
+  color: black;
 }
-.filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
-  display: none;
+button.p-column-filter-menu-button.p-link,
+g {
+  color: white;
+  margin-left: 10px;
 }
-.p-column-filter-matchmode-dropdown {
-  /* Our current filtering queries do not support options other than equals
-     for strings. To reduce confusion for end users, remove the dropdown
-     offering different matchmodes */
-  display: none;
+
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: left;
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 1px 0;
+  padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
-.p-column-filter-menu {
-  margin-left: 0.5rem;
+
+.view-label {
+  position: absolute;
+  top: -25px;
+  left: 5px;
+  background-color: white;
+  z-index: 1;
+  font-size: smaller;
+  color: var(--surface-500);
+  width: 110px;
+}
+.view-label2 {
+  position: absolute;
+  top: -15px;
+  left: 5px;
+  background-color: white;
+  z-index: 1;
+  font-size: smaller;
+  color: var(--surface-500);
+  width: 110px;
+}
+
+button.p-column-filter-menu-button.p-link:hover {
+  background: var(--surface-500);
+}
+
+.compressed .p-datatable .p-datatable-tbody > tr > td {
+  text-align: left;
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 3px 0;
+  padding: 1px 1.5rem 2px 1.5rem;
 }
 </style>
