@@ -541,6 +541,7 @@ button.p-button.p-component.softer {
 button.p-column-filter-menu-button.p-link,
 g {
   color: white;
+  margin-left: 10px;
 }
 
 .p-datatable .p-datatable-tbody > tr > td {
