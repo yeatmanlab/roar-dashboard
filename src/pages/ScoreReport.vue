@@ -238,7 +238,6 @@ import _isEmpty from 'lodash/isEmpty';
 import _filter from 'lodash/filter';
 import _pickBy from 'lodash/pickBy';
 import _union from 'lodash/union';
-import _uniqBy from 'lodash/uniqBy';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
@@ -401,7 +400,6 @@ const onPage = (event) => {
 const sortDisplay = computed(() => {
   const display = [];
   for (const sort of orderBy.value) {
-    console.log('sort item', sort);
     // TODO: TEMPORARY - Make this a dynamic way of converting
     // fields into column paths
     let item = {};
@@ -480,7 +478,7 @@ watch(filterSchools, (newSchools) => {
 });
 
 const onFilter = (event) => {
-  console.log('onFilter');
+  console.log('onFilter', event);
   // Turn off sort when filtering
   orderBy.value = [];
   const filters = [];
@@ -520,8 +518,9 @@ const onFilter = (event) => {
       }
     }
   }
-  const allFilters = _union(filters, filterBy.value);
-  filterBy.value = _uniqBy(allFilters, 'collection');
+  const orgFilter = _find(filterBy.value, { collection: 'schools' });
+  if (orgFilter) filters.push(orgFilter);
+  filterBy.value = filters;
   page.value = 0;
 };
 
