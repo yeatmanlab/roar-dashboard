@@ -27,7 +27,7 @@
     "@bdelab/roar-pa": "^1.3.0",
     "@bdelab/roar-sre": "^1.7.0",
     "@bdelab/roar-swr": "^1.5.0",
-    "@bdelab/roar-utils": "^1.0.12",
+    "@bdelab/roar-utils": "^1.0.17",
     "@bdelab/roar-vocab": "^1.4.0",
     "@tanstack/vue-query": "^4.35.7",
     "@vuelidate/core": "^2.0.0-alpha.40",
