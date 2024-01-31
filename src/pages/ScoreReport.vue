@@ -83,18 +83,6 @@
           </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
-          <div class="toggle-container">
-            <div>
-              <span>View</span>
-              <PvDropdown
-                v-model="viewMode"
-                :options="viewOptions"
-                option-label="label"
-                option-value="value"
-                class="ml-2"
-              />
-            </div>
-          </div>
           <RoarDataTable
             :data="tableData"
             :columns="columns"
@@ -109,29 +97,33 @@
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
-            <label for="view-columns" class="view-label">View</label>
-            <PvDropdown
-              id="view-columns"
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
-            <span class="p-float-label">
-              <PvMultiSelect
-                v-if="schoolsInfo"
-                id="ms-school-filter"
-                v-model="filterSchools"
-                style="width: 20rem; max-width: 25rem"
-                :options="schoolsInfo"
-                option-label="name"
-                option-value="id"
-                :show-toggle-all="false"
-                selected-items-label="{0} schools selected"
-              />
-              <label for="ms-school-filter">Filter by School</label>
-            </span>
+            <div class="flex flex-row gap-2">
+              <span>
+                <label for="view-columns" class="view-label">View</label>
+                <PvDropdown
+                  id="view-columns"
+                  v-model="viewMode"
+                  :options="viewOptions"
+                  option-label="label"
+                  option-value="value"
+                  class="ml-2"
+                />
+              </span>
+              <span class="p-float-label">
+                <PvMultiSelect
+                  v-if="schoolsInfo"
+                  id="ms-school-filter"
+                  v-model="filterSchools"
+                  style="width: 20rem; max-width: 25rem"
+                  :options="schoolsInfo"
+                  option-label="name"
+                  option-value="id"
+                  :show-toggle-all="false"
+                  selected-items-label="{0} schools selected"
+                />
+                <label for="ms-school-filter">Filter by School</label>
+              </span>
+            </div>
           </RoarDataTable>
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
@@ -225,7 +217,7 @@
         </div>
       </div>
       <PvConfirmDialog group="sort" class="confirm">
-        <template #message> Only 3 or fewer sorts are allowed to be applied. </template>
+        <template #message> Customized sorting on multiple fields is not yet supported. </template>
       </PvConfirmDialog>
     </section>
   </main>
@@ -410,7 +402,7 @@ const sortDisplay = computed(() => {
   const display = [];
   for (const sort of orderBy.value) {
     console.log('sort item', sort);
-    // TEMPORARY - Make this a dynamic way of converting
+    // TODO: TEMPORARY - Make this a dynamic way of converting
     // fields into column paths
     let item = {};
     if (sort.direction === 'ASCENDING') {
@@ -454,7 +446,7 @@ const onSort = (event) => {
       direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
     };
   });
-  if (_orderBy.length > 2) {
+  if (_orderBy.length > 1) {
     console.log('reached length');
     confirm.require({
       group: 'sort',

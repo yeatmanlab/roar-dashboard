@@ -92,7 +92,7 @@
         :key="col.field + '_' + index"
         :field="col.field"
         :data-type="col.dataType"
-        :sortable="col.sort !== false"
+        :sortable="currentFilter.length === 0 && col.sort !== false"
         :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
         :show-filter-operator="col.allowMultipleFilters === true"
         :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
@@ -179,22 +179,6 @@
           <div v-else>
             {{ _get(colData, col.field) }}
           </div>
-        </template>
-        <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
-          <!-- sorted down -->
-          <i
-            v-if="sorted && sortOrder === -1"
-            v-tooltip.top="sortIconTooltip"
-            class="pi pi-sort-amount-down-alt sort-icon"
-          ></i>
-          <!-- sorted up -->
-          <i
-            v-else-if="sorted && sortOrder === 1"
-            v-tooltip.top="sortIconTooltip"
-            class="pi pi-sort-amount-up-alt sort-icon"
-          ></i>
-          <!-- unsorted -->
-          <i v-else v-tooltip.top="sortIconTooltip" class="pi pi-sort-alt sort-icon"></i>
         </template>
         <template v-if="col.dataType" #filtericon>
           <i v-if="enableFilter(col.field)" class="pi pi-filter" />
@@ -422,11 +406,6 @@ const enableFilter = (field) => {
   return true;
 };
 
-const isMac = navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
-const sortIconTooltip = ref(
-  `To select multiple filters, hold the ${isMac ? 'Cmd (⌘)' : 'Win (⊞)'} key while selecting.`,
-);
-
 // Grab list of fields defined as dates
 let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
 dateFields = _map(dateFields, (col) => col.field);
@@ -607,7 +586,16 @@ button.p-column-filter-menu-button.p-link:hover {
   border-width: 0 0 3px 0;
   padding: 1px 1.5rem 2px 1.5rem;
 }
-.sort-icon {
-  margin-left: 0.5rem;
+.filter-content {
+  width: 12rem;
+}
+.filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
+  display: none;
+}
+.p-column-filter-matchmode-dropdown {
+  /* Our current filtering queries do not support options other than equals
+     for strings. To reduce confusion for end users, remove the dropdown
+     offering different matchmodes */
+  display: none;
 }
 </style>
