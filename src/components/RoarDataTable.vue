@@ -531,8 +531,57 @@ const onFilter = (event) => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+  margin-left: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
-.p-column-filter-menu {
-  margin-left: 0.5rem;
+button.p-button.p-component.softer {
+  background:#f3adad;
+  color: black;
+}
+button.p-column-filter-menu-button.p-link, g{
+  color: white;
+  margin-left: 10px;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: left;
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 1px 0;
+  padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.view-label {
+  position: absolute;
+  top: -25px;
+  left: 5px;
+  background-color: white;
+  z-index: 1;
+  font-size: smaller;
+  color: var(--surface-500);
+  width: 110px;
+}
+.view-label2 {
+  position: absolute;
+  top: -15px;
+  left: 5px;
+  background-color: white;
+  z-index: 1;
+  font-size: smaller;
+  color: var(--surface-500);
+  width: 110px;
+}
+
+button.p-column-filter-menu-button.p-link:hover {
+    background: var(--surface-500);
+}
+
+.compressed .p-datatable .p-datatable-tbody > tr > td {
+  text-align: left;
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 3px 0;
+  padding: 1px 1.5rem 2px 1.5rem;
 }
 </style>

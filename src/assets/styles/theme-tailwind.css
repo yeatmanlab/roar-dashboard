@@ -21,8 +21,9 @@
 }
 .p-column-filter-menu-button.p-column-filter-menu-button-open,
 .p-column-filter-menu-button.p-column-filter-menu-button-open:hover {
-  background: var(--surface-c);
+  background: var(--gray-500);
   color: var(--surface-900);
+  margin-left: 10px;
 }
 .p-column-filter-menu-button.p-column-filter-menu-button-active,
 .p-column-filter-menu-button.p-column-filter-menu-button-active:hover {
