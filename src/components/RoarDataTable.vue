@@ -69,6 +69,7 @@
       :loading="props.loading"
       scrollable
       :select-all="selectAll"
+      :multi-sort-meta="lazyPreSorting"
       @page="onPage($event)"
       @sort="onSort($event)"
       @filter="onFilter($event)"
@@ -275,6 +276,7 @@ const props = defineProps({
   totalRecords: { type: Number, required: false, default: 0 },
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
+  lazyPreSorting: { type: Array, required: false, default: () => [] },
 });
 
 const inputColumns = ref(props.columns);

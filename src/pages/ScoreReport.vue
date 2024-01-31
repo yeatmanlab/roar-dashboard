@@ -84,6 +84,14 @@
           </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
+          {{ sortDisplay }}
+          <PvMultiSelect
+            v-if="schoolsInfo"
+            v-model="filterSchools"
+            :options="schoolsInfo"
+            option-label="name"
+            option-value="id"
+          />
           <div class="toggle-container">
             <span>View</span>
             <PvDropdown
@@ -101,6 +109,7 @@
             lazy
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
+            :lazy-pre-sorting="sortDisplay"
             @page="onPage($event)"
             @sort="onSort($event)"
             @filter="onFilter($event)"
@@ -248,12 +257,15 @@
           </p>
         </div>
       </div>
+      <PvConfirmDialog group="sort" class="confirm">
+        <template #message> Only 3 or fewer sorts are allowed to be applied. </template>
+      </PvConfirmDialog>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
@@ -266,12 +278,15 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import _filter from 'lodash/filter';
 import _pickBy from 'lodash/pickBy';
+import _union from 'lodash/union';
+import _uniqBy from 'lodash/uniqBy';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
 import { fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
+import { useConfirm } from 'primevue/useconfirm';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import {
@@ -308,8 +323,31 @@ const props = defineProps({
 const initialized = ref(false);
 
 // Queries for page
-const orderBy = ref([]);
+const orderBy = ref([
+  {
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'userData.grade',
+    },
+  },
+  {
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'userData.name.last',
+    },
+  },
+]);
+// If this is a district report, make the schools column first sorted.
+if (props.orgType === 'district') {
+  orderBy.value.unshift({
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'readOrgs.schools',
+    },
+  });
+}
 const filterBy = ref([]);
+const filterSchools = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
@@ -401,6 +439,36 @@ const onPage = (event) => {
   pageLimit.value = event.rows;
 };
 
+const sortDisplay = computed(() => {
+  const display = [];
+  for (const sort of orderBy.value) {
+    console.log('sort item', sort);
+    // TEMPORARY - Make this a dynamic way of converting
+    // fields into column paths
+    let item = {};
+    if (sort.direction === 'ASCENDING') {
+      item.order = 1;
+    } else {
+      item.order = -1;
+    }
+    const sortFieldPath = sort.field.fieldPath;
+    if (sortFieldPath === 'userData.grade') {
+      item.field = 'user.studentData.grade';
+    } else if (sortFieldPath === 'userData.name.first') {
+      item.field = 'user.name.first';
+    } else if (sortFieldPath === 'userData.name.last') {
+      item.field = 'user.name.last';
+    } else if (sortFieldPath === 'userData.username') {
+      item.field = 'user.username';
+    } else if (sortFieldPath === 'readOrgs.schools') {
+      item.field = 'user.schoolName';
+    }
+    display.push(item);
+  }
+  return display;
+});
+
+const confirm = useConfirm();
 const onSort = (event) => {
   console.log('onSort');
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
@@ -411,14 +479,44 @@ const onSort = (event) => {
     if (field.split('.')[1] === 'studentData') {
       field = `userData.${field.split('.').slice(2, field.length)}`;
     }
+    if (field.split('.')[1] === 'schoolName') {
+      field = `readOrgs.schools`;
+    }
     return {
       field: { fieldPath: field },
       direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
     };
   });
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
-  page.value = 0;
+  if (_orderBy.length > 2) {
+    console.log('reached length');
+    confirm.require({
+      group: 'sort',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Continue',
+      acceptIcon: 'pi pi-check',
+      accept: () => {
+        console.log('modal closed.');
+      },
+    });
+  } else {
+    orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
+    page.value = 0;
+  }
 };
+
+watch(filterSchools, (newSchools) => {
+  // check if filter entry for schools exists
+  const filterSchools = _find(filterBy.value, { collection: 'schools' });
+  if (filterSchools) {
+    filterSchools.value = _union(filterSchools.value, newSchools);
+  } else {
+    filterBy.value.push({
+      collection: 'schools',
+      field: 'assigningOrgs.schools',
+      value: newSchools,
+    });
+  }
+});
 
 const onFilter = (event) => {
   console.log('onFilter');
@@ -435,7 +533,7 @@ const onFilter = (event) => {
           const schoolName = constraint.value;
           const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
           if (!_isEmpty(schoolEntry)) {
-            filters.push({ value: schoolEntry.id, collection: 'school', field: 'assigningOrgs.schools' });
+            filters.push({ value: [schoolEntry.id], collection: 'schools', field: 'assigningOrgs.schools' });
           }
         } else if (path[1] === 'studentData') {
           // Due to differences in the document schemas,
@@ -460,7 +558,8 @@ const onFilter = (event) => {
     }
   }
   // Scores Query
-  filterBy.value = filters;
+  const allFilters = _union(filters, filterBy.value);
+  filterBy.value = _uniqBy(allFilters, 'collection');
   page.value = 0;
 };
 
@@ -667,7 +766,7 @@ const columns = computed(() => {
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: false });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true });
   }
 
   if (authStore.isUserSuperAdmin) {
@@ -1027,5 +1126,12 @@ onMounted(async () => {
     display: flex;
     align-items: center;
   }
+}
+.confirm .p-confirm-dialog-reject {
+  display: none !important;
+}
+
+.confirm .p-dialog-header-close {
+  display: none !important;
 }
 </style>
