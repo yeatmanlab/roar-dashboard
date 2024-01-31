@@ -518,6 +518,8 @@ const onSort = (event) => {
 watch(filterSchools, (newSchools) => {
   // check if filter entry for schools exists
   const filterSchools = _find(filterBy.value, { collection: 'schools' });
+  // Turn off sort when filtering
+  orderBy.value = [];
   if (filterSchools) {
     filterSchools.value = _union(filterSchools.value, newSchools);
   } else {
@@ -531,6 +533,8 @@ watch(filterSchools, (newSchools) => {
 
 const onFilter = (event) => {
   console.log('onFilter');
+  // Turn off sort when filtering
+  orderBy.value = [];
   const filters = [];
   for (const filterKey in _get(event, 'filters')) {
     const filter = _get(event, 'filters')[filterKey];
@@ -568,7 +572,6 @@ const onFilter = (event) => {
       }
     }
   }
-  // Scores Query
   const allFilters = _union(filters, filterBy.value);
   filterBy.value = _uniqBy(allFilters, 'collection');
   page.value = 0;
