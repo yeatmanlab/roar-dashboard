@@ -30,6 +30,7 @@ export const getAssignmentsRequestBody = ({
   adminId,
   orgType,
   orgId,
+  orgArray,
   aggregationQuery,
   pageLimit,
   page,
@@ -63,7 +64,7 @@ export const getAssignmentsRequestBody = ({
     },
   ];
 
-  if (adminId && orgId) {
+  if (adminId && (orgId || orgArray)) {
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -75,16 +76,39 @@ export const getAssignmentsRequestBody = ({
               value: { stringValue: adminId },
             },
           },
-          {
-            fieldFilter: {
-              field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-              op: 'ARRAY_CONTAINS',
-              value: { stringValue: orgId },
-            },
-          },
         ],
       },
     };
+
+    if(orgArray) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            op: 'ARRAY_CONTAINS_ANY',
+            value: {
+              arrayValue: {
+                values: [
+                  orgArray.map((orgId) => {
+                    return { stringValue: orgId };
+                  }),
+                ]
+              }
+            }
+          },
+        },
+      )
+    } else {
+      requestBody.structuredQuery.where.compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+            op: 'ARRAY_CONTAINS',
+            value: { stringValue: orgId },
+          },
+        },
+      )
+    }
 
     if (!_isEmpty(orderBy)) {
       requestBody.structuredQuery.orderBy = orderBy;
@@ -641,13 +665,14 @@ export const assignmentPageFetcher = async (
     if (filters.length && filters[0].collection === 'users') {
       userFilter = filters[0];
     }
-    if (filters.length && filters[0].collection === 'school') {
+    if (filters.length && filters[0].collection === 'schools') {
       orgFilter = filters[0].value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
-      orgId: orgFilter ? orgFilter : orgId,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
       aggregationQuery: false,
       pageLimit: pageLimit.value,
       page: page.value,
@@ -656,6 +681,7 @@ export const assignmentPageFetcher = async (
       filter: userFilter,
       orderBy: toRaw(orderBy),
     });
+    console.log('REQUEST BODY', requestBody)
     console.log(`Fetching page ${page.value} for ${adminId}`);
     return adminAxiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
       const assignmentData = mapFields(data, true);
