@@ -4,6 +4,7 @@
   </div>
   <div v-else>
     <div class="flex flex-row flex-wrap w-full gap-2 pt-4 justify-content-end">
+      <slot name="filterbar"></slot>
       <span class="p-float-label">
         <PvMultiSelect
           id="ms-columns"
@@ -169,6 +170,22 @@
           <div v-else>
             {{ _get(colData, col.field) }}
           </div>
+        </template>
+        <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
+          <!-- sorted down -->
+          <i
+            v-if="sorted && sortOrder === -1"
+            v-tooltip.top="sortIconTooltip"
+            class="pi pi-sort-amount-down-alt sort-icon"
+          ></i>
+          <!-- sorted up -->
+          <i
+            v-else-if="sorted && sortOrder === 1"
+            v-tooltip.top="sortIconTooltip"
+            class="pi pi-sort-amount-up-alt sort-icon"
+          ></i>
+          <!-- unsorted -->
+          <i v-else v-tooltip.top="sortIconTooltip" class="pi pi-sort-alt sort-icon"></i>
         </template>
         <template v-if="col.dataType" #filtericon>
           <i v-if="enableFilter(col.field)" class="pi pi-filter" />
@@ -374,6 +391,11 @@ const enableFilter = (field) => {
   return true;
 };
 
+const isMac = navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
+const sortIconTooltip = ref(
+  `To select multiple filters, hold the ${isMac ? 'Cmd (⌘)' : 'Win (⊞)'} key while selecting.`,
+);
+
 // Grab list of fields defined as dates
 let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
 dateFields = _map(dateFields, (col) => col.field);
@@ -514,6 +536,9 @@ const onFilter = (event) => {
   display: none;
 }
 .p-column-filter-menu {
+  margin-left: 0.5rem;
+}
+.sort-icon {
   margin-left: 0.5rem;
 }
 </style>
