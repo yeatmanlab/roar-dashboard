@@ -856,10 +856,6 @@ onMounted(async () => {
 </script>
 
 <style lang="scss">
-.table-with-pv {
-  /* Apply your specific styles for tables with PvDropdown */
-  border: 2px solid blue; /* Example styling */
-}
 .overview-wrapper {
   display: flex;
   flex-direction: column;
