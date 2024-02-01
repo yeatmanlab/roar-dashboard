@@ -97,33 +97,35 @@
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
-            <div class="flex flex-row gap-2">
-              <span>
-                <label for="view-columns" class="view-label">View</label>
-                <PvDropdown
-                  id="view-columns"
-                  v-model="viewMode"
-                  :options="viewOptions"
-                  option-label="label"
-                  option-value="value"
-                  class="ml-2"
-                />
-              </span>
-              <span class="p-float-label">
-                <PvMultiSelect
-                  v-if="schoolsInfo"
-                  id="ms-school-filter"
-                  v-model="filterSchools"
-                  style="width: 20rem; max-width: 25rem"
-                  :options="schoolsInfo"
-                  option-label="name"
-                  option-value="id"
-                  :show-toggle-all="false"
-                  selected-items-label="{0} schools selected"
-                />
-                <label for="ms-school-filter">Filter by School</label>
-              </span>
-            </div>
+            <template #filterbar>
+              <div class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    v-if="schoolsInfo"
+                    id="ms-school-filter"
+                    v-model="filterSchools"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="schoolsInfo"
+                    option-label="name"
+                    option-value="id"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} schools selected"
+                  />
+                  <label for="ms-school-filter">Filter by School</label>
+                </span>
+              </div>
+            </template>
+            <span>
+              <label for="view-columns" class="view-label">View</label>
+              <PvDropdown
+                id="view-columns"
+                v-model="viewMode"
+                :options="viewOptions"
+                option-label="label"
+                option-value="value"
+                class="ml-2"
+              />
+            </span>
           </RoarDataTable>
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
