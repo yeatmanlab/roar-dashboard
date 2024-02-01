@@ -3,12 +3,7 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap">
-      <span>
-        <div class="relative">
-          <slot />
-        </div>
-      </span>
+    <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap mt-3">
       <span class="p-float-label">
         <PvMultiSelect
           id="ms-columns"
@@ -54,37 +49,44 @@
         <PvButton :label="nameForVisualize" @click="toggleView" />
       </span>
     </div>
-    <PvDataTable
-      ref="dataTable"
-      v-model:filters="refFilters"
-      v-model:selection="selectedRows"
-      :class="{ compressed: compressedRows }"
-      :value="computedData"
-      :row-hover="true"
-      :reorderable-columns="true"
-      :resizable-columns="true"
-      :export-filename="exportFilename"
-      removable-sort
-      sort-mode="multiple"
-      show-gridlines
-      filter-display="menu"
-      paginator
-      :rows="props.pageLimit"
-      :always-show-paginator="true"
-      paginator-position="both"
-      :rows-per-page-options="[10, 25, 50, 100]"
-      :total-records="props.totalRecords"
-      :lazy="props.lazy"
-      :loading="props.loading"
-      scrollable
-      :select-all="selectAll"
-      @page="onPage($event)"
-      @sort="onSort($event)"
-      @filter="onFilter($event)"
-      @select-all-change="onSelectAll"
-      @row-select="onSelectionChange"
-      @row-unselect="onSelectionChange"
-    >
+    <div>
+      <span style="height: 10px;display: block;">
+        <div class="relative flex justify-content-end z-2 mt-0 mr-2" style="top:25px">
+          <slot />
+        </div>
+      </span>
+      <span>
+        <PvDataTable
+        ref="dataTable"
+        v-model:filters="refFilters"
+        v-model:selection="selectedRows"
+        :class="{ compressed: compressedRows }"
+        :value="computedData"
+        :row-hover="true"
+        :reorderable-columns="true"
+        :resizable-columns="true"
+        :export-filename="exportFilename"
+        removable-sort
+        sort-mode="multiple"
+        show-gridlines
+        filter-display="menu"
+        paginator
+        :rows="props.pageLimit"
+        :always-show-paginator="true"
+        paginator-position="both"
+        :rows-per-page-options="[10, 25, 50, 100]"
+        :total-records="props.totalRecords"
+        :lazy="props.lazy"
+        :loading="props.loading"
+        scrollable
+        :select-all="selectAll"
+        @page="onPage($event)"
+        @sort="onSort($event)"
+        @filter="onFilter($event)"
+        @select-all-change="onSelectAll"
+        @row-select="onSelectionChange"
+        @row-unselect="onSelectionChange"
+      >
       <PvColumn selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
       <PvColumn
         v-for="(col, index) of computedColumns"
@@ -233,6 +235,9 @@
       </PvColumn>
       <template #empty> No data found. </template>
     </PvDataTable>
+      </span>
+    </div>
+
   </div>
 </template>
 <script setup>
@@ -554,14 +559,14 @@ g {
 }
 
 .view-label {
-  position: absolute;
-  top: -25px;
-  left: 5px;
+  /* position: absolute; */
+  /* top: -25px; */
+  /* left: 5px; */
   background-color: white;
-  z-index: 1;
+  /* z-index: 1; */
   font-size: smaller;
   color: var(--surface-500);
-  width: 110px;
+  /* width: 110px; */
 }
 .view-label2 {
   position: absolute;
@@ -584,4 +589,5 @@ button.p-column-filter-menu-button.p-link:hover {
   border-width: 0 0 3px 0;
   padding: 1px 1.5rem 2px 1.5rem;
 }
+
 </style>
