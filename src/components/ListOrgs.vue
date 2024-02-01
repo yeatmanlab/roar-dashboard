@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <PvPanel header="Your organizations">
         <template #icons>
@@ -61,6 +58,7 @@
               :page-limit="pageLimit"
               :total-records="totalRecords"
               :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
+              :allow-filtering="false"
               @page="onPage($event)"
               @sort="onSort($event)"
               @export-all="exportAll"
@@ -74,21 +72,22 @@
   </main>
 </template>
 <script setup>
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import { orgFetcher, orgCounter, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
-import { getSidebarActions } from '@/router/sidebarActions';
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useToast } from 'primevue/usetoast';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _isEmpty from 'lodash/isEmpty';
 
+const toast = useToast();
 const initialized = ref(false);
 const page = ref(0);
 const pageLimit = ref(10);
+const orgsQueryKeyIndex = ref(0);
 
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -120,6 +119,15 @@ const cleverSyncIcon = computed(() => {
   }
 });
 
+const syncClever = async () => {
+  toast.add({ severity: 'info', summary: 'Syncing', detail: 'Clever sync initiated', life: 3000 });
+  syncingClever.value = true;
+  await authStore.syncCleverOrgs();
+  syncingClever.value = false;
+  orgsQueryKeyIndex.value += 0;
+  toast.add({ severity: 'success', summary: 'Success', detail: 'Clever sync successful', life: 5000 });
+};
+
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', authStore.uid),
@@ -130,7 +138,6 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 const orgHeaders = computed(() => {
   const headers = {
@@ -169,7 +176,7 @@ const activeOrgType = computed(() => {
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 
 const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts'],
+  queryKey: ['districts', orgsQueryKeyIndex],
   queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: claimsLoaded,
@@ -181,7 +188,7 @@ const schoolQueryEnabled = computed(() => {
 });
 
 const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', selectedDistrict],
+  queryKey: ['schools', selectedDistrict, orgsQueryKeyIndex],
   queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: schoolQueryEnabled,
@@ -193,7 +200,7 @@ const {
   isFetching: isFetchingCount,
   data: totalRecords,
 } = useQuery({
-  queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy],
+  queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
   queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: claimsLoaded,
@@ -205,7 +212,7 @@ const {
   isFetching,
   data: orgData,
 } = useQuery({
-  queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page],
+  queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page, orgsQueryKeyIndex],
   queryFn: () =>
     orgPageFetcher(activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
@@ -228,21 +235,21 @@ const exportAll = async () => {
 
 const tableColumns = computed(() => {
   const columns = [
-    { field: 'name', header: 'Name', dataType: 'string', pinned: true },
-    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string' },
-    { field: 'address.formattedAddress', header: 'Address', dataType: 'string' },
-    { field: 'tags', header: 'Tags', dataType: 'array', chip: true },
+    { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: false },
+    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: false },
+    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: false },
+    { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
   ];
 
   if (['districts', 'schools'].includes(activeOrgType.value)) {
     columns.push(
-      { field: 'mdrNumber', header: 'MDR Number', dataType: 'string' },
-      { field: 'ncesId', header: 'NCES ID', dataType: 'string' },
+      { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
+      { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
     );
   }
 
   if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
-    columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean' });
+    columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
   }
 
   columns.push({

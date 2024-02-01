@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <PvPanel header="View Users">
         <div v-if="!(isLoading || isLoadingCount)">
@@ -16,6 +13,7 @@
             :total-records="totalRecords"
             :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
             :allow-export="false"
+            :allow-filtering="false"
             @page="onPage($event)"
             @sort="onSort($event)"
           />
@@ -26,33 +24,19 @@
   </main>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '../router/sidebarActions';
+import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import _isEmpty from 'lodash/isEmpty';
 import { useQuery } from '@tanstack/vue-query';
 import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
 import { countUsersByOrg, fetchUsersByOrg } from '@/helpers/query/users';
-import { fetchDocById } from '../helpers/query/utils';
 import { singularizeFirestoreCollection } from '@/helpers';
 
 const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
-
-const { data: userClaims } = useQuery({
-  queryKey: ['userClaims'],
-  queryFn: () => fetchDocById('userClaims', roarfirekit.value.roarUid),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 const pageLimit = ref(10);
 const page = ref(0);
@@ -102,36 +86,43 @@ const columns = ref([
     field: 'username',
     header: 'Username',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'name.first',
     header: 'First Name',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'name.last',
     header: 'Last Name',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'studentData.grade',
     header: 'Grade',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'studentData.gender',
     header: 'Gender',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'studentData.dob',
     header: 'Date of Birth',
     dataType: 'date',
+    sort: false,
   },
   {
     field: 'userType',
     header: 'User Type',
     dataType: 'string',
+    sort: false,
   },
 ]);
 

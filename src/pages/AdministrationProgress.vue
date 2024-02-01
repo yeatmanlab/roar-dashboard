@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <PvPanel header="Administration Progress">
         <div>
@@ -18,6 +15,7 @@
           :loading="isLoadingScores || isFetchingScores"
           :page-limit="pageLimit"
           lazy
+          :allow-filtering="false"
           @page="onPage($event)"
           @sort="onSort($event)"
           @export-selected="exportSelected"
@@ -42,8 +40,6 @@ import _isEmpty from 'lodash/isEmpty';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
 import { useQuery } from '@tanstack/vue-query';
 import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
@@ -52,8 +48,6 @@ import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames } from '@/helpers/reports.js';
 
 const authStore = useAuthStore();
-
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: {
@@ -231,18 +225,18 @@ const columns = computed(() => {
   if (assignmentData.value === undefined) return [];
 
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text' },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text' },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: false },
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text' });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: false });
   }
 
   if (authStore.isUserSuperAdmin) {
-    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text' });
+    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
   if (tableData.value.length > 0) {
@@ -261,6 +255,7 @@ const columns = computed(() => {
         tag: true,
         severityField: `status.${taskId}.severity`,
         iconField: `status.${taskId}.icon`,
+        sort: false,
       });
     }
   }

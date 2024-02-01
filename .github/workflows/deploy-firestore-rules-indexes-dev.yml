@@ -11,7 +11,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@master
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
+        uses: w9jds/firebase-action@v13.0.3
         with:
           args: deploy --only firestore:rules
         env:
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@master
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
+        uses: w9jds/firebase-action@v13.0.3
         with:
           args: deploy --only firestore:rules
         env:
@@ -37,7 +37,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@master
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
+        uses: w9jds/firebase-action@v13.0.3
         with:
           args: deploy --only firestore:indexes
         env:
@@ -50,7 +50,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@master
       - name: Deploy to Firebase
-        uses: w9jds/firebase-action@master
+        uses: w9jds/firebase-action@v13.0.3
         with:
           args: deploy --only firestore:indexes
         env:
