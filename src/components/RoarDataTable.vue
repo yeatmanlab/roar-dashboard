@@ -584,4 +584,16 @@ button.p-column-filter-menu-button.p-link:hover {
   border-width: 0 0 3px 0;
   padding: 1px 1.5rem 2px 1.5rem;
 }
+.filter-content {
+  width: 12rem;
+}
+.filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
+  display: none;
+}
+.p-column-filter-matchmode-dropdown {
+  /* Our current filtering queries do not support options other than equals
+     for strings. To reduce confusion for end users, remove the dropdown
+     offering different matchmodes */
+  display: none;
+}
 </style>
