@@ -559,14 +559,9 @@ g {
 }
 
 .view-label {
-  /* position: absolute; */
-  /* top: -25px; */
-  /* left: 5px; */
   background-color: white;
-  /* z-index: 1; */
   font-size: smaller;
   color: var(--surface-500);
-  /* width: 110px; */
 }
 .view-label2 {
   position: absolute;
