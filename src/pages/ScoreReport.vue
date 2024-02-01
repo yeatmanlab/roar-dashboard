@@ -765,7 +765,6 @@ function scoreFieldBelowSixth(taskId) {
   return 'percentile';
 }
 
-// TODO: replace this with normal function
 function scoreFieldAboveSixth(taskId) {
   if (taskId === 'swr') {
     return 'sprPercentile';
@@ -807,7 +806,7 @@ const runsByTaskId = computed(() => {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
 
-    const { support_level } = getSupportLevel(percentScore, taskId); // TODO: pass grade and raw as well
+    const { support_level } = getSupportLevel(percentScore, taskId);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
       grade: user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade),

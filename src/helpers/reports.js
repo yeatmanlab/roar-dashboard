@@ -43,7 +43,6 @@ export const supportLevelColors = {
   below: '#c93d82',
 };
 
-// function should also accept raw score and grade
 export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
   let support_level = null;
   let tag_color = null;
@@ -88,11 +87,6 @@ const getRawScoreThreshold = (taskId) => {
       above: 47,
       some: 73,
     };
-    // } else if (taskId === 'pa') {
-    //   return {
-    //     above: 1,
-    //     some: 1,
-    //   };
   }
   return null;
 };
