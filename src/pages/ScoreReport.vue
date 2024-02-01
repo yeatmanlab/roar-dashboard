@@ -256,6 +256,7 @@ import {
   supportLevelColors,
   getSupportLevel,
   tasksToDisplayGraphs,
+  getRawScoreThreshold,
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
@@ -509,14 +510,13 @@ const onFilter = (event) => {
       }
       if (_head(path) === 'scores') {
         const taskId = path[1];
-        const grade = _get(constraint, 'gradeRange');
-        const { percentileScoreKey } = getScoreKeys({ taskId: taskId }, grade);
+        const cutoffs = getRawScoreThreshold(taskId);
         filters.push({
           ...constraint,
           collection: 'scores',
           taskId: taskId,
-          elementaryField: `scores.computed.composite.${elementaryPercentileScoreKey}`,
-          field: `scores.computed.composite.${percentileScoreKey}`,
+          cutoffs,
+          field: `scores.computed.composite.categoryScore`,
         });
       }
     }

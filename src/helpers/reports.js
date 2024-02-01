@@ -63,3 +63,23 @@ export const getSupportLevel = (percentile) => {
     tag_color,
   };
 };
+
+export const getRawScoreThreshold = (taskId) => {
+  if (taskId === 'swr') {
+    return {
+      above: 550,
+      some: 400,
+    };
+  } else if (taskId === 'sre') {
+    return {
+      above: 73,
+      some: 47,
+    };
+  } else if (taskId === 'pa') {
+    return {
+      above: 55,
+      some: 45,
+    };
+  }
+  return null;
+};

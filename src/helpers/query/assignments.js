@@ -327,7 +327,7 @@ export const getFilteredScoresRequestBody = ({
               filters: [
                 {
                   fieldFilter: {
-                    field: { fieldPath: 'schoolLevel' },
+                    field: { fieldPath: 'userData.schoolLevel' },
                     op: 'EQUAL',
                     value: { stringValue: 'elementary' },
                   },
@@ -346,14 +346,14 @@ export const getFilteredScoresRequestBody = ({
                     filters: [
                       {
                         fieldFilter: {
-                          field: { fieldPath: 'schoolLevel' },
+                          field: { fieldPath: 'userData.schoolLevel' },
                           op: 'EQUAL',
                           value: { stringValue: 'middle' },
                         },
                       },
                       {
                         fieldFilter: {
-                          field: { fieldPath: 'schoolLevel' },
+                          field: { fieldPath: 'userData.schoolLevel' },
                           op: 'EQUAL',
                           value: { stringValue: 'high' },
                         },
@@ -369,7 +369,16 @@ export const getFilteredScoresRequestBody = ({
       },
     });
     console.log('requestBody before adding inequalities', requestBody);
-    if (filter.value === 'Above') {
+    if (filter.value === 'Average') {
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'GREATER_THAN_OR_EQUAL',
+            value: { doubleValue: filter.cutoffs.above }, // For middle/high students, the same field applies but the inequality changes.
+          },
+        },
+      );
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
         {
           fieldFilter: {
@@ -379,16 +388,23 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
+    } else if (filter.value === 'Some Support') {
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: 'GREATER_THAN_OR_EQUAL',
-            value: { doubleValue: 50 }, // For elementary students, the same field applies but the inequality changes.
+            op: 'LESS_THAN',
+            value: { doubleValue: filter.cutoffs.above }, // For middle/high students, the same field applies but the inequality changes.
+          },
+        },
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'GREATER_THAN',
+            value: { doubleValue: filter.cutoffs.some }, // For middle/high students, the same field applies but the inequality changes.
           },
         },
       );
-    } else if (filter.value === 'Average') {
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
         {
           fieldFilter: {
@@ -405,38 +421,22 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
+    } else if (filter.value === 'Extra Support') {
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
-            op: 'LESS_THAN',
-            value: { doubleValue: 50 }, // For elementary students, the same field applies but the inequality changes.
-          },
-        },
-        {
-          fieldFilter: {
-            field: { fieldPath: filter.field },
-            op: 'GREATER_THAN',
-            value: { doubleValue: 25 }, // For elementary students, the same field applies but the inequality changes.
+            op: 'LESS_THAN_OR_EQUAL',
+            value: { doubleValue: filter.cutoffs.some }, // For middle/high students, the same field applies but the inequality changes.
           },
         },
       );
-    } else if (filter.value === 'Needs Extra') {
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
             op: 'LESS_THAN_OR_EQUAL',
             value: { doubleValue: 25 },
-          },
-        },
-      );
-      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
-        {
-          fieldFilter: {
-            field: { fieldPath: filter.field },
-            op: 'LESS_THAN_OR_EQUAL',
-            value: { doubleValue: 25 }, // For elementary students, the same field applies but the inequality changes.
           },
         },
       );
