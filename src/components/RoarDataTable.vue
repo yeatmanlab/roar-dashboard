@@ -294,6 +294,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
+  allowFiltering: { type: Boolean, required: false, default: true },
 });
 
 const inputColumns = ref(props.columns);
@@ -305,7 +306,7 @@ const computedColumns = computed(() => {
   });
 });
 const currentFilter = ref([]);
-const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value));
+const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value) || !props.allowFiltering);
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
