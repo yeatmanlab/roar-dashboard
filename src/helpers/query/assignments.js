@@ -328,9 +328,9 @@ export const getFilteredScoresRequestBody = ({
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
         {
           fieldFilter: {
-            field: { fieldPath: filter.elementaryField },
+            field: { fieldPath: filter.field },
             op: 'GREATER_THAN_OR_EQUAL',
-            value: { doubleValue: 50 },
+            value: { doubleValue: 50 }, // For elementary students, the same field applies but the inequality changes.
           },
         },
       );
@@ -354,16 +354,16 @@ export const getFilteredScoresRequestBody = ({
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
         {
           fieldFilter: {
-            field: { fieldPath: filter.elementaryField },
+            field: { fieldPath: filter.field },
             op: 'LESS_THAN',
-            value: { doubleValue: 50 },
+            value: { doubleValue: 50 }, // For elementary students, the same field applies but the inequality changes.
           },
         },
         {
           fieldFilter: {
-            field: { fieldPath: filter.elementaryField },
+            field: { fieldPath: filter.field },
             op: 'GREATER_THAN',
-            value: { doubleValue: 25 },
+            value: { doubleValue: 25 }, // For elementary students, the same field applies but the inequality changes.
           },
         },
       );
@@ -380,9 +380,9 @@ export const getFilteredScoresRequestBody = ({
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
         {
           fieldFilter: {
-            field: { fieldPath: filter.elementaryField },
+            field: { fieldPath: filter.field },
             op: 'LESS_THAN_OR_EQUAL',
-            value: { doubleValue: 25 },
+            value: { doubleValue: 25 }, // For elementary students, the same field applies but the inequality changes.
           },
         },
       );
