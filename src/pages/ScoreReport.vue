@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <div>
         <div class="">
@@ -10,16 +7,19 @@
             <AppSpinner style="margin: 0.3rem 0rem" />
             <div class="uppercase text-sm">Loading Org Info</div>
           </div>
-          <div v-if="orgInfo">
+          <div v-if="orgInfo && administrationInfo">
             <div class="report-title">
               {{ _toUpper(orgInfo.name) }}
+            </div>
+            <div class="administration-name mb-4">
+              {{ _toUpper(administrationInfo?.name) }}
             </div>
             <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div v-if="isSuperAdmin" class="overview-wrapper bg-gray-100 py-3 mb-2">
+            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
@@ -42,7 +42,7 @@
                   </div>
                 </div>
               </div>
-              <div v-if="!isLoadingRunResults" class="legend-container">
+              <div v-if="!isLoadingRunResults && sortedAndFilteredTaskIds?.length > 0" class="legend-container">
                 <div class="legend-entry">
                   <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
                   <div>
@@ -83,16 +83,6 @@
           </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
-          <div class="toggle-container">
-            <span>View</span>
-            <PvDropdown
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
-          </div>
           <RoarDataTable
             :data="tableData"
             :columns="columns"
@@ -105,7 +95,16 @@
             @filter="onFilter($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
-          />
+          >
+            <label for="view-columns" class="view-label">View</label>
+            <PvDropdown
+              id="view-columns"
+              v-model="viewMode"
+              :options="viewOptions"
+              option-label="label"
+              option-value="value"
+              class="ml-2"
+          /></RoarDataTable>
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">
@@ -139,7 +138,7 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
-        <PvTabView v-if="isSuperAdmin">
+        <PvTabView>
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
@@ -154,61 +153,10 @@
               :org-type="orgType"
               :org-id="orgId"
               :org-info="orgInfo"
-              :schools-dict="schoolsDict"
               :administration-info="administrationInfo"
             />
           </PvTabPanel>
         </PvTabView>
-        <div v-else>
-          <!-- In depth breakdown of each task -->
-          <div v-if="allTasks.includes('letter')" class="task-card">
-            <div class="task-title">ROAR-LETTER</div>
-            <span style="text-transform: uppercase">Letter Names and Letter-Sound Matching</span>
-            <p class="task-description">
-              ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names
-              supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names.
-              Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict
-              success in learning to read. Learning the connection between letters and the sounds they represent is
-              fundamental for learning to decode and spell words. This assessment provides educators with valuable
-              insights to customize instruction and address any gaps in these foundational skills.
-            </p>
-          </div>
-          <div v-if="allTasks.includes('pa')" class="task-card">
-            <div class="task-title">ROAR-PHONEME</div>
-            <span style="text-transform: uppercase">Phonological Awareness</span>
-            <p class="task-description">
-              ROAR - Phoneme assesses a student's mastery of phonological awareness through elision and sound matching
-              tasks. Research indicates that phonological awareness, as a foundational pre-reading skill, is crucial for
-              achieving reading fluency. Without support for their foundational reading abilities, students may struggle
-              to catch up in overall reading proficiency. The student's score will range between 0-57 and can be viewed
-              by selecting 'Raw Score' on the table above.
-            </p>
-          </div>
-          <div v-if="allTasks.includes('swr') || allTasks.includes('swr-es')" class="task-card">
-            <div class="task-title">ROAR-WORD</div>
-            <span style="text-transform: uppercase">Single Word Recognition</span>
-            <p class="task-description">
-              ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read
-              fluently, students must master fundamental skills of decoding and automaticity. This test measures a
-              student's ability to detect real and made-up words, which can then translate to a student's reading levels
-              and need for support. The student's score will range between 100-900 and can be viewed by selecting 'Raw
-              Score' on the table above.
-            </p>
-          </div>
-          <div v-if="allTasks.includes('sre')" class="task-card">
-            <div class="task-title">ROAR-SENTENCE</div>
-            <span style="text-transform: uppercase">Sentence Reading Efficiency</span>
-            <p class="task-description">
-              ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become
-              fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can
-              make it harder for students to understand what they're reading. Students who don't receive support for
-              their basic reading skills may find it challenging to improve their overall reading ability. This
-              assessment is helpful for identifying students who may struggle with reading comprehension due to
-              difficulties with decoding words accurately or reading slowly and with effort. The student's score will
-              range between 0-130 and can be viewed by selecting 'Raw Score' on the table above.
-            </p>
-          </div>
-        </div>
         <div class="bg-gray-200 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
@@ -241,9 +189,10 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
           <p>
-            This score report has provided a snapshot of your school's reading performance at the time of
+            This score report has provided a snapshot of your student's reading performance at the time of
             administration. By providing classifications for students based on national norms for scoring, you are able
-            to see which students can benefit from varying levels of support.
+            to see how your student(s) can benefit from varying levels of support. To read more about what to do to
+            support your student, <a :href="NextSteps" class="hover:text-red-700" target="_blank">read more.</a>
           </p>
         </div>
       </div>
@@ -267,10 +216,8 @@ import _filter from 'lodash/filter';
 import _pickBy from 'lodash/pickBy';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
 import { getGrade } from '@bdelab/roar-utils';
-import { orderByDefault, fetchDocById, exportCsv } from '@/helpers/query/utils';
+import { fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { runPageFetcher } from '@/helpers/query/runs';
@@ -285,12 +232,11 @@ import {
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
+import NextSteps from '@/assets/NextSteps.pdf';
 
 const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
-
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
 
 const props = defineProps({
   administrationId: {
@@ -310,7 +256,7 @@ const props = defineProps({
 const initialized = ref(false);
 
 // Queries for page
-const orderBy = ref(orderByDefault);
+const orderBy = ref([]);
 const filterBy = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
@@ -345,7 +291,7 @@ const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
   queryKey: ['schools', ref(props.orgId)],
-  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
+  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
   keepPreviousData: true,
   enabled: props.orgType === 'district' && initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -354,7 +300,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = school.name;
+      acc[school.id] = parseLowGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -370,7 +316,7 @@ const {
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy],
+  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -382,6 +328,7 @@ const {
       undefined,
       true,
       filterBy.value,
+      orderBy.value,
     ),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
@@ -404,11 +351,20 @@ const onPage = (event) => {
 
 const onSort = (event) => {
   console.log('onSort');
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
-    field: { fieldPath: item.field },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-  }));
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => {
+    let field = item.field.replace('user', 'userData');
+    // Due to differences in the document schemas,
+    //   fields found in studentData in the user document are in the
+    //   top level of the assignments.userData object.
+    if (field.split('.')[1] === 'studentData') {
+      field = `userData.${field.split('.').slice(2, field.length)}`;
+    }
+    return {
+      field: { fieldPath: field },
+      direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
+    };
+  });
+  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
   page.value = 0;
 };
 
@@ -420,14 +376,27 @@ const onFilter = (event) => {
     const constraint = _head(_get(filter, 'constraints'));
     if (_get(constraint, 'value')) {
       const path = filterKey.split('.');
-      let collection;
       if (_head(path) === 'user') {
-        collection = 'users';
-        filters.push({ ...constraint, collection, field: _tail(path).join('.') });
+        // Special case for school
+        if (path[1] === 'schoolName') {
+          // find ID from given name
+          const schoolName = constraint.value;
+          const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
+          if (!_isEmpty(schoolEntry)) {
+            filters.push({ value: schoolEntry.id, collection: 'school', field: 'assigningOrgs.schools' });
+          }
+        } else if (path[1] === 'studentData') {
+          // Due to differences in the document schemas,
+          //   fields found in studentData in the user document are in the
+          //   top level of the assignments.userData object.
+          filters.push({ ...constraint, collection: 'users', field: path.slice(2, path.length) });
+        } else {
+          filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
+        }
       }
       if (_head(path) === 'scores') {
         const taskId = path[1];
-        const grade = _get(constraint, 'nationalNorms') ? 1 : 10;
+        const grade = _get(constraint, 'gradeRange');
         const { percentileScoreKey } = getScoreKeys({ taskId: taskId }, grade);
         filters.push({
           ...constraint,
@@ -436,7 +405,6 @@ const onFilter = (event) => {
           field: `scores.computed.composite.${percentileScoreKey}`,
         });
       }
-      // console.log('constraint is', { ...constraint, collection, field: _tail(path).join('.') })
     }
   }
   // Scores Query
@@ -458,7 +426,14 @@ const viewOptions = ref([
 
 const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
 
-const getPercentileScores = ({ grade, assessment, percentileScoreKey, percentileScoreDisplayKey, rawScoreKey, taskId }) => {
+const getPercentileScores = ({
+  grade,
+  assessment,
+  percentileScoreKey,
+  percentileScoreDisplayKey,
+  rawScoreKey,
+  taskId,
+}) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
   let raw = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
@@ -647,10 +622,10 @@ const refreshing = ref(false);
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'number', sort: false },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: true },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true },
   ];
 
   if (props.orgType === 'district') {
@@ -706,7 +681,7 @@ const tableData = computed(() => {
         percentileScoreKey,
         percentileScoreDisplayKey,
         rawScoreKey,
-        taskId: assessment.taskId
+        taskId: assessment.taskId,
       });
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       const rawScore = rawOnlyTasks.includes(assessment.taskId)
@@ -802,12 +777,30 @@ function scoreFieldAboveSixth(taskId) {
   return 'percentile';
 }
 
+function rawScoreByTaskId(taskId) {
+  if (taskId === 'swr') {
+    return 'roarScore';
+  } else if (taskId === 'sre') {
+    return 'sreScore';
+  } else if (taskId === 'pa') {
+    return 'roarScore';
+  }
+  return 'roarScore';
+}
+
+const parseLowGrade = (grade) => {
+  if (grade === 'PreKindergarten' || grade === 'Kindergarten') return 0;
+  else {
+    return parseInt(grade);
+  }
+};
+
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
   const computedScores = {};
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
-
+    const rawScore = _get(scores, rawScoreByTaskId(taskId));
     if (user?.data?.grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
@@ -822,6 +815,7 @@ const runsByTaskId = computed(() => {
         ...scores,
         support_level: support_level,
         stdPercentile: percentScore,
+        rawScore: rawScore,
       },
       taskId,
       user: {
@@ -919,6 +913,11 @@ onMounted(async () => {
   font-size: 2.5rem;
   font-weight: bold;
   margin-top: 0;
+}
+
+.administration-name {
+  font-size: 1.8rem;
+  font-weight: light;
 }
 
 .report-subheader {

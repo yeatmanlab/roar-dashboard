@@ -16,26 +16,40 @@
     </Accordion>
   </div>
   <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
-  <div v-if="tasksToDisplayGraphs.includes(taskId)" class="chart-wrapper">
-    <div>
-      <DistributionChartSupport
-        :initialized="initialized"
-        :administration-id="administrationId"
-        :org-type="orgType"
-        :org-id="orgId"
-        :task-id="taskId"
-        :runs="runs"
+  <div v-if="tasksToDisplayGraphs.includes(taskId)" class="chart-toggle-wrapper">
+    <div v-if="orgType === 'district'" class="mb-3">
+      <div class="flex uppercase text-xs font-light">view rows by</div>
+      <PvSelectButton
+        v-model="facetMode"
+        class="flex flex-row my-2 select-button"
+        :allow-empty="false"
+        :options="facetModes"
+        option-label="name"
       />
     </div>
-    <div>
-      <DistributionChartFacet
-        :initialized="initialized"
-        :administration-id="administrationId"
-        :org-type="orgType"
-        :org-id="orgId"
-        :task-id="taskId"
-        :runs="runs"
-      />
+    <div class="chart-wrapper">
+      <div>
+        <DistributionChartSupport
+          :initialized="initialized"
+          :administration-id="administrationId"
+          :org-type="orgType"
+          :org-id="orgId"
+          :task-id="taskId"
+          :runs="runs"
+          :facet-mode="facetMode"
+        />
+      </div>
+      <div>
+        <DistributionChartFacet
+          :initialized="initialized"
+          :administration-id="administrationId"
+          :org-type="orgType"
+          :org-id="orgId"
+          :task-id="taskId"
+          :runs="runs"
+          :facet-mode="facetMode"
+        />
+      </div>
     </div>
   </div>
   <div class="my-2 mx-4">
@@ -68,6 +82,7 @@ import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
 import { taskDisplayNames, tasksToDisplayGraphs } from '@/helpers/reports.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
+import { ref } from 'vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
@@ -104,6 +119,12 @@ const props = defineProps({
     required: true,
   },
 });
+
+const facetMode = ref({ name: 'Grade', key: 'grade' });
+const facetModes = [
+  { name: 'Grade', key: 'grade' },
+  { name: 'School', key: 'schoolName' },
+];
 
 let tasksInfoById = {
   swr: {
@@ -166,9 +187,9 @@ let tasksInfoById = {
   },
   letter: {
     color: '#E19834',
-    header: 'ROAR-LETTER',
+    header: 'ROAR-LETTER NAMES AND SOUNDS',
     subheader: 'Single Letter Recognition',
-    desc: 'ROAR-Letter assesses a student’s knowledge of letter names and letter sounds. Knowing letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict success in learning to read. Learning the connection between letters and the sounds they represent is fundamental for learning to decode and spell words. This assessment provides educators with valuable insights to customize instruction and address any gaps in these foundational skills.',
+    desc: 'ROAR-Letter Names and Sounds assesses a student’s knowledge of letter names and letter sounds. Knowing letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict success in learning to read. Learning the connection between letters and the sounds they represent is fundamental for learning to decode and spell words. This assessment provides educators with valuable insights to customize instruction and address any gaps in these foundational skills.',
   },
 };
 </script>
@@ -178,6 +199,12 @@ let tasksInfoById = {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-around;
+}
+
+.chart-toggle-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .task-card {
