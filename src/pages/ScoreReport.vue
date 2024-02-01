@@ -19,10 +19,7 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div
-              v-if="sortedAndFilteredTaskIds?.length > 0"
-              class="overview-wrapper bg-gray-100 py-3 mb-2"
-            >
+            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
@@ -85,7 +82,7 @@
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
-        <div v-else-if="scoresDataQuery?.length ?? 0 > 0" >
+        <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <RoarDataTable
             :data="tableData"
             :columns="columns"
@@ -93,23 +90,42 @@
             lazy
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
+            :lazy-pre-sorting="sortDisplay"
             @page="onPage($event)"
             @sort="onSort($event)"
             @filter="onFilter($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
-          <span>
-            <label for="view-columns" class="view-label">View</label>
-            <PvDropdown
-              id="view-columns"
-              v-model="viewMode"
-              :options="viewOptions"
-              option-label="label"
-              option-value="value"
-              class="ml-2"
-            />
-          </span>
+            <template #filterbar>
+              <div class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    v-if="schoolsInfo"
+                    id="ms-school-filter"
+                    v-model="filterSchools"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="schoolsInfo"
+                    option-label="name"
+                    option-value="id"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} schools selected"
+                  />
+                  <label for="ms-school-filter">Filter by School</label>
+                </span>
+              </div>
+            </template>
+            <span>
+              <label for="view-columns" class="view-label">View</label>
+              <PvDropdown
+                id="view-columns"
+                v-model="viewMode"
+                :options="viewOptions"
+                option-label="label"
+                option-value="value"
+                class="ml-2"
+              />
+            </span>
           </RoarDataTable>
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
@@ -202,12 +218,15 @@
           </p>
         </div>
       </div>
+      <PvConfirmDialog group="sort" class="confirm">
+        <template #message> Customized sorting on multiple fields is not yet supported. </template>
+      </PvConfirmDialog>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
@@ -220,12 +239,14 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import _filter from 'lodash/filter';
 import _pickBy from 'lodash/pickBy';
+import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
 import { fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
+import { useConfirm } from 'primevue/useconfirm';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import {
@@ -262,8 +283,31 @@ const props = defineProps({
 const initialized = ref(false);
 
 // Queries for page
-const orderBy = ref([]);
+const orderBy = ref([
+  {
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'userData.grade',
+    },
+  },
+  {
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'userData.name.last',
+    },
+  },
+]);
+// If this is a district report, make the schools column first sorted.
+if (props.orgType === 'district') {
+  orderBy.value.unshift({
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'readOrgs.schools',
+    },
+  });
+}
 const filterBy = ref([]);
+const filterSchools = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
@@ -355,6 +399,35 @@ const onPage = (event) => {
   pageLimit.value = event.rows;
 };
 
+const sortDisplay = computed(() => {
+  const display = [];
+  for (const sort of orderBy.value) {
+    // TODO: TEMPORARY - Make this a dynamic way of converting
+    // fields into column paths
+    let item = {};
+    if (sort.direction === 'ASCENDING') {
+      item.order = 1;
+    } else {
+      item.order = -1;
+    }
+    const sortFieldPath = sort.field.fieldPath;
+    if (sortFieldPath === 'userData.grade') {
+      item.field = 'user.studentData.grade';
+    } else if (sortFieldPath === 'userData.name.first') {
+      item.field = 'user.name.first';
+    } else if (sortFieldPath === 'userData.name.last') {
+      item.field = 'user.name.last';
+    } else if (sortFieldPath === 'userData.username') {
+      item.field = 'user.username';
+    } else if (sortFieldPath === 'readOrgs.schools') {
+      item.field = 'user.schoolName';
+    }
+    display.push(item);
+  }
+  return display;
+});
+
+const confirm = useConfirm();
 const onSort = (event) => {
   console.log('onSort');
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
@@ -365,17 +438,51 @@ const onSort = (event) => {
     if (field.split('.')[1] === 'studentData') {
       field = `userData.${field.split('.').slice(2, field.length)}`;
     }
+    if (field.split('.')[1] === 'schoolName') {
+      field = `readOrgs.schools`;
+    }
     return {
       field: { fieldPath: field },
       direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
     };
   });
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
-  page.value = 0;
+  if (_orderBy.length > 1) {
+    console.log('reached length');
+    confirm.require({
+      group: 'sort',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Continue',
+      acceptIcon: 'pi pi-check',
+      accept: () => {
+        console.log('modal closed.');
+      },
+    });
+  } else {
+    orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
+    page.value = 0;
+  }
 };
 
+watch(filterSchools, (newSchools) => {
+  // check if filter entry for schools exists
+  const filterSchools = _find(filterBy.value, { collection: 'schools' });
+  // Turn off sort when filtering
+  orderBy.value = [];
+  if (filterSchools) {
+    filterSchools.value = _union(filterSchools.value, newSchools);
+  } else {
+    filterBy.value.push({
+      collection: 'schools',
+      field: 'assigningOrgs.schools',
+      value: newSchools,
+    });
+  }
+});
+
 const onFilter = (event) => {
-  console.log('onFilter');
+  console.log('onFilter', event);
+  // Turn off sort when filtering
+  orderBy.value = [];
   const filters = [];
   for (const filterKey in _get(event, 'filters')) {
     const filter = _get(event, 'filters')[filterKey];
@@ -389,7 +496,7 @@ const onFilter = (event) => {
           const schoolName = constraint.value;
           const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
           if (!_isEmpty(schoolEntry)) {
-            filters.push({ value: schoolEntry.id, collection: 'school', field: 'assigningOrgs.schools' });
+            filters.push({ value: [schoolEntry.id], collection: 'schools', field: 'assigningOrgs.schools' });
           }
         } else if (path[1] === 'studentData') {
           // Due to differences in the document schemas,
@@ -413,7 +520,8 @@ const onFilter = (event) => {
       }
     }
   }
-  // Scores Query
+  const orgFilter = _find(filterBy.value, { collection: 'schools' });
+  if (orgFilter) filters.push(orgFilter);
   filterBy.value = filters;
   page.value = 0;
 };
@@ -621,7 +729,7 @@ const columns = computed(() => {
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: false });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true });
   }
 
   if (authStore.isUserSuperAdmin) {
@@ -986,5 +1094,12 @@ onMounted(async () => {
     display: flex;
     align-items: center;
   }
+}
+.confirm .p-confirm-dialog-reject {
+  display: none !important;
+}
+
+.confirm .p-dialog-header-close {
+  display: none !important;
 }
 </style>

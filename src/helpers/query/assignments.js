@@ -30,6 +30,7 @@ export const getAssignmentsRequestBody = ({
   adminId,
   orgType,
   orgId,
+  orgArray = [],
   aggregationQuery,
   pageLimit,
   page,
@@ -63,7 +64,7 @@ export const getAssignmentsRequestBody = ({
     },
   ];
 
-  if (adminId && orgId) {
+  if (adminId && (orgId || orgArray)) {
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -75,16 +76,35 @@ export const getAssignmentsRequestBody = ({
               value: { stringValue: adminId },
             },
           },
-          {
-            fieldFilter: {
-              field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-              op: 'ARRAY_CONTAINS',
-              value: { stringValue: orgId },
-            },
-          },
         ],
       },
     };
+
+    if (!_isEmpty(orgArray)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+          op: 'ARRAY_CONTAINS_ANY',
+          value: {
+            arrayValue: {
+              values: [
+                orgArray.map((orgId) => {
+                  return { stringValue: orgId };
+                }),
+              ],
+            },
+          },
+        },
+      });
+    } else {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+          op: 'ARRAY_CONTAINS',
+          value: { stringValue: orgId },
+        },
+      });
+    }
 
     if (!_isEmpty(orderBy)) {
       requestBody.structuredQuery.orderBy = orderBy;
@@ -217,6 +237,7 @@ export const getFilteredScoresRequestBody = ({
   adminId,
   orgId,
   orgType,
+  orgArray,
   filter,
   select = ['scores'],
   aggregationQuery,
@@ -255,13 +276,6 @@ export const getFilteredScoresRequestBody = ({
         },
         {
           fieldFilter: {
-            field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-            op: 'ARRAY_CONTAINS',
-            value: { stringValue: orgId },
-          },
-        },
-        {
-          fieldFilter: {
             field: { fieldPath: 'taskId' },
             op: 'EQUAL',
             value: { stringValue: filter.taskId },
@@ -277,6 +291,31 @@ export const getFilteredScoresRequestBody = ({
       ],
     },
   };
+  if (!_isEmpty(orgArray)) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+        op: 'ARRAY_CONTAINS_ANY',
+        value: {
+          arrayValue: {
+            values: [
+              orgArray.map((orgId) => {
+                return { stringValue: orgId };
+              }),
+            ],
+          },
+        },
+      },
+    });
+  } else {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+        op: 'ARRAY_CONTAINS',
+        value: { stringValue: orgId },
+      },
+    });
+  }
   if (filter) {
     if (filter.value === 'Average') {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
@@ -411,12 +450,23 @@ export const getScoresRequestBody = ({
 export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
-  // Assume that filters has at most length one
-  if (filters.length > 1) {
-    throw new Error('You may specify at most one filter');
-  }
+
+  // Only allow one non-org filter
+  let nonOrgFilter = null;
+  let orgFilters = null;
+  filters.forEach((filter) => {
+    if (filter.collection === 'schools') {
+      orgFilters = filter;
+    } else if (filter.collection !== 'schools') {
+      if (nonOrgFilter) {
+        throw new Error('You may specify at most one filter');
+      } else {
+        nonOrgFilter = filter;
+      }
+    }
+  });
   let requestBody;
-  if (filters.length && filters[0].collection === 'scores') {
+  if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
       orgType: orgType,
@@ -430,16 +480,17 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   } else {
     let userFilter = null;
     let orgFilter = null;
-    if (filters.length && filters[0].collection === 'users') {
+    if (nonOrgFilter && nonOrgFilter.collection === 'users') {
       userFilter = filters[0];
     }
-    if (filters.length && filters[0].collection === 'school') {
-      orgFilter = filters[0].value;
+    if (orgFilters && orgFilters.collection === 'schools') {
+      orgFilter = orgFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
-      orgId: orgFilter ? orgFilter : orgId,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
       aggregationQuery: true,
       filter: userFilter,
     });
@@ -463,18 +514,37 @@ export const assignmentPageFetcher = async (
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
-  // Assume that filters has at most length one
-  if (filters.length > 1) {
-    throw new Error('You may specify at most one filter');
-  }
+
+  // Only allow one non-org filter
+  let nonOrgFilter = null;
+  let orgFilters = null;
+  filters.forEach((filter) => {
+    if (filter.collection === 'schools') {
+      orgFilters = filter;
+    } else if (filter.collection !== 'schools') {
+      if (nonOrgFilter) {
+        throw new Error('You may specify at most one filter');
+      } else {
+        nonOrgFilter = filter;
+      }
+    }
+  });
+
+  console.log('orgFilter', orgFilters);
+  console.log('non-org filter', nonOrgFilter);
 
   // Handle filtering based on scores
-  if (filters.length && filters[0].collection === 'scores') {
+  if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
+    let orgFilter = null;
+    if (orgFilters && orgFilters.collection === 'schools') {
+      orgFilter = orgFilters.value;
+    }
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
-      filter: _head(filters),
+      orgType: orgFilter ? 'school' : orgType,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
+      filter: nonOrgFilter,
       aggregationQuery: false,
       paginate: true,
       page: page.value,
@@ -638,16 +708,17 @@ export const assignmentPageFetcher = async (
   } else {
     let userFilter = null;
     let orgFilter = null;
-    if (filters.length && filters[0].collection === 'users') {
-      userFilter = filters[0];
+    if (nonOrgFilter && nonOrgFilter.collection === 'users') {
+      userFilter = nonOrgFilter;
     }
-    if (filters.length && filters[0].collection === 'school') {
-      orgFilter = filters[0].value;
+    if (orgFilters && orgFilters.collection === 'schools') {
+      orgFilter = orgFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
-      orgId: orgFilter ? orgFilter : orgId,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
       aggregationQuery: false,
       pageLimit: pageLimit.value,
       page: page.value,
