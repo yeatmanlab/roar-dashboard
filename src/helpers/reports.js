@@ -72,7 +72,7 @@ export const getRawScoreThreshold = (taskId) => {
     };
   } else if (taskId === 'sre') {
     return {
-      above: 73,
+      above: 70,
       some: 47,
     };
   } else if (taskId === 'pa') {
