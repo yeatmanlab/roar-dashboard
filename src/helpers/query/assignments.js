@@ -111,7 +111,6 @@ export const getAssignmentsRequestBody = ({
     }
 
     if (!_isEmpty(filter)) {
-      console.log('filters are:', filter);
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `userData.${filter.field}` },
@@ -326,10 +325,24 @@ export const getFilteredScoresRequestBody = ({
               op: 'AND',
               filters: [
                 {
-                  fieldFilter: {
-                    field: { fieldPath: 'userData.schoolLevel' },
-                    op: 'EQUAL',
-                    value: { stringValue: 'elementary' },
+                  compositeFilter: {
+                    op: 'OR',
+                    filters: [
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'elementary' },
+                        },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'early-childhood' },
+                        },
+                      },
+                    ],
                   },
                 },
                 // Add filter inequalities here
@@ -357,6 +370,13 @@ export const getFilteredScoresRequestBody = ({
                           field: { fieldPath: 'userData.schoolLevel' },
                           op: 'EQUAL',
                           value: { stringValue: 'high' },
+                        },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'Equal',
+                          value: { stringValue: 'postsecondary' },
                         },
                       },
                     ],
@@ -650,7 +670,6 @@ export const assignmentPageFetcher = async (
       page: page.value,
       pageLimit: pageLimit.value,
     });
-    console.log('Request Body for filtered score report:', requestBody);
     console.log(
       `Fetching page ${page.value} for ${adminId} with filter ${filters[0].value} on field ${filters[0].field}`,
     );

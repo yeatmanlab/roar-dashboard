@@ -516,7 +516,7 @@ const onFilter = (event) => {
           collection: 'scores',
           taskId: taskId,
           cutoffs,
-          field: `scores.computed.composite.categoryScore`,
+          field: 'scores.computed.composite.categoryScore',
         });
       }
     }
