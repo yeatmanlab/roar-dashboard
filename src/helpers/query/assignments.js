@@ -205,7 +205,6 @@ export const getUsersByAssignmentIdRequestBody = ({
   };
 
   if (filter) {
-    console.log('filter in request body', filter);
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: filter[0].field },
@@ -649,9 +648,6 @@ export const assignmentPageFetcher = async (
       }
     }
   });
-
-  console.log('orgFilter', orgFilters);
-  console.log('non-org filter', nonOrgFilter);
 
   // Handle filtering based on scores
   if (nonOrgFilter && nonOrgFilter.collection === 'scores') {

@@ -430,7 +430,6 @@ const sortDisplay = computed(() => {
 
 const confirm = useConfirm();
 const onSort = (event) => {
-  console.log('onSort');
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
     let field = item.field.replace('user', 'userData');
     // Due to differences in the document schemas,
@@ -448,7 +447,6 @@ const onSort = (event) => {
     };
   });
   if (_orderBy.length > 1) {
-    console.log('reached length');
     confirm.require({
       group: 'sort',
       icon: 'pi pi-exclamation-triangle',
@@ -481,7 +479,6 @@ watch(filterSchools, (newSchools) => {
 });
 
 const onFilter = (event) => {
-  console.log('onFilter', event);
   // Turn off sort when filtering
   orderBy.value = [];
   const filters = [];
