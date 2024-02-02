@@ -225,16 +225,6 @@
                   :options="['Average', 'Some Support', 'Extra Support']"
                   style="margin-bottom: 0.5rem"
                 />
-                <div class="flex justify-content-between flex-column gap-2">
-                  <div class="flex flex-row align-items-center">
-                    <PvRadioButton v-model="filterModel.gradeRange" input-id="k5" name="Grades K-5" value="1" />
-                    <label for="Grades K-5" class="ml-2">Grades K-5</label>
-                  </div>
-                  <div class="flex flex-row align-items-center">
-                    <PvRadioButton v-model="filterModel.gradeRange" input-id="612" name="Grades 6-12" value="10" />
-                    <label for="Grades 6-12" class="ml-2">Grades 6-12</label>
-                  </div>
-                </div>
               </div>
             </template>
           </PvColumn>
@@ -387,7 +377,7 @@ _forEach(computedColumns.value, (column) => {
       // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
       //   so the filter event is being handled in an external handler.
       if (!taskFilterBlacklist.includes(column.field.split('.')[1])) {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH, gradeRange: '1' };
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
     }
 

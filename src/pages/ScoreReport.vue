@@ -255,6 +255,7 @@ import {
   supportLevelColors,
   getSupportLevel,
   tasksToDisplayGraphs,
+  getRawScoreThreshold,
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
@@ -428,7 +429,6 @@ const sortDisplay = computed(() => {
 
 const confirm = useConfirm();
 const onSort = (event) => {
-  console.log('onSort');
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
     let field = item.field.replace('user', 'userData');
     // Due to differences in the document schemas,
@@ -446,7 +446,6 @@ const onSort = (event) => {
     };
   });
   if (_orderBy.length > 1) {
-    console.log('reached length');
     confirm.require({
       group: 'sort',
       icon: 'pi pi-exclamation-triangle',
@@ -479,7 +478,6 @@ watch(filterSchools, (newSchools) => {
 });
 
 const onFilter = (event) => {
-  console.log('onFilter', event);
   // Turn off sort when filtering
   orderBy.value = [];
   const filters = [];
@@ -508,13 +506,13 @@ const onFilter = (event) => {
       }
       if (_head(path) === 'scores') {
         const taskId = path[1];
-        const grade = _get(constraint, 'gradeRange');
-        const { percentileScoreKey } = getScoreKeys({ taskId: taskId }, grade);
+        const cutoffs = getRawScoreThreshold(taskId);
         filters.push({
           ...constraint,
           collection: 'scores',
           taskId: taskId,
-          field: `scores.computed.composite.${percentileScoreKey}`,
+          cutoffs,
+          field: 'scores.computed.composite.categoryScore',
         });
       }
     }
@@ -919,7 +917,7 @@ const runsByTaskId = computed(() => {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
     const grade = user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade);
-    const { support_level } = getSupportLevel(grade, percentScore, taskId);
+    const { support_level } = getSupportLevel(grade, percentScore, rawScore, taskId);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
       grade: user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade),
