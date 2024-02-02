@@ -46,7 +46,7 @@ export const supportLevelColors = {
 export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
   let support_level = null;
   let tag_color = null;
-  if (percentile !== undefined && grade < 6) {
+  if (percentile !== undefined && grade < 6 && !['swr, pa'].includes(taskId)) {
     if (percentile >= 50) {
       support_level = 'At or Above Average';
       tag_color = supportLevelColors.above;
@@ -62,7 +62,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
     if (rawScore >= above) {
       support_level = 'At or Above Average';
       tag_color = supportLevelColors.above;
-    } else if (rawScore > some && rawScore < above) {
+    } else if (rawScore > some && percentile < above) {
       support_level = 'Needs Some Support';
       tag_color = supportLevelColors.some;
     } else {
