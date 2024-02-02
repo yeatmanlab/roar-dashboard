@@ -535,6 +535,7 @@
   border-width: 0;
   padding: var(--inline-spacing-larger) 1.5rem;
   border-radius: var(--border-radius);
+  width: 80%;
 }
 .p-paginator .p-paginator-first,
 .p-paginator .p-paginator-prev,
@@ -3245,6 +3246,8 @@
   font-size: var(--inline-spacing-larger);
   font-weight: 700;
   padding: 0.25rem 0.4rem;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 .p-tag.p-tag-success {
   background-color: var(--bright-green);

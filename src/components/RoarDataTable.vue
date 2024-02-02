@@ -50,9 +50,9 @@
         <PvButton :label="nameForVisualize" @click="toggleView" />
       </span>
     </div>
-    <div>
-      <span style="height: 10px; display: block">
-        <div class="relative flex justify-content-end z-2 mt-0 mr-2" style="top: 25px">
+    <div class="flex flex-column">
+      <span style="height: 10px;">
+        <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 80%;">
           <slot />
         </div>
       </span>
