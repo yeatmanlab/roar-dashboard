@@ -43,14 +43,26 @@ export const supportLevelColors = {
   below: '#c93d82',
 };
 
-export const getSupportLevel = (percentile) => {
+export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
   let support_level = null;
   let tag_color = null;
-  if (percentile !== undefined) {
+  if (percentile !== undefined && grade < 6) {
     if (percentile >= 50) {
       support_level = 'At or Above Average';
       tag_color = supportLevelColors.above;
     } else if (percentile > 25 && percentile < 50) {
+      support_level = 'Needs Some Support';
+      tag_color = supportLevelColors.some;
+    } else {
+      support_level = 'Needs Extra Support';
+      tag_color = supportLevelColors.below;
+    }
+  } else if (rawScore !== undefined && grade >= 6) {
+    const { above, some } = getRawScoreThreshold(taskId);
+    if (rawScore >= above) {
+      support_level = 'At or Above Average';
+      tag_color = supportLevelColors.above;
+    } else if (rawScore > some && rawScore < above) {
       support_level = 'Needs Some Support';
       tag_color = supportLevelColors.some;
     } else {
@@ -62,4 +74,24 @@ export const getSupportLevel = (percentile) => {
     support_level,
     tag_color,
   };
+};
+
+const getRawScoreThreshold = (taskId) => {
+  if (taskId === 'swr') {
+    return {
+      above: 550,
+      some: 400,
+    };
+  } else if (taskId === 'sre') {
+    return {
+      above: 70,
+      some: 43,
+    };
+  } else if (taskId === 'pa') {
+    return {
+      above: 55,
+      some: 45,
+    };
+  }
+  return null;
 };

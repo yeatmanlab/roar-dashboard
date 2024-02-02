@@ -98,10 +98,9 @@
             @export-selected="exportSelected"
           >
             <template #filterbar>
-              <div class="flex flex-row gap-2">
+              <div v-if="schoolsInfo" class="flex flex-row gap-2">
                 <span class="p-float-label">
                   <PvMultiSelect
-                    v-if="schoolsInfo"
                     id="ms-school-filter"
                     v-model="filterSchools"
                     style="width: 20rem; max-width: 25rem"
@@ -540,10 +539,18 @@ const viewOptions = ref([
 
 const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
 
-const getPercentileScores = ({ assessment, percentileScoreKey, percentileScoreDisplayKey }) => {
+const getPercentileScores = ({
+  grade,
+  assessment,
+  percentileScoreKey,
+  percentileScoreDisplayKey,
+  rawScoreKey,
+  taskId,
+}) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
-  const { support_level, tag_color } = getSupportLevel(percentile);
+  let raw = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
+  const { support_level, tag_color } = getSupportLevel(grade, percentile, raw, taskId);
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
@@ -583,9 +590,12 @@ const exportSelected = (selectedRows) => {
         getGrade(_get(user, 'studentData.grade')),
       );
       const { percentileString, support_level } = getPercentileScores({
+        grade: getGrade(_get(user, 'studentData.grade')),
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
+        rawScoreKey,
+        taskId,
       });
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
@@ -632,9 +642,12 @@ const exportAll = async () => {
         getGrade(_get(user, 'studentData.grade')),
       );
       const { percentileString, support_level } = getPercentileScores({
+        grade: getGrade(_get(user, 'studentData.grade')),
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
+        rawScoreKey,
+        taskId,
       });
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
@@ -776,9 +789,12 @@ const tableData = computed(() => {
         grade,
       );
       const { percentileString, support_level, tag_color } = getPercentileScores({
+        grade,
         assessment,
         percentileScoreKey,
         percentileScoreDisplayKey,
+        rawScoreKey,
+        taskId: assessment.taskId,
       });
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       const rawScore = rawOnlyTasks.includes(assessment.taskId)
@@ -902,7 +918,8 @@ const runsByTaskId = computed(() => {
     } else {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
-    const { support_level } = getSupportLevel(percentScore);
+    const grade = user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade);
+    const { support_level } = getSupportLevel(grade, percentScore, taskId);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
       grade: user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade),
