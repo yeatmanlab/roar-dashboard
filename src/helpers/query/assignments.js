@@ -738,18 +738,25 @@ export const assignmentPageFetcher = async (
       // Merge the scores into the assignment object
       const unretrievedScores = [];
       const initialScoredAssignments = batchAssignmentDocs.map((assignment) => {
-        const scoredAssessments = assignment.data.assessments.map((assessment) => {
-          const runId = assessment.runId;
-          const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
-          if (!scoresObject) {
-            const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
-            unretrievedScores.push(runPath);
-          }
-          return {
-            ...assessment,
-            scores: scoresObject,
-          };
-        });
+        const scoredAssessments = _without(
+          assignment.data.assessments.map((assessment) => {
+            const runId = assessment.runId;
+            if (runId) {
+              const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
+              if (!scoresObject) {
+                const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
+                unretrievedScores.push(runPath);
+              }
+              return {
+                ...assessment,
+                scores: scoresObject,
+              };
+            } else {
+              return undefined;
+            }
+          }),
+          undefined,
+        );
         return {
           userId: assignment.userId,
           data: {
