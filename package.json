@@ -2,6 +2,7 @@
   "name": "roar-dashboard",
   "private": true,
   "version": "1.3.0",
+  "type": "module",
   "scripts": {
     "build": "vite build",
     "dev": "vite --force --host",
