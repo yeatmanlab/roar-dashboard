@@ -26,7 +26,7 @@
     "@bdelab/roar-multichoice": "^1.8.2",
     "@bdelab/roar-pa": "^1.5.0",
     "@bdelab/roar-sre": "^1.10.2",
-    "@bdelab/roar-swr": "^1.7.0",
+    "@bdelab/roar-swr": "^1.7.1",
     "@bdelab/roar-utils": "^1.0.17",
     "@bdelab/roar-vocab": "^1.5.1",
     "@tanstack/vue-query": "^4.35.7",
