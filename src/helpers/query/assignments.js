@@ -389,7 +389,7 @@ export const getFilteredScoresRequestBody = ({
         ],
       },
     });
-    if (filter.value === 'Average') {
+    if (filter.value === 'Green') {
       // If the filter requests average students, define filters in which
       // elementary school students have the inequality percentileScore >= 50
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
@@ -411,7 +411,7 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
-    } else if (filter.value === 'Some Support') {
+    } else if (filter.value === 'Yellow') {
       // If the filter requests some support students, define filters in which
       // elementary school students have the inequality percentileScore < 50 and > 25
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
@@ -447,7 +447,7 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
-    } else if (filter.value === 'Extra Support') {
+    } else if (filter.value === 'Pink') {
       // If the filter requests extra support students, define filters in which
       // elementary school students have the inequality percentileScore <= 25
       requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(

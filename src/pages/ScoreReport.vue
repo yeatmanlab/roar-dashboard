@@ -46,22 +46,19 @@
                 <div class="legend-entry">
                   <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
                   <div>
-                    <div>Needs extra support</div>
-                    <div>(Below 25th percentile)</div>
+                    <div>Needs Extra Support</div>
                   </div>
                 </div>
                 <div class="legend-entry">
                   <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
                   <div>
-                    <div>Needs some support</div>
-                    <div>(Below 50th percentile)</div>
+                    <div>Developing Skill</div>
                   </div>
                 </div>
                 <div class="legend-entry">
                   <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
                   <div>
-                    <div>At or above average</div>
-                    <div>(At or above 50th percentile)</div>
+                    <div>Achieved Skill</div>
                   </div>
                 </div>
               </div>
@@ -131,22 +128,19 @@
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
-              <div>Needs extra support</div>
-              <div>(Below 25th percentile)</div>
+              <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
             <div>
-              <div>Needs some support</div>
-              <div>(Below 50th percentile)</div>
+              <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
             <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
             <div>
-              <div>At or above average</div>
-              <div>(At or above 50th percentile)</div>
+              <div>Achieved Skill</div>
             </div>
           </div>
         </div>

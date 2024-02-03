@@ -42,10 +42,10 @@ const returnGradeCount = computed(() => {
       if (score?.scores?.support_level === 'Needs Extra Support' && gradeCounter) {
         gradeCounter.support_levels[0]++;
         gradeCounter.totalStudents++;
-      } else if (score?.scores?.support_level === 'Needs Some Support' && gradeCounter) {
+      } else if (score?.scores?.support_level === 'Developing Skill' && gradeCounter) {
         gradeCounter.support_levels[1]++;
         gradeCounter.totalStudents++;
-      } else if (score?.scores?.support_level === 'At or Above Average' && gradeCounter) {
+      } else if (score?.scores?.support_level === 'Achieved Skill' && gradeCounter) {
         gradeCounter.support_levels[2]++;
         gradeCounter.totalStudents++;
       } else {
@@ -69,10 +69,10 @@ const returnSchoolCount = computed(() => {
     if (score?.scores?.support_level === 'Needs Extra Support') {
       schoolCounter.support_levels[0]++;
       schoolCounter.totalStudents++;
-    } else if (score?.scores?.support_level === 'Needs Some Support') {
+    } else if (score?.scores?.support_level === 'Developing Skill') {
       schoolCounter.support_levels[1]++;
       schoolCounter.totalStudents++;
-    } else if (score?.scores?.support_level === 'At or Above Average') {
+    } else if (score?.scores?.support_level === 'Achieved Skill') {
       schoolCounter.support_levels[2]++;
       schoolCounter.totalStudents++;
     } else {
@@ -95,11 +95,7 @@ function returnValueByIndex(index, xMode, grade) {
     // 0 => needs extra support
     // 1 => needs some support
     // 2 => at or above average
-    const valsByIndex = [
-      { group: 'Needs Extra Support' },
-      { group: 'Needs Some Support' },
-      { group: 'At or Above Average' },
-    ];
+    const valsByIndex = [{ group: 'Needs Extra Support' }, { group: 'Developing Skill' }, { group: 'Achieved Skill' }];
     if (xMode.name === 'Percent') {
       return {
         category: grade.category,
@@ -189,12 +185,12 @@ const distributionBySupport = computed(() => {
       },
       yOffset: {
         field: 'group',
-        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+        sort: ['Needs Extra Support', 'Developing Skill', 'Achieved Skill'],
       },
       color: {
         field: 'group',
         title: 'Support Level',
-        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+        sort: ['Needs Extra Support', 'Developing Skill', 'Achieved Skill'],
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
         labelFontSize: 16,
         legend: {

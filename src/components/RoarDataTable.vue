@@ -51,8 +51,8 @@
       </span>
     </div>
     <div class="flex flex-column">
-      <span style="height: 10px;">
-        <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 80%;">
+      <span style="height: 10px">
+        <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 80%">
           <slot />
         </div>
       </span>
@@ -222,7 +222,7 @@
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Average', 'Some Support', 'Extra Support']"
+                  :options="['Green', 'Yellow', 'Pink']"
                   style="margin-bottom: 0.5rem"
                 />
               </div>
