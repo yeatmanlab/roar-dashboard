@@ -48,10 +48,10 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
   let tag_color = null;
   if (percentile !== undefined && grade < 6) {
     if (percentile >= 50) {
-      support_level = 'At or Above Average';
+      support_level = 'Achieved Skill';
       tag_color = supportLevelColors.above;
     } else if (percentile > 25 && percentile < 50) {
-      support_level = 'Needs Some Support';
+      support_level = 'Developing Skill';
       tag_color = supportLevelColors.some;
     } else {
       support_level = 'Needs Extra Support';
@@ -60,10 +60,10 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
   } else if (rawScore !== undefined && grade >= 6) {
     const { above, some } = getRawScoreThreshold(taskId);
     if (rawScore >= above) {
-      support_level = 'At or Above Average';
+      support_level = 'Achieved Skill';
       tag_color = supportLevelColors.above;
     } else if (rawScore > some && rawScore < above) {
-      support_level = 'Needs Some Support';
+      support_level = 'Developing Skill';
       tag_color = supportLevelColors.some;
     } else {
       support_level = 'Needs Extra Support';
