@@ -437,7 +437,7 @@ let returnScoreTooltip = (colHeader, colData) => {
     toolTip += 'Percentile: ' + colData.scores?.swr?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.swr?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.swr?.standard + '\n';
-  } else if (colHeader === 'Sentence' && colData.scores?.sre.standard) {
+  } else if (colHeader === 'Sentence' && colData.scores?.sre?.standard) {
     toolTip += colData.scores?.sre?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
