@@ -14,7 +14,7 @@ export default defineConfig({
     }),
     Markdown(),
     vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
-    basicSsl(),
+    ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
     nodePolyfills({
       globals: {
         process: true,
