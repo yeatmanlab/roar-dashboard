@@ -30,7 +30,7 @@
     "@bdelab/roar-swr": "^1.7.1",
     "@bdelab/roar-utils": "^1.0.17",
     "@bdelab/roar-vocab": "^1.5.1",
-    "@tanstack/vue-query": "^5.18.1",
+    "@tanstack/vue-query": "^4.35.7",
     "@vuelidate/core": "^2.0.3",
     "@vuelidate/validators": "^2.0.4",
     "@vueuse/core": "^10.7.2",
