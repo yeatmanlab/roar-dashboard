@@ -56,11 +56,10 @@
               lazy
               :columns="tableColumns"
               :data="tableData"
-                           :page-limit="pageLimit"
+              :page-limit="pageLimit"
               :total-records="totalRecords"
               :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
               :allow-filtering="false"
-                           :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
               @page="onPage($event)"
                            @sort="onSort($event)"
               @export-all="exportAll"
