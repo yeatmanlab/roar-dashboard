@@ -20,7 +20,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     cy.visit('/');
 
     cy.get('.p-dropdown-trigger', { timeout: 10000 }).click();
-    cy.get('.p-dropdown-item', { timeout: 10000 }).contains('ZZZ Test Play PA').click();
+    cy.get('.p-dropdown-item', { timeout: 10000 }).contains(Cypress.env("testRoarAppsAdministration")).click();
 
     // cy.get(".p-tabview").contains(pa.name);
     cy.visit(`/game/${pa.id}`);

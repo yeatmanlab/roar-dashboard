@@ -5,7 +5,7 @@ describe('Test playthrough of SRE as a participant', () => {
 
     cy.get('.p-dropdown-trigger', { timeout: 10000 }).should('be.visible').click();
     cy.get('.p-dropdown-item', { timeout: 10000 })
-      .contains('ZZZ Test Shortened SRE')
+      .contains(Cypress.env("testRoarAppsAdministration"))
       .should('be.visible')
       .click();
 

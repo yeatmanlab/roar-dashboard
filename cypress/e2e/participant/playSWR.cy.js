@@ -7,7 +7,7 @@ describe('Testing playthrough of SWR as a participant', () => {
 
     cy.get('.p-dropdown-trigger', { timeout: 10 * timeout }).should('be.visible').click();
     cy.get('.p-dropdown-item', { timeout: 10 * timeout })
-      .contains('ZZZ Test Cypress Play Keypress Games')
+      .contains(Cypress.env("testRoarAppsAdministration"))
       .should('be.visible')
       .click();
 
@@ -28,7 +28,7 @@ describe('Testing playthrough of SWR as a participant', () => {
 
 function playSWRGame() {
   // play tutorial
-  cy.contains('Welcome to the Single Word Recognition activity', {timeout: timeout});
+  cy.contains('Welcome to the world of Lexicality!', {timeout: timeout});
   for (let i = 0; i < 3; i++) {
     cy.get('body', {timeout: timeout}).type('{leftarrow}');
   }
@@ -45,12 +45,12 @@ function playSWRGame() {
   playSWRBlock('You are halfway through the second block');
   playSWRBlock('You have completed the second block');
   playSWRBlock('You are halfway through the third block');
-  finishSWR('Congratulations');
+  finishSWR('You say farewell to your new friends and leave the land of Lexicality. Until next time!');
 
   // check if game completed
   cy.get('.p-dropdown-trigger', { timeout: 50 * timeout }).should('be.visible').click();
   cy.get('.p-dropdown-item', { timeout: 10 * timeout })
-    .contains('ZZZ Test Cypress Play Keypress Games')
+    .contains(Cypress.env("testRoarAppsAdministration"))
     .should('be.visible')
     .click();
   cy.get('.tabview-nav-link-label').contains('ROAR-Word').should('have.attr', 'data-game-status', 'complete');
@@ -72,10 +72,10 @@ function playIntro() {
 }
 
 function playSWRBlock(block_termination_phrase) {
+  cy.wait(0.3* timeout)
   cy.get('body', {timeout: 5 * timeout}).then((body) => {
     cy.log('entering stage: ', block_termination_phrase);
     if (!body.find('.stimulus').length > 0) {
-      cy.wait(0.2 * timeout)
       cy.get('body', {timeout: timeout}).type('{leftarrow}');
       cy.get('.jspsych-btn', {timeout: 5 * timeout}).contains('Continue').click();
       Cypress.on('uncaught:exception', () => {
@@ -90,6 +90,7 @@ function playSWRBlock(block_termination_phrase) {
 }
 
 function finishSWR(block_termination_phrase) {
+  cy.wait(0.3 * timeout)
   cy.get('body', {timeout: 5 * timeout}).then((body) => {
     if (!body.find('.stimulus',).length > 0) {
       assert(cy.contains(block_termination_phrase));

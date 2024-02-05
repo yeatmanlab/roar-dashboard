@@ -59,6 +59,8 @@ module.exports = defineConfig({
     stanfordUniversityAddress: '450 Jane Stanford Way, Stanford, CA 94305, USA',
     testTag: 'stanford university',
     cypressDownloads: 'cypress/downloads',
+    testRoarAppsAdministration: "zzzCypressTestRoarAppsAdministration",
+    testRoarAppsAdministrationId: "f3UMHUpR8NGLdmACLw9o",
     testUserList: [
     "zzzCypressTestStudent0",
     "zzzCypressTestStudent1",
