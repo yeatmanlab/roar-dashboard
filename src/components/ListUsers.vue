@@ -13,6 +13,7 @@
             :total-records="totalRecords"
             :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
             :allow-export="false"
+            :allow-filtering="false"
             @page="onPage($event)"
             @sort="onSort($event)"
           />
@@ -85,36 +86,43 @@ const columns = ref([
     field: 'username',
     header: 'Username',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'name.first',
     header: 'First Name',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'name.last',
     header: 'Last Name',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'studentData.grade',
     header: 'Grade',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'studentData.gender',
     header: 'Gender',
     dataType: 'string',
+    sort: false,
   },
   {
     field: 'studentData.dob',
     header: 'Date of Birth',
     dataType: 'date',
+    sort: false,
   },
   {
     field: 'userType',
     header: 'User Type',
     dataType: 'string',
+    sort: false,
   },
 ]);
 

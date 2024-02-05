@@ -30,6 +30,7 @@ export const getAssignmentsRequestBody = ({
   adminId,
   orgType,
   orgId,
+  orgArray = [],
   aggregationQuery,
   pageLimit,
   page,
@@ -63,7 +64,7 @@ export const getAssignmentsRequestBody = ({
     },
   ];
 
-  if (adminId && orgId) {
+  if (adminId && (orgId || orgArray)) {
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -75,23 +76,41 @@ export const getAssignmentsRequestBody = ({
               value: { stringValue: adminId },
             },
           },
-          {
-            fieldFilter: {
-              field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-              op: 'ARRAY_CONTAINS',
-              value: { stringValue: orgId },
-            },
-          },
         ],
       },
     };
+
+    if (!_isEmpty(orgArray)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+          op: 'ARRAY_CONTAINS_ANY',
+          value: {
+            arrayValue: {
+              values: [
+                orgArray.map((orgId) => {
+                  return { stringValue: orgId };
+                }),
+              ],
+            },
+          },
+        },
+      });
+    } else {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+          op: 'ARRAY_CONTAINS',
+          value: { stringValue: orgId },
+        },
+      });
+    }
 
     if (!_isEmpty(orderBy)) {
       requestBody.structuredQuery.orderBy = orderBy;
     }
 
     if (!_isEmpty(filter)) {
-      console.log('filters are:', filter);
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `userData.${filter.field}` },
@@ -186,7 +205,6 @@ export const getUsersByAssignmentIdRequestBody = ({
   };
 
   if (filter) {
-    console.log('filter in request body', filter);
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: filter[0].field },
@@ -217,6 +235,7 @@ export const getFilteredScoresRequestBody = ({
   adminId,
   orgId,
   orgType,
+  orgArray,
   filter,
   select = ['scores'],
   aggregationQuery,
@@ -255,13 +274,6 @@ export const getFilteredScoresRequestBody = ({
         },
         {
           fieldFilter: {
-            field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
-            op: 'ARRAY_CONTAINS',
-            value: { stringValue: orgId },
-          },
-        },
-        {
-          fieldFilter: {
             field: { fieldPath: 'taskId' },
             op: 'EQUAL',
             value: { stringValue: filter.taskId },
@@ -277,17 +289,132 @@ export const getFilteredScoresRequestBody = ({
       ],
     },
   };
-  if (filter) {
-    if (filter.value === 'Average') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: filter.field },
-          op: 'GREATER_THAN_OR_EQUAL',
-          value: { doubleValue: 50 },
+  if (!_isEmpty(orgArray)) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+        op: 'ARRAY_CONTAINS_ANY',
+        value: {
+          arrayValue: {
+            values: [
+              orgArray.map((orgId) => {
+                return { stringValue: orgId };
+              }),
+            ],
+          },
         },
-      });
-    } else if (filter.value === 'Some Support') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push(
+      },
+    });
+  } else {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
+        op: 'ARRAY_CONTAINS',
+        value: { stringValue: orgId },
+      },
+    });
+  }
+  if (filter) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      compositeFilter: {
+        op: 'OR',
+        filters: [
+          {
+            compositeFilter: {
+              op: 'AND',
+              filters: [
+                {
+                  compositeFilter: {
+                    op: 'OR',
+                    filters: [
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'elementary' },
+                        },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'early-childhood' },
+                        },
+                      },
+                    ],
+                  },
+                },
+                // Add filter inequalities here
+                // Inequalities that match elementary school students
+              ],
+            },
+          },
+          {
+            compositeFilter: {
+              op: 'AND',
+              filters: [
+                {
+                  compositeFilter: {
+                    op: 'OR',
+                    filters: [
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'middle' },
+                        },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'high' },
+                        },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'Equal',
+                          value: { stringValue: 'postsecondary' },
+                        },
+                      },
+                    ],
+                  },
+                },
+                // Add filter inequalities here
+                // Inequalities that match middle and high school students
+              ],
+            },
+          },
+        ],
+      },
+    });
+    if (filter.value === 'Green') {
+      // If the filter requests average students, define filters in which
+      // elementary school students have the inequality percentileScore >= 50
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'GREATER_THAN_OR_EQUAL',
+            value: { doubleValue: 50 },
+          },
+        },
+      );
+      // middle/high school students have the inequality categoryScore >= upper cutoff
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'GREATER_THAN_OR_EQUAL',
+            value: { doubleValue: filter.cutoffs.above }, // For middle/high students, the same field applies but the inequality changes.
+          },
+        },
+      );
+    } else if (filter.value === 'Yellow') {
+      // If the filter requests some support students, define filters in which
+      // elementary school students have the inequality percentileScore < 50 and > 25
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
         {
           fieldFilter: {
             field: { fieldPath: filter.field },
@@ -303,14 +430,45 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
-    } else if (filter.value === 'Extra Support') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: filter.field },
-          op: 'LESS_THAN_OR_EQUAL',
-          value: { doubleValue: 25 },
+      // middle/high school students have the inequality categoryScore < upper cutoff and > some cutoff
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'LESS_THAN',
+            value: { doubleValue: filter.cutoffs.above }, // For middle/high students, the same field applies but the inequality changes.
+          },
         },
-      });
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'GREATER_THAN',
+            value: { doubleValue: filter.cutoffs.some }, // For middle/high students, the same field applies but the inequality changes.
+          },
+        },
+      );
+    } else if (filter.value === 'Pink') {
+      // If the filter requests extra support students, define filters in which
+      // elementary school students have the inequality percentileScore <= 25
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'LESS_THAN_OR_EQUAL',
+            value: { doubleValue: 25 },
+          },
+        },
+      );
+      // middle/high school students have the inequality categoryScore <= some cutoff
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[1].compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: filter.field },
+            op: 'LESS_THAN_OR_EQUAL',
+            value: { doubleValue: filter.cutoffs.some }, // For middle/high students, the same field applies but the inequality changes.
+          },
+        },
+      );
     }
   }
   if (aggregationQuery) {
@@ -411,12 +569,23 @@ export const getScoresRequestBody = ({
 export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
-  // Assume that filters has at most length one
-  if (filters.length > 1) {
-    throw new Error('You may specify at most one filter');
-  }
+
+  // Only allow one non-org filter
+  let nonOrgFilter = null;
+  let orgFilters = null;
+  filters.forEach((filter) => {
+    if (filter.collection === 'schools') {
+      orgFilters = filter;
+    } else if (filter.collection !== 'schools') {
+      if (nonOrgFilter) {
+        throw new Error('You may specify at most one filter');
+      } else {
+        nonOrgFilter = filter;
+      }
+    }
+  });
   let requestBody;
-  if (filters.length && filters[0].collection === 'scores') {
+  if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
       orgType: orgType,
@@ -430,16 +599,17 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   } else {
     let userFilter = null;
     let orgFilter = null;
-    if (filters.length && filters[0].collection === 'users') {
+    if (nonOrgFilter && nonOrgFilter.collection === 'users') {
       userFilter = filters[0];
     }
-    if (filters.length && filters[0].collection === 'school') {
-      orgFilter = filters[0].value;
+    if (orgFilters && orgFilters.collection === 'schools') {
+      orgFilter = orgFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
-      orgId: orgFilter ? orgFilter : orgId,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
       aggregationQuery: true,
       filter: userFilter,
     });
@@ -463,18 +633,34 @@ export const assignmentPageFetcher = async (
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
-  // Assume that filters has at most length one
-  if (filters.length > 1) {
-    throw new Error('You may specify at most one filter');
-  }
+
+  // Only allow one non-org filter
+  let nonOrgFilter = null;
+  let orgFilters = null;
+  filters.forEach((filter) => {
+    if (filter.collection === 'schools') {
+      orgFilters = filter;
+    } else if (filter.collection !== 'schools') {
+      if (nonOrgFilter) {
+        throw new Error('You may specify at most one filter');
+      } else {
+        nonOrgFilter = filter;
+      }
+    }
+  });
 
   // Handle filtering based on scores
-  if (filters.length && filters[0].collection === 'scores') {
+  if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
+    let orgFilter = null;
+    if (orgFilters && orgFilters.collection === 'schools') {
+      orgFilter = orgFilters.value;
+    }
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
-      filter: _head(filters),
+      orgType: orgFilter ? 'school' : orgType,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
+      filter: nonOrgFilter,
       aggregationQuery: false,
       paginate: true,
       page: page.value,
@@ -552,18 +738,21 @@ export const assignmentPageFetcher = async (
       // Merge the scores into the assignment object
       const unretrievedScores = [];
       const initialScoredAssignments = batchAssignmentDocs.map((assignment) => {
-        const scoredAssessments = assignment.data.assessments.map((assessment) => {
-          const runId = assessment.runId;
-          const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
-          if (!scoresObject) {
-            const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
-            unretrievedScores.push(runPath);
-          }
-          return {
-            ...assessment,
-            scores: scoresObject,
-          };
-        });
+        const scoredAssessments = _without(
+          assignment.data.assessments.map((assessment) => {
+            const runId = assessment.runId;
+            const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
+            if (!scoresObject && runId) {
+              const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
+              unretrievedScores.push(runPath);
+            }
+            return {
+              ...assessment,
+              scores: scoresObject,
+            };
+          }),
+          undefined,
+        );
         return {
           userId: assignment.userId,
           data: {
@@ -638,16 +827,17 @@ export const assignmentPageFetcher = async (
   } else {
     let userFilter = null;
     let orgFilter = null;
-    if (filters.length && filters[0].collection === 'users') {
-      userFilter = filters[0];
+    if (nonOrgFilter && nonOrgFilter.collection === 'users') {
+      userFilter = nonOrgFilter;
     }
-    if (filters.length && filters[0].collection === 'school') {
-      orgFilter = filters[0].value;
+    if (orgFilters && orgFilters.collection === 'schools') {
+      orgFilter = orgFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
-      orgId: orgFilter ? orgFilter : orgId,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
       aggregationQuery: false,
       pageLimit: pageLimit.value,
       page: page.value,

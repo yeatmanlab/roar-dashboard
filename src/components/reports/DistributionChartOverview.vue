@@ -91,7 +91,7 @@ const overviewDistributionChart = (taskId) => {
         field: 'category',
         title: 'Support Level',
         scale: {
-          domain: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+          domain: ['Needs Extra Support', 'Developing Skill', 'Achieved Skill'],
           range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'],
         },
         legend: false,

@@ -7,7 +7,7 @@
 </template>
 <script setup>
 import RoarPA from '@bdelab/roar-pa';
-import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
+import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
@@ -66,18 +66,6 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 let roarApp;
 
 const { selectedAdmin } = storeToRefs(gameStore);
-
-const selectBestRun = async () => {
-  await authStore.roarfirekit.selectBestRun({
-    assignmentId: selectedAdmin.value.id,
-    taskId,
-  });
-};
-
-window.addEventListener('beforeunload', selectBestRun, { once: true });
-onBeforeUnmount(async () => {
-  selectBestRun();
-});
 
 async function startTask() {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);

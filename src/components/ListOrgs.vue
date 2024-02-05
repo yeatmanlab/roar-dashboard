@@ -58,6 +58,8 @@
               :data="tableData"
                            :page-limit="pageLimit"
               :total-records="totalRecords"
+              :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
+              :allow-filtering="false"
                            :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
               @page="onPage($event)"
                            @sort="onSort($event)"
@@ -232,22 +234,22 @@ const exportAll = async () => {
 
 const tableColumns = computed(() => {
   const columns = [
-    { field: 'name', header: 'Name', dataType: 'string', pinned: true },
-    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string' },
-    { field: 'address.formattedAddress', header: 'Address', dataType: 'string' },
-    { field: 'tags', header: 'Tags', dataType: 'array', chip: true },
+    { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: false },
+    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: false },
+    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: false },
+    { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
   ];
 
   if (['districts', 'schools'].includes(activeOrgType.value)) {
     columns.push(
-        { field: 'mdrNumber', header: 'MDR Number', dataType: 'string' },
-        { field: 'ncesId', header: 'NCES ID', dataType: 'string' },
+        { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
+        { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
     );
   }
 
   if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
     columns.push(
-        { field: 'clever', header: 'Clever', dataType: 'boolean' });
+        { field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
   }
 
   columns.push({
