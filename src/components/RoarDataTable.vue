@@ -450,7 +450,6 @@ let returnScoreTooltip = (colHeader, colData) => {
     toolTip += 'Raw Score: ' + colData.scores?.['swr-es']?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.['swr-es']?.standard + '\n';
   }
-
   return toolTip;
 };
 
