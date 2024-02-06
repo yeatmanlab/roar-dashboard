@@ -1,5 +1,3 @@
-import store from 'store2';
-
 const timeout = Cypress.env("timeout");
 
 let pa = {
@@ -35,7 +33,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     }
 
     // handles error where full screen throws a permissions error
-    cy.wait(1000);
+    cy.wait(0.2 * timeout);
     Cypress.on('uncaught:exception', () => {
       return false;
     });
