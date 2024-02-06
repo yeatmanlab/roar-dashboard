@@ -846,7 +846,6 @@ const tableData = computed(() => {
             administrationId: props.administrationId,
             userId: _get(user, 'userId'),
           },
-          
         };
       }
     }
@@ -1136,9 +1135,5 @@ onMounted(async () => {
 
 .confirm .p-dialog-header-close {
   display: none !important;
-}
-.unreliable-row {
-  background-color: #ffe6e6; /* Light red background color */
-  /* You can add more styling as needed */
 }
 </style>
