@@ -915,7 +915,7 @@ export const assignmentPageFetcher = async (
         const batchRunDocs = await appAxiosInstance
           .post(':batchGet', {
             documents: runDocPaths,
-            mask: { fieldPaths: ['scores'] },
+            mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
           })
           .then(({ data }) => {
             return _without(
@@ -943,6 +943,14 @@ export const assignmentPageFetcher = async (
             task['scores'] = _get(
               _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
               'data.scores',
+            );
+            task['reliable'] = _get(
+              _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
+              'data.reliable'
+            );
+            task['engagementFlags'] = _get(
+              _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
+              'data.engagementFlags'
             );
           }
         }

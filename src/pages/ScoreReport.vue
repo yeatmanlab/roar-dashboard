@@ -354,13 +354,14 @@ const schoolsDict = computed(() => {
 
 const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
 
+
 // Scores Query
 const {
   isLoading: isLoadingScores,
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryKey: ['scores', 'reliable','engagementFlags' ,props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -378,6 +379,8 @@ const {
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
 });
+
+
 
 // Scores count query
 const { data: scoresCount } = useQuery({
@@ -722,6 +725,7 @@ function getScoreKeys(row, grade) {
   };
 }
 
+
 const refreshing = ref(false);
 
 const columns = computed(() => {
@@ -797,8 +801,15 @@ const tableData = computed(() => {
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: rawOnlyTasks.includes(assessment.taskId) && rawScore ? 'white' : tag_color,
+        color: (typeof assessment.reliable !== 'undefined' && !assessment.reliable) ? 'gray' : (rawOnlyTasks.includes(assessment.taskId) && rawScore ? 'white' : tag_color),
+        // color: rawOnlyTasks.includes(assessment.taskId) && rawScore ? 'white' : tag_color,
       };
+      const isReliable = assessment.reliable;
+      const reliableFlags = assessment.engagementFlags
+      if(!isReliable && isReliable !=undefined){
+        console.log("From TableData ", isReliable, reliableFlags, assessment, user)
+      }
+      
     }
     // If this is a district score report, grab school information
     if (props.orgType === 'district') {
@@ -821,6 +832,7 @@ const tableData = computed(() => {
             administrationId: props.administrationId,
             userId: _get(user, 'userId'),
           },
+          
         };
       }
     }
@@ -1110,5 +1122,9 @@ onMounted(async () => {
 
 .confirm .p-dialog-header-close {
   display: none !important;
+}
+.unreliable-row {
+  background-color: #ffe6e6; /* Light red background color */
+  /* You can add more styling as needed */
 }
 </style>
