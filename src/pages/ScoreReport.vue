@@ -361,7 +361,7 @@ const {
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', 'reliable','engagementFlags' ,props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryKey: ['scores',props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
