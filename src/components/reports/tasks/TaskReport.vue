@@ -4,9 +4,9 @@
       <AccordionTab :header="('About ' + tasksInfoById[taskId]?.subheader).toUpperCase()">
         <div style="background-color: {taskInfoById[taskId]?.color}">
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ tasksInfoById[taskId]?.subheader }}</div>
-          <p class="mt-1 text-md font-light">
-            {{ tasksInfoById[taskId]?.desc }}
-          </p>
+          <!-- The following HTML is from a hard-coded source (below) -->
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <p class="mt-1 text-md font-light" v-html="tasksInfoById[taskId]?.desc"></p>
           <!-- <div v-for="definition of tasksInfoById[taskId]?.definitions" :key="definition.id" class="my-2">
             <div class="uppercase text-lg font-bold mb-2">{{ definition?.header }}</div>
             <div class="text-md font-light">{{ definition?.desc }}</div>
@@ -131,7 +131,7 @@ let tasksInfoById = {
     color: '#E97A49',
     header: 'ROAR-WORD',
     subheader: 'Single Word Recognition',
-    desc: "ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between 100-900 and can be viewed by selecting 'Raw Score' on the table above.",
+    desc: "ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between 100-900 and can be viewed by selecting 'Raw Score' on the table above. <br/><br/> Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below 75% of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. <br/><br/> Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. <br/><br/> Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.",
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -163,7 +163,7 @@ let tasksInfoById = {
     header: 'ROAR-SENTENCE',
     color: '#92974C',
     subheader: 'SENTENCE READING EFFICIENCY',
-    desc: "ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort. The student's score will range between 0-130 and can be viewed by selecting 'Raw Score' on the table above.",
+    desc: "ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort. The student's score will range between 0-130 and can be viewed by selecting 'Raw Score' on the table above. <br/><br/> Students in the pink category need support in sentence-reading efficiency to support growth in reading comprehension. Students in grades K-5 in the pink category have sentence-reading efficiency skills below 75% of their peers. Students in grades 6-12 in the pink category have sentence-reading efficiency skills below a third-grade level. <br/><br/> Students in the yellow category are still developing their sentence-reading efficiency skills and will benefit from focused reading practice. <br/><br/> Students in the green category demonstrate that sentence-reading efficiency is not a barrier in their reading.",
     definitions: [
       {
         header: 'WHAT IS FLUENCY?',
