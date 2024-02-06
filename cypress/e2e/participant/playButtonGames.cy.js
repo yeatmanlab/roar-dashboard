@@ -1,6 +1,6 @@
 import { games } from './buttonGamesList';
 
-const timeout = Cypress.env("timeout")
+const timeout = Cypress.env('timeout');
 
 describe('Testing play through of vocab, cva, letter, and multichoice games as a participant', () => {
   games.forEach((game) => {
@@ -8,21 +8,27 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
       cy.visit('/');
 
-      cy.get('.p-dropdown-trigger', { timeout: 2 * timeout }).should('be.visible').click();
+      cy.get('.p-dropdown-trigger', { timeout: 2 * timeout })
+        .should('be.visible')
+        .click();
       cy.get('.p-dropdown-item', { timeout: timeout })
-        .contains(Cypress.env("testRoarAppsAdministration"))
+        .contains(Cypress.env('testRoarAppsAdministration'))
         .should('be.visible')
         .click();
       cy.get('.tabview-nav-link-label').contains(game.name);
 
       cy.visit(`/game/${game.id}`);
 
-      // Long timeout is needed for picture vocab 
-      cy.get(game.startBtn, { timeout: 3 * timeout }).should('be.visible').click();
+      // Long timeout is needed for picture vocab
+      cy.get(game.startBtn, { timeout: 3 * timeout })
+        .should('be.visible')
+        .click();
 
       // case for game/pa -- it has two initiation buttons that need to be clicked
       if (game.startBtn2) {
-        cy.get(game.startBtn2, { timeout: 6 * timeout }).should('be.visible').click();
+        cy.get(game.startBtn2, { timeout: 6 * timeout })
+          .should('be.visible')
+          .click();
       }
 
       // handles error where full screen throws a permissions error
@@ -45,9 +51,11 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
 
       // check if game completed
       // cy.visit("/");
-      cy.get('.p-dropdown-trigger', { timeout: 5 * timeout }).should('be.visible').click();
+      cy.get('.p-dropdown-trigger', { timeout: 5 * timeout })
+        .should('be.visible')
+        .click();
       cy.get('.p-dropdown-item', { timeout: timeout })
-        .contains(Cypress.env("testRoarAppsAdministration"))
+        .contains(Cypress.env('testRoarAppsAdministration'))
         .should('be.visible')
         .click();
       cy.get('.tabview-nav-link-label').contains(game.name).should('have.attr', 'data-game-status', 'complete');

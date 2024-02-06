@@ -4,13 +4,17 @@ function selectDistrictsFromDropdown() {
 }
 
 function createDistrict() {
-  cy.get('.p-button-label', { timeout: Cypress.env('timeout') }).contains("Create District").click();
+  cy.get('.p-button-label', { timeout: Cypress.env('timeout') })
+    .contains('Create District')
+    .click();
 }
 
 function checkDistrictCreated() {
-  cy.get('.p-paginator-last', {timeout: Cypress.env('timeout')}).first().click()
-  cy.get('div', {timeout: Cypress.env('timeout')}).should('contain.text', Cypress.env('testDistrictName'))
-  cy.log("District successfully created.")
+  cy.get('.p-paginator-last', { timeout: Cypress.env('timeout') })
+    .first()
+    .click();
+  cy.get('div', { timeout: Cypress.env('timeout') }).should('contain.text', Cypress.env('testDistrictName'));
+  cy.log('District successfully created.');
 }
 
 describe('The admin user can navigate to the create organizations page, and create a new district.', () => {

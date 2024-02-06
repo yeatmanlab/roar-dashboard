@@ -42,20 +42,32 @@ Cypress.Commands.add(
     testGroupName = Cypress.env('testGroupName'),
   ) => {
     cy.get('span').contains('District').click();
-    cy.get('ul > li').contains(testDistrictName).click({animationDistanceThreshold: 20});
+    cy.get('ul > li').contains(testDistrictName).click({ animationDistanceThreshold: 20 });
 
     cy.get('span').contains('Schools').click();
-    cy.get('[data-cy="dropdown-selected-district"]').click().get('li').contains(testDistrictName).click({animationDistanceThreshold: 20});
-    cy.get('ul > li').contains(testSchoolName).click({animationDistanceThreshold: 20});
+    cy.get('[data-cy="dropdown-selected-district"]')
+      .click()
+      .get('li')
+      .contains(testDistrictName)
+      .click({ animationDistanceThreshold: 20 });
+    cy.get('ul > li').contains(testSchoolName).click({ animationDistanceThreshold: 20 });
 
     cy.get('span').contains('Classes').click();
-    cy.get('[data-cy="dropdown-selected-district"]').click().get('li').contains(testDistrictName).click({animationDistanceThreshold: 20});
-    cy.get('[data-cy="dropdown-selected-school"]').click().get('ul > li').contains(testSchoolName).click({animationDistanceThreshold: 20});
-    cy.get('ul > li').contains(testClassName).click({animationDistanceThreshold: 20});
+    cy.get('[data-cy="dropdown-selected-district"]')
+      .click()
+      .get('li')
+      .contains(testDistrictName)
+      .click({ animationDistanceThreshold: 20 });
+    cy.get('[data-cy="dropdown-selected-school"]')
+      .click()
+      .get('ul > li')
+      .contains(testSchoolName)
+      .click({ animationDistanceThreshold: 20 });
+    cy.get('ul > li').contains(testClassName).click({ animationDistanceThreshold: 20 });
 
     cy.get('span').contains('Groups').click();
-    cy.get('ul > li').contains(testGroupName).click({animationDistanceThreshold: 20});
-    cy.get('ul > li').contains('Kyle Test Group').click({animationDistanceThreshold: 20});
+    cy.get('ul > li').contains(testGroupName).click({ animationDistanceThreshold: 20 });
+    cy.get('ul > li').contains('Kyle Test Group').click({ animationDistanceThreshold: 20 });
   },
 );
 
@@ -63,18 +75,19 @@ Cypress.Commands.add('activateAdminSidebar', () => {
   cy.get('[data-cy="button-admin-sidebar"]').click().wait(1000);
 });
 
-
 Cypress.Commands.add('getAdministrationCard', () => {
-  cy.get('[data-cy="dropdown-sort-administrations"]', {timeout: Cypress.env('timeout')}).click()
-  cy.get("ul > li").contains("Name (descending)").click()
+  cy.get('[data-cy="dropdown-sort-administrations"]', { timeout: Cypress.env('timeout') }).click();
+  cy.get('ul > li').contains('Name (descending)').click();
 
-  cy.get('[data-cy="h2-card-admin-title"]', {timeout: Cypress.env('timeout')})
+  cy.get('[data-cy="h2-card-admin-title"]', { timeout: Cypress.env('timeout') })
     .filter((index, element) => {
       return Cypress.$(element).text().includes(Cypress.env('testPartnerAdministrationName'));
     })
     .should('have.length', 2)
-    .find('button', {timeout: Cypress.env('timeout')}).contains("Show details").click()
-})
+    .find('button', { timeout: Cypress.env('timeout') })
+    .contains('Show details')
+    .click();
+});
 
 Cypress.Commands.add('inputOrgDetails', (orgName, orgInitials, orgNcesId, orgAddress, orgGrade, orgTag) => {
   // Require orgName and orgInitials
@@ -109,31 +122,33 @@ Cypress.Commands.add('inputOrgDetails', (orgName, orgInitials, orgNcesId, orgAdd
 });
 
 Cypress.Commands.add('checkUserList', (userList) => {
-    cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
-    cy.wrap(row).find('td.p-frozen-column').then((cell) => {
-      const cellText = cell.text();
-      expect(userList).to.include(cellText);
-    });
+  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
+    cy.wrap(row)
+      .find('td.p-frozen-column')
+      .then((cell) => {
+        const cellText = cell.text();
+        expect(userList).to.include(cellText);
+      });
   });
-})
+});
 
 Cypress.Commands.add('loginByGoogleApi', () => {
   cy.log('Logging in to Google');
   cy.request({
-    method: "POST",
-    url: "https://www.googleapis.com/oauth2/v4/token",
+    method: 'POST',
+    url: 'https://www.googleapis.com/oauth2/v4/token',
     body: {
-      grant_type: "refresh_token",
-      client_id: Cypress.env("googleClientId"),
-      client_secret: Cypress.env("googleClientSecret"),
-      refresh_token: Cypress.env("googleRefreshToken"),
+      grant_type: 'refresh_token',
+      client_id: Cypress.env('googleClientId'),
+      client_secret: Cypress.env('googleClientSecret'),
+      refresh_token: Cypress.env('googleRefreshToken'),
     },
   }).then(({ body }) => {
     const { access_token, id_token } = body;
 
     cy.request({
-      method: "GET",
-      url: "https://www.googleapis.com/oauth2/v3/userinfo",
+      method: 'GET',
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo',
       headers: { Authorization: `Bearer ${access_token}` },
     }).then(({ body }) => {
       cy.log(body);
@@ -148,10 +163,7 @@ Cypress.Commands.add('loginByGoogleApi', () => {
         },
       };
 
-      window.localStorage.setItem(
-                "googleCypress",
-                JSON.stringify(userItem)
-            );
+      window.localStorage.setItem('googleCypress', JSON.stringify(userItem));
       // cy.visit('https://localhost:5173/')
     });
   });

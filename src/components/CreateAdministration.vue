@@ -57,7 +57,8 @@
           <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
           <PvPickList
             v-if="assessments[0].length || assessments[1].length"
-            v-model="assessments" data-cy="list-pick-list"
+            v-model="assessments"
+            data-cy="list-pick-list"
             :show-source-controls="false"
             list-style="height: 21.375rem"
             data-key="id"

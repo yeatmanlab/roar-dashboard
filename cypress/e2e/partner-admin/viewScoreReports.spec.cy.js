@@ -10,20 +10,22 @@ const testAssignments = ['vocab', 'Multichoice'];
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
   cy.navigateTo('/');
-  cy.url({timeout: timeout}).should('eq', `${baseUrl}/`);
+  cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
 }
 
 function clickScoreButton() {
-    cy.get('button', {timeout: timeout}).contains("Scores").first().click();
-    cy.url({timeout: timeout})
-        .should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
+  cy.get('button', { timeout: timeout }).contains('Scores').first().click();
+  cy.url({ timeout: timeout }).should(
+    'eq',
+    `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`,
+  );
 }
 
 function checkAssignmentColumns() {
   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
-    testAssignments.forEach(assignment => {
+    testAssignments.forEach((assignment) => {
       expect(tableHeaders).to.include(assignment);
     });
   });
@@ -31,10 +33,10 @@ function checkAssignmentColumns() {
 
 describe('The partner admin can view score reports for a given administration.', () => {
   it('Selects an administration and views its score report.', () => {
-    checkUrl()
-    cy.getAdministrationCard()
-    clickScoreButton()
-    cy.checkUserList(testUserList)
-    checkAssignmentColumns(testAssignments)
-  })
-})
+    checkUrl();
+    cy.getAdministrationCard();
+    clickScoreButton();
+    cy.checkUserList(testUserList);
+    checkAssignmentColumns(testAssignments);
+  });
+});

@@ -8,7 +8,6 @@
       <div class="flex flex-row w-full md:h-2rem sm:h-3rem">
         <div class="flex-grow-1 pr-3 mr-2 p-0 m-0">
           <h2 data-cy="h2-card-admin-title" class="sm:text-lg lg:text-lx m-0">{{ title }}</h2>
-
         </div>
         <div v-if="isSuperAdmin" class="flex justify-content-end w-3 pl-5 pb-5 ml-2 mb-6">
           <PvSpeedDial
@@ -76,7 +75,6 @@
               :options="setBarChartOptions(node.data.id)"
               class="h-3rem"
             />
-
           </template>
         </PvColumn>
         <PvColumn field="id" header="" style="width: 14rem">
@@ -117,14 +115,14 @@
                   label="Scores"
                   aria-label="Scores"
                   size="small"
-                  data-cy="button-scores" />
-            </router-link>
-          </div>
-        </template>
-      </PvColumn>
-    </PvTreeTable>
-  </div>
-
+                  data-cy="button-scores"
+                />
+              </router-link>
+            </div>
+          </template>
+        </PvColumn>
+      </PvTreeTable>
+    </div>
   </div>
 </template>
 
