@@ -87,6 +87,7 @@
             lazy
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
+            data-cy="roar-data-table"
             :lazy-pre-sorting="sortDisplay"
             @page="onPage($event)"
             @sort="onSort($event)"

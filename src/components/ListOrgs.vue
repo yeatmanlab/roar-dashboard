@@ -7,7 +7,7 @@
             v-if="isSuperAdmin"
             v-tooltip.top="'Sync Clever orgs'"
             class="p-panel-header-icon mr-2"
-            @click="syncClever"
+                  @click="syncClever"
           >
             <span :class="cleverSyncIcon"></span>
           </button>
@@ -16,9 +16,8 @@
           <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
             <div class="grid column-gap-3 mt-2">
               <div
-                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
-                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
-              >
+                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
+                   >
                 <span class="p-float-label">
                   <PvDropdown
                     v-model="selectedDistrict"
@@ -29,6 +28,7 @@
                     :placeholder="districtPlaceholder"
                     :loading="isLoadingDistricts"
                     class="w-full"
+                    data-cy="dropdown-parent-district"
                   />
                   <label for="district">District</label>
                 </span>
@@ -44,6 +44,7 @@
                     :placeholder="schoolPlaceholder"
                     :loading="isLoadingSchools"
                     class="w-full"
+                    data-cy="dropdown-parent-school"
                   />
                   <label for="school">School</label>
                 </span>
@@ -60,7 +61,7 @@
               :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
               :allow-filtering="false"
               @page="onPage($event)"
-              @sort="onSort($event)"
+                           @sort="onSort($event)"
               @export-all="exportAll"
             />
             <AppSpinner v-else />
@@ -183,9 +184,11 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
+
 
 const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
   queryKey: ['schools', selectedDistrict, orgsQueryKeyIndex],
@@ -194,6 +197,7 @@ const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
   enabled: schoolQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
 
 const {
   isLoading: isLoadingCount,
@@ -221,13 +225,7 @@ const {
 });
 
 const exportAll = async () => {
-  const exportData = await orgFetchAll(
-    activeOrgType,
-    selectedDistrict,
-    selectedSchool,
-    orderBy,
-    isSuperAdmin,
-    adminOrgs,
+  const exportData = await orgFetchAll(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs,
   );
   console.log('Exporting all:', exportData);
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
@@ -243,13 +241,14 @@ const tableColumns = computed(() => {
 
   if (['districts', 'schools'].includes(activeOrgType.value)) {
     columns.push(
-      { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
-      { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
+        { field: 'mdrNumber', header: 'MDR Number', dataType: 'string', sort: false },
+        { field: 'ncesId', header: 'NCES ID', dataType: 'string', sort: false },
     );
   }
 
   if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
-    columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
+    columns.push(
+        { field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
   }
 
   columns.push({

@@ -15,6 +15,7 @@
           :loading="isLoadingScores || isFetchingScores"
           :page-limit="pageLimit"
           lazy
+          data-cy="roar-data-table"
           :allow-filtering="false"
           @page="onPage($event)"
           @sort="onSort($event)"

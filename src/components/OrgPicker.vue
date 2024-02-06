@@ -3,7 +3,7 @@
     <div class="col-12 md:col-6">
       <PvPanel class="m-0 p-0" header="Select organizations here">
         <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" class="m-0 p-0" lazy>
-          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header" data-cy="tab-panel-org-header">
             <div class="grid column-gap-3">
               <div
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -20,6 +20,7 @@
                     :placeholder="districtPlaceholder"
                     :loading="isLoadingDistricts"
                     class="w-full"
+                    data-cy="dropdown-selected-district"
                   />
                   <label for="district">Select from district</label>
                 </span>
@@ -36,6 +37,7 @@
                     :placeholder="schoolPlaceholder"
                     :loading="isLoadingSchools"
                     class="w-full"
+                    data-cy="dropdown-selected-school"
                   />
                   <label for="school">Select from school</label>
                 </span>

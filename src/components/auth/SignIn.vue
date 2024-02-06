@@ -9,6 +9,7 @@
             :class="{ 'p-invalid': invalid }"
             aria-describedby="email-error"
             placeholder="Username or email"
+            data-cy="input-username-email"
           />
         </div>
         <small v-if="invalid" class="p-error">Incorrect username/email or password</small>
@@ -29,6 +30,7 @@
             hide-icon="pi pi-eye"
             :feedback="false"
             placeholder="Password"
+            data-cy="input-password"
           >
             <template #header>
               <h6>Pick a password</h6>

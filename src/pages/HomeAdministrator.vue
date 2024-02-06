@@ -9,6 +9,7 @@
             input-id="dd-sort"
             :options="sortOptions"
             option-label="label"
+            data-cy="dropdown-sort-administrations"
             @change="onSortChange($event)"
           />
         </template>
@@ -40,6 +41,7 @@
                     :assessments="item.assessments"
                     :show-params="isSuperAdmin"
                     :is-super-admin="isSuperAdmin"
+                    data-cy="h2-card-admin-title"
                   />
                 </div>
               </template>
