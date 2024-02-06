@@ -1,13 +1,15 @@
 import { games } from './buttonGamesList';
 
-describe('Testing playthrough of vocab, cva, letter, and multichoice games as a participant', () => {
+const timeout = Cypress.env("timeout")
+
+describe('Testing play through of vocab, cva, letter, and multichoice games as a participant', () => {
   games.forEach((game) => {
-    it(`${game.name} Playthrough Test`, () => {
+    it(`${game.name} Play through Test`, () => {
       cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
       cy.visit('/');
 
-      cy.get('.p-dropdown-trigger', { timeout: 20000 }).should('be.visible').click();
-      cy.get('.p-dropdown-item', { timeout: 10000 })
+      cy.get('.p-dropdown-trigger', { timeout: 2 * timeout }).should('be.visible').click();
+      cy.get('.p-dropdown-item', { timeout: timeout })
         .contains(Cypress.env("testRoarAppsAdministration"))
         .should('be.visible')
         .click();
@@ -16,35 +18,35 @@ describe('Testing playthrough of vocab, cva, letter, and multichoice games as a 
       cy.visit(`/game/${game.id}`);
 
       // Long timeout is needed for picture vocab 
-      cy.get(game.startBtn, { timeout: 280000 }).should('be.visible').click();
+      cy.get(game.startBtn, { timeout: 3 * timeout }).should('be.visible').click();
 
       // case for game/pa -- it has two initiation buttons that need to be clicked
       if (game.startBtn2) {
-        cy.get(game.startBtn2, { timeout: 60000 }).should('be.visible').click();
+        cy.get(game.startBtn2, { timeout: 6 * timeout }).should('be.visible').click();
       }
 
       // handles error where full screen throws a permissions error
-      cy.wait(1000);
+      cy.wait(0.2 * timeout);
       Cypress.on('uncaught:exception', () => {
         return false;
       });
 
       // if the game prompts some setup, make the choice
       if (game.setUpChoice) {
-        cy.get(game.setUpChoice, { timeout: 10000 }).should('be.visible').first().click();
+        cy.get(game.setUpChoice, { timeout: timeout }).should('be.visible').first().click();
       }
 
       // clicks through first introduction pages
       for (let i = 0; i < game.introIters; i++) {
-        cy.get(game.introBtn, { timeout: 10000 }).should('be.visible').click();
+        cy.get(game.introBtn, { timeout: timeout }).should('be.visible').click();
       }
 
       playROARGame(game);
 
       // check if game completed
       // cy.visit("/");
-      cy.get('.p-dropdown-trigger', { timeout: 50000 }).should('be.visible').click();
-      cy.get('.p-dropdown-item', { timeout: 10000 })
+      cy.get('.p-dropdown-trigger', { timeout: 5 * timeout }).should('be.visible').click();
+      cy.get('.p-dropdown-item', { timeout: timeout })
         .contains(Cypress.env("testRoarAppsAdministration"))
         .should('be.visible')
         .click();
@@ -77,7 +79,7 @@ function makeChoiceOrContinue(game, overflow) {
       }
       // assert stimulus is visible and num items rendered is correct
       else {
-        body.find(game.clickableItem, { timeout: 10000 }).first().click();
+        body.find(game.clickableItem).first().click();
       }
       if (overflow < 100) {
         makeChoiceOrContinue(game, overflow + 1);
