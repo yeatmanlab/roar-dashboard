@@ -774,6 +774,27 @@ const columns = computed(() => {
   return tableColumns;
 });
 
+// this function light out color if assessment is not reliable
+function colorSelection(assessment, rawScore, support_level, tag_color){
+  if(assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined ){
+    if(support_level == 'Needs Extra Support'){
+      return '#d6b8c7'
+    }
+    else if(support_level == 'Developing Skill'){
+      return '#e8dbb5'
+    }
+    else if(support_level == 'Achieved Skill'){
+      return '#c0d9bd'
+    }
+  }
+  else if(rawOnlyTasks.includes(assessment.taskId) && rawScore){
+    return 'white';
+  }else{
+    return tag_color;
+  }
+}
+
+
 const tableData = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   return scoresDataQuery.value.map(({ user, assignment }) => {
@@ -801,15 +822,8 @@ const tableData = computed(() => {
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: (typeof assessment.reliable !== 'undefined' && !assessment.reliable) ? 'gray' : (rawOnlyTasks.includes(assessment.taskId) && rawScore ? 'white' : tag_color),
-        // color: rawOnlyTasks.includes(assessment.taskId) && rawScore ? 'white' : tag_color,
+        color: colorSelection(assessment, rawScore, support_level, tag_color),
       };
-      const isReliable = assessment.reliable;
-      const reliableFlags = assessment.engagementFlags
-      if(!isReliable && isReliable !=undefined){
-        console.log("From TableData ", isReliable, reliableFlags, assessment, user)
-      }
-      
     }
     // If this is a district score report, grab school information
     if (props.orgType === 'district') {
