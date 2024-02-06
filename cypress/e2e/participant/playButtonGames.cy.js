@@ -45,7 +45,7 @@ describe('Testing playthrough of vocab, cva, letter, and multichoice games as a 
       // cy.visit("/");
       cy.get('.p-dropdown-trigger', { timeout: 50000 }).should('be.visible').click();
       cy.get('.p-dropdown-item', { timeout: 10000 })
-        .contains('ZZZ Test Cypress Playthrough Button Games')
+        .contains(Cypress.env("testRoarAppsAdministration"))
         .should('be.visible')
         .click();
       cy.get('.tabview-nav-link-label').contains(game.name).should('have.attr', 'data-game-status', 'complete');

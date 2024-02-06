@@ -26,8 +26,8 @@ export const games = [
     numIter: 9,
   },
   {
-    name: 'ROAR-Morphology',
-    id: 'multichoice',
+    name: 'Roar-Morphology',
+    id: 'morphology',
     startBtn: '.jspsych-btn',
     introBtn: '.go-button',
     introIters: 3,
