@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/valid-v-for -->
 <template>
   <div class="card">
     <!-- <p class="login-title" align="left">Register for ROAR</p> -->
@@ -36,8 +37,7 @@
             "
           >
             <span
-              v-for="error in v$.students.$each.$response.$errors[index]
-                .activationCode"
+              v-for="error in v$.students.$each.$response.$errors[index].activationCode"
               :key="index"
             >
               <small class="p-error">{{
@@ -87,7 +87,7 @@
                     v$.students.$each.$response.$data[index].password
                       .$invalid && submitted,
                 }"
-                toggleMask
+                toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
@@ -121,7 +121,7 @@
                 v-model="student.confirmPassword"
                 name="confirmPassword"
                 :class="{ 'p-invalid': isPasswordMismatch(index) && submitted }"
-                toggleMask
+                toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
@@ -150,18 +150,18 @@
               <Calendar
                 v-model="student.dob"
                 view="date"
-                dateFormat="mm/dd/yy"
-                modelValue="string"
-                showIcon
+                date-format="mm/dd/yy"
+                model-value="string"
+                show-icon
               />
             </div>
             <div v-else>
               <Calendar
                 v-model="student.dob"
                 view="year"
-                dateFormat="yy"
-                modelValue="string"
-                showIcon
+                date-format="yy"
+                model-value="string"
+                show-icon
               />
             </div>
             <small
@@ -186,8 +186,8 @@
             <Dropdown
               v-model="student.grade"
               :options="gradeOptions"
-              optionLabel="label"
-              optionValue="value"
+              option-label="label"
+              option-value="value"
               name="grade"
             />
             <!-- <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{ v$.grade.required.$message.replace("Value", "Grade") }}</small> -->
@@ -200,8 +200,8 @@
               <div>
                 <label for="firstName">First Name </label>
                 <InputText
-                  name="firstName"
                   v-model="student.firstName"
+                  name="firstName"
                   :class="{
                     'p-invalid':
                       v$.students.$each.$response.$data[index].firstName
@@ -220,8 +220,8 @@
               <div>
                 <label for="lastName">Last Name </label>
                 <InputText
-                  name="lastName"
                   v-model="student.lastName"
+                  name="lastName"
                   :class="{
                     'p-invalid':
                       v$.students.$each.$response.$data[index].lastName
@@ -238,8 +238,8 @@
                 <Dropdown
                   v-model="student.ell"
                   :options="ellOptions"
-                  optionLabel="label"
-                  optionValue="value"
+                  option-label="label"
+                  option-value="value"
                   name="ell"
                 />
               </div>
@@ -247,10 +247,10 @@
               <div class="mt-4 mb-5">
                 <label for="sex">Gender </label>
                 <Dropdown
-                  :options="genderOptions"
-                  optionLabel="label"
-                  optionValue="value"
                   v-model="student.gender"
+                  :options="genderOptions"
+                  option-label="label"
+                  option-value="value"
                   name="gender"
                 />
               </div>
@@ -260,10 +260,10 @@
               <div class="mt-4 mb-5">
                 <label for="stateId">Free-Reduced Lunch </label>
                 <Dropdown
-                  :options="frlOptions"
-                  optionLabel="label"
-                  optionValue="value"
                   v-model="student.freeReducedLunch"
+                  :options="frlOptions"
+                  option-label="label"
+                  option-value="value"
                   name="freeReducedLunch"
                 />
               </div>
@@ -271,10 +271,10 @@
               <div class="mt-4 mb-5">
                 <label for="stateId">IEP Status</label>
                 <Dropdown
-                  :options="IEPOptions"
-                  optionLabel="label"
-                  optionValue="value"
                   v-model="student.IEPStatus"
+                  :options="IEPOptions"
+                  option-label="label"
+                  option-value="value"
                   name="IEPStatus"
                 />
               </div>
@@ -287,8 +287,8 @@
                   v-model="student.race"
                   multiple
                   :suggestions="raceOptions"
-                  @complete="searchRaces"
                   name="race"
+                  @complete="searchRaces"
                 />
               </div>
               <!-- Hispanic Ethinicity -->
@@ -297,10 +297,10 @@
                   >Hispanic or Latino Ethnicity
                 </label>
                 <Dropdown
-                  :options="ethnicityOptions"
-                  optionLabel="label"
-                  optionValue="value"
                   v-model="student.hispanicEthnicity"
+                  :options="ethnicityOptions"
+                  option-label="label"
+                  option-value="value"
                   name="hispanicEthinicity"
                 />
               </div>
@@ -313,8 +313,8 @@
                   v-model="student.homeLanguage"
                   multiple
                   :suggestions="languageOptions"
-                  @complete="searchLanguages"
                   name="homeLanguage"
+                  @complete="searchLanguages"
                 />
               </div>
             </section>
@@ -323,8 +323,8 @@
         <section class="form-section-button">
           <button
             v-if="index !== 0"
-            @click="deleteStudentForm(student)"
             class="p-button p-component"
+            @click="deleteStudentForm(student)"
           >
             Delete Student
           </button>
@@ -332,31 +332,31 @@
       </div>
     </form>
     <div class="form-section-button2">
-      <button @click="addStudent()" class="p-button p-component">
+      <button class="p-button p-component" @click="addStudent()">
         Add another student
       </button>
     </div>
     <section class="form-submit">
       <Button
-        @click="handleFormSubmit(!v$.$invalid)"
         type="submit"
         label="Submit"
         class="submit-button"
+        @click="handleFormSubmit(!v$.$invalid)"
       />
     </section>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw, watch, defineEmits } from "vue";
-import { required, sameAs, minLength, helpers } from "@vuelidate/validators";
+import { reactive, ref, defineEmits } from "vue";
+import { required, minLength, helpers } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 
 // import {RegisterStudentSingle} from "../auth/RegisterStudentSingle.vue"
 
-const props = defineProps({
-  isRegistering: { type: Boolean, default: true },
-});
+// const props = defineProps({
+//   isRegistering: { type: Boolean, default: true },
+// });
 
 const emit = defineEmits(["submit"]);
 // const students = ref([{}]);
@@ -465,24 +465,24 @@ const handleFormSubmit = (isFormValid) => {
   emit("submit", computedStudents);
 };
 
-const resetForm = () => {
-  (state.activationCode = ""), (state.firstName = "");
-  state.lastName = "";
-  state.middleName;
-  state.password = "";
-  state.confirmPassword = "";
-  state.dob = "";
-  state.grade = "";
-  state.ell = "";
-  state.gender = "";
-  state.freeReducedLunch = "";
-  state.IEPStatus = "";
-  state.race = [];
-  state.hispanicEthnicity = "";
-  state.homeLanguage = [];
-  submitted.value = false;
-  yearOnlyCheck.value = false;
-};
+// const resetForm = () => {
+//   (state.activationCode = ""), (state.firstName = "");
+//   state.lastName = "";
+//   state.middleName;
+//   state.password = "";
+//   state.confirmPassword = "";
+//   state.dob = "";
+//   state.grade = "";
+//   state.ell = "";
+//   state.gender = "";
+//   state.freeReducedLunch = "";
+//   state.IEPStatus = "";
+//   state.race = [];
+//   state.hispanicEthnicity = "";
+//   state.homeLanguage = [];
+//   submitted.value = false;
+//   yearOnlyCheck.value = false;
+// };
 const yearOnlyCheck = ref(false);
 
 const searchRaces = (event) => {

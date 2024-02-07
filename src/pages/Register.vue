@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/valid-v-else -->
 <template>
   <div id="register-container">
     <section id="register">
@@ -47,36 +48,36 @@ import Register from "../components/auth/RegisterParent.vue";
 import RegisterStudent from "../components/auth/RegisterStudent.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { ref, onMounted, onBeforeUnmount, watch, toRaw } from "vue";
-import { useQueryStore } from "@/store/query";
+// import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
-import { useToast } from "primevue/usetoast";
-import { storeToRefs } from "pinia";
-import VueRecaptcha from "vue-recaptcha";
+// import { useToast } from "primevue/usetoast";
+// import { storeToRefs } from "pinia";
+// import VueRecaptcha from "vue-recaptcha";
 
 // import {useAuthStore} from "@/store/auth";
 // import Steps from 'primevue/steps';
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
-const toast = useToast();
+// const { roarfirekit } = storeToRefs(authStore);
+// const toast = useToast();
 
 const activeIndex = ref(0); // Current active step
-const items = ref([{ label: "Step 1" }, { label: "Step 2" }]);
+// const items = ref([{ label: "Step 1" }, { label: "Step 2" }]);
 
 const parentInfo = ref(null);
 const studentInfo = ref(null);
 
-function prevStep() {
-  if (activeIndex.value > 0) {
-    activeIndex.value--;
-  }
-}
+// function prevStep() {
+//   if (activeIndex.value > 0) {
+//     activeIndex.value--;
+//   }
+// }
 
-function nextStep() {
-  if (activeIndex.value < items.value.length - 1) {
-    activeIndex.value++;
-  }
-}
+// function nextStep() {
+//   if (activeIndex.value < items.value.length - 1) {
+//     activeIndex.value++;
+//   }
+// }
 
 async function handleParentSubmit(data) {
   console.log("Parent data: ", data);
@@ -127,7 +128,7 @@ function handleStudentSubmit(data) {
 
 watch(
   [parentInfo, studentInfo],
-  ([newParentInfo, newStudentInfo], [oldParentInfo, oldStudentInfo]) => {
+  ([newParentInfo, newStudentInfo]) => {
     if (newParentInfo && newStudentInfo) {
       const rawParentInfo = toRaw(newParentInfo);
       const rawStudentInfo = toRaw(newStudentInfo);

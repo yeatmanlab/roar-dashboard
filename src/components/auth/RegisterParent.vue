@@ -1,10 +1,10 @@
 <template>
   <div class="card">
-    <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
+    <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <section class="form-section flex lg:flex-row ">
         <div>
           <label for="firstName">First Name <span class="required p-1">*</span></label>
-          <InputText name="firstName" v-model="v$.firstName.$model"  :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
+          <InputText v-model="v$.firstName.$model" name="firstName"  :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
           <span v-if="v$.firstName.$error && submitted">
             <span v-for="(error, index) of v$.firstName.$errors" :key="index">
               <small class="p-error">{{ error.$message }}</small>
@@ -16,7 +16,7 @@
         </div>
         <div>
           <label for="lastName">Last Name <span class="required p-1">*</span></label>
-          <InputText name="lastName" v-model="v$.lastName.$model" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
+          <InputText v-model="v$.lastName.$model" name="lastName" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
           <span v-if="v$.lastName.$error && submitted">
             <span v-for="(error, index) of v$.lastName.$errors" :key="index">
               <small class="p-error">{{ error.$message }}</small>
@@ -50,7 +50,7 @@
         <div>
           <div>
             <label for="password">Password <span class="required p-1">*</span></label>
-            <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></Password>
+            <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggle-mask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></Password>
           </div>
           <span v-if="v$.password.$error && submitted">
             <span v-for="(error, index) of v$.password.$errors" :key="index">
@@ -65,8 +65,9 @@
         <div>
           <div>
             <label for="confirmPassword">Confirm Password <span class="required p-1">*</span></label>
-            <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model" name="confirmPassword"
-              :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false">
+            <Password
+:id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model" name="confirmPassword"
+              :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggle-mask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false">
             </Password>
           </div>
           <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
@@ -79,8 +80,9 @@
         <!-- Recaptcha + consent -->
         <ChallengeV3 v-model="response" action="submit">
           <div class="field-checkbox terms-checkbox">
-            <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" binary :disabled="showConsent"
-              v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" @change="getConsent"/>
+            <Checkbox
+:id="`accept-${isRegistering ? 'register' : 'login'}`" v-model="v$.accept.$model" name="accept" binary
+              :disabled="showConsent" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" @change="getConsent"/>
             <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and conditions<span class="required">*</span></label>
           </div>
           <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
@@ -97,25 +99,25 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, toRaw, watch, defineEmits, defineComponent } from "vue";
+import { computed, reactive, ref, defineEmits } from "vue";
 import { required, sameAs, minLength, } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
-import { useRouter } from "vue-router";
+// import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
-import { isMobileBrowser } from "@/helpers";
+// import { isMobileBrowser } from "@/helpers";
 import ConsentModal from "../ConsentModal.vue";
-import _get from 'lodash/get'
+// import _get from 'lodash/get'
 // import ChallengeV3 from "../admin/reCaptcha.vue"
 import { ChallengeV3 } from 'vue-recaptcha';
 
-const router = useRouter()
+// const router = useRouter()
 const authStore = useAuthStore()
 const isCaptchaverified = ref(null);
 
-const props = defineProps({
-  isRegistering: {type: Boolean, default: true},
+// const props = defineProps({
+//   isRegistering: {type: Boolean, default: true},
 
-});
+// });
 
 const emit = defineEmits(['submit']);
 
@@ -186,18 +188,18 @@ function handleCaptcha(){
   isCaptchaverified.value = response.value;
 }
 
-const resetForm = () => {
-  state.firstName = "";
-  state.lastName = "";
-  state.email = "";
-  state.password = "";
-  state.confirmPassword = "";
-  submitted.value = false;
-};
+// const resetForm = () => {
+//   state.firstName = "";
+//   state.lastName = "";
+//   state.email = "";
+//   state.password = "";
+//   state.confirmPassword = "";
+//   submitted.value = false;
+// };
 
 const showConsent = ref(false);
 const consentText = ref("");
-let consentVersion = "";
+// let consentVersion = "";
 
 async function handleConsentAccept() {
   state.accept = true;
@@ -207,7 +209,7 @@ async function handleConsentAccept() {
 async function getConsent() {
   const consentDoc = await authStore.getLegalDoc("consent");
   consentText.value = consentDoc.text;
-  consentVersion = consentDoc.version;
+  // consentVersion = consentDoc.version;
   showConsent.value = true
   handleCheckCaptcha();
 }
