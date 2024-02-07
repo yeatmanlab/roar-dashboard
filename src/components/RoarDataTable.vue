@@ -435,7 +435,7 @@ function getIndexTask(colData, task){
 function getFlags(index, ColData){
   const flags = ColData.assignment.assessments[index].engagementFlags;
   if(flags !== undefined && flags !== '' && !ColData.assignment.assessments[index].reliable){
-    return '\n' + 'Reliability: ' + Object.keys(flags).map(key => key.toLowerCase()).join(', ') + '\n';
+    return '\n' + 'Reliability: ' + Object.keys(flags).map(_lowerCase).join(', ') + '\n';
   }
   else{
     return ''
