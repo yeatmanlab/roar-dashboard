@@ -441,8 +441,9 @@ let returnScoreTooltip = (colHeader, colData) => {
     toolTip += 'Raw Score: ' + colData.scores?.pa?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.pa?.standard + '\n';
     index = getIndexTask(colData, 'pa');
-    if(colData.assignment.assessments[index].engagementFlags !== undefined && colData.assignment.assessments[index].engagementFlags !== '' && !colData.assignment.assessments[index].reliable){
-      toolTip += '\n' + 'Reliability: ' + Object.keys(colData.assignment.assessments[index].engagementFlags) + '\n';
+    const flags = colData.assignment.assessments[index].engagementFlags;
+    if(flags !== undefined && flags !== '' && !colData.assignment.assessments[index].reliable){
+      toolTip += '\n' + 'Reliability: ' + Object.keys(flags).map(_lowerCase).join(', ') + '\n';
     }
   } else if (colHeader === 'Word' && colData.scores?.swr?.standard) {
     toolTip += colData.scores?.swr?.support_level + '\n' + '\n';
