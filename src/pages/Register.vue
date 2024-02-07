@@ -1,3 +1,5 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+// eslint-disable-next-line vue/multi-word-component-names
 <!-- eslint-disable vue/valid-v-else -->
 <template>
   <div id="register-container">
