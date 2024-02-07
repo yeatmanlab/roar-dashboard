@@ -55,7 +55,7 @@ export const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
 
 /*
  *  Scored Tasks
- *  A list of tasks to be included
+ *  A list of tasks to be included in the generation of support levels
  */
 export const scoredTasks = ['swr', 'pa', 'sre'];
 
@@ -71,7 +71,7 @@ export const supportLevelColors = {
 
 /*
  *  Get Support Level
- *
+ *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
 export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
   let support_level = null;
