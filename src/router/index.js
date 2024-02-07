@@ -117,8 +117,8 @@ const routes = [
   // },
   // We don't support individual registration yet
   {
-    path: "/register",
-    name: "Register",
+    path: '/register',
+    name: 'Register',
     component: () => import('../pages/Register.vue'),
     children: [
       {
@@ -258,7 +258,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const store = useAuthStore();
 
-  const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent'];
+  const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent', 'Register'];
 
   // Check if user is signed in. If not, go to signin
   if (
