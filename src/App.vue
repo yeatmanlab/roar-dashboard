@@ -28,6 +28,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 import AppHead from '@/components/AppHead.vue';
 import { i18n } from '@/translations/i18n';
 import { useRoute } from 'vue-router';
+import { useRecaptchaProvider } from 'vue-recaptcha';
 
 const route = useRoute();
 const pageTitle = computed(() => {
@@ -36,6 +37,8 @@ const pageTitle = computed(() => {
   return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
 });
 const isAuthStoreReady = ref(false);
+
+useRecaptchaProvider();
 
 const navbarBlacklist = ref([
   'SignIn',

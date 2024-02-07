@@ -182,7 +182,20 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('../pages/RegisterUser.vue'),
+    component: () => import('../pages/Register.vue'),
+    children: [
+      {
+        name: 'Register',
+        path: '',
+        component: () => import('../components/auth/RegisterParent.vue'),
+      },
+      {
+        name: 'registerStudent',
+        path: 'student',
+        component: () => import('../components/auth/RegisterStudent.vue'),
+      },
+    ],
+    meta: { requiresGuest: true },
   },
   {
     path: '/register-students',
