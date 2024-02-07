@@ -4,7 +4,7 @@
       <section class="form-section flex lg:flex-row ">
         <div>
           <label for="firstName">First Name <span class="required p-1">*</span></label>
-          <InputText v-model="v$.firstName.$model" name="firstName"  :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
+          <PvInputText v-model="v$.firstName.$model" name="firstName"  :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
           <span v-if="v$.firstName.$error && submitted">
             <span v-for="(error, index) of v$.firstName.$errors" :key="index">
               <small class="p-error">{{ error.$message }}</small>
@@ -16,7 +16,7 @@
         </div>
         <div>
           <label for="lastName">Last Name <span class="required p-1">*</span></label>
-          <InputText v-model="v$.lastName.$model" name="lastName" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
+          <PvInputText v-model="v$.lastName.$model" name="lastName" :class="{ 'p-invalid': v$.firstName.$invalid && submitted }" aria-describedby="first-name-error"/>
           <span v-if="v$.lastName.$error && submitted">
             <span v-for="(error, index) of v$.lastName.$errors" :key="index">
               <small class="p-error">{{ error.$message }}</small>
@@ -31,7 +31,7 @@
       <section class="form-section flex lg:flex-row">
         <div class="p-input-icon-right">
           <label for="ParentEmail">Email <span class="required p-1">*</span></label>
-          <InputText
+          <PvInputText
             v-model="v$.ParentEmail.$model" 
             name="ParentEmail"
             :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }" 
@@ -50,7 +50,7 @@
         <div>
           <div>
             <label for="password">Password <span class="required p-1">*</span></label>
-            <Password v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggle-mask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></Password>
+            <PvPassword v-model="v$.password.$model" name="password" :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggle-mask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false"></PvPassword>
           </div>
           <span v-if="v$.password.$error && submitted">
             <span v-for="(error, index) of v$.password.$errors" :key="index">
@@ -65,10 +65,10 @@
         <div>
           <div>
             <label for="confirmPassword">Confirm Password <span class="required p-1">*</span></label>
-            <Password
+            <PvPassword
 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model" name="confirmPassword"
               :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggle-mask show-icon="pi pi-eye-slash" hide-icon="pi pi-eye" :feedback="false">
-            </Password>
+            </PvPassword>
           </div>
           <small v-if="(v$.confirmPassword.$invalid && submitted) || v$.confirmPassword.$pending.$response" class="p-error">
             Passwords must match
@@ -80,7 +80,7 @@
         <!-- Recaptcha + consent -->
         <ChallengeV3 v-model="response" action="submit">
           <div class="field-checkbox terms-checkbox">
-            <Checkbox
+            <PvCheckbox
 :id="`accept-${isRegistering ? 'register' : 'login'}`" v-model="v$.accept.$model" name="accept" binary
               :disabled="showConsent" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" @change="getConsent"/>
             <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and conditions<span class="required">*</span></label>
@@ -92,7 +92,7 @@
       </section>
       <ConsentModal v-if="showConsent" :consent-text="consentText" consent-type="consent" @accepted="handleConsentAccept" />
       <div class="form-submit">
-        <Button type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled"/>
+        <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled"/>
       </div>
     </form>
   </div>
