@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <p class="login-title" align="left">Register for ROAR</p>
-    <form @submit.prevent="handleFormSubmit(!v$.$invalid)" class="p-fluid">
+    <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <!--First / Last Name-->
       <div class="mt-4 name-container">
         <div>
@@ -17,7 +17,8 @@
       <div class="field mt-4">
         <div class="p-input-icon-right">
           <label for="username">Username or Email <span class="required">*</span></label>
-          <InputText v-model="v$.email.$model" name="username" :class="{ 'p-invalid': v$.email.$invalid && submitted }"
+          <InputText
+v-model="v$.email.$model" name="username" :class="{ 'p-invalid': v$.email.$invalid && submitted }"
             aria-describedby="email-error" />
         </div>
         <span v-if="v$.email.$error && submitted">
@@ -39,11 +40,13 @@
           </div>
         </div>
         <div v-if="!yearOnlyCheck">
-          <Calendar v-model="v$.dob.$model" view="date" dateFormat="mm/dd/yy" modelValue="string" showIcon
+          <Calendar
+v-model="v$.dob.$model" view="date" date-format="mm/dd/yy" model-value="string" show-icon
             :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
         </div>
         <div v-else>
-          <Calendar v-model="v$.dob.$model" view="year" dateFormat="yy" modelValue="string" showIcon
+          <Calendar
+v-model="v$.dob.$model" view="year" date-format="yy" model-value="string" show-icon
             :class="{ 'p-invalid': v$.dob.$invalid && submitted }" />
         </div>
         <small v-if="(v$.dob.$invalid && submitted) || v$.dob.$pending.$response" class="p-error">{{
@@ -52,7 +55,8 @@
       <!--Grade-->
       <div class="mt-4 mb-5">
         <label for="grade">Grade <span class="required">*</span></label>
-        <Dropdown v-model="v$.grade.$model" :options="gradeOptions" optionLabel="label" optionValue="value" name="grade"
+        <Dropdown
+v-model="v$.grade.$model" :options="gradeOptions" option-label="label" option-value="value" name="grade"
           :class="{ 'p-invalid': v$.grade.$invalid && submitted }" />
         <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{
           v$.grade.required.$message.replace("Value", "Grade") }}</small>
@@ -60,19 +64,20 @@
       <!--English Language Level-->
       <div class="mt-4 mb-5">
         <label for="ell">English Language Level</label>
-        <Dropdown v-model="v$.ell.$model" :options="eLLOptions" optionLabel="label" optionValue="value" name="ell" />
+        <Dropdown v-model="v$.ell.$model" :options="eLLOptions" option-label="label" option-value="value" name="ell" />
       </div>
       <!--Sex-->
       <div class="mt-4 mb-5">
         <label for="sex">Gender</label>
-        <Dropdown :options="sexOptions" optionLabel="label" optionValue="value" v-model="v$.sex.$model" name="sex" />
+        <Dropdown v-model="v$.sex.$model" :options="sexOptions" option-label="label" option-value="value" name="sex" />
       </div>
       <!--Password-->
       <div class="field mt-4 mb-5">
         <div>
           <label for="password">Password <span class="required">*</span></label>
-          <Password v-model="v$.password.$model" name="password"
-            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggleMask feedback>
+          <Password
+v-model="v$.password.$model" name="password"
+            :class="{ 'p-invalid': v$.password.$invalid && submitted }" toggle-mask feedback>
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -97,8 +102,9 @@
       <div class="field mt-4 mb-5">
         <div>
           <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-          <Password :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model"
-            name="confirmPassword" :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggleMask
+          <Password
+:id="`confirmPassword-${isRegistering ? 'register' : 'login'}`" v-model="v$.confirmPassword.$model"
+            name="confirmPassword" :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }" toggle-mask
             :feedback="false">
           </Password>
         </div>
@@ -108,8 +114,9 @@
       </div>
       <!--Accept Checkbox-->
       <div class="field-checkbox terms-checkbox">
-        <Checkbox :id="`accept-${isRegistering ? 'register' : 'login'}`" name="accept" value="Accept"
-          v-model="v$.accept.$model" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
+        <Checkbox
+:id="`accept-${isRegistering ? 'register' : 'login'}`" v-model="v$.accept.$model" name="accept"
+          value="Accept" :class="{ 'p-invalid': v$.accept.$invalid && submitted }" />
         <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }">I agree to the terms and
           conditions</label>
       </div>
@@ -122,14 +129,14 @@
 import { computed, reactive, ref } from "vue";
 import { required, sameAs } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
-import { useAuthStore } from "@/store/auth";
-import { isMobileBrowser } from "@/helpers";
+// import { useAuthStore } from "@/store/auth";
+// import { isMobileBrowser } from "@/helpers";
 
-const props = defineProps({
-  isRegistering: { type: Boolean, default: true }
-});
+// const props = defineProps({
+//   isRegistering: { type: Boolean, default: true }
+// });
 
-const authStore = useAuthStore();
+// const authStore = useAuthStore();
 
 // TODO: Include middle
 const state = reactive({
@@ -170,19 +177,19 @@ const handleFormSubmit = (isFormValid) => {
   // authStore.registerWithEmailAndPassword(state);
 };
 
-const resetForm = () => {
-  state.firstName = "";
-  state.lastName = "";
-  state.email = "";
-  state.password = "";
-  state.confirmPassword = "";
-  state.dob = "";
-  state.ell = "";
-  state.sex = "";
-  state.grade = "";
-  submitted.value = false;
-  yearOnlyCheck.value = false;
-};
+// const resetForm = () => {
+//   state.firstName = "";
+//   state.lastName = "";
+//   state.email = "";
+//   state.password = "";
+//   state.confirmPassword = "";
+//   state.dob = "";
+//   state.ell = "";
+//   state.sex = "";
+//   state.grade = "";
+//   submitted.value = false;
+//   yearOnlyCheck.value = false;
+// };
 const yearOnlyCheck = ref(false);
 
 // Dropdown Options

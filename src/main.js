@@ -91,10 +91,16 @@ import { i18n } from '@/translations/i18n.js';
 // https://www.npmjs.com/package/vue-country-flag-next
 import CountryFlag from 'vue-country-flag-next';
 
+import { VueRecaptchaPlugin } from 'vue-recaptcha';
+
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
+
+app.use(VueRecaptchaPlugin, {
+  v3SiteKey: '6Lf8ESUpAAAAAP6R4mi-4ZJO7aMGR6mppFV19YWW',
+});
 
 initSentry(app);
 
