@@ -231,7 +231,6 @@ import _find from 'lodash/find';
 import _head from 'lodash/head';
 import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
-import _filter from 'lodash/filter';
 import _pickBy from 'lodash/pickBy';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
@@ -246,11 +245,12 @@ import { pluralizeFirestoreCollection } from '@/helpers';
 import {
   taskDisplayNames,
   descriptionsByTaskId,
-  excludedTasks,
   supportLevelColors,
   getSupportLevel,
   tasksToDisplayGraphs,
   getRawScoreThreshold,
+  rawOnlyTasks,
+  scoredTasks,
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
@@ -530,8 +530,6 @@ const viewOptions = ref([
   { label: 'Raw Score', value: 'raw' },
 ]);
 
-const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
-
 const getPercentileScores = ({
   grade,
   assessment,
@@ -725,6 +723,12 @@ function getScoreKeys(row, grade) {
 
 const refreshing = ref(false);
 
+const shouldBeOutlined = (taskId) => {
+  if (scoredTasks.includes(taskId)) return false;
+  else if (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw') return true;
+  else return true;
+};
+
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
@@ -764,7 +768,7 @@ const columns = computed(() => {
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
         emptyTag: viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
         tagColor: `scores.${taskId}.color`,
-        tagOutlined: rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw',
+        tagOutlined: shouldBeOutlined(taskId),
       });
     }
   }
@@ -835,10 +839,7 @@ const tableData = computed(() => {
 
 const allTasks = computed(() => {
   if (tableData.value.length > 0) {
-    let ids = tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
-    return _filter(ids, (taskId) => {
-      return !excludedTasks.includes(taskId);
-    });
+    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
   } else return [];
 });
 
@@ -935,7 +936,7 @@ const runsByTaskId = computed(() => {
     }
   }
   return _pickBy(computedScores, (scores, taskId) => {
-    return !excludedTasks.includes(taskId);
+    return tasksToDisplayGraphs.includes(taskId);
   });
 });
 
