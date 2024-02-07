@@ -59,6 +59,17 @@ const scoreModes = [
   { name: 'Percentile', key: 'stdPercentile' },
 ];
 
+const getBinSize = (scoreMode, taskId) => {
+  if (scoreMode === 'Percentile') {
+    return 10;
+  } else if (scoreMode === 'Raw Score') {
+    if (taskId === 'pa') return 5;
+    else if (taskId === 'sre') return 10;
+    else if (taskId === 'swr') return 50;
+  }
+  return 10;
+};
+
 const getRangeLow = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
     return 0;
@@ -141,7 +152,7 @@ const distributionChartFacet = (taskId, runs) => {
       x: {
         field: `scores.${scoreMode.value.key}`,
         title: scoreMode.value.name === 'Percentile' ? `${scoreMode.value.name} Score` : `${scoreMode.value.name}`,
-        bin: { extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)] },
+        bin: { step: getBinSize(scoreMode.value.name, taskId), extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)] },
         sort: 'ascending',
         axis: {
           labelAngle: 0,
