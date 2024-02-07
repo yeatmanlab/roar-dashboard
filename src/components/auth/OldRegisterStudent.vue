@@ -132,9 +132,11 @@ import { useVuelidate } from "@vuelidate/core";
 // import { useAuthStore } from "@/store/auth";
 // import { isMobileBrowser } from "@/helpers";
 
-// const props = defineProps({
-//   isRegistering: { type: Boolean, default: true }
-// });
+const props = defineProps({
+  isRegistering: { type: Boolean, default: true }
+});
+
+console.log(props);
 
 // const authStore = useAuthStore();
 
