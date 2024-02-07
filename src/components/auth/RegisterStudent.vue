@@ -1,7 +1,6 @@
 <!-- eslint-disable vue/valid-v-for -->
 <template>
   <div class="card">
-    <!-- <p class="login-title" align="left">Register for ROAR</p> -->
     <form class="p-fluid">
       <div
         v-for="(student, index) in state.students"
@@ -353,7 +352,6 @@ const props = defineProps({
 console.log(props);
 
 const emit = defineEmits(["submit"]);
-// const students = ref([{}]);
 const state = reactive({
   students: [
     {
@@ -401,7 +399,6 @@ const rules = {
 };
 
 function addStudent() {
-  console.log("adding new student ", state);
   state.students.push({
     activationCode: "",
     studentUsername: "",
@@ -440,10 +437,8 @@ const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = (isFormValid) => {
-  console.log("about to admit: ", state);
   submitted.value = true;
   if (!isFormValid) {
-    console.log("form is invalid", isFormValid);
     return;
   }
   // format username as an email
@@ -454,7 +449,6 @@ const handleFormSubmit = (isFormValid) => {
       ...studentData,
     };
   });
-  console.log("student field sumitting ", computedStudents, isFormValid);
 
   emit("submit", computedStudents);
 };

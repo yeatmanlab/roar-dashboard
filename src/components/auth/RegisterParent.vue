@@ -102,15 +102,11 @@
 import { computed, reactive, ref, defineEmits } from "vue";
 import { required, sameAs, minLength, } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
-// import { useRouter } from "vue-router";
 import { useAuthStore } from "@/store/auth";
-// import { isMobileBrowser } from "@/helpers";
 import ConsentModal from "../ConsentModal.vue";
-// import _get from 'lodash/get'
-// import ChallengeV3 from "../admin/reCaptcha.vue"
 import { ChallengeV3 } from 'vue-recaptcha';
 
-// const router = useRouter()
+
 const authStore = useAuthStore()
 const isCaptchaverified = ref(null);
 
@@ -164,7 +160,6 @@ async function handleCheckCaptcha() {
     await new Promise(resolve => {
       // Simulate a delay to ensure the reCAPTCHA value is updated
       setTimeout(() => {
-        console.log("Recaptcha response:", response.value);
         resolve();
         handleCaptcha();
       }, 500); // You might adjust the delay time if needed
@@ -177,7 +172,6 @@ const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = (isFormValid) => {
-  console.log("about to admit: ", state)
   submitted.value = true
   if (!isFormValid) {
     return;
@@ -189,22 +183,11 @@ function handleCaptcha(){
   isCaptchaverified.value = response.value;
 }
 
-// const resetForm = () => {
-//   state.firstName = "";
-//   state.lastName = "";
-//   state.email = "";
-//   state.password = "";
-//   state.confirmPassword = "";
-//   submitted.value = false;
-// };
-
 const showConsent = ref(false);
 const consentText = ref("");
-// let consentVersion = "";
 
 async function handleConsentAccept() {
   state.accept = true;
-  // Need to create 'legal' object to send into the user submit object.
 }
 
 async function getConsent() {

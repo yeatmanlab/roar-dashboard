@@ -39,9 +39,6 @@
         </div>
       </div>
     </section>
-
-    <!-- <button @click="prevStep">Previous</button>
-    <button @click="nextStep">Next</button> -->
   </div>
 </template>
 
@@ -50,81 +47,23 @@ import Register from "../components/auth/RegisterParent.vue";
 import RegisterStudent from "../components/auth/RegisterStudent.vue";
 import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
 import { ref, onMounted, onBeforeUnmount, watch, toRaw } from "vue";
-// import { useQueryStore } from "@/store/query";
 import { useAuthStore } from "@/store/auth";
-// import { useToast } from "primevue/usetoast";
-// import { storeToRefs } from "pinia";
-// import VueRecaptcha from "vue-recaptcha";
-
-// import {useAuthStore} from "@/store/auth";
-// import Steps from 'primevue/steps';
+import router from "../router";
 
 const authStore = useAuthStore();
-// const { roarfirekit } = storeToRefs(authStore);
-// const toast = useToast();
 
 const activeIndex = ref(0); // Current active step
-// const items = ref([{ label: "Step 1" }, { label: "Step 2" }]);
 
 const parentInfo = ref(null);
 const studentInfo = ref(null);
 
-// function prevStep() {
-//   if (activeIndex.value > 0) {
-//     activeIndex.value--;
-//   }
-// }
-
-// function nextStep() {
-//   if (activeIndex.value < items.value.length - 1) {
-//     activeIndex.value++;
-//   }
-// }
 
 async function handleParentSubmit(data) {
-  console.log("Parent data: ", data);
   parentInfo.value = data;
   activeIndex.value=1;
-
-  // const SendParentObject = {
-  //   email: data.usernameOrEmail,
-  //   password: data.password,
-  //   UserData: {
-  //     name: {
-  //       first: data.firstName,
-  //       last: data.lastName,
-  //     },
-  //   },
-  //   children: [],
-  // };
-
-  // try {
-  //   await roarfirekit.value.createNewFamily(
-  //     SendParentObject.email,
-  //     SendParentObject.password,
-  //     SendParentObject.UserData
-  //   );
-
-  //   toast.add({
-  //     severity: "success",
-  //     summary: "Success",
-  //     detail: "Parent account created",
-  //     life: 3000,
-  //   });
-  // } catch (error) {
-  //   // Handle any potential errors here
-  //   console.error("Error creating parent account:", error);
-  //   toast.add({
-  //     severity: "error",
-  //     summary: "Error",
-  //     detail: "Failed to create parent account",
-  //     life: 3000,
-  //   });
-  // }
 }
 
-function handleStudentSubmit(data) {
-  console.log("Student data: ", data);
+async function handleStudentSubmit(data) {
   studentInfo.value = data;
 }
 
@@ -135,8 +74,6 @@ watch(
       const rawParentInfo = toRaw(newParentInfo);
       const rawStudentInfo = toRaw(newStudentInfo);
       console.log("both student and parent info present:");
-      console.log("parent", rawParentInfo);
-      console.log("student", rawStudentInfo);
       const parentUserData = {
         name: {
           first: rawParentInfo.firstName,
@@ -173,6 +110,7 @@ watch(
         studentSendObject
       );
       console.log("firekit function called");
+      router.push({name: "SignIn"})
     }
   }
 );
