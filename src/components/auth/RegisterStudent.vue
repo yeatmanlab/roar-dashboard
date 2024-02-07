@@ -19,7 +19,7 @@
             <label for="activationCode"
               >Activation code <span class="required">*</span></label
             >
-            <InputText
+            <PvInputText
               v-model="student.activationCode"
               name="activationCode"
               :class="{
@@ -51,7 +51,7 @@
             <label for="studentUsername"
               >Student Username <span class="required">*</span></label
             >
-            <InputText
+            <PvInputText
               v-model="student.studentUsername"
               name="studentUsername"
               :class="{
@@ -79,7 +79,7 @@
               <label for="password"
                 >Password <span class="required">*</span></label
               >
-              <Password
+              <PvPassword
                 v-model="student.password"
                 name="password"
                 :class="{
@@ -91,7 +91,7 @@
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
-              ></Password>
+              ></PvPassword>
             </div>
             <span
               v-if="
@@ -116,7 +116,7 @@
               <label for="confirmPassword"
                 >Confirm Password <span class="required">*</span></label
               >
-              <Password
+              <PvPassword
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
                 name="confirmPassword"
@@ -125,7 +125,7 @@
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
-              ></Password>
+              ></PvPassword>
             </div>
             <span v-if="isPasswordMismatch(index) && submitted" class="p-error">
               Passwords must match
@@ -138,7 +138,7 @@
             <div class="flex justify-content-between">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
-                <Checkbox
+                <PvCheckbox
                   v-model="yearOnlyCheck"
                   :binary="true"
                   name="yearOnly"
@@ -147,16 +147,15 @@
               </div>
             </div>
             <div v-if="!yearOnlyCheck">
-              <Calendar
+              <pvCalendar
                 v-model="student.dob"
                 view="date"
                 date-format="mm/dd/yy"
-                model-value="string"
                 show-icon
               />
             </div>
             <div v-else>
-              <Calendar
+              <PvCalendar
                 v-model="student.dob"
                 view="year"
                 date-format="yy"
@@ -170,12 +169,7 @@
                 submitted
               "
               class="p-error"
-              >{{
-                v$.students.$each.$response.$errors[index].dob.$message.replace(
-                  "Value",
-                  "Date of Birth"
-                )
-              }}</small
+              >{{v$.students.$each.$response.$errors[index].dob.$message.replace("Value", "Date of Birth")}}</small
             >
           </div>
         </section>
@@ -183,7 +177,7 @@
           <!--Grade-->
           <div>
             <label for="grade">Grade <span class="required">*</span></label>
-            <Dropdown
+            <PvDropdown
               v-model="student.grade"
               :options="gradeOptions"
               option-label="label"
@@ -193,13 +187,13 @@
             <!-- <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{ v$.grade.required.$message.replace("Value", "Grade") }}</small> -->
           </div>
         </section>
-        <Accordion>
-          <AccordionTab header="Optional Info">
+        <PvAccordion>
+          <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
               <div>
                 <label for="firstName">First Name </label>
-                <InputText
+                <PvInputText
                   v-model="student.firstName"
                   name="firstName"
                   :class="{
@@ -213,13 +207,13 @@
               <!-- Middle Name -->
               <div>
                 <label for="middleName">Middle Name </label>
-                <InputText v-model="student.middleName" name="middleName" />
+                <PvInputText v-model="student.middleName" name="middleName" />
               </div>
             </section>
             <section class="form-section">
               <div>
                 <label for="lastName">Last Name </label>
-                <InputText
+                <PvInputText
                   v-model="student.lastName"
                   name="lastName"
                   :class="{
@@ -235,7 +229,7 @@
               <!--English Language Level-->
               <div class="mt-4 mb-5">
                 <label for="ell">English as a Second Language</label>
-                <Dropdown
+                <PvDropdown
                   v-model="student.ell"
                   :options="ellOptions"
                   option-label="label"
@@ -246,7 +240,7 @@
               <!--Sex-->
               <div class="mt-4 mb-5">
                 <label for="sex">Gender </label>
-                <Dropdown
+                <PvDropdown
                   v-model="student.gender"
                   :options="genderOptions"
                   option-label="label"
@@ -259,7 +253,7 @@
               <!-- Free-Reduced Lunch -->
               <div class="mt-4 mb-5">
                 <label for="stateId">Free-Reduced Lunch </label>
-                <Dropdown
+                <PvDropdown
                   v-model="student.freeReducedLunch"
                   :options="frlOptions"
                   option-label="label"
@@ -270,7 +264,7 @@
               <!-- IEP Status -->
               <div class="mt-4 mb-5">
                 <label for="stateId">IEP Status</label>
-                <Dropdown
+                <PvDropdown
                   v-model="student.IEPStatus"
                   :options="IEPOptions"
                   option-label="label"
@@ -283,7 +277,7 @@
               <!-- Race -->
               <div class="mt-4 mb-5">
                 <label for="race">Race </label>
-                <AutoComplete
+                <PvAutoComplete
                   v-model="student.race"
                   multiple
                   :suggestions="raceOptions"
@@ -296,7 +290,7 @@
                 <label for="hispanicEthnicity"
                   >Hispanic or Latino Ethnicity
                 </label>
-                <Dropdown
+                <PvDropdown
                   v-model="student.hispanicEthnicity"
                   :options="ethnicityOptions"
                   option-label="label"
@@ -309,7 +303,7 @@
               <!-- Home Language -->
               <div class="mt-4 mb-5">
                 <label for="stateId">Home Language </label>
-                <AutoComplete
+                <PvAutoComplete
                   v-model="student.homeLanguage"
                   multiple
                   :suggestions="languageOptions"
@@ -318,26 +312,26 @@
                 />
               </div>
             </section>
-          </AccordionTab>
-        </Accordion>
+          </PvAccordionTab>
+        </PvAccordion>
         <section class="form-section-button">
-          <button
+          <PvButton
             v-if="index !== 0"
             class="p-button p-component"
             @click="deleteStudentForm(student)"
           >
             Delete Student
-          </button>
+          </PvButton>
         </section>
       </div>
     </form>
     <div class="form-section-button2">
-      <button class="p-button p-component" @click="addStudent()">
+      <PvButton class="p-button p-component" @click="addStudent()">
         Add another student
-      </button>
+      </PvButton>
     </div>
     <section class="form-submit">
-      <Button
+      <PvButton
         type="submit"
         label="Submit"
         class="submit-button"
@@ -352,11 +346,11 @@ import { reactive, ref, defineEmits } from "vue";
 import { required, minLength, helpers } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 
-// import {RegisterStudentSingle} from "../auth/RegisterStudentSingle.vue"
+const props = defineProps({
+  isRegistering: { type: Boolean, default: true },
+});
 
-// const props = defineProps({
-//   isRegistering: { type: Boolean, default: true },
-// });
+console.log(props);
 
 const emit = defineEmits(["submit"]);
 // const students = ref([{}]);
@@ -464,25 +458,6 @@ const handleFormSubmit = (isFormValid) => {
 
   emit("submit", computedStudents);
 };
-
-// const resetForm = () => {
-//   (state.activationCode = ""), (state.firstName = "");
-//   state.lastName = "";
-//   state.middleName;
-//   state.password = "";
-//   state.confirmPassword = "";
-//   state.dob = "";
-//   state.grade = "";
-//   state.ell = "";
-//   state.gender = "";
-//   state.freeReducedLunch = "";
-//   state.IEPStatus = "";
-//   state.race = [];
-//   state.hispanicEthnicity = "";
-//   state.homeLanguage = [];
-//   submitted.value = false;
-//   yearOnlyCheck.value = false;
-// };
 const yearOnlyCheck = ref(false);
 
 const searchRaces = (event) => {

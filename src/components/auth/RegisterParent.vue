@@ -114,10 +114,11 @@ import { ChallengeV3 } from 'vue-recaptcha';
 const authStore = useAuthStore()
 const isCaptchaverified = ref(null);
 
-// const props = defineProps({
-//   isRegistering: {type: Boolean, default: true},
+const props = defineProps({
+  isRegistering: {type: Boolean, default: true},
+});
 
-// });
+console.log(props);
 
 const emit = defineEmits(['submit']);
 
