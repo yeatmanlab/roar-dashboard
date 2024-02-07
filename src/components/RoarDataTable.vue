@@ -103,7 +103,7 @@
             :frozen="col.pinned"
             align-frozen="left"
             :class="{ 'filter-button-override': hideFilterButtons }"
-            :filter-menu-style="enableFilter(col.field) ? '' : 'display: none;'"
+            :filter-menu-style="enableFilter(col) ? '' : 'display: none;'"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
             <template #header>
@@ -187,7 +187,7 @@
               </div>
             </template>
             <template v-if="col.dataType" #filtericon>
-              <i v-if="enableFilter(col.field)" class="pi pi-filter" />
+              <i v-if="enableFilter(col)" class="pi pi-filter" />
             </template>
             <template v-if="col.dataType" #filter="{ filterModel }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
@@ -396,12 +396,22 @@ _forEach(computedColumns.value, (column) => {
 const refOptions = ref(options);
 const refFilters = ref(filters);
 
-const enableFilter = (field) => {
+const enableFilter = (column) => {
+  // If column is specified to have filtering disabled
+  if (_get(column, 'filter') === false) return false;
+
+  // If the field is not defined, turn off filtering
+  const field = column.field;
   if (!field) return false;
+
+  // If the field is a score, and the taskId is on
+  //   the filter blacklist, turn off filtering
   const path = field.split('.');
   if (path[0] === 'scores') {
     if (taskFilterBlacklist.includes(path[1])) return false;
   }
+
+  // Otherwise, enable filtering
   return true;
 };
 
