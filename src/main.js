@@ -111,7 +111,7 @@ app.use(pinia);
 app.use(router);
 app.use(VueGoogleMaps, {
   load: {
-    key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
+    key: '6LefrGopAAAAADcrBVk9kAMxdTF3_0v7Ydc3UGUe',
     libraries: 'places',
   },
 });
