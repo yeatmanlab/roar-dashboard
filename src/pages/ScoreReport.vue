@@ -903,7 +903,7 @@ const runsByTaskId = computed(() => {
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
     const rawScore = _get(scores, rawScoreByTaskId(taskId));
-    const grade = parseGrade(grade);
+    const grade = parseGrade(user?.data?.grade);
     if (grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
