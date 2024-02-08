@@ -12,7 +12,7 @@
           </div>
         </section>
         <!-- Student Username -->
-        <section class="form-section">
+        <!-- <section class="form-section">
           <div class="p-input-icon-right">
             <label for="activationCode"
               >Activation code <span class="required">*</span></label
@@ -43,7 +43,7 @@
               }}</small>
             </span>
           </span>
-        </section>
+        </section> -->
         <section class="form-section">
           <div class="p-input-icon-right">
             <label for="studentUsername"
@@ -376,7 +376,7 @@ const state = reactive({
 const rules = {
   students: {
     $each: helpers.forEach({
-      activationCode: { required },
+      // activationCode: { required },
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
