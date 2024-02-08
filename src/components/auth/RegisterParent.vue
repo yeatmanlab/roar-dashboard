@@ -34,6 +34,7 @@
           <PvInputText
             v-model="v$.ParentEmail.$model" 
             name="ParentEmail"
+            type= "email"
             :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }" 
             aria-describedby="username-or-email-error"
           />
@@ -130,12 +131,13 @@ const passwordRef = computed(() => state.password);
 
 
 
-const ParentEmail = (value) => {
-  if (!value.includes('@')) return true;
+// const ParentEmail = (value) => {
+//   if (!value.includes('@')) return true;
 
-  const emailRegex = /^(?!.*@.*@)[a-zA-Z0-9]+([._]?[a-zA-Z0-9]+)*(@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,7})+)?$/;
-  return emailRegex.test(value);
-} 
+//   // const emailRegex = /^(?!.*@.*@)[a-zA-Z0-9]+([._]?[a-zA-Z0-9]+)*(@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,7})+)?$/;
+//   // const emailRegex = new RegExp(/^[A-Za-z0-9_!#$%&'*+\/=?`{|}~^.-]+@[A-Za-z0-9.-]+$/, "gm");
+//   return emailRegex.test(value);
+// } 
 
 const rules = {
   // activationCode: { required },
@@ -143,7 +145,6 @@ const rules = {
   lastName: { required },
   ParentEmail: { 
     required, 
-    ParentEmail
   },
   password: { 
     required,

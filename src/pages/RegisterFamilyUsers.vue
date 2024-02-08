@@ -1,6 +1,4 @@
-<!-- eslint-disable vue/multi-word-component-names -->
-// eslint-disable-next-line vue/multi-word-component-names
-<!-- eslint-disable vue/valid-v-else -->
+
 <template>
   <div id="register-container">
     <section id="register">
@@ -19,7 +17,7 @@
             <Register @submit="handleParentSubmit($event)"/>
           </router-view>
         </div>
-        <div v-else="activeIndex === 1">
+        <div v-else>
           <router-view name="registerStudent">
             <div class="register-title">
               <h1 align="center">Register your child</h1>
