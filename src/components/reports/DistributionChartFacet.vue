@@ -1,21 +1,17 @@
 <template>
-  <div class="view-by-wrapper mx-2">
-    <div class="flex uppercase text-xs font-light">view scores by</div>
-    <PvSelectButton
-      v-model="scoreMode"
-      :allow-empty="false"
-      class="flex flex-row my-2 select-button"
-      :options="scoreModes"
-      option-label="name"
-      @change="handleModeChange"
-    />
+  <div class="distribution-wrapper">
+    <div :id="`roar-distribution-chart-${taskId}`"></div>
+    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2">
+      <div class="flex uppercase text-xs font-light">view scores by</div>
+      <PvSelectButton
+v-model="scoreMode" :allow-empty="false" class="flex flex-row my-2 select-button"
+        :options="scoreModes" option-label="name" @change="handleModeChange" />
+    </div>
   </div>
-  <!-- </div> -->
-  <div :id="`roar-distribution-chart-${taskId}`"></div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
@@ -51,6 +47,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  minGradeByRuns: {
+    type: Number,
+    required: true
+  }
 });
 
 const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
@@ -92,7 +92,19 @@ const getRangeHigh = (scoreMode, taskId) => {
   return 100;
 };
 
-const distributionChartFacet = (taskId, runs) => {
+
+// With Percentile View, only display runs under grade 6
+const computedRuns = computed(() => {
+  if (scoreMode.value.name === 'Percentile') {
+    return props.runs.filter((run) =>
+      run.grade < 6
+    );
+  }
+  return props.runs;
+});
+
+
+const distributionChartFacet = (taskId) => {
   return {
     background: null,
     title: {
@@ -102,7 +114,7 @@ const distributionChartFacet = (taskId, runs) => {
       fontSize: 18,
     },
     data: {
-      values: runs,
+      values: computedRuns.value,
     },
     mark: 'bar',
     height: 50,
@@ -196,6 +208,7 @@ const draw = async () => {
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
 
+// Update Distribution Graph on external facetMode change
 watch(
   () => props.facetMode,
   () => {
@@ -203,6 +216,15 @@ watch(
   },
 );
 
+// Update Distribution Graph on computedRuns recalculation
+watch(
+  () => computedRuns,
+  () => {
+    draw();
+  },
+);
+
+// Update Distribution Graph on internal scoreMode change
 const handleModeChange = () => {
   draw();
 };
@@ -223,7 +245,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  align-items: flex-end;
+  align-items: center;
   height: 100%;
 }
 </style>

@@ -1,5 +1,6 @@
 <template>
-  <div class="view-by-wrapper mx-2">
+  <div :id="`roar-distribution-chart-support-${taskId}`"></div>
+  <div class="view-by-wrapper my-2">
     <div class="flex uppercase text-xs font-light">view support levels by</div>
     <PvSelectButton
       v-model="xMode"
@@ -10,7 +11,6 @@
       @change="handleXModeChange"
     />
   </div>
-  <div :id="`roar-distribution-chart-support-${taskId}`"></div>
 </template>
 
 <script setup>

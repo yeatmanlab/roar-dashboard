@@ -27,8 +27,8 @@
         option-label="name"
       />
     </div>
-    <div class="chart-wrapper">
-      <div>
+    <div class="chart-wrapper align-items-center">
+      <div class="h-full flex flex-column align-items-center">
         <DistributionChartSupport
           :initialized="initialized"
           :administration-id="administrationId"
@@ -39,7 +39,7 @@
           :facet-mode="facetMode"
         />
       </div>
-      <div>
+      <div class="h-full flex">
         <DistributionChartFacet
           :initialized="initialized"
           :administration-id="administrationId"
@@ -48,6 +48,7 @@
           :task-id="taskId"
           :runs="runs"
           :facet-mode="facetMode"
+          :min-grade-by-runs="minGradeByRuns"
         />
       </div>
     </div>
@@ -82,7 +83,7 @@ import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
 import { taskDisplayNames, tasksToDisplayGraphs } from '@/helpers/reports.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
@@ -125,6 +126,10 @@ const facetModes = [
   { name: 'Grade', key: 'grade' },
   { name: 'School', key: 'schoolName' },
 ];
+
+const minGradeByRuns = computed(() => {
+  return Math.min(...props.runs.map((run) => run.grade));
+});
 
 let tasksInfoById = {
   swr: {
@@ -196,6 +201,7 @@ let tasksInfoById = {
 <style>
 .chart-wrapper {
   display: flex;
+  height: 100%;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-around;
