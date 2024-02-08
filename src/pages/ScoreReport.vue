@@ -912,7 +912,8 @@ const runsByTaskId = computed(() => {
     } else {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
-    const grade = user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade);
+    const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
+    const grade = gradeZero.includes(user?.data?.grade?.toLowerCase()) ? 0 : parseInt(user?.data?.grade);
     const { support_level } = getSupportLevel(grade, percentScore, rawScore, taskId);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
