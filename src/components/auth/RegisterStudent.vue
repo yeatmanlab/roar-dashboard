@@ -1,10 +1,9 @@
-<!-- eslint-disable vue/valid-v-for -->
 <template>
   <div class="card">
     <form class="p-fluid">
       <div
-        v-for="(student, index) in state.students"
-        :key="index"
+        v-for="(student, outerIndex) in state.students"
+        :key="outerIndex"
         class="student-form-border"
       >
         <section class="form-section">
@@ -23,7 +22,7 @@
               name="activationCode"
               :class="{
                 'p-invalid':
-                  v$.students.$each.$response.$data[index].activationCode
+                  v$.students.$each.$response.$data[index]?.activationCode
                     .$invalid && submitted,
               }"
               aria-describedby="activation-code-error"
@@ -31,13 +30,13 @@
           </div>
           <span
             v-if="
-              v$.students.$each.$response.$data[index].activationCode
+              v$.students.$each.$response.$data[index]?.activationCode
                 .$invalid && submitted
             "
           >
             <span
-              v-for="error in v$.students.$each.$response.$errors[index].activationCode"
-              :key="index"
+              v-for="(error, innerIndex) in v$.students.$each.$response.$errors[index]?.activationCode"
+              :key="`error-${outerIndex}-${innerIndex}`"
             >
               <small class="p-error">{{
                 error.$message.replace("Value", "Activation Code")
@@ -55,20 +54,20 @@
               name="studentUsername"
               :class="{
                 'p-invalid':
-                  v$.students.$each.$response.$data[index].studentUsername
+                  v$.students.$each.$response.$data[index]?.studentUsername
                     .$invalid && submitted,
               }"
-              aria-describedby="username-or-email-error"
+              aria-describedby="username-error"
             />
           </div>
           <span
             v-if="
-              v$.students.$each.$response.$data[index].studentUsername
+              v$.students.$each.$response.$data[index]?.studentUsername
                 .$invalid && submitted
             "
             class="p-error"
           >
-            <small class="p-error">Please enter a valid email address.</small>
+            <small class="p-error">Please enter a valid username.</small>
           </span>
         </section>
         <!-- Password -->
@@ -83,7 +82,7 @@
                 name="password"
                 :class="{
                   'p-invalid':
-                    v$.students.$each.$response.$data[index].password
+                    v$.students.$each.$response.$data[index]?.password
                       .$invalid && submitted,
                 }"
                 toggle-mask
@@ -94,14 +93,13 @@
             </div>
             <span
               v-if="
-                v$.students.$each.$response.$data[index].password.$invalid &&
+                v$.students.$each.$response.$data[index]?.password.$invalid &&
                 submitted
               "
             >
               <span
-                v-for="error in v$.students.$each.$response.$errors[index]
-                  .password"
-                :key="index"
+                v-for="(error, innerIndex2)  in v$.students.$each.$response.$errors[index]?.password"
+                :key="`error-${outerIndex}-${innerIndex2}`"
               >
                 <small class="p-error">{{
                   error.$message.replace("Value", "Password")
@@ -164,11 +162,11 @@
             </div>
             <small
               v-if="
-                v$.students.$each.$response.$data[index].dob.$invalid &&
+                v$.students.$each.$response.$data[index]?.dob.$invalid &&
                 submitted
               "
               class="p-error"
-              >{{v$.students.$each.$response.$errors[index].dob.$message.replace("Value", "Date of Birth")}}</small
+              >{{v$.students.$each.$response.$errors[index]?.dob.$message.replace("Value", "Date of Birth")}}</small
             >
           </div>
         </section>
@@ -197,7 +195,7 @@
                   name="firstName"
                   :class="{
                     'p-invalid':
-                      v$.students.$each.$response.$data[index].firstName
+                      v$.students.$each.$response.$data[index]?.firstName
                         .$invalid,
                   }"
                   aria-describedby="first-name-error"
@@ -217,7 +215,7 @@
                   name="lastName"
                   :class="{
                     'p-invalid':
-                      v$.students.$each.$response.$data[index].lastName
+                      v$.students.$each.$response.$data[index]?.lastName
                         .$invalid,
                   }"
                   aria-describedby="first-name-error"
@@ -428,7 +426,7 @@ function deleteStudentForm(student) {
 }
 function isPasswordMismatch(index) {
   return (
-    state.students[index].password !== state.students[index].confirmPassword
+    state.students[index]?.password !== state.students[index]?.confirmPassword
   );
 }
 
