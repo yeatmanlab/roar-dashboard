@@ -4,8 +4,13 @@
     <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2">
       <div class="flex uppercase text-xs font-light">view scores by</div>
       <PvSelectButton
-v-model="scoreMode" :allow-empty="false" class="flex flex-row my-2 select-button"
-        :options="scoreModes" option-label="name" @change="handleModeChange" />
+        v-model="scoreMode"
+        :allow-empty="false"
+        class="flex flex-row my-2 select-button"
+        :options="scoreModes"
+        option-label="name"
+        @change="handleModeChange"
+      />
     </div>
   </div>
 </template>
@@ -49,8 +54,8 @@ const props = defineProps({
   },
   minGradeByRuns: {
     type: Number,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
@@ -92,13 +97,10 @@ const getRangeHigh = (scoreMode, taskId) => {
   return 100;
 };
 
-
 // With Percentile View, only display runs under grade 6
 const computedRuns = computed(() => {
   if (scoreMode.value.name === 'Percentile') {
-    return props.runs.filter((run) =>
-      run.grade < 6
-    );
+    return props.runs.filter((run) => run.grade < 6);
   }
   return props.runs;
 });
@@ -156,7 +158,10 @@ const distributionChartFacet = (taskId) => {
       x: {
         field: `scores.${scoreMode.value.key}`,
         title: scoreMode.value.name === 'Percentile' ? `${scoreMode.value.name} Score` : `${scoreMode.value.name}`,
-        bin: { step: getBinSize(scoreMode.value.name, taskId), extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)] },
+        bin: {
+          step: getBinSize(scoreMode.value.name, taskId),
+          extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)],
+        },
         sort: 'ascending',
         axis: {
           labelAngle: 0,
