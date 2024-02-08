@@ -8,7 +8,7 @@
       >
         <section class="form-section">
           <div class="p-input-icon-right">
-            <label for="student">Student {{ index + 1 }}</label>
+            <label for="student">Student {{ outerIndex + 1 }}</label>
           </div>
         </section>
         <!-- Student Username -->
@@ -22,7 +22,7 @@
               name="activationCode"
               :class="{
                 'p-invalid':
-                  v$.students.$each.$response.$data[index]?.activationCode
+                  v$.students.$each.$response.$data[outerIndex].activationCode
                     .$invalid && submitted,
               }"
               aria-describedby="activation-code-error"
@@ -30,12 +30,12 @@
           </div>
           <span
             v-if="
-              v$.students.$each.$response.$data[index]?.activationCode
+              v$.students.$each.$response.$data[outerIndex].activationCode
                 .$invalid && submitted
             "
           >
             <span
-              v-for="(error, innerIndex) in v$.students.$each.$response.$errors[index]?.activationCode"
+              v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
               :key="`error-${outerIndex}-${innerIndex}`"
             >
               <small class="p-error">{{
@@ -54,7 +54,7 @@
               name="studentUsername"
               :class="{
                 'p-invalid':
-                  v$.students.$each.$response.$data[index]?.studentUsername
+                  v$.students.$each.$response.$data[outerIndex].studentUsername
                     .$invalid && submitted,
               }"
               aria-describedby="username-error"
@@ -62,7 +62,7 @@
           </div>
           <span
             v-if="
-              v$.students.$each.$response.$data[index]?.studentUsername
+              v$.students.$each.$response.$data[outerIndex].studentUsername
                 .$invalid && submitted
             "
             class="p-error"
@@ -82,7 +82,7 @@
                 name="password"
                 :class="{
                   'p-invalid':
-                    v$.students.$each.$response.$data[index]?.password
+                    v$.students.$each.$response.$data[outerIndex].password
                       .$invalid && submitted,
                 }"
                 toggle-mask
@@ -93,12 +93,12 @@
             </div>
             <span
               v-if="
-                v$.students.$each.$response.$data[index]?.password.$invalid &&
+                v$.students.$each.$response.$data[outerIndex].password.$invalid &&
                 submitted
               "
             >
               <span
-                v-for="(error, innerIndex2)  in v$.students.$each.$response.$errors[index]?.password"
+                v-for="(error, innerIndex2)  in v$.students.$each.$response.$errors[outerIndex].password"
                 :key="`error-${outerIndex}-${innerIndex2}`"
               >
                 <small class="p-error">{{
@@ -117,14 +117,14 @@
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
                 name="confirmPassword"
-                :class="{ 'p-invalid': isPasswordMismatch(index) && submitted }"
+                :class="{ 'p-invalid': isPasswordMismatch(outerIndex) && submitted }"
                 toggle-mask
                 show-icon="pi pi-eye-slash"
                 hide-icon="pi pi-eye"
                 :feedback="false"
               ></PvPassword>
             </div>
-            <span v-if="isPasswordMismatch(index) && submitted" class="p-error">
+            <span v-if="isPasswordMismatch(outerIndex) && submitted" class="p-error">
               Passwords must match
             </span>
           </div>
@@ -162,11 +162,11 @@
             </div>
             <small
               v-if="
-                v$.students.$each.$response.$data[index]?.dob.$invalid &&
+                v$.students.$each.$response.$data[outerIndex].dob.$invalid &&
                 submitted
               "
               class="p-error"
-              >{{v$.students.$each.$response.$errors[index]?.dob.$message.replace("Value", "Date of Birth")}}</small
+              >{{v$.students.$each.$response.$errors[outerIndex].dob.$message.replace("Value", "Date of Birth")}}</small
             >
           </div>
         </section>
