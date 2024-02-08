@@ -103,7 +103,6 @@ const computedRuns = computed(() => {
   return props.runs;
 });
 
-
 const distributionChartFacet = (taskId) => {
   return {
     background: null,
@@ -148,17 +147,10 @@ const distributionChartFacet = (taskId) => {
       },
 
       color: {
-        field: `scores.${scoreMode.value.key}`,
-        scheme: 'blues',
-        type: 'quantitative',
+        field: `tag_color`,
+        type: 'nominal',
         legend: null,
-        scale: {
-          range:
-            scoreMode.value.name === 'Percentile'
-              ? ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green']
-              : ['#ADD8E6', '#000080'],
-          domain: scoreMode.value.name === 'Percentile' ? [0, 45, 70, 100] : '',
-        },
+        scale: null,
       },
 
       x: {

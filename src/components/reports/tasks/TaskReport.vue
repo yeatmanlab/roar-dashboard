@@ -128,7 +128,7 @@ const facetModes = [
 ];
 
 const minGradeByRuns = computed(() => {
-  return Math.min(...props.runs.map((run) => run.grade));
+  return Math.min(...props.runs.filter(run => run.scores.rawScore || run.scores.stdPercentile).map((run) => run.grade));
 });
 
 let tasksInfoById = {
