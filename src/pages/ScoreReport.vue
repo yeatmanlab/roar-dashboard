@@ -345,7 +345,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = parseLowGrade(school.lowGrade) + ' ' + school.name;
+      acc[school.id] = parseGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -894,11 +894,9 @@ function rawScoreByTaskId(taskId) {
   return 'roarScore';
 }
 
-const parseLowGrade = (grade) => {
-  if (grade === 'PreKindergarten' || grade === 'Kindergarten') return 0;
-  else {
-    return parseInt(grade);
-  }
+const parseGrade = (grade) => {
+  const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
+  return gradeZero.includes(grade?.toLowerCase()) ? 0 : parseInt(grade);
 };
 
 const runsByTaskId = computed(() => {
@@ -907,16 +905,16 @@ const runsByTaskId = computed(() => {
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
     const rawScore = _get(scores, rawScoreByTaskId(taskId));
-    if (user?.data?.grade >= 6) {
+    const grade = parseGrade(user?.data?.grade);
+    if (grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
-    const grade = user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade);
-    const { support_level } = getSupportLevel(grade, percentScore, rawScore, taskId);
+    const { support_level, tag_color } = getSupportLevel(grade, percentScore, rawScore, taskId);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
-      grade: user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade),
+      grade: grade,
       scores: {
         ...scores,
         support_level: support_level,
@@ -928,6 +926,7 @@ const runsByTaskId = computed(() => {
         ...user.data,
         schoolName: schoolsDict.value[user?.data?.schools?.current[0]],
       },
+      tag_color: tag_color,
     };
     if (run.taskId in computedScores) {
       computedScores[run.taskId].push(run);
@@ -1106,6 +1105,7 @@ onMounted(async () => {
     align-items: center;
   }
 }
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }
