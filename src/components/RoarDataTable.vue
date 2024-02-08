@@ -95,7 +95,7 @@
             :key="col.field + '_' + index"
             :field="col.field"
             :data-type="col.dataType"
-            :sortable="currentFilter.length === 0 && col.sort !== false"
+            :sortable="col.sort !== false"
             :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
             :show-filter-operator="col.allowMultipleFilters === true"
             :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
@@ -185,6 +185,11 @@
               <div v-else>
                 {{ _get(colData, col.field) }}
               </div>
+            </template>
+            <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
+              <i v-if="!sorted && currentSort.length === 0 && !scoreFilterApplied" class="pi pi-sort-alt ml-2" />
+              <i v-if="sorted && sortOrder === 1 && !scoreFilterApplied" class="pi pi-sort-amount-down-alt ml-2" />
+              <i v-else-if="sorted && sortOrder === -1 && !scoreFilterApplied" class="pi pi-sort-amount-up-alt ml-2" />
             </template>
             <template v-if="col.dataType" #filtericon>
               <i v-if="enableFilter(col)" class="pi pi-filter" />
@@ -303,8 +308,17 @@ const computedColumns = computed(() => {
     return _find(props.columns, (pcol) => pcol.header === col.header);
   });
 });
+const currentSort = ref([]);
 const currentFilter = ref([]);
 const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value) || !props.allowFiltering);
+const scoreFilterApplied = computed(() => {
+  const scoreFilter = _find(currentFilter.value, (filter) => {
+    if (filter.split('.')[0] === 'scores') {
+      return true;
+    } else return false;
+  });
+  return Boolean(scoreFilter);
+});
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -516,6 +530,7 @@ const onPage = (event) => {
   emit('page', event);
 };
 const onSort = (event) => {
+  currentSort.value = _get(event, 'multiSortMeta') ?? [];
   emit('sort', event);
 };
 const onFilter = (event) => {
