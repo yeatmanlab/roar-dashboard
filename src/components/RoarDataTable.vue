@@ -250,7 +250,6 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _lowerCase from 'lodash/lowerCase';
-import { taskFilterBlacklist } from '@/helpers/reports';
 import { scoredTasks } from '@/helpers/reports';
 
 /*
