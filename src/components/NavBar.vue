@@ -18,7 +18,7 @@
           </PvMenu>
         </div>
         <router-link :to="{ name: 'SignOut' }" class="signout-button">
-          <PvButton class="no-underline">Sign Out</PvButton>
+          <PvButton data-cy="button-sign-out" class="no-underline">Sign Out</PvButton>
         </router-link>
       </div>
     </nav>
