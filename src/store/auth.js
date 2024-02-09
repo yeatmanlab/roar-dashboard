@@ -163,6 +163,9 @@ export const useAuthStore = () => {
       async syncCleverOrgs() {
         return this.roarfirekit.syncCleverOrgs(false);
       },
+      async createLevanteUsers(users) {
+        return this.roarfirekit.createLevanteUsersWithEmailPassword(users);
+      }
       // Used for requesting access when user doesn't have access to page
       // TODO: punt- thinking about moving to a ticket system instead of this solution.
       // async requestAccess() {

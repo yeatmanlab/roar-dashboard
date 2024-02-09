@@ -67,13 +67,16 @@ const authWithGoogle = () => {
   if (isMobileBrowser()) {
     authStore.signInWithGoogleRedirect();
   } else {
-    // authStore.signInWithGoogleRedirect();
+    console.log('Hit else');
     authStore
       .signInWithGooglePopup()
       .then(async () => {
         if (authStore.uid) {
           const userData = await fetchDocById('users', authStore.uid);
           const userClaims = await fetchDocById('userClaims', authStore.uid);
+
+          console.log('userData', userData);
+          console.log('userClaims', userClaims);
           authStore.userData = userData;
           authStore.userClaims = userClaims;
         }
