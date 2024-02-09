@@ -147,7 +147,7 @@
         </div>
         <div class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-          indicate that the assessment was not completed.
+          indicate that the assessment was not completed. <br> Pale colors indicate that the score may not reflect the reader’s ability because responses were made too quickly or the assessment was incomplete.
         </div>
         <!-- Subscores tables -->
         <div v-if="isLoadingRunResults" class="loading-wrapper">
