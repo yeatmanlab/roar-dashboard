@@ -67,19 +67,8 @@ export const getAxiosInstance = (db = 'admin') => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
 
-  let axiosOptions
+  const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
 
-  if (import.meta.env.MODE === 'LEVANTE') {
-    const headers = _get(roarfirekit.value.restConfig, db) ?? {};
-    
-    axiosOptions = {
-      baseURL: 'https://firestore.googleapis.com/v1/projects/hs-levante-admin-dev/databases/(default)/documents',
-      headers: headers.headers,
-    };
-    
-  } else {
-    axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
-  }
   return axios.create(axiosOptions);
 };
 
