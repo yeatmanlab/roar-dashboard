@@ -2,7 +2,6 @@ import _find from 'lodash/find';
 import _flatten from 'lodash/flatten';
 import _get from 'lodash/get';
 import _groupBy from 'lodash/groupBy';
-import _head from 'lodash/head';
 import _mapValues from 'lodash/mapValues';
 import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
@@ -334,23 +333,6 @@ export const getFilteredScoresRequestBody = ({
       },
     });
   }
-  if (!_isEmpty(grades)) {
-    requestBody.structuredQuery.where.compositeFilter.filters.push({
-      fieldFilter: {
-        field: { fieldPath: `userData.grade` },
-        op: 'IN',
-        value: {
-          arrayValue: {
-            values: [
-              ...grades.map((grade) => {
-                return { stringValue: grade };
-              }),
-            ],
-          },
-        },
-      },
-    });
-  }
   if (filter) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
       compositeFilter: {
@@ -507,6 +489,24 @@ export const getFilteredScoresRequestBody = ({
         },
       );
     }
+    if (!_isEmpty(grades)) {
+      console.log('current grades', grades);
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.grade` },
+          op: 'IN',
+          value: {
+            arrayValue: {
+              values: [
+                ...grades.map((grade) => {
+                  return { stringValue: grade };
+                }),
+              ],
+            },
+          },
+        },
+      });
+    }
   }
   if (aggregationQuery) {
     return {
@@ -626,11 +626,21 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   });
   let requestBody;
   if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
+    let orgFilter = null;
+    let gradeFilter = null;
+    if (orgFilters && orgFilters.collection === 'schools') {
+      orgFilter = orgFilters.value;
+    }
+    if (gradeFilters && gradeFilters.collection === 'grade') {
+      gradeFilter = gradeFilters.value;
+    }
     requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
-      filter: _head(filters),
+      orgType: orgFilter ? 'school' : orgType,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
+      grades: gradeFilter,
+      filter: nonOrgFilter,
       aggregationQuery: true,
     });
     return appAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
@@ -679,6 +689,8 @@ export const assignmentPageFetcher = async (
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
 
+  console.log('filters coming in', filters);
+
   // Only allow one non-org filter
   let nonOrgFilter = null;
   let orgFilters = null;
@@ -696,6 +708,7 @@ export const assignmentPageFetcher = async (
       }
     }
   });
+  console.log('grades filter', gradeFilters);
 
   // Handle filtering based on scores
   if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
@@ -705,8 +718,9 @@ export const assignmentPageFetcher = async (
       orgFilter = orgFilters.value;
     }
     if (gradeFilters && gradeFilters.collection === 'grade') {
-      gradeFilter = gradeFilters;
+      gradeFilter = gradeFilters.value;
     }
+    console.log('gradeFilter', gradeFilter);
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
@@ -719,6 +733,7 @@ export const assignmentPageFetcher = async (
       page: page.value,
       pageLimit: pageLimit.value,
     });
+    console.log('requestBody', requestBody);
     console.log(
       `Fetching page ${page.value} for ${adminId} with filter ${filters[0].value} on field ${filters[0].field}`,
     );
