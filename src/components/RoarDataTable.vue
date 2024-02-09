@@ -447,7 +447,6 @@ function getFlags(index, ColData){
           return _lowerCase(flag);
       }
     });
-    // return '\n' + 'Reliability: ' + Object.keys(flags).map(_lowerCase).join(', ') + '\n';
     return reliabilityFlags + '\n\n';
   }
   else{
