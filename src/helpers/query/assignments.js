@@ -258,6 +258,7 @@ export const getFilteredScoresRequestBody = ({
   filter,
   select = ['scores'],
   aggregationQuery,
+  grades,
   paginate = true,
   page,
   pageLimit,
@@ -330,6 +331,23 @@ export const getFilteredScoresRequestBody = ({
         field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
         op: 'ARRAY_CONTAINS',
         value: { stringValue: orgId },
+      },
+    });
+  }
+  if (!_isEmpty(grades)) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: `userData.grade` },
+        op: 'IN',
+        value: {
+          arrayValue: {
+            values: [
+              ...grades.map((grade) => {
+                return { stringValue: grade };
+              }),
+            ],
+          },
+        },
       },
     });
   }
@@ -682,8 +700,12 @@ export const assignmentPageFetcher = async (
   // Handle filtering based on scores
   if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     let orgFilter = null;
+    let gradeFilter = null;
     if (orgFilters && orgFilters.collection === 'schools') {
       orgFilter = orgFilters.value;
+    }
+    if (gradeFilters && gradeFilters.collection === 'grade') {
+      gradeFilter = gradeFilters;
     }
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
@@ -692,6 +714,7 @@ export const assignmentPageFetcher = async (
       orgArray: orgFilter,
       filter: nonOrgFilter,
       aggregationQuery: false,
+      grades: gradeFilter,
       paginate: true,
       page: page.value,
       pageLimit: pageLimit.value,
