@@ -743,7 +743,7 @@ export const assignmentPageFetcher = async (
             const runId = assessment.runId;
             const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
             const reliable = _get(_find(scoresData, { id: runId }), 'reliable');
-            const engagementFlags = _get(_find(scoresData, {id: runId}), 'engagementFlags');
+            const engagementFlags = _get(_find(scoresData, { id: runId }), 'engagementFlags');
             if (!scoresObject && runId) {
               const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
               unretrievedScores.push(runPath);
@@ -793,7 +793,7 @@ export const assignmentPageFetcher = async (
           const runId = assessment.runId;
           const runScores = _get(_find(otherScores, { id: runId }), 'scores');
           const reliable = _get(_find(otherScores, { id: runId }), 'reliable');
-          const engagementFlags = _get(_find(otherScores, {id: runId}), 'engagementFlags');
+          const engagementFlags = _get(_find(otherScores, { id: runId }), 'engagementFlags');
           if (runScores) {
             return {
               ...assessment,
@@ -954,11 +954,11 @@ export const assignmentPageFetcher = async (
             );
             task['reliable'] = _get(
               _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
-              'data.reliable'
+              'data.reliable',
             );
             task['engagementFlags'] = _get(
               _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
-              'data.engagementFlags'
+              'data.engagementFlags',
             );
           }
         }
