@@ -1,3 +1,9 @@
+/*
+ *  Task Display Names
+ *  A map of all tasks, including their taskId, display name, and index for ordering
+ *  Key: taskId
+ *  Value: { orderindex, displayName }
+ */
 export const taskDisplayNames = {
   letter: { name: 'Letter Names and Sounds', order: 1 },
   pa: { name: 'Phoneme', order: 2 },
@@ -14,6 +20,10 @@ export const taskDisplayNames = {
   ExternalTest: { name: 'External Test', order: 13 },
 };
 
+/*
+ *  Descriptions By Task Id
+ *  A map to correlate taskId with a proper header and description for use in the distribution graphs.
+ */
 export const descriptionsByTaskId = {
   // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
   pa: {
@@ -31,27 +41,65 @@ export const descriptionsByTaskId = {
   },
 };
 
+/*
+ *  Tasks to Display Graphs
+ *  A list of tasks who, when included in a score report, will generate breaskdown graphs.
+ */
 export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
 
-export const excludedTasks = ['cva', 'morphology'];
+/*
+ *  Raw Only Tasks
+ *  A list of tasks to only display raw scores when included in a RoarDataTable.
+ */
+export const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
 
-export const taskFilterBlacklist = ['letter'];
+/*
+ *  Scored Tasks
+ *  A list of tasks to be included in the generation of support levels
+ */
+export const scoredTasks = ['swr', 'pa', 'sre'];
 
+/*
+ *  Support Level Colors
+ *  Colors corresponding to each support level.
+ */
 export const supportLevelColors = {
   above: 'green',
   some: '#edc037',
   below: '#c93d82',
 };
 
-export const getSupportLevel = (percentile) => {
+/*
+ *  Get Support Level
+ *  Function to take scores, taskId, and grade and return the proper support category for the run.
+ */
+export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
   let support_level = null;
   let tag_color = null;
-  if (percentile !== undefined) {
+  if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {
+    return {
+      support_level: 'Scores Under Development',
+      tag_color: 'white',
+    };
+  }
+  if (percentile !== undefined && grade < 6) {
     if (percentile >= 50) {
-      support_level = 'At or Above Average';
+      support_level = 'Achieved Skill';
       tag_color = supportLevelColors.above;
     } else if (percentile > 25 && percentile < 50) {
-      support_level = 'Needs Some Support';
+      support_level = 'Developing Skill';
+      tag_color = supportLevelColors.some;
+    } else {
+      support_level = 'Needs Extra Support';
+      tag_color = supportLevelColors.below;
+    }
+  } else if (rawScore !== undefined && grade >= 6) {
+    const { above, some } = getRawScoreThreshold(taskId);
+    if (rawScore >= above) {
+      support_level = 'Achieved Skill';
+      tag_color = supportLevelColors.above;
+    } else if (rawScore > some && rawScore < above) {
+      support_level = 'Developing Skill';
       tag_color = supportLevelColors.some;
     } else {
       support_level = 'Needs Extra Support';
@@ -62,4 +110,24 @@ export const getSupportLevel = (percentile) => {
     support_level,
     tag_color,
   };
+};
+
+export const getRawScoreThreshold = (taskId) => {
+  if (taskId === 'swr') {
+    return {
+      above: 550,
+      some: 400,
+    };
+  } else if (taskId === 'sre') {
+    return {
+      above: 70,
+      some: 47,
+    };
+  } else if (taskId === 'pa') {
+    return {
+      above: 55,
+      some: 45,
+    };
+  }
+  return null;
 };

@@ -2,10 +2,12 @@
   <div id="games">
     <PvTabView v-model:activeIndex="displayGameIndex">
       <PvTabPanel
-        v-for="game in games"
+        v-for="(game, index) in games"
         :key="game.taskId"
         :disabled="
-          sequential && allGamesComplete && (!game.completedOn || allGamesComplete) && currentGameId !== game.taskId
+          sequential &&
+          ((index > 0 && !games[index - 1].completedOn) ||
+            (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
         "
       >
         <template #header>
@@ -30,7 +32,11 @@
               <p>{{ game.taskData.description }}</p>
             </div>
             <div class="roar-game-meta">
-              <PvTag v-for="(items, index) in game.taskData.meta" :key="index" :value="index + ': ' + items" />
+              <PvTag
+                v-for="(items, metaIndex) in game.taskData.meta"
+                :key="metaIndex"
+                :value="metaIndex + ': ' + items"
+              />
             </div>
             <div class="roar-game-footer">
               <i v-if="!allGamesComplete" class="pi"

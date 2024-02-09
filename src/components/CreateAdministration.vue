@@ -9,7 +9,11 @@
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
-              <PvInputText id="administration-name" v-model="state.administrationName" />
+              <PvInputText
+                id="administration-name"
+                v-model="state.administrationName"
+                data-cy="input-administration-name"
+              />
               <label for="administration-name">Administration Name</label>
               <small v-if="v$.administrationName.$invalid && submitted" class="p-error"
                 >Please name your administration</small
@@ -28,6 +32,7 @@
                 :manual-input="false"
                 show-icon
                 show-button-bar
+                data-cy="input-calendar"
               />
               <label for="dates">Dates</label>
               <small v-if="v$.dates.required.$invalid && submitted" class="p-error">Please select dates.</small>
@@ -53,6 +58,7 @@
           <PvPickList
             v-if="assessments[0].length || assessments[1].length"
             v-model="assessments"
+            data-cy="list-pick-list"
             :show-source-controls="false"
             list-style="height: 21.375rem"
             data-key="id"
@@ -109,7 +115,7 @@
         </PvPanel>
 
         <div class="col-12 mb-3">
-          <PvButton label="Create Administration" @click="submit" />
+          <PvButton label="Create Administration" data-cy="button-create-administration" @click="submit" />
         </div>
       </PvPanel>
     </section>

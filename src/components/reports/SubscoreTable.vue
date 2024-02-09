@@ -8,6 +8,7 @@
       lazy
       :page-limit="pageLimit"
       :loading="isLoadingScores || isFetchingScores"
+      :allow-filtering="false"
       @page="onPage($event)"
       @sort="onSort($event)"
       @export-all="exportAll"
@@ -83,28 +84,28 @@ const { data: scoresCount } = useQuery({
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text' },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text' },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: false },
   ];
   if (props.taskId === 'letter') {
     tableColumns.push(
-      { field: 'scores.letter.lowerCaseScore', header: 'Lower Case', dataType: 'text' },
-      { field: 'scores.letter.upperCaseScore', header: 'Upper Case', dataType: 'text' },
-      { field: 'scores.letter.phonemeScore', header: 'Letter Sounds', dataType: 'text' },
-      { field: 'scores.letter.totalScore', header: 'Total', dataType: 'text' },
-      { field: 'scores.letter.incorrectLetters', header: 'Letters To Work On', dataType: 'text' },
-      { field: 'scores.letter.incorrectPhonemes', header: 'Sounds To Work On', dataType: 'text' },
+      { field: 'scores.letter.lowerCaseScore', header: 'Lower Case', dataType: 'text', sort: false },
+      { field: 'scores.letter.upperCaseScore', header: 'Upper Case', dataType: 'text', sort: false },
+      { field: 'scores.letter.phonemeScore', header: 'Letter Sounds', dataType: 'text', sort: false },
+      { field: 'scores.letter.totalScore', header: 'Total', dataType: 'text', sort: false },
+      { field: 'scores.letter.incorrectLetters', header: 'Letters To Work On', dataType: 'text', sort: false },
+      { field: 'scores.letter.incorrectPhonemes', header: 'Sounds To Work On', dataType: 'text', sort: false },
     );
   }
   if (props.taskId === 'pa') {
     tableColumns.push(
-      { field: 'scores.pa.firstSound', header: 'First Sound', dataType: 'text' },
-      { field: 'scores.pa.lastSound', header: 'Last Sound', dataType: 'text' },
-      { field: 'scores.pa.deletion', header: 'Deletion', dataType: 'text' },
-      { field: 'scores.pa.total', header: 'Total', dataType: 'text' },
-      { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text' },
+      { field: 'scores.pa.firstSound', header: 'First Sound', dataType: 'text', sort: false },
+      { field: 'scores.pa.lastSound', header: 'Last Sound', dataType: 'text', sort: false },
+      { field: 'scores.pa.deletion', header: 'Deletion', dataType: 'text', sort: false },
+      { field: 'scores.pa.total', header: 'Total', dataType: 'text', sort: false },
+      { field: 'scores.pa.skills', header: 'Skills To Work On', dataType: 'text', sort: false },
     );
   }
   return tableColumns;

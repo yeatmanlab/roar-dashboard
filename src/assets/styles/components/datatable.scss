@@ -1,6 +1,8 @@
 .p-datatable .p-paginator-top {
   border-width: 0 0 1px 0;
   border-radius: 0;
+  justify-content: center;
+  display: flex;
 }
 .p-datatable .p-paginator-bottom {
   border-width: 0 0 1px 0;
@@ -84,12 +86,7 @@
   color: var(--text-color);
   transition: none;
 }
-.p-datatable .p-datatable-tbody > tr > td {
-  text-align: left;
-  border: 1px solid var(--surface-c);
-  border-width: 0 0 1px 0;
-  padding: 1rem 1.5rem;
-}
+
 .p-datatable .p-datatable-tbody > tr > td .p-row-toggler,
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-init,
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-save,
@@ -196,6 +193,8 @@
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tbody > tr + tr > td,
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tbody > tr:first-child > td {
   border-top-width: 0;
+  padding-left: 23px;
+  padding-top: 2px;
 }
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tfoot > tr > td + td {
   border-left-width: 0;

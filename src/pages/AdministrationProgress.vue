@@ -15,6 +15,8 @@
           :loading="isLoadingScores || isFetchingScores"
           :page-limit="pageLimit"
           lazy
+          data-cy="roar-data-table"
+          :allow-filtering="false"
           @page="onPage($event)"
           @sort="onSort($event)"
           @export-selected="exportSelected"
@@ -224,18 +226,18 @@ const columns = computed(() => {
   if (assignmentData.value === undefined) return [];
 
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text' },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text' },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text' },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: false },
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text' });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: false });
   }
 
   if (authStore.isUserSuperAdmin) {
-    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text' });
+    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
   if (tableData.value.length > 0) {
@@ -254,6 +256,7 @@ const columns = computed(() => {
         tag: true,
         severityField: `status.${taskId}.severity`,
         iconField: `status.${taskId}.icon`,
+        sort: false,
       });
     }
   }
