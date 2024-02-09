@@ -110,6 +110,21 @@
                   <label for="ms-school-filter">Filter by School</label>
                 </span>
               </div>
+              <div class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    id="ms-grade-filter"
+                    v-model="filterGrades"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="gradeOptions"
+                    option-label="label"
+                    option-value="value"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} grades selected"
+                  />
+                  <label for="ms-school-filter">Filter by Grade</label>
+                </span>
+              </div>
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -219,7 +234,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch, toRaw } from 'vue';
 import { storeToRefs } from 'pinia';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
@@ -302,6 +317,7 @@ if (props.orgType === 'district') {
 }
 const filterBy = ref([]);
 const filterSchools = ref([]);
+const filterGrades = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
@@ -331,6 +347,58 @@ const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+// Grab grade options for filter dropdown
+const gradeOptions = ref([
+  {
+    value: '1',
+    label: '1st Grade',
+  },
+  {
+    value: '2',
+    label: '2nd Grade',
+  },
+  {
+    value: '3',
+    label: '3rd Grade',
+  },
+  {
+    value: '4',
+    label: '4th Grade',
+  },
+  {
+    value: '5',
+    label: '5th Grade',
+  },
+  {
+    value: '6',
+    label: '6th Grade',
+  },
+  {
+    value: '7',
+    label: '7th Grade',
+  },
+  {
+    value: '8',
+    label: '8th Grade',
+  },
+  {
+    value: '9',
+    label: '9th Grade',
+  },
+  {
+    value: '10',
+    label: '10th Grade',
+  },
+  {
+    value: '11',
+    label: '11th Grade',
+  },
+  {
+    value: '12th',
+    label: '12th Grade',
+  },
+]);
 
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
@@ -469,6 +537,17 @@ watch(filterSchools, (newSchools) => {
       value: newSchools,
     });
   }
+});
+
+watch(filterGrades, (newGrades) => {
+  // Turn off sort when filtering
+  orderBy.value = [];
+  console.log('newGrades', toRaw(newGrades));
+  filterBy.value.push({
+    collection: 'grade',
+    field: 'grade',
+    value: toRaw(newGrades),
+  });
 });
 
 const onFilter = (event) => {
@@ -730,7 +809,7 @@ const columns = computed(() => {
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
     { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: true },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true, filter: false },
   ];
 
   if (props.orgType === 'district') {

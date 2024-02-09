@@ -38,6 +38,7 @@ export const getAssignmentsRequestBody = ({
   select = assignmentSelectFields,
   filter = {},
   orderBy = [],
+  grades = [],
   isCollectionGroupQuery = true,
 }) => {
   const requestBody = {
@@ -102,6 +103,24 @@ export const getAssignmentsRequestBody = ({
           field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
           op: 'ARRAY_CONTAINS',
           value: { stringValue: orgId },
+        },
+      });
+    }
+
+    if (!_isEmpty(grades)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.grade` },
+          op: 'IN',
+          value: {
+            arrayValue: {
+              values: [
+                ...grades.map((grade) => {
+                  return { stringValue: grade };
+                }),
+              ],
+            },
+          },
         },
       });
     }
@@ -573,9 +592,12 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   // Only allow one non-org filter
   let nonOrgFilter = null;
   let orgFilters = null;
+  let gradeFilters = null;
   filters.forEach((filter) => {
     if (filter.collection === 'schools') {
       orgFilters = filter;
+    } else if (filter.collection === 'grade') {
+      gradeFilters = filter;
     } else if (filter.collection !== 'schools') {
       if (nonOrgFilter) {
         throw new Error('You may specify at most one filter');
@@ -599,11 +621,15 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   } else {
     let userFilter = null;
     let orgFilter = null;
+    let gradeFilter = null;
     if (nonOrgFilter && nonOrgFilter.collection === 'users') {
-      userFilter = filters[0];
+      userFilter = nonOrgFilter;
     }
     if (orgFilters && orgFilters.collection === 'schools') {
       orgFilter = orgFilters.value;
+    }
+    if (gradeFilters && gradeFilters.collection === 'grade') {
+      gradeFilter = gradeFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
@@ -612,6 +638,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
       orgArray: orgFilter,
       aggregationQuery: true,
       filter: userFilter,
+      grades: gradeFilter,
     });
     return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
@@ -637,9 +664,12 @@ export const assignmentPageFetcher = async (
   // Only allow one non-org filter
   let nonOrgFilter = null;
   let orgFilters = null;
+  let gradeFilters = null;
   filters.forEach((filter) => {
     if (filter.collection === 'schools') {
       orgFilters = filter;
+    } else if (filter.collection === 'grade') {
+      gradeFilters = filter;
     } else if (filter.collection !== 'schools') {
       if (nonOrgFilter) {
         throw new Error('You may specify at most one filter');
@@ -827,12 +857,21 @@ export const assignmentPageFetcher = async (
   } else {
     let userFilter = null;
     let orgFilter = null;
+    let gradeFilter = null;
     if (nonOrgFilter && nonOrgFilter.collection === 'users') {
-      userFilter = nonOrgFilter;
+      if (nonOrgFilter.field === 'grade') {
+        gradeFilter = nonOrgFilter.value;
+      } else {
+        userFilter = nonOrgFilter;
+      }
     }
     if (orgFilters && orgFilters.collection === 'schools') {
       orgFilter = orgFilters.value;
     }
+    if (gradeFilters && gradeFilters.collection === 'grade') {
+      gradeFilter = gradeFilters.value;
+    }
+    console.log('gradeFilter', gradeFilter);
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
@@ -844,6 +883,7 @@ export const assignmentPageFetcher = async (
       paginate: paginate,
       select: select,
       filter: userFilter,
+      grades: gradeFilter,
       orderBy: toRaw(orderBy),
     });
     console.log(`Fetching page ${page.value} for ${adminId}`);
