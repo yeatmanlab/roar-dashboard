@@ -249,7 +249,7 @@ import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
-// import _lowerCase from 'lodash/lowerCase';
+import _lowerCase from 'lodash/lowerCase';
 import { scoredTasks } from '@/helpers/reports';
 
 /*
@@ -444,7 +444,7 @@ function getFlags(index, ColData){
         case 'responseTimeTooFast':
           return 'Responses were too fast';
         default:
-          return flag;
+          return _lowerCase(flag).join(', ');
       }
     });
     // return '\n' + 'Reliability: ' + Object.keys(flags).map(_lowerCase).join(', ') + '\n';
