@@ -147,7 +147,7 @@
         </div>
         <div class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-          indicate that the assessment was not completed.
+          indicate that the assessment was not completed. <br> Pale colors indicate that the score may not reflect the reader’s ability because responses were made too quickly or the assessment was incomplete.
         </div>
         <!-- Subscores tables -->
         <div v-if="isLoadingRunResults" class="loading-wrapper">
@@ -355,13 +355,14 @@ const schoolsDict = computed(() => {
 
 const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
 
+
 // Scores Query
 const {
   isLoading: isLoadingScores,
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryKey: ['scores',props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -379,6 +380,8 @@ const {
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
 });
+
+
 
 // Scores count query
 const { data: scoresCount } = useQuery({
@@ -721,6 +724,7 @@ function getScoreKeys(row, grade) {
   };
 }
 
+
 const refreshing = ref(false);
 
 const shouldBeOutlined = (taskId) => {
@@ -775,6 +779,27 @@ const columns = computed(() => {
   return tableColumns;
 });
 
+// this function light out color if assessment is not reliable
+function colorSelection(assessment, rawScore, support_level, tag_color){
+  if(assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined ){
+    if(support_level == 'Needs Extra Support'){
+      return '#d6b8c7'
+    }
+    else if(support_level == 'Developing Skill'){
+      return '#e8dbb5'
+    }
+    else if(support_level == 'Achieved Skill'){
+      return '#c0d9bd'
+    }
+  }
+  else if(rawOnlyTasks.includes(assessment.taskId) && rawScore){
+    return 'white';
+  }else{
+    return tag_color;
+  }
+}
+
+
 const tableData = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   return scoresDataQuery.value.map(({ user, assignment }) => {
@@ -802,7 +827,7 @@ const tableData = computed(() => {
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: rawOnlyTasks.includes(assessment.taskId) && rawScore ? 'white' : tag_color,
+        color: colorSelection(assessment, rawScore, support_level, tag_color),
       };
     }
     // If this is a district score report, grab school information

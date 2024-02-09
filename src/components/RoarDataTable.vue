@@ -249,6 +249,7 @@ import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
+import _lowerCase from 'lodash/lowerCase';
 import { scoredTasks } from '@/helpers/reports';
 
 /*
@@ -424,31 +425,69 @@ let toolTipByHeader = (header) => {
   return '';
 };
 
+
+function getIndexTask(colData, task){
+  for (let index = 0; index < colData.assignment.assessments.length; index++) {
+    if(colData.assignment.assessments[index].taskId === task){
+      return index;
+    }
+  }
+};
+
+function getFlags(index, ColData){
+  const flags = ColData.assignment.assessments[index].engagementFlags;
+  if(flags !== undefined && flags !== '' && !ColData.assignment.assessments[index].reliable){
+    const reliabilityFlags = Object.keys(flags).map(flag => {
+      switch (flag) {
+        case 'notEnoughResponses':
+          return 'Assessment was incomplete';
+        case 'responseTimeTooFast':
+          return 'Responses were too fast';
+        default:
+          return _lowerCase(flag);
+      }
+    });
+    return reliabilityFlags + '\n\n';
+  }
+  else{
+    return ''
+  }
+}
+
+
 let returnScoreTooltip = (colHeader, colData, fieldPath) => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
   let toolTip = '';
-
   if (colHeader === 'Phoneme' && colData.scores?.pa?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'pa'), colData);
     toolTip += colData.scores.pa?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.pa?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.pa?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.pa?.standard + '\n';
   } else if (colHeader === 'Word' && colData.scores?.swr?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'swr'), colData);
     toolTip += colData.scores?.swr?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.swr?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.swr?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.swr?.standard + '\n';
   } else if (colHeader === 'Sentence' && colData.scores?.sre?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'sre'), colData);
     toolTip += colData.scores?.sre?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
   } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
+    toolTip += getFlags(getIndexTask(colData, 'letter'), colData);
     toolTip += 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
+  } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'swr-es'), colData);
+    toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
+    toolTip += 'Percentile: ' + colData.scores?.['swr-es']?.percentile + '\n';
+    toolTip += 'Raw Score: ' + colData.scores?.['swr-es']?.raw + '\n';
+    toolTip += 'Standardized Score: ' + colData.scores?.['swr-es']?.standard + '\n';
   } else if (taskId && !scoredTasks.includes(taskId)) {
     toolTip += 'These scores are under development.';
   }
-
   return toolTip;
 };
 
