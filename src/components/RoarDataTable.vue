@@ -425,19 +425,18 @@ let toolTipByHeader = (header) => {
   return '';
 };
 
-
-function getIndexTask(colData, task){
+function getIndexTask(colData, task) {
   for (let index = 0; index < colData.assignment.assessments.length; index++) {
-    if(colData.assignment.assessments[index].taskId === task){
+    if (colData.assignment.assessments[index].taskId === task) {
       return index;
     }
   }
-};
+}
 
-function getFlags(index, ColData){
+function getFlags(index, ColData) {
   const flags = ColData.assignment.assessments[index].engagementFlags;
-  if(flags !== undefined && flags !== '' && !ColData.assignment.assessments[index].reliable){
-    const reliabilityFlags = Object.keys(flags).map(flag => {
+  if (flags !== undefined && flags !== '' && !ColData.assignment.assessments[index].reliable) {
+    const reliabilityFlags = Object.keys(flags).map((flag) => {
       switch (flag) {
         case 'notEnoughResponses':
           return 'Assessment was incomplete';
@@ -448,12 +447,10 @@ function getFlags(index, ColData){
       }
     });
     return reliabilityFlags + '\n\n';
-  }
-  else{
-    return ''
+  } else {
+    return '';
   }
 }
-
 
 let returnScoreTooltip = (colHeader, colData, fieldPath) => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
