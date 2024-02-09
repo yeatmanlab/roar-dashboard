@@ -591,7 +591,9 @@ const onFilter = (event) => {
     }
   }
   const orgFilter = _find(filterBy.value, { collection: 'schools' });
+  const gradeFilter = _find(filterBy.value, { collection: 'grade' });
   if (orgFilter) filters.push(orgFilter);
+  if (gradeFilter) filters.push(gradeFilter);
   filterBy.value = filters;
   page.value = 0;
 };
