@@ -444,7 +444,7 @@ function getFlags(index, ColData){
         case 'responseTimeTooFast':
           return 'Responses were too fast';
         default:
-          return flag;
+          return _lowerCase(flag);
       }
     });
     // return '\n' + 'Reliability: ' + Object.keys(flags).map(_lowerCase).join(', ') + '\n';
