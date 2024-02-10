@@ -6,6 +6,7 @@ module.exports = defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173/',
     experimentalRunAllSpecs: true,
+    retries: 2,
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },
