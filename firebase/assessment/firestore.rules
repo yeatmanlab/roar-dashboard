@@ -14,9 +14,9 @@ service cloud.firestore {
       return request.auth.token.get("roarUid", "");
     }
 
-    // The auth token has a custom claim for the organizations that the user is
+    // The userClaims document has a custom claim for the organizations that the user is
     // an admin for. The expected data structure is
-    // token.adminOrgs = {
+    // claims.adminOrgs = {
     //   districts?: string[],
     //   schools?: string[],
     //   classes?: string[],
