@@ -6,7 +6,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
   games.forEach((game) => {
     it(`${game.name} Play through Test`, () => {
       cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-      cy.visit('/'), {timeout: timeout};
+      cy.visit("/", { timeout: 2 * timeout })
 
       cy.get('.p-dropdown-trigger', { timeout: 2 * timeout })
         .should('be.visible')
@@ -17,6 +17,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
         .click();
       cy.get('.tabview-nav-link-label', {timeout: 2 * timeout}).contains(game.name);
 
+      cy.visit(`/game/${game.id}`, { timeout: 2 * timeout })
 
       // Long timeout is needed for picture vocab
       cy.get(game.startBtn, { timeout: 6 * timeout })
