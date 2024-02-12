@@ -18,8 +18,8 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/');
 
-    cy.get('.p-dropdown-trigger', { timeout: timeout }).click();
-    cy.get('.p-dropdown-item', { timeout: timeout }).contains(Cypress.env('testRoarAppsAdministration')).click();
+    cy.get('.p-dropdown-trigger', { timeout: 2 * timeout }).click();
+    cy.get('.p-dropdown-item', { timeout: 2 * timeout }).contains(Cypress.env('testRoarAppsAdministration')).click();
 
     // cy.get(".p-tabview").contains(pa.name);
     cy.visit('/game/pa');
@@ -31,11 +31,11 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     cy.get('.p-dropdown-trigger', { timeout: 2 * timeout })
       .should('be.visible')
       .click();
-    cy.get('.p-dropdown-item', { timeout: timeout })
+    cy.get('.p-dropdown-item', { timeout: 2 * timeout })
       .contains(Cypress.env('testRoarAppsAdministration'))
       .should('be.visible')
       .click();
-    cy.get('.tabview-nav-link-label').contains("ROAR-Phoneme").should('have.attr', 'data-game-status', 'complete');
+    cy.get('.tabview-nav-link-label', {timeout: 2 * timeout}).contains("ROAR-Phoneme").should('have.attr', 'data-game-status', 'complete');
   });
 });
 

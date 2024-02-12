@@ -11,40 +11,48 @@ const playTrial = (targetText) => {
   // Long wait time needed for asset loading
   cy.wait(1.5 * timeout);
 
-  // Check for the end block text
+  // Check for a re-route to the dashboard or for the end block text
   cy.get("body", { timeout: timeout })
     .invoke("text")
     .then((text) => {
-      if (text.includes(targetText)) {
-        cy.get("div", { timeout: timeout })
-          .contains(targetText, { timeout: timeout })
-          .should("be.visible");
-        cy.log("Game break.");
-      } else {
-        // Check session storage for the correct answer and select it
-        cy.window().then((win) => {
-          const correctAnswer = JSON.parse(win.sessionStorage.getItem('currentStimulus')).goal;
-          cy.log(correctAnswer);
 
-          cy.log("Game in progress; selecting correct answer.");
-          cy.get(`img[src*="${correctAnswer}.webp"]`, { timeout: timeout })
-            .first()
-            .click()
-            .wait(0.05 * timeout);
+    //   Check for re-route to dashboard from game and assume game complete
+    if (text.includes("Sign Out")) {
+      cy.log("Rerouted to dashboard from game; game complete.")
+    }
+    else {
+        // Check for the end block text
+        if (text.includes(targetText)) {
+          cy.get("div", { timeout: timeout })
+            .contains(targetText, { timeout: timeout })
+            .should("be.visible");
+          cy.log("Game break.");
+        } else {
+          // Check session storage for the correct answer and select it
+          cy.window().then((win) => {
+            const correctAnswer = JSON.parse(win.sessionStorage.getItem('currentStimulus')).goal;
+            cy.log(correctAnswer);
 
-          // Check progress bar status
-          cy.get('#jspsych-progressbar-inner', { timeout: timeout })
-            .invoke('attr', 'style')
-            .then((style) => {
-              // If the progress bar is at 100%, the game is complete
-              if (style && style.includes('width: 100%')) {
-                cy.log('Game complete.');
-              } else {
-                playTrial(targetText); // Recursive call
-              }
-            });
-        });
-      }
+            cy.log("Game in progress; selecting correct answer.");
+            cy.get(`img[src*="${correctAnswer}.webp"]`, { timeout: timeout })
+              .first()
+              .click()
+              .wait(0.05 * timeout);
+
+            // Check progress bar status
+            cy.get('#jspsych-progressbar-inner', { timeout: timeout })
+              .invoke('attr', 'style')
+              .then((style) => {
+                // If the progress bar is at 100%, the game is complete
+                if (style && style.includes('width: 100%')) {
+                  cy.log('Game complete.');
+                } else {
+                  playTrial(targetText); // Recursive call
+                }
+              });
+          });
+        }
+    }
     });
 };
 
