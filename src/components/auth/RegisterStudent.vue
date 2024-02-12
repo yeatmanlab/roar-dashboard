@@ -15,6 +15,7 @@
                 v-model="noActivationCode"
                 :binary="true"
                 name="noActivationCode"
+                @change="updateActivationCode"
               />
               <label for="noActivationCode" class="ml-2">I don't have code</label>
             </div>
@@ -382,9 +383,7 @@ const state = reactive({
 const rules = {
   students: {
     $each: helpers.forEach({
-      activationCode: { 
-        ...(!noActivationCode.value ? {required}: {}),
-      },
+      activationCode: { required },
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
@@ -425,6 +424,17 @@ function addStudent() {
   });
 }
 
+function updateActivationCode() {
+  state.students.forEach((student) => {
+    if (noActivationCode.value) {
+      student.activationCode = "noActivationCode";
+    } else {
+      student.activationCode = "";
+    }
+  });
+}
+
+
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
     state.students.splice(student, 1); // Remove the student at the specified index
@@ -460,6 +470,8 @@ const handleFormSubmit = (isFormValid) => {
   console.log(computedStudents)
   emit("submit", computedStudents);
 };
+
+
 const yearOnlyCheck = ref(false);
 
 const searchRaces = (event) => {
