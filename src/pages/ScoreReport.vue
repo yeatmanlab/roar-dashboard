@@ -954,7 +954,7 @@ const runsByTaskId = computed(() => {
       computedScores[run.taskId] = [run];
     }
   }
-  console.log(computedScores);
+
   return _pickBy(computedScores, (scores, taskId) => {
     return Object.keys(taskInfoById).includes(taskId);
   });
