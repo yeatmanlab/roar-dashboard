@@ -6,44 +6,49 @@
         :key="outerIndex"
         class="student-form-border"
       >
-        <section class="form-section">
-          <div class="p-input-icon-right">
-            <label for="student">Student {{ outerIndex + 1 }}</label>
+      <section class="form-section">
+        <div class="p-input-icon-right">
+          <div class="flex justify-content-between">
+            <label for="activationCode">Activation code <span class="required">*</span></label>
+            <div class="flex align-items-center">
+              <PvCheckbox
+                v-model="noActivationCode"
+                :binary="true"
+                name="noActivationCode"
+              />
+              <label for="noActivationCode" class="ml-2">I don't have code</label>
+            </div>
           </div>
-        </section>
-        <!-- Student Username -->
-        <!-- <section class="form-section">
-          <div class="p-input-icon-right">
-            <label for="activationCode"
-              >Activation code <span class="required">*</span></label
-            >
-            <PvInputText
-              v-model="student.activationCode"
-              name="activationCode"
-              :class="{
-                'p-invalid':
-                  v$.students.$each.$response.$data[outerIndex].activationCode
-                    .$invalid && submitted,
-              }"
-              aria-describedby="activation-code-error"
-            />
-          </div>
+          <PvInputText
+            v-if="!noActivationCode"
+            v-model="student.activationCode"
+            name="activationCode"
+            :class="{
+              'p-invalid':
+                v$.students.$each.$response.$data[outerIndex].activationCode
+                  .$invalid && submitted,
+            }"
+            aria-describedby="activation-code-error"
+            :disabled="noActivationCode"
+          />
+        </div>
+        <span
+          v-if="
+            !noActivationCode &&
+            v$.students.$each.$response.$data[outerIndex].activationCode
+              .$invalid && submitted
+          "
+        >
           <span
-            v-if="
-              v$.students.$each.$response.$data[outerIndex].activationCode
-                .$invalid && submitted
-            "
+            v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
+            :key="`error-${outerIndex}-${innerIndex}`"
           >
-            <span
-              v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
-              :key="`error-${outerIndex}-${innerIndex}`"
-            >
-              <small class="p-error">{{
-                error.$message.replace("Value", "Activation Code")
-              }}</small>
-            </span>
+            <small class="p-error">{{
+              error.$message.replace("Value", "Activation Code")
+            }}</small>
           </span>
-        </section> -->
+        </span>
+      </section>
         <section class="form-section">
           <div class="p-input-icon-right">
             <label for="studentUsername"
@@ -348,6 +353,7 @@ const props = defineProps({
 });
 
 console.log(props);
+const noActivationCode = ref(false);
 
 const emit = defineEmits(["submit"]);
 const state = reactive({
@@ -376,7 +382,9 @@ const state = reactive({
 const rules = {
   students: {
     $each: helpers.forEach({
-      // activationCode: { required },
+      activationCode: { 
+        ...(!noActivationCode.value ? {required}: {}),
+      },
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
@@ -436,7 +444,9 @@ const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
+
   if (!isFormValid) {
+    console.log("it is not valid")
     return;
   }
   // format username as an email
@@ -447,7 +457,7 @@ const handleFormSubmit = (isFormValid) => {
       ...studentData,
     };
   });
-
+  console.log(computedStudents)
   emit("submit", computedStudents);
 };
 const yearOnlyCheck = ref(false);
