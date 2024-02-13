@@ -1,29 +1,30 @@
 <template>
-
   <div v-if="!studentData" class="flex flex-column justify-content-center align-items-center loading-container">
     <AppSpinner style="margin-bottom: 1rem" />
     <span>Loading Your Individual Roar Score Report...</span>
   </div>
 
-  <div v-else class="container">
+  <div v-else class="container flex flex-column align-items-around">
 
-    <div class="flex flex-column md:flex-row align-items-center p-4 gap-4">
-
-      <div class="student-name text-center md:text-left">
-        <h1 class="text-6xl lg:ml-2">
+    <div class="flex flex-column md:flex-row align-items-center mt-2 mb-4">
+      <div class="student-name text-center md:text-left my-5">
+        <div class="text-lg uppercase text-gray-400">
+          Individual Score Report
+        </div>
+        <div class="text-6xl">
           <strong>{{ studentFirstName }} {{ studentLastName }}</strong>
-        </h1>
-        <h2 class="md:ml-4 lg:ml-6">Welcome to your ROAR Score Report!</h2>
+        </div>
       </div>
 
-      <div class="student-info">
-        <p>
+      <div class="student-info bg-gray-200">
+        <p v-if="studentData?.studentData?.grade">
           <strong>Grade:</strong> {{ getGradeWithSuffix(studentData.studentData.grade) }}
         </p>
-        <p>
+        <!-- TODO: Get Student Class -->
+        <p v-if="studentData?.studentData?.class">
           <strong>Class:</strong> { Placeholder }
         </p>
-        <p>
+        <p v-if="administrationData.name">
           <strong>Administration:</strong> {{ administrationData.name }}
         </p>
       </div>
@@ -35,40 +36,66 @@
         It looks like {{ studentFirstName }} is still working on completing their assigned games!
       </div>
 
-      <h3>{{ studentFirstName }}'s individual score report will be built when the student has completed at least one assessment.</h3>
+      <h3>{{ studentFirstName }}'s individual score report will be built when the student has completed at least one
+        assessment.</h3>
     </div>
 
-    <div v-else class="p-4">
-      The Rapid Online Assessment of Reading (ROAR)
-      assesses students across a range of foundational reading skills.
-      {{ studentFirstName }} completed the following games:
-      <ul class="inline-flex p-0" style="list-style-type:none">
-        <li>
-          <strong>{{ formattedTasks }}</strong>
-        </li>
-      </ul>
-      In this report, you will find {{ studentFirstName }}’s scoring at the time of testing,
-      as well as ways you can support {{ studentFirstName }} in
-      their path to reading fluency!
+    <div v-else class="welcome-card mt-2 mb-6 text-lg">
+      <div class="welcome-banner">
+        <div class="banner-text">Welcome to your ROAR Score Report</div>
+      </div>
+      <div class="p-3">
+        The Rapid Online Assessment of Reading (ROAR)
+        assesses students across a range of foundational reading skills.
+        <div class="mt-2">
+          {{ studentFirstName }} completed the following games:
+        </div>
+        <ul class="inline-flex p-0" style="list-style-type:none">
+          <li>
+            <strong>{{ formattedTasks }}</strong>
+          </li>
+        </ul>
+        <div>
+          In this report, you will find {{ studentFirstName }}’s scoring at the time of testing,
+          as well as ways you can support {{ studentFirstName }} in
+          their path to reading fluency!
+        </div>
+      </div>
     </div>
 
 
-    <div>
-      <individual-score-report-task :student-data="studentData" :task-data="taskData" :raw-task-data="rawTaskData"/>
+    <div class="individual-report-wrapper gap-4">
+      <individual-score-report-task :student-data="studentData" :task-data="taskData" :raw-task-data="rawTaskData" />
     </div>
-</div>
+    <PvAccordion class="my-5 w-full">
+      <PvAccordionTab header="Score Recap Table">
+        <div style="">
+        </div>
+      </PvAccordionTab>
+    </PvAccordion>
+    <PvAccordion class="mb-5 w-full">
+      <PvAccordionTab header="Next Steps">
+        <div style="">
+          This score report provides a broad overview of your student’s reading development. Understand that a student’s
+          progress may not be linear, and their scores are not fixed- everyone has room to grow and learn.
+
+          To learn more about any given test or subskill, click here.
+        </div>
+      </PvAccordionTab>
+    </PvAccordion>
+  </div>
 </template>
 
 <script setup>
 import { fetchDocById } from "../helpers/query/utils";
 import { runPageFetcher } from "../helpers/query/runs";
-import {useQuery} from "@tanstack/vue-query";
-import {computed, onMounted, ref} from "vue";
-import {storeToRefs} from "pinia";
-import {useAuthStore} from "../store/auth";
+import { useQuery } from "@tanstack/vue-query";
+import { computed, onMounted, ref } from "vue";
+import { storeToRefs } from "pinia";
+import { useAuthStore } from "../store/auth";
 import IndividualScoreReportTask from "../components/reports/IndividualScoreReportTask.vue";
 import AppSpinner from "../components/AppSpinner.vue";
-import {getGrade} from "@bdelab/roar-utils";
+import { getGrade } from "@bdelab/roar-utils";
 
 // const administrationId = '5vaxicYXnpsNXeq1mUJK';
 // const userId = '00w7xNIlq9gG1uxhmRTiv9NdOys2';
@@ -91,7 +118,7 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const {data: studentData } = useQuery({
+const { data: studentData } = useQuery({
   queryKey: ['users', props.userId],
   queryFn: () => fetchDocById('users', props.userId),
   enabled: initialized,
@@ -107,34 +134,36 @@ const {data: studentData } = useQuery({
 //   staleTime: 5 * 60 * 1000,
 // })
 
-const { data: taskData } = useQuery( {
+const { data: taskData } = useQuery({
   queryKey: ['runs', props.administrationId, props.userId],
   queryFn: () => runPageFetcher({
-  administrationId: props.administrationId,
-  userId: props.userId,
-  select: ['scores.computed.composite', 'taskId'],
-  scoreKey: 'scores.computed.composite',
-  paginate: false}),
+    administrationId: props.administrationId,
+    userId: props.userId,
+    select: ['scores.computed.composite', 'taskId'],
+    scoreKey: 'scores.computed.composite',
+    paginate: false
+  }),
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
 })
 
-const { data: rawTaskData } = useQuery( {
+const { data: rawTaskData } = useQuery({
   queryKey: ['runs', props.administrationId, props.userId],
   queryFn: () => runPageFetcher({
-  administrationId: props.administrationId,
-  userId: props.userId,
-  select: ['scores.computed', 'taskId'],
-  scoreKey: 'scores.computed',
-  paginate: false}),
+    administrationId: props.administrationId,
+    userId: props.userId,
+    select: ['scores.computed', 'taskId'],
+    scoreKey: 'scores.computed',
+    paginate: false
+  }),
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
 })
 
 
-const {data: administrationData } = useQuery({
+const { data: administrationData } = useQuery({
   queryKey: ['administrations', props.administrationId],
   queryFn: () => fetchDocById('administrations', props.administrationId),
   enabled: initialized,
@@ -150,11 +179,11 @@ const formattedTasks = computed(() => {
 });
 
 const studentFirstName = computed(() => {
-  if (!studentData.value.name) return studentData.value.username;
+  if (studentData.value.name.first == undefined) return studentData.value.username;
   return studentData.value.name.first;
 });
 
-const studentLastName = computed ( () => {
+const studentLastName = computed(() => {
   if (!studentData.value.name) return "";
   return studentData.value.name.last;
 });
@@ -222,7 +251,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig){
+  if (roarfirekit.value.restConfig) {
     refresh()
   }
 });
@@ -232,39 +261,80 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.individual-report-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-around;
+}
+
+/* @media (max-width: 768px) {
+  .individual-report-wrapper {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-around;
+  }
+} */
+
+.welcome-card {
+  outline: 1px solid rgb(188, 188, 188);
+  border-radius: 0.2rem 0.2rem 0.5rem 0.5rem;
+}
+
+.welcome-banner {
+  background-color: var(--primary-color);
+  padding: .8rem 1.5rem;
+  border-radius: .5rem;
+  color: white;
+  border-radius: .2rem .2rem 0rem 0rem;
+}
+
+.banner-text {
+  color: white;
+  font-weight: bold;
+  font-size: 1.4rem;
+}
 
 .student-name {
   flex: 2;
-  background: linear-gradient(to right, var(--red-200), white);
   border-radius: 12px;
-  padding: .5rem;
 }
 
 .student-info {
   flex: 1;
-  background: linear-gradient(to right, white, var(--blue-200));
+  font-size: 1.2rem;
   border-radius: 12px;
-  padding: .5rem;
+  padding: .75rem 1.5rem;
 }
 
 @media (min-width: 768px) {
   .container {
     max-width: 768px;
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 }
 
 @media (min-width: 992px) {
   .container {
     max-width: 992px;
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 }
 
 @media (min-width: 1200px) {
   .container {
     max-width: 1800px;
-    margin: 0 auto;
+    /* margin: 0 2rem; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 }
 </style>
