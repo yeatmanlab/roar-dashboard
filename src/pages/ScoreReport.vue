@@ -255,6 +255,7 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import _pickBy from 'lodash/pickBy';
 import _union from 'lodash/union';
+import _remove from 'lodash/remove';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
@@ -538,6 +539,10 @@ watch(filterSchools, (newSchools) => {
   // Turn off sort when filtering
   orderBy.value = [];
   if (filterSchools) {
+    if (_isEmpty(newSchools)) {
+      _remove(filterBy.value, { collection: 'schools' });
+      return;
+    }
     filterSchools.value = _union(filterSchools.value, newSchools);
   } else {
     filterBy.value.push({
@@ -551,7 +556,6 @@ watch(filterSchools, (newSchools) => {
 watch(filterGrades, (newGrades) => {
   // Turn off sort when filtering
   orderBy.value = [];
-  console.log('newGrades', toRaw(newGrades));
   filterBy.value.push({
     collection: 'grade',
     field: 'grade',
@@ -608,6 +612,8 @@ const onFilter = (event) => {
 };
 
 const resetFilters = () => {
+  filterSchools.value = [];
+  filterGrades.value = [];
   filterBy.value = [];
 };
 const viewMode = ref('color');

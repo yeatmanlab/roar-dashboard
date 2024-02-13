@@ -490,7 +490,6 @@ export const getFilteredScoresRequestBody = ({
       );
     }
     if (!_isEmpty(grades)) {
-      console.log('current grades', grades);
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `userData.grade` },
@@ -628,7 +627,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     let orgFilter = null;
     let gradeFilter = null;
-    if (orgFilters && orgFilters.collection === 'schools') {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
     }
     if (gradeFilters && gradeFilters.collection === 'grade') {
@@ -653,7 +652,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
     if (nonOrgFilter && nonOrgFilter.collection === 'users') {
       userFilter = nonOrgFilter;
     }
-    if (orgFilters && orgFilters.collection === 'schools') {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
     }
     if (gradeFilters && gradeFilters.collection === 'grade') {
@@ -689,8 +688,6 @@ export const assignmentPageFetcher = async (
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
 
-  console.log('filters coming in', filters);
-
   // Only allow one non-org filter
   let nonOrgFilter = null;
   let orgFilters = null;
@@ -708,19 +705,17 @@ export const assignmentPageFetcher = async (
       }
     }
   });
-  console.log('grades filter', gradeFilters);
 
   // Handle filtering based on scores
   if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     let orgFilter = null;
     let gradeFilter = null;
-    if (orgFilters && orgFilters.collection === 'schools') {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
     }
     if (gradeFilters && gradeFilters.collection === 'grade') {
       gradeFilter = gradeFilters.value;
     }
-    console.log('gradeFilter', gradeFilter);
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
@@ -733,7 +728,6 @@ export const assignmentPageFetcher = async (
       page: page.value,
       pageLimit: pageLimit.value,
     });
-    console.log('requestBody', requestBody);
     console.log(
       `Fetching page ${page.value} for ${adminId} with filter ${filters[0].value} on field ${filters[0].field}`,
     );
@@ -911,13 +905,12 @@ export const assignmentPageFetcher = async (
         userFilter = nonOrgFilter;
       }
     }
-    if (orgFilters && orgFilters.collection === 'schools') {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
     }
     if (gradeFilters && gradeFilters.collection === 'grade') {
       gradeFilter = gradeFilters.value;
     }
-    console.log('gradeFilter', gradeFilter);
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
       orgType: orgFilter ? 'school' : orgType,
