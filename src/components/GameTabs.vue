@@ -64,7 +64,6 @@
               !game.completedOn &&
               !game.taskData?.taskURL &&
               !game.taskData?.variantURL &&
-              game.taskId !== 'core-tasks'
             "
             :to="{ path: 'game/' + game.taskId }"
           ></router-link>
