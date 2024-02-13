@@ -19,7 +19,10 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
+            <div
+              v-if="sortedAndFilteredTaskIds?.length > 0"
+              class="overview-wrapper bg-gray-100 py-3 mb-2"
+            >
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
@@ -87,6 +90,7 @@
             lazy
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
+            data-cy="roar-data-table"
             :lazy-pre-sorting="sortDisplay"
             @page="onPage($event)"
             @sort="onSort($event)"
@@ -161,7 +165,9 @@
         </div>
         <div class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-          indicate that the assessment was not completed.
+          indicate that the assessment was not completed. <br />
+          Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
+          quickly or the assessment was incomplete.
         </div>
         <!-- Subscores tables -->
         <div v-if="isLoadingRunResults" class="loading-wrapper">
@@ -245,7 +251,6 @@ import _find from 'lodash/find';
 import _head from 'lodash/head';
 import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
-import _filter from 'lodash/filter';
 import _pickBy from 'lodash/pickBy';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
@@ -259,12 +264,14 @@ import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import {
   taskDisplayNames,
+  taskInfoById,
   descriptionsByTaskId,
-  excludedTasks,
   supportLevelColors,
   getSupportLevel,
   tasksToDisplayGraphs,
   getRawScoreThreshold,
+  rawOnlyTasks,
+  scoredTasks,
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
@@ -412,7 +419,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = parseLowGrade(school.lowGrade) + ' ' + school.name;
+      acc[school.id] = parseGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -610,8 +617,6 @@ const viewOptions = ref([
   { label: 'Raw Score', value: 'raw' },
 ]);
 
-const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
-
 const getPercentileScores = ({
   grade,
   assessment,
@@ -805,6 +810,12 @@ function getScoreKeys(row, grade) {
 
 const refreshing = ref(false);
 
+const shouldBeOutlined = (taskId) => {
+  if (scoredTasks.includes(taskId)) return false;
+  else if (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw') return true;
+  else return true;
+};
+
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
@@ -844,12 +855,29 @@ const columns = computed(() => {
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
         emptyTag: viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
         tagColor: `scores.${taskId}.color`,
-        tagOutlined: rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw',
+        tagOutlined: shouldBeOutlined(taskId),
       });
     }
   }
   return tableColumns;
 });
+
+// this function light out color if assessment is not reliable
+function colorSelection(assessment, rawScore, support_level, tag_color) {
+  if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+    if (support_level == 'Needs Extra Support') {
+      return '#d6b8c7';
+    } else if (support_level == 'Developing Skill') {
+      return '#e8dbb5';
+    } else if (support_level == 'Achieved Skill') {
+      return '#c0d9bd';
+    }
+  } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
+    return 'white';
+  } else {
+    return tag_color;
+  }
+}
 
 const tableData = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
@@ -878,7 +906,7 @@ const tableData = computed(() => {
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: rawOnlyTasks.includes(assessment.taskId) && rawScore ? 'white' : tag_color,
+        color: colorSelection(assessment, rawScore, support_level, tag_color),
       };
     }
     // If this is a district score report, grab school information
@@ -915,10 +943,7 @@ const tableData = computed(() => {
 
 const allTasks = computed(() => {
   if (tableData.value.length > 0) {
-    let ids = tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
-    return _filter(ids, (taskId) => {
-      return !excludedTasks.includes(taskId);
-    });
+    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
   } else return [];
 });
 
@@ -973,11 +998,9 @@ function rawScoreByTaskId(taskId) {
   return 'roarScore';
 }
 
-const parseLowGrade = (grade) => {
-  if (grade === 'PreKindergarten' || grade === 'Kindergarten') return 0;
-  else {
-    return parseInt(grade);
-  }
+const parseGrade = (grade) => {
+  const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
+  return gradeZero.includes(grade?.toLowerCase()) ? 0 : parseInt(grade);
 };
 
 const runsByTaskId = computed(() => {
@@ -986,16 +1009,16 @@ const runsByTaskId = computed(() => {
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
     const rawScore = _get(scores, rawScoreByTaskId(taskId));
-    if (user?.data?.grade >= 6) {
+    const grade = parseGrade(user?.data?.grade);
+    if (grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
-    const grade = user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade);
-    const { support_level } = getSupportLevel(grade, percentScore, rawScore, taskId);
+    const { support_level, tag_color } = getSupportLevel(grade, percentScore, rawScore, taskId);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
-      grade: user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade),
+      grade: grade,
       scores: {
         ...scores,
         support_level: support_level,
@@ -1007,6 +1030,7 @@ const runsByTaskId = computed(() => {
         ...user.data,
         schoolName: schoolsDict.value[user?.data?.schools?.current[0]],
       },
+      tag_color: tag_color,
     };
     if (run.taskId in computedScores) {
       computedScores[run.taskId].push(run);
@@ -1014,8 +1038,9 @@ const runsByTaskId = computed(() => {
       computedScores[run.taskId] = [run];
     }
   }
+
   return _pickBy(computedScores, (scores, taskId) => {
-    return !excludedTasks.includes(taskId);
+    return Object.keys(taskInfoById).includes(taskId);
   });
 });
 
@@ -1185,6 +1210,7 @@ onMounted(async () => {
     align-items: center;
   }
 }
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }

@@ -122,7 +122,7 @@
             <template #body="{ data: colData }">
               <div
                 v-if="col.tag && _get(colData, col.field) !== undefined"
-                v-tooltip.right="`${returnScoreTooltip(col.header, colData)}`"
+                v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
               >
                 <PvTag
                   v-if="!col.tagOutlined"
@@ -130,7 +130,7 @@
                   :value="_get(colData, col.field)"
                   :icon="_get(colData, col.iconField)"
                   :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
-                    returnScoreTooltip(col.header, colData).length > 0 &&
+                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
                     'outline: 1px dotted #0000CD; outline-offset: 3px'
                   }`"
                   rounded
@@ -144,14 +144,14 @@
               <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
               </div>
-              <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData)}`">
+              <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
                 <div
                   v-if="!col.tagOutlined"
                   class="circle"
                   :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
                     _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
                   }; ${
-                    returnScoreTooltip(col.header, colData).length > 0 &&
+                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
                     'outline: 1px dotted #0000CD; outline-offset: 3px'
                   }`"
                 />
@@ -160,7 +160,7 @@
                   v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
                   class="circle"
                   :style="`border: 1px solid black; ${
-                    returnScoreTooltip(col.header, colData).length > 0 &&
+                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
                     'outline: 1px dotted #0000CD; outline-offset: 3px'
                   }`"
                 />
@@ -254,7 +254,8 @@ import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
-import { taskFilterBlacklist } from '@/helpers/reports';
+import _lowerCase from 'lodash/lowerCase';
+import { scoredTasks } from '@/helpers/reports';
 
 /*
 Using the DataTable
@@ -390,7 +391,7 @@ _forEach(computedColumns.value, (column) => {
     } else if (dataType === 'SCORE') {
       // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
       //   so the filter event is being handled in an external handler.
-      if (!taskFilterBlacklist.includes(column.field.split('.')[1])) {
+      if (scoredTasks.includes(column.field.split('.')[1])) {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
     }
@@ -422,7 +423,7 @@ const enableFilter = (column) => {
   //   the filter blacklist, turn off filtering
   const path = field.split('.');
   if (path[0] === 'scores') {
-    if (taskFilterBlacklist.includes(path[1])) return false;
+    if (!scoredTasks.includes(path[1])) return false;
   }
 
   // Otherwise, enable filtering
@@ -448,33 +449,66 @@ let toolTipByHeader = (header) => {
   return '';
 };
 
-let returnScoreTooltip = (colHeader, colData) => {
-  let toolTip = '';
+function getIndexTask(colData, task) {
+  for (let index = 0; index < colData.assignment.assessments.length; index++) {
+    if (colData.assignment.assessments[index].taskId === task) {
+      return index;
+    }
+  }
+}
 
+function getFlags(index, ColData) {
+  const flags = ColData.assignment.assessments[index].engagementFlags;
+  if (flags !== undefined && flags !== '' && !ColData.assignment.assessments[index].reliable) {
+    const reliabilityFlags = Object.keys(flags).map((flag) => {
+      switch (flag) {
+        case 'notEnoughResponses':
+          return 'Assessment was incomplete';
+        case 'responseTimeTooFast':
+          return 'Responses were too fast';
+        default:
+          return _lowerCase(flag);
+      }
+    });
+    return reliabilityFlags + '\n\n';
+  } else {
+    return '';
+  }
+}
+
+let returnScoreTooltip = (colHeader, colData, fieldPath) => {
+  const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
+  let toolTip = '';
   if (colHeader === 'Phoneme' && colData.scores?.pa?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'pa'), colData);
     toolTip += colData.scores.pa?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.pa?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.pa?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.pa?.standard + '\n';
   } else if (colHeader === 'Word' && colData.scores?.swr?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'swr'), colData);
     toolTip += colData.scores?.swr?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.swr?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.swr?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.swr?.standard + '\n';
   } else if (colHeader === 'Sentence' && colData.scores?.sre?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'sre'), colData);
     toolTip += colData.scores?.sre?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
   } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
+    toolTip += getFlags(getIndexTask(colData, 'letter'), colData);
     toolTip += 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
   } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'swr-es'), colData);
     toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.['swr-es']?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.['swr-es']?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.['swr-es']?.standard + '\n';
+  } else if (taskId && !scoredTasks.includes(taskId)) {
+    toolTip += 'These scores are under development.';
   }
-
   return toolTip;
 };
 

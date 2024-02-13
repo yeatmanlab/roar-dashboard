@@ -255,7 +255,7 @@ export const getFilteredScoresRequestBody = ({
   orgType,
   orgArray,
   filter,
-  select = ['scores'],
+  select = ['scores', 'reliable', 'engagementFlags'],
   aggregationQuery,
   grades,
   paginate = true,
@@ -810,6 +810,8 @@ export const assignmentPageFetcher = async (
           assignment.data.assessments.map((assessment) => {
             const runId = assessment.runId;
             const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
+            const reliable = _get(_find(scoresData, { id: runId }), 'reliable');
+            const engagementFlags = _get(_find(scoresData, { id: runId }), 'engagementFlags');
             if (!scoresObject && runId) {
               const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
               unretrievedScores.push(runPath);
@@ -817,6 +819,8 @@ export const assignmentPageFetcher = async (
             return {
               ...assessment,
               scores: scoresObject,
+              reliable,
+              engagementFlags,
             };
           }),
           undefined,
@@ -834,7 +838,7 @@ export const assignmentPageFetcher = async (
       const otherScores = await appAxiosInstance
         .post(':batchGet', {
           documents: unretrievedScores,
-          mask: { fieldPaths: ['scores'] },
+          mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
         })
         .then(({ data }) => {
           return _without(
@@ -856,10 +860,14 @@ export const assignmentPageFetcher = async (
         const scoredAssessments = assignment.data.assessments.map((assessment) => {
           const runId = assessment.runId;
           const runScores = _get(_find(otherScores, { id: runId }), 'scores');
+          const reliable = _get(_find(otherScores, { id: runId }), 'reliable');
+          const engagementFlags = _get(_find(otherScores, { id: runId }), 'engagementFlags');
           if (runScores) {
             return {
               ...assessment,
               scores: runScores,
+              reliable,
+              engagementFlags,
             };
           } else {
             return assessment;
@@ -993,7 +1001,7 @@ export const assignmentPageFetcher = async (
         const batchRunDocs = await appAxiosInstance
           .post(':batchGet', {
             documents: runDocPaths,
-            mask: { fieldPaths: ['scores'] },
+            mask: { fieldPaths: ['scores', 'reliable', 'engagementFlags'] },
           })
           .then(({ data }) => {
             return _without(
@@ -1021,6 +1029,14 @@ export const assignmentPageFetcher = async (
             task['scores'] = _get(
               _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
               'data.scores',
+            );
+            task['reliable'] = _get(
+              _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
+              'data.reliable',
+            );
+            task['engagementFlags'] = _get(
+              _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
+              'data.engagementFlags',
             );
           }
         }
