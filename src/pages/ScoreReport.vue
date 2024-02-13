@@ -110,6 +110,7 @@
                     option-value="id"
                     :show-toggle-all="false"
                     selected-items-label="{0} schools selected"
+                    data-cy="filter-by-school"
                   />
                   <label for="ms-school-filter">Filter by School</label>
                 </span>
@@ -125,6 +126,7 @@
                     option-value="value"
                     :show-toggle-all="false"
                     selected-items-label="{0} grades selected"
+                    data-cy="filter-by-grade"
                   />
                   <label for="ms-school-filter">Filter by Grade</label>
                 </span>

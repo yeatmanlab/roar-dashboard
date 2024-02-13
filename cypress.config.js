@@ -6,7 +6,7 @@ module.exports = defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173/',
     experimentalRunAllSpecs: true,
-    retries: 2,
+    // retries: 2,
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },
@@ -85,5 +85,9 @@ module.exports = defineConfig({
       'zzzCypressTestStudent19',
       'zzzCypressTestStudent20',
     ],
+    roarDemoDistrictName: 'Roar Demo District',
+    roarDemoDistrictId: 'dfyDUItJNf3wEoG6Mf8H',
+    roarDemoAdministrationName: 'ROAR demo administration',
+    roarDemoAdministrationId: 'EWC9corgcnipev7ZnmuN',
   },
 });
