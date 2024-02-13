@@ -15,18 +15,18 @@ v-if="rawOnlyTasks.includes(task.taskId) && isNaN(getRawScore(task.taskId))"
       incomplete assessment.
     </div>
 
-    <div v-else class="flex flex-column align-items-center mb-2 p-2 score-card">
+    <div v-else class="flex flex-column align-items-center mb-1 p-1 score-card">
       <div class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center">
-          <h3 class="header-task-name">{{ extendedTaskData.extendedTitle[task.taskId] }}</h3>
+          <div class="header-task-name">{{ extendedTaskData.extendedTitle[task.taskId] }}</div>
           <!-- <PvChart v-if="rawOnlyTasks.includes(task.taskId)" type="doughnut" :data="doughnutChartData(getRawScore(task.taskId), task.taskId)" /> 
           <PvChart v-else type="doughnut" :data="doughnutChartData(task.scores?.[getPercentileScoreKey(task.taskId, grade)], task.taskId)" />  -->
           <PvKnob
-v-if="rawOnlyTasks.includes(task.taskId)" :model-value="getRawScore(task.taskId)" size="200"
+v-if="rawOnlyTasks.includes(task.taskId)" :model-value="getRawScore(task.taskId)" size="160"
             value-color="gray" range-color="gray" />
           <PvKnob
 v-else :value-template="getPercentileSuffix(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
-            :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])" size="200"
+            :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])" size="160"
             :value-color="getColorByPercentile(task.scores?.[getPercentileScoreKey(task.taskId, grade)])" />
         </div>
         <!-- <p v-if="rawOnlyTasks.includes(task.taskId)" class="score">{{ getRawScore(task.taskId) }}</p> -->
@@ -53,7 +53,7 @@ v-else :value-template="getPercentileSuffix(task.scores?.[getPercentileScoreKey(
       </div>
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
         <PvDivider/>
-        <PvAccordion class="w-full">
+        <PvAccordion class="w-full my-2">
           <PvAccordionTab header="Score Breakdown">
             <div v-for="scoreKey in Object.keys(task.scores)" :key="scoreKey">
               <div v-if="task.scores[scoreKey] != undefined" class="flex flex-column align-items-center">
@@ -285,7 +285,7 @@ function getPercentileSuffix(percentile) {
 .score {
   position: relative;
   /* margin-top: -156px; */
-  font-size: 2.0rem;
+  font-size: 1.5rem;
 }
 
 .score-card {
@@ -295,14 +295,14 @@ function getPercentileSuffix(percentile) {
 }
 
 .score-description {
-  font-size: 1.2rem;
+  font-size: 1.0rem;
   margin-top: 2rem;
-  max-width: 28rem;
+  max-width: 22rem;
 }
 
 
 .header-task-name {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: bold;
   border-radius: 12px;
   padding: 1.0rem;

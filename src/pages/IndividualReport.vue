@@ -6,12 +6,12 @@
 
   <div v-else class="container flex flex-column align-items-around">
 
-    <div class="flex flex-column md:flex-row align-items-center mt-2 mb-4">
-      <div class="student-name text-center md:text-left my-5">
+    <div class="flex flex-column md:flex-row align-items-center my-2">
+      <div class="student-name text-center md:text-left my-3">
         <div class="text-lg uppercase text-gray-400">
           Individual Score Report
         </div>
-        <div class="text-6xl">
+        <div class="text-5xl">
           <strong>{{ studentFirstName }} {{ studentLastName }}</strong>
         </div>
       </div>
@@ -40,11 +40,11 @@
         assessment.</h3>
     </div>
 
-    <div v-else class="welcome-card mt-2 mb-6 text-lg">
+    <div v-else class="welcome-card mt-2 mb-4">
       <div class="welcome-banner">
         <div class="banner-text">Welcome to your ROAR Score Report</div>
       </div>
-      <div class="p-3">
+      <div class="p-3 ">
         The Rapid Online Assessment of Reading (ROAR)
         assesses students across a range of foundational reading skills.
         <div class="mt-2">
@@ -264,7 +264,7 @@ onMounted(async () => {
 .individual-report-wrapper {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: .5rem;
   align-items: center;
   justify-content: space-around;
 }
@@ -286,7 +286,7 @@ onMounted(async () => {
 
 .welcome-banner {
   background-color: var(--primary-color);
-  padding: .8rem 1.5rem;
+  padding: .8rem 1rem;
   border-radius: .5rem;
   color: white;
   border-radius: .2rem .2rem 0rem 0rem;
@@ -295,7 +295,7 @@ onMounted(async () => {
 .banner-text {
   color: white;
   font-weight: bold;
-  font-size: 1.4rem;
+  font-size: 1rem;
 }
 
 .student-name {
@@ -305,9 +305,9 @@ onMounted(async () => {
 
 .student-info {
   flex: 1;
-  font-size: 1.2rem;
+  font-size: 1rem;
   border-radius: 12px;
-  padding: .75rem 1.5rem;
+  padding: .35rem .75rem;
 }
 
 @media (min-width: 768px) {
@@ -330,7 +330,7 @@ onMounted(async () => {
 
 @media (min-width: 1200px) {
   .container {
-    max-width: 1800px;
+    max-width: 1200px;
     /* margin: 0 2rem; */
     display: flex;
     flex-direction: column;
