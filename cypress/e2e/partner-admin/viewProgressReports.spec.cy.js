@@ -1,4 +1,5 @@
 const testDistrictId = Cypress.env('testDistrictId');
+const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testAdministrationId = Cypress.env('testAdministrationId');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
@@ -45,7 +46,7 @@ function checkProgressTags(headers) {
 describe('The partner admin can view progress reports for a given administration.', () => {
   it('Selects an administration and views its progress report', () => {
     checkUrl();
-    cy.getAdministrationCard();
+    cy.getAdministrationCard(testPartnerAdministrationName);
     clickProgressButton();
     cy.checkUserList(testUserList);
     checkProgressTags(testAssignments);
