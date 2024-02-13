@@ -1,5 +1,5 @@
 <template>
-  <div v-for="task in props.taskData" :key="task">
+  <div v-for="task in computedTaskData" :key="task">
 
     <div
 v-if="rawOnlyTasks.includes(task.taskId) && isNaN(getRawScore(task.taskId))"
@@ -17,16 +17,20 @@ v-if="rawOnlyTasks.includes(task.taskId) && isNaN(getRawScore(task.taskId))"
 
     <div v-else class="flex flex-column align-items-center mb-1 p-1 score-card">
       <div class="flex flex-column md:flex-row align-items-center">
-        <div class="flex flex-column justify-content-center align-items-center">
+        <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ extendedTaskData.extendedTitle[task.taskId] }}</div>
+          <div class="text-xs uppercase font-thin mb-2 text-gray-400">
+            <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Percentile Score </div>
+            <div v-else class="scoring-type">Raw Score</div>
+          </div>
           <!-- <PvChart v-if="rawOnlyTasks.includes(task.taskId)" type="doughnut" :data="doughnutChartData(getRawScore(task.taskId), task.taskId)" /> 
           <PvChart v-else type="doughnut" :data="doughnutChartData(task.scores?.[getPercentileScoreKey(task.taskId, grade)], task.taskId)" />  -->
           <PvKnob
-v-if="rawOnlyTasks.includes(task.taskId)" :model-value="getRawScore(task.taskId)" size="160"
+v-if="rawOnlyTasks.includes(task.taskId)" :model-value="getRawScore(task.taskId)" size=160
             value-color="gray" range-color="gray" />
           <PvKnob
 v-else :value-template="getPercentileSuffix(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
-            :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])" size="160"
+            :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])" size=160
             :value-color="getColorByPercentile(task.scores?.[getPercentileScoreKey(task.taskId, grade)])" />
         </div>
         <!-- <p v-if="rawOnlyTasks.includes(task.taskId)" class="score">{{ getRawScore(task.taskId) }}</p> -->
@@ -52,12 +56,12 @@ v-else :value-template="getPercentileSuffix(task.scores?.[getPercentileScoreKey(
         {{ extendedTaskData.extendedDescription[task.taskId] }}.
       </div>
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
-        <PvDivider/>
-        <PvAccordion class="w-full my-2">
+        <!-- <PvDivider /> -->
+        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
             <div v-for="scoreKey in Object.keys(task.scores)" :key="scoreKey">
               <div v-if="task.scores[scoreKey] != undefined" class="flex flex-column align-items-center">
-                <div>{{ scoreKey }} : {{ task.scores[scoreKey] }}</div>
+                <div>{{ scoreKey }}: {{ task.scores[scoreKey] }}</div>
               </div>
             </div>
           </PvAccordionTab>
@@ -86,9 +90,11 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  expanded: {
+    type: Boolean,
+    required: false,
+  }
 });
-
-
 
 const extendedTaskData = {
   ...props.taskData,
@@ -146,7 +152,11 @@ const studentFirstName = computed(() => {
   return props.studentData.name.first;
 });
 
-const grade = computed(() => props.studentData.studentData.grade)
+const grade = computed(() => props.studentData?.studentData?.grade)
+
+const computedTaskData = computed(() => {
+  return props.taskData?.filter(task => task.scores != undefined)
+})
 
 let supportColor = null
 // let remainderColor = null
@@ -284,7 +294,6 @@ function getPercentileSuffix(percentile) {
 <style scoped>
 .score {
   position: relative;
-  /* margin-top: -156px; */
   font-size: 1.5rem;
 }
 
@@ -292,11 +301,12 @@ function getPercentileSuffix(percentile) {
   outline: 3px solid var(--primary-color);
   width: fit-content;
   border-radius: 1rem;
+  min-height: 30rem;
 }
 
 .score-description {
   font-size: 1.0rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
   max-width: 22rem;
 }
 
@@ -305,7 +315,6 @@ function getPercentileSuffix(percentile) {
   font-size: 1.3rem;
   font-weight: bold;
   border-radius: 12px;
-  padding: 1.0rem;
 }
 
 .error {
