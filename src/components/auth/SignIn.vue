@@ -34,12 +34,12 @@
               data-cy="input-password"
             />
             <small
+              class="text-link sign-in-method-link"
+              data-cy="sign-in-with-email-link"
               @click="
                 allowPassword = false;
                 state.usePassword = false;
               "
-              class="text-link sign-in-method-link"
-              data-cy="sign-in-with-email-link"
               >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
             >
           </div>
@@ -79,12 +79,12 @@
               data-cy="password-disabled-for-email"
             />
             <small
+              class="text-link sign-in-method-link"
+              data-cy="sign-in-with-password"
               @click="
                 allowPassword = true;
                 state.usePassword = true;
               "
-              class="text-link sign-in-method-link"
-              data-cy="sign-in-with-password"
               >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
             >
           </div>
