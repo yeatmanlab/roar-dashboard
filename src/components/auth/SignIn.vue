@@ -113,6 +113,14 @@ const allowLink = ref(false);
 const validateRoarEmail = _debounce(
   async (email) => {
     await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
+      if (email.includes('levante')) {
+        allowLink.value = false;
+        allowPassword.value = true;
+        state.useLink = allowLink.value;
+        evaluatingEmail.value = false;
+        return;
+      }
+
       if (emailAvail) {
         console.log(`Email ${email} is available`);
         allowPassword.value = false;

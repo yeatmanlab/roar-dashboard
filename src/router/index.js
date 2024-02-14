@@ -137,6 +137,12 @@ const routes = [
     meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
   },
   {
+    path: '/register-users',
+    name: 'Register Users',
+    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
+    meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
+  },
+  {
     path: '/signin',
     name: 'SignIn',
     component: () => import('../pages/SignIn.vue'),
@@ -252,6 +258,11 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
+  // Don't allow routing to LEVANTE pages if not in LEVANTE instance
+  if (import.meta.env.MODE !== 'LEVANTE' && to.meta?.project === 'LEVANTE') {
+    return { path: "/"}
+  }
+
   const store = useAuthStore();
 
   const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent'];

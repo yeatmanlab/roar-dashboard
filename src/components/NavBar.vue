@@ -76,7 +76,11 @@ const isAtHome = computed(() => {
   return router.currentRoute.value.fullPath === '/';
 });
 const dropDownActions = computed(() => {
-  const rawActions = getSidebarActions(isSuperAdmin.value, !isAtHome.value);
+  const rawActions = getSidebarActions({
+    isSuperAdmin: isSuperAdmin.value, 
+    isAdmin: isAdmin.value,
+    includeHomeLink: !isAtHome.value
+  });
   return rawActions.map((action) => {
     return {
       label: action.title,
