@@ -120,6 +120,7 @@ const authWithEmail = (state) => {
           authStore.userData = userData;
           authStore.userClaims = userClaims;
         }
+
         spinner.value = true;
       })
       .catch((e) => {
@@ -130,6 +131,7 @@ const authWithEmail = (state) => {
           throw e;
         }
       });
+
   }
 };
 

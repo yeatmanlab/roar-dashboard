@@ -97,6 +97,9 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
       collection,
       ..._mapValues(data.fields, (value) => convertValues(value)),
     };
+  })
+  .catch((error) => {
+    console.error(error);
   });
 };
 
