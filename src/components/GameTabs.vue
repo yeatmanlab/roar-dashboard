@@ -63,7 +63,8 @@
               !allGamesComplete &&
               !game.completedOn &&
               !game.taskData?.taskURL &&
-              !game.taskData?.variantURL"
+              !game.taskData?.variantURL
+            "
             :to="{ path: 'game/' + game.taskId }"
           ></router-link>
 
