@@ -181,6 +181,12 @@ const routes = [
     meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
   },
   {
+    path: '/register-users',
+    name: 'Register Users',
+    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
+    meta: { pageTitle: 'Register Users', requireAdmin: true },
+  },
+  {
     path: '/signin',
     name: 'SignIn',
     component: () => import('../pages/SignIn.vue'),

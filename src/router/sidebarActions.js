@@ -64,6 +64,7 @@ const sidebarActionOptions = [
   },
 ];
 
+
 export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, includeHomeLink = true }) => {
   if (import.meta.env.MODE === 'LEVANTE') {
     return sidebarActionOptions.filter((action) => {
