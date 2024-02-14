@@ -95,7 +95,7 @@
             :key="col.field + '_' + index"
             :field="col.field"
             :data-type="col.dataType"
-            :sortable="currentFilter.length === 0 && col.sort !== false"
+            :sortable="col.sort !== false"
             :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
             :show-filter-operator="col.allowMultipleFilters === true"
             :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
@@ -103,7 +103,7 @@
             :frozen="col.pinned"
             align-frozen="left"
             :class="{ 'filter-button-override': hideFilterButtons }"
-            :filter-menu-style="enableFilter(col.field) ? '' : 'display: none;'"
+            :filter-menu-style="enableFilter(col) ? '' : 'display: none;'"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
             <template #header>
@@ -186,8 +186,13 @@
                 {{ _get(colData, col.field) }}
               </div>
             </template>
+            <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
+              <i v-if="!sorted && currentSort.length === 0 && !scoreFilterApplied" class="pi pi-sort-alt ml-2" />
+              <i v-if="sorted && sortOrder === 1 && !scoreFilterApplied" class="pi pi-sort-amount-down-alt ml-2" />
+              <i v-else-if="sorted && sortOrder === -1 && !scoreFilterApplied" class="pi pi-sort-amount-up-alt ml-2" />
+            </template>
             <template v-if="col.dataType" #filtericon>
-              <i v-if="enableFilter(col.field)" class="pi pi-filter" />
+              <i v-if="enableFilter(col)" class="pi pi-filter" />
             </template>
             <template v-if="col.dataType" #filter="{ filterModel }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
@@ -304,8 +309,17 @@ const computedColumns = computed(() => {
     return _find(props.columns, (pcol) => pcol.header === col.header);
   });
 });
+const currentSort = ref([]);
 const currentFilter = ref([]);
 const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value) || !props.allowFiltering);
+const scoreFilterApplied = computed(() => {
+  const scoreFilter = _find(currentFilter.value, (filter) => {
+    if (filter.split('.')[0] === 'scores') {
+      return true;
+    } else return false;
+  });
+  return Boolean(scoreFilter);
+});
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -397,12 +411,22 @@ _forEach(computedColumns.value, (column) => {
 const refOptions = ref(options);
 const refFilters = ref(filters);
 
-const enableFilter = (field) => {
+const enableFilter = (column) => {
+  // If column is specified to have filtering disabled
+  if (_get(column, 'filter') === false) return false;
+
+  // If the field is not defined, turn off filtering
+  const field = column.field;
   if (!field) return false;
+
+  // If the field is a score, and the taskId is on
+  //   the filter blacklist, turn off filtering
   const path = field.split('.');
   if (path[0] === 'scores') {
     if (!scoredTasks.includes(path[1])) return false;
   }
+
+  // Otherwise, enable filtering
   return true;
 };
 
@@ -540,6 +564,7 @@ const onPage = (event) => {
   emit('page', event);
 };
 const onSort = (event) => {
+  currentSort.value = _get(event, 'multiSortMeta') ?? [];
   emit('sort', event);
 };
 const onFilter = (event) => {

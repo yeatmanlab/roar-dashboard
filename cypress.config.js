@@ -85,5 +85,9 @@ module.exports = defineConfig({
       'zzzCypressTestStudent19',
       'zzzCypressTestStudent20',
     ],
+    roarDemoDistrictName: 'Roar Demo District',
+    roarDemoDistrictId: 'dfyDUItJNf3wEoG6Mf8H',
+    roarDemoAdministrationName: 'ROAR demo administration',
+    roarDemoAdministrationId: 'EWC9corgcnipev7ZnmuN',
   },
 });

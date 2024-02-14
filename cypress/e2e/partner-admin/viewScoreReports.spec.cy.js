@@ -1,4 +1,5 @@
 const testDistrictId = Cypress.env('testDistrictId');
+const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
 const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
@@ -34,7 +35,7 @@ function checkAssignmentColumns() {
 describe('The partner admin can view score reports for a given administration.', () => {
   it('Selects an administration and views its score report.', () => {
     checkUrl();
-    cy.getAdministrationCard();
+    cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();
     cy.checkUserList(testUserList);
     checkAssignmentColumns(testAssignments);
