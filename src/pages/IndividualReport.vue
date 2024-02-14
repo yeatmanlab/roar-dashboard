@@ -190,11 +190,10 @@ const IndividualReportDownload = ref(null);
 function printDownload() {
   const doc = IndividualReportDownload.value
 
-  console.log("printDownload called")
   const opt = {
     margin: 0.2,
     filename: `IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`,
-    html2canvas: { width: 800, },
+    html2canvas: { width: 1200, },
     jsPDF: {
       format: 'letter', orientation: 'p',
     }
