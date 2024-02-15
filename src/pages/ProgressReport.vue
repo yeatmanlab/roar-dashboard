@@ -4,36 +4,46 @@
       <div class="flex justify-content-between align-items-center">
         <div>
           <div class="flex flex-column align-items-start mb-4 gap-2">
-            <div class="uppercase font-light text-gray-500 text-md">
-              {{ props.orgType }} Progress Report 
-            </div>
+            <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
             <div class="report-title uppercase">
               {{ orgInfo.name }}
             </div>
-            <div class="uppercase font-light text-gray-500 text-md">
-              Administration
-            </div>
+            <div class="uppercase font-light text-gray-500 text-md">Administration</div>
             <div class="administration-name uppercase">
               {{ administrationInfo?.name }}
             </div>
           </div>
         </div>
         <div class="flex flex-row align-items-center gap-4">
-          <div class="uppercase text-sm text-gray-600">
-            VIEW
-          </div>
+          <div class="uppercase text-sm text-gray-600">VIEW</div>
           <PvSelectButton
-v-model="reportView" :options="reportViews" option-disabled="constant" :allow-empty="false"
-            option-label="name" class="flex my-2 select-button" @change="handleViewChange">
+            v-model="reportView"
+            :options="reportViews"
+            option-disabled="constant"
+            :allow-empty="false"
+            option-label="name"
+            class="flex my-2 select-button"
+            @change="handleViewChange"
+          >
           </PvSelectButton>
         </div>
       </div>
 
       <RoarDataTable
-v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns" :total-records="assignmentCount"
-        :loading="isLoadingScores || isFetchingScores" :page-limit="pageLimit" lazy data-cy="roar-data-table"
-        :allow-filtering="false" @page="onPage($event)" @sort="onSort($event)" @export-selected="exportSelected"
-        @export-all="exportAll" />
+        v-if="columns?.length ?? 0 > 0"
+        :data="tableData"
+        :columns="columns"
+        :total-records="assignmentCount"
+        :loading="isLoadingScores || isFetchingScores"
+        :page-limit="pageLimit"
+        lazy
+        data-cy="roar-data-table"
+        :allow-filtering="false"
+        @page="onPage($event)"
+        @sort="onSort($event)"
+        @export-selected="exportSelected"
+        @export-all="exportAll"
+      />
       <div v-else class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>Loading Progress Data</span>
@@ -77,12 +87,15 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const reportView = ref({ name: "Progress Report", constant: true })
-const reportViews = [{ name: "Score Report", constant: false }, { name: "Progress Report", constant: true }]
+const reportView = ref({ name: 'Progress Report', constant: true });
+const reportViews = [
+  { name: 'Score Report', constant: false },
+  { name: 'Progress Report', constant: true },
+];
 
 const handleViewChange = () => {
   window.location.href = `/scores/${props.administrationId}/${props.orgType}/${props.orgId}`;
-}
+};
 
 // Queries for page
 const orderBy = ref(orderByDefault);

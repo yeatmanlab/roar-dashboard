@@ -10,27 +10,27 @@
           <div v-if="orgInfo && administrationInfo">
             <div class="flex justify-content-between align-items-center">
               <div class="flex flex-column align-items-start gap-2">
-                <div class="uppercase font-light text-gray-500 text-sm">
-                  {{ props.orgType }} Progress Report 
-                </div>
+                <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Progress Report</div>
                 <div class="report-title">
                   {{ _toUpper(orgInfo.name) }}
                 </div>
-                <div class="uppercase font-light text-gray-500 text-sm">
-                  Administration
-                </div>
+                <div class="uppercase font-light text-gray-500 text-sm">Administration</div>
                 <div class="administration-name mb-4">
                   {{ _toUpper(administrationInfo?.name) }}
                 </div>
                 <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
               </div>
               <div class="flex flex-row align-items-center gap-4">
-                <div class="uppercase text-sm text-gray-600">
-                  VIEW
-                </div>
+                <div class="uppercase text-sm text-gray-600">VIEW</div>
                 <PvSelectButton
-v-model="reportView" :options="reportViews" option-disabled="constant" :allow-empty="false"
-                  option-label="name" class="flex my-2 select-button" @change="handleViewChange">
+                  v-model="reportView"
+                  :options="reportViews"
+                  option-disabled="constant"
+                  :allow-empty="false"
+                  option-label="name"
+                  class="flex my-2 select-button"
+                  @change="handleViewChange"
+                >
                 </PvSelectButton>
               </div>
             </div>
@@ -43,8 +43,13 @@ v-model="reportView" :options="reportViews" option-disabled="constant" :allow-em
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
                     <DistributionChartOverview
-:runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
-                      :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+                      :runs="runsByTaskId[taskId]"
+                      :initialized="initialized"
+                      :task-id="taskId"
+                      :org-type="props.orgType"
+                      :org-id="props.orgId"
+                      :administration-id="props.administrationId"
+                    />
                     <div className="task-description mt-3">
                       <span class="font-bold">
                         {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
@@ -88,32 +93,57 @@ v-model="reportView" :options="reportViews" option-disabled="constant" :allow-em
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span>The filters applied have no matching scores.
+          <span
+            >The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <RoarDataTable
-:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores" data-cy="roar-data-table" :lazy-pre-sorting="sortDisplay"
-            @page="onPage($event)" @sort="onSort($event)" @filter="onFilter($event)" @export-all="exportAll"
-            @export-selected="exportSelected">
+            :data="tableData"
+            :columns="columns"
+            :total-records="scoresCount"
+            lazy
+            :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores"
+            data-cy="roar-data-table"
+            :lazy-pre-sorting="sortDisplay"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @filter="onFilter($event)"
+            @export-all="exportAll"
+            @export-selected="exportSelected"
+          >
             <template #filterbar>
               <div v-if="schoolsInfo" class="flex flex-row gap-2">
                 <span class="p-float-label">
                   <PvMultiSelect
-id="ms-school-filter" v-model="filterSchools" style="width: 20rem; max-width: 25rem"
-                    :options="schoolsInfo" option-label="name" option-value="id" :show-toggle-all="false"
-                    selected-items-label="{0} schools selected" data-cy="filter-by-school" />
+                    id="ms-school-filter"
+                    v-model="filterSchools"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="schoolsInfo"
+                    option-label="name"
+                    option-value="id"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} schools selected"
+                    data-cy="filter-by-school"
+                  />
                   <label for="ms-school-filter">Filter by School</label>
                 </span>
               </div>
               <div class="flex flex-row gap-2">
                 <span class="p-float-label">
                   <PvMultiSelect
-id="ms-grade-filter" v-model="filterGrades" style="width: 20rem; max-width: 25rem"
-                    :options="gradeOptions" option-label="label" option-value="value" :show-toggle-all="false"
-                    selected-items-label="{0} grades selected" data-cy="filter-by-grade" />
+                    id="ms-grade-filter"
+                    v-model="filterGrades"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="gradeOptions"
+                    option-label="label"
+                    option-value="value"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} grades selected"
+                    data-cy="filter-by-grade"
+                  />
                   <label for="ms-school-filter">Filter by Grade</label>
                 </span>
               </div>
@@ -121,8 +151,13 @@ id="ms-grade-filter" v-model="filterGrades" style="width: 20rem; max-width: 25re
             <span>
               <label for="view-columns" class="view-label">View</label>
               <PvDropdown
-id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
-                option-value="value" class="ml-2" />
+                id="view-columns"
+                v-model="viewMode"
+                :options="viewOptions"
+                option-label="label"
+                option-value="value"
+                class="ml-2"
+              />
             </span>
           </RoarDataTable>
         </div>
@@ -159,12 +194,21 @@ id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
         </div>
         <PvTabView>
           <PvTabPanel
-v-for="taskId of sortedTaskIds" :key="taskId"
-            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
+            v-for="taskId of sortedTaskIds"
+            :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
+          >
             <TaskReport
-v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
-              :administration-info="administrationInfo" />
+              v-if="taskId"
+              :task-id="taskId"
+              :initialized="initialized"
+              :administration-id="administrationId"
+              :runs="runsByTaskId[taskId]"
+              :org-type="orgType"
+              :org-id="orgId"
+              :org-info="orgInfo"
+              :administration-info="administrationInfo"
+            />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
@@ -273,12 +317,15 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const reportView = ref({ name: "Score Report", constant: true })
-const reportViews = [{ name: "Score Report", constant: true }, { name: "Progress Report", constant: false }]
+const reportView = ref({ name: 'Score Report', constant: true });
+const reportViews = [
+  { name: 'Score Report', constant: true },
+  { name: 'Progress Report', constant: false },
+];
 
 const handleViewChange = () => {
   window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
-}
+};
 
 // Queries for page
 const orderBy = ref([
