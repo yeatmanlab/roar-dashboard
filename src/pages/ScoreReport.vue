@@ -1071,9 +1071,9 @@ const tableData = computed(() => {
           assignment,
           scores,
           routeParams: {
-          administrationId: props.administrationId,
-          userId: _get(user, 'userId'),
-          }
+            administrationId: props.administrationId,
+            userId: _get(user, 'userId'),
+          },
         };
       }
     }
@@ -1084,7 +1084,7 @@ const tableData = computed(() => {
       routeParams: {
         administrationId: props.administrationId,
         userId: _get(user, 'userId'),
-      }
+      },
     };
   });
 });
@@ -1193,7 +1193,6 @@ const runsByTaskId = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  console.log(runsByTaskId)
   return Object.keys(runsByTaskId.value).toSorted((p1, p2) => {
     if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
       return taskDisplayNames[p1].order - taskDisplayNames[p2].order;

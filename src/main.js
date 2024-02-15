@@ -34,7 +34,7 @@ import PvInputNumber from 'primevue/inputnumber';
 import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvInlineMessage from 'primevue/inlinemessage';
-import PvKnob from 'primevue/knob'; 
+import PvKnob from 'primevue/knob';
 import PvListbox from 'primevue/listbox';
 import PvMessage from 'primevue/message';
 import PvMenu from 'primevue/menu';

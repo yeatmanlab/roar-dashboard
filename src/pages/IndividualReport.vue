@@ -7,9 +7,7 @@
   <div v-else ref="IndividualReportDownload" class="container flex flex-column align-items-around">
     <div class="flex flex-column md:flex-row align-items-center my-2">
       <div class="student-name text-center md:text-left my-3">
-        <div class="text-lg uppercase text-gray-400">
-          Individual Score Report
-        </div>
+        <div class="text-lg uppercase text-gray-400">Individual Score Report</div>
         <div class="text-5xl">
           <strong>{{ studentFirstName }} {{ studentLastName }}</strong>
         </div>
@@ -20,23 +18,18 @@
           <strong>Grade:</strong> {{ getGradeWithSuffix(studentData.studentData.grade) }}
         </p>
         <!-- TODO: Get Student Class -->
-        <p v-if="studentData?.studentData?.class">
-          <strong>Class:</strong> { Placeholder }
-        </p>
-        <p v-if="administrationData?.name">
-          <strong>Administration:</strong> {{ administrationData?.name }}
-        </p>
+        <p v-if="studentData?.studentData?.class"><strong>Class:</strong> { Placeholder }</p>
+        <p v-if="administrationData?.name"><strong>Administration:</strong> {{ administrationData?.name }}</p>
       </div>
-
     </div>
 
     <div v-if="taskData?.length === 0" class="flex flex-column align-items-center mt-8">
-      <div class="p-4">
-        It looks like {{ studentFirstName }} is still working on completing their assigned games!
-      </div>
+      <div class="p-4">It looks like {{ studentFirstName }} is still working on completing their assigned games!</div>
 
-      <h3>{{ studentFirstName }}'s individual score report will be built when the student has completed at least one
-        assessment.</h3>
+      <h3>
+        {{ studentFirstName }}'s individual score report will be built when the student has completed at least one
+        assessment.
+      </h3>
     </div>
 
     <div v-else class="welcome-card mt-2 mb-4">
@@ -44,48 +37,56 @@
         <div class="banner-text">Welcome to your ROAR Score Report</div>
         <div class="flex">
           <PvButton
-outlined class="text-white" :label="!expanded ? 'Expand All Sections' : 'Collapse All Sections'"
+            outlined
+            class="text-white"
+            :label="!expanded ? 'Expand All Sections' : 'Collapse All Sections'"
             :icon="!expanded ? 'pi pi-plus' : 'pi pi-minus'"
-            icon-pos="right" data-html2canvas-ignore="true" @click="setExpand" />
+            icon-pos="right"
+            data-html2canvas-ignore="true"
+            @click="setExpand"
+          />
           <PvButton
-outlined class="text-white" label="Export to PDF" icon="pi pi-download"
-            icon-pos="right" data-html2canvas-ignore="true" @click="printDownload" />
+            outlined
+            class="text-white"
+            label="Export to PDF"
+            icon="pi pi-download"
+            icon-pos="right"
+            data-html2canvas-ignore="true"
+            @click="printDownload"
+          />
         </div>
         <!-- </PvButton> -->
       </div>
-      <div class="p-3 ">
-        The Rapid Online Assessment of Reading (ROAR)
-        assesses students across a range of foundational reading skills.
-        <div class="mt-2">
-          {{ studentFirstName }} completed the following games:
-        </div>
-        <ul class="inline-flex p-0" style="list-style-type:none">
+      <div class="p-3">
+        The Rapid Online Assessment of Reading (ROAR) assesses students across a range of foundational reading skills.
+        <div class="mt-2">{{ studentFirstName }} completed the following games:</div>
+        <ul class="inline-flex p-0" style="list-style-type: none">
           <li>
             <strong>{{ formattedTasks }}</strong>
           </li>
         </ul>
         <div>
-          In this report, you will find {{ studentFirstName }}’s scoring at the time of testing,
-          as well as ways you can support {{ studentFirstName }} in
-          their path to reading fluency!
+          In this report, you will find {{ studentFirstName }}’s scoring at the time of testing, as well as ways you can
+          support {{ studentFirstName }} in their path to reading fluency and comprehension!
         </div>
       </div>
     </div>
 
-
     <div class="individual-report-wrapper gap-4">
       <individual-score-report-task
-:student-data="studentData" :task-data="taskData" :raw-task-data="rawTaskData"
-        :expanded="expanded" />
+        :student-data="studentData"
+        :task-data="taskData"
+        :raw-task-data="rawTaskData"
+        :expanded="expanded"
+      />
     </div>
     <PvAccordion class="my-5 w-full" :active-index="expanded ? 0 : null">
       <PvAccordionTab header="Next Steps">
         <div style="">
-          This score report provides a broad overview of your student’s reading development. Understand that a
-          student’s
-          progress may not be linear, and their scores are not fixed- everyone has room to grow and learn.
-
-          To learn more about any given test or subskill, click here.
+          This score report provides a broad overview of your student’s reading development. Understand that a student’s
+          progress may not be linear, and their scores are not fixed- everyone has room to grow and learn. To learn more
+          about any given test or subskill, and to find more resources for supporting your student
+          <a :href="NextSteps" class="hover:text-red-700" target="_blank">click here.</a>
         </div>
       </PvAccordionTab>
     </PvAccordion>
@@ -93,16 +94,17 @@ outlined class="text-white" label="Export to PDF" icon="pi pi-download"
 </template>
 
 <script setup>
-import { fetchDocById } from "../helpers/query/utils";
-import { runPageFetcher } from "../helpers/query/runs";
-import { useQuery } from "@tanstack/vue-query";
-import { computed, onMounted, ref } from "vue";
-import { storeToRefs } from "pinia";
-import { useAuthStore } from "../store/auth";
-import IndividualScoreReportTask from "../components/reports/IndividualScoreReportTask.vue";
-import AppSpinner from "../components/AppSpinner.vue";
-import { getGrade } from "@bdelab/roar-utils";
-import html2pdf from "html2pdf.js"
+import { fetchDocById } from '../helpers/query/utils';
+import { runPageFetcher } from '../helpers/query/runs';
+import { useQuery } from '@tanstack/vue-query';
+import { computed, onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '../store/auth';
+import IndividualScoreReportTask from '../components/reports/IndividualScoreReportTask.vue';
+import AppSpinner from '../components/AppSpinner.vue';
+import { getGrade } from '@bdelab/roar-utils';
+import html2pdf from 'html2pdf.js';
+import NextSteps from '@/assets/NextSteps.pdf';
 
 // const administrationId = '5vaxicYXnpsNXeq1mUJK';
 // const userId = '00w7xNIlq9gG1uxhmRTiv9NdOys2';
@@ -122,7 +124,6 @@ const props = defineProps({
   },
 });
 
-
 const initialized = ref(false);
 
 const { data: studentData } = useQuery({
@@ -131,7 +132,7 @@ const { data: studentData } = useQuery({
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
-})
+});
 
 // const {data: classData } = useQuery({
 //   queryKey: ['classes', props.userId],
@@ -143,32 +144,33 @@ const { data: studentData } = useQuery({
 
 const { data: taskData } = useQuery({
   queryKey: ['runs', props.administrationId, props.userId],
-  queryFn: () => runPageFetcher({
-    administrationId: props.administrationId,
-    userId: props.userId,
-    select: ['scores.computed.composite', 'taskId'],
-    scoreKey: 'scores.computed.composite',
-    paginate: false
-  }),
+  queryFn: () =>
+    runPageFetcher({
+      administrationId: props.administrationId,
+      userId: props.userId,
+      select: ['scores.computed.composite', 'taskId'],
+      scoreKey: 'scores.computed.composite',
+      paginate: false,
+    }),
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
-})
+});
 
 const { data: rawTaskData } = useQuery({
   queryKey: ['runs', props.administrationId, props.userId],
-  queryFn: () => runPageFetcher({
-    administrationId: props.administrationId,
-    userId: props.userId,
-    select: ['scores.computed', 'taskId'],
-    scoreKey: 'scores.computed',
-    paginate: false
-  }),
+  queryFn: () =>
+    runPageFetcher({
+      administrationId: props.administrationId,
+      userId: props.userId,
+      select: ['scores.computed', 'taskId'],
+      scoreKey: 'scores.computed',
+      paginate: false,
+    }),
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
-})
-
+});
 
 const { data: administrationData } = useQuery({
   queryKey: ['administrations', props.administrationId],
@@ -176,36 +178,38 @@ const { data: administrationData } = useQuery({
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
-})
+});
 
 const expanded = ref(false);
 
 const setExpand = () => {
-  console.log("expand called")
+  console.log('expand called');
   expanded.value = !expanded.value;
-}
+};
 
 const IndividualReportDownload = ref(null);
 
 function printDownload() {
-  const doc = IndividualReportDownload.value
+  const doc = IndividualReportDownload.value;
 
   const opt = {
     margin: 0.2,
     filename: `IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`,
-    html2canvas: { width: 1200, },
+    html2canvas: { width: 1200 },
     jsPDF: {
-      format: 'letter', orientation: 'p',
-    }
+      format: 'letter',
+      orientation: 'p',
+    },
   };
-  html2pdf().set(opt).from(doc).save()
-
+  html2pdf().set(opt).from(doc).save();
 }
 
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId));
 
 const formattedTasks = computed(() => {
-  return tasks?.value?.map(taskId => extendedTaskTitle[taskId] ? extendedTaskTitle[taskId] : taskId).join(', ') + '.';
+  return (
+    tasks?.value?.map((taskId) => (extendedTaskTitle[taskId] ? extendedTaskTitle[taskId] : taskId)).join(', ') + '.'
+  );
 });
 
 const studentFirstName = computed(() => {
@@ -214,25 +218,24 @@ const studentFirstName = computed(() => {
 });
 
 const studentLastName = computed(() => {
-  if (!studentData.value.name) return "";
+  if (!studentData.value.name) return '';
   return studentData.value.name.last;
 });
 
-
 const extendedTaskTitle = {
-  "swr": "ROAR-Word",
-  "swr-es": "ROAR-Palabra",
-  "pa": "ROAR-Phoneme",
-  "sre": "ROAR-Sentence",
-  "vocab": "ROAR-Picture Vocabulary ",
-  "multichoice": "ROAR-Multiple Choice",
-  "morph": "ROAR-Morphology",
-  "cva": "ROAR-Written Vocabulary",
-  "letter": "ROAR-Letter",
-  "comp": "ROAR-Comprehension",
-  "syntax": "ROAR-Syntax",
-  "fluency": "ROAM-Fluency",
-}
+  swr: 'ROAR-Word',
+  'swr-es': 'ROAR-Palabra',
+  pa: 'ROAR-Phoneme',
+  sre: 'ROAR-Sentence',
+  vocab: 'ROAR-Picture Vocabulary ',
+  multichoice: 'ROAR-Multiple Choice',
+  morph: 'ROAR-Morphology',
+  cva: 'ROAR-Written Vocabulary',
+  letter: 'ROAR-Letter',
+  comp: 'ROAR-Comprehension',
+  syntax: 'ROAR-Syntax',
+  fluency: 'ROAM-Fluency',
+};
 
 function getGradeWithSuffix(grade) {
   if (getGrade(grade) < 1) {
@@ -246,7 +249,7 @@ function getGradeWithSuffix(grade) {
   } else if (getGrade(grade) >= 4 && getGrade(grade) <= 12) {
     return grade + 'th';
   } else {
-    return "Invalid grade";
+    return 'Invalid grade';
   }
 }
 
@@ -265,7 +268,6 @@ function getGradeWithSuffix(grade) {
 //   return matchingClasses;
 // }
 
-
 const refreshing = ref(false);
 let unsubscribe;
 const refresh = () => {
@@ -282,19 +284,16 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) {
-    refresh()
+    refresh();
   }
 });
-
-
-
 </script>
 
 <style scoped>
 .individual-report-wrapper {
   display: flex;
   flex-wrap: wrap;
-  gap: .5rem;
+  gap: 0.5rem;
   align-items: center;
   justify-content: space-around;
 }
@@ -307,13 +306,12 @@ onMounted(async () => {
 .welcome-banner {
   display: flex;
   background-color: var(--primary-color);
-  padding: .8rem 1rem;
-  border-radius: .5rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.5rem;
   color: white;
   justify-content: space-between;
   align-items: center;
-  ;
-  border-radius: .2rem .2rem 0rem 0rem;
+  border-radius: 0.2rem 0.2rem 0rem 0rem;
 }
 
 .banner-text {
@@ -331,7 +329,7 @@ onMounted(async () => {
   flex: 1;
   font-size: 1rem;
   border-radius: 12px;
-  padding: .35rem .75rem;
+  padding: 0.35rem 0.75rem;
 }
 
 @media (min-width: 768px) {

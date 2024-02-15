@@ -947,18 +947,19 @@ export const assignmentPageFetcher = async (
       const batchUserDocs = await adminAxiosInstance
         .post(':batchGet', {
           documents: userDocPaths,
-          mask: { fieldPaths: userSelectFields },})
-      .then(({ data }) => {
-        return _without(
-          data.map(({ found }) => {
-            if (found) {
-              const userId = found.name.split('/users/')[1];
-              return {
-                name: found.name,
-                data: {
-                  ..._mapValues(found.fields, (value) => convertValues(value)),
-                  userId,
-                },
+          mask: { fieldPaths: userSelectFields },
+        })
+        .then(({ data }) => {
+          return _without(
+            data.map(({ found }) => {
+              if (found) {
+                const userId = found.name.split('/users/')[1];
+                return {
+                  name: found.name,
+                  data: {
+                    ..._mapValues(found.fields, (value) => convertValues(value)),
+                    userId,
+                  },
                 };
               }
               return undefined;

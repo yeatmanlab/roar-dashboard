@@ -59,12 +59,7 @@
           </div>
 
           <router-link
-            v-if="
-              !allGamesComplete &&
-              !game.completedOn &&
-              !game.taskData?.taskURL &&
-              !game.taskData?.variantURL
-            "
+            v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
             :to="{ path: 'game/' + game.taskId }"
           ></router-link>
         </article>
