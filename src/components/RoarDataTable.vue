@@ -281,7 +281,7 @@ Array of objects consisting of a field and header at minimum.
       the leftmost column.
 */
 // const compressedRows = ref(false);
-const nameForVisualize = ref('Expand view');
+const nameForVisualize = ref('Expand View');
 const countForVisualize = ref(2); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
@@ -362,9 +362,9 @@ const padding = '1rem 1.5rem';
 function increasePadding() {
   if (countForVisualize.value % 2 === 0) {
     document.documentElement.style.setProperty('--padding-value', padding);
-    nameForVisualize.value = 'Compact view';
+    nameForVisualize.value = 'Compact View';
   } else {
-    nameForVisualize.value = 'Expand view';
+    nameForVisualize.value = 'Expand View';
     document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
   countForVisualize.value = countForVisualize.value + 1;

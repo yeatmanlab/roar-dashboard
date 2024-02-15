@@ -3,13 +3,8 @@
   <div class="view-by-wrapper my-2">
     <div class="flex uppercase text-xs font-light">view support levels by</div>
     <PvSelectButton
-      v-model="xMode"
-      class="flex flex-row my-2 select-button"
-      :allow-empty="false"
-      :options="xModes"
-      option-label="name"
-      @change="handleXModeChange"
-    />
+v-model="xMode" class="flex flex-row my-2 select-button" :allow-empty="false" :options="xModes"
+      option-label="name" @change="handleXModeChange" />
   </div>
 </template>
 
@@ -118,10 +113,14 @@ const returnSupportLevelValues = computed(() => {
   return values;
 });
 
+const graphHeight = computed(() => {
+  return returnSupportLevelValues.value.length * 23.5;
+})
+
 const distributionBySupport = computed(() => {
   let spec = {
     mark: 'bar',
-    height: 450,
+    height: graphHeight.value,
     width: 350,
     background: null,
     title: {
@@ -156,32 +155,32 @@ const distributionBySupport = computed(() => {
         sort:
           props.facetMode.name === 'Grade'
             ? [
-                'Kindergarten',
-                1,
-                '1',
-                2,
-                '2',
-                3,
-                '3',
-                4,
-                '4',
-                5,
-                '5',
-                6,
-                '6',
-                7,
-                '7',
-                8,
-                '8',
-                9,
-                '9',
-                10,
-                '10',
-                11,
-                '11',
-                12,
-                '12',
-              ]
+              'Kindergarten',
+              1,
+              '1',
+              2,
+              '2',
+              3,
+              '3',
+              4,
+              '4',
+              5,
+              '5',
+              6,
+              '6',
+              7,
+              '7',
+              8,
+              '8',
+              9,
+              '9',
+              10,
+              '10',
+              11,
+              '11',
+              12,
+              '12',
+            ]
             : 'ascending',
         axis: {
           labelAngle: 0,
