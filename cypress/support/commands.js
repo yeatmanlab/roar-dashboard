@@ -75,7 +75,7 @@ Cypress.Commands.add('activateAdminSidebar', () => {
   cy.get('[data-cy="button-admin-sidebar"]').click().wait(1000);
 });
 
-Cypress.Commands.add('getAdministrationCard', ( testAdministration, sort = 'descending') => {
+Cypress.Commands.add('getAdministrationCard', (testAdministration, sort = 'descending') => {
   cy.get('[data-cy="dropdown-sort-administrations"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('ul > li').contains(`Name (${sort})`).click();
 

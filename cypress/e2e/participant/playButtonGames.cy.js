@@ -6,7 +6,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
   games.forEach((game) => {
     it(`${game.name} Play through Test`, () => {
       cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-      cy.visit("/", { timeout: 2 * timeout })
+      cy.visit('/', { timeout: 2 * timeout });
 
       cy.get('.p-dropdown-trigger', { timeout: 2 * timeout })
         .should('be.visible')
@@ -15,9 +15,9 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
         .contains(Cypress.env('testRoarAppsAdministration'))
         .should('be.visible')
         .click();
-      cy.get('.tabview-nav-link-label', {timeout: 2 * timeout}).contains(game.name);
+      cy.get('.tabview-nav-link-label', { timeout: 2 * timeout }).contains(game.name);
 
-      cy.visit(`/game/${game.id}`, { timeout: 2 * timeout })
+      cy.visit(`/game/${game.id}`, { timeout: 2 * timeout });
 
       // Long timeout is needed for picture vocab
       cy.get(game.startBtn, { timeout: 6 * timeout })
@@ -58,7 +58,9 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
         .contains(Cypress.env('testRoarAppsAdministration'))
         .should('be.visible')
         .click();
-      cy.get('.tabview-nav-link-label', {timeout: 5 * timeout }).contains(game.name).should('have.attr', 'data-game-status', 'complete');
+      cy.get('.tabview-nav-link-label', { timeout: 5 * timeout })
+        .contains(game.name)
+        .should('have.attr', 'data-game-status', 'complete');
     });
   });
 });
@@ -78,7 +80,7 @@ function makeChoiceOrContinue(game, overflow) {
   }
   cy.get('body').then((body) => {
     if (body.find(game.introBtn).length > 0) {
-      cy.get(game.introBtn, {timeout: timeout}).click();
+      cy.get(game.introBtn, { timeout: timeout }).click();
     } else {
       // Timing issues with the stimulus prevent this assertion from being used -- tabling until next sprint
       // cy.get(game.stimulus).should("be.visible")

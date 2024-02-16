@@ -118,10 +118,14 @@ const returnSupportLevelValues = computed(() => {
   return values;
 });
 
+const graphHeight = computed(() => {
+  return returnSupportLevelValues.value.length * 23.5;
+});
+
 const distributionBySupport = computed(() => {
   let spec = {
     mark: 'bar',
-    height: 450,
+    height: graphHeight.value,
     width: 350,
     background: null,
     title: {
