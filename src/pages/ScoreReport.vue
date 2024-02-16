@@ -304,7 +304,7 @@ import {
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
-import NextSteps from '@/assets/NextStepsV3.pdf';
+import NextSteps from '@/assets/NextSteps.pdf';
 
 const authStore = useAuthStore();
 

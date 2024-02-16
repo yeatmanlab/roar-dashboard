@@ -431,7 +431,6 @@ const enableFilter = (column) => {
   return true;
 };
 
-
 // Grab list of fields defined as dates
 let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
 dateFields = _map(dateFields, (col) => col.field);
@@ -631,7 +630,6 @@ g {
   width: 110px;
 }
 
-
 button.p-column-filter-menu-button.p-link:hover {
   background: var(--surface-500);
 }
@@ -655,17 +653,15 @@ button.p-column-filter-menu-button.p-link:hover {
   display: none;
 }
 .scrollable-container::-webkit-scrollbar {
-    width: 10px;
+  width: 10px;
 }
 
 .scrollable-container::-webkit-scrollbar-thumb,
 .scrollable-container::-webkit-scrollbar-track {
-    background-color: var(--primary-color);
+  background-color: var(--primary-color);
 }
 
 .scrollable-container {
   scrollbar-color: var(--primary-color) white;
 }
-
-
 </style>
