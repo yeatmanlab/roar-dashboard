@@ -278,7 +278,7 @@ import {
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
-import NextSteps from '@/assets/NextSteps.pdf';
+import NextSteps from '@/assets/NextStepsV3.pdf';
 
 const authStore = useAuthStore();
 
@@ -1185,7 +1185,7 @@ onMounted(async () => {
 .legend-description {
   text-align: center;
   margin-bottom: 1rem;
-  font-size: 0.7rem;
+  font-size: 1rem;
 }
 
 .circle {
