@@ -1008,7 +1008,7 @@ function rawScoreByTaskId(taskId) {
 
 const parseGrade = (grade) => {
   const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
-  return gradeZero.includes(grade?.toLowerCase()) ? 0 : parseInt(grade);
+  return gradeZero.includes(String(grade)?.toLowerCase()) ? 0 : parseInt(grade);
 };
 
 const runsByTaskId = computed(() => {
