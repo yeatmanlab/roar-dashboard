@@ -27,8 +27,14 @@
               <div class="flex flex-row align-items-center gap-4">
                 <div class="uppercase text-sm text-gray-600">VIEW</div>
                 <PvSelectButton
-v-model="reportView" :options="reportViews" option-disabled="constant"
-                  :allow-empty="false" option-label="name" class="flex my-2 select-button" @change="handleViewChange">
+                  v-model="reportView"
+                  :options="reportViews"
+                  option-disabled="constant"
+                  :allow-empty="false"
+                  option-label="name"
+                  class="flex my-2 select-button"
+                  @change="handleViewChange"
+                >
                 </PvSelectButton>
               </div>
             </div>
@@ -41,8 +47,13 @@ v-model="reportView" :options="reportViews" option-disabled="constant"
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
                     <DistributionChartOverview
-:runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
-                      :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
+                      :runs="runsByTaskId[taskId]"
+                      :initialized="initialized"
+                      :task-id="taskId"
+                      :org-type="props.orgType"
+                      :org-id="props.orgId"
+                      :administration-id="props.administrationId"
+                    />
                     <div className="task-description mt-3">
                       <span class="font-bold">
                         {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
@@ -86,32 +97,57 @@ v-model="reportView" :options="reportViews" option-disabled="constant"
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span>The filters applied have no matching scores.
+          <span
+            >The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <RoarDataTable
-:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores" data-cy="roar-data-table" :lazy-pre-sorting="sortDisplay"
-            @page="onPage($event)" @sort="onSort($event)" @filter="onFilter($event)" @export-all="exportAll"
-            @export-selected="exportSelected">
+            :data="tableData"
+            :columns="columns"
+            :total-records="scoresCount"
+            lazy
+            :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores"
+            data-cy="roar-data-table"
+            :lazy-pre-sorting="sortDisplay"
+            @page="onPage($event)"
+            @sort="onSort($event)"
+            @filter="onFilter($event)"
+            @export-all="exportAll"
+            @export-selected="exportSelected"
+          >
             <template #filterbar>
               <div v-if="schoolsInfo" class="flex flex-row gap-2">
                 <span class="p-float-label">
                   <PvMultiSelect
-id="ms-school-filter" v-model="filterSchools" style="width: 20rem; max-width: 25rem"
-                    :options="schoolsInfo" option-label="name" option-value="id" :show-toggle-all="false"
-                    selected-items-label="{0} schools selected" data-cy="filter-by-school" />
+                    id="ms-school-filter"
+                    v-model="filterSchools"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="schoolsInfo"
+                    option-label="name"
+                    option-value="id"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} schools selected"
+                    data-cy="filter-by-school"
+                  />
                   <label for="ms-school-filter">Filter by School</label>
                 </span>
               </div>
               <div class="flex flex-row gap-2">
                 <span class="p-float-label">
                   <PvMultiSelect
-id="ms-grade-filter" v-model="filterGrades" style="width: 20rem; max-width: 25rem"
-                    :options="gradeOptions" option-label="label" option-value="value" :show-toggle-all="false"
-                    selected-items-label="{0} grades selected" data-cy="filter-by-grade" />
+                    id="ms-grade-filter"
+                    v-model="filterGrades"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="gradeOptions"
+                    option-label="label"
+                    option-value="value"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} grades selected"
+                    data-cy="filter-by-grade"
+                  />
                   <label for="ms-school-filter">Filter by Grade</label>
                 </span>
               </div>
@@ -119,8 +155,13 @@ id="ms-grade-filter" v-model="filterGrades" style="width: 20rem; max-width: 25re
             <span>
               <label for="view-columns" class="view-label">View</label>
               <PvDropdown
-id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
-                option-value="value" class="ml-2" />
+                id="view-columns"
+                v-model="viewMode"
+                :options="viewOptions"
+                option-label="label"
+                option-value="value"
+                class="ml-2"
+              />
             </span>
           </RoarDataTable>
         </div>
@@ -146,7 +187,7 @@ id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: white`" />
             <div>
-              <div>Assessed </div>
+              <div>Assessed</div>
             </div>
           </div>
         </div>
@@ -163,12 +204,21 @@ id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
         </div>
         <PvTabView>
           <PvTabPanel
-v-for="taskId of sortedTaskIds" :key="taskId"
-            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
+            v-for="taskId of sortedTaskIds"
+            :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
+          >
             <TaskReport
-v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
-              :administration-info="administrationInfo" />
+              v-if="taskId"
+              :task-id="taskId"
+              :initialized="initialized"
+              :administration-id="administrationId"
+              :runs="runsByTaskId[taskId]"
+              :org-type="orgType"
+              :org-id="orgId"
+              :org-info="orgInfo"
+              :administration-info="administrationInfo"
+            />
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
@@ -994,7 +1044,7 @@ function rawScoreByTaskId(taskId) {
 
 const parseGrade = (grade) => {
   const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
-  return gradeZero.includes(grade?.toLowerCase()) ? 0 : parseInt(grade);
+  return gradeZero.includes(String(grade)?.toLowerCase()) ? 0 : parseInt(grade);
 };
 
 const runsByTaskId = computed(() => {
@@ -1186,8 +1236,8 @@ onMounted(async () => {
 }
 
 .tooltip {
-  outline: 1px dotted #0000CD;
-  outline-offset: 3px
+  outline: 1px dotted #0000cd;
+  outline-offset: 3px;
 }
 
 .extra-info-title {

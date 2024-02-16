@@ -4,13 +4,17 @@
       <div class="flex justify-content-between align-items-center">
         <div>
           <div class="flex flex-column align-items-start mb-4 gap-2">
-            <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
-            <div class="report-title uppercase">
-              {{ orgInfo.name }}
+            <div>
+              <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
+              <div class="report-title uppercase">
+                {{ orgInfo.name }}
+              </div>
             </div>
-            <div class="uppercase font-light text-gray-500 text-md">Administration</div>
-            <div class="administration-name uppercase">
-              {{ administrationInfo?.name }}
+            <div>
+              <div class="uppercase font-light text-gray-500 text-md">Administration</div>
+              <div class="administration-name uppercase">
+                {{ administrationInfo?.name }}
+              </div>
             </div>
           </div>
         </div>
