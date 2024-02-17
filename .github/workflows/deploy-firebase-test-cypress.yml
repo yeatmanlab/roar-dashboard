@@ -9,6 +9,7 @@ concurrency:
 
 jobs:
   build-and-preview:
+    name: Deploy preview
     if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
     runs-on: ubuntu-latest
     steps:
@@ -30,6 +31,7 @@ jobs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
   cypress-run:
+    name: Run Cypress Tests
     needs: [build-and-preview]
     runs-on: ubuntu-latest
     timeout-minutes: 90
