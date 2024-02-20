@@ -131,8 +131,8 @@ const tableData = computed(() => {
             .join(', ');
 
           _set(scores, 'letter', {
-            upperCaseScore: _get(assessment, 'scores.computed.LowercaseNames.subScore'),
-            lowerCaseScore: _get(assessment, 'scores.computed.UppercaseNames.subScore'),
+            upperCaseScore: _get(assessment, 'scores.computed.UppercaseNames.subScore'),
+            lowerCaseScore: _get(assessment, 'scores.computed.LowercaseNames.subScore'),
             phonemeScore: _get(assessment, 'scores.computed.Phonemes.subScore'),
             totalScore: _get(assessment, 'scores.computed.composite'),
             incorrectLetters: incorrectLetters,
@@ -227,8 +227,7 @@ const exportAll = async () => {
           _set(tableRow, 'Letters To Work On', incorrectLetters);
           _set(tableRow, 'Sounds To Work On', incorrectPhonemes);
         }
-      }
-      if (assessment.taskId === 'pa') {
+      } else if (assessment.taskId === 'pa') {
         if (_get(assessment, 'scores')) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
           const last = _get(assessment, 'scores.computed.LSM.roarScore');
