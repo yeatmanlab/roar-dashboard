@@ -9,9 +9,7 @@ const orgs = [
 const listOrgsUrl = '/list-orgs';
 
 function checkOrgExists(org) {
-  cy.get('ul > li', { timeout: timeout })
-    .contains(org.tabName, { timeout: timeout })
-    .click();
+  cy.get('ul > li', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
   cy.log('Tab ' + org.tabName + ' found.');
 
   cy.get('div', { timeout: timeout }).should('contain.text', org.orgName, {
@@ -24,7 +22,7 @@ describe('The partner admin user', () => {
   beforeEach(() => {
     cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
     cy.wait(0.2 * timeout);
-    cy.navigateTo(listOrgsUrl, {timeout: timeout});
+    cy.navigateTo(listOrgsUrl, { timeout: timeout });
   });
 
   orgs.forEach((org) => {

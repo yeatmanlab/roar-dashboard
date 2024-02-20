@@ -61,6 +61,7 @@
           ref="dataTable"
           v-model:filters="refFilters"
           v-model:selection="selectedRows"
+          class="scrollable-container"
           :class="{ compressed: compressedRows }"
           :value="computedData"
           :row-hover="true"
@@ -281,7 +282,7 @@ Array of objects consisting of a field and header at minimum.
       the leftmost column.
 */
 // const compressedRows = ref(false);
-const nameForVisualize = ref('Expand view');
+const nameForVisualize = ref('Expand View');
 const countForVisualize = ref(2); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
@@ -362,9 +363,9 @@ const padding = '1rem 1.5rem';
 function increasePadding() {
   if (countForVisualize.value % 2 === 0) {
     document.documentElement.style.setProperty('--padding-value', padding);
-    nameForVisualize.value = 'Compact view';
+    nameForVisualize.value = 'Compact View';
   } else {
-    nameForVisualize.value = 'Expand view';
+    nameForVisualize.value = 'Expand View';
     document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
   countForVisualize.value = countForVisualize.value + 1;
@@ -650,5 +651,17 @@ button.p-column-filter-menu-button.p-link:hover {
      for strings. To reduce confusion for end users, remove the dropdown
      offering different matchmodes */
   display: none;
+}
+.scrollable-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb,
+.scrollable-container::-webkit-scrollbar-track {
+  background-color: var(--primary-color);
+}
+
+.scrollable-container {
+  scrollbar-color: var(--primary-color) white;
 }
 </style>

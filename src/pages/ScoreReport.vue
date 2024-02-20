@@ -8,21 +8,41 @@
             <div class="uppercase text-sm">Loading Org Info</div>
           </div>
           <div v-if="orgInfo && administrationInfo">
-            <div class="report-title">
-              {{ _toUpper(orgInfo.name) }}
+            <div class="flex justify-content-between align-items-center">
+              <div class="flex flex-column align-items-start gap-2">
+                <div>
+                  <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Progress Report</div>
+                  <div class="report-title">
+                    {{ _toUpper(orgInfo.name) }}
+                  </div>
+                </div>
+                <div>
+                  <div class="uppercase font-light text-gray-500 text-sm">Administration</div>
+                  <div class="administration-name mb-4">
+                    {{ _toUpper(administrationInfo?.name) }}
+                  </div>
+                </div>
+                <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
+              </div>
+              <div class="flex flex-row align-items-center gap-4">
+                <div class="uppercase text-sm text-gray-600">VIEW</div>
+                <PvSelectButton
+                  v-model="reportView"
+                  :options="reportViews"
+                  option-disabled="constant"
+                  :allow-empty="false"
+                  option-label="name"
+                  class="flex my-2 select-button"
+                  @change="handleViewChange"
+                >
+                </PvSelectButton>
+              </div>
             </div>
-            <div class="administration-name mb-4">
-              {{ _toUpper(administrationInfo?.name) }}
-            </div>
-            <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
-            <div
-              v-if="sortedAndFilteredTaskIds?.length > 0"
-              class="overview-wrapper bg-gray-100 py-3 mb-2"
-            >
+            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
@@ -147,21 +167,27 @@
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
               <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
             <div>
               <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
             <div>
               <div>Achieved Skill</div>
+            </div>
+          </div>
+          <div class="legend-entry">
+            <div class="circle tooltip" :style="`background-color: white`" />
+            <div>
+              <div>Assessed</div>
             </div>
           </div>
         </div>
@@ -230,7 +256,7 @@
             This score report has provided a snapshot of your student's reading performance at the time of
             administration. By providing classifications for students based on national norms for scoring, you are able
             to see how your student(s) can benefit from varying levels of support. To read more about what to do to
-            support your student, <a :href="NextSteps" class="hover:text-red-700" target="_blank">read more.</a>
+            support your student, <a :href="NextSteps" class="hover:text-red-700" target="_blank">read more</a>.
           </p>
         </div>
       </div>
@@ -300,6 +326,16 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
+
+const reportView = ref({ name: 'Score Report', constant: true });
+const reportViews = [
+  { name: 'Score Report', constant: true },
+  { name: 'Progress Report', constant: false },
+];
+
+const handleViewChange = () => {
+  window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
+};
 
 // Queries for page
 const orderBy = ref([
@@ -1008,7 +1044,7 @@ function rawScoreByTaskId(taskId) {
 
 const parseGrade = (grade) => {
   const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
-  return gradeZero.includes(grade?.toLowerCase()) ? 0 : parseInt(grade);
+  return gradeZero.includes(String(grade)?.toLowerCase()) ? 0 : parseInt(grade);
 };
 
 const runsByTaskId = computed(() => {
@@ -1185,7 +1221,7 @@ onMounted(async () => {
 .legend-description {
   text-align: center;
   margin-bottom: 1rem;
-  font-size: 0.7rem;
+  font-size: 1rem;
 }
 
 .circle {
@@ -1197,6 +1233,11 @@ onMounted(async () => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+}
+
+.tooltip {
+  outline: 1px dotted #0000cd;
+  outline-offset: 3px;
 }
 
 .extra-info-title {

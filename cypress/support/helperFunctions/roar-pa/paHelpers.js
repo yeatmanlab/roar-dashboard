@@ -12,28 +12,24 @@ const playTrial = (targetText) => {
   cy.wait(1.5 * timeout);
 
   // Check for a re-route to the dashboard or for the end block text
-  cy.get("body", { timeout: timeout })
-    .invoke("text")
+  cy.get('body', { timeout: timeout })
+    .invoke('text')
     .then((text) => {
-
-    //   Check for re-route to dashboard from game and assume game complete
-    if (text.includes("Sign Out")) {
-      cy.log("Rerouted to dashboard from game; game complete.")
-    }
-    else {
+      //   Check for re-route to dashboard from game and assume game complete
+      if (text.includes('Sign Out')) {
+        cy.log('Rerouted to dashboard from game; game complete.');
+      } else {
         // Check for the end block text
         if (text.includes(targetText)) {
-          cy.get("div", { timeout: timeout })
-            .contains(targetText, { timeout: timeout })
-            .should("be.visible");
-          cy.log("Game break.");
+          cy.get('div', { timeout: timeout }).contains(targetText, { timeout: timeout }).should('be.visible');
+          cy.log('Game break.');
         } else {
           // Check session storage for the correct answer and select it
           cy.window().then((win) => {
             const correctAnswer = JSON.parse(win.sessionStorage.getItem('currentStimulus')).goal;
             cy.log(correctAnswer);
 
-            cy.log("Game in progress; selecting correct answer.");
+            cy.log('Game in progress; selecting correct answer.');
             cy.get(`img[src*="${correctAnswer}.webp"]`, { timeout: timeout })
               .first()
               .click()
@@ -52,7 +48,7 @@ const playTrial = (targetText) => {
               });
           });
         }
-    }
+      }
     });
 };
 
@@ -69,10 +65,10 @@ function playIntro(startText) {
     .should('be.visible')
     .click();
 
-  handleFullScreenError()
+  handleFullScreenError();
 
-  cy.get("div", { timeout: timeout }).contains(startText, { timeout: timeout }).should("be.visible");
-  cy.get(".continue", { timeout: timeout }).should('be.visible').click();
+  cy.get('div', { timeout: timeout }).contains(startText, { timeout: timeout }).should('be.visible');
+  cy.get('.continue', { timeout: timeout }).should('be.visible').click();
 
   // clicks through first introduction pages
   // eslint-disable-next-line no-plusplus
@@ -117,7 +113,6 @@ function playThirdTutorial() {
   cy.get('.continue').click();
 }
 
-
 export function playPA(startText, endText, breakText) {
   playIntro(startText);
 
@@ -136,7 +131,7 @@ export function playPA(startText, endText, breakText) {
   playTrial(endText.endText2);
 
   playThirdTutorial();
-  playTrial(breakText.breakText3)
+  playTrial(breakText.breakText3);
   //  delBreak
   cy.log('break 3');
   cy.get('.continue', { timeout: 2 * timeout }).click();
