@@ -206,7 +206,7 @@ const exportAll = async () => {
       Grade: _get(user, 'studentData.grade'),
     };
     for (const assessment of assignment?.assessments || []) {
-      if (assessment.taskId === 'letter') {
+      if (assessment.taskId === 'letter' && props.taskId === 'letter') {
         if (_get(assessment, 'scores')) {
           const incorrectLetters = [
             ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
@@ -227,8 +227,7 @@ const exportAll = async () => {
           _set(tableRow, 'Letters To Work On', incorrectLetters);
           _set(tableRow, 'Sounds To Work On', incorrectPhonemes);
         }
-      }
-      if (assessment.taskId === 'pa') {
+      } else if (assessment.taskId === 'pa' && props.taskId === 'pa') {
         if (_get(assessment, 'scores')) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
           const last = _get(assessment, 'scores.computed.LSM.roarScore');
