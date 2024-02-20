@@ -1,6 +1,6 @@
 <template>
   <AppHead>
-    <title>ROAR: {{ $route.meta.pageTitle }}</title>
+    <title>ROAR: {{ $route.meta.pageTitle[language] }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!" />
 
     <!-- Social -->
@@ -26,6 +26,8 @@ import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
 import { ref } from 'vue';
 import { fetchDocById } from '@/helpers/query/utils';
+
+const language = window.navigator.language;
 
 const navbarBlacklist = ref([
   'SignIn',

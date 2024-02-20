@@ -80,6 +80,9 @@ import 'primeflex/primeflex.scss'; // primeflex
 import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import './assets/styles/theme.scss'; // ROAR theme
 
+// translations
+import { i18n } from './translations/i18n';
+
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia();
@@ -99,6 +102,7 @@ app.use(VueGoogleMaps, {
 app.use(createHead());
 app.use(TextClamp);
 app.use(VueQueryPlugin);
+app.use(i18n);
 app.use(surveyPlugin);
 
 app.component('PvAccordion', PvAccordion);

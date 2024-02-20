@@ -2,7 +2,7 @@
   <div v-if="isLoading">
     <div class="col-full text-center">
       <AppSpinner />
-      <p class="text-center">Loading...</p>
+      <p class="text-center">{{ $t("homeSelector.loading") }}</p>
     </div>
   </div>
   <div v-else>
@@ -18,8 +18,7 @@
   />
   <PvConfirmDialog group="inactivity-logout" class="confirm">
     <template #message>
-      You will soon be logged out for security purposes. Please click "Continue" if you wish to continue your session.
-      Otherwise, you will be automatically logged out in {{ timeLeft }} seconds.
+      {{ $t('homeSelector.inactivityLogout', { timeLeft: timeLeft }) }}
     </template>
   </PvConfirmDialog>
 </template>
@@ -40,6 +39,7 @@ import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
 import ConsentModal from '@/components/ConsentModal.vue';
 import { fetchDocById } from '@/helpers/query/utils';
+import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
 const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
@@ -127,9 +127,10 @@ watch(isLoading, async (newValue) => {
   }
 });
 
-const { idle } = useIdle(20 * 60 * 1000); // 10 min
+const { idle } = useIdle(20 * 60 * 10000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
+const { t } = useI18n();
 
 watch(idle, (idleValue) => {
   if (idleValue) {
@@ -146,7 +147,7 @@ watch(idle, (idleValue) => {
     confirm.require({
       group: 'inactivity-logout',
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Continue',
+      acceptLabel: t('homeSelector.inactivityLogoutAcceptLabel'),
       acceptIcon: 'pi pi-check',
       accept: () => {
         clearInterval(timer);

@@ -1,7 +1,7 @@
 <template>
   <div class="loading-container">
     <AppSpinner style="margin-bottom: 1rem" />
-    <span>Loading your data from Clever...</span>
+    <span>{{ $t('cleverLanding.cleverLoading') }}</span>
   </div>
 </template>
 <script setup>

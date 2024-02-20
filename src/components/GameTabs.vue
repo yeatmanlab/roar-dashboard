@@ -49,7 +49,7 @@
                 </svg>
               </i>
               <span v-if="!allGamesComplete && !game.completedOn">Click to start</span>
-              <span v-else>Task Completed!</span>
+              <span v-else>{{ $t('gameTabs.taskCompleted') }}</span>
             </div>
           </div>
           <div class="roar-game-image">
