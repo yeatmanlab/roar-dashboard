@@ -227,7 +227,8 @@ const exportAll = async () => {
           _set(tableRow, 'Letters To Work On', incorrectLetters);
           _set(tableRow, 'Sounds To Work On', incorrectPhonemes);
         }
-      } else if (assessment.taskId === 'pa') {
+      }
+      if (assessment.taskId === 'pa') {
         if (_get(assessment, 'scores')) {
           const first = _get(assessment, 'scores.computed.FSM.roarScore');
           const last = _get(assessment, 'scores.computed.LSM.roarScore');
