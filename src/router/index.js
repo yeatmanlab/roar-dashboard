@@ -15,7 +15,11 @@ const routes = [
     path: '/',
     name: 'Home',
     component: () => import('../pages/HomeSelector.vue'),
-    meta: { pageTitle: 'Dashboard' },
+    meta: { pageTitle: {
+      "en-US": "Dashboard",
+      "en": "Dashboard",
+      "es": "Tablero"
+    }},
   },
   {
     path: '/clever-user',
@@ -140,7 +144,11 @@ const routes = [
     path: '/signin',
     name: 'SignIn',
     component: () => import('../pages/SignIn.vue'),
-    meta: { pageTitle: 'Sign In' },
+    meta: { pageTitle: {
+      "en-US": "Sign In",
+      "en": "Sign In",
+      "es": "Iniciar Sesión"
+      } },
   },
   {
     path: '/signout',
@@ -152,7 +160,11 @@ const routes = [
       }
       return { name: 'SignIn' };
     },
-    meta: { pageTitle: 'Sign Out' },
+    meta: { pageTitle: {
+      "en-US": "Sign Out",
+      "en": "Sign Out",
+      "es": "Cerrar Sesión"
+      } },
   },
   {
     path: '/auth-clever',

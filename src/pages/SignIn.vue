@@ -9,14 +9,14 @@
           <ROARLogoShort />
         </div>
       </header>
-      <h1>Welcome to ROAR!</h1>
+      <h1>{{ $t('pageSignIn.welcome') }}</h1>
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
-          <h4 class="signin-option-title">Log in to access your dashboard</h4>
+          <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
           <SignIn :invalid="incorrect" @submit="authWithEmail" />
         </section>
         <section class="signin-option-container signin-option-providers">
-          <h4 class="signin-option-title">Log in with:</h4>
+          <h4 class="signin-option-title">{{ $t('pageSignIn.loginWith') }}</h4>
           <div class="flex">
             <PvButton label="Sign in with Google" class="signin-button" @click="authWithGoogle">
               <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
@@ -31,7 +31,7 @@
       </section>
       <footer style="display: none">
         <!-- TODO: figure out a link for this -->
-        <a href="#trouble">Having trouble?</a>
+        <a href="#trouble">{{ $t('pageSignIn.havingTrouble') }}</a>
       </footer>
     </section>
   </div>

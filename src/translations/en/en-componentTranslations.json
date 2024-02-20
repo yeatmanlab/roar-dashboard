@@ -1,0 +1,61 @@
+{
+  "en": {
+    "authSignIn": {
+      "atLeastOneLowercase": "At least one lowercase",
+      "atLeastOneUpperCase": "At least one uppercase",
+      "atLeastOneNumber": "At least one number",
+      "atLeastOneNumeric": "At least one numeric",
+      "bothAllowed": "Both are allowed",
+      "buttonLabel": "Go!",
+      "minimumCharacters": "Minimum 8 characters",
+      "emailId": "email",
+      "emailPlaceholder": "Username or email",
+      "incorrectEmailOrPassword": "Incorrect username/email or password",
+      "invalidEmailPlaceholder": "Error: invalid email",
+      "passwordId": "password",
+      "passwordPlaceholder": "Password",
+      "pickPassword": "Pick a password",
+      "signInWithEmailLinkPlaceHolder": "Press Go to sign-in with an email link.",
+      "suggestions": "Suggestions"
+    },
+    "cleverLanding": {
+      "cleverLoading": "Loading your data from Clever..."
+    },
+    "consentModal": {
+      "title": "Consent"
+    },
+    "homeParticipant": {
+      "loadingAssignments": "Loading Assignments",
+      "selectAssignment": "Select an assignment",
+      "noAssignments":  "You have no assignments!",
+      "contactAdministrator": "Please contact your administrator to get added to an assignment."
+    },
+    "homeSelector": {
+      "loading:": "Loading...",
+      "inactivityLogout": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
+      "inactivityLogoutAcceptLabel": "Continue"
+    },
+    "gameTabs": {
+      "taskCompleted": "Task Completed!"
+    },
+    "navBar": {
+      "signOut": "Sign Out"
+    },
+    "notFound": {
+      "label": "Click here to go to the home page.",
+      "pageNotFound": "Page not found",
+      "sorry": "Sorry, we could not find that page!"
+    },
+    "participantSidebar": {
+      "grade": "Grade",
+      "studentInfo": "Student Info",
+      "tasksCompleted": "tasks completed!"
+    },
+    "pageSignIn": {
+      "havingTrouble": "Having trouble?",
+      "login": "Log in to access your dashboard",
+      "loginWith": "Log in with",
+      "welcome": "Welcome to ROAR!"
+    }
+  }
+}
