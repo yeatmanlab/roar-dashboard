@@ -5,13 +5,16 @@
         <div class="p-input-icon-right">
           <PvInputText
             :id="$t('authSignIn.emailId')"
+            :id="$t('authSignIn.emailId')"
             v-model="v$.email.$model"
             :class="{ 'p-invalid': invalid }"
             aria-describedby="email-error"
             :placeholder="$t('authSignIn.emailPlaceholder')"
+            :placeholder="$t('authSignIn.emailPlaceholder')"
             data-cy="input-username-email"
           />
         </div>
+        <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
         <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
       <div class="field mt-4 mb-5">
@@ -47,6 +50,7 @@
           <PvPassword
             v-else-if="allowPassword"
             :id="$t('authSignIn.passwordId')"
+            :id="$t('authSignIn.passwordId')"
             v-model="v$.password.$model"
             :class="{ 'p-invalid': invalid }"
             toggle-mask
@@ -54,16 +58,23 @@
             hide-icon="pi pi-eye"
             :feedback="false"
             :placeholder="$t('authSignIn.passwordPlaceholder')"
+            :placeholder="$t('authSignIn.passwordPlaceholder')"
             data-cy="input-password"
           >
             <template #header>
+              <h6>{{ $t('authSignIn.pickPassword') }}</h6>
               <h6>{{ $t('authSignIn.pickPassword') }}</h6>
             </template>
             <template #footer="sp">
               {{ sp.level }}
               <PvDivider />
               <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
+              <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
               <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
+                <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
+                <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
+                <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>
+                <li>{{ $t('authSignIn.minimumCharacters') }}</li>
                 <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
                 <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
                 <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>

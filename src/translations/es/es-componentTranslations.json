@@ -1,65 +1,62 @@
 {
-  "authSignIn": {
-    "atLeastOneLowercase": "Al menos una minúscula",
-    "atLeastOneUpperCase": "Al menos una mayúscula",
-    "atLeastOneNumber": "Al menos un número",
-    "atLeastOneNumeric": "Al menos un numérico",
-    "buttonLabel": "¡Vamos!",
-    "minimumCharacters": "Mínimo 8 caracteres",
-    "emailId": "correo electrónico",
-    "emailPlaceholder": "Nombre de usuario o correo electrónico",
-    "incorrectEmailOrPassword": "Nombre de usuario/correo electrónico o contraseña incorrectos",
-    "invalidEmailPlaceholder": "Error: correo electrónico no válido",
-    "pageTitle": "Iniciar sesión",
-    "passwordId": "contraseña",
-    "passwordPlaceholder": "Contraseña",
-    "pickPassword": "Elige una contraseña",
-    "signInWithEmailLinkPlaceHolder": "Presiona Go para iniciar sesión con un enlace de correo electrónico.",
-    "signInWithEmailLinkInstead": "Iniciar sesión con enlace de correo electrónico",
-    "signInWithPasswordInstead": "Iniciar sesión con contraseña",
-    "suggestions": "Sugerencias"
-  },
-  "cleverLanding": {
-    "cleverLoading": "Cargando tus datos desde Clever..."
-  },
-  "consentModal": {
-    "title": "Consentimiento"
-  },
-  "homeParticipant": {
-    "loadingAssignments": "Cargando actividades",
-    "selectAssignment": "Selecciona una actividad",
-    "noAssignments": "¡No tienes actividades!",
-    "contactAdministrator": "Por favor, contacta a tu administrador para que te agregue a una actividad."
-  },
-  "homeSelector": {
-    "loading": "Cargando...",
-    "inactivityLogout": "Pronto será desconectado por motivos de seguridad. Haz clic en \"Continuar\" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",
-    "inactivityLogoutAcceptLabel": "Continuar"
-  },
-  "gameTabs": {
-    "clickToStart": "Haz clic para empezar",
-    "taskCompleted": "¡Tarea completada!"
-  },
-  "navBar": {
-    "signOut": "Salir"
-  },
-  "notFound": {
-    "label": "Haz clic aquí para ir a la página de inicio.",
-    "pageNotFound": "Página no encontrada",
-    "sorry": "¡Lo siento, no pudimos encontrar esa página!"
-  },
-  "participantSidebar": {
-    "grade": "Calificación",
-    "studentInfo": "Información del estudiante",
-    "tasksCompleted": "¡tareas completadas!"
-  },
-  "pageSignIn": {
-    "havingTrouble": "¿Tienes problemas?",
-    "login": "Inicia sesión para acceder a tu panel de control",
-    "loginWith": "Inicia sesión con",
-    "welcome": "¡Bienvenido a ROAR!"
-  },
-  "tasks": {
-    "preparing": "¡Preparando tu juego!"
+  "es": {
+    "authSignIn": {
+      "atLeastOneLowercase": "Al menos una minúscula",
+      "atLeastOneUpperCase": "Al menos una mayúscula",
+      "atLeastOneNumber": "Al menos un número",
+      "atLeastOneNumeric": "Al menos un numérico",
+      "bothAllowed": "Ambos están permitidos",
+      "buttonLabel": "¡Vamos!",
+      "minimumCharacters": "Mínimo 8 caracteres",
+      "emailId": "correo electrónico",
+      "emailPlaceholder": "Nombre de usuario o correo electrónico",
+      "incorrectEmailOrPassword": "Nombre de usuario/correo electrónico o contraseña incorrectos",
+      "invalidEmailPlaceholder": "Error: correo electrónico no válido",
+      "pageTitle": "Iniciar sesión",
+      "passwordId": "contraseña",
+      "passwordPlaceholder": "Contraseña",
+      "pickPassword": "Elige una contraseña",
+      "signInWithEmailLinkPlaceHolder": "Presiona Go para iniciar sesión con un enlace de correo electrónico.",
+      "suggestions": "Sugerencias"
+    },
+    "cleverLanding": {
+      "cleverLoading": "Cargando tus datos desde Clever..."
+    },
+    "consentModal": {
+      "title": "Consentimiento"
+    },
+    "homeParticipant": {
+      "loadingAssignments": "Cargando asignaciones",
+      "selectAssignment": "Selecciona una asignación",
+      "noAssignments":  "¡No tienes asignaciones!",
+      "contactAdministrator": "Por favor, contacta a tu administrador para que te agregue a una asignación."
+    },
+    "homeSelector": {
+      "loading": "Cargando...",
+      "inactivityLogout": "Pronto será desconectado por motivos de seguridad. Haga clic en \"Continuar\" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",
+      "inactivityLogoutAcceptLabel": "Continuar"
+    },
+    "gameTabs": {
+      "taskCompleted": "¡Tarea completada!"
+    },
+    "navBar": {
+      "signOut": "Salir"
+    },
+    "notFound": {
+      "label": "Haz clic aquí para ir a la página de inicio.",
+      "pageNotFound": "Página no encontrada",
+      "sorry": "¡Lo siento, no pudimos encontrar esa página!"
+    },
+    "participantSidebar": {
+      "grade": "Calificación",
+      "studentInfo": "Información del estudiante",
+      "tasksCompleted": "¡tareas completadas!"
+    },
+    "pageSignIn": {
+      "havingTrouble": "¿Tienes problemas?",
+      "login": "Inicia sesión para acceder a tu panel de control",
+      "loginWith": "Inicia sesión con",
+      "welcome": "¡Bienvenido a ROAR!"
+}
   }
 }

@@ -49,7 +49,7 @@
                 </svg>
               </i>
               <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-              <span v-else>{{ taskCompletedMessage }}</span>
+              <span v-else>{{ $t('gameTabs.taskCompleted') }}</span>
               <router-link
                 v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
                 :to="{ path: `${game.taskId === 'Survey' ? '/survey' : 'game/' + game.taskId}` }"

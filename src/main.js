@@ -88,6 +88,9 @@ import { i18n } from '@/translations/i18n.js';
 // https://www.npmjs.com/package/vue-country-flag-next
 import CountryFlag from 'vue-country-flag-next';
 
+// translations
+import { i18n } from './translations/i18n';
+
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia();

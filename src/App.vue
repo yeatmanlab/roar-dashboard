@@ -1,6 +1,6 @@
 <template>
   <AppHead>
-    <title>ROAR: {{ pageTitle }}</title>
+    <title>ROAR: {{ $route.meta.pageTitle[language] }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!" />
 
     <!-- Social -->

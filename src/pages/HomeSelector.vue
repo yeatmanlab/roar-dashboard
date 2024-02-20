@@ -19,6 +19,7 @@
   <PvConfirmDialog group="inactivity-logout" class="confirm">
     <template #message>
       {{ $t('homeSelector.inactivityLogout', { timeLeft: timeLeft }) }}
+      {{ $t('homeSelector.inactivityLogout', { timeLeft: timeLeft }) }}
     </template>
   </PvConfirmDialog>
 </template>
@@ -127,7 +128,7 @@ watch(isLoading, async (newValue) => {
   }
 });
 
-const { idle } = useIdle(20 * 60 * 1000); // 10 min
+const { idle } = useIdle(20 * 60 * 10000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
 const { t } = useI18n();
