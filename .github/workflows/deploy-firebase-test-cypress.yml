@@ -30,7 +30,6 @@ jobs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
   cypress-run:
-    if: '!contains(github.event.pull_request.head.commit.message, '[skip ci]')'
     needs: [build-and-preview]
     runs-on: ubuntu-latest
     timeout-minutes: 90
