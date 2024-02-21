@@ -28,7 +28,7 @@
     "homeParticipant": {
       "loadingAssignments": "Cargando asignaciones",
       "selectAssignment": "Selecciona una asignación",
-      "noAssignments":  "¡No tienes asignaciones!",
+      "noAssignments": "¡No tienes asignaciones!",
       "contactAdministrator": "Por favor, contacta a tu administrador para que te agregue a una asignación."
     },
     "homeSelector": {
@@ -57,6 +57,9 @@
       "login": "Inicia sesión para acceder a tu panel de control",
       "loginWith": "Inicia sesión con",
       "welcome": "¡Bienvenido a ROAR!"
-}
+    },
+    "tasks": {
+      "preparing": "¡Preparando tu juego!"
+    }
   }
 }
