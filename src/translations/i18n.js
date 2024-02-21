@@ -1,11 +1,9 @@
 import { createI18n } from 'vue-i18n';
-import enTranslations from './en/en-componentTranslations.json';
-import esTranslations from './es/es-componentTranslations.json';
-import esCOTranslations from './es/es-co-componentTranslations.json';
+import { enTranslations, enUSTranslations, esTranslations, esCOTranslations } from './exports';
 
 const locale = window.navigator.language;
 const messages = {
-  'en-US': enTranslations,
+  'en-US': enUSTranslations,
   en: enTranslations,
   es: esTranslations,
   'es-CO': esCOTranslations,
@@ -19,8 +17,8 @@ const getTranslations = () => {
     console.log('Language not supported, using default es.');
     return messages['es'];
   } else {
-    console.log('Language not supported, using default en-US.');
-    return messages['en-US'];
+    console.log('Language not supported, using default en.');
+    return messages['en'];
   }
 };
 
