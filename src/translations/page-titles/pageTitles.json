@@ -1,0 +1,22 @@
+{
+  "en-US": {
+    "home": "Dashboard",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "en": {
+    "home": "Dashboard",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "es": {
+    "home": "Tablero",
+    "signIn": "Iniciar Sesión",
+    "signOut": "Cerrar Sesión"
+  },
+  "es-CO": {
+    "home": "Tablero",
+    "signIn": "Iniciar Sesión",
+    "signOut": "Cerrar Sesión"
+  }
+}

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
+import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '../translations/exports';
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -17,9 +18,10 @@ const routes = [
     component: () => import('../pages/HomeSelector.vue'),
     meta: {
       pageTitle: {
-        'en-US': 'Dashboard',
-        en: 'Dashboard',
-        es: 'Tablero',
+        'en-US': pageTitlesUS['en-US']['home'],
+        en: pageTitlesEN['en']['home'],
+        es: pageTitlesES['es']['home'],
+        'es-CO': pageTitlesCO['es-CO']['home'],
       },
     },
   },
@@ -103,7 +105,7 @@ const routes = [
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: true,
     // Add which specific task?
-    // Code in App.vue overwrites updating it programtically
+    // Code in App.vue overwrites updating it programmatically
     meta: { pageTitle: 'Core Tasks' },
   },
   {
@@ -148,9 +150,10 @@ const routes = [
     component: () => import('../pages/SignIn.vue'),
     meta: {
       pageTitle: {
-        'en-US': 'Sign In',
-        en: 'Sign In',
-        es: 'Iniciar Sesión',
+        'en-US': pageTitlesUS['en-US']['signIn'],
+        en: pageTitlesEN['en']['signIn'],
+        es: pageTitlesES['es']['signIn'],
+        'es-CO': pageTitlesCO['es-CO']['signIn'],
       },
     },
   },
@@ -166,9 +169,10 @@ const routes = [
     },
     meta: {
       pageTitle: {
-        'en-US': 'Sign Out',
-        en: 'Sign Out',
-        es: 'Cerrar Sesión',
+        'en-US': pageTitlesUS['en-US']['signOut'],
+        en: pageTitlesEN['en']['signOut'],
+        es: pageTitlesES['es']['signOut'],
+        'es-CO': pageTitlesCO['es-CO']['signOut'],
       },
     },
   },
