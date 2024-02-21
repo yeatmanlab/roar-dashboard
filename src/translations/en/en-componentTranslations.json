@@ -27,7 +27,7 @@
     "homeParticipant": {
       "loadingAssignments": "Loading Assignments",
       "selectAssignment": "Select an assignment",
-      "noAssignments":  "You have no assignments!",
+      "noAssignments": "You have no assignments!",
       "contactAdministrator": "Please contact your administrator to get added to an assignment."
     },
     "homeSelector": {

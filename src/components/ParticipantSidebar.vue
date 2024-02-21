@@ -8,7 +8,9 @@
       </div>
     </div>
     <ul class="sidebar-info">
-      <li class="sidebar-title"><strong>{{ $t('participantSidebar.studentInfo') }}</strong></li>
+      <li class="sidebar-title">
+        <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
+      </li>
       <li>
         {{ $t('participantSidebar.grade') }}: <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
       </li>
