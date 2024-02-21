@@ -2,9 +2,9 @@ Cypress.Commands.add('login', (username, password) => {
   cy.session(
     [username, password],
     () => {
-      cy.visit('/', {timeout: Cypress.env('timeout')});
-      cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout')});
-      cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout')});
+      cy.visit('/', { timeout: Cypress.env('timeout') });
+      cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
+      cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
       cy.get('button')
         .contains('Go!', { timeout: Cypress.env('timeout') })
         .click();
