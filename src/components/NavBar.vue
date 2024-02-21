@@ -18,7 +18,7 @@
           </PvMenu>
         </div>
         <router-link :to="{ name: 'SignOut' }" class="signout-button">
-          <PvButton data-cy="button-sign-out" class="no-underline">{{ $t("navBar.signOut") }}</PvButton>
+          <PvButton data-cy="button-sign-out" class="no-underline">{{ $t('navBar.signOut') }}</PvButton>
         </router-link>
       </div>
     </nav>

@@ -3,7 +3,7 @@
     <div v-if="!noGamesAvailable || consentSpinner">
       <div v-if="isFetching || consentSpinner" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
-        <span>{{ $t("homeParticipant.loadingAssignments") }}</span>
+        <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
       <div v-else>
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
@@ -11,7 +11,7 @@
         </h2>
         <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
           <PvDropdown v-model="selectedAdmin" :options="adminInfo ?? []" option-label="name" input-id="dd-assignment" />
-          <label for="dd-assignment">{{ $t("homeParticipant.selectAssignment") }}</label>
+          <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
@@ -21,8 +21,8 @@
     </div>
     <div v-else>
       <div class="col-full text-center">
-        <h1>{{ $t("homeParticipant.noAssignments") }}</h1>
-        <p class="text-center">{{ $t("homeParticipant.contactAdministrator") }}</p>
+        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
+        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
         <router-link :to="{ name: 'SignOut' }">
           <PvButton :label="$t('navBar.signOut')" class="no-underline" icon="pi pi-sign-out" />
         </router-link>
@@ -45,7 +45,6 @@ import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
-
 
 let unsubscribe;
 const initialized = ref(false);

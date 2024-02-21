@@ -51,11 +51,15 @@
             <PvPassword disabled :placeholder="$t('signInWithEmailLinkPlaceholder')" />
           </div>
           <div v-else>
-            <PvPassword disabled class="p-invalid text-red-600" :placeholder="$t('authSignIn.invalidEmailPlaceholder')" />
+            <PvPassword
+              disabled
+              class="p-invalid text-red-600"
+              :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
+            />
           </div>
         </div>
       </div>
-          <PvButton type="submit" :label="$t('authSignIn.buttonLabel') + ' &rarr;'" class="submit-button" />
+      <PvButton type="submit" :label="$t('authSignIn.buttonLabel') + ' &rarr;'" class="submit-button" />
     </form>
   </div>
 </template>

@@ -2,7 +2,7 @@
   <div v-if="isLoading">
     <div class="col-full text-center">
       <AppSpinner />
-      <p class="text-center">{{ $t("homeSelector.loading") }}</p>
+      <p class="text-center">{{ $t('homeSelector.loading') }}</p>
     </div>
   </div>
   <div v-else>
