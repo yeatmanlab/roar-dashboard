@@ -11,7 +11,7 @@
             <div class="flex justify-content-between align-items-center">
               <div class="flex flex-column align-items-start gap-2">
                 <div>
-                  <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Progress Report</div>
+                  <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Score Report</div>
                   <div class="report-title">
                     {{ _toUpper(orgInfo.name) }}
                   </div>
