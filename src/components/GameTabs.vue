@@ -48,7 +48,7 @@
                   />
                 </svg>
               </i>
-              <span v-if="!allGamesComplete && !game.completedOn">Click to start</span>
+              <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
               <span v-else>{{ $t('gameTabs.taskCompleted') }}</span>
             </div>
           </div>
