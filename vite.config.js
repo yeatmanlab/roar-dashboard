@@ -13,7 +13,7 @@ export default defineConfig({
       include: [/\.vue$/, /\.md$/],
     }),
     Markdown(),
-    // vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
+    vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
     ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
     nodePolyfills({
       globals: {
