@@ -31,11 +31,12 @@
       "contactAdministrator": "Please contact your administrator to get added to an assignment."
     },
     "homeSelector": {
-      "loading:": "Loading...",
+      "loading": "Loading...",
       "inactivityLogout": "You will soon be logged out for security purposes. Please click \"Continue\" if you wish to continue your session.\n Otherwise, you will be automatically logged out in { timeLeft } seconds.",
       "inactivityLogoutAcceptLabel": "Continue"
     },
     "gameTabs": {
+      "clickToStart": "Click to start",
       "taskCompleted": "Task Completed!"
     },
     "navBar": {
@@ -56,6 +57,9 @@
       "login": "Log in to access your dashboard",
       "loginWith": "Log in with",
       "welcome": "Welcome to ROAR!"
+    },
+    "tasks": {
+      "preparing": "Preparing your game!"
     }
   }
 }

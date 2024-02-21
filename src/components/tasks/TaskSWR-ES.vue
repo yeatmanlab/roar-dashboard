@@ -1,7 +1,7 @@
 <template>
   <div id="jspsych-target" class="game-target" translate="no" />
   <div v-if="!gameStarted" class="col-full text-center">
-    <h1>Preparing your game!</h1>
+    <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
 </template>

@@ -37,6 +37,7 @@
       "inactivityLogoutAcceptLabel": "Continuar"
     },
     "gameTabs": {
+      "clickToStart": "Haz clic para empezar",
       "taskCompleted": "¡Tarea completada!"
     },
     "navBar": {
@@ -57,6 +58,9 @@
       "login": "Inicia sesión para acceder a tu panel de control",
       "loginWith": "Inicia sesión con",
       "welcome": "¡Bienvenido a ROAR!"
-}
+},
+    "tasks": {
+      "preparing": "¡Preparando tu juego!"
+    }
   }
 }
