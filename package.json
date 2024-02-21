@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "1.5.1",
+  "version": "1.6.0",
   "scripts": {
     "build": "vite build",
     "build:levante": "vite build -m LEVANTE",
@@ -15,6 +15,7 @@
     "emulate:stop": "ps -e | grep 'firebase emulators:start' | grep -v 'grep' | grep -v 'rg' | sed -e 's/^[ \t]*//' | tr -s ' ' | cut -d ' ' -f 1 | xargs kill -s INT",
     "cypress:open": "cypress open",
     "format": "prettier . --write",
+    "check-format": "prettier . --check",
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src",
     "postversion": "GIT_REMOTE=$(git remote -v | grep \"yeatmanlab/roar-dashboard.git \\(push\\)\" | cut -f 1) && git push $GIT_REMOTE && git push $GIT_REMOTE --tags",
     "prepare": "husky install",
@@ -24,7 +25,7 @@
   },
   "dependencies": {
     "@bdelab/roam-fluency": "^1.9.4",
-    "@bdelab/roar-firekit": "^4.6.0",
+    "@bdelab/roar-firekit": "^4.7.0",
     "@bdelab/roar-letter": "^1.6.1",
     "@bdelab/roar-multichoice": "^1.9.1",
     "@bdelab/roar-pa": "^1.6.1",

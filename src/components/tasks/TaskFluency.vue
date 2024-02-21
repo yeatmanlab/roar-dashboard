@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import RoamFluency from '@bdelab/roam-fluency';
+import { TaskLauncher as RoamFluency } from '@bdelab/roam-fluency';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
