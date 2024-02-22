@@ -232,6 +232,13 @@
                   style="margin-bottom: 0.5rem"
                 />
               </div>
+              <div v-if="col.dataType === 'progress'">
+                <PvDropdown
+                  v-model="filterModel.value"
+                  :options="['Completed', 'Assigned', 'Started']"
+                  style="margin-bottom: 0.5rem"
+                />
+              </div>
             </template>
           </PvColumn>
           <template #empty> No data found. </template>
@@ -372,7 +379,7 @@ function increasePadding() {
 }
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE'];
+const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE', 'PROGRESS'];
 let filters = {};
 let options = {};
 _forEach(computedColumns.value, (column) => {
@@ -395,6 +402,9 @@ _forEach(computedColumns.value, (column) => {
       if (scoredTasks.includes(column.field.split('.')[1])) {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
+    } else if (dataType === 'PROGRESS') {
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
+      options[column.field] = ['Completed', 'Assigned', 'Started'];
     }
 
     if (_get(column, 'useMultiSelect')) {

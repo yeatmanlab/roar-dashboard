@@ -7,7 +7,7 @@
             <div>
               <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
               <div class="report-title uppercase">
-                {{ orgInfo.name }}
+                {{ orgInfo?.name }}
               </div>
             </div>
             <div>
@@ -21,55 +21,80 @@
         <div class="flex flex-row align-items-center gap-4">
           <div class="uppercase text-sm text-gray-600">VIEW</div>
           <PvSelectButton
-            v-model="reportView"
-            :options="reportViews"
-            option-disabled="constant"
-            :allow-empty="false"
-            option-label="name"
-            class="flex my-2 select-button"
-            @change="handleViewChange"
-          >
+v-model="reportView" :options="reportViews" option-disabled="constant" :allow-empty="false"
+            option-label="name" class="flex my-2 select-button" @change="handleViewChange">
           </PvSelectButton>
         </div>
       </div>
 
-      <RoarDataTable
-        v-if="columns?.length ?? 0 > 0"
-        :data="tableData"
-        :columns="columns"
-        :total-records="assignmentCount"
-        :loading="isLoadingScores || isFetchingScores"
-        :page-limit="pageLimit"
-        lazy
-        data-cy="roar-data-table"
-        :allow-filtering="false"
-        @page="onPage($event)"
-        @sort="onSort($event)"
-        @export-selected="exportSelected"
-        @export-all="exportAll"
-      />
-      <div v-else class="loading-container">
+      <!-- <div v-if="refreshing" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>Loading Progress Data</span>
+      </div> -->
+      <div v-if="assignmentData?.length === 0" class="no-scores-container">
+        <h3>No scores found.</h3>
+        <span>The filters applied have no matching scores.
+          <PvButton text @click="resetFilters">Reset filters</PvButton>
+        </span>
       </div>
+      <div v-else-if="assignmentData?.length ?? 0 > 0">
+        <RoarDataTable
+v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns"
+          :total-records="assignmentCount" :loading="isLoadingScores || isFetchingScores" :page-limit="pageLimit" lazy
+          :lazy-pre-sorting="sortDisplay" data-cy="roar-data-table" :allow-filtering="true" @page="onPage($event)"
+          @sort="onSort($event)" @filter="onFilter($event)" @export-selected="exportSelected" @export-all="exportAll">
+          <template #filterbar>
+            <div v-if="schoolsInfo" class="flex flex-row gap-2">
+              <span class="p-float-label">
+                <PvMultiSelect
+id="ms-school-filter" v-model="filterSchools" style="width: 20rem; max-width: 25rem"
+                  :options="schoolsInfo" option-label="name" option-value="id" :show-toggle-all="false"
+                  selected-items-label="{0} schools selected" data-cy="filter-by-school" />
+                <label for="ms-school-filter">Filter by School</label>
+              </span>
+            </div>
+            <div class="flex flex-row gap-2">
+              <span class="p-float-label">
+                <PvMultiSelect
+id="ms-grade-filter" v-model="filterGrades" style="width: 20rem; max-width: 25rem"
+                  :options="gradeOptions" option-label="label" option-value="value" :show-toggle-all="false"
+                  selected-items-label="{0} grades selected" data-cy="filter-by-grade" />
+                <label for="ms-school-filter">Filter by Grade</label>
+              </span>
+            </div>
+          </template>
+          <span>
+            <label for="view-columns" class="view-label">View</label>
+            <PvDropdown
+id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
+              option-value="value" class="ml-2" />
+          </span>
+        </RoarDataTable>
+      </div>
+
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch, toRaw } from 'vue';
 import { storeToRefs } from 'pinia';
 import _find from 'lodash/find';
+import _head from 'lodash/head';
+import _tail from 'lodash/tail';
 import _get from 'lodash/get';
+import _remove from 'lodash/remove';
+import _union from 'lodash/union';
 import _isEmpty from 'lodash/isEmpty';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import { orderByDefault, fetchDocById, exportCsv } from '../helpers/query/utils';
+import { fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { useConfirm } from 'primevue/useconfirm';
 import { taskDisplayNames } from '@/helpers/reports.js';
 
 const authStore = useAuthStore();
@@ -102,7 +127,33 @@ const handleViewChange = () => {
 };
 
 // Queries for page
-const orderBy = ref(orderByDefault);
+const orderBy = ref([
+  {
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'userData.grade',
+    },
+  },
+  {
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'userData.name.last',
+    },
+  },
+]);
+// If this is a district report, make the schools column first sorted.
+if (props.orgType === 'district') {
+  orderBy.value.unshift({
+    direction: 'ASCENDING',
+    field: {
+      fieldPath: 'readOrgs.schools',
+    },
+  });
+}
+
+const filterBy = ref([]);
+const filterSchools = ref([]);
+const filterGrades = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
@@ -133,6 +184,58 @@ const { data: orgInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// Grab grade options for filter dropdown
+const gradeOptions = ref([
+  {
+    value: '1',
+    label: '1st Grade',
+  },
+  {
+    value: '2',
+    label: '2nd Grade',
+  },
+  {
+    value: '3',
+    label: '3rd Grade',
+  },
+  {
+    value: '4',
+    label: '4th Grade',
+  },
+  {
+    value: '5',
+    label: '5th Grade',
+  },
+  {
+    value: '6',
+    label: '6th Grade',
+  },
+  {
+    value: '7',
+    label: '7th Grade',
+  },
+  {
+    value: '8',
+    label: '8th Grade',
+  },
+  {
+    value: '9',
+    label: '9th Grade',
+  },
+  {
+    value: '10',
+    label: '10th Grade',
+  },
+  {
+    value: '11',
+    label: '11th Grade',
+  },
+  {
+    value: '12th',
+    label: '12th Grade',
+  },
+]);
+
 const schoolInfoQueryEnabled = computed(() => props.orgType === 'district' && initialized.value);
 
 // Grab schools if this is a district score report
@@ -151,8 +254,8 @@ const {
   isFetching: isFetchingScores,
   data: assignmentData,
 } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId, pageLimit, page],
-  queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page),
+  queryKey: ['assignments', props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page, false, undefined, true, filterBy.value, orderBy.value),
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
@@ -172,12 +275,153 @@ const onPage = (event) => {
   pageLimit.value = event.rows;
 };
 
+const sortDisplay = computed(() => {
+  const display = [];
+  for (const sort of orderBy.value) {
+    // TODO: TEMPORARY - Make this a dynamic way of converting
+    // fields into column paths
+    let item = {};
+    if (sort.direction === 'ASCENDING') {
+      item.order = 1;
+    } else {
+      item.order = -1;
+    }
+    const sortFieldPath = sort.field.fieldPath;
+    if (sortFieldPath === 'userData.grade') {
+      item.field = 'user.studentData.grade';
+    } else if (sortFieldPath === 'userData.name.first') {
+      item.field = 'user.name.first';
+    } else if (sortFieldPath === 'userData.name.last') {
+      item.field = 'user.name.last';
+    } else if (sortFieldPath === 'userData.username') {
+      item.field = 'user.username';
+    } else if (sortFieldPath === 'readOrgs.schools') {
+      item.field = 'user.schoolName';
+    }
+    display.push(item);
+  }
+  return display;
+});
+
+const confirm = useConfirm();
 const onSort = (event) => {
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
-    field: { fieldPath: item.field },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-  }));
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
+  const _orderBy = (event.multiSortMeta ?? []).map((item) => {
+    let field = item.field.replace('user', 'userData');
+    console.log("onsort called", field)
+    // Due to differences in the document schemas,
+    //   fields found in studentData in the user document are in the
+    //   top level of the assignments.userData object.
+    if (field.split('.')[1] === 'studentData') {
+      field = `userData.${field.split('.').slice(2, field.length)}`;
+    }
+    if (field.split('.')[1] === 'schoolName') {
+      field = `readOrgs.schools`;
+    }
+    return {
+      field: { fieldPath: field },
+      direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
+    };
+  });
+  if (_orderBy.length > 1) {
+    confirm.require({
+      group: 'sort',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Continue',
+      acceptIcon: 'pi pi-check',
+      accept: () => {
+        console.log('modal closed.');
+      },
+    });
+  } else {
+    orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
+    page.value = 0;
+  }
+};
+
+watch(filterSchools, (newSchools) => {
+  // check if filter entry for schools exists
+  const filterSchools = _find(filterBy.value, { collection: 'schools' });
+  // Turn off sort when filtering
+  orderBy.value = [];
+  if (filterSchools) {
+    if (_isEmpty(newSchools)) {
+      _remove(filterBy.value, { collection: 'schools' });
+      return;
+    }
+    filterSchools.value = _union(filterSchools.value, newSchools);
+  } else {
+    filterBy.value.push({
+      collection: 'schools',
+      field: 'assigningOrgs.schools',
+      value: newSchools,
+    });
+  }
+});
+
+watch(filterGrades, (newGrades) => {
+  // Turn off sort when filtering
+  orderBy.value = [];
+  filterBy.value.push({
+    collection: 'grade',
+    field: 'grade',
+    value: toRaw(newGrades),
+  });
+});
+
+const onFilter = (event) => {
+  // Turn off sort when filtering
+  orderBy.value = [];
+  const filters = [];
+  for (const filterKey in _get(event, 'filters')) {
+    const filter = _get(event, 'filters')[filterKey];
+    console.log("filter", filter)
+    const constraint = _head(_get(filter, 'constraints'));
+    if (_get(constraint, 'value')) {
+      const path = filterKey.split('.');
+      if (_head(path) === 'user') {
+        // Special case for school
+        if (path[1] === 'schoolName') {
+          // find ID from given name
+          const schoolName = constraint.value;
+          const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
+          if (!_isEmpty(schoolEntry)) {
+            filters.push({ value: [schoolEntry.id], collection: 'schools', field: 'assigningOrgs.schools' });
+          }
+        } else if (path[1] === 'studentData') {
+          // Due to differences in the document schemas,
+          //   fields found in studentData in the user document are in the
+          //   top level of the assignments.userData object.
+          filters.push({ ...constraint, collection: 'users', field: path.slice(2, path.length) });
+        } else {
+          filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
+        }
+      }
+      if (_head(path) === 'progress') {
+        console.log("progress filter")
+        // const taskId = path[1];
+        // const cutoffs = getRawScoreThreshold(taskId);
+        // filters.push({
+        //   ...constraint,
+        //   collection: 'scores',
+        //   taskId: taskId,
+        //   cutoffs,
+        //   field: 'scores.computed.composite.categoryScore',
+        // });
+      }
+    }
+  }
+  const orgFilter = _find(filterBy.value, { collection: 'schools' });
+  const gradeFilter = _find(filterBy.value, { collection: 'grade' });
+  if (orgFilter) filters.push(orgFilter);
+  if (gradeFilter) filters.push(gradeFilter);
+  filterBy.value = filters;
+  page.value = 0;
+};
+
+const resetFilters = () => {
+  filterSchools.value = [];
+  filterGrades.value = [];
+  filterBy.value = [];
 };
 
 const exportSelected = (selectedRows) => {
@@ -260,14 +504,14 @@ const columns = computed(() => {
   if (assignmentData.value === undefined) return [];
 
   const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: false },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: false },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: false },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: false },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
+    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
+    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: true },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true, filter: false },
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: false });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true, filter: false });
   }
 
   if (authStore.isUserSuperAdmin) {
@@ -286,7 +530,7 @@ const columns = computed(() => {
       tableColumns.push({
         field: `status.${taskId}.value`,
         header: taskDisplayNames[taskId]?.name ?? taskId,
-        dataType: 'text',
+        dataType: 'progress',
         tag: true,
         severityField: `status.${taskId}.severity`,
         iconField: `status.${taskId}.icon`,
@@ -294,6 +538,7 @@ const columns = computed(() => {
       });
     }
   }
+  console.log(tableColumns)
   return tableColumns;
 });
 
@@ -352,19 +597,23 @@ const tableData = computed(() => {
 });
 
 let unsubscribe;
-
-const init = async () => {
+const refreshing = ref(false);
+const refresh = () => {
+  console.log("refreshing called")
+  refreshing.value = true;
   if (unsubscribe) unsubscribe();
+
+  refreshing.value = false;
   initialized.value = true;
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+  if (state.roarfirekit.restConfig) refresh();
 });
-
 const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  if (roarfirekit.value.restConfig) init();
+  console.log("onmounted called")
+  if (roarfirekit.value.restConfig) refresh();
 });
 </script>
 
@@ -381,6 +630,21 @@ onMounted(async () => {
   font-size: 2.5rem;
   font-weight: bold;
   margin-top: 0;
+}
+
+.no-scores-container {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+
+  h3 {
+    font-weight: bold;
+  }
+
+  span {
+    display: flex;
+    align-items: center;
+  }
 }
 
 .administration-name {
