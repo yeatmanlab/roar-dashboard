@@ -11,7 +11,7 @@ const messages = {
 
 const getTranslations = () => {
   if (messages[locale]) {
-    console.log('Language supported, using ' + locale + '.');
+    console.log(`Language supported, using ${locale}.`);
     return messages[locale];
   } else if (locale.includes('es')) {
     console.log('Language not supported, using default es.');
