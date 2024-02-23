@@ -374,7 +374,7 @@ const onFilter = (event) => {
   const filters = [];
   for (const filterKey in _get(event, 'filters')) {
     const filter = _get(event, 'filters')[filterKey];
-    console.log("filter", filter)
+    console.log("filter", filter, _head(filterKey.split('.')))
     const constraint = _head(_get(filter, 'constraints'));
     if (_get(constraint, 'value')) {
       const path = filterKey.split('.');
@@ -396,7 +396,7 @@ const onFilter = (event) => {
           filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
         }
       }
-      if (_head(path) === 'progress') {
+      if (_head(path) === 'status') {
         console.log("progress filter")
         // const taskId = path[1];
         // const cutoffs = getRawScoreThreshold(taskId);
@@ -530,7 +530,7 @@ const columns = computed(() => {
       tableColumns.push({
         field: `status.${taskId}.value`,
         header: taskDisplayNames[taskId]?.name ?? taskId,
-        dataType: 'progress',
+        dataType: 'text',
         tag: true,
         severityField: `status.${taskId}.severity`,
         iconField: `status.${taskId}.icon`,

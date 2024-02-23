@@ -403,8 +403,8 @@ _forEach(computedColumns.value, (column) => {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
     } else if (dataType === 'PROGRESS') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
-      options[column.field] = ['Completed', 'Assigned', 'Started'];
+      console.log('progress', column)
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
     }
 
     if (_get(column, 'useMultiSelect')) {
