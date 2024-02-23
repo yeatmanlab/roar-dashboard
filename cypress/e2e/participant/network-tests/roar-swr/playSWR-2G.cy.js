@@ -2,9 +2,8 @@ import { playSWRGame } from '../../../../support/helperFunctions/roar-swr/swrHel
 
 const timeout = Cypress.env('timeout');
 
-describe("Testing playthrough of SWR as a participant under a 2G Mobile connection or similar network of low bandwidth.", () => {
-  it.skip("ROAR-Word Playthrough Test", () => {
-
+describe('Testing playthrough of SWR as a participant under a 2G Mobile connection or similar network of low bandwidth.', () => {
+  it.skip('ROAR-Word Playthrough Test', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
 
     // Add wait time to simulate a slow network connection
@@ -33,5 +32,5 @@ describe("Testing playthrough of SWR as a participant under a 2G Mobile connecti
     });
 
     playSWRGame();
-  })
-})
+  });
+});

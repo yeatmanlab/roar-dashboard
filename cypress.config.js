@@ -19,7 +19,7 @@ module.exports = defineConfig({
   },
   env: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
-    firestoreUrl: "https://firestore.googleapis.com/**/*",
+    firestoreUrl: 'https://firestore.googleapis.com/**/*',
     timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
