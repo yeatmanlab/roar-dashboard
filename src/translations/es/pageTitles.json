@@ -1,7 +1,5 @@
 {
-  "es": {
-    "home": "Tablero",
-    "signIn": "Iniciar Sesión",
-    "signOut": "Cerrar Sesión"
-  }
+  "home": "Tablero",
+  "signIn": "Iniciar Sesión",
+  "signOut": "Cerrar Sesión"
 }

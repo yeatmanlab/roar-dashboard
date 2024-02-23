@@ -18,10 +18,10 @@ const routes = [
     component: () => import('../pages/HomeSelector.vue'),
     meta: {
       pageTitle: {
-        'en-US': pageTitlesUS['en-US']['home'],
-        en: pageTitlesEN['en']['home'],
-        es: pageTitlesES['es']['home'],
-        'es-CO': pageTitlesCO['es-CO']['home'],
+        'en-US': pageTitlesUS['home'],
+        en: pageTitlesEN['home'],
+        es: pageTitlesES['home'],
+        'es-CO': pageTitlesCO['home'],
       },
     },
   },
@@ -150,10 +150,10 @@ const routes = [
     component: () => import('../pages/SignIn.vue'),
     meta: {
       pageTitle: {
-        'en-US': pageTitlesUS['en-US']['signIn'],
-        en: pageTitlesEN['en']['signIn'],
-        es: pageTitlesES['es']['signIn'],
-        'es-CO': pageTitlesCO['es-CO']['signIn'],
+        'en-US': pageTitlesUS['signIn'],
+        en: pageTitlesEN['signIn'],
+        es: pageTitlesES['signIn'],
+        'es-CO': pageTitlesCO['signIn'],
       },
     },
   },
@@ -169,10 +169,10 @@ const routes = [
     },
     meta: {
       pageTitle: {
-        'en-US': pageTitlesUS['en-US']['signOut'],
-        en: pageTitlesEN['en']['signOut'],
-        es: pageTitlesES['es']['signOut'],
-        'es-CO': pageTitlesCO['es-CO']['signOut'],
+        'en-US': pageTitlesUS['signOut'],
+        en: pageTitlesEN['signOut'],
+        es: pageTitlesES['signOut'],
+        'es-CO': pageTitlesCO['signOut'],
       },
     },
   },

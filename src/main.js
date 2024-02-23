@@ -1,8 +1,8 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { createHead } from '@vueuse/head';
-import router from '@/router/index.js';
-import App from '@/App.vue';
+import router from './router/index.js';
+import App from './App.vue';
 
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import TextClamp from 'vue3-text-clamp';
@@ -79,7 +79,9 @@ import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue
 import './assets/styles/theme.scss'; // ROAR theme
 
 // translations
-import { i18n } from './translations/i18n';
+import { i18n } from './translations/i18n.js';
+// https://www.npmjs.com/package/vue-country-flag-next
+import CountryFlag from 'vue-country-flag-next';
 
 // Begin the app!
 const app = createApp(App);
@@ -101,6 +103,7 @@ app.use(createHead());
 app.use(TextClamp);
 app.use(VueQueryPlugin);
 app.use(i18n);
+app.use(CountryFlag);
 
 app.component('PvAccordion', PvAccordion);
 app.component('PvAccordionTab', PvAccordionTab);

@@ -1,25 +1,54 @@
 <template>
   <header id="site-header" class="navbar-container">
-    <nav class="container">
+    <nav class="container flex flex-row align-items-center">
       <router-link :to="{ name: 'Home' }">
         <div class="navbar-logo">
           <ROARLogo />
         </div>
       </router-link>
-      <div class="login-container">
-        <div v-if="isAdmin">
-          <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
-          <PvMenu ref="menu" :model="dropDownActions" :popup="true">
-            <template #item="{ item }">
-              <div class="cursor-pointer hover:surface-200">
-                <i :class="item.icon" class="p-1 pb-2 pt-2 text-sm cursor-pointer"></i> {{ item.label }}
-              </div>
-            </template>
-          </PvMenu>
+
+      <div id="navBarRightEnd" class="flex flex-row align-items-center">
+        <PvDropdown
+          v-model="$i18n.locale"
+          class="mr-2"
+          :options="languageDropdownOptions"
+          option-label="name"
+          option-value="value"
+          placeholder="Select language"
+          :highlight-on-select="true"
+        >
+          <template #value="locale">
+            <div v-if="locale.value" class="flex flex-row justify-content-center align-items-center">
+              <country-flag :country="getCountryFlag(locale.value)" class="mr-2" size="small" />
+              <span>{{ getCountryName(locale.value) }}</span>
+            </div>
+            <span v-else>
+              {{ locale.placeholder }}
+            </span>
+          </template>
+          <template #option="country">
+            <div class="flex flex-row justify-content-start align-items-center">
+              <country-flag :country="country.option.code" class="mr-2" size="small" />
+              <span>{{ country.option.name }}</span>
+            </div>
+          </template>
+        </PvDropdown>
+
+        <div class="login-container">
+          <div v-if="isAdmin">
+            <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
+            <PvMenu ref="menu" :model="dropDownActions" :popup="true">
+              <template #item="{ item }">
+                <div class="cursor-pointer hover:surface-200">
+                  <i :class="item.icon" class="p-1 pb-2 pt-2 text-sm cursor-pointer"></i> {{ item.label }}
+                </div>
+              </template>
+            </PvMenu>
+          </div>
+          <router-link :to="{ name: 'SignOut' }" class="signout-button">
+            <PvButton data-cy="button-sign-out" class="no-underline">{{ $t('navBar.signOut') }}</PvButton>
+          </router-link>
         </div>
-        <router-link :to="{ name: 'SignOut' }" class="signout-button">
-          <PvButton data-cy="button-sign-out" class="no-underline">{{ $t('navBar.signOut') }}</PvButton>
-        </router-link>
       </div>
     </nav>
   </header>
@@ -36,6 +65,8 @@ import _union from 'lodash/union';
 import { getSidebarActions } from '@/router/sidebarActions';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
+import { languageOptions } from '../translations/i18n.js';
+import CountryFlag from 'vue-country-flag-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -43,6 +74,7 @@ const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
 let unsubscribe;
+
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
@@ -75,6 +107,34 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
 const isAtHome = computed(() => {
   return router.currentRoute.value.fullPath === '/';
 });
+
+// Convert the object to an array of [key, value] pairs
+let languageOptionsArray = Object.entries(languageOptions);
+
+// Sort the array by the key (language code)
+languageOptionsArray.sort((a, b) => a[0].localeCompare(b[1]));
+
+// Convert it back to an object
+let sortedLanguageOptions = Object.fromEntries(languageOptionsArray);
+
+const languageDropdownOptions = computed(() => {
+  return Object.entries(sortedLanguageOptions).map(([key, value]) => {
+    return {
+      name: value.country,
+      code: value.code,
+      value: key,
+    };
+  });
+});
+
+const getCountryName = (locale) => {
+  return languageOptions[locale].country;
+};
+
+const getCountryFlag = (locale) => {
+  return languageOptions[locale].code;
+};
+
 const dropDownActions = computed(() => {
   const rawActions = getSidebarActions(isSuperAdmin.value, !isAtHome.value);
   return rawActions.map((action) => {

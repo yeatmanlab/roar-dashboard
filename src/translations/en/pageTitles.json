@@ -1,7 +1,5 @@
 {
-  "en": {
-    "home": "Dashboard",
-    "signIn": "Sign In",
-    "signOut": "Sign Out"
-  }
+  "home": "Dashboard",
+  "signIn": "Sign In",
+  "signOut": "Sign Out"
 }

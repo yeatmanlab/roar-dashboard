@@ -49,7 +49,7 @@
                 </svg>
               </i>
               <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-              <span v-else>{{ $t('gameTabs.taskCompleted') }}</span>
+              <span v-else>{{ taskCompletedMessage }}</span>
             </div>
           </div>
           <div class="roar-game-image">
@@ -75,6 +75,13 @@ import _findIndex from 'lodash/findIndex';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+
+const taskCompletedMessage = computed(() => {
+  return t('gameTabs.taskCompleted');
+});
 
 const props = defineProps({
   games: { type: Array, required: true },
