@@ -100,11 +100,11 @@ Cypress.Commands.add('activateAdminSidebar', () => {
 
 Cypress.Commands.add('selectAdministration', (testAdministration) => {
   cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') })
-    .should('exist')
+    .should('be.visible')
     .click();
   cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
     .contains(testAdministration)
-    .should('exist')
+    .should('be.visible')
     .click();
 });
 
