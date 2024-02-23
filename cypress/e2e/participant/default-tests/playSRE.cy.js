@@ -28,6 +28,8 @@ describe('Test playthrough of SRE as a participant', () => {
     playSREGame();
 
     // check if game completed
+    cy.visit('/');
+    cy.wait(0.2 * timeout);
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
     cy.get('.tabview-nav-link-label').contains('ROAR-Sentence').should('have.attr', 'data-game-status', 'complete');
   });
