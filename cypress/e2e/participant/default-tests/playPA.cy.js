@@ -18,10 +18,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/');
 
-    cy.get('.p-dropdown-trigger', { timeout: 2 * timeout }).click();
-    cy.get('.p-dropdown-item', { timeout: 2 * timeout })
-      .contains(Cypress.env('testRoarAppsAdministration'))
-      .click();
+    cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
     // cy.get(".p-tabview").contains(pa.name);
     cy.visit('/game/pa');

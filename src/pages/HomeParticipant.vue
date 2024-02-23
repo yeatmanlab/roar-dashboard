@@ -10,7 +10,13 @@
           {{ adminInfo.at(0).name }}
         </h2>
         <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
-          <PvDropdown v-model="selectedAdmin" :options="adminInfo ?? []" option-label="name" input-id="dd-assignment" />
+          <PvDropdown
+            v-model="selectedAdmin"
+            :options="adminInfo ?? []"
+            option-label="name"
+            input-id="dd-assignment"
+            data-cy="dropdown-select-administration"
+          />
           <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
         </div>
         <div class="tabs-container">
