@@ -48,13 +48,7 @@ function playSWRGame() {
   finishSWR('You say farewell to your new friends and leave the land of Lexicality. Until next time!');
 
   // check if game completed
-  cy.get('.p-dropdown-trigger', { timeout: 50 * timeout })
-    .should('be.visible')
-    .click();
-  cy.get('.p-dropdown-item', { timeout: 10 * timeout })
-    .contains(Cypress.env('testRoarAppsAdministration'))
-    .should('be.visible')
-    .click();
+  cy.selectAdministration(Cypress.env('testRoarAppsAdministration'))
   cy.get('.tabview-nav-link-label').contains('ROAR-Word').should('have.attr', 'data-game-status', 'complete');
 }
 

@@ -43,15 +43,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
 
       playROARGame(game);
 
-      // check if game completed
-      // cy.visit("/");
-      cy.get('.p-dropdown-trigger', { timeout: 5 * timeout })
-        .should('be.visible')
-        .click();
-      cy.get('.p-dropdown-item', { timeout: 5 * timeout })
-        .contains(Cypress.env('testRoarAppsAdministration'))
-        .should('be.visible')
-        .click();
+      cy.selectAdministration(Cypress.env('testRoarAppsAdministration'))
       cy.get('.tabview-nav-link-label', { timeout: 5 * timeout })
         .contains(game.name)
         .should('have.attr', 'data-game-status', 'complete');
