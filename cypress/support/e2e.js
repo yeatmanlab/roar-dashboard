@@ -10,7 +10,7 @@ Cypress.on('uncaught:exception', () => {
 // beforeEach hook to simulate various network conditions based on information in the test filename.
 beforeEach(() => {
   if (Cypress.spec.name.includes('4G')) {
-    // Simulate a 4G connection
+    cy.task('log', 'Simulating 4G connection');
     cy.intercept(
       {
         method: 'GET',
@@ -25,7 +25,7 @@ beforeEach(() => {
       },
     ).as('4G Connection');
   } else if (Cypress.spec.name.includes('3G')) {
-    // Simulate a 3G connection
+    cy.task('log', 'Simulating 3G connection');
     cy.intercept(
       {
         method: 'GET',
@@ -40,7 +40,7 @@ beforeEach(() => {
       },
     ).as('3G Connection');
   } else if (Cypress.spec.name.includes('2G')) {
-    // Simulate a 2G connection
+    cy.task('log', 'Simulating 2G connection');
     cy.intercept(
       {
         method: 'GET',
@@ -55,7 +55,7 @@ beforeEach(() => {
       },
     ).as('2G Connection');
   } else if (Cypress.spec.name.includes('Offline')) {
-    // Simulate offline condition
+    cy.task('log', 'Simulating offline condition');
     cy.intercept(
       {
         method: 'GET',
@@ -66,7 +66,7 @@ beforeEach(() => {
       },
     );
   } else if (Cypress.spec.name.includes('HighLatency')) {
-    // Simulate high latency
+    cy.task('log', 'Simulating high latency network');
     cy.intercept(
       {
         method: 'GET',
@@ -80,7 +80,7 @@ beforeEach(() => {
       },
     ).as('High Latency Network');
   } else if (Cypress.spec.name.includes('LowBandwidth')) {
-    // Simulate low bandwidth
+    cy.task('log', 'Simulating low bandwidth network');
     cy.intercept(
       {
         method: 'GET',
