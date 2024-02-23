@@ -43,6 +43,8 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
 
       playROARGame(game);
 
+      cy.visit('/');
+      cy.wait(0.2 * timeout);
       cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
       cy.get('.tabview-nav-link-label', { timeout: 5 * timeout })
         .contains(game.name)

@@ -48,6 +48,8 @@ function playSWRGame() {
   finishSWR('You say farewell to your new friends and leave the land of Lexicality. Until next time!');
 
   // check if game completed
+  cy.visit('/');
+  cy.wait(0.2 * timeout);
   cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
   cy.get('.tabview-nav-link-label').contains('ROAR-Word').should('have.attr', 'data-game-status', 'complete');
 }
