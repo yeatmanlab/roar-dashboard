@@ -13,6 +13,9 @@
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
+          <div id="languageSelect" class="m-4">
+            <LanguageSelector />
+          </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" />
         </section>
         <section class="signin-option-container signin-option-providers">

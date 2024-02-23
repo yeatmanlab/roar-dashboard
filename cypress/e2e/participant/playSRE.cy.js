@@ -5,11 +5,7 @@ describe('Test playthrough of SRE as a participant', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/');
 
-    cy.get('.p-dropdown-trigger', { timeout: timeout }).should('be.visible').click();
-    cy.get('.p-dropdown-item', { timeout: timeout })
-      .contains(Cypress.env('testRoarAppsAdministration'))
-      .should('be.visible')
-      .click();
+    cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
     cy.get('.p-tabview').contains('ROAR-Sentence');
     cy.visit(`/game/sre`);

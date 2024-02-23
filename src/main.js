@@ -69,6 +69,7 @@ import VueGoogleMaps from 'vue-google-maps-community-fork';
 
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue';
+import LanguageSelector from './components/LanguageSelector.vue';
 
 // Style assets
 import 'primevue/resources/primevue.css'; // primevue css
@@ -153,6 +154,7 @@ app.component('PvDataTable', PvDataTable);
 app.component('PvColumn', PvColumn);
 
 app.component('RoarDataTable', RoarDataTable);
+app.component('LanguageSelector', LanguageSelector);
 
 app.directive('tooltip', PvTooltip);
 

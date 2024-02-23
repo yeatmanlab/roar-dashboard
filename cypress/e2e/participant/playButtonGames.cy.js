@@ -8,13 +8,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
       cy.visit('/', { timeout: 2 * timeout });
 
-      cy.get('.p-dropdown-trigger', { timeout: 2 * timeout })
-        .should('be.visible')
-        .click();
-      cy.get('.p-dropdown-item', { timeout: 2 * timeout })
-        .contains(Cypress.env('testRoarAppsAdministration'))
-        .should('be.visible')
-        .click();
+      cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
       cy.get('.tabview-nav-link-label', { timeout: 2 * timeout }).contains(game.name);
 
       cy.visit(`/game/${game.id}`, { timeout: 2 * timeout });
