@@ -32,13 +32,7 @@ describe('Test playthrough of SRE as a participant', () => {
     playSREGame();
 
     // check if game completed
-    cy.get('.p-dropdown-trigger', { timeout: 5 * timeout })
-      .should('be.visible')
-      .click();
-    cy.get('.p-dropdown-item', { timeout: timeout })
-      .contains(Cypress.env('testRoarAppsAdministration'))
-      .should('be.visible')
-      .click();
+    cy.selectAdministration(Cypress.env('testRoarAppsAdministration'))
     cy.get('.tabview-nav-link-label').contains('ROAR-Sentence').should('have.attr', 'data-game-status', 'complete');
   });
 });
