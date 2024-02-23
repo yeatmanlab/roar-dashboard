@@ -26,6 +26,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     playPA(startText, endBlockText, breakBlockText);
 
     cy.visit('/');
+    cy.wait(0.2 * timeout);
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
     cy.get('.tabview-nav-link-label', { timeout: 2 * timeout })
       .contains('ROAR-Phoneme')
