@@ -6,16 +6,20 @@ module.exports = defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173/',
     experimentalRunAllSpecs: true,
+    experimentalMemoryManagement: true,
     retries: 2,
-    setupNodeEvents(on, config) {
-      // implement node event listeners here
+    setupNodeEvents(on) {
+      on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        },
+      });
     },
-    // specPattern: [
-    //
-    // ]
   },
   env: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
+    firestoreUrl: "https://firestore.googleapis.com/**/*",
     timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
