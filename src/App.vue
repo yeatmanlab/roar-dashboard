@@ -40,6 +40,9 @@ const navbarBlacklist = ref([
   'Morphology',
   'Cva',
   'Fluency',
+  "Fluency-ARF",
+  "Fluency-CALF",
+  "Fluency-Alpaca"
 ]);
 
 onBeforeMount(async () => {

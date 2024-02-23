@@ -92,6 +92,27 @@ const routes = [
     meta: { pageTitle: 'Fluency' },
   },
   {
+  path: '/game/fluency-arf',
+  name: 'Fluency-ARF',
+  component: () => import('../components/tasks/TaskFluency.vue'),
+  props: { taskId: 'fluency-arf' },
+  meta: { pageTitle: 'Fluency-ARF' },
+  },
+  {
+  path: '/game/fluency-calf',
+  name: 'Fluency-CALF',
+  component: () => import('../components/tasks/TaskFluency.vue'),
+  props: { taskId: 'fluency-calf' },
+  meta: { pageTitle: 'Fluency-CALF' },
+  },
+  {
+  path: '/game/fluency-alpaca',
+  name: 'Fluency-Alpaca',
+  component: () => import('../components/tasks/TaskFluency.vue'),
+  props: { taskId: 'fluency-alpaca' },
+  meta: { pageTitle: 'Fluency-Alpaca' },
+  },
+  {
     path: '/game/:taskId',
     name: 'Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
