@@ -60,7 +60,7 @@
 
           <router-link
             v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
-            :to="{ path: 'game/' + game.taskId }"
+            :to="{ path: `${game.taskId === 'Survey' ?  '/survey' : 'game/' + game.taskId}` }"
           ></router-link>
         </article>
       </PvTabPanel>
@@ -103,7 +103,7 @@ const allGamesComplete = computed(() => gameIndex.value === -1);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 
-const { selectedAdmin } = storeToRefs(gameStore);
+const { selectedAdmin, } = storeToRefs(gameStore);
 
 async function routeExternalTask(game) {
   let url;

@@ -6,10 +6,11 @@
     <section id="signin">
       <header>
         <div class="signin-logo">
-          <ROARLogoShort />
+          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200"/>
+          <ROARLogoShort v-else/>
         </div>
       </header>
-      <h1>Welcome to ROAR!</h1>
+      <h1 v-if="!isLevante">Welcome to ROAR!</h1>
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">Log in to access your dashboard</h4>
@@ -22,7 +23,7 @@
               <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Google</span>
             </PvButton>
-            <PvButton class="signin-button" @click="authWithClever">
+            <PvButton v-if="!isLevante" class="signin-button" @click="authWithClever">
               <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Clever</span>
             </PvButton>
@@ -48,6 +49,7 @@ import { isMobileBrowser } from '@/helpers';
 import { fetchDocById } from '../helpers/query/utils';
 
 const incorrect = ref(false);
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
 
@@ -55,6 +57,13 @@ const { spinner, authFromClever } = storeToRefs(authStore);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
+    if (authStore.userData) {
+      if (toRaw(authStore.userData.userType.toLowerCase()) === 'parent' || toRaw(authStore.userData.userType.toLowerCase()) === 'teacher') {
+        router.push({ name: 'Survey' });
+        return
+      }
+    }
+
     if (authFromClever.value) {
       router.push({ name: 'CleverLanding' });
     } else {
@@ -131,7 +140,6 @@ const authWithEmail = (state) => {
           throw e;
         }
       });
-
   }
 };
 

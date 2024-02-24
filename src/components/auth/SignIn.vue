@@ -55,7 +55,7 @@
           </div>
         </div>
       </div>
-      <PvButton type="submit" label="Go! &rarr;" class="submit-button" />
+      <PvButton type="submit" :label=signInBtnLabel class="submit-button" />
     </form>
   </div>
 </template>
@@ -70,6 +70,8 @@ import { useAuthStore } from '@/store/auth';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const isLevante = import.meta.env.MODE === 'LEVANTE';
+const signInBtnLabel = isLevante ? 'Sign in' : "Go! →"
 
 const emit = defineEmits(['submit']);
 // eslint-disable-next-line no-unused-vars

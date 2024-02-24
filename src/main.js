@@ -3,6 +3,7 @@ import { createPinia } from 'pinia';
 import { createHead } from '@vueuse/head';
 import router from '@/router/index.js';
 import App from '@/App.vue';
+import { surveyPlugin } from 'survey-vue3-ui'
 
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import TextClamp from 'vue3-text-clamp';
@@ -98,6 +99,7 @@ app.use(VueGoogleMaps, {
 app.use(createHead());
 app.use(TextClamp);
 app.use(VueQueryPlugin);
+app.use(surveyPlugin);
 
 app.component('PvAccordion', PvAccordion);
 app.component('PvAccordionTab', PvAccordionTab);

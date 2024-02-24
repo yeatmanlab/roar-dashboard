@@ -43,7 +43,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, fetchDocsById } from '../helpers/query/utils';
+import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
 
 let unsubscribe;
@@ -136,6 +136,14 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
+const { data: surveyResponsesData } = useQuery({
+  queryKey: ['surveyResponses', authStore.uid],
+  queryFn: () => fetchSubcollection(`users/${authStore.uid}`, 'surveyResponses'),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000,
+});
+
 const isLoading = computed(() => {
   return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
 });
@@ -152,8 +160,8 @@ const noGamesAvailable = computed(() => {
 // Assessments to populate the game tabs.
 // Generated based on the current selected admin Id
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
-    return selectedAdmin.value.assessments.map((assessment) => {
+  if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) { 
+    const fetchedAssessments = selectedAdmin.value.assessments.map((assessment) => {
       // Get the matching assessment from assignmentInfo
       const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
       const matchingAssessments = matchingAssignment?.assessments ?? [];
@@ -168,6 +176,27 @@ const assessments = computed(() => {
       };
       return combinedAssessment;
     });
+
+    if (authStore.userData.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+      // Add survey card before the last task (external MEFS)
+      fetchedAssessments.splice(fetchedAssessments.length - 1, 0, {
+        taskId: 'Survey',
+        taskData: {
+          name: 'Survey',
+          description: 'Take a break and answer some questions for us!',
+        },
+      });
+
+      if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
+        fetchedAssessments.forEach((assessment) => {
+          if (assessment.taskId === 'Survey') {
+            assessment.completedOn = new Date();
+          }
+        });
+      }
+    }
+
+    return fetchedAssessments;
   }
   return [];
 });
