@@ -146,7 +146,6 @@ const authWithEmail = (state) => {
           throw e;
         }
       });
-
   }
 };
 

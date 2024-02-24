@@ -115,7 +115,7 @@ const allGamesComplete = computed(() => gameIndex.value === -1);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 
-const { selectedAdmin } = storeToRefs(gameStore);
+const { selectedAdmin, } = storeToRefs(gameStore);
 
 async function routeExternalTask(game) {
   let url;
