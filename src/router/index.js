@@ -131,14 +131,14 @@ const routes = [
     component: () => import('../pages/RegisterFamilyUsers.vue'),
     children: [
       {
-          name: 'Register',
-          path: '',
-          component: () => import('../components/auth/RegisterParent.vue'),
+        name: 'Register',
+        path: '',
+        component: () => import('../components/auth/RegisterParent.vue'),
       },
       {
-          name: 'registerStudent',
-          path: 'student',
-          component: () => import('../components/auth/RegisterStudent.vue')
+        name: 'registerStudent',
+        path: 'student',
+        component: () => import('../components/auth/RegisterStudent.vue'),
       },
     ],
     meta: { requiresGuest: true },

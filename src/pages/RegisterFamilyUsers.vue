@@ -1,4 +1,3 @@
-
 <template>
   <div id="register-container">
     <section id="register">
@@ -14,16 +13,14 @@
               <h1 align="center">Register for ROAR</h1>
               <p align="center">Enter your information to create an account.</p>
             </div>
-            <Register @submit="handleParentSubmit($event)"/>
+            <Register @submit="handleParentSubmit($event)" />
           </router-view>
         </div>
         <div v-else>
           <router-view name="registerStudent">
             <div class="register-title">
               <h1 align="center">Register your child</h1>
-              <p align="center">
-                Enter your child's information to create their ROAR account.
-              </p>
+              <p align="center">Enter your child's information to create their ROAR account.</p>
             </div>
             <div>
               <!-- Iterate through the list of students -->
@@ -41,12 +38,12 @@
 </template>
 
 <script setup>
-import Register from "../components/auth/RegisterParent.vue";
-import RegisterStudent from "../components/auth/RegisterStudent.vue";
-import ROARLogoShort from "@/assets/RoarLogo-Short.vue";
-import { ref, onMounted, onBeforeUnmount, watch, toRaw } from "vue";
-import { useAuthStore } from "@/store/auth";
-import router from "../router";
+import Register from '../components/auth/RegisterParent.vue';
+import RegisterStudent from '../components/auth/RegisterStudent.vue';
+import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
+import { ref, onMounted, onBeforeUnmount, watch, toRaw } from 'vue';
+import { useAuthStore } from '@/store/auth';
+import router from '../router';
 
 const authStore = useAuthStore();
 
@@ -55,70 +52,61 @@ const activeIndex = ref(0); // Current active step
 const parentInfo = ref(null);
 const studentInfo = ref(null);
 
-
 async function handleParentSubmit(data) {
   parentInfo.value = data;
-  activeIndex.value=1;
+  activeIndex.value = 1;
 }
 
 async function handleStudentSubmit(data) {
   studentInfo.value = data;
 }
 
-watch(
-  [parentInfo, studentInfo],
-  ([newParentInfo, newStudentInfo]) => {
-    if (newParentInfo && newStudentInfo) {
-      const rawParentInfo = toRaw(newParentInfo);
-      const rawStudentInfo = toRaw(newStudentInfo);
-      console.log("both student and parent info present:");
-      const parentUserData = {
-        name: {
-          first: rawParentInfo.firstName,
-          last: rawParentInfo.lastName,
+watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
+  if (newParentInfo && newStudentInfo) {
+    const rawParentInfo = toRaw(newParentInfo);
+    const rawStudentInfo = toRaw(newStudentInfo);
+    console.log('both student and parent info present:');
+    const parentUserData = {
+      name: {
+        first: rawParentInfo.firstName,
+        last: rawParentInfo.lastName,
+      },
+    };
+    const studentSendObject = rawStudentInfo.map((student) => {
+      return {
+        email: student.studentUsername,
+        password: student.password,
+        userData: {
+          name: {
+            first: student.firstName,
+            middle: student.middleName,
+            last: student.lastName,
+          },
+          activationCode: student.activationCode,
+          grade: student.grade,
+          dob: student.dob,
+          gender: student.gender,
+          ell_status: student.ell,
+          iep_status: student.IEPStatus,
+          frl_status: student.freeReducedLunch,
+          race: student.race,
+          hispanic_ethnicity: student.hispanicEthnicity,
+          home_language: student.homeLanguage,
         },
       };
-      const studentSendObject = rawStudentInfo.map((student) => {
-        return {
-          email: student.studentUsername,
-          password: student.password,
-          userData: {
-            name: {
-              first: student.firstName,
-              middle: student.middleName,
-              last: student.lastName,
-            },
-            activationCode: student.activationCode,
-            grade: student.grade,
-            dob: student.dob,
-            gender: student.gender,
-            ell_status: student.ell,
-            iep_status: student.IEPStatus,
-            frl_status: student.freeReducedLunch,
-            race: student.race,
-            hispanic_ethnicity: student.hispanicEthnicity,
-            home_language: student.homeLanguage,
-          },
-        };
-      });
-      authStore.createNewFamily(
-        rawParentInfo.ParentEmail,
-        rawParentInfo.password,
-        parentUserData,
-        studentSendObject
-      );
-      console.log("firekit function called");
-      router.push({name: "SignIn"})
-    }
+    });
+    authStore.createNewFamily(rawParentInfo.ParentEmail, rawParentInfo.password, parentUserData, studentSendObject);
+    console.log('firekit function called');
+    router.push({ name: 'SignIn' });
   }
-);
+});
 
 onMounted(() => {
-  document.body.classList.add("page-register");
+  document.body.classList.add('page-register');
 });
 
 onBeforeUnmount(() => {
-  document.body.classList.remove("page-register");
+  document.body.classList.remove('page-register');
 });
 </script>
 

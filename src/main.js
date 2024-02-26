@@ -85,8 +85,8 @@ const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
 
 app.use(VueRecaptchaPlugin, {
-  v3SiteKey: "6Lf8ESUpAAAAAP6R4mi-4ZJO7aMGR6mppFV19YWW",
-})
+  v3SiteKey: '6Lf8ESUpAAAAAP6R4mi-4ZJO7aMGR6mppFV19YWW',
+});
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);

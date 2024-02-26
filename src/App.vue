@@ -28,7 +28,7 @@ import { ref } from 'vue';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 
-useRecaptchaProvider()
+useRecaptchaProvider();
 
 const navbarBlacklist = ref([
   'SignIn',
