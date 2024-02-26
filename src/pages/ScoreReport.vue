@@ -7,7 +7,7 @@
             <AppSpinner style="margin: 0.3rem 0rem" />
             <div class="uppercase text-sm">Loading Org Info</div>
           </div>
-          <div v-if="orgInfo && administrationInfo">
+          <div v-if="orgInfo && administrationInfo" id="at-a-glance-charts">
             <div class="flex justify-content-between align-items-center">
               <div class="flex flex-column align-items-start gap-2">
                 <div>
@@ -24,18 +24,19 @@
                 </div>
                 <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
               </div>
-              <div class="flex flex-row align-items-center gap-4">
-                <div class="uppercase text-sm text-gray-600">VIEW</div>
-                <PvSelectButton
-                  v-model="reportView"
-                  :options="reportViews"
-                  option-disabled="constant"
-                  :allow-empty="false"
-                  option-label="name"
-                  class="flex my-2 select-button"
-                  @change="handleViewChange"
-                >
-                </PvSelectButton>
+              <div class="flex flex-column align-items-end gap-2">
+                <div class="flex flex-row align-items-center gap-4">
+                  <div class="uppercase text-sm text-gray-600">VIEW</div>
+                  <PvSelectButton
+v-model="reportView" :options="reportViews" option-disabled="constant"
+                    :allow-empty="false" option-label="name" class="flex my-2 select-button" @change="handleViewChange">
+                  </PvSelectButton>
+                </div>
+                <div>
+                  <PvButton
+class="flex flex-row" :icon="!exportLoading ? 'pi pi-download' : 'pi pi-spin pi-spinner'"
+                    :disabled="exportLoading" label="Export To Pdf" @click="handleExportToPdf" />
+                </div>
               </div>
             </div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
@@ -47,13 +48,8 @@
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
                   <div class="distribution-overview-wrapper">
                     <DistributionChartOverview
-                      :runs="runsByTaskId[taskId]"
-                      :initialized="initialized"
-                      :task-id="taskId"
-                      :org-type="props.orgType"
-                      :org-id="props.orgId"
-                      :administration-id="props.administrationId"
-                    />
+:runs="runsByTaskId[taskId]" :initialized="initialized" :task-id="taskId"
+                      :org-type="props.orgType" :org-id="props.orgId" :administration-id="props.administrationId" />
                     <div className="task-description mt-3">
                       <span class="font-bold">
                         {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
@@ -97,57 +93,32 @@
         <!-- Main table -->
         <div v-else-if="scoresCount === 0" class="no-scores-container">
           <h3>No scores found.</h3>
-          <span
-            >The filters applied have no matching scores.
+          <span>The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <RoarDataTable
-            :data="tableData"
-            :columns="columns"
-            :total-records="scoresCount"
-            lazy
-            :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
-            data-cy="roar-data-table"
-            :lazy-pre-sorting="sortDisplay"
-            @page="onPage($event)"
-            @sort="onSort($event)"
-            @filter="onFilter($event)"
-            @export-all="exportAll"
-            @export-selected="exportSelected"
-          >
+:data="tableData" :columns="columns" :total-records="scoresCount" lazy :page-limit="pageLimit"
+            :loading="isLoadingScores || isFetchingScores" data-cy="roar-data-table" :lazy-pre-sorting="sortDisplay"
+            @page="onPage($event)" @sort="onSort($event)" @filter="onFilter($event)" @export-all="exportAll"
+            @export-selected="exportSelected">
             <template #filterbar>
               <div v-if="schoolsInfo" class="flex flex-row gap-2">
                 <span class="p-float-label">
                   <PvMultiSelect
-                    id="ms-school-filter"
-                    v-model="filterSchools"
-                    style="width: 20rem; max-width: 25rem"
-                    :options="schoolsInfo"
-                    option-label="name"
-                    option-value="id"
-                    :show-toggle-all="false"
-                    selected-items-label="{0} schools selected"
-                    data-cy="filter-by-school"
-                  />
+id="ms-school-filter" v-model="filterSchools" style="width: 20rem; max-width: 25rem"
+                    :options="schoolsInfo" option-label="name" option-value="id" :show-toggle-all="false"
+                    selected-items-label="{0} schools selected" data-cy="filter-by-school" />
                   <label for="ms-school-filter">Filter by School</label>
                 </span>
               </div>
               <div class="flex flex-row gap-2">
                 <span class="p-float-label">
                   <PvMultiSelect
-                    id="ms-grade-filter"
-                    v-model="filterGrades"
-                    style="width: 20rem; max-width: 25rem"
-                    :options="gradeOptions"
-                    option-label="label"
-                    option-value="value"
-                    :show-toggle-all="false"
-                    selected-items-label="{0} grades selected"
-                    data-cy="filter-by-grade"
-                  />
+id="ms-grade-filter" v-model="filterGrades" style="width: 20rem; max-width: 25rem"
+                    :options="gradeOptions" option-label="label" option-value="value" :show-toggle-all="false"
+                    selected-items-label="{0} grades selected" data-cy="filter-by-grade" />
                   <label for="ms-school-filter">Filter by Grade</label>
                 </span>
               </div>
@@ -155,13 +126,8 @@
             <span>
               <label for="view-columns" class="view-label">View</label>
               <PvDropdown
-                id="view-columns"
-                v-model="viewMode"
-                :options="viewOptions"
-                option-label="label"
-                option-value="value"
-                class="ml-2"
-              />
+id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
+                option-value="value" class="ml-2" />
             </span>
           </RoarDataTable>
         </div>
@@ -204,21 +170,14 @@
         </div>
         <PvTabView>
           <PvTabPanel
-            v-for="taskId of sortedTaskIds"
-            :key="taskId"
-            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
-          >
-            <TaskReport
-              v-if="taskId"
-              :task-id="taskId"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]"
-              :org-type="orgType"
-              :org-id="orgId"
-              :org-info="orgInfo"
-              :administration-info="administrationInfo"
-            />
+v-for="taskId of sortedTaskIds" :key="taskId"
+            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
+            <div :id="'tab-view-' + taskId">
+              <TaskReport
+v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="administrationId"
+                :runs="runsByTaskId[taskId]" :org-type="orgType" :org-id="orgId" :org-info="orgInfo"
+                :administration-info="administrationInfo" />
+            </div>
           </PvTabPanel>
         </PvTabView>
         <div class="bg-gray-200 px-4 py-2 mt-4">
@@ -270,6 +229,8 @@
 <script setup>
 import { computed, ref, onMounted, watch, toRaw } from 'vue';
 import { storeToRefs } from 'pinia';
+import { jsPDF } from 'jspdf'
+import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
@@ -336,6 +297,53 @@ const reportViews = [
 const handleViewChange = () => {
   window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
 };
+
+const exportLoading = ref(false);
+
+const handleExportToPdf = async () => {
+  exportLoading.value = true;
+  console.log("export to pdf called")
+  const doc = new jsPDF();
+
+  doc.text(`Score Report for:  ${orgInfo?.value.name}`, 10, 10);
+  doc.text(`Administration:  ${administrationInfo?.value.name}`, 10, 20);
+
+  // Use html2canvas to convert the HTML element to a canvas
+  await html2canvas(document.getElementById('at-a-glance-charts')).then(function (canvas) {
+    // Convert the canvas to an image
+    // Convert the canvas to an image with lower quality
+    var imgData = canvas.toDataURL('image/jpeg', 0.7); // Lower quality
+
+    // Add the image to the PDF
+    doc.addImage(imgData, 'JPEG', 10, 30, 200, 100); // adjust the coordinates and size as needed
+  });
+
+  // let yCoord = 60;
+  for (const taskId of sortedTaskIds.value) {
+    console.log("taskid", taskId)
+    await html2canvas(document.getElementById('tab-view-' + taskId), {
+      onclone: function (clonedDoc) {
+        // Append the hidden elements to the cloned document
+        clonedDoc.body.appendChild(clonedDoc);
+      }
+    }).then(function (canvas) {
+      doc.addPage();
+      // Convert the canvas to an image
+      // Convert the canvas to an image with lower quality
+      var imgData = canvas.toDataURL('image/jpeg', 0.7); // Lower quality
+
+      // Add the image to the PDF
+      doc.addImage(imgData, 'JPEG', 10, 10, 200, 100); // adjust the coordinates and size as needed
+    });
+    // yCoord += 30
+  }
+
+
+  doc.save('score_report.pdf');
+  exportLoading.value = false;
+
+  return;
+}
 
 // Queries for page
 const orderBy = ref([
