@@ -1,76 +1,59 @@
 <template>
   <div class="card">
     <form class="p-fluid">
-      <div
-        v-for="(student, outerIndex) in state.students"
-        :key="outerIndex"
-        class="student-form-border"
-      >
-      <section class="form-section">
-        <div class="p-input-icon-right">
-          <div class="flex justify-content-between">
-            <label for="activationCode">Activation code <span class="required">*</span></label>
-            <div class="flex align-items-center">
-              <PvCheckbox
-                v-model="noActivationCode"
-                :binary="true"
-                name="noActivationCode"
-                @change="updateActivationCode"
-              />
-              <label for="noActivationCode" class="ml-2">I don't have code</label>
-            </div>
-          </div>
-          <PvInputText
-            v-if="!noActivationCode"
-            v-model="student.activationCode"
-            name="activationCode"
-            :class="{
-              'p-invalid':
-                v$.students.$each.$response.$data[outerIndex].activationCode
-                  .$invalid && submitted,
-            }"
-            aria-describedby="activation-code-error"
-            :disabled="noActivationCode"
-          />
-        </div>
-        <span
-          v-if="
-            !noActivationCode &&
-            v$.students.$each.$response.$data[outerIndex].activationCode
-              .$invalid && submitted
-          "
-        >
-          <span
-            v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
-            :key="`error-${outerIndex}-${innerIndex}`"
-          >
-            <small class="p-error">{{
-              error.$message.replace("Value", "Activation Code")
-            }}</small>
-          </span>
-        </span>
-      </section>
+      <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
         <section class="form-section">
           <div class="p-input-icon-right">
-            <label for="studentUsername"
-              >Student Username <span class="required">*</span></label
+            <div class="flex justify-content-between">
+              <label for="activationCode">Activation code <span class="required">*</span></label>
+              <div class="flex align-items-center">
+                <PvCheckbox
+                  v-model="noActivationCode"
+                  :binary="true"
+                  name="noActivationCode"
+                  @change="updateActivationCode"
+                />
+                <label for="noActivationCode" class="ml-2">I don't have code</label>
+              </div>
+            </div>
+            <PvInputText
+              v-if="!noActivationCode"
+              v-model="student.activationCode"
+              name="activationCode"
+              :class="{
+                'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
+              }"
+              aria-describedby="activation-code-error"
+              :disabled="noActivationCode"
+            />
+          </div>
+          <span
+            v-if="
+              !noActivationCode && v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted
+            "
+          >
+            <span
+              v-for="(error, innerIndex) in v$.students.$each.$response.$errors[outerIndex].activationCode"
+              :key="`error-${outerIndex}-${innerIndex}`"
             >
+              <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
+            </span>
+          </span>
+        </section>
+        <section class="form-section">
+          <div class="p-input-icon-right">
+            <label for="studentUsername">Student Username <span class="required">*</span></label>
             <PvInputText
               v-model="student.studentUsername"
               name="studentUsername"
               :class="{
-                'p-invalid':
-                  v$.students.$each.$response.$data[outerIndex].studentUsername
-                    .$invalid && submitted,
+                'p-invalid': v$.students.$each.$response.$data[outerIndex].studentUsername.$invalid && submitted,
               }"
               aria-describedby="username-error"
             />
           </div>
           <span
-            v-if="
-              v$.students.$each.$response.$data[outerIndex].studentUsername
-                .$invalid && submitted
-            "
+            v-if="v$.students.$each.$response.$data[outerIndex].studentUsername.$invalid && submitted"
             class="p-error"
           >
             <small class="p-error">Please enter a valid username.</small>
@@ -80,16 +63,12 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password"
-                >Password <span class="required">*</span></label
-              >
+              <label for="password">Password <span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"
                 :class="{
-                  'p-invalid':
-                    v$.students.$each.$response.$data[outerIndex].password
-                      .$invalid && submitted,
+                  'p-invalid': v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted,
                 }"
                 toggle-mask
                 show-icon="pi pi-eye-slash"
@@ -97,28 +76,19 @@
                 :feedback="false"
               ></PvPassword>
             </div>
-            <span
-              v-if="
-                v$.students.$each.$response.$data[outerIndex].password.$invalid &&
-                submitted
-              "
-            >
+            <span v-if="v$.students.$each.$response.$data[outerIndex].password.$invalid && submitted">
               <span
-                v-for="(error, innerIndex2)  in v$.students.$each.$response.$errors[outerIndex].password"
+                v-for="(error, innerIndex2) in v$.students.$each.$response.$errors[outerIndex].password"
                 :key="`error-${outerIndex}-${innerIndex2}`"
               >
-                <small class="p-error">{{
-                  error.$message.replace("Value", "Password")
-                }}</small>
+                <small class="p-error">{{ error.$message.replace('Value', 'Password') }}</small>
               </span>
             </span>
           </div>
           <!-- Confirm Password -->
           <div>
             <div>
-              <label for="confirmPassword"
-                >Confirm Password <span class="required">*</span></label
-              >
+              <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
               <PvPassword
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
@@ -130,9 +100,7 @@
                 :feedback="false"
               ></PvPassword>
             </div>
-            <span v-if="isPasswordMismatch(outerIndex) && submitted" class="p-error">
-              Passwords must match
-            </span>
+            <span v-if="isPasswordMismatch(outerIndex) && submitted" class="p-error"> Passwords must match </span>
           </div>
         </section>
         <section class="form-section">
@@ -141,39 +109,19 @@
             <div class="flex justify-content-between">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
-                <PvCheckbox
-                  v-model="yearOnlyCheck"
-                  :binary="true"
-                  name="yearOnly"
-                />
+                <PvCheckbox v-model="yearOnlyCheck" :binary="true" name="yearOnly" />
                 <label for="yearOnly" class="ml-2">Use Year Only</label>
               </div>
             </div>
             <div v-if="!yearOnlyCheck">
-              <pvCalendar
-                v-model="student.dob"
-                view="date"
-                date-format="mm/dd/yy"
-                show-icon
-              />
+              <pvCalendar v-model="student.dob" view="date" date-format="mm/dd/yy" show-icon />
             </div>
             <div v-else>
-              <PvCalendar
-                v-model="student.dob"
-                view="year"
-                date-format="yy"
-                model-value="string"
-                show-icon
-              />
+              <PvCalendar v-model="student.dob" view="year" date-format="yy" model-value="string" show-icon />
             </div>
-            <small
-              v-if="
-                v$.students.$each.$response.$data[outerIndex].dob.$invalid &&
-                submitted
-              "
-              class="p-error"
-              >{{v$.students.$each.$response.$errors[outerIndex].dob.$message.replace("Value", "Date of Birth")}}</small
-            >
+            <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
+              v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
+            }}</small>
           </div>
         </section>
         <section class="form-section">
@@ -200,9 +148,7 @@
                   v-model="student.firstName"
                   name="firstName"
                   :class="{
-                    'p-invalid':
-                      v$.students.$each.$response.$data[index]?.firstName
-                        .$invalid,
+                    'p-invalid': v$.students.$each.$response.$data[index]?.firstName.$invalid,
                   }"
                   aria-describedby="first-name-error"
                 />
@@ -220,9 +166,7 @@
                   v-model="student.lastName"
                   name="lastName"
                   :class="{
-                    'p-invalid':
-                      v$.students.$each.$response.$data[index]?.lastName
-                        .$invalid,
+                    'p-invalid': v$.students.$each.$response.$data[index]?.lastName.$invalid,
                   }"
                   aria-describedby="first-name-error"
                 />
@@ -290,9 +234,7 @@
               </div>
               <!-- Hispanic Ethinicity -->
               <div class="mt-4 mb-5">
-                <label for="hispanicEthnicity"
-                  >Hispanic or Latino Ethnicity
-                </label>
+                <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
                 <PvDropdown
                   v-model="student.hispanicEthnicity"
                   :options="ethnicityOptions"
@@ -318,36 +260,25 @@
           </PvAccordionTab>
         </PvAccordion>
         <section class="form-section-button">
-          <PvButton
-            v-if="index !== 0"
-            class="p-button p-component"
-            @click="deleteStudentForm(student)"
-          >
+          <PvButton v-if="index !== 0" class="p-button p-component" @click="deleteStudentForm(student)">
             Delete Student
           </PvButton>
         </section>
       </div>
     </form>
     <div class="form-section-button2">
-      <PvButton class="p-button p-component" @click="addStudent()">
-        Add another student
-      </PvButton>
+      <PvButton class="p-button p-component" @click="addStudent()"> Add another student </PvButton>
     </div>
     <section class="form-submit">
-      <PvButton
-        type="submit"
-        label="Submit"
-        class="submit-button"
-        @click="handleFormSubmit(!v$.$invalid)"
-      />
+      <PvButton type="submit" label="Submit" class="submit-button" @click="handleFormSubmit(!v$.$invalid)" />
     </section>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, defineEmits } from "vue";
-import { required, minLength, helpers } from "@vuelidate/validators";
-import { useVuelidate } from "@vuelidate/core";
+import { reactive, ref, defineEmits } from 'vue';
+import { required, minLength, helpers } from '@vuelidate/validators';
+import { useVuelidate } from '@vuelidate/core';
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
@@ -356,25 +287,25 @@ const props = defineProps({
 console.log(props);
 const noActivationCode = ref(false);
 
-const emit = defineEmits(["submit"]);
+const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      activationCode: "",
-      studentUsername: "",
-      password: "",
-      confirmPassword: "",
-      firstName: "",
-      lastName: "",
-      middleName: "",
-      dob: "",
-      grade: "",
-      ell: "",
-      gender: "",
-      freeReducedLunch: "",
-      IEPStatus: "",
+      activationCode: '',
+      studentUsername: '',
+      password: '',
+      confirmPassword: '',
+      firstName: '',
+      lastName: '',
+      middleName: '',
+      dob: '',
+      grade: '',
+      ell: '',
+      gender: '',
+      freeReducedLunch: '',
+      IEPStatus: '',
       race: [],
-      hispanicEthnicity: "",
+      hispanicEthnicity: '',
       homeLanguage: [],
     },
   ],
@@ -405,21 +336,21 @@ const rules = {
 
 function addStudent() {
   state.students.push({
-    activationCode: "",
-    studentUsername: "",
-    password: "",
-    confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    middleName: "",
-    dob: "",
-    grade: "",
-    ell: "",
-    gender: "",
-    freeReducedLunch: "",
-    IEPStatus: "",
+    activationCode: '',
+    studentUsername: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    middleName: '',
+    dob: '',
+    grade: '',
+    ell: '',
+    gender: '',
+    freeReducedLunch: '',
+    IEPStatus: '',
     race: [],
-    hispanicEthnicity: "",
+    hispanicEthnicity: '',
     homeLanguage: [],
   });
 }
@@ -427,25 +358,22 @@ function addStudent() {
 function updateActivationCode() {
   state.students.forEach((student) => {
     if (noActivationCode.value) {
-      student.activationCode = "noActivationCode";
+      student.activationCode = 'noActivationCode';
     } else {
-      student.activationCode = "";
+      student.activationCode = '';
     }
   });
 }
-
 
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
     state.students.splice(student, 1); // Remove the student at the specified index
   } else {
-    alert("At least one student is required."); // Prevent deleting the last student form
+    alert('At least one student is required.'); // Prevent deleting the last student form
   }
 }
 function isPasswordMismatch(index) {
-  return (
-    state.students[index]?.password !== state.students[index]?.confirmPassword
-  );
+  return state.students[index]?.password !== state.students[index]?.confirmPassword;
 }
 
 const submitted = ref(false);
@@ -456,7 +384,7 @@ const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
 
   if (!isFormValid) {
-    console.log("it is not valid")
+    console.log('it is not valid');
     return;
   }
   // format username as an email
@@ -467,19 +395,16 @@ const handleFormSubmit = (isFormValid) => {
       ...studentData,
     };
   });
-  console.log(computedStudents)
-  emit("submit", computedStudents);
+  console.log(computedStudents);
+  emit('submit', computedStudents);
 };
-
 
 const yearOnlyCheck = ref(false);
 
 const searchRaces = (event) => {
   const query = event.query.toLowerCase();
 
-  let filteredOptions = races.filter((opt) =>
-    opt.toLowerCase().includes(query)
-  );
+  let filteredOptions = races.filter((opt) => opt.toLowerCase().includes(query));
 
   if (filteredOptions.length === 0 && query) {
     filteredOptions.push(query);
@@ -493,9 +418,7 @@ const searchRaces = (event) => {
 const searchLanguages = (event) => {
   const query = event.query.toLowerCase();
 
-  let filteredOptions = languages.filter((opt) =>
-    opt.toLowerCase().includes(query)
-  );
+  let filteredOptions = languages.filter((opt) => opt.toLowerCase().includes(query));
 
   if (filteredOptions.length === 0 && query) {
     filteredOptions.push(query);
@@ -507,83 +430,83 @@ const searchLanguages = (event) => {
 };
 
 const gradeOptions = ref([
-  { label: "PK", value: "PK" },
-  { label: "TK", value: "TK" },
-  { label: "K", value: "K" },
-  { label: "1st", value: "1" },
-  { label: "2nd", value: "2" },
-  { label: "3rd", value: "3" },
-  { label: "4th", value: "4" },
-  { label: "5th", value: "5" },
-  { label: "6th", value: "6" },
-  { label: "7th", value: "7" },
-  { label: "8th", value: "8" },
-  { label: "9th", value: "9" },
-  { label: "10th", value: "10" },
-  { label: "11th", value: "11" },
-  { label: "12th", value: "12" },
+  { label: 'PK', value: 'PK' },
+  { label: 'TK', value: 'TK' },
+  { label: 'K', value: 'K' },
+  { label: '1st', value: '1' },
+  { label: '2nd', value: '2' },
+  { label: '3rd', value: '3' },
+  { label: '4th', value: '4' },
+  { label: '5th', value: '5' },
+  { label: '6th', value: '6' },
+  { label: '7th', value: '7' },
+  { label: '8th', value: '8' },
+  { label: '9th', value: '9' },
+  { label: '10th', value: '10' },
+  { label: '11th', value: '11' },
+  { label: '12th', value: '12' },
 ]);
 
 const genderOptions = ref([
-  { label: "Male", value: "male" },
-  { label: "Female", value: "female" },
-  { label: "Nonbinary / Do not want to specify", value: "dns" },
+  { label: 'Male', value: 'male' },
+  { label: 'Female', value: 'female' },
+  { label: 'Nonbinary / Do not want to specify', value: 'dns' },
 ]);
 
 const races = [
-  "american Indian or alaska Native",
-  "asian",
-  "black or african American",
-  "native hawaiian or other pacific islander",
-  "white",
+  'american Indian or alaska Native',
+  'asian',
+  'black or african American',
+  'native hawaiian or other pacific islander',
+  'white',
 ];
 
 const raceOptions = ref([...races]);
 
 const frlOptions = ref([
-  { label: "Free", value: "Free" },
-  { label: "Reduced", value: "Reduced" },
-  { label: "Paid", value: "Paid" },
-  { label: "N/A", value: "N/A" },
+  { label: 'Free', value: 'Free' },
+  { label: 'Reduced', value: 'Reduced' },
+  { label: 'Paid', value: 'Paid' },
+  { label: 'N/A', value: 'N/A' },
 ]);
 
 const IEPOptions = ref([
-  { label: "Yes", value: "Y" },
-  { label: "No", value: "N" },
+  { label: 'Yes', value: 'Y' },
+  { label: 'No', value: 'N' },
 ]);
 
 const ellOptions = ref([
-  { label: "Yes", value: "Y" },
-  { label: "No", value: "N" },
+  { label: 'Yes', value: 'Y' },
+  { label: 'No', value: 'N' },
 ]);
 
 const ethnicityOptions = ref([
-  { label: "Yes", value: "Y" },
-  { label: "No", value: "N" },
+  { label: 'Yes', value: 'Y' },
+  { label: 'No', value: 'N' },
 ]);
 
 // Top 20 languages spoken in the U.S.
 const languages = [
-  "English",
-  "Spanish",
-  "Chinese",
-  "Tagalog",
-  "Vietnamese",
-  "Arabic",
-  "French",
-  "Korean",
-  "Russian",
-  "German",
-  "Haitian Creole",
-  "Hindi",
-  "Portuguese",
-  "Italian",
-  "Polish",
-  "Urdu",
-  "Japanese",
-  "Persian",
-  "Gujarati",
-  "Telugu",
+  'English',
+  'Spanish',
+  'Chinese',
+  'Tagalog',
+  'Vietnamese',
+  'Arabic',
+  'French',
+  'Korean',
+  'Russian',
+  'German',
+  'Haitian Creole',
+  'Hindi',
+  'Portuguese',
+  'Italian',
+  'Polish',
+  'Urdu',
+  'Japanese',
+  'Persian',
+  'Gujarati',
+  'Telugu',
 ];
 
 const languageOptions = ref([...languages]);
