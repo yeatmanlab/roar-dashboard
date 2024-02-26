@@ -92,6 +92,15 @@ const routes = [
     meta: { pageTitle: 'Fluency' },
   },
   {
+    path: '/game/:taskId',
+    name: 'Core Tasks',
+    component: () => import('../components/tasks/TaskLevante.vue'),
+    props: true,
+    // Add which specific task?
+    // Code in App.vue overwrites updating it programtically
+    meta: { pageTitle: 'Core Tasks' },
+  },
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),
@@ -220,7 +229,7 @@ const routes = [
     path: '/administration/:administrationId/:orgType/:orgId',
     name: 'ViewAdministration',
     props: true,
-    component: () => import('../pages/AdministrationProgress.vue'),
+    component: () => import('../pages/ProgressReport.vue'),
     meta: { pageTitle: 'View Administration', requireAdmin: true },
   },
   {

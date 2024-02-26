@@ -6,7 +6,7 @@
   </div>
 </template>
 <script setup>
-import RoamFluency from '@bdelab/roam-fluency';
+import { TaskLauncher as RoamFluency } from '@bdelab/roam-fluency';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -63,8 +63,6 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
   if (newFirekitInitValue && !newLoadingUserData) await startTask();
 });
 
-let roarApp;
-
 const { selectedAdmin } = storeToRefs(gameStore);
 
 async function startTask() {
@@ -80,7 +78,7 @@ async function startTask() {
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true };
-  roarApp = new RoamFluency(appKit, gameParams, userParams, 'jspsych-target');
+  const roarApp = new RoamFluency(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {

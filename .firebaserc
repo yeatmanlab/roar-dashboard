@@ -1,7 +1,9 @@
 {
   "projects": {
     "default": "gse-roar-admin",
-    "assessment": "gse-roar-assessment"
+    "assessment": "gse-roar-assessment",
+    "admin-dev": "gse-roar-admin-dev",
+    "assessment-dev": "gse-roar-assessment-dev"
   },
   "targets": {
     "gse-roar-admin": {

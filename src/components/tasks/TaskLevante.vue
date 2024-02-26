@@ -5,8 +5,9 @@
     <AppSpinner />
   </div>
 </template>
+
 <script setup>
-import RoarSWR from '@bdelab/roar-swr';
+import { TaskLauncher } from 'core-tasks';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -15,25 +16,24 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
-
-const taskId = 'swr-es';
+const props = defineProps({
+  taskId: { type: String, required: true, default: 'egma-math' },
+});
+const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
-
 const initialized = ref(false);
 let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
-
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
-
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
   queryKey: ['userData', authStore.uid, 'studentData'],
   queryFn: () => fetchDocById('users', authStore.uid, ['studentData']),
@@ -41,7 +41,6 @@ const { isLoading: isLoadingUserData, data: userData } = useQuery({
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
-
 // The following code intercepts the back button and instead forces a refresh.
 // We add { once: true } to prevent an infinite loop.
 window.addEventListener(
@@ -51,50 +50,39 @@ window.addEventListener(
   },
   { once: true },
 );
-
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
 });
-
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
   if (newFirekitInitValue && !newLoadingUserData) await startTask();
 });
-
 const { selectedAdmin } = storeToRefs(gameStore);
-
 async function startTask() {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
-
   const userDob = _get(userData.value, 'studentData.dob');
   const userDateObj = new Date(userDob);
-
   const userParams = {
     grade: _get(userData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
-    language: 'es',
   };
-
   const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true };
-  const roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
-
+  const levanteTask = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
   gameStarted.value = true;
-  await roarApp.run().then(async () => {
+  await levanteTask.run().then(async () => {
     // Handle any post-game actions.
     await authStore.completeAssessment(selectedAdmin.value.id, taskId);
-
     // Navigate to home, but first set the refresh flag to true.
     gameStore.requireHomeRefresh();
     router.push({ name: 'Home' });
   });
 }
 </script>
-<style>
-@import '@bdelab/roar-swr/lib/resources/roar-swr.css';
 
+<style>
 .game-target {
   position: absolute;
   top: 0;
@@ -102,7 +90,6 @@ async function startTask() {
   width: 100%;
   height: 100%;
 }
-
 .game-target:focus {
   outline: none;
 }

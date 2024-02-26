@@ -61,6 +61,7 @@
           ref="dataTable"
           v-model:filters="refFilters"
           v-model:selection="selectedRows"
+          class="scrollable-container"
           :class="{ compressed: compressedRows }"
           :value="computedData"
           :row-hover="true"
@@ -95,7 +96,7 @@
             :key="col.field + '_' + index"
             :field="col.field"
             :data-type="col.dataType"
-            :sortable="currentFilter.length === 0 && col.sort !== false"
+            :sortable="col.sort !== false"
             :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
             :show-filter-operator="col.allowMultipleFilters === true"
             :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
@@ -103,7 +104,7 @@
             :frozen="col.pinned"
             align-frozen="left"
             :class="{ 'filter-button-override': hideFilterButtons }"
-            :filter-menu-style="enableFilter(col.field) ? '' : 'display: none;'"
+            :filter-menu-style="enableFilter(col) ? '' : 'display: none;'"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
             <template #header>
@@ -186,8 +187,13 @@
                 {{ _get(colData, col.field) }}
               </div>
             </template>
+            <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
+              <i v-if="!sorted && currentSort.length === 0 && !scoreFilterApplied" class="pi pi-sort-alt ml-2" />
+              <i v-if="sorted && sortOrder === 1 && !scoreFilterApplied" class="pi pi-sort-amount-down-alt ml-2" />
+              <i v-else-if="sorted && sortOrder === -1 && !scoreFilterApplied" class="pi pi-sort-amount-up-alt ml-2" />
+            </template>
             <template v-if="col.dataType" #filtericon>
-              <i v-if="enableFilter(col.field)" class="pi pi-filter" />
+              <i v-if="enableFilter(col)" class="pi pi-filter" />
             </template>
             <template v-if="col.dataType" #filter="{ filterModel }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
@@ -249,6 +255,7 @@ import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
+import _lowerCase from 'lodash/lowerCase';
 import { scoredTasks } from '@/helpers/reports';
 
 /*
@@ -275,7 +282,7 @@ Array of objects consisting of a field and header at minimum.
       the leftmost column.
 */
 // const compressedRows = ref(false);
-const nameForVisualize = ref('Expand view');
+const nameForVisualize = ref('Expand View');
 const countForVisualize = ref(2); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
@@ -303,8 +310,17 @@ const computedColumns = computed(() => {
     return _find(props.columns, (pcol) => pcol.header === col.header);
   });
 });
+const currentSort = ref([]);
 const currentFilter = ref([]);
 const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value) || !props.allowFiltering);
+const scoreFilterApplied = computed(() => {
+  const scoreFilter = _find(currentFilter.value, (filter) => {
+    if (filter.split('.')[0] === 'scores') {
+      return true;
+    } else return false;
+  });
+  return Boolean(scoreFilter);
+});
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -347,9 +363,9 @@ const padding = '1rem 1.5rem';
 function increasePadding() {
   if (countForVisualize.value % 2 === 0) {
     document.documentElement.style.setProperty('--padding-value', padding);
-    nameForVisualize.value = 'Compact view';
+    nameForVisualize.value = 'Compact View';
   } else {
-    nameForVisualize.value = 'Expand view';
+    nameForVisualize.value = 'Expand View';
     document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
   countForVisualize.value = countForVisualize.value + 1;
@@ -396,12 +412,22 @@ _forEach(computedColumns.value, (column) => {
 const refOptions = ref(options);
 const refFilters = ref(filters);
 
-const enableFilter = (field) => {
+const enableFilter = (column) => {
+  // If column is specified to have filtering disabled
+  if (_get(column, 'filter') === false) return false;
+
+  // If the field is not defined, turn off filtering
+  const field = column.field;
   if (!field) return false;
+
+  // If the field is a score, and the taskId is on
+  //   the filter blacklist, turn off filtering
   const path = field.split('.');
   if (path[0] === 'scores') {
     if (!scoredTasks.includes(path[1])) return false;
   }
+
+  // Otherwise, enable filtering
   return true;
 };
 
@@ -424,31 +450,66 @@ let toolTipByHeader = (header) => {
   return '';
 };
 
+function getIndexTask(colData, task) {
+  for (let index = 0; index < colData.assignment.assessments.length; index++) {
+    if (colData.assignment.assessments[index].taskId === task) {
+      return index;
+    }
+  }
+}
+
+function getFlags(index, ColData) {
+  const flags = ColData.assignment.assessments[index].engagementFlags;
+  if (flags !== undefined && flags !== '' && !ColData.assignment.assessments[index].reliable) {
+    const reliabilityFlags = Object.keys(flags).map((flag) => {
+      switch (flag) {
+        case 'notEnoughResponses':
+          return 'Assessment was incomplete';
+        case 'responseTimeTooFast':
+          return 'Responses were too fast';
+        default:
+          return _lowerCase(flag);
+      }
+    });
+    return reliabilityFlags + '\n\n';
+  } else {
+    return '';
+  }
+}
+
 let returnScoreTooltip = (colHeader, colData, fieldPath) => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
   let toolTip = '';
-
   if (colHeader === 'Phoneme' && colData.scores?.pa?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'pa'), colData);
     toolTip += colData.scores.pa?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.pa?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.pa?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.pa?.standard + '\n';
   } else if (colHeader === 'Word' && colData.scores?.swr?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'swr'), colData);
     toolTip += colData.scores?.swr?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.swr?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.swr?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.swr?.standard + '\n';
   } else if (colHeader === 'Sentence' && colData.scores?.sre?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'sre'), colData);
     toolTip += colData.scores?.sre?.support_level + '\n' + '\n';
     toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
     toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
   } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
+    toolTip += getFlags(getIndexTask(colData, 'letter'), colData);
     toolTip += 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
+  } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
+    toolTip += getFlags(getIndexTask(colData, 'swr-es'), colData);
+    toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
+    toolTip += 'Percentile: ' + colData.scores?.['swr-es']?.percentile + '\n';
+    toolTip += 'Raw Score: ' + colData.scores?.['swr-es']?.raw + '\n';
+    toolTip += 'Standardized Score: ' + colData.scores?.['swr-es']?.standard + '\n';
   } else if (taskId && !scoredTasks.includes(taskId)) {
     toolTip += 'These scores are under development.';
   }
-
   return toolTip;
 };
 
@@ -504,6 +565,7 @@ const onPage = (event) => {
   emit('page', event);
 };
 const onSort = (event) => {
+  currentSort.value = _get(event, 'multiSortMeta') ?? [];
   emit('sort', event);
 };
 const onFilter = (event) => {
@@ -589,5 +651,17 @@ button.p-column-filter-menu-button.p-link:hover {
      for strings. To reduce confusion for end users, remove the dropdown
      offering different matchmodes */
   display: none;
+}
+.scrollable-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb,
+.scrollable-container::-webkit-scrollbar-track {
+  background-color: var(--primary-color);
+}
+
+.scrollable-container {
+  scrollbar-color: var(--primary-color) white;
 }
 </style>

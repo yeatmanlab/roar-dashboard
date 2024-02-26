@@ -8,13 +8,36 @@
             <div class="uppercase text-sm">Loading Org Info</div>
           </div>
           <div v-if="orgInfo && administrationInfo">
-            <div class="report-title">
-              {{ _toUpper(orgInfo.name) }}
+            <div class="flex justify-content-between align-items-center">
+              <div class="flex flex-column align-items-start gap-2">
+                <div>
+                  <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Score Report</div>
+                  <div class="report-title">
+                    {{ _toUpper(orgInfo.name) }}
+                  </div>
+                </div>
+                <div>
+                  <div class="uppercase font-light text-gray-500 text-sm">Administration</div>
+                  <div class="administration-name mb-4">
+                    {{ _toUpper(administrationInfo?.name) }}
+                  </div>
+                </div>
+                <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
+              </div>
+              <div class="flex flex-row align-items-center gap-4">
+                <div class="uppercase text-sm text-gray-600">VIEW</div>
+                <PvSelectButton
+                  v-model="reportView"
+                  :options="reportViews"
+                  option-disabled="constant"
+                  :allow-empty="false"
+                  option-label="name"
+                  class="flex my-2 select-button"
+                  @change="handleViewChange"
+                >
+                </PvSelectButton>
+              </div>
             </div>
-            <div class="administration-name mb-4">
-              {{ _toUpper(administrationInfo?.name) }}
-            </div>
-            <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
@@ -107,8 +130,25 @@
                     option-value="id"
                     :show-toggle-all="false"
                     selected-items-label="{0} schools selected"
+                    data-cy="filter-by-school"
                   />
                   <label for="ms-school-filter">Filter by School</label>
+                </span>
+              </div>
+              <div class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    id="ms-grade-filter"
+                    v-model="filterGrades"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="gradeOptions"
+                    option-label="label"
+                    option-value="value"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} grades selected"
+                    data-cy="filter-by-grade"
+                  />
+                  <label for="ms-school-filter">Filter by Grade</label>
                 </span>
               </div>
             </template>
@@ -127,27 +167,35 @@
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
               <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
             <div>
               <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
             <div>
               <div>Achieved Skill</div>
+            </div>
+          </div>
+          <div class="legend-entry">
+            <div class="circle tooltip" :style="`background-color: white`" />
+            <div>
+              <div>Assessed</div>
             </div>
           </div>
         </div>
         <div class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-          indicate that the assessment was not completed.
+          indicate that the assessment was not completed. <br />
+          Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
+          quickly or the assessment was incomplete.
         </div>
         <!-- Subscores tables -->
         <div v-if="isLoadingRunResults" class="loading-wrapper">
@@ -208,7 +256,7 @@
             This score report has provided a snapshot of your student's reading performance at the time of
             administration. By providing classifications for students based on national norms for scoring, you are able
             to see how your student(s) can benefit from varying levels of support. To read more about what to do to
-            support your student, <a :href="NextSteps" class="hover:text-red-700" target="_blank">read more.</a>
+            support your student, <a :href="NextSteps" class="hover:text-red-700" target="_blank">read more</a>.
           </p>
         </div>
       </div>
@@ -220,7 +268,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch, toRaw } from 'vue';
 import { storeToRefs } from 'pinia';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
@@ -233,6 +281,7 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import _pickBy from 'lodash/pickBy';
 import _union from 'lodash/union';
+import _remove from 'lodash/remove';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
@@ -244,6 +293,7 @@ import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import {
   taskDisplayNames,
+  taskInfoById,
   descriptionsByTaskId,
   supportLevelColors,
   getSupportLevel,
@@ -277,6 +327,16 @@ const props = defineProps({
 
 const initialized = ref(false);
 
+const reportView = ref({ name: 'Score Report', constant: true });
+const reportViews = [
+  { name: 'Score Report', constant: true },
+  { name: 'Progress Report', constant: false },
+];
+
+const handleViewChange = () => {
+  window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
+};
+
 // Queries for page
 const orderBy = ref([
   {
@@ -303,6 +363,7 @@ if (props.orgType === 'district') {
 }
 const filterBy = ref([]);
 const filterSchools = ref([]);
+const filterGrades = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
@@ -333,6 +394,58 @@ const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// Grab grade options for filter dropdown
+const gradeOptions = ref([
+  {
+    value: '1',
+    label: '1st Grade',
+  },
+  {
+    value: '2',
+    label: '2nd Grade',
+  },
+  {
+    value: '3',
+    label: '3rd Grade',
+  },
+  {
+    value: '4',
+    label: '4th Grade',
+  },
+  {
+    value: '5',
+    label: '5th Grade',
+  },
+  {
+    value: '6',
+    label: '6th Grade',
+  },
+  {
+    value: '7',
+    label: '7th Grade',
+  },
+  {
+    value: '8',
+    label: '8th Grade',
+  },
+  {
+    value: '9',
+    label: '9th Grade',
+  },
+  {
+    value: '10',
+    label: '10th Grade',
+  },
+  {
+    value: '11',
+    label: '11th Grade',
+  },
+  {
+    value: '12th',
+    label: '12th Grade',
+  },
+]);
+
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
   queryKey: ['schools', ref(props.orgId)],
@@ -345,7 +458,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = parseLowGrade(school.lowGrade) + ' ' + school.name;
+      acc[school.id] = parseGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -462,6 +575,10 @@ watch(filterSchools, (newSchools) => {
   // Turn off sort when filtering
   orderBy.value = [];
   if (filterSchools) {
+    if (_isEmpty(newSchools)) {
+      _remove(filterBy.value, { collection: 'schools' });
+      return;
+    }
     filterSchools.value = _union(filterSchools.value, newSchools);
   } else {
     filterBy.value.push({
@@ -470,6 +587,16 @@ watch(filterSchools, (newSchools) => {
       value: newSchools,
     });
   }
+});
+
+watch(filterGrades, (newGrades) => {
+  // Turn off sort when filtering
+  orderBy.value = [];
+  filterBy.value.push({
+    collection: 'grade',
+    field: 'grade',
+    value: toRaw(newGrades),
+  });
 });
 
 const onFilter = (event) => {
@@ -513,12 +640,16 @@ const onFilter = (event) => {
     }
   }
   const orgFilter = _find(filterBy.value, { collection: 'schools' });
+  const gradeFilter = _find(filterBy.value, { collection: 'grade' });
   if (orgFilter) filters.push(orgFilter);
+  if (gradeFilter) filters.push(gradeFilter);
   filterBy.value = filters;
   page.value = 0;
 };
 
 const resetFilters = () => {
+  filterSchools.value = [];
+  filterGrades.value = [];
   filterBy.value = [];
 };
 const viewMode = ref('color');
@@ -735,11 +866,11 @@ const columns = computed(() => {
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
     { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: true },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true, filter: false },
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true, filter: false });
   }
 
   if (authStore.isUserSuperAdmin) {
@@ -775,6 +906,23 @@ const columns = computed(() => {
   return tableColumns;
 });
 
+// this function light out color if assessment is not reliable
+function colorSelection(assessment, rawScore, support_level, tag_color) {
+  if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+    if (support_level == 'Needs Extra Support') {
+      return '#d6b8c7';
+    } else if (support_level == 'Developing Skill') {
+      return '#e8dbb5';
+    } else if (support_level == 'Achieved Skill') {
+      return '#c0d9bd';
+    }
+  } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
+    return 'white';
+  } else {
+    return tag_color;
+  }
+}
+
 const tableData = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   return scoresDataQuery.value.map(({ user, assignment }) => {
@@ -802,7 +950,7 @@ const tableData = computed(() => {
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: rawOnlyTasks.includes(assessment.taskId) && rawScore ? 'white' : tag_color,
+        color: colorSelection(assessment, rawScore, support_level, tag_color),
       };
     }
     // If this is a district score report, grab school information
@@ -894,11 +1042,9 @@ function rawScoreByTaskId(taskId) {
   return 'roarScore';
 }
 
-const parseLowGrade = (grade) => {
-  if (grade === 'PreKindergarten' || grade === 'Kindergarten') return 0;
-  else {
-    return parseInt(grade);
-  }
+const parseGrade = (grade) => {
+  const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
+  return gradeZero.includes(String(grade)?.toLowerCase()) ? 0 : parseInt(grade);
 };
 
 const runsByTaskId = computed(() => {
@@ -907,16 +1053,16 @@ const runsByTaskId = computed(() => {
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
     const rawScore = _get(scores, rawScoreByTaskId(taskId));
-    if (user?.data?.grade >= 6) {
+    const grade = parseGrade(user?.data?.grade);
+    if (grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
-    const grade = user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade);
-    const { support_level } = getSupportLevel(grade, percentScore, rawScore, taskId);
+    const { support_level, tag_color } = getSupportLevel(grade, percentScore, rawScore, taskId);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
-      grade: user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade),
+      grade: grade,
       scores: {
         ...scores,
         support_level: support_level,
@@ -928,6 +1074,7 @@ const runsByTaskId = computed(() => {
         ...user.data,
         schoolName: schoolsDict.value[user?.data?.schools?.current[0]],
       },
+      tag_color: tag_color,
     };
     if (run.taskId in computedScores) {
       computedScores[run.taskId].push(run);
@@ -935,8 +1082,9 @@ const runsByTaskId = computed(() => {
       computedScores[run.taskId] = [run];
     }
   }
+
   return _pickBy(computedScores, (scores, taskId) => {
-    return tasksToDisplayGraphs.includes(taskId);
+    return Object.keys(taskInfoById).includes(taskId);
   });
 });
 
@@ -1073,7 +1221,7 @@ onMounted(async () => {
 .legend-description {
   text-align: center;
   margin-bottom: 1rem;
-  font-size: 0.7rem;
+  font-size: 1rem;
 }
 
 .circle {
@@ -1085,6 +1233,11 @@ onMounted(async () => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+}
+
+.tooltip {
+  outline: 1px dotted #0000cd;
+  outline-offset: 3px;
 }
 
 .extra-info-title {
@@ -1106,6 +1259,7 @@ onMounted(async () => {
     align-items: center;
   }
 }
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }

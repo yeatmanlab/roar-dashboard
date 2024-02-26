@@ -63,8 +63,6 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
   if (newFirekitInitValue && !newLoadingUserData) await startTask();
 });
 
-let roarApp;
-
 const { selectedAdmin } = storeToRefs(gameStore);
 
 async function startTask() {
@@ -81,7 +79,7 @@ async function startTask() {
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true };
-  roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
+  const roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {

@@ -10,6 +10,7 @@ name: Deploy to Firebase Hosting (production)
       - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
 jobs:
   build_and_deploy:
+    name: Deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

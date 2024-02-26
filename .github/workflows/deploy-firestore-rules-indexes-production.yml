@@ -8,6 +8,7 @@ name: Deploy Firestore Rules and Indexes (Production)
 
 jobs:
   deploy-admin-rules:
+    name: Admin Rules
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -21,6 +22,7 @@ jobs:
           PROJECT_ID: gse-roar-admin
           PROJECT_PATH: ./firebase/admin
   deploy-assessment-rules:
+    name: Assessment Rules
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -34,6 +36,7 @@ jobs:
           PROJECT_ID: gse-roar-assessment
           PROJECT_PATH: ./firebase/assessment
   deploy-admin-indexes:
+    name: Admin Indexes
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -47,6 +50,7 @@ jobs:
           PROJECT_ID: gse-roar-admin
           PROJECT_PATH: ./firebase/admin
   deploy-assessment-indexes:
+    name: Assessment Indexes
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
