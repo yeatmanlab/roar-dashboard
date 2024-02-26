@@ -1,4 +1,4 @@
-import { games } from '../../fixtures/buttonGamesList';
+import { games } from '../../../fixtures/buttonGamesList';
 
 const timeout = Cypress.env('timeout');
 
