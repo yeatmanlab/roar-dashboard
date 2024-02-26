@@ -20,7 +20,7 @@ const props = defineProps({
   taskId: { type: String, required: true, default: 'fluency' },
 });
 
-const taskId = props.taskId
+const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
