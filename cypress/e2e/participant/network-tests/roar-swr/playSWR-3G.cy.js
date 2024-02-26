@@ -10,8 +10,10 @@ describe('Testing playthrough of SWR as a participant under a 3G Mobile connecti
     cy.wait(0.3 * timeout);
     cy.visit('/');
 
-    cy.get('.p-dropdown-trigger', { timeout: timeout }).should('be.visible').click();
-    cy.get('.p-dropdown-item', { timeout: timeout })
+    cy.get('.p-dropdown-trigger', { timeout: 2 * timeout })
+      .should('be.visible')
+      .click();
+    cy.get('.p-dropdown-item', { timeout: 2 * timeout })
       .contains(Cypress.env('testRoarAppsAdministration'))
       .should('be.visible')
       .click();
@@ -19,7 +21,9 @@ describe('Testing playthrough of SWR as a participant under a 3G Mobile connecti
     cy.get('.p-tabview').contains('ROAR-Word');
     cy.visit(`/game/swr`);
 
-    cy.get('.jspsych-btn', { timeout: timeout }).should('be.visible').click();
+    cy.get('.jspsych-btn', { timeout: 2 * timeout })
+      .should('be.visible')
+      .click();
 
     // handles error where full screen throws a permissions error
     cy.wait(0.1 * timeout);
