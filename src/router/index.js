@@ -122,7 +122,7 @@ const routes = [
   },
   {
     path: '/game/fluency-alpaca-es',
-    name: 'Fluency-Alpaca-es',
+    name: 'Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskFluency.vue'),
     props: { taskId: 'fluency-alpaca-es' },
     meta: { pageTitle: 'Fluency-Alpaca ES' },
