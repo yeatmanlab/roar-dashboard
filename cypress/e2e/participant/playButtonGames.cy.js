@@ -50,7 +50,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       playROARGame(game);
 
       // check if game completed
-      // cy.visit("/");
+      cy.visit('/');
       cy.get('.p-dropdown-trigger', { timeout: 5 * timeout })
         .should('be.visible')
         .click();
