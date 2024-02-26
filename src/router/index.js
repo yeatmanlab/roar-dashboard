@@ -86,17 +86,18 @@ const routes = [
     meta: { pageTitle: 'Vocab' },
   },
   {
-    path: '/game/fluency',
-    name: 'Fluency',
-    component: () => import('../components/tasks/TaskFluency.vue'),
-    meta: { pageTitle: 'Fluency' },
-  },
-  {
   path: '/game/fluency-arf',
   name: 'Fluency-ARF',
   component: () => import('../components/tasks/TaskFluency.vue'),
   props: { taskId: 'fluency-arf' },
   meta: { pageTitle: 'Fluency-ARF' },
+  },
+  {
+  path: '/game/fluency-arf-es',
+  name: 'Fluency-ARF-ES',
+  component: () => import('../components/tasks/TaskFluency.vue'),
+  props: { taskId: 'fluency-arf-es' },
+  meta: { pageTitle: 'Fluency-ARF ES' },
   },
   {
   path: '/game/fluency-calf',
@@ -106,11 +107,25 @@ const routes = [
   meta: { pageTitle: 'Fluency-CALF' },
   },
   {
+  path: '/game/fluency-calf-es',
+  name: 'Fluency-CALF-ES',
+  component: () => import('../components/tasks/TaskFluency.vue'),
+  props: { taskId: 'fluency-calf-es' },
+  meta: { pageTitle: 'Fluency-CALF ES' },
+  },
+  {
   path: '/game/fluency-alpaca',
   name: 'Fluency-Alpaca',
   component: () => import('../components/tasks/TaskFluency.vue'),
   props: { taskId: 'fluency-alpaca' },
   meta: { pageTitle: 'Fluency-Alpaca' },
+  },
+  {
+  path: '/game/fluency-alpaca-es',
+  name: 'Fluency-Alpaca-es',
+  component: () => import('../components/tasks/TaskFluency.vue'),
+  props: { taskId: 'fluency-alpaca-es' },
+  meta: { pageTitle: 'Fluency-Alpaca ES' },
   },
   {
     path: '/game/:taskId',
