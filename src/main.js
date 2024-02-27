@@ -84,7 +84,7 @@ const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
 
-initSentry(app)
+initSentry(app);
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);

@@ -1,4 +1,4 @@
-import { games } from './buttonGamesList';
+import { games } from '../../../fixtures/buttonGamesList';
 
 const timeout = Cypress.env('timeout');
 
@@ -50,6 +50,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       playROARGame(game);
 
       // check if game completed
+      // The apps are supposed to redirect to the home page after the game is completed, so this cy.visit() should not be strictly necessary
       cy.visit('/');
       cy.get('.p-dropdown-trigger', { timeout: 5 * timeout })
         .should('be.visible')
