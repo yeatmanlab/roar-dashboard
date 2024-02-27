@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { createHead } from '@vueuse/head';
+import { initSentry } from './sentry';
 import router from '@/router/index.js';
 import App from '@/App.vue';
 
@@ -82,6 +83,8 @@ import './assets/styles/theme.scss'; // ROAR theme
 const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
+
+initSentry(app)
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
