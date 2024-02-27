@@ -1,4 +1,4 @@
-import { playPA } from '../../support/helperFunctions/roar-pa/paHelpers';
+import { playPA } from '../../../support/helperFunctions/roar-pa/paHelpers';
 
 const timeout = Cypress.env('timeout');
 const startText = 'In this game we are going to look for words that BEGIN with the same sound.';

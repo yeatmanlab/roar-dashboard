@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.6.1",
   "scripts": {
     "build": "vite build",
     "build:levante": "vite build -m LEVANTE",
@@ -24,15 +24,15 @@
     "version": "npm run format && git add -A"
   },
   "dependencies": {
-    "@bdelab/roam-fluency": "^1.9.4",
-    "@bdelab/roar-firekit": "^4.7.0",
-    "@bdelab/roar-letter": "^1.6.1",
-    "@bdelab/roar-multichoice": "^1.9.1",
-    "@bdelab/roar-pa": "^1.6.1",
-    "@bdelab/roar-sre": "^1.11.1",
-    "@bdelab/roar-swr": "^1.8.1",
+    "@bdelab/roam-fluency": "^1.9.10",
+    "@bdelab/roar-firekit": "^4.8.0",
+    "@bdelab/roar-letter": "^1.6.3",
+    "@bdelab/roar-multichoice": "^1.9.2",
+    "@bdelab/roar-pa": "^1.6.2",
+    "@bdelab/roar-sre": "^1.11.2",
+    "@bdelab/roar-swr": "^1.8.2",
     "@bdelab/roar-utils": "^1.0.18",
-    "@bdelab/roar-vocab": "^1.6.1",
+    "@bdelab/roar-vocab": "^1.6.6",
     "@tanstack/vue-query": "^4.35.7",
     "@vuelidate/core": "^2.0.0-alpha.40",
     "@vuelidate/validators": "^2.0.0-alpha.28",

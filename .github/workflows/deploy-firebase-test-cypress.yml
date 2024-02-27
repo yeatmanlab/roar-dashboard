@@ -39,7 +39,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        containers: [1, 2]
+        containers: [1, 2, 3]
     env:
       CYPRESS_BASE_URL: ${{ needs.build-and-preview.outputs.deployUrl }}
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
@@ -61,8 +61,8 @@ jobs:
           build: echo "Build step already completed"
           start: echo "App already deployed to Firebase"
           wait-on: ${{ env.CYPRESS_BASE_URL }}
-          wait-on-timeout: 60
+          wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/participant/**/*,cypress/e2e/partner-admin/**/*'
+          spec: 'cypress/e2e/participant/default-tests/**/*,cypress/e2e/partner-admin/default-tests/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
