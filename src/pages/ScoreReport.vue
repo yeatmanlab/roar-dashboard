@@ -441,7 +441,7 @@ const gradeOptions = ref([
     label: '11th Grade',
   },
   {
-    value: '12th',
+    value: '12',
     label: '12th Grade',
   },
 ]);
