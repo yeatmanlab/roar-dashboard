@@ -1,4 +1,4 @@
-import { sentryVitePlugin } from '@sentry/vite-plugin';
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vite';
 import vitePluginFaviconsInject from 'vite-plugin-favicons-inject';
@@ -9,23 +9,16 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    Vue({
-      include: [/\.vue$/, /\.md$/],
-    }),
-    Markdown(),
-    vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
-    ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
-    nodePolyfills({
-      globals: {
-        process: true,
-      },
-    }),
-    sentryVitePlugin({
-      org: 'roar-89588e380',
-      project: 'dashboard',
-    }),
-  ],
+  plugins: [Vue({
+    include: [/\.vue$/, /\.md$/],
+  }), Markdown(), vitePluginFaviconsInject('./src/assets/roar-icon.svg'), ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []), nodePolyfills({
+    globals: {
+      process: true,
+    },
+  }), sentryVitePlugin({
+    org: "roar-89588e380",
+    project: "dashboard"
+  })],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -34,7 +27,7 @@ export default defineConfig({
   },
   build: {
     cssCodeSplit: true,
-    sourcemap: true,
+    sourcemap: true
   },
   optimizeDeps: {
     include: ['@bdelab/roar-firekit', 'vue-google-maps-community-fork', 'fast-deep-equal'],
