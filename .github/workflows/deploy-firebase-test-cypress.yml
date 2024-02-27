@@ -61,7 +61,7 @@ jobs:
           build: echo "Build step already completed"
           start: echo "App already deployed to Firebase"
           wait-on: ${{ env.CYPRESS_BASE_URL }}
-          wait-on-timeout: 60
+          wait-on-timeout: 120
           record: true
           parallel: true
           spec: 'cypress/e2e/participant/default-tests/**/*,cypress/e2e/partner-admin/default-tests/**/*'
