@@ -334,80 +334,82 @@ export const getFilteredScoresRequestBody = ({
     });
   }
   if (filter) {
-    requestBody.structuredQuery.where.compositeFilter.filters.push({
-      compositeFilter: {
-        op: 'OR',
-        filters: [
-          {
-            compositeFilter: {
-              op: 'AND',
-              filters: [
-                {
-                  compositeFilter: {
-                    op: 'OR',
-                    filters: [
-                      {
-                        fieldFilter: {
-                          field: { fieldPath: 'userData.schoolLevel' },
-                          op: 'EQUAL',
-                          value: { stringValue: 'elementary' },
+    if (filter.value === 'Green' || filter.value === 'Yellow' || filter.value === 'Red') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        compositeFilter: {
+          op: 'OR',
+          filters: [
+            {
+              compositeFilter: {
+                op: 'AND',
+                filters: [
+                  {
+                    compositeFilter: {
+                      op: 'OR',
+                      filters: [
+                        {
+                          fieldFilter: {
+                            field: { fieldPath: 'userData.schoolLevel' },
+                            op: 'EQUAL',
+                            value: { stringValue: 'elementary' },
+                          },
                         },
-                      },
-                      {
-                        fieldFilter: {
-                          field: { fieldPath: 'userData.schoolLevel' },
-                          op: 'EQUAL',
-                          value: { stringValue: 'early-childhood' },
+                        {
+                          fieldFilter: {
+                            field: { fieldPath: 'userData.schoolLevel' },
+                            op: 'EQUAL',
+                            value: { stringValue: 'early-childhood' },
+                          },
                         },
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-                // Add filter inequalities here
-                // Inequalities that match elementary school students
-              ],
+                  // Add filter inequalities here
+                  // Inequalities that match elementary school students
+                ],
+              },
             },
-          },
-          {
-            compositeFilter: {
-              op: 'AND',
-              filters: [
-                {
-                  compositeFilter: {
-                    op: 'OR',
-                    filters: [
-                      {
-                        fieldFilter: {
-                          field: { fieldPath: 'userData.schoolLevel' },
-                          op: 'EQUAL',
-                          value: { stringValue: 'middle' },
+            {
+              compositeFilter: {
+                op: 'AND',
+                filters: [
+                  {
+                    compositeFilter: {
+                      op: 'OR',
+                      filters: [
+                        {
+                          fieldFilter: {
+                            field: { fieldPath: 'userData.schoolLevel' },
+                            op: 'EQUAL',
+                            value: { stringValue: 'middle' },
+                          },
                         },
-                      },
-                      {
-                        fieldFilter: {
-                          field: { fieldPath: 'userData.schoolLevel' },
-                          op: 'EQUAL',
-                          value: { stringValue: 'high' },
+                        {
+                          fieldFilter: {
+                            field: { fieldPath: 'userData.schoolLevel' },
+                            op: 'EQUAL',
+                            value: { stringValue: 'high' },
+                          },
                         },
-                      },
-                      {
-                        fieldFilter: {
-                          field: { fieldPath: 'userData.schoolLevel' },
-                          op: 'Equal',
-                          value: { stringValue: 'postsecondary' },
+                        {
+                          fieldFilter: {
+                            field: { fieldPath: 'userData.schoolLevel' },
+                            op: 'Equal',
+                            value: { stringValue: 'postsecondary' },
+                          },
                         },
-                      },
-                    ],
+                      ],
+                    },
                   },
-                },
-                // Add filter inequalities here
-                // Inequalities that match middle and high school students
-              ],
+                  // Add filter inequalities here
+                  // Inequalities that match middle and high school students
+                ],
+              },
             },
-          },
-        ],
-      },
-    });
+          ],
+        },
+      });
+    }
     if (filter.value === 'Green') {
       // If the filter requests average students, define filters in which
       // elementary school students have the inequality percentileScore >= 50
@@ -488,6 +490,33 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
+    }
+    if (filter.value === 'Completed') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: 'completed' },
+          op: 'EQUAL',
+          value: { booleanValue: true },
+        },
+      });
+    }
+    else if (filter.value === 'Started') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: 'completed' },
+          op: 'EQUAL',
+          value: { booleanValue: false },
+        },
+      });
+    }
+    else if (filter.value === 'Assigned') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: 'timeStarted' },
+          op: 'EQUAL',
+          value: { doubleValue: 0},
+        },
+      });
     }
     if (!_isEmpty(grades)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({

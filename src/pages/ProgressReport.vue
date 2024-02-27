@@ -263,8 +263,8 @@ const {
 
 // Scores count query
 const { data: assignmentCount } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId],
-  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId),
+  queryKey: ['assignments', props.administrationId, props.orgId, filterBy],
+  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value),
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000,
@@ -398,15 +398,16 @@ const onFilter = (event) => {
       }
       if (_head(path) === 'status') {
         console.log("progress filter")
-        // const taskId = path[1];
+        const taskId = path[1];
         // const cutoffs = getRawScoreThreshold(taskId);
-        // filters.push({
-        //   ...constraint,
-        //   collection: 'scores',
-        //   taskId: taskId,
-        //   cutoffs,
-        //   field: 'scores.computed.composite.categoryScore',
-        // });
+        filters.push({
+          ...constraint,
+          collection: 'scores',
+          taskId: taskId,
+          // cutoffs,
+          field: 'scores.computed.composite.categoryScore',
+        });
+        console.log("progress", filters)
       }
     }
   }
@@ -530,7 +531,7 @@ const columns = computed(() => {
       tableColumns.push({
         field: `status.${taskId}.value`,
         header: taskDisplayNames[taskId]?.name ?? taskId,
-        dataType: 'text',
+        dataType: 'progress',
         tag: true,
         severityField: `status.${taskId}.severity`,
         iconField: `status.${taskId}.icon`,
