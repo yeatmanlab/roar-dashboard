@@ -1,9 +1,9 @@
 name: Cypress Network Tests
 on:
-  release:
+  workflow_run:
+    workflows: ['Deploy to Firebase Hosting (production)']
     types:
-      - published
-      - prereleased
+      - completed
 
 concurrency:
   group: ci-preview-tests-${{ github.ref }}-1
