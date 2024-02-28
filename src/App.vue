@@ -27,13 +27,13 @@ import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
 import { ref } from 'vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import AppHead from './components/AppHead.vue';
-import { i18n } from './translations/i18n';
+import AppHead from '@/components/AppHead.vue';
+import { i18n } from '@/translations/i18n';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const pageTitle = computed(() => {
-  return route.meta?.pageTitle[i18n.global.locale.value] ?? route.meta?.pageTitle[i18n.global.fallbackLocale.value];
+  return route.meta?.pageTitle?.[i18n.global.locale.value] ?? route.meta?.pageTitle?.[i18n.global.fallbackLocale.value];
 });
 
 const navbarBlacklist = ref([
