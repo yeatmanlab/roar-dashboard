@@ -29,7 +29,9 @@
           </div>
           <span
             v-if="
-              v$.students.$each.$response.$data[outerIndex].noActivationCode && v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted
+              v$.students.$each.$response.$data[outerIndex].noActivationCode &&
+              v$.students.$each.$response.$data[outerIndex].activationCode.$invalid &&
+              submitted
             "
           >
             <span
