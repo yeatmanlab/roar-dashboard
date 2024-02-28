@@ -8,7 +8,7 @@
               <label for="activationCode">Activation code <span class="required">*</span></label>
               <div class="flex align-items-center">
                 <PvCheckbox
-                  v-model="noActivationCode"
+                  v-model="student.noActivationCode"
                   :binary="true"
                   name="noActivationCode"
                   @change="updateActivationCode"
@@ -17,19 +17,19 @@
               </div>
             </div>
             <PvInputText
-              v-if="!noActivationCode"
+              v-if="!student.noActivationCode"
               v-model="student.activationCode"
-              name="activationCode"
+              name="noActivationCode"
               :class="{
                 'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
               }"
               aria-describedby="activation-code-error"
-              :disabled="noActivationCode"
+              :disabled="student.noActivationCode"
             />
           </div>
           <span
             v-if="
-              !noActivationCode && v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted
+              v$.students.$each.$response.$data[outerIndex].noActivationCode && v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted
             "
           >
             <span
@@ -109,15 +109,15 @@
             <div class="flex justify-content-between">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
-                <PvCheckbox v-model="yearOnlyCheck" :binary="true" name="yearOnly" />
+                <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
                 <label for="yearOnly" class="ml-2">Use Year Only</label>
               </div>
             </div>
-            <div v-if="!yearOnlyCheck">
+            <div v-if="!student.yearOnlyCheckRef">
               <pvCalendar v-model="student.dob" view="date" date-format="mm/dd/yy" show-icon />
             </div>
             <div v-else>
-              <PvCalendar v-model="student.dob" view="year" date-format="yy" model-value="string" show-icon />
+              <PvCalendar v-model="student.dob" view="year" date-format="yy" show-icon />
             </div>
             <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
               v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
@@ -285,7 +285,8 @@ const props = defineProps({
 });
 
 console.log(props);
-const noActivationCode = ref(false);
+const noActivationCodeRef = ref(false);
+const yearOnlyCheckRef = ref(false);
 
 const emit = defineEmits(['submit']);
 const state = reactive({
@@ -307,6 +308,8 @@ const state = reactive({
       race: [],
       hispanicEthnicity: '',
       homeLanguage: [],
+      noActivationCode: noActivationCodeRef.value,
+      yearOnlyCheck: yearOnlyCheckRef.value,
     },
   ],
 });
@@ -330,6 +333,8 @@ const rules = {
       race: {},
       hispanicEthnicity: {},
       homeLanguage: {},
+      noActivationCode: {},
+      yearOnlyCheck: {},
     }),
   },
 };
@@ -352,12 +357,14 @@ function addStudent() {
     race: [],
     hispanicEthnicity: '',
     homeLanguage: [],
+    noActivationCode: noActivationCodeRef.value,
+    yearOnlyCheck: yearOnlyCheckRef.value,
   });
 }
 
 function updateActivationCode() {
   state.students.forEach((student) => {
-    if (noActivationCode.value) {
+    if (student.noActivationCode) {
       student.activationCode = 'noActivationCode';
     } else {
       student.activationCode = '';
@@ -399,7 +406,7 @@ const handleFormSubmit = (isFormValid) => {
   emit('submit', computedStudents);
 };
 
-const yearOnlyCheck = ref(false);
+// const yearOnlyCheck = ref(false);
 
 const searchRaces = (event) => {
   const query = event.query.toLowerCase();
