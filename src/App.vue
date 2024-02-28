@@ -43,7 +43,12 @@ const navbarBlacklist = ref([
   'Multichoice',
   'Morphology',
   'Cva',
-  'Fluency',
+  'Fluency-ARF',
+  'Fluency-ARF-ES',
+  'Fluency-CALF',
+  'Fluency-CALF-ES',
+  'Fluency-Alpaca',
+  'Fluency-Alpaca-ES',
 ]);
 
 onBeforeMount(async () => {
