@@ -18,10 +18,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/');
 
-    cy.get('.p-dropdown-trigger', { timeout: 2 * timeout }).click();
-    cy.get('.p-dropdown-item', { timeout: 2 * timeout })
-      .contains(Cypress.env('testRoarAppsAdministration'))
-      .click();
+    cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
     // cy.get(".p-tabview").contains(pa.name);
     cy.visit('/game/pa');
@@ -29,13 +26,8 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     playPA(startText, endBlockText, breakBlockText);
 
     cy.visit('/');
-    cy.get('.p-dropdown-trigger', { timeout: 2 * timeout })
-      .should('be.visible')
-      .click();
-    cy.get('.p-dropdown-item', { timeout: 2 * timeout })
-      .contains(Cypress.env('testRoarAppsAdministration'))
-      .should('be.visible')
-      .click();
+    cy.wait(0.2 * timeout);
+    cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
     cy.get('.tabview-nav-link-label', { timeout: 2 * timeout })
       .contains('ROAR-Phoneme')
       .should('have.attr', 'data-game-status', 'complete');

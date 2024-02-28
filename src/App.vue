@@ -1,6 +1,6 @@
 <template>
   <AppHead>
-    <title>ROAR: {{ $route.meta.pageTitle }}</title>
+    <title>ROAR: {{ pageTitle }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!" />
 
     <!-- Social -->
@@ -21,11 +21,19 @@
 </template>
 
 <script setup>
-import { onBeforeMount } from 'vue';
+import { computed, onBeforeMount } from 'vue';
 import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
 import { ref } from 'vue';
 import { fetchDocById } from '@/helpers/query/utils';
+import AppHead from '@/components/AppHead.vue';
+import { i18n } from '@/translations/i18n';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+const pageTitle = computed(() => {
+  return route.meta?.pageTitle?.[i18n.global.locale.value] ?? route.meta?.pageTitle?.[i18n.global.fallbackLocale.value];
+});
 
 const navbarBlacklist = ref([
   'SignIn',
