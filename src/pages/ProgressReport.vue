@@ -202,7 +202,7 @@ const { data: administrationInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { dta: orgInfo } = useQuery({
+const { data: orgInfo } = useQuery({
   queryKey: ['orgInfo', props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
