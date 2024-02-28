@@ -204,10 +204,7 @@ watch(
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list
     // of all administrations choose the first one from adminInfo
-    console.log('allAdminIds', allAdminIds);
-    console.log('selectedAdminId', selectedAdminId);
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-      console.log('Setting selected admin to first admin');
       selectedAdmin.value = _head(adminInfo.value);
     }
   },
