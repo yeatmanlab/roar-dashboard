@@ -28,7 +28,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { languageOptions } from '../translations/i18n.js';
+import { languageOptions } from '@/translations/i18n.js';
 import CountryFlag from 'vue-country-flag-next';
 
 // Convert the object to an array of [key, value] pairs
