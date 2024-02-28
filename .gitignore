@@ -29,3 +29,6 @@ cypress/downloads
 .env
 .env.sentry-build-plugin
 .vite/*
+
+# Sentry Config File
+.env.sentry-build-plugin
