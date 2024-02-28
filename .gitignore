@@ -27,6 +27,7 @@ dist-ssr
 cypress/downloads
 
 .env
+.env.sentry-build-plugin
 .vite/*
 
 # Sentry Config File

@@ -3,15 +3,21 @@
     <div v-if="!noGamesAvailable || consentSpinner">
       <div v-if="isFetching || consentSpinner" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
-        <span>Loading Assignments</span>
+        <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
       <div v-else>
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
           {{ adminInfo.at(0).name }}
         </h2>
         <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
-          <PvDropdown v-model="selectedAdmin" :options="adminInfo ?? []" option-label="name" input-id="dd-assignment" />
-          <label for="dd-assignment">Select an assignment</label>
+          <PvDropdown
+            v-model="selectedAdmin"
+            :options="adminInfo ?? []"
+            option-label="name"
+            input-id="dd-assignment"
+            data-cy="dropdown-select-administration"
+          />
+          <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
@@ -21,10 +27,10 @@
     </div>
     <div v-else>
       <div class="col-full text-center">
-        <h1>You have no assignments!</h1>
-        <p class="text-center">Please contact your administrator to get added to an assignment.</p>
+        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
+        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
         <router-link :to="{ name: 'SignOut' }">
-          <PvButton label="Sign out" class="no-underline" icon="pi pi-sign-out" />
+          <PvButton :label="$t('navBar.signOut')" class="no-underline" icon="pi pi-sign-out" />
         </router-link>
       </div>
     </div>

@@ -4,13 +4,15 @@
       <PvChart type="doughnut" :data="chartData" :options="chartOptions" />
       <div>
         <p class="sidebar-progress-totals">{{ completedGames }}/{{ totalGames }}</p>
-        <p>tasks completed!</p>
+        <p>{{ $t('participantSidebar.tasksCompleted') }}</p>
       </div>
     </div>
     <ul class="sidebar-info">
-      <li class="sidebar-title"><strong>Student Info</strong></li>
+      <li class="sidebar-title">
+        <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
+      </li>
       <li>
-        Grade: <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
+        {{ $t('participantSidebar.grade') }}: <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
       </li>
     </ul>
   </div>
