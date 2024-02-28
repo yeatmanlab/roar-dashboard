@@ -3,10 +3,12 @@ import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataInteg
 
 const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
 
-export function initSentry (app) {
-  Sentry.init({
-    app,
-    dsn: "https://f15e3ff866394e93e00514b42113d03d@o4505913837420544.ingest.sentry.io/4506820782129152",
+export function initSentry(app) {
+  // Only initialize Sentry in production
+  if (process.env.NODE_ENV === 'production') {
+    Sentry.init({
+      app,
+      dsn: 'https://f15e3ff866394e93e00514b42113d03d@o4505913837420544.ingest.sentry.io/4506820782129152',
       release: `${process.env.npm_package_name}@${process.env.npm_package_version}`,
       integrations: [
         Sentry.replayIntegration({
@@ -23,11 +25,7 @@ export function initSentry (app) {
       attachStacktrace: true,
       // Performance Monitoring
       tracesSampleRate: 0.2, // Capture 20% of the transactions
-      tracePropagationTargets: [
-        'localhost',
-        'https://roar.education/**/*',
-        regex,
-      ],
+      tracePropagationTargets: ['localhost', 'https://roar.education/**/*', regex],
       // Session Replay
       replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
       replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
@@ -35,5 +33,6 @@ export function initSentry (app) {
       beforeSend(event) {
         return event;
       },
-  });
+    });
+  }
 }
