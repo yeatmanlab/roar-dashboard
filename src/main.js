@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { createHead } from '@vueuse/head';
-import { initSentry } from './sentry';
+import { initSentry } from '@/sentry';
 import router from '@/router/index.js';
 import App from '@/App.vue';
 
