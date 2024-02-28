@@ -13,7 +13,7 @@
                 <div>
                   <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Score Report</div>
                   <div class="report-title">
-                    {{ _toUpper(orgInfo.name) }}
+                    {{ _toUpper(orgInfo?.name) }}
                   </div>
                 </div>
                 <div>
@@ -25,17 +25,18 @@
                 <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
               </div>
               <div class="flex flex-column align-items-end gap-2">
-                <div class="flex flex-row align-items-center gap-4">
+                <div class="flex flex-row align-items-center gap-4" data-html2canvas-ignore="true">
                   <div class="uppercase text-sm text-gray-600">VIEW</div>
                   <PvSelectButton
 v-model="reportView" :options="reportViews" option-disabled="constant"
                     :allow-empty="false" option-label="name" class="flex my-2 select-button" @change="handleViewChange">
                   </PvSelectButton>
                 </div>
-                <div>
+                <div v-if="!isLoadingRunResults">
                   <PvButton
 class="flex flex-row" :icon="!exportLoading ? 'pi pi-download' : 'pi pi-spin pi-spinner'"
-                    :disabled="exportLoading" label="Export To Pdf" @click="handleExportToPdf" />
+                    :disabled="exportLoading" label="Export To Pdf" data-html2canvas-ignore="true"
+                    @click="handleExportToPdf" />
                 </div>
               </div>
             </div>
@@ -168,7 +169,7 @@ id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
-        <PvTabView>
+        <PvTabView :active-index="activeTabIndex" @tab-change="onTabChange">
           <PvTabPanel
 v-for="taskId of sortedTaskIds" :key="taskId"
             :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''">
@@ -180,7 +181,7 @@ v-if="taskId" :task-id="taskId" :initialized="initialized" :administration-id="a
             </div>
           </PvTabPanel>
         </PvTabView>
-        <div class="bg-gray-200 px-4 py-2 mt-4">
+        <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -300,46 +301,74 @@ const handleViewChange = () => {
 
 const exportLoading = ref(false);
 
-const handleExportToPdf = async () => {
-  exportLoading.value = true;
-  console.log("export to pdf called")
-  const doc = new jsPDF();
+const activeTabIndex = ref(0)
 
-  doc.text(`Score Report for:  ${orgInfo?.value.name}`, 10, 10);
-  doc.text(`Administration:  ${administrationInfo?.value.name}`, 10, 20);
+function onTabChange(event) {
+  event.preventDefault(); // Prevent the default scroll behavior
+  // Your tab change logic here
+}
 
-  // Use html2canvas to convert the HTML element to a canvas
-  await html2canvas(document.getElementById('at-a-glance-charts')).then(function (canvas) {
-    // Convert the canvas to an image
-    // Convert the canvas to an image with lower quality
-    var imgData = canvas.toDataURL('image/jpeg', 0.7); // Lower quality
+const pageWidth = 190; // Set page width for calculations
+const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
+// Helper function to add an element to a document and perform page break logic
+const addElementToPdf = async (element, document, yCounter, offset = 0) => {
+  await html2canvas(element).then(function (canvas) {
+    const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
+    const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
+    // Add a new page for each task if there is no more space in the page for task desc and graph
+    if (yCounter + scaledCanvasHeight + offset > 287) {
+      document.addPage();
+      yCounter = 10;
+    }
+    else {
+      // Add Margin
+      yCounter += 5
+    }
 
-    // Add the image to the PDF
-    doc.addImage(imgData, 'JPEG', 10, 30, 200, 100); // adjust the coordinates and size as needed
+    document.addImage(imgData, 'JPEG', 10, yCounter, pageWidth, scaledCanvasHeight)
+    yCounter += scaledCanvasHeight;
   });
+  return yCounter;
+}
 
-  // let yCoord = 60;
-  for (const taskId of sortedTaskIds.value) {
-    console.log("taskid", taskId)
-    await html2canvas(document.getElementById('tab-view-' + taskId), {
-      onclone: function (clonedDoc) {
-        // Append the hidden elements to the cloned document
-        clonedDoc.body.appendChild(clonedDoc);
-      }
-    }).then(function (canvas) {
-      doc.addPage();
-      // Convert the canvas to an image
-      // Convert the canvas to an image with lower quality
-      var imgData = canvas.toDataURL('image/jpeg', 0.7); // Lower quality
+const handleExportToPdf = async () => {
+  exportLoading.value = true; // Set loading icon in button to prevent multiple clicks
+  const doc = new jsPDF();
+  let yCounter = 10; // yCounter tracks the y position in the PDF
 
-      // Add the image to the PDF
-      doc.addImage(imgData, 'JPEG', 10, 10, 200, 100); // adjust the coordinates and size as needed
-    });
-    // yCoord += 30
+  // Add At a Glance Charts and report header to the PDF
+  const atAGlanceCharts = document.getElementById('at-a-glance-charts')
+  if (atAGlanceCharts !== null) {
+    yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
   }
 
+  // Initialize to first tab
+  activeTabIndex.value = 0;
 
-  doc.save('score_report.pdf');
+  for (const [i, taskId] of sortedTaskIds.value.entries()) {
+    activeTabIndex.value = i;
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Add Task Description and Task Chart to document
+    const tabViewDesc = document.getElementById('tab-view-description-' + taskId)
+    const tabViewChart = document.getElementById('tab-view-chart-' + taskId)
+    const chartHeight = tabViewChart && await html2canvas(document.getElementById('tab-view-chart-' + taskId)).then((canvas) => canvas.height * returnScaleFactor(canvas.width));
+
+    if (tabViewDesc !== null) {
+      yCounter = await addElementToPdf(tabViewDesc, doc, yCounter, chartHeight);
+    }
+    if (tabViewChart !== null) {
+      yCounter = await addElementToPdf(tabViewChart, doc, yCounter);
+    }
+  }
+
+  // Add Report Closing 
+  const closing = document.getElementById('score-report-closing');
+  if (closing !== null) {
+    yCounter = await addElementToPdf(closing, doc, yCounter);
+  }
+
+  doc.save(`roar-scores-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.pdf`)
   exportLoading.value = false;
 
   return;
