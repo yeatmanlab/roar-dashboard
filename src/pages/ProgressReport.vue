@@ -21,8 +21,14 @@
         <div class="flex flex-row align-items-center gap-4">
           <div class="uppercase text-sm text-gray-600">VIEW</div>
           <PvSelectButton
-v-model="reportView" :options="reportViews" option-disabled="constant" :allow-empty="false"
-            option-label="name" class="flex my-2 select-button" @change="handleViewChange">
+            v-model="reportView"
+            :options="reportViews"
+            option-disabled="constant"
+            :allow-empty="false"
+            option-label="name"
+            class="flex my-2 select-button"
+            @change="handleViewChange"
+          >
           </PvSelectButton>
         </div>
       </div>
@@ -33,45 +39,65 @@ v-model="reportView" :options="reportViews" option-disabled="constant" :allow-em
       </div> -->
       <div v-if="assignmentData?.length === 0" class="no-scores-container">
         <h3>No scores found.</h3>
-        <span>The filters applied have no matching scores.
+        <span
+          >The filters applied have no matching scores.
           <PvButton text @click="resetFilters">Reset filters</PvButton>
         </span>
       </div>
       <div v-else-if="assignmentData?.length ?? 0 > 0">
         <RoarDataTable
-v-if="columns?.length ?? 0 > 0" :data="tableData" :columns="columns"
-          :total-records="assignmentCount" :loading="isLoadingScores || isFetchingScores" :page-limit="pageLimit" lazy
-          :lazy-pre-sorting="sortDisplay" data-cy="roar-data-table" :allow-filtering="true" @page="onPage($event)"
-          @sort="onSort($event)" @filter="onFilter($event)" @export-selected="exportSelected" @export-all="exportAll">
+          v-if="columns?.length ?? 0 > 0"
+          :data="tableData"
+          :columns="columns"
+          :total-records="assignmentCount"
+          :loading="isLoadingScores || isFetchingScores"
+          :page-limit="pageLimit"
+          lazy
+          :lazy-pre-sorting="sortDisplay"
+          data-cy="roar-data-table"
+          :allow-filtering="true"
+          @page="onPage($event)"
+          @sort="onSort($event)"
+          @filter="onFilter($event)"
+          @export-selected="exportSelected"
+          @export-all="exportAll"
+        >
           <template #filterbar>
             <div v-if="schoolsInfo" class="flex flex-row gap-2">
               <span class="p-float-label">
                 <PvMultiSelect
-id="ms-school-filter" v-model="filterSchools" style="width: 20rem; max-width: 25rem"
-                  :options="schoolsInfo" option-label="name" option-value="id" :show-toggle-all="false"
-                  selected-items-label="{0} schools selected" data-cy="filter-by-school" />
+                  id="ms-school-filter"
+                  v-model="filterSchools"
+                  style="width: 20rem; max-width: 25rem"
+                  :options="schoolsInfo"
+                  option-label="name"
+                  option-value="id"
+                  :show-toggle-all="false"
+                  selected-items-label="{0} schools selected"
+                  data-cy="filter-by-school"
+                />
                 <label for="ms-school-filter">Filter by School</label>
               </span>
             </div>
             <div class="flex flex-row gap-2">
               <span class="p-float-label">
                 <PvMultiSelect
-id="ms-grade-filter" v-model="filterGrades" style="width: 20rem; max-width: 25rem"
-                  :options="gradeOptions" option-label="label" option-value="value" :show-toggle-all="false"
-                  selected-items-label="{0} grades selected" data-cy="filter-by-grade" />
+                  id="ms-grade-filter"
+                  v-model="filterGrades"
+                  style="width: 20rem; max-width: 25rem"
+                  :options="gradeOptions"
+                  option-label="label"
+                  option-value="value"
+                  :show-toggle-all="false"
+                  selected-items-label="{0} grades selected"
+                  data-cy="filter-by-grade"
+                />
                 <label for="ms-school-filter">Filter by Grade</label>
               </span>
             </div>
           </template>
-          <span>
-            <label for="view-columns" class="view-label">View</label>
-            <PvDropdown
-id="view-columns" v-model="viewMode" :options="viewOptions" option-label="label"
-              option-value="value" class="ml-2" />
-          </span>
         </RoarDataTable>
       </div>
-
     </section>
   </main>
 </template>
@@ -176,7 +202,7 @@ const { data: administrationInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: orgInfo } = useQuery({
+const { dta: orgInfo } = useQuery({
   queryKey: ['orgInfo', props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
@@ -231,7 +257,7 @@ const gradeOptions = ref([
     label: '11th Grade',
   },
   {
-    value: '12th',
+    value: '12',
     label: '12th Grade',
   },
 ]);
@@ -255,7 +281,19 @@ const {
   data: assignmentData,
 } = useQuery({
   queryKey: ['assignments', props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
-  queryFn: () => assignmentPageFetcher(props.administrationId, props.orgType, props.orgId, pageLimit, page, false, undefined, true, filterBy.value, orderBy.value),
+  queryFn: () =>
+    assignmentPageFetcher(
+      props.administrationId,
+      props.orgType,
+      props.orgId,
+      pageLimit,
+      page,
+      false,
+      undefined,
+      true,
+      filterBy.value,
+      orderBy.value,
+    ),
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
@@ -307,7 +345,6 @@ const confirm = useConfirm();
 const onSort = (event) => {
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
     let field = item.field.replace('user', 'userData');
-    console.log("onsort called", field)
     // Due to differences in the document schemas,
     //   fields found in studentData in the user document are in the
     //   top level of the assignments.userData object.
@@ -374,7 +411,6 @@ const onFilter = (event) => {
   const filters = [];
   for (const filterKey in _get(event, 'filters')) {
     const filter = _get(event, 'filters')[filterKey];
-    console.log("filter", filter, _head(filterKey.split('.')))
     const constraint = _head(_get(filter, 'constraints'));
     if (_get(constraint, 'value')) {
       const path = filterKey.split('.');
@@ -397,17 +433,13 @@ const onFilter = (event) => {
         }
       }
       if (_head(path) === 'status') {
-        console.log("progress filter")
         const taskId = path[1];
-        // const cutoffs = getRawScoreThreshold(taskId);
         filters.push({
           ...constraint,
           collection: 'scores',
           taskId: taskId,
-          // cutoffs,
-          field: 'scores.computed.composite.categoryScore',
+          field: 'completed',
         });
-        console.log("progress", filters)
       }
     }
   }
@@ -539,7 +571,6 @@ const columns = computed(() => {
       });
     }
   }
-  console.log(tableColumns)
   return tableColumns;
 });
 
@@ -600,7 +631,7 @@ const tableData = computed(() => {
 let unsubscribe;
 const refreshing = ref(false);
 const refresh = () => {
-  console.log("refreshing called")
+  console.log('refreshing called');
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
 
@@ -613,7 +644,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  console.log("onmounted called")
+  console.log('onmounted called');
   if (roarfirekit.value.restConfig) refresh();
 });
 </script>

@@ -7,27 +7,46 @@
       <slot name="filterbar"></slot>
       <span class="p-float-label">
         <PvMultiSelect
-id="ms-columns" v-tooltip.top="'Show and hide columns'" :model-value="selectedColumns"
-          :options="inputColumns" option-label="header" :max-selected-labels="3" class="w-2 md:w-20rem"
-          selected-items-label="{0} columns selected" @update:model-value="onColumnToggle" />
+          id="ms-columns"
+          v-tooltip.top="'Show and hide columns'"
+          :model-value="selectedColumns"
+          :options="inputColumns"
+          option-label="header"
+          :max-selected-labels="3"
+          class="w-2 md:w-20rem"
+          selected-items-label="{0} columns selected"
+          @update:model-value="onColumnToggle"
+        />
         <label for="ms-columns" class="view-label2">Select Columns</label>
       </span>
       <span class="p-float-label">
         <PvMultiSelect
-id="ms-freeze" :model-value="frozenColumns" :options="inputColumns" option-label="header"
-          :max-selected-labels="3" class="w-2 md:w-20rem" selected-items-label="{0} columns frozen"
-          :show-toggle-all="false" @update:model-value="onFreezeToggle" />
+          id="ms-freeze"
+          :model-value="frozenColumns"
+          :options="inputColumns"
+          option-label="header"
+          :max-selected-labels="3"
+          class="w-2 md:w-20rem"
+          selected-items-label="{0} columns frozen"
+          :show-toggle-all="false"
+          @update:model-value="onFreezeToggle"
+        />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
       <span class="flex flex-row flex-wrap justify-content-end">
         <PvButton
-v-if="allowExport"
+          v-if="allowExport"
           v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
-          label="Export Selected" :disabled="selectedRows.length === 0" @click="exportCSV(true, $event)" />
+          label="Export Selected"
+          :disabled="selectedRows.length === 0"
+          @click="exportCSV(true, $event)"
+        />
         <PvButton
-v-if="allowExport"
+          v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
-          label="Export Whole Table" @click="exportCSV(false, $event)" />
+          label="Export Whole Table"
+          @click="exportCSV(false, $event)"
+        />
         <PvButton :label="nameForVisualize" @click="toggleView" />
       </span>
     </div>
@@ -39,70 +58,126 @@ v-if="allowExport"
       </span>
       <span>
         <PvDataTable
-ref="dataTable" v-model:filters="refFilters" v-model:selection="selectedRows"
-          class="scrollable-container" :class="{ compressed: compressedRows }" :value="computedData" :row-hover="true"
-          :reorderable-columns="true" :resizable-columns="true" :export-filename="exportFilename" removable-sort
-          sort-mode="multiple" show-gridlines filter-display="menu" paginator :rows="props.pageLimit"
-          :always-show-paginator="true" paginator-position="both" :rows-per-page-options="[10, 25, 50, 100]"
-          :total-records="props.totalRecords" :lazy="props.lazy" :loading="props.loading" scrollable
-          :select-all="selectAll" :multi-sort-meta="lazyPreSorting" @page="onPage($event)" @sort="onSort($event)"
-          @filter="onFilter($event)" @select-all-change="onSelectAll" @row-select="onSelectionChange"
-          @row-unselect="onSelectionChange">
+          ref="dataTable"
+          v-model:filters="refFilters"
+          v-model:selection="selectedRows"
+          class="scrollable-container"
+          :class="{ compressed: compressedRows }"
+          :value="computedData"
+          :row-hover="true"
+          :reorderable-columns="true"
+          :resizable-columns="true"
+          :export-filename="exportFilename"
+          removable-sort
+          sort-mode="multiple"
+          show-gridlines
+          filter-display="menu"
+          paginator
+          :rows="props.pageLimit"
+          :always-show-paginator="true"
+          paginator-position="both"
+          :rows-per-page-options="[10, 25, 50, 100]"
+          :total-records="props.totalRecords"
+          :lazy="props.lazy"
+          :loading="props.loading"
+          scrollable
+          :select-all="selectAll"
+          :multi-sort-meta="lazyPreSorting"
+          @page="onPage($event)"
+          @sort="onSort($event)"
+          @filter="onFilter($event)"
+          @select-all-change="onSelectAll"
+          @row-select="onSelectionChange"
+          @row-unselect="onSelectionChange"
+        >
           <PvColumn selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
           <PvColumn
-v-for="(col, index) of computedColumns" :key="col.field + '_' + index" :field="col.field"
-            :data-type="col.dataType" :sortable="col.sort !== false"
-            :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
+            v-for="(col, index) of computedColumns"
+            :key="col.field + '_' + index"
+            :field="col.field"
+            :data-type="col.dataType"
+            :sortable="col.sort !== false"
+            :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'"
             :show-filter-operator="col.allowMultipleFilters === true"
             :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
-            :show-add-button="col.allowMultipleFilters === true" :frozen="col.pinned" align-frozen="left"
+            :show-add-button="col.allowMultipleFilters === true"
+            :frozen="col.pinned"
+            align-frozen="left"
             :class="{ 'filter-button-override': hideFilterButtons }"
             :filter-menu-style="enableFilter(col) ? '' : 'display: none;'"
-            header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0">
+            header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+          >
             <template #header>
               <div
-v-tooltip.top="`${toolTipByHeader(col.header)}`" :style="[
-                toolTipByHeader(col.header).length > 0
-                  ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
-                  : null,
-                col.header === 'Letter Names and Sounds' ? 'width: 7em; text-wrap: wrap' : '',
-              ]">
+                v-tooltip.top="`${toolTipByHeader(col.header)}`"
+                :style="[
+                  toolTipByHeader(col.header).length > 0
+                    ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
+                    : null,
+                  col.header === 'Letter Names and Sounds' ? 'width: 7em; text-wrap: wrap' : '',
+                ]"
+              >
                 {{ col.header }}
               </div>
             </template>
             <template #body="{ data: colData }">
               <div
-v-if="col.tag && _get(colData, col.field) !== undefined"
-                v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
+                v-if="col.tag && _get(colData, col.field) !== undefined"
+                v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
+              >
                 <PvTag
-v-if="!col.tagOutlined" :severity="_get(colData, col.severityField)"
-                  :value="_get(colData, col.field)" :icon="_get(colData, col.iconField)" :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${returnScoreTooltip(col.header, colData, col.field).length > 0 &&
+                  v-if="!col.tagOutlined"
+                  :severity="_get(colData, col.severityField)"
+                  :value="_get(colData, col.field)"
+                  :icon="_get(colData, col.iconField)"
+                  :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
+                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
                     'outline: 1px dotted #0000CD; outline-offset: 3px'
-                    }`" rounded />
+                  }`"
+                  rounded
+                />
                 <div
-v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle"
-                  style="border: 1px solid black" />
+                  v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+                  class="circle"
+                  style="border: 1px solid black"
+                />
               </div>
               <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
               </div>
               <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
                 <div
-v-if="!col.tagOutlined" class="circle" :style="`background-color: ${_get(colData, col.tagColor)}; color: ${_get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }; ${returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                  'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`" />
+                  v-if="!col.tagOutlined"
+                  class="circle"
+                  :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
+                    _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+                  }; ${
+                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
+                    'outline: 1px dotted #0000CD; outline-offset: 3px'
+                  }`"
+                />
 
                 <div
-v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle" :style="`border: 1px solid black; ${returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                  'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`" />
+                  v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+                  class="circle"
+                  :style="`border: 1px solid black; ${
+                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
+                    'outline: 1px dotted #0000CD; outline-offset: 3px'
+                  }`"
+                />
               </div>
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
-v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.routeLabel"
-                    :aria-label="col.routeTooltip" :icon="col.routeIcon" size="small" />
+                    v-tooltip.top="col.routeTooltip"
+                    severity="secondary"
+                    text
+                    raised
+                    :label="col.routeLabel"
+                    :aria-label="col.routeTooltip"
+                    :icon="col.routeIcon"
+                    size="small"
+                  />
                 </router-link>
               </div>
               <div v-else-if="col.dataType === 'date'">
@@ -126,27 +201,43 @@ v-tooltip.top="col.routeTooltip" severity="secondary" text raised :label="col.ro
                 <small>Filter is case sensitive.</small>
               </div>
               <PvInputNumber
-v-if="col.dataType === 'number' && !col.useMultiSelect" v-model="filterModel.value"
-                type="text" class="p-column-filter" placeholder="Search" />
+                v-if="col.dataType === 'number' && !col.useMultiSelect"
+                v-model="filterModel.value"
+                type="text"
+                class="p-column-filter"
+                placeholder="Search"
+              />
               <PvMultiSelect
-v-if="col.useMultiSelect" v-model="filterModel.value" :options="_get(refOptions, col.field)"
-                placeholder="Any" :show-toggle-all="false" class="p-column-filter" />
+                v-if="col.useMultiSelect"
+                v-model="filterModel.value"
+                :options="_get(refOptions, col.field)"
+                placeholder="Any"
+                :show-toggle-all="false"
+                class="p-column-filter"
+              />
               <PvCalendar
-v-if="col.dataType === 'date' && !col.useMultiSelect" v-model="filterModel.value"
-                date-format="mm/dd/yy" placeholder="mm/dd/yyyy" />
+                v-if="col.dataType === 'date' && !col.useMultiSelect"
+                v-model="filterModel.value"
+                date-format="mm/dd/yy"
+                placeholder="mm/dd/yyyy"
+              />
               <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
                 <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
                 <label for="booleanFilter">{{ col.header + '?' }}</label>
               </div>
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
-v-model="filterModel.value" :options="['Green', 'Yellow', 'Pink']"
-                  style="margin-bottom: 0.5rem" />
+                  v-model="filterModel.value"
+                  :options="['Green', 'Yellow', 'Pink']"
+                  style="margin-bottom: 0.5rem"
+                />
               </div>
               <div v-if="col.dataType === 'progress'">
                 <PvDropdown
-v-model="filterModel.value" :options="['Completed', 'Assigned', 'Started']"
-                  style="margin-bottom: 0.5rem" />
+                  v-model="filterModel.value"
+                  :options="['Completed', 'Started']"
+                  style="margin-bottom: 0.5rem"
+                />
               </div>
             </template>
           </PvColumn>
@@ -312,7 +403,6 @@ _forEach(computedColumns.value, (column) => {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
     } else if (dataType === 'PROGRESS') {
-      console.log('progress', column)
       returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
     }
 
@@ -526,7 +616,7 @@ g {
   margin-left: 10px;
 }
 
-.p-datatable .p-datatable-tbody>tr>td {
+.p-datatable .p-datatable-tbody > tr > td {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
@@ -556,7 +646,7 @@ button.p-column-filter-menu-button.p-link:hover {
   background: var(--surface-500);
 }
 
-.compressed .p-datatable .p-datatable-tbody>tr>td {
+.compressed .p-datatable .p-datatable-tbody > tr > td {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 3px 0;
