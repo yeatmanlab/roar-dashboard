@@ -1,16 +1,11 @@
 <template>
   <div class="distribution-wrapper">
     <div :id="`roar-distribution-chart-${taskId}`"></div>
-    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2">
+    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2" data-html2canvas-ignore="true">
       <div class="flex uppercase text-xs font-light">view scores by</div>
       <PvSelectButton
-        v-model="scoreMode"
-        :allow-empty="false"
-        class="flex flex-row my-2 select-button"
-        :options="scoreModes"
-        option-label="name"
-        @change="handleModeChange"
-      />
+v-model="scoreMode" :allow-empty="false" class="flex flex-row my-2 select-button"
+        :options="scoreModes" option-label="name" @change="handleModeChange" />
     </div>
   </div>
 </template>

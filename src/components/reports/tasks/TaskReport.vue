@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col items-center justify-center mx-2">
-    <Accordion v-if="taskInfoById[taskId]" class="mb-5 w-full">
+  <div :id="'tab-view-description-'+taskId" class="flex flex-col items-center justify-center mx-2">
+    <Accordion v-if="taskInfoById[taskId]" class="mb-5 w-full" :active-index="0">
       <AccordionTab :header="('About ' + taskInfoById[taskId]?.subheader).toUpperCase()">
         <div>
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ taskInfoById[taskId]?.subheader }}</div>
@@ -16,64 +16,35 @@
     </Accordion>
   </div>
   <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
-  <div v-if="tasksToDisplayGraphs.includes(taskId)" class="chart-toggle-wrapper">
-    <div v-if="orgType === 'district'" class="mb-3">
+  <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class='chart-toggle-wrapper'>
+    <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
       <div class="flex uppercase text-xs font-light">view rows by</div>
       <PvSelectButton
-        v-model="facetMode"
-        class="flex flex-row my-2 select-button"
-        :allow-empty="false"
-        :options="facetModes"
-        option-label="name"
-      />
+v-model="facetMode" class="flex flex-row my-2 select-button" :allow-empty="false"
+        :options="facetModes" option-label="name" />
     </div>
     <div class="chart-wrapper align-items-center">
       <div class="h-full flex flex-column align-items-center">
         <DistributionChartSupport
-          :initialized="initialized"
-          :administration-id="administrationId"
-          :org-type="orgType"
-          :org-id="orgId"
-          :task-id="taskId"
-          :runs="runs"
-          :facet-mode="facetMode"
-        />
+:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+          :org-id="orgId" :task-id="taskId" :runs="runs" :facet-mode="facetMode" />
       </div>
       <div class="h-full flex">
         <DistributionChartFacet
-          :initialized="initialized"
-          :administration-id="administrationId"
-          :org-type="orgType"
-          :org-id="orgId"
-          :task-id="taskId"
-          :runs="runs"
-          :facet-mode="facetMode"
-          :min-grade-by-runs="minGradeByRuns"
-        />
+:initialized="initialized" :administration-id="administrationId" :org-type="orgType"
+          :org-id="orgId" :task-id="taskId" :runs="runs" :facet-mode="facetMode" :min-grade-by-runs="minGradeByRuns" />
       </div>
     </div>
   </div>
   <div class="my-2 mx-4">
     <SubscoreTable
-      v-if="taskId === 'letter'"
-      task-id="letter"
-      :task-name="taskDisplayNames['letter'].name"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-    />
+v-if="taskId === 'letter'" task-id="letter" :task-name="taskDisplayNames['letter'].name"
+      :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
     <SubscoreTable
-      v-if="taskId === 'pa'"
-      task-id="pa"
-      :task-name="taskDisplayNames['pa'].name"
-      :administration-id="administrationId"
-      :org-type="orgType"
-      :org-id="orgId"
-      :administration-name="administrationInfo.name ?? undefined"
-      :org-name="orgInfo.name ?? undefined"
-    />
+v-if="taskId === 'pa'" task-id="pa" :task-name="taskDisplayNames['pa'].name"
+      :administration-id="administrationId" :org-type="orgType" :org-id="orgId"
+      :administration-name="administrationInfo.name ?? undefined" :org-name="orgInfo.name ?? undefined" />
   </div>
 </template>
 <script setup>
