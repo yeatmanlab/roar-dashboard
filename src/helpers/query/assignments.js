@@ -129,47 +129,13 @@ export const getAssignmentsRequestBody = ({
     }
 
     if (!_isEmpty(filter)) {
-      if (filter.value === 'Completed' || filter.value === 'Assigned' || filter.value === 'Started') {
-        console.log('completed called');
-        if (filter.value === 'Completed') {
-          // console.log('completed called');
-          // requestBody.structuredQuery.where.compositeFilter.filters.push({
-          //   unaryFilter: {
-          //     op: 'IS_NOT_NULL',
-          //     field: { fieldPath: `completed` },
-          //   },
-          // });
-          requestBody.structuredQuery.where.compositeFilter.filters.push({
-            fieldFilter: {
-              field: { fieldPath: `assessments` },
-              op: 'EQUAL',
-              value: { stringValue: '2' },
-            },
-          });
-        } else if (filter.value === 'Assigned') {
-          requestBody.structuredQuery.where.compositeFilter.filters.push({
-            unaryFilter: {
-              op: 'IS_NULL',
-              field: { fieldPath: `startedOn` },
-            },
-          });
-        } else if (filter.value === 'Started') {
-          requestBody.structuredQuery.where.compositeFilter.filters.push({
-            unaryFilter: {
-              op: 'IS_NOT_NULL',
-              field: { fieldPath: `startedOn` },
-            },
-          });
-        }
-      } else {
-        requestBody.structuredQuery.where.compositeFilter.filters.push({
-          fieldFilter: {
-            field: { fieldPath: `userData.${filter.field}` },
-            op: 'EQUAL',
-            value: { stringValue: filter.value },
-          },
-        });
-      }
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.${filter.field}` },
+          op: 'EQUAL',
+          value: { stringValue: filter.value },
+        },
+      });
     }
   } else {
     const currentDate = new Date().toISOString();
@@ -685,7 +651,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
     }
   });
   let requestBody;
-  if (nonOrgFilter && nonOrgFilter.collection === 'scores' && nonOrgFilter.constraint.value !== 'Assigned') {
+  if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     let orgFilter = null;
     let gradeFilter = null;
     if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
@@ -982,7 +948,7 @@ export const assignmentPageFetcher = async (
       page: page.value,
       paginate: paginate,
       select: select,
-      filter: userFilter || nonOrgFilter,
+      filter: userFilter,
       grades: gradeFilter,
       orderBy: toRaw(orderBy),
     });
