@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vite';
 import vitePluginFaviconsInject from 'vite-plugin-favicons-inject';
@@ -20,6 +21,10 @@ export default defineConfig({
         process: true,
       },
     }),
+    sentryVitePlugin({
+      org: 'roar-89588e380',
+      project: 'dashboard',
+    }),
   ],
   resolve: {
     alias: {
@@ -29,6 +34,7 @@ export default defineConfig({
   },
   build: {
     cssCodeSplit: true,
+    sourcemap: true,
   },
   optimizeDeps: {
     include: ['@bdelab/roar-firekit', 'vue-google-maps-community-fork', 'fast-deep-equal'],
