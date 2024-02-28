@@ -70,7 +70,7 @@ import VueGoogleMaps from 'vue-google-maps-community-fork';
 
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue';
-import LanguageSelector from './components/LanguageSelector.vue';
+import LanguageSelector from '@/components/LanguageSelector.vue';
 
 // Style assets
 import 'primevue/resources/primevue.css'; // primevue css
@@ -81,7 +81,7 @@ import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue
 import './assets/styles/theme.scss'; // ROAR theme
 
 // translations
-import { i18n } from './translations/i18n.js';
+import { i18n } from '@/translations/i18n.js';
 // https://www.npmjs.com/package/vue-country-flag-next
 import CountryFlag from 'vue-country-flag-next';
 
