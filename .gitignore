@@ -28,3 +28,4 @@ cypress/downloads
 
 .env
 .vite/*
+.env.sentry-build-plugin
