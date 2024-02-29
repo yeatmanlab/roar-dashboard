@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col items-center justify-center mx-2">
-    <Accordion v-if="taskInfoById[taskId]" class="mb-5 w-full">
+  <div :id="'tab-view-description-' + taskId" class="flex flex-col items-center justify-center mx-2">
+    <Accordion v-if="taskInfoById[taskId]" class="mb-5 w-full" :active-index="0">
       <AccordionTab :header="('About ' + taskInfoById[taskId]?.subheader).toUpperCase()">
         <div>
           <div style="text-transform: uppercase" class="text-2xl font-bold">{{ taskInfoById[taskId]?.subheader }}</div>
@@ -16,8 +16,8 @@
     </Accordion>
   </div>
   <!-- <div class="grid grid-cols-2 w-full space-around items-center p-3"> -->
-  <div v-if="tasksToDisplayGraphs.includes(taskId)" class="chart-toggle-wrapper">
-    <div v-if="orgType === 'district'" class="mb-3">
+  <div v-if="tasksToDisplayGraphs.includes(taskId)" :id="'tab-view-chart-' + taskId" class="chart-toggle-wrapper">
+    <div v-if="orgType === 'district'" class="mb-3" data-html2canvas-ignore="true">
       <div class="flex uppercase text-xs font-light">view rows by</div>
       <PvSelectButton
         v-model="facetMode"

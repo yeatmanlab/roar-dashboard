@@ -1,6 +1,6 @@
 <template>
   <div :id="`roar-distribution-chart-support-${taskId}`"></div>
-  <div class="view-by-wrapper my-2">
+  <div class="view-by-wrapper my-2" data-html2canvas-ignore="true">
     <div class="flex uppercase text-xs font-light">view support levels by</div>
     <PvSelectButton
       v-model="xMode"
