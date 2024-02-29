@@ -27,7 +27,7 @@ export function playSWRGame() {
   cy.visit('/');
   cy.wait(0.2 * timeout);
   cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-  cy.get('.tabview-nav-link-label').contains('ROAR-Word').should('have.attr', 'data-game-status', 'complete');
+  cy.get('.tabview-nav-link-label').contains('ROAR - Word').should('have.attr', 'data-game-status', 'complete');
 }
 
 function playIntro() {

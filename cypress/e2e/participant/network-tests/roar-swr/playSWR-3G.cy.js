@@ -18,7 +18,7 @@ describe('Testing playthrough of SWR as a participant under a 3G Mobile connecti
       .should('be.visible')
       .click();
 
-    cy.get('.p-tabview').contains('ROAR-Word');
+    cy.get('.p-tabview').contains('ROAR - Word');
     cy.visit(`/game/swr`);
 
     cy.get('.jspsych-btn', { timeout: 2 * timeout })
