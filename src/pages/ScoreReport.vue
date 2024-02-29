@@ -214,7 +214,7 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
-        <PvTabView :active-index="activeTabIndex" @tab-change="onTabChange">
+        <PvTabView :active-index="activeTabIndex">
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
@@ -357,16 +357,12 @@ const exportLoading = ref(false);
 
 const activeTabIndex = ref(0);
 
-function onTabChange(event) {
-  event.preventDefault(); // Prevent the default scroll behavior
-  // Your tab change logic here
-}
-
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
+
 // Helper function to add an element to a document and perform page break logic
 const addElementToPdf = async (element, document, yCounter, offset = 0) => {
-  await html2canvas(element).then(function (canvas) {
+  await html2canvas(element, { windowWidth: 1100, scale: 2 }).then(function (canvas) {
     const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
     const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
     // Add a new page for each task if there is no more space in the page for task desc and graph
