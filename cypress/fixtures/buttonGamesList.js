@@ -1,6 +1,6 @@
 export const games = [
   {
-    name: 'ROAR Picture Vocabulary',
+    name: 'ROAR - Picture Vocabulary',
     id: 'vocab',
     startBtn: '.jspsych-btn',
     introBtn: '.continue',
@@ -13,7 +13,7 @@ export const games = [
     numIter: 4,
   },
   {
-    name: 'ROAR Written Vocabulary',
+    name: 'ROAR - Written Vocabulary',
     id: 'cva',
     startBtn: '.jspsych-btn',
     introBtn: '.go-button',
@@ -26,7 +26,7 @@ export const games = [
     numIter: 9,
   },
   {
-    name: 'Roar-Morphology',
+    name: 'ROAR - Morphology',
     id: 'morphology',
     startBtn: '.jspsych-btn',
     introBtn: '.go-button',
@@ -40,7 +40,7 @@ export const games = [
     numIter: 6,
   },
   {
-    name: 'Letter',
+    name: 'ROAR - Letter',
     id: 'letter',
     startBtn: '.jspsych-btn',
     introBtn: '.go-button',

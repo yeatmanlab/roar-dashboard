@@ -7,7 +7,7 @@ describe('Test playthrough of SRE as a participant', () => {
 
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
-    cy.get('.p-tabview').contains('ROAR-Sentence');
+    cy.get('.p-tabview').contains('ROAR - Sentence');
     cy.visit(`/game/sre`);
 
     cy.get('.jspsych-btn', { timeout: 5 * timeout })
@@ -15,10 +15,6 @@ describe('Test playthrough of SRE as a participant', () => {
       .click();
 
     cy.wait(0.2 * timeout);
-
-    // cy.get('b').contains('I agree').click();
-    // cy.get('.jspsych-btn', { timeout: 10000 }).should('be.visible').click();
-    // cy.get('.jspsych-btn', { timeout: 10000 }).should('be.visible').click();
 
     // handles error where full screen throws a permissions error
     cy.wait(0.2 * timeout);
@@ -35,7 +31,7 @@ describe('Test playthrough of SRE as a participant', () => {
     cy.visit('/');
     cy.wait(0.2 * timeout);
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-    cy.get('.tabview-nav-link-label').contains('ROAR-Sentence').should('have.attr', 'data-game-status', 'complete');
+    cy.get('.tabview-nav-link-label').contains('ROAR - Sentence').should('have.attr', 'data-game-status', 'complete');
   });
 });
 
