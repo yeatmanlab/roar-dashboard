@@ -12,7 +12,7 @@ describe('Testing playthrough of SWR as a participant under a 3G Mobile connecti
 
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
-    cy.get('.p-tabview', { timeout: 2 * timeout }).contains('ROAR - Word');
+    cy.get('.p-tabview').contains('ROAR - Word');
     cy.visit(`/game/swr`);
 
     cy.get('.jspsych-btn', { timeout: 2 * timeout })
