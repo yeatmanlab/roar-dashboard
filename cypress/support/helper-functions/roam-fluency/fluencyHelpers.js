@@ -29,6 +29,10 @@ function playFluencyIntro() {
   typeEnter();
   waitTimeout();
 
+  // Click enter
+  typeEnter();
+  waitTimeout();
+
   //   Click backspace
   cy.get('body').type('{backspace}');
   waitTimeout();
@@ -76,6 +80,7 @@ function checkGameComplete(endText) {
             cy.get('body').type('{enter}');
           });
         cy.log('Game complete.');
+        cy.get('body', { timeout: timeout }).type('{enter}');
       } else {
         cy.log('Continuing game...');
         playFluencyLoop();
