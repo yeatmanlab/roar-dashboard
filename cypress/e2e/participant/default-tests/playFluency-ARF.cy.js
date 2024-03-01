@@ -1,10 +1,10 @@
 import { playFluency } from '../../../support/helper-functions/roam-fluency/fluencyHelpers';
 
 const timeout = Cypress.env('timeout');
-const endText = 'You are all done.';
+const endText = "You are all done."
 
 describe('Test playthrough of Fluency as a participant', () => {
-  it('Fluency Playthrough Test', () => {
+  it ('Fluency Playthrough Test', () => {
     Cypress.on('uncaught:exception', () => {
       return false;
     });
@@ -14,20 +14,22 @@ describe('Test playthrough of Fluency as a participant', () => {
 
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
-    cy.get('.p-tabview').contains('ROAM - Single-Digit');
+    cy.get('.p-tabview').contains('ROAM - Fluency ARF');
     cy.visit(`/game/fluency-arf`);
 
-    //   Click jspsych button to begin
+
+  //   Click jspsych button to begin
     cy.get('.jspsych-btn', { timeout: 5 * timeout })
-      .should('be.visible')
-      .click();
+    .should('be.visible')
+    .click();
 
-    playFluency(endText);
+   playFluency(endText);
 
-    //  Check if game is marked as complete on the dashboard
-    cy.visit('/');
-    cy.wait(0.2 * timeout);
-    cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-    cy.get('.tabview-nav-link-label').contains('ROAM - Single-Digit').should('exist');
-  });
-});
+  //  Check if game is marked as complete on the dashboard
+  cy.visit('/');
+  cy.wait(0.2 * timeout);
+  cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
+  cy.get('.tabview-nav-link-label').contains('ROAM - Fluency ARF').should('have.attr', 'data-game-status', 'complete');
+
+  })
+})

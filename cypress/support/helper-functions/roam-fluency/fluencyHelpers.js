@@ -1,5 +1,6 @@
 const timeout = Cypress.env('timeout');
 const participantId = '123456789';
+const practiceNumber = '1';
 const questionInput = '42';
 
 function typeEnter() {
@@ -14,81 +15,68 @@ function playFluencyIntro() {
   waitTimeout();
 
   //   Click textbox and enter random participantId
-  cy.get('#input-0', { timeout: timeout }).type(`${participantId} {enter}`);
-  waitTimeout();
-  typeEnter();
-  waitTimeout();
+  cy.get('#input-0', {timeout: timeout}).type(`${participantId} {enter}`,)
+  typeEnter()
+
+  //   Input any number
+  cy.get('#practice_number', {timeout: timeout}).type(practiceNumber)
 
   //   Click enter
-  cy.get('body').type('1 {enter}');
+  typeEnter()
   waitTimeout();
 
-  typeEnter();
+  // Click enter
+  typeEnter()
   waitTimeout();
 
   //   Click backspace
-  cy.get('body').type('{backspace}');
-  waitTimeout();
-
-  // Input example number, enter x1
-  cy.get('#practice_number').type('10');
-  waitTimeout();
-
-  cy.get('#practice_number').type('{enter}');
-  typeEnter();
+  cy.get('body').type('{backspace}')
   waitTimeout();
 
   //   Enter x2
-  //cy.get("body").type("x2 {enter}");
-  typeEnter();
-  typeEnter();
-  //waitTimeout();
+  cy.get('body').type('x2 {enter}')
+  waitTimeout();
 
   //   Type 4, enter x2
-  cy.get('#question_input_key').type('4');
+  cy.get('#question_input_key').type('4')
   waitTimeout();
-  cy.get('#question_input_key').type('{enter}');
-  typeEnter();
+  cy.get('#question_input_key').type('{enter}')
+  typeEnter()
   waitTimeout();
-  typeEnter();
+  typeEnter()
 
   //   Type 2, enter x2
-  cy.get('#question_input_key').type('2');
+  cy.get('#question_input_key').type('2')
   waitTimeout();
-  cy.get('#question_input_key').type('{enter}');
-  typeEnter();
+  cy.get('#question_input_key').type('{enter}')
+  typeEnter()
   waitTimeout();
-  typeEnter();
+  typeEnter()
 
   // Proceed to main game loop
-  typeEnter();
-  typeEnter();
+  typeEnter()
+  typeEnter()
 }
 
 function playFluencyLoop() {
-  cy.get('#question_input_key').type(questionInput);
+  cy.get('#question_input_key').type(questionInput)
   waitTimeout();
-  cy.get('#question_input_key').type('{enter}');
+  cy.get('#question_input_key').type('{enter}')
   waitTimeout();
 }
 
 function checkGameComplete(endText) {
-  cy.get('body')
-    .invoke('text')
-    .then((text) => {
-      if (text.includes(endText)) {
-        cy.get('body')
-          .should('contain', endText)
-          .then(() => {
-            cy.get('body').type('{enter}');
-          });
-        cy.log('Game complete.');
-      } else {
-        cy.log('Continuing game...');
-        playFluencyLoop();
-        checkGameComplete(endText);
-      }
-    });
+   cy.get('body').invoke('text').then( (text) => {
+     if (text.includes(endText)) {
+       cy.get('body').should('contain', endText).then(() => {cy.get('body').type('{enter}')})
+       cy.log('Game complete.')
+     }
+     else {
+       cy.log("Continuing game...")
+       playFluencyLoop()
+       checkGameComplete(endText)
+     }
+   })
 }
 
 export function playFluency(endText) {
