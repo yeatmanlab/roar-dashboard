@@ -1,4 +1,4 @@
-import { playSWRGame } from '../../../../support/helperFunctions/roar-swr/swrHelpers';
+import { playSWRGame } from '../../../../support/helper-functions/roar-swr/swrHelpers';
 
 const timeout = Cypress.env('timeout');
 
