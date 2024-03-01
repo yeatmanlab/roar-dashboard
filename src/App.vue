@@ -32,7 +32,9 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const pageTitle = computed(() => {
-  return route.meta?.pageTitle?.[i18n.global.locale.value] ?? route.meta?.pageTitle?.[i18n.global.fallbackLocale.value];
+  const locale = i18n.global.locale.value;
+  const fallbackLocale = i18n.global.fallbackLocale.value;
+  return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
 });
 
 const navbarBlacklist = ref([
