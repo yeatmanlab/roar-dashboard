@@ -9,7 +9,6 @@ export function initSentry(app) {
     Sentry.init({
       app,
       dsn: 'https://f15e3ff866394e93e00514b42113d03d@o4505913837420544.ingest.sentry.io/4506820782129152',
-      release: `${process.env.npm_package_name}@${process.env.npm_package_version}`,
       integrations: [
         Sentry.replayIntegration({
           maskAllText: true,
