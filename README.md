@@ -1,4 +1,4 @@
-# ROAR-query
+# ROAR Dashboard
 
 This web app serves as the participant and administrator dashboard for the Rapid Online Assessment of Reading (ROAR) platform.
 
