@@ -69,7 +69,7 @@ async function startTask() {
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
   };
-  const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true };
+  const gameParams = { ...appKit._taskInfo.variantParams };
   const levanteTask = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
   gameStarted.value = true;
   await levanteTask.run().then(async () => {
