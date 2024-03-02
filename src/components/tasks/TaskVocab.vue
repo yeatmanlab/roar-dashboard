@@ -77,7 +77,7 @@ async function startTask() {
     birthYear: userDateObj.getFullYear(),
   };
 
-  const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true };
+  const gameParams = { ...appKit._taskInfo.variantParams };
   const roarApp = new RoarVocab(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
