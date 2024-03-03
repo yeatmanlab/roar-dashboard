@@ -49,7 +49,7 @@ Already know what you're looking for in this guide? Jump to the following sectio
 [ROAR][link_roar_website] is a web application with many interacting components:
 
 - a dashboard web app ([repo][link_dashboard_repo],
-[issues][link_dashboard_issues])
+  [issues][link_dashboard_issues])
 - Firebase cloud functions ([repo][link_cloud_functions_repo], [issues][link_cloud_functions_issues])
 - standalone web applications for each ROAR assessment. For example,
   - ROAR-SWR ([repo][link_swr_repo], [issues][link_swr_issues])
@@ -57,9 +57,9 @@ Already know what you're looking for in this guide? Jump to the following sectio
   - ROAR-PA ([repo][link_pa_repo], [issues][link_pa_issues])
   - and many more
 - ROAR-firekit, an external library that allows the dashboard and ROAR apps to
-communicate with our Firestore databases ([repo][link_firekit_repo], [issues][link_firekit_issues]))
+  communicate with our Firestore databases ([repo][link_firekit_repo], [issues][link_firekit_issues])
 - ROAR-utils, an external library that contains common utilities used by the
-ROAR assessments ([repo][link_utils_repo], [issues][link_utils_issues])
+  ROAR assessments ([repo][link_utils_repo], [issues][link_utils_issues])
 
 Each of these components is housed in it's own GitHub repository, some of which
 are public and others private. If the links above don't work, it is probably
@@ -126,14 +126,14 @@ overall project's goals and immediate next steps.
 The current list of issue labels are [here][link_labels] and include:
 
 - ![Good first issue](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/good%20first%20issue)]
-_These issues contain a task that is amenable to new contributors because it
-doesn't entail a steep learning curve._
+  _These issues contain a task that is amenable to new contributors because it
+  doesn't entail a steep learning curve._
 
   If you feel that you can contribute to one of these issues,
   we especially encourage you to do so!
 
 - ![Bug](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/bug)
-_These issues point to problems in the project._
+  _These issues point to problems in the project._
 
   If you find new a bug, please give as much detail as possible in your issue,
   including steps to recreate the error.
@@ -141,8 +141,8 @@ _These issues point to problems in the project._
   please add any additional information that you have as a comment.
 
 - ![Enhancement](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/enhancement)
-_These issues are asking for new features and improvements to be considered by
-the project._
+  _These issues are asking for new features and improvements to be considered by
+  the project._
 
   Please try to make sure that your requested feature is distinct from any others
   that have already been requested or implemented.
@@ -152,11 +152,11 @@ the project._
 In order to define priorities and directions in the development roadmap,
 we have two sets of special labels:
 
-| Label | Description |
-| ----- | ----------- |
-| ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/impact%3A%20high) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/impact%3A%20medium) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/impact%3A%20low) | Estimation of the downstream impact the proposed feature/bugfix will have. |
-| ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/effort%3A%20high) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/effort%3A%20medium) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/effort%3A%20low) | Estimation of effort required to implement the requested feature or fix the reported bug. |
-| ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/urgency%3A%20critical) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/urgency%3A%20high) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/urgency%3A%20medium) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/urgency%3A%20low) | Estimation of the urgency of the requested feature or bug fix. |
+| Label                                                                                                                                                                                                                                                                                                                                                                                                                           | Description                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/impact%3A%20high) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/impact%3A%20medium) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/impact%3A%20low)                                                                                                                | Estimation of the downstream impact the proposed feature/bugfix will have.                |
+| ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/effort%3A%20high) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/effort%3A%20medium) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/effort%3A%20low)                                                                                                                | Estimation of effort required to implement the requested feature or fix the reported bug. |
+| ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/urgency%3A%20critical) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/urgency%3A%20high) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/urgency%3A%20medium) <br> ![GitHub labels](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/urgency%3A%20low) | Estimation of the urgency of the requested feature or bug fix.                            |
 
 These labels help triage and set priorities of the development tasks.
 For instance, consider a bug that prevents users from completing assessments,
@@ -183,7 +183,7 @@ We appreciate all contributions to ROAR,
 but those accepted fastest will follow a workflow similar to the following:
 
 1. **Comment on an existing issue or open a new issue referencing your
-addition.**<br />
+   addition.**<br />
    This allows other members of the ROAR development team to confirm
    that you aren't overlapping with work that's currently underway and that
    everyone is on the same page with the goal of the work you're going to carry
@@ -191,7 +191,7 @@ addition.**<br />
    putting this work in up front is so useful to everyone involved.
 
 1. **[Fork][link_fork] the repository that you want to edit to your
-profile.**<br />
+   profile.**<br />
    This is now your own unique copy of the repository.
    Changes here won't effect anyone else's work, so it's a safe space to
    explore edits to the code!
@@ -226,7 +226,7 @@ profile.**<br />
    ```
 
 1. **Install a development version of the software so that your local changes
-are reflected in your local tests**<br />
+   are reflected in your local tests**<br />
    In most cases, you can install a development version of by navigating to the
    root of your repository and then typing
 
@@ -235,7 +235,7 @@ are reflected in your local tests**<br />
    ```
 
 1. **Create a [new branch][link_branches] to develop and maintain the proposed
-code changes.**<br />
+   code changes.**<br />
    For example:
 
    ```Shell
@@ -257,7 +257,7 @@ code changes.**<br />
    | `maint/<some-identifier>` | for repository maintenance         |
 
 1. **Make the changes you've discussed, following the [ROAR coding
-style](#roar-coding-style).**<br />
+   style](#roar-coding-style).**<br />
    Try to keep the changes focused: it is generally easy to review changes that
    address one feature or bug at a time.
    In many of our repositories, you can test your changes locally using
@@ -288,7 +288,7 @@ style](#roar-coding-style).**<br />
      Pull-requests tagged with `WIP:` will not be merged until the tag is removed.
 
 1. **Have your PR reviewed by the development team, and update your changes
-accordingly in your branch.**<br />
+   accordingly in your branch.**<br />
    The reviewers will take special care in assisting you to address their
    comments, as well as dealing with conflicts and other tricky situations
    that could emerge from distributed development.
@@ -311,33 +311,33 @@ these pre-commit hooks, follow [these directions][link_husky_skip_hooks].
 We ask that you document your contributions by following these standards:
 
 1. Document as you code by writing comments in your code to explain "why"
-something is done a certain way, not just "what" the code does. This is
-especially important for complex logic or decisions that might not be
-immediately obvious to someone new to the codebase.
+   something is done a certain way, not just "what" the code does. This is
+   especially important for complex logic or decisions that might not be
+   immediately obvious to someone new to the codebase.
 
 1. Write clear and descriptive commit messages. They are the first line of
-documentation and provide a history of changes and the reasoning behind them.
+   documentation and provide a history of changes and the reasoning behind them.
 
 1. Use [JSDoc comments][link_jsdoc] to document modules, namespaces, functions,
-classes, methods, and interfaces. For all functions, classes, and methods,
-document the parameters, return types, exceptions, and any side effects.
+   classes, methods, and interfaces. For all functions, classes, and methods,
+   document the parameters, return types, exceptions, and any side effects.
 
 1. Update the ROAR developer documentation if necessary. We maintain
-[centralized ROAR developer documentation][link_roar_developer_documentation] in
-a [separate repository][link_roar_docs_repo]. This allows us not only to
-centralize documentation of each ROAR project, but also to document the
-interactions between different ROAR components. We ask that all code
-contributors update the centralized ROAR developer documentation if necessary.
+   [centralized ROAR developer documentation][link_roar_developer_documentation] in
+   a [separate repository][link_roar_docs_repo]. This allows us not only to
+   centralize documentation of each ROAR project, but also to document the
+   interactions between different ROAR components. We ask that all code
+   contributors update the centralized ROAR developer documentation if necessary.
 
 1. Be direct. Use the active voice and present tense. Avoid jargon,
-colloquialisms, and unnecessarily complex words. The goal is to be understood by
-as wide an audience as possible.
+   colloquialisms, and unnecessarily complex words. The goal is to be understood by
+   as wide an audience as possible.
 
 1. Explain technical terms. When you must use technical terms, briefly explain
-them or link to a good external explanation.
+   them or link to a good external explanation.
 
 1. Keep it short and sweet. More documentation isn't always better. Be concise.
-Aim to provide maximum value with minimum words to respect the reader's time.
+   Aim to provide maximum value with minimum words to respect the reader's time.
 
 ## Licensing
 
@@ -359,79 +359,79 @@ constructive pull request (PR) reviews:
 1. Timeliness
 
    - Respond promptly:
-   Aim to review PRs within a reasonable timeframe, ideally within 48 hours
-   during the workweek. This helps maintain project momentum and keeps
-   contributors engaged.
+     Aim to review PRs within a reasonable timeframe, ideally within 48 hours
+     during the workweek. This helps maintain project momentum and keeps
+     contributors engaged.
 
    - Communicate delays:
-   If you are unable to review within the expected timeframe, inform the
-   contributor, so they know their work hasn't been overlooked.
+     If you are unable to review within the expected timeframe, inform the
+     contributor, so they know their work hasn't been overlooked.
 
 1. Thoroughness
 
    - Review completely:
-   Ensure you have a clear understanding of the PR's purpose and changes. Review
-   all changes thoroughly, not just the parts that might be most relevant to
-   your expertise.
+     Ensure you have a clear understanding of the PR's purpose and changes. Review
+     all changes thoroughly, not just the parts that might be most relevant to
+     your expertise.
 
    - Test locally:
-   When possible, checkout the PR branch and test the changes locally. This can
-   help catch issues that are not immediately visible through code review alone.
+     When possible, checkout the PR branch and test the changes locally. This can
+     help catch issues that are not immediately visible through code review alone.
 
 1. Constructive Feedback
 
    - Be kind and respectful:
-   Remember that behind every contribution is a person who has invested time and
-   effort. Approach your review with kindness and respect. Offer constructive
-   feedback and avoid harsh criticism.
+     Remember that behind every contribution is a person who has invested time and
+     effort. Approach your review with kindness and respect. Offer constructive
+     feedback and avoid harsh criticism.
 
    - Suggest improvements:
-   If you see areas for improvement, provide clear, actionable suggestions.
-   Include code snippets, links to documentation, or examples when possible.
+     If you see areas for improvement, provide clear, actionable suggestions.
+     Include code snippets, links to documentation, or examples when possible.
 
 1. Clarity and Precision
 
    - Be specific:
-   When requesting changes, be specific about what needs to be addressed and
-   why. This helps contributors understand your feedback and how to act on it.
+     When requesting changes, be specific about what needs to be addressed and
+     why. This helps contributors understand your feedback and how to act on it.
 
    - Ask questions:
-   If something is unclear, ask questions rather than making assumptions. This
-   can lead to better understanding and sometimes even simpler solutions.
+     If something is unclear, ask questions rather than making assumptions. This
+     can lead to better understanding and sometimes even simpler solutions.
 
 1. Encouragement and Acknowledgment
 
    - Praise good work:
-   Acknowledge and praise good work. Recognition can be incredibly motivating
-   and encourages further contributions.
+     Acknowledge and praise good work. Recognition can be incredibly motivating
+     and encourages further contributions.
 
    - Encourage discussion:
-   Encourage contributors to discuss their approach, especially if there are
-   multiple ways to solve a problem. Open dialogue can lead to innovative
-   solutions and stronger community bonds.
+     Encourage contributors to discuss their approach, especially if there are
+     multiple ways to solve a problem. Open dialogue can lead to innovative
+     solutions and stronger community bonds.
 
 1. Security and Compliance
 
    - Check for security flaws:
-   Always be on the lookout for potential security vulnerabilities in
-   contributions. If you suspect a security issue, flag it immediately following
-   the project's security protocol.
+     Always be on the lookout for potential security vulnerabilities in
+     contributions. If you suspect a security issue, flag it immediately following
+     the project's security protocol.
 
    - Ensure compliance:
-   Verify that contributions comply with the project's licensing and
-   contribution guidelines. This includes checking for proper attribution of
-   third-party code and ensuring that all dependencies are compatible with the
-   project's license.
+     Verify that contributions comply with the project's licensing and
+     contribution guidelines. This includes checking for proper attribution of
+     third-party code and ensuring that all dependencies are compatible with the
+     project's license.
 
 ### Releases
 
 Most ROAR repositories publish three different kinds of releases:
 
 - Development releases are published with temporary unique URLs for each
-submitted pull request (PR).
+  submitted pull request (PR).
 
 - Staging releases are published on every commit to the main branch. For
-example, the roar-dashboard repoitory publishes these to roar-staging.web.app.
+  example, the roar-dashboard repoitory publishes these to roar-staging.web.app.
 
 - Production releases are published on every version tag.
 
@@ -455,8 +455,8 @@ So a typical release workflow would be
 version <major|minor|patch>`.
 
 1. After all of the npm scripts and GitHub actions have completed, there will be
-a new version tag on GitHub. Using the GitHub web console, create a new release
-from that tag, complete with release notes.
+   a new version tag on GitHub. Using the GitHub web console, create a new release
+   from that tag, complete with release notes.
 
 [^1]:
     The imposter syndrome disclaimer was originally written by
