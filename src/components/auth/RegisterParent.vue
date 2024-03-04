@@ -134,7 +134,7 @@
         @accepted="handleConsentAccept"
       />
       <div class="form-submit">
-        <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled"/>
+        <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled" />
         <div v-if="isDialogVisible">
           <div class="dialog-overlay">
             <!-- Dialog content -->
@@ -233,7 +233,6 @@ const handleFormSubmit = (isFormValid) => {
   validateRoarEmail();
 };
 
-
 const validateRoarEmail = async () => {
   console.log('validateRoarEmail');
   const validEmail = await roarfirekit.value.isEmailAvailable(state.ParentEmail);
@@ -241,10 +240,10 @@ const validateRoarEmail = async () => {
   if (!validEmail) {
     showErrorDialog();
     submitted.value = false;
-    return
-  } else{
+    return;
+  } else {
     emit('submit', state);
-  }  
+  }
 };
 
 function handleCaptcha() {
@@ -270,8 +269,6 @@ const isNextButtonDisabled = computed(() => {
   // Return true (button disabled) if isCaptchaverified is null or undefined
   return isCaptchaverified.value === null || isCaptchaverified.value === undefined;
 });
-
-
 </script>
 
 <style scoped>
