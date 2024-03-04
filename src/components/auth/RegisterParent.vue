@@ -134,7 +134,7 @@
         @accepted="handleConsentAccept"
       />
       <div class="form-submit">
-        <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled" />
+        <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled"/>
         <div v-if="isDialogVisible">
           <div class="dialog-overlay">
             <!-- Dialog content -->
@@ -152,13 +152,16 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue';
+import { storeToRefs } from 'pinia';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import ConsentModal from '../ConsentModal.vue';
 import { ChallengeV3 } from 'vue-recaptcha';
+// import _debounce from 'lodash/debounce';
 
 const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
 const isCaptchaverified = ref(null);
 
 const isDialogVisible = ref(false);
@@ -183,6 +186,7 @@ const state = reactive({
   // activationCode: "",
   firstName: '',
   lastName: '',
+  ParentEmail: '',
   password: '',
   confirmPassword: '',
   accept: false,
@@ -226,7 +230,21 @@ const handleFormSubmit = (isFormValid) => {
     showErrorDialog();
     return;
   }
-  emit('submit', state);
+  validateRoarEmail();
+};
+
+
+const validateRoarEmail = async () => {
+  console.log('validateRoarEmail');
+  const validEmail = await roarfirekit.value.isEmailAvailable(state.ParentEmail);
+  console.log('validEmail', validEmail);
+  if (!validEmail) {
+    showErrorDialog();
+    submitted.value = false;
+    return
+  } else{
+    emit('submit', state);
+  }  
 };
 
 function handleCaptcha() {
@@ -252,6 +270,8 @@ const isNextButtonDisabled = computed(() => {
   // Return true (button disabled) if isCaptchaverified is null or undefined
   return isCaptchaverified.value === null || isCaptchaverified.value === undefined;
 });
+
+
 </script>
 
 <style scoped>
