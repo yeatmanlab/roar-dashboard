@@ -135,6 +135,16 @@
       />
       <div class="form-submit">
         <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled" />
+        <div v-if="isDialogVisible">
+            <div class="dialog-overlay">
+              <!-- Dialog content -->
+              <div class="dialog-content">
+                <h2>Error!</h2>
+                <p>The email has been already used</p>
+                <PvButton @click="closeErrorDialog">Close</PvButton>
+              </div>
+            </div>
+          </div>
       </div>
     </form>
   </div>
@@ -150,6 +160,16 @@ import { ChallengeV3 } from 'vue-recaptcha';
 
 const authStore = useAuthStore();
 const isCaptchaverified = ref(null);
+
+const isDialogVisible = ref(false);
+
+const showErrorDialog = () => {
+  isDialogVisible.value = true;
+};
+
+const closeErrorDialog = () => {
+  isDialogVisible.value = false;
+};
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
@@ -168,14 +188,6 @@ const state = reactive({
   accept: false,
 });
 const passwordRef = computed(() => state.password);
-
-// const ParentEmail = (value) => {
-//   if (!value.includes('@')) return true;
-
-//   // const emailRegex = /^(?!.*@.*@)[a-zA-Z0-9]+([._]?[a-zA-Z0-9]+)*(@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*(\.[a-zA-Z]{2,7})+)?$/;
-//   // const emailRegex = new RegExp(/^[A-Za-z0-9_!#$%&'*+\/=?`{|}~^.-]+@[A-Za-z0-9.-]+$/, "gm");
-//   return emailRegex.test(value);
-// }
 
 const rules = {
   // activationCode: { required },
@@ -211,6 +223,7 @@ const v$ = useVuelidate(rules, state);
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
   if (!isFormValid) {
+    showErrorDialog();
     return;
   }
   emit('submit', state);

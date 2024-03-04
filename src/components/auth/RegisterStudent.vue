@@ -2,7 +2,7 @@
   <div class="card">
     <form class="p-fluid">
       <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
-        <section class="form-section">
+        <!-- <section class="form-section">
           <div class="p-input-icon-right">
             <div class="flex justify-content-between">
               <label for="activationCode">Activation code <span class="required">*</span></label>
@@ -41,7 +41,7 @@
               <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
             </span>
           </span>
-        </section>
+        </section> -->
         <section class="form-section">
           <div class="p-input-icon-right">
             <label for="studentUsername">Student Username <span class="required">*</span></label>
@@ -262,7 +262,7 @@
           </PvAccordionTab>
         </PvAccordion>
         <section class="form-section-button">
-          <PvButton v-if="index !== 0" class="p-button p-component" @click="deleteStudentForm(student)">
+          <PvButton v-if="index !== 0" class="p-button p-component" @click="deleteStudentForm(outerIndex)">
             Delete Student
           </PvButton>
         </section>
@@ -272,7 +272,17 @@
       <PvButton class="p-button p-component" @click="addStudent()"> Add another student </PvButton>
     </div>
     <section class="form-submit">
-      <PvButton type="submit" label="Submit" class="submit-button" @click="handleFormSubmit(!v$.$invalid)" />
+      <PvButton type="submit" label="Submit" class="submit-button" @click.prevent="handleFormSubmit(!v$.$invalid)"/>
+      <div v-if="isDialogVisible">
+        <div class="dialog-overlay">
+          <!-- Dialog content -->
+          <div class="dialog-content">
+            <h2>Error!</h2>
+            <p>The email has been already used</p>
+            <PvButton @click="closeErrorDialog">Close</PvButton>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 </template>
@@ -286,15 +296,25 @@ const props = defineProps({
   isRegistering: { type: Boolean, default: true },
 });
 
+const isDialogVisible = ref(false);
+
+const showErrorDialog = () => {
+  isDialogVisible.value = true;
+};
+
+const closeErrorDialog = () => {
+  isDialogVisible.value = false;
+};
+
 console.log(props);
-const noActivationCodeRef = ref(false);
+// const noActivationCodeRef = ref(false);
 const yearOnlyCheckRef = ref(false);
 
 const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      activationCode: '',
+      // activationCode: '',
       studentUsername: '',
       password: '',
       confirmPassword: '',
@@ -310,7 +330,7 @@ const state = reactive({
       race: [],
       hispanicEthnicity: '',
       homeLanguage: [],
-      noActivationCode: noActivationCodeRef.value,
+      // noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
     },
   ],
@@ -319,7 +339,7 @@ const state = reactive({
 const rules = {
   students: {
     $each: helpers.forEach({
-      activationCode: { required },
+      // activationCode: { required },
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
@@ -335,7 +355,7 @@ const rules = {
       race: {},
       hispanicEthnicity: {},
       homeLanguage: {},
-      noActivationCode: {},
+      // noActivationCode: {},
       yearOnlyCheck: {},
     }),
   },
@@ -343,7 +363,7 @@ const rules = {
 
 function addStudent() {
   state.students.push({
-    activationCode: '',
+    // activationCode: '',
     studentUsername: '',
     password: '',
     confirmPassword: '',
@@ -359,20 +379,20 @@ function addStudent() {
     race: [],
     hispanicEthnicity: '',
     homeLanguage: [],
-    noActivationCode: noActivationCodeRef.value,
+    // noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
   });
 }
 
-function updateActivationCode() {
-  state.students.forEach((student) => {
-    if (student.noActivationCode) {
-      student.activationCode = 'noActivationCode';
-    } else {
-      student.activationCode = '';
-    }
-  });
-}
+// function updateActivationCode() {
+//   state.students.forEach((student) => {
+//     if (student.noActivationCode) {
+//       student.activationCode = 'noActivationCode';
+//     } else {
+//       student.activationCode = '';
+//     }
+//   });
+// }
 
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
@@ -390,10 +410,12 @@ const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = (isFormValid) => {
+  console.log(isFormValid);
   submitted.value = true;
 
   if (!isFormValid) {
     console.log('it is not valid');
+    showErrorDialog();
     return;
   }
   // format username as an email
