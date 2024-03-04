@@ -27,6 +27,17 @@
               <div class="student-form">
                 <div class="student-form-border">
                   <RegisterStudent @submit="handleStudentSubmit($event)" />
+                  <!-- PvDialog is now inside the block -->
+                  <div v-if="isDialogVisible">
+                    <div class="dialog-overlay">
+                      <!-- Dialog content -->
+                      <div class="dialog-content">
+                        <h2>{{ dialogHeader }}</h2>
+                        <p>{{ dialogMessage }}</p>
+                        <PvButton @click="closeDialog">Close</PvButton>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -51,21 +62,46 @@ const activeIndex = ref(0); // Current active step
 
 const parentInfo = ref(null);
 const studentInfo = ref(null);
+const dialogHeader = ref('');
+const dialogMessage = ref('');
+
+const isDialogVisible = ref(false);
+
+const showDialog = () => {
+  isDialogVisible.value = true;
+};
+
+const closeDialog = () => {
+  isDialogVisible.value = false;
+  router.push({ name: 'SignIn' });
+};
 
 async function handleParentSubmit(data) {
-  parentInfo.value = data;
-  activeIndex.value = 1;
+  try {
+    parentInfo.value = data;
+    activeIndex.value = 1;
+  } catch (error) {
+    dialogHeader.value = 'Error!';
+    dialogMessage.value = error.message;
+    showDialog();
+  }
 }
 
 async function handleStudentSubmit(data) {
-  studentInfo.value = data;
+  try {
+    studentInfo.value = data;
+  } catch (error) {
+    dialogHeader.value = 'Error!';
+    dialogMessage.value = error.message;
+    showDialog();
+  }
 }
 
 watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
   if (newParentInfo && newStudentInfo) {
     const rawParentInfo = toRaw(newParentInfo);
     const rawStudentInfo = toRaw(newStudentInfo);
-    console.log('both student and parent info present:');
+    console.log('both student and parent info present');
     const parentUserData = {
       name: {
         first: rawParentInfo.firstName,
@@ -97,7 +133,9 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
     });
     authStore.createNewFamily(rawParentInfo.ParentEmail, rawParentInfo.password, parentUserData, studentSendObject);
     console.log('firekit function called');
-    router.push({ name: 'SignIn' });
+    dialogHeader.value = 'Success!';
+    dialogMessage.value = 'Your family has been created!';
+    showDialog();
   }
 });
 
