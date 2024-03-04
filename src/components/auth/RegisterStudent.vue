@@ -277,7 +277,7 @@
           <!-- Dialog content -->
           <div class="dialog-content">
             <h2>Error!</h2>
-            <p>The email has been already used</p>
+            <p>{{ dialogMessage }}</p>
             <PvButton @click="closeErrorDialog">Close</PvButton>
           </div>
         </div>
@@ -290,6 +290,12 @@
 import { reactive, ref } from 'vue';
 import { required, minLength, helpers } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+const dialogMessage = ref('');
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
@@ -408,27 +414,32 @@ function isPasswordMismatch(index) {
 
 const v$ = useVuelidate(rules, state);
 
-const handleFormSubmit = (isFormValid) => {
+const handleFormSubmit = async (isFormValid) => {
   console.log(isFormValid);
   submitted.value = true;
 
   if (!isFormValid) {
     console.log('it is not valid');
+    dialogMessage.value = 'Please fill out all the required fields.';
     showErrorDialog();
     submitted.value = false;
     return;
   }
-  // format username as an email
-  if (isFormValid) {
-    const computedStudents = state.students.map((student) => {
-      const { studentUsername, ...studentData } = student;
-      return {
-        studentUsername: `${studentUsername}@roar-auth.com`,
-        ...studentData,
-      };
-    });
-    console.log(computedStudents);
-    emit('submit', computedStudents);
+
+  if (await validateRoarUsername()) {
+    // format username as an email
+    console.log('I entered a the if');
+    if (isFormValid) {
+      const computedStudents = state.students.map((student) => {
+        const { studentUsername, ...studentData } = student;
+        return {
+          studentUsername: `${studentUsername}@roar-auth.com`,
+          ...studentData,
+        };
+      });
+      console.log(computedStudents);
+      emit('submit', computedStudents);
+    }
   }
 };
 
@@ -543,6 +554,19 @@ const languages = [
 ];
 
 const languageOptions = ref([...languages]);
+
+const validateRoarUsername = async () => {
+  for (const student of state.students) {
+    const validUserName = await roarfirekit.value.isUsernameAvailable(student.studentUsername);
+    if (!validUserName) {
+      dialogMessage.value = 'Username: ' + student.studentUsername + ' is already in use';
+      showErrorDialog();
+      submitted.value = false;
+      return false;
+    }
+  }
+  return true;
+};
 </script>
 
 <style scoped>
