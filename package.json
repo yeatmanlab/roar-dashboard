@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@bdelab/roam-fluency": "^1.9.14",
-    "@bdelab/roar-firekit": "^4.8.0",
+    "@bdelab/roar-firekit": "^4.8.4",
     "@bdelab/roar-letter": "^1.6.7",
     "@bdelab/roar-multichoice": "^1.9.4",
     "@bdelab/roar-pa": "^1.6.4",
