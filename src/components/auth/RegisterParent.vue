@@ -136,22 +136,22 @@
       <div class="form-submit">
         <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled" />
         <div v-if="isDialogVisible">
-            <div class="dialog-overlay">
-              <!-- Dialog content -->
-              <div class="dialog-content">
-                <h2>Error!</h2>
-                <p>The email has been already used</p>
-                <PvButton @click="closeErrorDialog">Close</PvButton>
-              </div>
+          <div class="dialog-overlay">
+            <!-- Dialog content -->
+            <div class="dialog-content">
+              <h2>Error!</h2>
+              <p>The email has been already used</p>
+              <PvButton @click="closeErrorDialog">Close</PvButton>
             </div>
           </div>
+        </div>
       </div>
     </form>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref, defineEmits } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';

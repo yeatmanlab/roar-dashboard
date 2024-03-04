@@ -40,7 +40,6 @@ const pageTitle = computed(() => {
   return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
 });
 
-
 const navbarBlacklist = ref([
   'SignIn',
   'Register',
