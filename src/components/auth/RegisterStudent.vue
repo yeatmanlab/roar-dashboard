@@ -137,7 +137,6 @@
               option-value="value"
               name="grade"
             />
-            <!-- <small v-if="(v$.grade.$invalid && submitted) || v$.grade.$pending.$response" class="p-error">{{ v$.grade.required.$message.replace("Value", "Grade") }}</small> -->
           </div>
         </section>
         <PvAccordion>
@@ -150,7 +149,7 @@
                   v-model="student.firstName"
                   name="firstName"
                   :class="{
-                    'p-invalid': v$.students.$each.$response.$data[index]?.firstName.$invalid,
+                    'p-invalid': v$.students.$each.$response.$data[outerIndex]?.firstName.$invalid,
                   }"
                   aria-describedby="first-name-error"
                 />
@@ -168,7 +167,7 @@
                   v-model="student.lastName"
                   name="lastName"
                   :class="{
-                    'p-invalid': v$.students.$each.$response.$data[index]?.lastName.$invalid,
+                    'p-invalid': v$.students.$each.$response.$data[outerIndex]?.lastName.$invalid,
                   }"
                   aria-describedby="first-name-error"
                 />
@@ -272,7 +271,7 @@
       <PvButton class="p-button p-component" @click="addStudent()"> Add another student </PvButton>
     </div>
     <section class="form-submit">
-      <PvButton type="submit" label="Submit" class="submit-button" @click.prevent="handleFormSubmit(!v$.$invalid)"/>
+      <PvButton type="submit" label="Submit" class="submit-button" @click.prevent="handleFormSubmit(!v$.$invalid)" />
       <div v-if="isDialogVisible">
         <div class="dialog-overlay">
           <!-- Dialog content -->
@@ -288,7 +287,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, defineEmits } from 'vue';
+import { reactive, ref } from 'vue';
 import { required, minLength, helpers } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 
@@ -297,6 +296,7 @@ const props = defineProps({
 });
 
 const isDialogVisible = ref(false);
+const submitted = ref(false);
 
 const showErrorDialog = () => {
   isDialogVisible.value = true;
@@ -399,13 +399,12 @@ function deleteStudentForm(student) {
     state.students.splice(student, 1); // Remove the student at the specified index
   } else {
     alert('At least one student is required.'); // Prevent deleting the last student form
+    submitted.value = false;
   }
 }
 function isPasswordMismatch(index) {
   return state.students[index]?.password !== state.students[index]?.confirmPassword;
 }
-
-const submitted = ref(false);
 
 const v$ = useVuelidate(rules, state);
 
@@ -416,18 +415,21 @@ const handleFormSubmit = (isFormValid) => {
   if (!isFormValid) {
     console.log('it is not valid');
     showErrorDialog();
+    submitted.value = false;
     return;
   }
   // format username as an email
-  const computedStudents = state.students.map((student) => {
-    const { studentUsername, ...studentData } = student;
-    return {
-      studentUsername: `${studentUsername}@roar-auth.com`,
-      ...studentData,
-    };
-  });
-  console.log(computedStudents);
-  emit('submit', computedStudents);
+  if (isFormValid) {
+    const computedStudents = state.students.map((student) => {
+      const { studentUsername, ...studentData } = student;
+      return {
+        studentUsername: `${studentUsername}@roar-auth.com`,
+        ...studentData,
+      };
+    });
+    console.log(computedStudents);
+    emit('submit', computedStudents);
+  }
 };
 
 // const yearOnlyCheck = ref(false);
