@@ -1,6 +1,6 @@
 <template>
   <AppHead>
-    <title>ROAR: {{ $route.meta.pageTitle }}</title>
+    <title>ROAR: {{ pageTitle }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!" />
 
     <!-- Social -->
@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { onBeforeMount } from 'vue';
+import { computed, onBeforeMount } from 'vue';
 import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
 import { ref } from 'vue';
@@ -29,6 +29,17 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 
 useRecaptchaProvider();
+import AppHead from '@/components/AppHead.vue';
+import { i18n } from '@/translations/i18n';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+const pageTitle = computed(() => {
+  const locale = i18n.global.locale.value;
+  const fallbackLocale = i18n.global.fallbackLocale.value;
+  return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
+});
+
 
 const navbarBlacklist = ref([
   'SignIn',

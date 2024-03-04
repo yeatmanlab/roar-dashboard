@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { createHead } from '@vueuse/head';
+import { initSentry } from '@/sentry';
 import router from '@/router/index.js';
 import App from '@/App.vue';
 
@@ -69,6 +70,7 @@ import VueGoogleMaps from 'vue-google-maps-community-fork';
 
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue';
+import LanguageSelector from '@/components/LanguageSelector.vue';
 
 // Style assets
 import 'primevue/resources/primevue.css'; // primevue css
@@ -79,6 +81,11 @@ import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue
 import './assets/styles/theme.scss'; // ROAR theme
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
 
+// translations
+import { i18n } from '@/translations/i18n.js';
+// https://www.npmjs.com/package/vue-country-flag-next
+import CountryFlag from 'vue-country-flag-next';
+
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia();
@@ -87,6 +94,8 @@ pinia.use(piniaPluginPersistedState);
 app.use(VueRecaptchaPlugin, {
   v3SiteKey: '6Lf8ESUpAAAAAP6R4mi-4ZJO7aMGR6mppFV19YWW',
 });
+
+initSentry(app);
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
@@ -102,6 +111,8 @@ app.use(VueGoogleMaps, {
 app.use(createHead());
 app.use(TextClamp);
 app.use(VueQueryPlugin);
+app.use(i18n);
+app.use(CountryFlag);
 
 app.component('PvAccordion', PvAccordion);
 app.component('PvAccordionTab', PvAccordionTab);
@@ -151,6 +162,7 @@ app.component('PvDataTable', PvDataTable);
 app.component('PvColumn', PvColumn);
 
 app.component('RoarDataTable', RoarDataTable);
+app.component('LanguageSelector', LanguageSelector);
 
 app.directive('tooltip', PvTooltip);
 

@@ -1,7 +1,7 @@
 <template>
   <div class="distribution-wrapper">
     <div :id="`roar-distribution-chart-${taskId}`"></div>
-    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2">
+    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2" data-html2canvas-ignore="true">
       <div class="flex uppercase text-xs font-light">view scores by</div>
       <PvSelectButton
         v-model="scoreMode"

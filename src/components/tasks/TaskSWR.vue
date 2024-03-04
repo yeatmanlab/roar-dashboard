@@ -1,7 +1,7 @@
 <template>
   <div id="jspsych-target" class="game-target" translate="no" />
   <div v-if="!gameStarted" class="col-full text-center">
-    <h1>Preparing your game!</h1>
+    <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
   </div>
 </template>
@@ -78,7 +78,7 @@ async function startTask() {
     language: 'en',
   };
 
-  const gameParams = { ...appKit._taskInfo.variantParams, fromDashboard: true };
+  const gameParams = { ...appKit._taskInfo.variantParams };
   const roarApp = new RoarSWR(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;

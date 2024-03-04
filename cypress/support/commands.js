@@ -2,9 +2,9 @@ Cypress.Commands.add('login', (username, password) => {
   cy.session(
     [username, password],
     () => {
-      cy.visit('/');
-      cy.get('[data-cy="input-username-email"]').type(username, { log: false });
-      cy.get('[data-cy="input-password"]').type(password, { log: false });
+      cy.visit('/', { timeout: Cypress.env('timeout') });
+      cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
+      cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
       cy.get('button')
         .contains('Go!', { timeout: Cypress.env('timeout') })
         .click();
@@ -73,6 +73,16 @@ Cypress.Commands.add(
 
 Cypress.Commands.add('activateAdminSidebar', () => {
   cy.get('[data-cy="button-admin-sidebar"]').click().wait(1000);
+});
+
+Cypress.Commands.add('selectAdministration', (testAdministration) => {
+  cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') })
+    .should('be.visible')
+    .click();
+  cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
+    .contains(testAdministration)
+    .should('be.visible')
+    .click();
 });
 
 Cypress.Commands.add('getAdministrationCard', (testAdministration, sort = 'descending') => {

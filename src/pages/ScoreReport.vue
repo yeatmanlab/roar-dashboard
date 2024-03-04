@@ -7,13 +7,13 @@
             <AppSpinner style="margin: 0.3rem 0rem" />
             <div class="uppercase text-sm">Loading Org Info</div>
           </div>
-          <div v-if="orgInfo && administrationInfo">
+          <div v-if="orgInfo && administrationInfo" id="at-a-glance-charts">
             <div class="flex justify-content-between align-items-center">
               <div class="flex flex-column align-items-start gap-2">
                 <div>
                   <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Score Report</div>
                   <div class="report-title">
-                    {{ _toUpper(orgInfo.name) }}
+                    {{ _toUpper(orgInfo?.name) }}
                   </div>
                 </div>
                 <div>
@@ -24,18 +24,30 @@
                 </div>
                 <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
               </div>
-              <div class="flex flex-row align-items-center gap-4">
-                <div class="uppercase text-sm text-gray-600">VIEW</div>
-                <PvSelectButton
-                  v-model="reportView"
-                  :options="reportViews"
-                  option-disabled="constant"
-                  :allow-empty="false"
-                  option-label="name"
-                  class="flex my-2 select-button"
-                  @change="handleViewChange"
-                >
-                </PvSelectButton>
+              <div class="flex flex-column align-items-end gap-2">
+                <div class="flex flex-row align-items-center gap-4" data-html2canvas-ignore="true">
+                  <div class="uppercase text-sm text-gray-600">VIEW</div>
+                  <PvSelectButton
+                    v-model="reportView"
+                    :options="reportViews"
+                    option-disabled="constant"
+                    :allow-empty="false"
+                    option-label="name"
+                    class="flex my-2 select-button"
+                    @change="handleViewChange"
+                  >
+                  </PvSelectButton>
+                </div>
+                <div v-if="!isLoadingRunResults">
+                  <PvButton
+                    class="flex flex-row"
+                    :icon="!exportLoading ? 'pi pi-download' : 'pi pi-spin pi-spinner'"
+                    :disabled="exportLoading"
+                    label="Export To Pdf"
+                    data-html2canvas-ignore="true"
+                    @click="handleExportToPdf"
+                  />
+                </div>
               </div>
             </div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
@@ -202,26 +214,28 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
-        <PvTabView>
+        <PvTabView :active-index="activeTabIndex">
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
             :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
           >
-            <TaskReport
-              v-if="taskId"
-              :task-id="taskId"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]"
-              :org-type="orgType"
-              :org-id="orgId"
-              :org-info="orgInfo"
-              :administration-info="administrationInfo"
-            />
+            <div :id="'tab-view-' + taskId">
+              <TaskReport
+                v-if="taskId"
+                :task-id="taskId"
+                :initialized="initialized"
+                :administration-id="administrationId"
+                :runs="runsByTaskId[taskId]"
+                :org-type="orgType"
+                :org-id="orgId"
+                :org-info="orgInfo"
+                :administration-info="administrationInfo"
+              />
+            </div>
           </PvTabPanel>
         </PvTabView>
-        <div class="bg-gray-200 px-4 py-2 mt-4">
+        <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -270,6 +284,8 @@
 <script setup>
 import { computed, ref, onMounted, watch, toRaw } from 'vue';
 import { storeToRefs } from 'pinia';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
@@ -335,6 +351,81 @@ const reportViews = [
 
 const handleViewChange = () => {
   window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
+};
+
+const exportLoading = ref(false);
+
+const activeTabIndex = ref(0);
+
+const pageWidth = 190; // Set page width for calculations
+const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
+
+// Helper function to add an element to a document and perform page break logic
+const addElementToPdf = async (element, document, yCounter, offset = 0) => {
+  await html2canvas(element, { windowWidth: 1100, scale: 2 }).then(function (canvas) {
+    const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
+    const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
+    // Add a new page for each task if there is no more space in the page for task desc and graph
+    if (yCounter + scaledCanvasHeight + offset > 287) {
+      document.addPage();
+      yCounter = 10;
+    } else {
+      // Add Margin
+      yCounter += 5;
+    }
+
+    document.addImage(imgData, 'JPEG', 10, yCounter, pageWidth, scaledCanvasHeight);
+    yCounter += scaledCanvasHeight;
+  });
+  return yCounter;
+};
+
+const handleExportToPdf = async () => {
+  exportLoading.value = true; // Set loading icon in button to prevent multiple clicks
+  const doc = new jsPDF();
+  let yCounter = 10; // yCounter tracks the y position in the PDF
+
+  // Add At a Glance Charts and report header to the PDF
+  const atAGlanceCharts = document.getElementById('at-a-glance-charts');
+  if (atAGlanceCharts !== null) {
+    yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
+  }
+
+  // Initialize to first tab
+  activeTabIndex.value = 0;
+
+  for (const [i, taskId] of sortedTaskIds.value.entries()) {
+    activeTabIndex.value = i;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    // Add Task Description and Task Chart to document
+    const tabViewDesc = document.getElementById('tab-view-description-' + taskId);
+    const tabViewChart = document.getElementById('tab-view-chart-' + taskId);
+    const chartHeight =
+      tabViewChart &&
+      (await html2canvas(document.getElementById('tab-view-chart-' + taskId)).then(
+        (canvas) => canvas.height * returnScaleFactor(canvas.width),
+      ));
+
+    if (tabViewDesc !== null) {
+      yCounter = await addElementToPdf(tabViewDesc, doc, yCounter, chartHeight);
+    }
+    if (tabViewChart !== null) {
+      yCounter = await addElementToPdf(tabViewChart, doc, yCounter);
+    }
+  }
+
+  // Add Report Closing
+  const closing = document.getElementById('score-report-closing');
+  if (closing !== null) {
+    yCounter = await addElementToPdf(closing, doc, yCounter);
+  }
+
+  doc.save(`roar-scores-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.pdf`);
+  exportLoading.value = false;
+  window.scrollTo(0, 0);
+
+  return;
 };
 
 // Queries for page
