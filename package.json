@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "1.7.0",
+  "version": "1.7.1",
   "scripts": {
     "build": "vite build",
     "build:levante": "vite build -m LEVANTE",
