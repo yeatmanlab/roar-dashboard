@@ -125,7 +125,7 @@ overall project's goals and immediate next steps.
 
 The current list of issue labels are [here][link_labels] and include:
 
-- ![Good first issue](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/good%20first%20issue)]
+- ![Good first issue](https://img.shields.io/github/labels/yeatmanlab/roar-dashboard/good%20first%20issue)
   _These issues contain a task that is amenable to new contributors because it
   doesn't entail a steep learning curve._
 
