@@ -4,7 +4,12 @@
     <span>Loading Your Individual Roar Score Report...</span>
   </div>
 
-  <div v-else ref="IndividualReportDownload" class="container flex flex-column align-items-around">
+  <div
+    v-else
+    ref="IndividualReportDownload"
+    class="container flex flex-column align-items-around"
+    id="individual-report-export"
+  >
     <div class="flex flex-column md:flex-row align-items-center my-2">
       <div class="student-name text-center md:text-left my-3">
         <div class="text-lg uppercase text-gray-400">Individual Score Report</div>
@@ -49,10 +54,11 @@
             outlined
             class="text-white"
             label="Export to PDF"
-            icon="pi pi-download"
+            :icon="exportLoading ? 'pi pi-spin pi-spinner' : 'pi pi-download'"
+            :disabled="exportLoading"
             icon-pos="right"
             data-html2canvas-ignore="true"
-            @click="printDownload"
+            @click="exportToPdf"
           />
         </div>
         <!-- </PvButton> -->
@@ -103,8 +109,9 @@ import { useAuthStore } from '../store/auth';
 import IndividualScoreReportTask from '../components/reports/IndividualScoreReportTask.vue';
 import AppSpinner from '../components/AppSpinner.vue';
 import { getGrade } from '@bdelab/roar-utils';
-import html2pdf from 'html2pdf.js';
 import NextSteps from '@/assets/NextSteps.pdf';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // const administrationId = '5vaxicYXnpsNXeq1mUJK';
 // const userId = '00w7xNIlq9gG1uxhmRTiv9NdOys2';
@@ -181,6 +188,7 @@ const { data: administrationData } = useQuery({
 });
 
 const expanded = ref(false);
+const exportLoading = ref(false);
 
 const setExpand = () => {
   console.log('expand called');
@@ -189,20 +197,50 @@ const setExpand = () => {
 
 const IndividualReportDownload = ref(null);
 
-function printDownload() {
-  const doc = IndividualReportDownload.value;
+const pageWidth = 190; // Set page width for calculations
+const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
 
-  const opt = {
-    margin: 0.2,
-    filename: `IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`,
-    html2canvas: { width: 1200 },
-    jsPDF: {
-      format: 'letter',
-      orientation: 'p',
-    },
-  };
-  html2pdf().set(opt).from(doc).save();
-}
+// Helper function to add an element to a document and perform page break logic
+const addElementToPdf = async (element, document, yCounter, offset = 0) => {
+  await html2canvas(element, { windowWidth: 1300, scale: 2 }).then(function (canvas) {
+    const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
+    const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
+    // Add a new page for each task if there is no more space in the page for task desc and graph
+    if (yCounter + scaledCanvasHeight + offset > 287) {
+      document.addPage();
+      yCounter = 10;
+    } else {
+      // Add Margin
+      yCounter += 5;
+    }
+
+    document.addImage(imgData, 'JPEG', 10, yCounter, pageWidth, scaledCanvasHeight);
+    yCounter += scaledCanvasHeight;
+  });
+  return yCounter;
+};
+
+const exportToPdf = async () => {
+  exportLoading.value = true; // Set loading icon in button to prevent multiple clicks
+  if (!expanded.value) {
+    setExpand();
+  }
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  const doc = new jsPDF();
+  let yCounter = 10; // yCounter tracks the y position in the PDF
+
+  // Add At a Glance Charts and report header to the PDF
+  const individualReport = document.getElementById('individual-report-export');
+  if (individualReport !== null) {
+    yCounter = await addElementToPdf(individualReport, doc, yCounter);
+  }
+
+  doc.save(`IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`),
+    (exportLoading.value = false);
+
+  return;
+};
 
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId));
 
@@ -317,7 +355,7 @@ onMounted(async () => {
 .banner-text {
   color: white;
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 1.3rem;
 }
 
 .student-name {
