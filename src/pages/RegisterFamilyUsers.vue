@@ -188,7 +188,7 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
       rawParentInfo.password,
       parentUserData,
       studentSendObject,
-      isTestData,
+      isTestData.value,
     );
     console.log('firekit function called');
     dialogHeader.value = 'Success!';
