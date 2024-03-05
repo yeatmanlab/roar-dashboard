@@ -19,7 +19,21 @@
           <span v-if="evaluatingEmail">
             <PvSkeleton height="2.75rem" />
           </span>
-          <div v-else-if="allowPassword && allowLink">{{ $t('authSignIn.bothAllowed') }}</div>
+          <div v-else-if="allowPassword && allowLink">
+            {{ $t('authSignIn.bothAllowed') }}
+            <PvPassword
+              :id="$t('authSignIn.passwordId')"
+              v-model="v$.password.$model"
+              :class="{ 'p-invalid': invalid }"
+              toggle-mask
+              show-icon="pi pi-eye-slash"
+              hide-icon="pi pi-eye"
+              :feedback="false"
+              :placeholder="$t('authSignIn.passwordPlaceholder')"
+              data-cy="input-password"
+            />
+            <small @click="allowPassword = false">Send me an email instead</small>
+          </div>
           <PvPassword
             v-else-if="allowPassword"
             :id="$t('authSignIn.passwordId')"
@@ -48,7 +62,8 @@
             </template>
           </PvPassword>
           <div v-else-if="allowLink">
-            <PvPassword disabled :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')" />
+            <PvPassword disabled :placeholder="$t('authSignIn.signInWithEmailLinkPlaceholder')" />
+            <small @click="allowPassword = true">Sign in using Password instead</small>
           </div>
           <div v-else>
             <PvPassword
