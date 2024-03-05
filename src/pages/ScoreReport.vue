@@ -696,9 +696,7 @@ const onFilter = (event) => {
   const filters = [];
   for (const filterKey in _get(event, 'filters')) {
     const filter = _get(event, 'filters')[filterKey];
-    console.log('filter', filter, _head(filterKey.split('.')));
     const constraint = _head(_get(filter, 'constraints'));
-    console.log('constraint', constraint);
     if (_get(constraint, 'value')) {
       const path = filterKey.split('.');
       if (_head(path) === 'user') {

@@ -33,10 +33,6 @@
         </div>
       </div>
 
-      <!-- <div v-if="refreshing" class="loading-container">
-        <AppSpinner style="margin-bottom: 1rem" />
-        <span>Loading Progress Data</span>
-      </div> -->
       <div v-if="assignmentData?.length === 0" class="no-scores-container">
         <h3>No scores found.</h3>
         <span
@@ -631,7 +627,6 @@ const tableData = computed(() => {
 let unsubscribe;
 const refreshing = ref(false);
 const refresh = () => {
-  console.log('refreshing called');
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
 
@@ -644,7 +639,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 const { roarfirekit } = storeToRefs(authStore);
 onMounted(async () => {
-  console.log('onmounted called');
   if (roarfirekit.value.restConfig) refresh();
 });
 </script>
