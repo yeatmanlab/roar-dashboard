@@ -5,44 +5,26 @@
         <div class="signin-logo">
           <ROARLogoShort />
         </div>
-        <!-- <div class="flex mb-2 gap-2 justify-content-end"> -->
-            <!-- <PvButton @click="active = 0" rounded label="1" class="w-2rem h-2rem p-0" :outlined="active !== 0" /> -->
-            <!-- <PvButton @click="active = 1" rounded label="2" class="w-2rem h-2rem p-0" :outlined="active !== 1" /> -->
-            <!-- <PvButton @click="active = 2" rounded label="3" class="w-2rem h-2rem p-0" :outlined="active !== 2" /> -->
-        <!-- </div> -->
-        <!-- <PvSteps v-model:activeStep="active" :model="items" /> -->
       </header>
       <div>
-        <div v-if="activeIndex === 0">
-          <router-view name="registerParent">
-            <div class="register-title">
+        <div v-if="activeIndex === 0" class="register-title">
               <h1 align="center">Register for ROAR</h1>
               <p align="center">Enter your information to create an account.</p>
-            </div>
-            <Register @submit="handleParentSubmit($event)" />
-          </router-view>
         </div>
-        <div v-else>
-          <router-view name="registerStudent">
-            <div class="register-title">
-              <h1 align="center">Register your child</h1>
-              <p align="center">Enter your child's information to create their ROAR account.</p>
-            </div>
-            <div>
-              <!-- Iterate through the list of students -->
-              <div class="student-form">
-                <div class="student-form-border">
-                  <RegisterStudent @submit="handleStudentSubmit($event)" />
-                  <PvDialog v-model:visible="isDialogVisible" :header="dialogHeader" :style="{ width: '25rem' }" :position="position" :modal="true" :draggable="false">
-                    <!-- <h2>{{ dialogHeader }}</h2> -->
-                    <p>{{ dialogMessage }}</p>
-                    <PvButton @click="closeDialog">Close</PvButton>
-                  </PvDialog>
-                </div>
-              </div>
-            </div>
-          </router-view>
+        <div v-else class="register-title">
+            <PvButton class="w-6rem justify-start" @click="activeIndex=0"> ← Back </PvButton>
+            <h1 align="center">Register your child</h1>
+            <p align="center">Enter your child's information to create their ROAR account.</p>
         </div>
+        <div>
+          <KeepAlive>
+              <component :is="activeComp()" @submit="handleSubmit($event)" />
+          </KeepAlive>
+        </div>
+        <PvDialog v-model:visible="isDialogVisible" :header="dialogHeader" :style="{ width: '25rem' }" :position="position" :modal="true" :draggable="false">
+          <p>{{ dialogMessage }}</p>
+          <PvButton @click="closeDialog">Close</PvButton>
+        </PvDialog>
       </div>
     </section>
   </div>
@@ -59,6 +41,7 @@ import router from '../router';
 const authStore = useAuthStore();
 
 const activeIndex = ref(0); // Current active step
+// const activeComp = ref(Register);
 
 const parentInfo = ref(null);
 const studentInfo = ref(null);
@@ -73,7 +56,7 @@ const showDialog = () => {
 
 const closeDialog = () => {
   isDialogVisible.value = false;
-  router.push({ name: 'SignIn' });
+  router.push({ name: 'SignIn'});
 };
 
 async function handleParentSubmit(data) {
@@ -95,7 +78,28 @@ async function handleStudentSubmit(data) {
     dialogMessage.value = error.message;
     showDialog();
   }
+};
+
+async function handleSubmit(event) {
+  if(activeComp() == RegisterStudent) {
+    handleStudentSubmit(event);
+    
+  }
+  else{
+    handleParentSubmit(event);
+    activeIndex.value = 1;
+    activeComp();
+  }
 }
+
+function activeComp() {
+  if(activeIndex.value === 0) {
+    return Register;
+  }
+  else {
+    return RegisterStudent;
+  }
+};
 
 watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
   if (newParentInfo && newStudentInfo) {
