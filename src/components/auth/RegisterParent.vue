@@ -134,17 +134,11 @@
         @accepted="handleConsentAccept"
       />
       <div class="form-submit">
-        <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled" />
-        <div v-if="isDialogVisible">
-          <div class="dialog-overlay">
-            <!-- Dialog content -->
-            <div class="dialog-content">
-              <h2>Error!</h2>
-              <p>The email has been already used</p>
-              <PvButton @click="closeErrorDialog">Close</PvButton>
-            </div>
-          </div>
-        </div>
+        <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled"/>
+          <PvDialog v-model:visible="isDialogVisible" header="Error!" :style="{ width: '25rem' }" :position="position" :modal="true" :draggable="false">
+            <p>{{dialogMessage}}</p>
+            <PvButton @click="closeErrorDialog">Close</PvButton>
+          </PvDialog>
       </div>
     </form>
   </div>
@@ -163,6 +157,7 @@ import { ChallengeV3 } from 'vue-recaptcha';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const isCaptchaverified = ref(null);
+const dialogMessage = ref('');
 
 const isDialogVisible = ref(false);
 
@@ -227,6 +222,7 @@ const v$ = useVuelidate(rules, state);
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
   if (!isFormValid) {
+    dialogMessage.value = 'Please fill out all the required fields.';
     showErrorDialog();
     return;
   }
@@ -238,6 +234,7 @@ const validateRoarEmail = async () => {
   const validEmail = await roarfirekit.value.isEmailAvailable(state.ParentEmail);
   console.log('validEmail', validEmail);
   if (!validEmail) {
+    dialogMessage.value = 'This email address is already in use.';
     showErrorDialog();
     submitted.value = false;
     return;
