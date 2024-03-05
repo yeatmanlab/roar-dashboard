@@ -99,7 +99,7 @@ const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
 
 app.use(VueRecaptchaPlugin, {
-  v3SiteKey: '6Lf8ESUpAAAAAP6R4mi-4ZJO7aMGR6mppFV19YWW',
+  v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
 });
 
 initSentry(app);
@@ -111,7 +111,7 @@ app.use(pinia);
 app.use(router);
 app.use(VueGoogleMaps, {
   load: {
-    key: '6LefrGopAAAAADcrBVk9kAMxdTF3_0v7Ydc3UGUe',
+    key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
     libraries: 'places',
   },
 });
