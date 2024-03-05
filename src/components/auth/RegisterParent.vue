@@ -134,11 +134,18 @@
         @accepted="handleConsentAccept"
       />
       <div class="form-submit">
-        <PvButton type="submit" label="Next" class="submit-button" :disabled="isNextButtonDisabled"/>
-          <PvDialog v-model:visible="isDialogVisible" header="Error!" :style="{ width: '25rem' }" :position="position" :modal="true" :draggable="false">
-            <p>{{dialogMessage}}</p>
-            <PvButton @click="closeErrorDialog">Close</PvButton>
-          </PvDialog>
+        <PvButton type="submit" label="Next" class="submit-button z-5" :disabled="isNextButtonDisabled" />
+        <PvDialog
+          v-model:visible="isDialogVisible"
+          header="Error!"
+          :style="{ width: '25rem' }"
+          :position="position"
+          :modal="true"
+          :draggable="false"
+        >
+          <p>{{ dialogMessage }}</p>
+          <PvButton @click="closeErrorDialog">Close</PvButton>
+        </PvDialog>
       </div>
     </form>
   </div>

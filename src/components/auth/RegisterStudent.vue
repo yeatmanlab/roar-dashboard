@@ -272,7 +272,14 @@
     </div>
     <section class="form-submit">
       <PvButton type="submit" label="Submit" class="submit-button" @click.prevent="handleFormSubmit(!v$.$invalid)" />
-      <PvDialog v-model:visible="isDialogVisible" header="Error!" :style="{ width: '25rem' }" :position="position" :modal="true" :draggable="false">
+      <PvDialog
+        v-model:visible="isDialogVisible"
+        header="Error!"
+        :style="{ width: '25rem' }"
+        :position="position"
+        :modal="true"
+        :draggable="false"
+      >
         <p>{{ dialogMessage }}</p>
         <PvButton @click="closeErrorDialog">Close</PvButton>
       </PvDialog>
