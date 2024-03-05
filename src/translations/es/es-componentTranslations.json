@@ -15,7 +15,7 @@
     "passwordId": "contraseña",
     "passwordPlaceholder": "Contraseña",
     "pickPassword": "Elige una contraseña",
-    "signInWithEmailLinkPlaceHolder": "Presiona Go para iniciar sesión con un enlace de correo electrónico.",
+    "signInWithEmailLinkPlaceHolder": "Presiona Vamos para iniciar sesión con un link de correo electrónico.",
     "suggestions": "Sugerencias"
   },
   "cleverLanding": {
@@ -25,14 +25,14 @@
     "title": "Consentimiento"
   },
   "homeParticipant": {
-    "loadingAssignments": "Cargando asignaciones",
-    "selectAssignment": "Selecciona una asignación",
-    "noAssignments": "¡No tienes asignaciones!",
-    "contactAdministrator": "Por favor, contacta a tu administrador para que te agregue a una asignación."
+    "loadingAssignments": "Cargando actividades",
+    "selectAssignment": "Selecciona una actividad",
+    "noAssignments": "¡No tienes actividades!",
+    "contactAdministrator": "Por favor, contacta a tu administrador para que te agregue a una actividad."
   },
   "homeSelector": {
     "loading": "Cargando...",
-    "inactivityLogout": "Pronto será desconectado por motivos de seguridad. Haga clic en \"Continuar\" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",
+    "inactivityLogout": "Pronto será desconectado por motivos de seguridad. Haz clic en \"Continuar\" si desea continuar con su sesión. De lo contrario, se cerrará la sesión automáticamente en {timeLeft} segundos.",
     "inactivityLogoutAcceptLabel": "Continuar"
   },
   "gameTabs": {
