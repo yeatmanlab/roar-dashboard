@@ -97,7 +97,7 @@
             :field="col.field"
             :data-type="col.dataType"
             :sortable="col.sort !== false"
-            :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
+            :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'"
             :show-filter-operator="col.allowMultipleFilters === true"
             :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
             :show-add-button="col.allowMultipleFilters === true"
@@ -229,6 +229,13 @@
                 <PvDropdown
                   v-model="filterModel.value"
                   :options="['Green', 'Yellow', 'Pink']"
+                  style="margin-bottom: 0.5rem"
+                />
+              </div>
+              <div v-if="col.dataType === 'progress'">
+                <PvDropdown
+                  v-model="filterModel.value"
+                  :options="['Assigned', 'Started', 'Completed']"
                   style="margin-bottom: 0.5rem"
                 />
               </div>
@@ -372,7 +379,7 @@ function increasePadding() {
 }
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE'];
+const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE', 'PROGRESS'];
 let filters = {};
 let options = {};
 _forEach(computedColumns.value, (column) => {
@@ -395,6 +402,8 @@ _forEach(computedColumns.value, (column) => {
       if (scoredTasks.includes(column.field.split('.')[1])) {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
+    } else if (dataType === 'PROGRESS') {
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
     }
 
     if (_get(column, 'useMultiSelect')) {
@@ -595,10 +604,12 @@ const onFilter = (event) => {
   margin-top: 5px;
   margin-bottom: 5px;
 }
+
 button.p-button.p-component.softer {
   background: #f3adad;
   color: black;
 }
+
 button.p-column-filter-menu-button.p-link,
 g {
   color: white;
@@ -619,6 +630,7 @@ g {
   font-size: smaller;
   color: var(--surface-500);
 }
+
 .view-label2 {
   position: absolute;
   top: -15px;
@@ -640,18 +652,22 @@ button.p-column-filter-menu-button.p-link:hover {
   border-width: 0 0 3px 0;
   padding: 1px 1.5rem 2px 1.5rem;
 }
+
 .filter-content {
   width: 12rem;
 }
+
 .filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
   display: none;
 }
+
 .p-column-filter-matchmode-dropdown {
   /* Our current filtering queries do not support options other than equals
      for strings. To reduce confusion for end users, remove the dropdown
      offering different matchmodes */
   display: none;
 }
+
 .scrollable-container::-webkit-scrollbar {
   width: 10px;
 }

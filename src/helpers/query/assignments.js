@@ -124,11 +124,31 @@ export const getAssignmentsRequestBody = ({
       });
     }
 
-    if (!_isEmpty(orderBy)) {
-      requestBody.structuredQuery.orderBy = orderBy;
-    }
-
-    if (!_isEmpty(filter)) {
+    if (filter?.value === 'Completed') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `progress.${filter.taskId}` },
+          op: 'EQUAL',
+          value: { stringValue: 'completed' },
+        },
+      });
+    } else if (filter?.value === 'Started') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `progress.${filter.taskId}` },
+          op: 'EQUAL',
+          value: { stringValue: 'started' },
+        },
+      });
+    } else if (filter?.value === 'Assigned') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `progress.${filter.taskId}` },
+          op: 'EQUAL',
+          value: { stringValue: 'assigned' },
+        },
+      });
+    } else if (!_isEmpty(filter)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `userData.${filter.field}` },
@@ -146,6 +166,10 @@ export const getAssignmentsRequestBody = ({
         value: { timestampValue: currentDate },
       },
     };
+  }
+
+  if (!_isEmpty(orderBy)) {
+    requestBody.structuredQuery.orderBy = orderBy;
   }
 
   if (aggregationQuery) {
@@ -649,7 +673,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
     let userFilter = null;
     let orgFilter = null;
     let gradeFilter = null;
-    if (nonOrgFilter && nonOrgFilter.collection === 'users') {
+    if (nonOrgFilter && nonOrgFilter.collection === 'users' && nonOrgFilter.collection === 'assignments') {
       userFilter = nonOrgFilter;
     }
     if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
@@ -664,7 +688,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
       orgId: orgFilter ? null : orgId,
       orgArray: orgFilter,
       aggregationQuery: true,
-      filter: userFilter,
+      filter: userFilter || nonOrgFilter,
       grades: gradeFilter,
     });
     return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
@@ -921,7 +945,7 @@ export const assignmentPageFetcher = async (
       page: page.value,
       paginate: paginate,
       select: select,
-      filter: userFilter,
+      filter: userFilter || nonOrgFilter,
       grades: gradeFilter,
       orderBy: toRaw(orderBy),
     });
