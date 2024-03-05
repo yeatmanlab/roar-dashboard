@@ -48,7 +48,7 @@
             </template>
           </PvPassword>
           <div v-else-if="allowLink">
-            <PvPassword disabled :placeholder="$t('signInWithEmailLinkPlaceholder')" />
+            <PvPassword disabled :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')" />
           </div>
           <div v-else>
             <PvPassword
