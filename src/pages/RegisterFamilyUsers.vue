@@ -8,20 +8,35 @@
       </header>
       <div>
         <div v-if="activeIndex === 0" class="register-title">
-              <h1 align="center">Register for ROAR</h1>
-              <p align="center">Enter your information to create an account.</p>
+          <h1 align="center">Register for ROAR</h1>
+          <p align="center">Enter your information to create an account.</p>
         </div>
         <div v-else class="register-title">
-            <PvButton class="w-6rem justify-start" @click="activeIndex=0"> ← Back </PvButton>
-            <h1 align="center">Register your child</h1>
-            <p align="center">Enter your child's information to create their ROAR account.</p>
+          <PvButton class="w-6rem justify-start" @click="activeIndex = 0"> ← Back </PvButton>
+          <h1 align="center">Register your child</h1>
+          <p align="center">Enter your child's information to create their ROAR account.</p>
         </div>
         <div>
           <KeepAlive>
-              <component :is="activeComp()" @submit="handleSubmit($event)" />
+            <component :is="activeComp()" @submit="handleSubmit($event)" />
           </KeepAlive>
+          <div
+            v-if="isSuperAdmin"
+            class="flex flex-row justify-content-center align-content-center z-2 absolute ml-5"
+            style="margin-top: -5rem; margin-bottom: 4rem"
+          >
+            <PvCheckbox :model-value="isTestData" :binary="true" name="isTestDatalabel" @change="updateState" />
+            <label for="isTestDatalabel" class="ml-2">This is test data</label>
+          </div>
         </div>
-        <PvDialog v-model:visible="isDialogVisible" :header="dialogHeader" :style="{ width: '25rem' }" :position="position" :modal="true" :draggable="false">
+        <PvDialog
+          v-model:visible="isDialogVisible"
+          :header="dialogHeader"
+          :style="{ width: '25rem' }"
+          :position="position"
+          :modal="true"
+          :draggable="false"
+        >
           <p>{{ dialogMessage }}</p>
           <PvButton @click="closeDialog">Close</PvButton>
         </PvDialog>
@@ -34,14 +49,45 @@
 import Register from '../components/auth/RegisterParent.vue';
 import RegisterStudent from '../components/auth/RegisterStudent.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
-import { ref, onMounted, onBeforeUnmount, watch, toRaw } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
+import { useQuery } from '@tanstack/vue-query';
+import { storeToRefs } from 'pinia';
+import { fetchDocById } from '@/helpers/query/utils';
 import router from '../router';
 
 const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+const initialized = ref(false);
+let unsubscribe;
+
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+});
+
+// const claimsLoaded = computed(() => !isLoadingClaims.value);
+
+const { data: userClaims } = useQuery({
+  queryKey: ['userClaims', authStore.uid],
+  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
 const activeIndex = ref(0); // Current active step
-// const activeComp = ref(Register);
+const isTestData = ref(false);
 
 const parentInfo = ref(null);
 const studentInfo = ref(null);
@@ -56,7 +102,7 @@ const showDialog = () => {
 
 const closeDialog = () => {
   isDialogVisible.value = false;
-  router.push({ name: 'SignIn'});
+  router.push({ name: 'SignIn' });
 };
 
 async function handleParentSubmit(data) {
@@ -78,28 +124,30 @@ async function handleStudentSubmit(data) {
     dialogMessage.value = error.message;
     showDialog();
   }
-};
+}
 
 async function handleSubmit(event) {
-  if(activeComp() == RegisterStudent) {
+  if (activeComp() == RegisterStudent) {
     handleStudentSubmit(event);
-    
-  }
-  else{
+  } else {
     handleParentSubmit(event);
     activeIndex.value = 1;
     activeComp();
   }
 }
 
+function updateState() {
+  isTestData.value = !isTestData.value;
+  console.log(isTestData.value);
+}
+
 function activeComp() {
-  if(activeIndex.value === 0) {
+  if (activeIndex.value === 0) {
     return Register;
-  }
-  else {
+  } else {
     return RegisterStudent;
   }
-};
+}
 
 watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
   if (newParentInfo && newStudentInfo) {
@@ -135,7 +183,13 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         },
       };
     });
-    authStore.createNewFamily(rawParentInfo.ParentEmail, rawParentInfo.password, parentUserData, studentSendObject);
+    authStore.createNewFamily(
+      rawParentInfo.ParentEmail,
+      rawParentInfo.password,
+      parentUserData,
+      studentSendObject,
+      isTestData,
+    );
     console.log('firekit function called');
     dialogHeader.value = 'Success!';
     dialogMessage.value = 'Your family has been created!';
