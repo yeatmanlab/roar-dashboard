@@ -5,6 +5,12 @@
         <div class="signin-logo">
           <ROARLogoShort />
         </div>
+        <!-- <div class="flex mb-2 gap-2 justify-content-end"> -->
+            <!-- <PvButton @click="active = 0" rounded label="1" class="w-2rem h-2rem p-0" :outlined="active !== 0" /> -->
+            <!-- <PvButton @click="active = 1" rounded label="2" class="w-2rem h-2rem p-0" :outlined="active !== 1" /> -->
+            <!-- <PvButton @click="active = 2" rounded label="3" class="w-2rem h-2rem p-0" :outlined="active !== 2" /> -->
+        <!-- </div> -->
+        <!-- <PvSteps v-model:activeStep="active" :model="items" /> -->
       </header>
       <div>
         <div v-if="activeIndex === 0">
@@ -27,17 +33,11 @@
               <div class="student-form">
                 <div class="student-form-border">
                   <RegisterStudent @submit="handleStudentSubmit($event)" />
-                  <!-- PvDialog is now inside the block -->
-                  <div v-if="isDialogVisible">
-                    <div class="dialog-overlay">
-                      <!-- Dialog content -->
-                      <div class="dialog-content">
-                        <h2>{{ dialogHeader }}</h2>
-                        <p>{{ dialogMessage }}</p>
-                        <PvButton @click="closeDialog">Close</PvButton>
-                      </div>
-                    </div>
-                  </div>
+                  <PvDialog v-model:visible="isDialogVisible" :header="dialogHeader" :style="{ width: '25rem' }" :position="position" :modal="true" :draggable="false">
+                    <!-- <h2>{{ dialogHeader }}</h2> -->
+                    <p>{{ dialogMessage }}</p>
+                    <PvButton @click="closeDialog">Close</PvButton>
+                  </PvDialog>
                 </div>
               </div>
             </div>
