@@ -124,11 +124,31 @@ export const getAssignmentsRequestBody = ({
       });
     }
 
-    if (!_isEmpty(orderBy)) {
-      requestBody.structuredQuery.orderBy = orderBy;
-    }
-
-    if (!_isEmpty(filter)) {
+    if (filter?.value === 'Completed') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `progress.${filter.taskId}` },
+          op: 'EQUAL',
+          value: { stringValue: 'completed' },
+        },
+      });
+    } else if (filter?.value === 'Started') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `progress.${filter.taskId}` },
+          op: 'EQUAL',
+          value: { stringValue: 'started' },
+        },
+      });
+    } else if (filter?.value === 'Assigned') {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `progress.${filter.taskId}` },
+          op: 'EQUAL',
+          value: { stringValue: 'assigned' },
+        },
+      });
+    } else if (!_isEmpty(filter)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `userData.${filter.field}` },
@@ -146,6 +166,10 @@ export const getAssignmentsRequestBody = ({
         value: { timestampValue: currentDate },
       },
     };
+  }
+
+  if (!_isEmpty(orderBy)) {
+    requestBody.structuredQuery.orderBy = orderBy;
   }
 
   if (aggregationQuery) {
@@ -334,82 +358,80 @@ export const getFilteredScoresRequestBody = ({
     });
   }
   if (filter) {
-    if (filter.value === 'Green' || filter.value === 'Yellow' || filter.value === 'Red') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        compositeFilter: {
-          op: 'OR',
-          filters: [
-            {
-              compositeFilter: {
-                op: 'AND',
-                filters: [
-                  {
-                    compositeFilter: {
-                      op: 'OR',
-                      filters: [
-                        {
-                          fieldFilter: {
-                            field: { fieldPath: 'userData.schoolLevel' },
-                            op: 'EQUAL',
-                            value: { stringValue: 'elementary' },
-                          },
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      compositeFilter: {
+        op: 'OR',
+        filters: [
+          {
+            compositeFilter: {
+              op: 'AND',
+              filters: [
+                {
+                  compositeFilter: {
+                    op: 'OR',
+                    filters: [
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'elementary' },
                         },
-                        {
-                          fieldFilter: {
-                            field: { fieldPath: 'userData.schoolLevel' },
-                            op: 'EQUAL',
-                            value: { stringValue: 'early-childhood' },
-                          },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'early-childhood' },
                         },
-                      ],
-                    },
+                      },
+                    ],
                   },
-                  // Add filter inequalities here
-                  // Inequalities that match elementary school students
-                ],
-              },
+                },
+                // Add filter inequalities here
+                // Inequalities that match elementary school students
+              ],
             },
-            {
-              compositeFilter: {
-                op: 'AND',
-                filters: [
-                  {
-                    compositeFilter: {
-                      op: 'OR',
-                      filters: [
-                        {
-                          fieldFilter: {
-                            field: { fieldPath: 'userData.schoolLevel' },
-                            op: 'EQUAL',
-                            value: { stringValue: 'middle' },
-                          },
+          },
+          {
+            compositeFilter: {
+              op: 'AND',
+              filters: [
+                {
+                  compositeFilter: {
+                    op: 'OR',
+                    filters: [
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'middle' },
                         },
-                        {
-                          fieldFilter: {
-                            field: { fieldPath: 'userData.schoolLevel' },
-                            op: 'EQUAL',
-                            value: { stringValue: 'high' },
-                          },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'EQUAL',
+                          value: { stringValue: 'high' },
                         },
-                        {
-                          fieldFilter: {
-                            field: { fieldPath: 'userData.schoolLevel' },
-                            op: 'Equal',
-                            value: { stringValue: 'postsecondary' },
-                          },
+                      },
+                      {
+                        fieldFilter: {
+                          field: { fieldPath: 'userData.schoolLevel' },
+                          op: 'Equal',
+                          value: { stringValue: 'postsecondary' },
                         },
-                      ],
-                    },
+                      },
+                    ],
                   },
-                  // Add filter inequalities here
-                  // Inequalities that match middle and high school students
-                ],
-              },
+                },
+                // Add filter inequalities here
+                // Inequalities that match middle and high school students
+              ],
             },
-          ],
-        },
-      });
-    }
+          },
+        ],
+      },
+    });
     if (filter.value === 'Green') {
       // If the filter requests average students, define filters in which
       // elementary school students have the inequality percentileScore >= 50
@@ -490,31 +512,6 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
-    }
-    if (filter.value === 'Completed') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: 'completed' },
-          op: 'EQUAL',
-          value: { booleanValue: true },
-        },
-      });
-    } else if (filter.value === 'Started') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: 'completed' },
-          op: 'EQUAL',
-          value: { booleanValue: false },
-        },
-      });
-    } else if (filter.value === 'Assigned') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: 'completed' },
-          op: 'EQUAL',
-          value: { nullValue: null },
-        },
-      });
     }
     if (!_isEmpty(grades)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
@@ -676,7 +673,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
     let userFilter = null;
     let orgFilter = null;
     let gradeFilter = null;
-    if (nonOrgFilter && nonOrgFilter.collection === 'users') {
+    if (nonOrgFilter && nonOrgFilter.collection === 'users' && nonOrgFilter.collection === 'assignments') {
       userFilter = nonOrgFilter;
     }
     if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
@@ -691,7 +688,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
       orgId: orgFilter ? null : orgId,
       orgArray: orgFilter,
       aggregationQuery: true,
-      filter: userFilter,
+      filter: userFilter || nonOrgFilter,
       grades: gradeFilter,
     });
     return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
@@ -948,7 +945,7 @@ export const assignmentPageFetcher = async (
       page: page.value,
       paginate: paginate,
       select: select,
-      filter: userFilter,
+      filter: userFilter || nonOrgFilter,
       grades: gradeFilter,
       orderBy: toRaw(orderBy),
     });

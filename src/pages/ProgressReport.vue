@@ -436,9 +436,9 @@ const onFilter = (event) => {
         const taskId = path[1];
         filters.push({
           ...constraint,
-          collection: 'scores',
+          collection: 'assignments',
           taskId: taskId,
-          field: 'completed',
+          field: 'progress',
         });
       }
     }

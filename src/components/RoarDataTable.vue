@@ -235,7 +235,7 @@
               <div v-if="col.dataType === 'progress'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Completed', 'Started']"
+                  :options="['Assigned', 'Started', 'Completed']"
                   style="margin-bottom: 0.5rem"
                 />
               </div>
