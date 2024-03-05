@@ -203,6 +203,28 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.assessmentPid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.grade",
           "order": "ASCENDING"
         }
@@ -297,6 +319,28 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.name.first",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.name.last",
           "order": "ASCENDING"
         }
@@ -333,6 +377,28 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.name.last",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.username",
           "order": "ASCENDING"
         }
@@ -353,6 +419,28 @@
         {
           "fieldPath": "userData.username",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.classes",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.username",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -517,6 +605,76 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.assessmentPid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.assessmentPid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readOrgs.schools",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.assessmentPid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readOrgs.schools",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.grade",
           "order": "ASCENDING"
         }
@@ -571,6 +729,76 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "user.name.first",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readOrgs.schools",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "user.name.first",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readOrgs.schools",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "user.name.first",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.name.last",
           "order": "ASCENDING"
         }
@@ -607,6 +835,76 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.name.last",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.name.last",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readOrgs.schools",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.name.last",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readOrgs.schools",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.username",
           "order": "ASCENDING"
         }
@@ -627,6 +925,76 @@
         {
           "fieldPath": "userData.username",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.username",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.username",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readOrgs.schools",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.username",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readOrgs.schools",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -729,6 +1097,46 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.assessmentPid",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.assessmentPid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.grade",
           "order": "ASCENDING"
         }
@@ -823,6 +1231,28 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.name.first",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.name.last",
           "order": "ASCENDING"
         }
@@ -879,6 +1309,28 @@
         {
           "fieldPath": "userData.username",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.groups",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.username",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -945,6 +1397,28 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.assessmentPid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.grade",
           "order": "ASCENDING"
         }
@@ -1039,6 +1513,28 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.name.first",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.name.last",
           "order": "ASCENDING"
         }
@@ -1095,6 +1591,28 @@
         {
           "fieldPath": "userData.username",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.schools",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.username",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
         }
       ]
     },
