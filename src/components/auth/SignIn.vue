@@ -16,9 +16,11 @@
       </div>
       <div class="field mt-4 mb-5">
         <div>
+          <!-- Email is currently being evaluated (loading state) -->
           <span v-if="evaluatingEmail">
             <PvSkeleton height="2.75rem" />
           </span>
+          <!-- Email is entered, Password is desired -->
           <div v-else-if="allowPassword && allowLink">
             {{ $t('authSignIn.bothAllowed') }}
             <PvPassword
@@ -34,6 +36,7 @@
             />
             <small @click="allowPassword = false">Send me an email instead</small>
           </div>
+          <!-- Username is entered, Password is desired -->
           <PvPassword
             v-else-if="allowPassword"
             :id="$t('authSignIn.passwordId')"
@@ -61,10 +64,12 @@
               </ul>
             </template>
           </PvPassword>
+          <!-- Email is entered, MagicLink is desired login -->
           <div v-else-if="allowLink">
             <PvPassword disabled :placeholder="$t('authSignIn.signInWithEmailLinkPlaceholder')" />
             <small @click="allowPassword = true">Sign in using Password instead</small>
           </div>
+          <!-- Email is entered, however it is an invalid email (prevent login) -->
           <div v-else>
             <small>Invalid email!</small>
           </div>
