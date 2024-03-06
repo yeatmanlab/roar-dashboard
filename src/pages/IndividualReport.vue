@@ -6,9 +6,9 @@
 
   <div
     v-else
+    id="individual-report-export"
     ref="IndividualReportDownload"
     class="container flex flex-column align-items-around"
-    id="individual-report-export"
   >
     <div class="flex flex-column md:flex-row align-items-center my-2">
       <div class="student-name text-center md:text-left my-3">
@@ -234,7 +234,7 @@ const exportToPdf = async () => {
   // Add At a Glance Charts and report header to the PDF
   const individualReport = document.getElementById('individual-report-export');
   if (individualReport !== null) {
-    yCounter = await addElementToPdf(individualReport, doc, yCounter);
+    await addElementToPdf(individualReport, doc, yCounter);
   }
 
   doc.save(`IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`),
