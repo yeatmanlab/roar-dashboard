@@ -133,7 +133,7 @@
         consent-type="consent"
         @accepted="handleConsentAccept"
       />
-      <div class="form-submit">
+      <div class="form-submit2">
         <PvButton type="submit" label="Next" class="submit-button z-5" :disabled="isNextButtonDisabled" />
         <PvDialog
           v-model:visible="isDialogVisible"
@@ -273,14 +273,14 @@ const isNextButtonDisabled = computed(() => {
 
 <style scoped>
 .submit-button {
-  margin: auto;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   display: flex;
-  background-color: #e5e5e5;
-  color: black;
+  background-color: var(--primary-color);
+  color: white;
   border: none;
   width: 11.75rem;
+  justify-content: end;
 }
 .submit-button:hover {
   background-color: #b7b5b5;
@@ -295,6 +295,12 @@ const isNextButtonDisabled = computed(() => {
 }
 label {
   width: 100%;
+}
+.form-submit2 {
+  margin-top: 2rem;
+  justify-content: end;
+  display: flex;
+  margin-right: -2rem;
 }
 
 @media screen and (max-width: 580px) {
