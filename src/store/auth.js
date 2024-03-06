@@ -180,8 +180,8 @@ export const useAuthStore = () => {
       async syncCleverOrgs() {
         return this.roarfirekit.syncCleverOrgs(false);
       },
-      async createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students) {
-        return this.roarfirekit.createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students);
+      async createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData = false) {
+        return this.roarfirekit.createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData);
       },
       // Used for requesting access when user doesn't have access to page
       // TODO: punt- thinking about moving to a ticket system instead of this solution.
