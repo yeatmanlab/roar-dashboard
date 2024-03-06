@@ -12,7 +12,6 @@
           <p align="center">Enter your information to create an account.</p>
         </div>
         <div v-else class="register-title">
-          <PvButton class="w-6rem justify-start" @click="activeIndex = 0"> ← Back </PvButton>
           <h1 align="center">Register your child</h1>
           <p align="center">Enter your child's information to create their ROAR account.</p>
         </div>
@@ -27,6 +26,9 @@
           >
             <PvCheckbox :model-value="isTestData" :binary="true" name="isTestDatalabel" @change="updateState" />
             <label for="isTestDatalabel" class="ml-2">This is test data</label>
+          </div>
+          <div v-if="activeIndex === 1">
+            <PvButton class="justify-start z-1 hover:surface-300 hover:text-900 border-none" style="margin-top: -3.2rem; width: 11rem;" @click="activeIndex = 0"><i class="pi pi-arrow-left mr-2"></i> Back </PvButton>
           </div>
         </div>
         <PvDialog
