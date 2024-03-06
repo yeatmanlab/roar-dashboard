@@ -298,7 +298,7 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const dialogMessage = ref('');
 
-const props = defineProps({
+defineProps({
   isRegistering: { type: Boolean, default: true },
 });
 
@@ -313,7 +313,6 @@ const closeErrorDialog = () => {
   isDialogVisible.value = false;
 };
 
-console.log(props);
 // const noActivationCodeRef = ref(false);
 const yearOnlyCheckRef = ref(false);
 
@@ -416,11 +415,9 @@ function isPasswordMismatch(index) {
 const v$ = useVuelidate(rules, state);
 
 const handleFormSubmit = async (isFormValid) => {
-  console.log(isFormValid);
   submitted.value = true;
 
   if (!isFormValid) {
-    console.log('it is not valid');
     dialogMessage.value = 'Please fill out all the required fields.';
     showErrorDialog();
     submitted.value = false;
@@ -429,7 +426,6 @@ const handleFormSubmit = async (isFormValid) => {
 
   if (await validateRoarUsername()) {
     // format username as an email
-    console.log('I entered a the if');
     if (isFormValid) {
       const computedStudents = state.students.map((student) => {
         const { studentUsername, ...studentData } = student;
@@ -438,7 +434,6 @@ const handleFormSubmit = async (isFormValid) => {
           ...studentData,
         };
       });
-      console.log(computedStudents);
       emit('submit', computedStudents);
     }
   }
