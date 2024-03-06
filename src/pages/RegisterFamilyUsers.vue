@@ -28,7 +28,12 @@
             <label for="isTestDatalabel" class="ml-2">This is test data</label>
           </div>
           <div v-if="activeIndex === 1">
-            <PvButton class="justify-start z-1 hover:surface-300 hover:text-900 border-none" style="margin-top: -3.2rem; width: 11rem;" @click="activeIndex = 0"><i class="pi pi-arrow-left mr-2"></i> Back </PvButton>
+            <PvButton
+              class="justify-start z-1 hover:surface-300 hover:text-900 border-none"
+              style="margin-top: -3.2rem; width: 11rem"
+              @click="activeIndex = 0"
+              ><i class="pi pi-arrow-left mr-2"></i> Back
+            </PvButton>
           </div>
         </div>
         <PvDialog
