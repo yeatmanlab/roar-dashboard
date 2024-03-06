@@ -999,7 +999,7 @@ const columns = computed(() => {
     link: true,
     routeName: 'StudentReport',
     routeTooltip: 'Student Score Report',
-    routeLabel: 'Individual Report',
+    routeLabel: 'Report',
     routeIcon: 'pi pi-user',
     sort: false,
   });

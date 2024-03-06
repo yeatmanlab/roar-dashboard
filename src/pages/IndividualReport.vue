@@ -106,6 +106,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../store/auth';
+import { taskDisplayNames } from '@/helpers/reports';
 import IndividualScoreReportTask from '../components/reports/IndividualScoreReportTask.vue';
 import AppSpinner from '../components/AppSpinner.vue';
 import { getGrade } from '@bdelab/roar-utils';
@@ -246,7 +247,16 @@ const tasks = computed(() => taskData?.value?.map((assignment) => assignment.tas
 
 const formattedTasks = computed(() => {
   return (
-    tasks?.value?.map((taskId) => (extendedTaskTitle[taskId] ? extendedTaskTitle[taskId] : taskId)).join(', ') + '.'
+    tasks?.value
+      ?.map((taskId) => (extendedTaskTitle[taskId] ? extendedTaskTitle[taskId] : taskId))
+      .sort((a, b) => {
+        if (Object.keys(taskDisplayNames).includes(a.taskId) && Object.keys(taskDisplayNames).includes(b.taskId)) {
+          return taskDisplayNames[a.taskId].order - taskDisplayNames[b.taskId].order;
+        } else {
+          return -1;
+        }
+      })
+      .join(', ') + '.'
   );
 });
 

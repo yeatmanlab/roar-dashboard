@@ -20,7 +20,7 @@
     </div>
 
     <div v-else class="flex flex-column align-items-center mb-1 p-1 score-card">
-      <div class="flex flex-column md:flex-row align-items-center">
+      <div v-if="grade < 6" class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ extendedTaskData.extendedTitle[task.taskId] }}</div>
           <div class="text-xs uppercase font-thin mb-2 text-gray-400">
@@ -48,13 +48,42 @@
         <!-- <p v-else class="score">{{ Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]) }}%</p> -->
       </div>
 
+      <div v-else class="flex flex-column md:flex-row align-items-center">
+        <div class="flex flex-column justify-content-center align-items-center mt-2">
+          <div class="header-task-name">{{ extendedTaskData.extendedTitle[task.taskId] }}</div>
+          <div class="text-xs uppercase font-thin mb-2 text-gray-400">
+            <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Standard Score</div>
+            <div v-else class="scoring-type">Raw Score</div>
+          </div>
+          <!-- <PvChart v-if="rawOnlyTasks.includes(task.taskId)" type="doughnut" :data="doughnutChartData(getRawScore(task.taskId), task.taskId)" /> 
+          <PvChart v-else type="doughnut" :data="doughnutChartData(task.scores?.[getPercentileScoreKey(task.taskId, grade)], task.taskId)" />  -->
+          <PvKnob
+            v-if="rawOnlyTasks.includes(task.taskId)"
+            :model-value="getRawScore(task.taskId)"
+            size="160"
+            value-color="gray"
+            range-color="gray"
+          />
+          <PvKnob
+            v-else
+            :model-value="Math.round(task.scores?.sprStandardScore)"
+            size="160"
+            :value-color="getColorByPercentile(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
+            :min="0"
+            :max="153"
+          />
+        </div>
+        <!-- <p v-if="rawOnlyTasks.includes(task.taskId)" class="score">{{ getRawScore(task.taskId) }}</p> -->
+        <!-- <p v-else class="score">{{ Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]) }}%</p> -->
+      </div>
+
       <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
         {{ studentFirstName }} achieved a composite score of
         <strong>{{ getRawScore(task.taskId) }}</strong>
         in {{ extendedTaskData.extendedName[task.taskId] }}. {{ extendedTaskData.extendedDescription[task.taskId] }}.
       </div>
 
-      <div v-else class="px-4 py-2 score-description">
+      <div v-else-if="grade < 6" class="px-4 py-2 score-description">
         {{ studentFirstName }} scored in the
         <strong :style="{ color: supportColor }"
           >{{
@@ -62,6 +91,15 @@
           }}
           percentile</strong
         >, which indicates they
+        <strong :style="{ color: supportColor }">{{
+          getSupportLevel(task.scores?.[getPercentileScoreKey(task.taskId, grade)])
+        }}</strong>
+        in {{ extendedTaskData.extendedName[task.taskId] }}. {{ extendedTaskData.extendedDescription[task.taskId] }}.
+      </div>
+      <div v-else class="px-4 py-2 score-description">
+        {{ studentFirstName }} scored a standard score of
+        <strong>{{ Math.round(task.scores?.sprStandardScore) }}</strong>
+        which indicates they
         <strong :style="{ color: supportColor }">{{
           getSupportLevel(task.scores?.[getPercentileScoreKey(task.taskId, grade)])
         }}</strong>
@@ -235,51 +273,6 @@ function getColorByPercentile(percentile) {
   return;
 }
 
-// const doughnutChartData = (scoreKey, taskId) => {
-
-//   const docStyle = getComputedStyle(document.documentElement);
-//   let score = Math.round(scoreKey);
-//   let remainder = 100 - score;
-
-//   if (getSupportLevel(score) === 'are At or Above Average') {
-//     supportColor = docStyle.getPropertyValue('--green-500');
-//     remainderColor = docStyle.getPropertyValue('--green-800');
-//   } else if (getSupportLevel(score) === 'Need Some Support') {
-//     supportColor = docStyle.getPropertyValue('--yellow-500');
-//     remainderColor = docStyle.getPropertyValue('--yellow-800');
-//   } else {
-//     supportColor = docStyle.getPropertyValue('--red-500');
-//     remainderColor = docStyle.getPropertyValue('--red-800');
-//   }
-
-//   if (rawOnlyTasks.includes(taskId)) {
-//     return {
-//       labels: ['Raw Score'],
-//       datasets: [
-//         {
-//           data: [score],
-//           backgroundColor: [
-//             "dodgerblue", "lightblue",
-//           ],
-//           // hoverBackgroundColor: ['green', docStyle.getPropertyValue('--surface-d')]
-//         },
-//       ],
-//     };
-//   }
-
-//   return {
-//     labels: ['Percentile'],
-//     datasets: [
-//       {
-//         data: [score, remainder],
-//         backgroundColor: [
-//           supportColor, remainderColor,
-//         ],
-//       },
-//     ],
-//   };
-// };
-
 const getPercentileScoreKey = (taskId, grade) => {
   if (taskId === 'swr' || taskId === 'swr-es') {
     if (getGrade(grade) < 6) {
@@ -303,6 +296,30 @@ const getPercentileScoreKey = (taskId, grade) => {
     }
   }
 };
+
+// const getStandardScoreKey = (taskId, grade) => {
+//   if (taskId === 'swr' || taskId === 'swr-es') {
+//     if (getGrade(grade) < 6) {
+//       return 'standardScore';
+//     } else {
+//       return 'sprStandardScore';
+//     }
+//   }
+//   if (taskId === 'pa') {
+//     if (getGrade(grade) < 6) {
+//       return 'standardScore';
+//     } else {
+//       return 'sprStandardScore';
+//     }
+//   }
+//   if (taskId === 'sre') {
+//     if (getGrade(grade) < 6) {
+//       return 'tosrecSS';
+//     } else {
+//       return 'sprStandardScore';
+//     }
+//   }
+// };
 
 const getRawScore = (taskId) => {
   const task = props.rawTaskData.find((task) => task.taskId === taskId);
