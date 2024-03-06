@@ -10,13 +10,7 @@ describe('Testing playthrough of SWR as a participant under a 2G Mobile connecti
     cy.wait(0.5 * timeout);
     cy.visit('/');
 
-    cy.get('.p-dropdown-trigger', { timeout: 6 * timeout })
-      .should('be.visible')
-      .click();
-    cy.get('.p-dropdown-item', { timeout: 6 * timeout })
-      .contains(Cypress.env('testRoarAppsAdministration'))
-      .should('be.visible')
-      .click();
+    cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
     cy.get('.p-tabview', { timeout: 6 * timeout }).contains('ROAR - Word');
     cy.visit(`/game/swr`);
