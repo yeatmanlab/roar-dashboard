@@ -66,11 +66,7 @@
             <small @click="allowPassword = true">Sign in using Password instead</small>
           </div>
           <div v-else>
-            <PvPassword
-              disabled
-              class="p-invalid text-red-600"
-              :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
-            />
+            <small>Invalid email!</small>
           </div>
         </div>
       </div>
