@@ -176,11 +176,9 @@ const closeErrorDialog = () => {
   isDialogVisible.value = false;
 };
 
-const props = defineProps({
+defineProps({
   isRegistering: { type: Boolean, default: true },
 });
-
-console.log(props);
 
 const emit = defineEmits(['submit']);
 
@@ -237,9 +235,7 @@ const handleFormSubmit = (isFormValid) => {
 };
 
 const validateRoarEmail = async () => {
-  console.log('validateRoarEmail');
   const validEmail = await roarfirekit.value.isEmailAvailable(state.ParentEmail);
-  console.log('validEmail', validEmail);
   if (!validEmail) {
     dialogMessage.value = 'This email address is already in use.';
     showErrorDialog();

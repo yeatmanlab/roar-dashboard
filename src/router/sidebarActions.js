@@ -42,7 +42,7 @@ export const sidebarActionOptions = [
     requiresSuperAdmin: true,
   },
   {
-    title: 'Register New Parent',
+    title: 'Register New Family',
     icon: 'pi pi-pencil',
     buttonLink: { name: 'Register' },
     requiresSuperAdmin: true,

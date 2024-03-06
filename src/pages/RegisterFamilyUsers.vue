@@ -145,7 +145,6 @@ async function handleSubmit(event) {
 
 function updateState() {
   isTestData.value = !isTestData.value;
-  console.log(isTestData.value);
 }
 
 function activeComp() {
@@ -160,7 +159,6 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
   if (newParentInfo && newStudentInfo) {
     const rawParentInfo = toRaw(newParentInfo);
     const rawStudentInfo = toRaw(newStudentInfo);
-    console.log('both student and parent info present');
     const parentUserData = {
       name: {
         first: rawParentInfo.firstName,
@@ -197,7 +195,6 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
       studentSendObject,
       isTestData.value,
     );
-    console.log('firekit function called');
     dialogHeader.value = 'Success!';
     dialogMessage.value = 'Your family has been created!';
     showDialog();
