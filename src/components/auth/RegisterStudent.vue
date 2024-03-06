@@ -270,7 +270,7 @@
     <div class="form-section-button2">
       <PvButton class="p-button p-component" @click="addStudent()"> Add another student </PvButton>
     </div>
-    <section class="form-submit">
+    <section class="flex mt-8 justify-content-end">
       <PvButton type="submit" label="Submit" class="submit-button" @click.prevent="handleFormSubmit(!v$.$invalid)" />
       <PvDialog
         v-model:visible="isDialogVisible"
@@ -591,7 +591,6 @@ const validateRoarUsername = async () => {
   font-size: 26px;
 }
 .submit-button {
-  margin: auto;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   display: flex;
@@ -599,6 +598,7 @@ const validateRoarUsername = async () => {
   color: white;
   border: none;
   width: 11.75rem;
+  justify-content: end;
 }
 .submit-button:hover {
   background-color: #b7b5b5;
