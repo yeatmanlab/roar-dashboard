@@ -18,6 +18,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 
 const props = defineProps({
   taskId: { type: String, required: true, default: 'fluency' },
+  language: { type: String, required: true, default: 'en' },
 });
 
 const taskId = props.taskId;
@@ -79,6 +80,7 @@ async function startTask() {
     grade: _get(userData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
+    language: props.language,
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams };
