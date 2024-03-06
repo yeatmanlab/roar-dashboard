@@ -15,7 +15,7 @@
           <h1 align="center">Register your child</h1>
           <p align="center">Enter your child's information to create their ROAR account.</p>
         </div>
-        <div>
+        <div v-if="spinner === false">
           <KeepAlive>
             <component :is="activeComp()" @submit="handleSubmit($event)" />
           </KeepAlive>
@@ -35,6 +35,10 @@
               ><i class="pi pi-arrow-left mr-2"></i> Back
             </PvButton>
           </div>
+        </div>
+        <div v-else class="loading-container flex text-center">
+          <AppSpinner style="margin-bottom: 1rem" />
+          <span class="flex text-center">Creating Family</span>
         </div>
         <PvDialog
           v-model:visible="isDialogVisible"
@@ -66,6 +70,7 @@ import router from '../router';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
+const spinner = ref(false);
 let unsubscribe;
 
 const init = () => {
@@ -157,6 +162,7 @@ function activeComp() {
 
 watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
   if (newParentInfo && newStudentInfo) {
+    spinner.value = true;
     const rawParentInfo = toRaw(newParentInfo);
     const rawStudentInfo = toRaw(newStudentInfo);
     const parentUserData = {
@@ -188,16 +194,20 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         },
       };
     });
-    authStore.createNewFamily(
-      rawParentInfo.ParentEmail,
-      rawParentInfo.password,
-      parentUserData,
-      studentSendObject,
-      isTestData.value,
-    );
-    dialogHeader.value = 'Success!';
-    dialogMessage.value = 'Your family has been created!';
-    showDialog();
+    authStore
+      .createNewFamily(
+        rawParentInfo.ParentEmail,
+        rawParentInfo.password,
+        parentUserData,
+        studentSendObject,
+        isTestData.value,
+      )
+      .then(() => {
+        spinner.value = false;
+        dialogHeader.value = 'Success!';
+        dialogMessage.value = 'Your family has been created!';
+        showDialog();
+      });
   }
 });
 
