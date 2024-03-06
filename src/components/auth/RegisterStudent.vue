@@ -116,10 +116,10 @@
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
-              <pvCalendar v-model="student.dob" view="date" date-format="mm/dd/yy" show-icon />
+              <PvCalendar v-model="student.dob" :max-date="maxDoB" view="date" date-format="mm/dd/yy" show-icon />
             </div>
             <div v-else>
-              <PvCalendar v-model="student.dob" view="year" date-format="yy" show-icon />
+              <PvCalendar v-model="student.dob" :max-date="maxDoB" view="year" date-format="yy" show-icon />
             </div>
             <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
               v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
@@ -297,6 +297,10 @@ import { storeToRefs } from 'pinia';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const dialogMessage = ref('');
+
+const today = new Date();
+today.setFullYear(today.getFullYear() - 2);
+const maxDoB = ref(today);
 
 defineProps({
   isRegistering: { type: Boolean, default: true },
