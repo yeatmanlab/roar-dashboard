@@ -111,6 +111,8 @@ async function checkConsent() {
 const router = useRouter();
 
 onMounted(async () => {
+  console.log('hit home selector mounted');
+
   if (requireRefresh.value) {
     requireRefresh.value = false;
     router.go(0);

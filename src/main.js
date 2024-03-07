@@ -4,7 +4,7 @@ import { createHead } from '@vueuse/head';
 import { initSentry } from '@/sentry';
 import router from './router/index.js';
 import App from './App.vue';
-import { surveyPlugin } from 'survey-vue3-ui'
+import { surveyPlugin } from 'survey-vue3-ui';
 
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import TextClamp from 'vue3-text-clamp';
@@ -98,7 +98,7 @@ const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
 
-initSentry(app)
+initSentry(app);
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);

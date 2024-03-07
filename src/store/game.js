@@ -20,7 +20,7 @@ export const useGameStore = () => {
       },
       setSurveyCompleted() {
         this.isSurveyCompleted = true;
-      }
+      },
     },
     persist: {
       storage: sessionStorage,

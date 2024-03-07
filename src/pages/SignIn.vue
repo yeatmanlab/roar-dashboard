@@ -8,6 +8,8 @@
         <div class="signin-logo">
           <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
           <ROARLogoShort v-else />
+          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
+          <ROARLogoShort v-else />
         </div>
       </header>
       <h1>{{ $t('pageSignIn.welcome') }}</h1>
@@ -125,6 +127,8 @@ const authWithEmail = (state) => {
     if (!creds.email.includes('@')) {
       creds.email = `${creds.email}@roar-auth.com`;
     }
+
+    console.log('Authing with email');
 
     authStore
       .logInWithEmailAndPassword(creds)

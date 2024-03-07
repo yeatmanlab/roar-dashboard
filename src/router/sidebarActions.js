@@ -6,6 +6,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: false,
     requiresAdmin: false,
     project: 'ALL',
+    project: 'ALL',
   },
   {
     title: 'List organizations',
@@ -13,6 +14,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
     requiresAdmin: false,
+    project: 'ALL',
     project: 'ALL',
   },
   {
@@ -22,6 +24,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
+    project: 'ALL',
   },
   {
     title: 'Register students',
@@ -30,12 +33,14 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ROAR',
+    project: 'ROAR',
   },
   {
     title: 'Register administrator',
     icon: 'pi pi-user-plus',
     buttonLink: { name: 'CreateAdministrator' },
     requiresSuperAdmin: true,
+    project: 'ALL',
     project: 'ALL',
   },
   {
@@ -45,6 +50,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
+    project: 'ALL',
   },
   {
     title: 'Register Task',
@@ -52,6 +58,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'RegisterGame' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
+    project: 'ALL',
     project: 'ALL',
   },
   {
@@ -61,6 +68,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'LEVANTE',
+    project: 'LEVANTE',
   },
 ];
 
@@ -69,6 +77,7 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, inclu
   if (import.meta.env.MODE === 'LEVANTE') {
     return sidebarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {
+        if ((action.requiresSuperAdmin && !isSuperAdmin) || (action.requiresAdmin && !isAdmin)) {
         if ((action.requiresSuperAdmin && !isSuperAdmin) || (action.requiresAdmin && !isAdmin)) {
           return false;
         }
@@ -90,6 +99,7 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, inclu
       }
       return true;
     });
+
 
     return actionsWithHomeLink;
   }

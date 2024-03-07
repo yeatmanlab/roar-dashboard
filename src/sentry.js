@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/vue'
+import * as Sentry from '@sentry/vue';
 import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
 
 const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
