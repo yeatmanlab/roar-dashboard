@@ -6,6 +6,10 @@
 
         <PvDivider />
 
+        <div class="card flex justify-content-center">
+          <EditTaskDialog :visible="visible" :assessment="assessment" />
+        </div>
+
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
@@ -45,9 +49,6 @@
 
         <OrgPicker @selection="selection($event)" />
 
-        <TaskPicker :tasks="variantsByTaskId" />
-        {{ variantsByTaskId[0] }}
-
         <PvPanel class="mt-3" header="Select assessments for this administration">
           <template #icons>
             <div class="flex flex-row align-items-center justify-content-end">
@@ -74,7 +75,9 @@
             }"
           >
             <template #sourceheader>Available</template>
+
             <template #targetheader>Selected</template>
+
             <template #item="slotProps">
               <div class="flex flex-wrap p-2 align-items-center gap-3">
                 <img
@@ -126,7 +129,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, toRaw, watch, computed } from 'vue';
+import { onMounted, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -136,14 +139,13 @@ import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
-import _groupBy from 'lodash/groupBy';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import AppSpinner from '@/components/AppSpinner.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { variantsFetcher } from '@/helpers/query/tasks';
-import TaskPicker from './TaskPicker.vue';
+import EditTaskDialog from './tasks/EditTaskDialog.vue';
 
 const router = useRouter();
 const toast = useToast();
@@ -160,10 +162,6 @@ const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const variantsByTaskId = computed(() => {
-  return _groupBy(allVariants.value, 'task.id');
-});
-
 //      +---------------------------------+
 // -----| Form state and validation rules |-----
 //      +---------------------------------+
@@ -177,8 +175,6 @@ const state = reactive({
   groups: [],
   families: [],
 });
-
-const selectedAssessments = ref([]);
 
 const datesNotNull = (value) => {
   return value[0] && value[1];
@@ -224,6 +220,25 @@ const toggle = (event, id) => {
 };
 
 const assessments = ref([[], []]);
+const assessment = ref({
+  id: '07e91CO5Nn9WHNsUz4qK',
+  variant: {
+    name: 'Same Different Selection',
+    params: { fromDashboard: true, taskName: 'same-different-selection' },
+    lastUpdated: '2024-01-31T00:48:08.810Z',
+    id: '07e91CO5Nn9WHNsUz4qK',
+    parentDoc: 'core-tasks',
+  },
+  task: {
+    id: 'core-tasks',
+    image:
+      'https://imgs.search.brave.com/SOh64AD8PjBSoFCQukI7vBloBK_tNX_45_mZ6e0sv4M/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS12ZWN0b3Iv/d2hpdGUtaXNvbGF0/ZWQtZmVhdGhlci1j/YXJ0b29uXzEzMDgt/MTM4MDg2LmpwZz9z/aXplPTYyNiZleHQ9/anBn',
+    name: 'LEVANTE core tasks',
+    registered: true,
+    description: 'Test for LEVANTE core tasks',
+    lastUpdated: '2024-02-09T00:33:45.740Z',
+  },
+});
 
 const backupImage = '/src/assets/swr-icon.jpeg';
 
