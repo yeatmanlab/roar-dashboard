@@ -1,3 +1,5 @@
+import html2canvas from 'html2canvas';
+
 /*
  *  Task Display Names
  *  A map of all tasks, including their taskId, display name, and index for ordering
@@ -5,19 +7,79 @@
  *  Value: { orderindex, displayName }
  */
 export const taskDisplayNames = {
-  letter: { name: 'Letter Names and Sounds', order: 1 },
-  pa: { name: 'Phoneme', order: 2 },
-  swr: { name: 'Word', order: 3 },
-  'swr-es': { name: 'Palabra', order: 4 },
-  sre: { name: 'Sentence', order: 5 },
-  morphology: { name: 'Morphology', order: 6 },
-  cva: { name: 'Written-Vocab', order: 7 },
-  multichoice: { name: 'Multichoice', order: 8 },
-  fluency: { name: 'Fluency', order: 9 },
-  mep: { name: 'MEP', order: 10 },
-  'mep-pseudo': { name: 'MEP-Pseudo', order: 11 },
-  ExternalTask: { name: 'External Task', order: 12 },
-  ExternalTest: { name: 'External Test', order: 13 },
+  letter: {
+    name: 'Letter Names and Sounds',
+    extendedTitle: 'ROAR - Letter Names and Sounds',
+    extendedName: 'Letter Names and Sounds',
+    order: 1,
+  },
+  pa: { name: 'Phoneme', extendedTitle: 'ROAR - Phoneme', extendedName: 'Phonological Awareness', order: 2 },
+  swr: { name: 'Word', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 3 },
+  'swr-es': { name: 'Palabra', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 4 },
+  sre: { name: 'Sentence', extendedTitle: 'ROAR - Sentence', extendedName: 'Sentence Reading Efficiency', order: 5 },
+  morphology: {
+    name: 'Morphology',
+    extendedTitle: 'ROAR - Morphology',
+    extendedName: 'Morphological Awareness',
+    order: 6,
+  },
+  cva: {
+    name: 'Written-Vocab',
+    extendedTitle: 'ROAR - Written Vocabulary',
+    extendedName: 'Written Vocabulary',
+    order: 7,
+  },
+  multichoice: {
+    name: 'Multichoice',
+    extendedTitle: 'ROAR - Multichoice',
+    extendedName: 'Multiple Choice Vocabulary',
+    order: 8,
+  },
+  fluency: { name: 'Fluency', extendedTitle: 'ROAM - Fluency', extendedName: 'Math Fluency', order: 9 },
+  syntax: { name: 'Syntax', extendedTitle: 'ROAR - Syntax', extendedName: 'Syntax', order: 10 },
+  phonics: { name: 'Phonics', extendedTitle: 'ROAR - Phonics', extendedName: 'Phonics', order: 11 },
+  comp: {
+    name: 'Comprehension',
+    extendedTitle: 'ROAR - Comprehension',
+    extendedName: 'Reading Comprehension',
+    order: 12,
+  },
+  mep: { name: 'MEP', extendedTitle: 'ROAR - MEP', extendedName: 'MEP', order: 12 },
+  'mep-pseudo': { name: 'MEP-Pseudo', extendedTitle: 'ROAR - MEP Pseudo', extendedName: 'MEP-Pseudo', order: 12 },
+  ExternalTask: {
+    name: 'External Task',
+    extendedTitle: 'ROAR - External Task',
+    extendedName: 'External Task',
+    order: 13,
+  },
+  ExternalTest: {
+    name: 'External Test',
+    extendedTitle: 'ROAR- External Test',
+    extendedName: 'External Test',
+    order: 13,
+  },
+};
+
+export const extendedDescriptions = {
+  swr: 'This test measures your student’s skill in reading single words quickly and correctly',
+  'swr-es':
+    'This test measures how well a student can identify real words and made-up words. ' +
+    'The goal is for students to recognize words quickly and accurately, a skill called decoding. ' +
+    'High scores on this assessment indicate a readiness to be a skilled and fluent reader',
+  pa: 'This test measures how well your student can break down a spoken word into its individual sounds and choose or create a word with the same sounds',
+  sre: 'This test measures how quickly your student can silently read and understand sentences',
+  vocab: 'This test measures how well your student knows words by having them match a picture to a spoken word',
+  multichoice: 'Temporary description for multichoice',
+  morph:
+    'This test measures how well your student understands how parts of words, including prefixes and suffixes, can change the meaning of a word in a sentence',
+  cva: 'This test measures your students’ knowledge of words that are often used in the books they read at school',
+  letter:
+    'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
+  comp: 'Temporary description for comp',
+  phonics:
+    'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
+  syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
+  fluency: 'Temporary description for fluency',
 };
 
 /*
@@ -39,6 +101,28 @@ export const descriptionsByTaskId = {
     header: 'ROAR-Sentence Reading Efficiency (ROAR-Sentence)',
     description: ' assesses reading fluency at the sentence level.',
   },
+};
+
+const pageWidth = 190; // Set page width for calculations
+const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
+// Helper function to add an element to a document and perform page break logic
+export const addElementToPdf = async (element, document, yCounter, offset = 0) => {
+  await html2canvas(element, { windowWidth: 1300, scale: 2 }).then(function (canvas) {
+    const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
+    const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
+    // Add a new page for each task if there is no more space in the page for task desc and graph
+    if (yCounter + scaledCanvasHeight + offset > 287) {
+      document.addPage();
+      yCounter = 10;
+    } else {
+      // Add Margin
+      yCounter += 5;
+    }
+
+    document.addImage(imgData, 'JPEG', 10, yCounter, pageWidth, scaledCanvasHeight);
+    yCounter += scaledCanvasHeight;
+  });
+  return yCounter;
 };
 
 /*

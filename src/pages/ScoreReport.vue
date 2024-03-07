@@ -317,6 +317,7 @@ import {
   getRawScoreThreshold,
   rawOnlyTasks,
   scoredTasks,
+  addElementToPdf,
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
@@ -359,26 +360,6 @@ const activeTabIndex = ref(0);
 
 const pageWidth = 190; // Set page width for calculations
 const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
-
-// Helper function to add an element to a document and perform page break logic
-const addElementToPdf = async (element, document, yCounter, offset = 0) => {
-  await html2canvas(element, { windowWidth: 1100, scale: 2 }).then(function (canvas) {
-    const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
-    const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
-    // Add a new page for each task if there is no more space in the page for task desc and graph
-    if (yCounter + scaledCanvasHeight + offset > 287) {
-      document.addPage();
-      yCounter = 10;
-    } else {
-      // Add Margin
-      yCounter += 5;
-    }
-
-    document.addImage(imgData, 'JPEG', 10, yCounter, pageWidth, scaledCanvasHeight);
-    yCounter += scaledCanvasHeight;
-  });
-  return yCounter;
-};
 
 const handleExportToPdf = async () => {
   exportLoading.value = true; // Set loading icon in button to prevent multiple clicks
@@ -994,6 +975,15 @@ const columns = computed(() => {
       });
     }
   }
+  tableColumns.push({
+    header: 'Student Report',
+    link: true,
+    routeName: 'StudentReport',
+    routeTooltip: 'Student Score Report',
+    routeLabel: 'Report',
+    routeIcon: 'pi pi-user',
+    sort: false,
+  });
   return tableColumns;
 });
 
@@ -1072,6 +1062,10 @@ const tableData = computed(() => {
       user,
       assignment,
       scores,
+      routeParams: {
+        administrationId: props.administrationId,
+        userId: _get(user, 'userId'),
+      },
     };
   });
 });
