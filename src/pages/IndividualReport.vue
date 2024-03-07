@@ -4,13 +4,8 @@
     <span>Loading Your Individual Roar Score Report...</span>
   </div>
 
-  <div
-    v-else
-    id="individual-report-export"
-    ref="IndividualReportDownload"
-    class="container flex flex-column align-items-around"
-  >
-    <div class="flex flex-column md:flex-row align-items-center my-2">
+  <div v-else class="container flex flex-column align-items-around">
+    <div id="individual-report-header" class="flex flex-column md:flex-row align-items-center my-2">
       <div class="student-name text-center md:text-left my-3">
         <div class="text-lg uppercase text-gray-400">Individual Score Report</div>
         <div class="text-5xl">
@@ -37,7 +32,7 @@
       </h3>
     </div>
 
-    <div v-else class="welcome-card mt-2 mb-4">
+    <div v-else id="individual-report-banner" class="welcome-card mt-2 mb-4">
       <div class="welcome-banner">
         <div class="banner-text">Welcome to your ROAR Score Report</div>
         <div class="flex">
@@ -61,9 +56,8 @@
             @click="exportToPdf"
           />
         </div>
-        <!-- </PvButton> -->
       </div>
-      <div class="p-3">
+      <div class="p-3 text-lg">
         The Rapid Online Assessment of Reading (ROAR) assesses students across a range of foundational reading skills.
         <div class="mt-2">{{ studentFirstName }} completed the following games:</div>
         <ul class="inline-flex p-0" style="list-style-type: none">
@@ -77,8 +71,7 @@
         </div>
       </div>
     </div>
-
-    <div class="individual-report-wrapper gap-4">
+    <div id="individual-report-cards" class="individual-report-wrapper gap-4">
       <individual-score-report-task
         :student-data="studentData"
         :task-data="taskData"
@@ -86,16 +79,43 @@
         :expanded="expanded"
       />
     </div>
-    <PvAccordion class="my-5 w-full" :active-index="expanded ? 0 : null">
-      <PvAccordionTab header="Next Steps">
-        <div style="">
-          This score report provides a broad overview of your student’s reading development. Understand that a student’s
-          progress may not be linear, and their scores are not fixed- everyone has room to grow and learn. To learn more
-          about any given test or subskill, and to find more resources for supporting your student
-          <a :href="NextSteps" class="hover:text-red-700" target="_blank">click here.</a>
-        </div>
-      </PvAccordionTab>
-    </PvAccordion>
+    <div class="support-wrapper" id="support-graphic">
+      <img src="../assets/support-distribution.svg" class="w-10" />
+      <PvAccordion class="my-5 w-full" :active-index="expanded ? 0 : null">
+        <PvAccordionTab header="Understanding The Scores" class="text-xl font-bold">
+          <div class="text-lg">
+            <div class="text-xl font-bold">The ROAR assessements return 3 kinds of scores:</div>
+            <ul>
+              <li>
+                <b>Raw Score: </b>A score that captures your students' general performance on the assessment, such as
+                total items correct. This score is difficult to interpret on its own which is why it is used to generate
+                standard scores and percentiles
+              </li>
+              <li>
+                <b>Standard Score: </b>A score that compares your students' performance to the performance of other
+                students in their age of grade group. This score gives you a glimpse of your student's understanding of
+                the tested skill compared to their peers
+              </li>
+              <li>
+                <b>Percentile: </b>A score that defines which percent of scores fall below your student's scores. For
+                example, if your student is in the 74th percentile, then 74 percent of scores are lower than their
+                score.
+              </li>
+            </ul>
+          </div>
+        </PvAccordionTab>
+      </PvAccordion>
+      <PvAccordion class="my-5 w-full" :active-index="expanded ? 0 : null">
+        <PvAccordionTab header="Next Steps">
+          <div class="text-lg">
+            This score report provides a broad overview of your student’s reading development. Understand that a
+            student’s progress may not be linear, and their scores are not fixed- everyone has room to grow and learn.
+            To learn more about any given test or subskill, and to find more resources for supporting your student
+            <a :href="NextSteps" class="hover:text-red-700" target="_blank">click here.</a>
+          </div>
+        </PvAccordionTab>
+      </PvAccordion>
+    </div>
   </div>
 </template>
 
@@ -106,12 +126,11 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../store/auth';
-import { taskDisplayNames } from '@/helpers/reports';
+import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
 import IndividualScoreReportTask from '../components/reports/IndividualScoreReportTask.vue';
 import AppSpinner from '../components/AppSpinner.vue';
 import { getGrade } from '@bdelab/roar-utils';
 import NextSteps from '@/assets/NextSteps.pdf';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 // const administrationId = '5vaxicYXnpsNXeq1mUJK';
@@ -141,14 +160,6 @@ const { data: studentData } = useQuery({
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
 });
-
-// const {data: classData } = useQuery({
-//   queryKey: ['classes', props.userId],
-//   queryFn: () => fetchDocById('classes', studentData.value.classes.current[0]),
-//   enabled: studentData.value !== undefined,
-//   keepPreviousData: true,
-//   staleTime: 5 * 60 * 1000,
-// })
 
 const { data: taskData } = useQuery({
   queryKey: ['runs', props.administrationId, props.userId],
@@ -192,33 +203,7 @@ const expanded = ref(false);
 const exportLoading = ref(false);
 
 const setExpand = () => {
-  console.log('expand called');
   expanded.value = !expanded.value;
-};
-
-const IndividualReportDownload = ref(null);
-
-const pageWidth = 190; // Set page width for calculations
-const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
-
-// Helper function to add an element to a document and perform page break logic
-const addElementToPdf = async (element, document, yCounter, offset = 0) => {
-  await html2canvas(element, { windowWidth: 1300, scale: 2 }).then(function (canvas) {
-    const imgData = canvas.toDataURL('image/jpeg', 0.7, { willReadFrequently: true });
-    const scaledCanvasHeight = canvas.height * returnScaleFactor(canvas.width);
-    // Add a new page for each task if there is no more space in the page for task desc and graph
-    if (yCounter + scaledCanvasHeight + offset > 287) {
-      document.addPage();
-      yCounter = 10;
-    } else {
-      // Add Margin
-      yCounter += 5;
-    }
-
-    document.addImage(imgData, 'JPEG', 10, yCounter, pageWidth, scaledCanvasHeight);
-    yCounter += scaledCanvasHeight;
-  });
-  return yCounter;
 };
 
 const exportToPdf = async () => {
@@ -229,12 +214,24 @@ const exportToPdf = async () => {
   await new Promise((resolve) => setTimeout(resolve, 250));
 
   const doc = new jsPDF();
-  let yCounter = 10; // yCounter tracks the y position in the PDF
+  let yCounter = 5; // yCounter tracks the y position in the PDF
 
   // Add At a Glance Charts and report header to the PDF
-  const individualReport = document.getElementById('individual-report-export');
-  if (individualReport !== null) {
-    await addElementToPdf(individualReport, doc, yCounter);
+  const individualReportHeader = document.getElementById('individual-report-header');
+  if (individualReportHeader !== null) {
+    yCounter = await addElementToPdf(individualReportHeader, doc, yCounter);
+  }
+  const individualReportBanner = document.getElementById('individual-report-banner');
+  if (individualReportBanner !== null) {
+    yCounter = await addElementToPdf(individualReportBanner, doc, yCounter);
+  }
+  const individualReportCards = document.getElementById('individual-report-cards');
+  if (individualReportCards !== null) {
+    yCounter = await addElementToPdf(individualReportCards, doc, yCounter);
+  }
+  const supportGraphic = document.getElementById('support-graphic');
+  if (supportGraphic !== null) {
+    yCounter = await addElementToPdf(supportGraphic, doc, yCounter);
   }
 
   doc.save(`IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`),
@@ -248,20 +245,21 @@ const tasks = computed(() => taskData?.value?.map((assignment) => assignment.tas
 const formattedTasks = computed(() => {
   return (
     tasks?.value
-      ?.map((taskId) => (extendedTaskTitle[taskId] ? extendedTaskTitle[taskId] : taskId))
       .sort((a, b) => {
-        if (Object.keys(taskDisplayNames).includes(a.taskId) && Object.keys(taskDisplayNames).includes(b.taskId)) {
-          return taskDisplayNames[a.taskId].order - taskDisplayNames[b.taskId].order;
+        if (Object.keys(taskDisplayNames).includes(a) && Object.keys(taskDisplayNames).includes(b)) {
+          return taskDisplayNames[a].order - taskDisplayNames[b].order;
         } else {
           return -1;
         }
       })
+      .map((task) => (taskDisplayNames[task] ? taskDisplayNames[task].extendedName : task))
       .join(', ') + '.'
   );
 });
 
 const studentFirstName = computed(() => {
-  if (studentData.value.name.first == undefined) return studentData.value.username;
+  // Using == instead of === to catch both undefined and null values
+  if (studentData.value.name?.first == undefined) return studentData.value.username;
   return studentData.value.name.first;
 });
 
@@ -269,21 +267,6 @@ const studentLastName = computed(() => {
   if (!studentData.value.name) return '';
   return studentData.value.name.last;
 });
-
-const extendedTaskTitle = {
-  swr: 'ROAR-Word',
-  'swr-es': 'ROAR-Palabra',
-  pa: 'ROAR-Phoneme',
-  sre: 'ROAR-Sentence',
-  vocab: 'ROAR-Picture Vocabulary ',
-  multichoice: 'ROAR-Multiple Choice',
-  morph: 'ROAR-Morphology',
-  cva: 'ROAR-Written Vocabulary',
-  letter: 'ROAR-Letter',
-  comp: 'ROAR-Comprehension',
-  syntax: 'ROAR-Syntax',
-  fluency: 'ROAM-Fluency',
-};
 
 function getGradeWithSuffix(grade) {
   if (getGrade(grade) < 1) {
@@ -294,27 +277,12 @@ function getGradeWithSuffix(grade) {
     return grade + 'nd';
   } else if (getGrade(grade) === 3) {
     return grade + 'rd';
-  } else if (getGrade(grade) >= 4 && getGrade(grade) <= 12) {
+  } else if (getGrade(grade) >= 4 && getGrade(grade) <= 13) {
     return grade + 'th';
   } else {
     return 'Invalid grade';
   }
 }
-
-// function getMatchingClasses(studentData, administrationData) {
-//   // Check if the necessary properties exist
-//   // if (!studentData?.classes || !studentData?.classes?.current || !administrationData?.classes) {
-//   //   throw new Error('Invalid class data');
-//   // }
-//
-//   // Use the filter method to find matching elements
-//   const matchingClasses = studentData.classes.current.filter(className =>
-//     administrationData?.classes.includes(className)
-//   );
-//   classId.value = matchingClasses;
-//   classMatched.value = true;
-//   return matchingClasses;
-// }
 
 const refreshing = ref(false);
 let unsubscribe;
@@ -375,9 +343,17 @@ onMounted(async () => {
 
 .student-info {
   flex: 1;
-  font-size: 1rem;
+  font-size: 1.2rem;
   border-radius: 12px;
   padding: 0.35rem 0.75rem;
+}
+
+.support-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-around;
 }
 
 @media (min-width: 768px) {

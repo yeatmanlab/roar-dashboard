@@ -4,7 +4,7 @@
       v-if="rawOnlyTasks.includes(task.taskId) && isNaN(getRawScore(task.taskId))"
       class="error flex flex-column md:flex-row align-items-center m-auto p-4 w-5"
     >
-      ERROR: Unable to load score for <strong>{{ extendedTaskData.extendedTitle[task.taskId] }}</strong
+      ERROR: Unable to load score for <strong>{{ taskDisplayNames[task.taskId]?.extendedTitle }}</strong
       >; score may not exist due to incomplete assessment.
     </div>
 
@@ -15,20 +15,18 @@
       "
       class="error flex justify-content-center md:flex-row align-items-center m-auto p-4 w-5"
     >
-      ERROR: Unable to load score for {{ extendedTaskData.extendedTitle[task.taskId] }}; score may not exist due to
+      ERROR: Unable to load score for {{ taskDisplayNames[task.taskId]?.extendedTitle }}; score may not exist due to
       incomplete assessment.
     </div>
 
     <div v-else class="flex flex-column align-items-center mb-1 p-1 score-card">
       <div v-if="grade < 6" class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
-          <div class="header-task-name">{{ extendedTaskData.extendedTitle[task.taskId] }}</div>
+          <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
           <div class="text-xs uppercase font-thin mb-2 text-gray-400">
             <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Percentile Score</div>
             <div v-else class="scoring-type">Raw Score</div>
           </div>
-          <!-- <PvChart v-if="rawOnlyTasks.includes(task.taskId)" type="doughnut" :data="doughnutChartData(getRawScore(task.taskId), task.taskId)" /> 
-          <PvChart v-else type="doughnut" :data="doughnutChartData(task.scores?.[getPercentileScoreKey(task.taskId, grade)], task.taskId)" />  -->
           <PvKnob
             v-if="rawOnlyTasks.includes(task.taskId)"
             :model-value="getRawScore(task.taskId)"
@@ -44,19 +42,15 @@
             :value-color="getColorByPercentile(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
           />
         </div>
-        <!-- <p v-if="rawOnlyTasks.includes(task.taskId)" class="score">{{ getRawScore(task.taskId) }}</p> -->
-        <!-- <p v-else class="score">{{ Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]) }}%</p> -->
       </div>
 
       <div v-else class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
-          <div class="header-task-name">{{ extendedTaskData.extendedTitle[task.taskId] }}</div>
+          <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
           <div class="text-xs uppercase font-thin mb-2 text-gray-400">
             <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Standard Score</div>
             <div v-else class="scoring-type">Raw Score</div>
           </div>
-          <!-- <PvChart v-if="rawOnlyTasks.includes(task.taskId)" type="doughnut" :data="doughnutChartData(getRawScore(task.taskId), task.taskId)" /> 
-          <PvChart v-else type="doughnut" :data="doughnutChartData(task.scores?.[getPercentileScoreKey(task.taskId, grade)], task.taskId)" />  -->
           <PvKnob
             v-if="rawOnlyTasks.includes(task.taskId)"
             :model-value="getRawScore(task.taskId)"
@@ -73,14 +67,12 @@
             :max="153"
           />
         </div>
-        <!-- <p v-if="rawOnlyTasks.includes(task.taskId)" class="score">{{ getRawScore(task.taskId) }}</p> -->
-        <!-- <p v-else class="score">{{ Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]) }}%</p> -->
       </div>
 
       <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
         {{ studentFirstName }} achieved a composite score of
         <strong>{{ getRawScore(task.taskId) }}</strong>
-        in {{ extendedTaskData.extendedName[task.taskId] }}. {{ extendedTaskData.extendedDescription[task.taskId] }}.
+        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
       </div>
 
       <div v-else-if="grade < 6" class="px-4 py-2 score-description">
@@ -94,7 +86,7 @@
         <strong :style="{ color: supportColor }">{{
           getSupportLevel(task.scores?.[getPercentileScoreKey(task.taskId, grade)])
         }}</strong>
-        in {{ extendedTaskData.extendedName[task.taskId] }}. {{ extendedTaskData.extendedDescription[task.taskId] }}.
+        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
       </div>
       <div v-else class="px-4 py-2 score-description">
         {{ studentFirstName }} scored a standard score of
@@ -103,10 +95,9 @@
         <strong :style="{ color: supportColor }">{{
           getSupportLevel(task.scores?.[getPercentileScoreKey(task.taskId, grade)])
         }}</strong>
-        in {{ extendedTaskData.extendedName[task.taskId] }}. {{ extendedTaskData.extendedDescription[task.taskId] }}.
+        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
       </div>
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
-        <!-- <PvDivider /> -->
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
             <div v-for="[key, value] in extractScoreNames(task.scores)" :key="key">
@@ -126,7 +117,7 @@
 <script setup>
 import { computed } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
-import { rawOnlyTasks, taskDisplayNames } from '@/helpers/reports';
+import { rawOnlyTasks, taskDisplayNames, extendedDescriptions } from '@/helpers/reports';
 
 const props = defineProps({
   studentData: {
@@ -146,61 +137,6 @@ const props = defineProps({
     required: false,
   },
 });
-
-const extendedTaskData = {
-  ...props.taskData,
-  extendedTitle: {
-    swr: 'ROAR-Word',
-    'swr-es': 'ROAR-Palabra',
-    pa: 'ROAR-Phoneme',
-    sre: 'ROAR-Sentence',
-    vocab: 'ROAR-Picture Vocabulary ',
-    multichoice: 'ROAR-Multiple Choice',
-    morph: 'ROAR-Morphology',
-    cva: 'ROAR-Written Vocabulary',
-    letter: 'ROAR-Letter',
-    comp: 'ROAR-Comprehension',
-    phonics: 'ROAR-Phonics',
-    syntax: 'ROAR-Syntax',
-    fluency: 'ROAM-Fluency',
-  },
-  extendedName: {
-    swr: 'Single Word Recognition',
-    'swr-es': 'Single Word Recognition',
-    pa: 'Phonological Awareness',
-    sre: 'Sentence Reading Efficiency',
-    vocab: 'Picture Vocabulary',
-    multichoice: 'Multiple Choice Vocabulary',
-    morph: 'Morphological Awareness',
-    cva: 'Written Vocabulary',
-    letter: 'Letter Names and Sounds',
-    comp: 'Reading Comprehension',
-    phonics: 'Phonics',
-    syntax: 'Syntax',
-    fluency: 'Math Fluency',
-  },
-  extendedDescription: {
-    swr: 'This test measures your student’s skill in reading single words quickly and correctly',
-    'swr-es':
-      'This test measures how well a student can identify real words and made-up words. ' +
-      'The goal is for students to recognize words quickly and accurately, a skill called decoding. ' +
-      'High scores on this assessment indicate a readiness to be a skilled and fluent reader',
-    pa: 'This test measures how well your student can break down a spoken word into its individual sounds and choose or create a word with the same sounds',
-    sre: 'This test measures how quickly your student can silently read and understand sentences',
-    vocab: 'This test measures how well your student knows words by having them match a picture to a spoken word',
-    multichoice: 'Temporary description for multichoice',
-    morph:
-      'This test measures how well your student understands how parts of words, including prefixes and suffixes, can change the meaning of a word in a sentence',
-    cva: 'This test measures your students’ knowledge of words that are often used in the books they read at school',
-    letter:
-      'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
-    comp: 'Temporary description for comp',
-    phonics:
-      'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
-    syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
-    fluency: 'Temporary description for fluency',
-  },
-};
 
 const studentFirstName = computed(() => {
   if (!props.studentData.name) return props.studentData.username;
@@ -252,13 +188,13 @@ const extractScoreNames = (scores) => {
   });
 
   // Ensure scores are in consistent order
+  console.log(formattedScoresArray);
   return formattedScoresArray.sort((first, second) => {
     return first[0].localeCompare(second[0]);
   });
 };
 
 let supportColor = null;
-// let remainderColor = null
 
 function getColorByPercentile(percentile) {
   if (percentile !== undefined) {
@@ -296,30 +232,6 @@ const getPercentileScoreKey = (taskId, grade) => {
     }
   }
 };
-
-// const getStandardScoreKey = (taskId, grade) => {
-//   if (taskId === 'swr' || taskId === 'swr-es') {
-//     if (getGrade(grade) < 6) {
-//       return 'standardScore';
-//     } else {
-//       return 'sprStandardScore';
-//     }
-//   }
-//   if (taskId === 'pa') {
-//     if (getGrade(grade) < 6) {
-//       return 'standardScore';
-//     } else {
-//       return 'sprStandardScore';
-//     }
-//   }
-//   if (taskId === 'sre') {
-//     if (getGrade(grade) < 6) {
-//       return 'tosrecSS';
-//     } else {
-//       return 'sprStandardScore';
-//     }
-//   }
-// };
 
 const getRawScore = (taskId) => {
   const task = props.rawTaskData.find((task) => task.taskId === taskId);
@@ -366,7 +278,7 @@ function getPercentileSuffix(percentile) {
 <style scoped>
 .score {
   position: relative;
-  font-size: 1.5rem;
+  font-size: 1.7rem;
 }
 
 .score-card {
@@ -377,22 +289,26 @@ function getPercentileSuffix(percentile) {
 }
 
 .score-description {
-  font-size: 1rem;
+  font-size: 1.1rem;
   margin-top: 1rem;
   max-width: 22rem;
 }
 
 .header-task-name {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: bold;
   border-radius: 12px;
 }
 
 .error {
   color: red;
-  font-size: 1rem;
+  font-size: 1.2rem;
   border: 2px solid red;
   border-radius: 12px;
+}
+
+.score-wrapper {
+  border-radius: 0.3rem;
 }
 
 @media (min-width: 768px) {
