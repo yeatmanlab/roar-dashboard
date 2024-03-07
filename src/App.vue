@@ -26,9 +26,9 @@ import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
 import { ref } from 'vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import { useRecaptchaProvider } from 'vue-recaptcha';
+// import { useRecaptchaProvider } from 'vue-recaptcha';
 
-useRecaptchaProvider();
+// useRecaptchaProvider();
 import AppHead from '@/components/AppHead.vue';
 import { i18n } from '@/translations/i18n';
 import { useRoute } from 'vue-router';

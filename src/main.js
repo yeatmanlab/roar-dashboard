@@ -81,7 +81,7 @@ import 'primeflex/primeflex.scss'; // primeflex
 
 import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import './assets/styles/theme.scss'; // ROAR theme
-import { VueRecaptchaPlugin } from 'vue-recaptcha';
+// import { VueRecaptchaPlugin } from 'vue-recaptcha';
 
 // translations
 import { i18n } from '@/translations/i18n.js';
@@ -93,9 +93,9 @@ const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
 
-app.use(VueRecaptchaPlugin, {
-  v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
-});
+// app.use(VueRecaptchaPlugin, {
+//   v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
+// });
 
 initSentry(app);
 
