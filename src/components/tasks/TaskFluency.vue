@@ -17,7 +17,7 @@ import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'fluency' },
+  taskId: { type: String, required: true, default: 'fluency-arf' },
   language: { type: String, required: true, default: 'en' },
 });
 
