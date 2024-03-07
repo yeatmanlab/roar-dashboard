@@ -133,9 +133,6 @@ import { getGrade } from '@bdelab/roar-utils';
 import NextSteps from '@/assets/NextSteps.pdf';
 import jsPDF from 'jspdf';
 
-// const administrationId = '5vaxicYXnpsNXeq1mUJK';
-// const userId = '00w7xNIlq9gG1uxhmRTiv9NdOys2';
-
 const authStore = useAuthStore();
 
 const { roarfirekit } = storeToRefs(authStore);
