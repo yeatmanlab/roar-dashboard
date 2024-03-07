@@ -49,4 +49,3 @@ jobs:
               body: `The workflow failed on [${context.sha.substring(0, 7)}](${context.payload.repository.html_url}/commit/${context.sha}). Please check it.`,
             };
             github.rest.issues.create(issue);
-

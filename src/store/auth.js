@@ -94,7 +94,8 @@ export const useAuthStore = () => {
       },
       async logInWithEmailAndPassword({ email, password }) {
         if (this.isFirekitInit) {
-          return this.roarfirekit.logInWithEmailAndPassword({ email, password })
+          return this.roarfirekit
+            .logInWithEmailAndPassword({ email, password })
             .then(() => {})
             .catch((error) => {
               console.error('Error signing in:', error);
@@ -104,6 +105,7 @@ export const useAuthStore = () => {
       async initiateLoginWithEmailLink({ email }) {
         if (this.isFirekitInit) {
           const redirectUrl = `${window.location.origin}/auth-email-link`;
+          console.log('redirectUrl', redirectUrl);
           return this.roarfirekit.initiateLoginWithEmailLink({ email, redirectUrl }).then(() => {
             window.localStorage.setItem('emailForSignIn', email);
           });

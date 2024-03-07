@@ -66,10 +66,14 @@ const addMessages = (errorCode) => {
 const loginFromEmailLink = async (email) => {
   unsubscribe();
   const emailLink = window.location.href;
+  console.log('Email link', emailLink);
+  console.log('Email in loginFromEmailLink', email);
   await authStore
     .signInWithEmailLink({ email, emailLink })
     .catch((error) => {
+      console.log('Hit error');
       if (error.code === 'auth/invalid-action-code') {
+        console.log('Hit invalid action code');
         addMessages(error.code);
         setTimeout(() => {
           router.replace({ name: 'SignIn' });
@@ -98,6 +102,7 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
     const email = window.localStorage.getItem('emailForSignIn');
     if (email) {
+      console.log('Hit login with email link');
       await loginFromEmailLink(email);
     }
   }
@@ -105,5 +110,6 @@ const unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   localStorageEmail.value = window.localStorage.getItem('emailForSignIn');
+  console.log('Local storage email', localStorage);
 });
 </script>

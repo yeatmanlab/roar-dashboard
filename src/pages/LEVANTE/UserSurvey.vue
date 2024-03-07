@@ -1,14 +1,14 @@
 <script setup>
-import 'survey-core/defaultV2.min.css'
+import 'survey-core/defaultV2.min.css';
 import { Model } from 'survey-core';
-import { onMounted, ref, toRaw, } from 'vue';
+import { onMounted, ref, toRaw } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { useRouter } from 'vue-router';
 import { useGameStore } from '@/store/game';
-import { Converter } from "showdown";
+import { Converter } from 'showdown';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -22,71 +22,69 @@ const router = useRouter();
 
 // Fetch the survey on component mount
 onMounted(async () => {
-    await getSurvey();
+  await getSurvey();
 });
 
 async function getSurvey() {
-    let userType = toRaw(authStore.userData.userType.toLowerCase());
-    if (userType === 'student') userType = 'child'
+  let userType = toRaw(authStore.userData.userType.toLowerCase());
+  if (userType === 'student') userType = 'child';
 
-    try {
-        const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey`);
-        fetchedSurvey.value = response.data;
-        // Create the survey model with the fetched data
-        survey.value = new Model(fetchedSurvey.value);
-        survey.value.onTextMarkdown.add(function (survey, options) {
-            // Convert Markdown to HTML
-            let str = converter.makeHtml(options.text);
-            // Remove root paragraphs <p></p>
-            str = str.substring(3);
-            str = str.substring(0, str.length - 4);
-            // Set HTML markup to render
-            options.html = str;
-        });
-        survey.value.onComplete.add(saveResults);
-    } catch (error) {
-        console.error(error);
-    }
+  try {
+    const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey`);
+    fetchedSurvey.value = response.data;
+    // Create the survey model with the fetched data
+    survey.value = new Model(fetchedSurvey.value);
+    survey.value.onTextMarkdown.add(function (survey, options) {
+      // Convert Markdown to HTML
+      let str = converter.makeHtml(options.text);
+      // Remove root paragraphs <p></p>
+      str = str.substring(3);
+      str = str.substring(0, str.length - 4);
+      // Set HTML markup to render
+      options.html = str;
+    });
+    survey.value.onComplete.add(saveResults);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
-
 async function saveResults(sender) {
-    console.log('sender.data: ', sender.data);
+  console.log('sender.data: ', sender.data);
 
-    // If user did not fill out the survey, do not save the results
-    if (Object.keys(sender.data).length === 0) {
-        console.log('No data to save')
-        // update game store to let game tabs know
-        gameStore.setSurveyCompleted()
-        return;
-    }
+  // If user did not fill out the survey, do not save the results
+  if (Object.keys(sender.data).length === 0) {
+    console.log('No data to save');
+    // update game store to let game tabs know
+    gameStore.setSurveyCompleted();
+    return;
+  }
 
-    // turn on loading state
-    isSavingResponses.value = true;
+  // turn on loading state
+  isSavingResponses.value = true;
 
-    // call cloud function to save the survey results
-    try {
-        const res = await roarfirekit.value.saveSurveyResponses(sender.data);
-        console.log('response: ', res);
+  // call cloud function to save the survey results
+  try {
+    const res = await roarfirekit.value.saveSurveyResponses(sender.data);
+    console.log('response: ', res);
 
-        // update game store to let game tabs know
-        gameStore.setSurveyCompleted()
+    // update game store to let game tabs know
+    gameStore.setSurveyCompleted();
 
-        // route back to game tabs (HomeParticipant)
-        router.push({ name: 'Home' });
-    } catch (error) {
-        isSavingResponses.value = false;
-        console.error(error);
-    }
+    // route back to game tabs (HomeParticipant)
+    router.push({ name: 'Home' });
+  } catch (error) {
+    isSavingResponses.value = false;
+    console.error(error);
+  }
 }
 </script>
 
 <template>
-    <div v-if="survey && !isSavingResponses">
-        <SurveyComponent :model="survey" />
-    </div>
-    <AppSpinner v-if="!survey || isSavingResponses"/>
+  <div v-if="survey && !isSavingResponses">
+    <SurveyComponent :model="survey" />
+  </div>
+  <AppSpinner v-if="!survey || isSavingResponses" />
 </template>
 
-<style>
-</style>
+<style></style>

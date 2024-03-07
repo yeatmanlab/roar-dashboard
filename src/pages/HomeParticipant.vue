@@ -166,7 +166,7 @@ const noGamesAvailable = computed(() => {
 // Assessments to populate the game tabs.
 // Generated based on the current selected admin Id
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) { 
+  if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
     const fetchedAssessments = selectedAdmin.value.assessments.map((assessment) => {
       // Get the matching assessment from assignmentInfo
       const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });

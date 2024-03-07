@@ -91,19 +91,21 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
   const axiosInstance = getAxiosInstance(db);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
   const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-  return axiosInstance.get(docPath + queryString).then(({ data }) => {
-    return {
-      id: docId,
-      collection,
-      ..._mapValues(data.fields, (value) => convertValues(value)),
-    };
-  })
-  .catch((error) => {
-    console.error(error);
-    return {
-      data: `${error.code === '404' ? 'Document not found' : error.message}`,
-    }
-  });
+  return axiosInstance
+    .get(docPath + queryString)
+    .then(({ data }) => {
+      return {
+        id: docId,
+        collection,
+        ..._mapValues(data.fields, (value) => convertValues(value)),
+      };
+    })
+    .catch((error) => {
+      console.error(error);
+      return {
+        data: `${error.code === '404' ? 'Document not found' : error.message}`,
+      };
+    });
 };
 
 export const fetchDocsById = async (documents, db = 'admin') => {
@@ -135,18 +137,21 @@ export const fetchSubcollection = async (collectionPath, subcollectionName, sele
   const axiosInstance = getAxiosInstance(db);
   // Construct the path to the subcollection
   const subcollectionPath = `/${collectionPath}/${subcollectionName}`;
-  const queryParams = select.map(field => `mask.fieldPaths=${field}`).join('&');
-  const queryString = queryParams ? `?${queryParams}` : ''; 
+  const queryParams = select.map((field) => `mask.fieldPaths=${field}`).join('&');
+  const queryString = queryParams ? `?${queryParams}` : '';
 
-  return axiosInstance.get(subcollectionPath + queryString)
+  return axiosInstance
+    .get(subcollectionPath + queryString)
     .then(({ data }) => {
       // Assuming the API returns an array of document data in the subcollection
-      return data.documents ? data.documents.map(doc => {
-        return {
-          id: doc.name.split('/').pop(), // Extract document ID from the document name/path
-          ..._mapValues(doc.fields, value => convertValues(value)),
-        };
-      }) : [];
+      return data.documents
+        ? data.documents.map((doc) => {
+            return {
+              id: doc.name.split('/').pop(), // Extract document ID from the document name/path
+              ..._mapValues(doc.fields, (value) => convertValues(value)),
+            };
+          })
+        : [];
     })
     .catch((error) => {
       console.error(error);
@@ -155,4 +160,3 @@ export const fetchSubcollection = async (collectionPath, subcollectionName, sele
       };
     });
 };
-

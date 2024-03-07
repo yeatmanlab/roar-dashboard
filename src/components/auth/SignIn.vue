@@ -74,8 +74,6 @@ import { useAuthStore } from '@/store/auth';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-const isLevante = import.meta.env.MODE === 'LEVANTE';
-const signInBtnLabel = isLevante ? 'Sign in' : "Go! →"
 
 const emit = defineEmits(['submit']);
 // eslint-disable-next-line no-unused-vars

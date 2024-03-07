@@ -5,7 +5,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'Home' },
     requiresSuperAdmin: false,
     requiresAdmin: false,
-    project: 'ALL'
+    project: 'ALL',
   },
   {
     title: 'List organizations',
@@ -13,7 +13,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
     requiresAdmin: false,
-    project: 'ALL'
+    project: 'ALL',
   },
   {
     title: 'Create organization',
@@ -21,7 +21,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateOrgs' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
-    project: 'ALL'
+    project: 'ALL',
   },
   {
     title: 'Register students',
@@ -29,14 +29,14 @@ const sidebarActionOptions = [
     buttonLink: { name: 'RegisterStudents' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
-    project: 'ROAR'
+    project: 'ROAR',
   },
   {
     title: 'Register administrator',
     icon: 'pi pi-user-plus',
     buttonLink: { name: 'CreateAdministrator' },
     requiresSuperAdmin: true,
-    project: 'ALL'
+    project: 'ALL',
   },
   {
     title: 'Create administration',
@@ -44,7 +44,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateAdministration' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
-    project: 'ALL'
+    project: 'ALL',
   },
   {
     title: 'Register Task',
@@ -52,7 +52,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'RegisterGame' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
-    project: 'ALL'
+    project: 'ALL',
   },
   {
     title: 'Register Users',
@@ -60,16 +60,15 @@ const sidebarActionOptions = [
     buttonLink: { name: 'Register Users' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
-    project: 'LEVANTE'
+    project: 'LEVANTE',
   },
 ];
-
 
 export const getSidebarActions = (isSuperAdmin = false, isAdmin = false, includeHomeLink = true) => {
   if (import.meta.env.MODE === 'LEVANTE') {
     return sidebarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {
-        if (action.requiresSuperAdmin && !isSuperAdmin || action.requiresAdmin && !isAdmin) {
+        if ((action.requiresSuperAdmin && !isSuperAdmin) || (action.requiresAdmin && !isAdmin)) {
           return false;
         }
         return true;
@@ -88,7 +87,7 @@ export const getSidebarActions = (isSuperAdmin = false, isAdmin = false, include
       }
       return true;
     });
-  
+
     return actionsWithHomeLink;
   }
 };

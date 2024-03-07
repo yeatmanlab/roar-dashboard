@@ -3,7 +3,7 @@
     <nav class="container flex flex-row align-items-center">
       <router-link :to="{ name: 'Home' }">
         <div class="navbar-logo">
-          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200"/>
+          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
           <ROARLogo v-else />
         </div>
       </router-link>

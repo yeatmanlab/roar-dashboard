@@ -6,8 +6,8 @@
     <section id="signin">
       <header>
         <div class="signin-logo">
-          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200"/>
-          <ROARLogoShort v-else/>
+          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
+          <ROARLogoShort v-else />
         </div>
       </header>
       <h1 v-if="!isLevante">{{ $t('pageSignIn.welcome') }}</h1>
@@ -61,9 +61,12 @@ const { spinner, authFromClever } = storeToRefs(authStore);
 authStore.$subscribe(() => {
   if (authStore.uid) {
     if (authStore.userData) {
-      if (toRaw(authStore.userData.userType.toLowerCase()) === 'parent' || toRaw(authStore.userData.userType.toLowerCase()) === 'teacher') {
+      if (
+        toRaw(authStore.userData.userType.toLowerCase()) === 'parent' ||
+        toRaw(authStore.userData.userType.toLowerCase()) === 'teacher'
+      ) {
         router.push({ name: 'Survey' });
-        return
+        return;
       }
     }
 
@@ -122,6 +125,8 @@ const authWithEmail = (state) => {
     if (!creds.email.includes('@')) {
       creds.email = `${creds.email}@roar-auth.com`;
     }
+
+    console.log('Authing with email');
 
     authStore
       .logInWithEmailAndPassword(creds)
