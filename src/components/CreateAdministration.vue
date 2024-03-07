@@ -45,6 +45,9 @@
 
         <OrgPicker @selection="selection($event)" />
 
+        <TaskPicker :tasks="variantsByTaskId" />
+        {{ variantsByTaskId[0] }}
+
         <PvPanel class="mt-3" header="Select assessments for this administration">
           <template #icons>
             <div class="flex flex-row align-items-center justify-content-end">
@@ -123,7 +126,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, toRaw, watch } from 'vue';
+import { onMounted, reactive, ref, toRaw, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -133,12 +136,14 @@ import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
+import _groupBy from 'lodash/groupBy';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import AppSpinner from '@/components/AppSpinner.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { variantsFetcher } from '@/helpers/query/tasks';
+import TaskPicker from './TaskPicker.vue';
 
 const router = useRouter();
 const toast = useToast();
@@ -155,6 +160,10 @@ const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+const variantsByTaskId = computed(() => {
+  return _groupBy(allVariants.value, 'task.id');
+});
+
 //      +---------------------------------+
 // -----| Form state and validation rules |-----
 //      +---------------------------------+
@@ -168,6 +177,8 @@ const state = reactive({
   groups: [],
   families: [],
 });
+
+const selectedAssessments = ref([]);
 
 const datesNotNull = (value) => {
   return value[0] && value[1];
