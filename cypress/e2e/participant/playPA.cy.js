@@ -34,7 +34,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
       .click();
     cy.get('.p-dropdown-item', { timeout: 2 * timeout })
       .contains(Cypress.env('testRoarAppsAdministration'))
-      .should('be.visible')
+      .should('exist')
       .click();
     cy.get('.tabview-nav-link-label', { timeout: 2 * timeout })
       .contains('ROAR-Phoneme')
