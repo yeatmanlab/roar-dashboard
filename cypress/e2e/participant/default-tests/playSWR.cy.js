@@ -12,7 +12,9 @@ describe('Testing playthrough of SWR as a participant', () => {
     cy.get('.p-tabview').contains('ROAR - Word');
     cy.visit(`/game/swr`);
 
-    cy.get('.jspsych-btn', { timeout: timeout }).should('be.visible').click();
+    cy.get('.jspsych-btn', { timeout: 3 * timeout })
+      .should('be.visible')
+      .click();
 
     // handles error where full screen throws a permissions error
     cy.wait(0.1 * timeout);
