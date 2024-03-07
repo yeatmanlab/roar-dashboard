@@ -80,10 +80,10 @@
       />
     </div>
     <div class="support-wrapper" id="support-graphic">
-      <img src="../assets/support-distribution.svg" class="w-10" />
-      <PvAccordion class="my-5 w-full" :active-index="expanded ? 0 : null">
-        <PvAccordionTab header="Understanding The Scores" class="text-xl font-bold">
-          <div class="text-lg">
+      <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+        <PvAccordionTab header="Understanding the Scores">
+          <div class="flex flex-column align-items-center text-lg">
+            <img src="../assets/support-distribution.svg" class="w-10" />
             <div class="text-xl font-bold">The ROAR assessements return 3 kinds of scores:</div>
             <ul>
               <li>
@@ -105,7 +105,7 @@
           </div>
         </PvAccordionTab>
       </PvAccordion>
-      <PvAccordion class="my-5 w-full" :active-index="expanded ? 0 : null">
+      <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
         <PvAccordionTab header="Next Steps">
           <div class="text-lg">
             This score report provides a broad overview of your student’s reading development. Understand that a
