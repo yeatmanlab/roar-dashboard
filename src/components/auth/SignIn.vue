@@ -33,7 +33,12 @@
               :placeholder="$t('authSignIn.passwordPlaceholder')"
               data-cy="input-password"
             />
-            <small @click="allowPassword = false" class="text-link sign-in-method-link"
+            <small
+              @click="
+                allowPassword = false;
+                state.usePassword = false;
+              "
+              class="text-link sign-in-method-link"
               >Sign-in with email link instead</small
             >
           </div>
@@ -71,15 +76,17 @@
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
               :class="{ 'p-invalid': invalid }"
-              toggle-mask
-              show-icon="pi pi-eye-slash"
-              hide-icon="pi pi-eye"
               :feedback="false"
-              :placeholder="$t('authSignIn.passwordPlaceholder')"
+              :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
               :disabled="true"
               data-cy="input-password"
             />
-            <small @click="allowPassword = true" class="text-link sign-in-method-link"
+            <small
+              @click="
+                allowPassword = true;
+                state.usePassword = true;
+              "
+              class="text-link sign-in-method-link"
               >Sign in using password instead</small
             >
           </div>
@@ -115,6 +122,7 @@ const state = reactive({
   email: '',
   password: '',
   useLink: false,
+  usePassword: true,
 });
 
 const rules = {
@@ -159,6 +167,7 @@ const validateRoarEmail = _debounce(
         } else {
           allowLink.value = true;
           allowPassword.value = false;
+          state.usePassword = false;
         }
       }
       state.useLink = allowLink.value;
@@ -222,6 +231,7 @@ watch(
   color: var(--primary-color-text);
 }
 .sign-in-method-link {
+  margin-top: 0.5rem;
   display: flex;
   justify-content: flex-end;
   width: 100%;
