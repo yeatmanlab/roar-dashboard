@@ -25,8 +25,8 @@
             game.taskData.name
           }}</span>
         </template>
-        <article class="roar-tabview-game pointer" @click="routeExternalTask(game)">
-          <div class="roar-game-content">
+        <article class="roar-tabview-game pointer">
+          <div class="roar-game-content" @click="routeExternalTask(game)">
             <h2 class="roar-game-title">{{ game.taskData.name }}</h2>
             <div class="roar-game-description">
               <p>{{ game.taskData.description }}</p>
@@ -50,18 +50,22 @@
               </i>
               <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
               <span v-else>{{ taskCompletedMessage }}</span>
+              <router-link
+                v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
+                :to="{ path: 'game/' + game.taskId }"
+              ></router-link>
             </div>
           </div>
           <div class="roar-game-image">
-            <img v-if="game.taskData.image" :src="game.taskData.image" />
-            <!-- TODO: Get real backup image -->
-            <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
+            <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
+              <VideoPlayer :options="returnVideoOptions(game.taskData?.tutorialVideo)" />
+            </div>
+            <div v-else>
+              <img v-if="game.taskData.image" :src="game.taskData.image" />
+              <!-- TODO: Get real backup image -->
+              <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
+            </div>
           </div>
-
-          <router-link
-            v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
-            :to="{ path: 'game/' + game.taskId }"
-          ></router-link>
         </article>
       </PvTabPanel>
     </PvTabView>
@@ -76,6 +80,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
+import VideoPlayer from '@/components/VideoPlayer.vue';
 
 const { t } = useI18n();
 
@@ -131,9 +136,32 @@ async function routeExternalTask(game) {
 
   window.location.href = url;
 }
+const returnVideoOptions = (videoURL) => {
+  return {
+    autoplay: false,
+    controls: true,
+    preload: true,
+    fluid: true,
+    sources: [
+      {
+        src: videoURL,
+        type: 'video/mp4',
+      },
+    ],
+  };
+};
 </script>
 <style scoped lang="scss">
 .pointer {
   cursor: pointer;
+}
+
+.video-player-wrapper {
+  // display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 30rem;
+  min-height: 100%;
 }
 </style>
