@@ -36,7 +36,7 @@
             </PvButton>
           </div>
         </div>
-        <div v-else class="loading-container flex text-center">
+        <div v-else class="loading-container flex text-center justify-content-center align-content-center">
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="flex text-center">Creating Family</span>
         </div>
