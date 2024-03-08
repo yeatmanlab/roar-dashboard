@@ -22,7 +22,6 @@
           </span>
           <!-- Email is entered, Password is desired -->
           <div v-else-if="allowPassword && allowLink">
-            {{ $t('authSignIn.bothAllowed') }}
             <PvPassword
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
@@ -34,7 +33,9 @@
               :placeholder="$t('authSignIn.passwordPlaceholder')"
               data-cy="input-password"
             />
-            <small @click="allowPassword = false">Send me an email instead</small>
+            <small @click="allowPassword = false" class="text-link sign-in-method-link"
+              >Sign-in with email link instead</small
+            >
           </div>
           <!-- Username is entered, Password is desired -->
           <PvPassword
@@ -66,8 +67,21 @@
           </PvPassword>
           <!-- Email is entered, MagicLink is desired login -->
           <div v-else-if="allowLink">
-            <PvPassword disabled :placeholder="$t('authSignIn.signInWithEmailLinkPlaceholder')" />
-            <small @click="allowPassword = true">Sign in using Password instead</small>
+            <PvPassword
+              :id="$t('authSignIn.passwordId')"
+              v-model="v$.password.$model"
+              :class="{ 'p-invalid': invalid }"
+              toggle-mask
+              show-icon="pi pi-eye-slash"
+              hide-icon="pi pi-eye"
+              :feedback="false"
+              :placeholder="$t('authSignIn.passwordPlaceholder')"
+              :disabled="true"
+              data-cy="input-password"
+            />
+            <small @click="allowPassword = true" class="text-link sign-in-method-link"
+              >Sign in using password instead</small
+            >
           </div>
           <!-- Email is entered, however it is an invalid email (prevent login) -->
           <div v-else>
@@ -184,5 +198,32 @@ watch(
 .submit-button:hover {
   background-color: #b7b5b5;
   color: black;
+}
+.text-link {
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  font-weight: bold;
+  text-decoration: underline;
+}
+.text-line {
+  border-bottom: 1px solid var(--primary-color-text);
+  margin-right: auto;
+  margin-left: auto;
+  width: 7rem;
+  line-height: 0.1em;
+  margin: 20px 0;
+}
+.text-line span {
+  padding: 0 0.5rem;
+  background-color: var(--surface-a);
+}
+
+.text-link:hover {
+  color: var(--primary-color-text);
+}
+.sign-in-method-link {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }
 </style>

@@ -101,6 +101,7 @@ const authWithClever = () => {
 };
 
 const authWithEmail = (state) => {
+  console.log('signing in with email', state);
   // If username is supplied instead of email
   // turn it into our internal auth email
   incorrect.value = false;
