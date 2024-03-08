@@ -78,7 +78,7 @@
               :class="{ 'p-invalid': invalid }"
               :feedback="false"
               :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
-              :disabled="true"
+              disabled
               data-cy="input-password"
             />
             <small
@@ -92,7 +92,11 @@
           </div>
           <!-- Email is entered, however it is an invalid email (prevent login) -->
           <div v-else>
-            <small>Invalid email!</small>
+            <PvPassword
+              disabled
+              class="p-invalid text-red-600"
+              :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
+            />
           </div>
         </div>
       </div>
@@ -213,18 +217,6 @@ watch(
   color: var(--text-color-secondary);
   font-weight: bold;
   text-decoration: underline;
-}
-.text-line {
-  border-bottom: 1px solid var(--primary-color-text);
-  margin-right: auto;
-  margin-left: auto;
-  width: 7rem;
-  line-height: 0.1em;
-  margin: 20px 0;
-}
-.text-line span {
-  padding: 0 0.5rem;
-  background-color: var(--surface-a);
 }
 
 .text-link:hover {
