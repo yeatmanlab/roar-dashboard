@@ -72,15 +72,7 @@
           </PvPassword>
           <!-- Email is entered, MagicLink is desired login -->
           <div v-else-if="allowLink">
-            <PvPassword
-              :id="$t('authSignIn.passwordId')"
-              v-model="v$.password.$model"
-              :class="{ 'p-invalid': invalid }"
-              :feedback="false"
-              :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
-              disabled
-              data-cy="input-password"
-            />
+            <PvPassword :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')" disabled />
             <small
               @click="
                 allowPassword = true;
