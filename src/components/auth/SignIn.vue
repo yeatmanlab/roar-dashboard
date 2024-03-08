@@ -39,6 +39,7 @@
                 state.usePassword = false;
               "
               class="text-link sign-in-method-link"
+              data-cy="sign-in-with-email-link"
               >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
             >
           </div>
@@ -72,13 +73,18 @@
           </PvPassword>
           <!-- Email is entered, MagicLink is desired login -->
           <div v-else-if="allowLink">
-            <PvPassword :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')" disabled />
+            <PvPassword
+              :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
+              disabled
+              data-cy="password-disabled-for-email"
+            />
             <small
               @click="
                 allowPassword = true;
                 state.usePassword = true;
               "
               class="text-link sign-in-method-link"
+              data-cy="sign-in-with-password"
               >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
             >
           </div>
