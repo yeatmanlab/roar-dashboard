@@ -15,6 +15,8 @@
     "passwordPlaceholder": "Password",
     "pickPassword": "Pick a password",
     "signInWithEmailLinkPlaceHolder": "Press Go to sign-in with an email link.",
+    "signInWithEmailLinkInstead": "Sign-in using email link",
+    "signInWithPasswordInstead": "Sign-in using password",
     "suggestions": "Suggestions"
   },
   "cleverLanding": {

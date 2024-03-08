@@ -39,7 +39,7 @@
                 state.usePassword = false;
               "
               class="text-link sign-in-method-link"
-              >Sign-in with email link instead</small
+              >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
             >
           </div>
           <!-- Username is entered, Password is desired -->
@@ -87,7 +87,7 @@
                 state.usePassword = true;
               "
               class="text-link sign-in-method-link"
-              >Sign in using password instead</small
+              >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
             >
           </div>
           <!-- Email is entered, however it is an invalid email (prevent login) -->

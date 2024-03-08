@@ -15,7 +15,9 @@
     "passwordId": "contraseña",
     "passwordPlaceholder": "Contraseña",
     "pickPassword": "Elige una contraseña",
-    "signInWithEmailLinkPlaceHolder": "Presiona Vamos para iniciar sesión con un link de correo electrónico.",
+    "signInWithEmailLinkPlaceHolder": "Presiona Go para iniciar sesión con un enlace de correo electrónico.",
+    "signInWithEmailLinkInstead": "Iniciar sesión con enlace de correo electrónico",
+    "signInWithPasswordInstead": "Iniciar sesión con contraseña",
     "suggestions": "Sugerencias"
   },
   "cleverLanding": {
