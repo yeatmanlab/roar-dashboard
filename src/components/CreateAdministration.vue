@@ -5,11 +5,6 @@
         Use this form to create a new administration and assign it to organizations.
 
         <PvDivider />
-
-        <div class="card flex justify-content-center">
-          <EditTaskDialog :visible="visible" :assessment="assessment" />
-        </div>
-
         <div class="formgrid grid mt-5">
           <div class="field col">
             <span class="p-float-label">
@@ -119,6 +114,10 @@
             <span>Loading Assessments</span>
           </div>
         </PvPanel>
+
+        <div class="card flex justify-content-center">
+          <EditTaskDialog :visible="visible" :assessment="assessment" />
+        </div>
 
         <div class="col-12 mb-3">
           <PvButton label="Create Administration" data-cy="button-create-administration" @click="submit" />
