@@ -2,15 +2,6 @@
   <div>TaskPicker</div>
   <PvPanel header="Task Picker" style="">
     <div class="w-full flex flex-row">
-      <!-- <PvTabView @tab-change="updateCurrentTab" class="variant-selector">
-        <PvTabPanel v-for="(value, key) in tasks" :key="key" :header="key" data-cy="tab-panel-org-header">
-          <PvScrollPanel style="height: 26rem; width: 100%">
-            <div v-for="variant in value">
-              <VariantCard :variant="variant" />
-            </div>
-          </PvScrollPanel>
-        </PvTabPanel>
-      </PvTabView> -->
       <div class="variant-selector">
         <PvDropdown
           v-model="currentTask"
@@ -20,42 +11,35 @@
           class="w-full"
         />
         <PvScrollPanel style="height: 26rem; width: 100%">
-          <draggable
+          <!-- Draggable Zone 1 -->
+          <VueDraggableNext
             v-model="currentVariants"
-            group="variant"
-            @start="drag = true"
-            @end="drag = false"
-            item-key="id"
-            class="w-full h-full"
-            style="background-color: aquamarine"
+            :group="{ name: 'people', pull: 'clone', put: false }"
+            :sort="false"
           >
-            <template #item="{ element }">
-              <div>{{ element }}</div>
-            </template>
-          </draggable>
-          <!-- <div v-for="variant in currentVariants">
-            <VariantCard :variant="variant" />
-          </div> -->
+            <transition-group>
+              <div v-for="element in currentVariants" :key="element.id">
+                <VariantCard :variant="element" />
+              </div>
+            </transition-group>
+          </VueDraggableNext>
         </PvScrollPanel>
       </div>
-      <div class="selected-container">
-        <div class="w-full" style="background-color: #fafafa; border: 1px solid #e5e7eb; height: 4rem">
-          Selected Content
-        </div>
-        <PvScrollPanel class="w-full h-full">
-          <draggable
+      <div class="variant-selector">
+        <PvScrollPanel style="height: 26rem; width: 100%">
+          <!-- Draggable Zone 2 -->
+          <VueDraggableNext
             v-model="selectedVariants"
-            group="variant"
-            @start="drag = true"
-            @end="drag = false"
-            item-key="id"
+            :group="{ name: 'people', pull: true, put: true }"
+            :sort="true"
             class="w-full h-full"
-            style="background-color: aquamarine"
           >
-            <template #item="{ element }">
-              <div>{{ element }}</div>
-            </template>
-          </draggable>
+            <transition-group>
+              <div v-for="element in selectedVariants" :key="element.id">
+                <VariantCard :variant="element" has-controls />
+              </div>
+            </transition-group>
+          </VueDraggableNext>
         </PvScrollPanel>
       </div>
     </div>
@@ -64,7 +48,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import _startCase from 'lodash/startCase';
-import draggable from 'vuedraggable';
+import { VueDraggableNext } from 'vue-draggable-next';
 import VariantCard from './VariantCard.vue';
 
 const props = defineProps({
@@ -74,12 +58,10 @@ const props = defineProps({
   },
 });
 
-const drag = ref(false);
-
 const taskOptions = computed(() => {
   return Object.keys(props.tasks).map((key) => {
     return {
-      label: _startCase(key),
+      label: key,
       value: key,
     };
   });
