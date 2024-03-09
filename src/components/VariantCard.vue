@@ -49,7 +49,9 @@
   <!---------- end card without buttons ----- >-->
   <div v-else :class="isActive()">
     <div class="ml-0 pl-0">
-      <PvButton class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+      <PvButton
+        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+        @click="handleRemove"
         ><i class="pi pi-times text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
       <PvButton class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
@@ -164,6 +166,11 @@ const props = defineProps({
 const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
 const showParams = ref(false);
+const emit = defineEmits(['remove']);
+
+const handleRemove = () => {
+  emit('remove', props.variant);
+};
 
 function toggleShowContent() {
   showContent.value = !showContent.value;

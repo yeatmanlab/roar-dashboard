@@ -36,7 +36,7 @@
           >
             <transition-group>
               <div v-for="element in selectedVariants" :key="element.id">
-                <VariantCard :variant="element" has-controls />
+                <VariantCard :variant="element" has-controls @remove="removeCard" />
               </div>
             </transition-group>
           </VueDraggableNext>
@@ -73,6 +73,11 @@ const currentVariants = computed(() => {
   return props.tasks[currentTask.value];
 });
 const selectedVariants = ref([]);
+
+// Card event handlers
+const removeCard = (variant) => {
+  selectedVariants.value = selectedVariants.value.filter((selectedVariant) => selectedVariant.id !== variant.id);
+};
 </script>
 <style lang="scss">
 .task-tab {
