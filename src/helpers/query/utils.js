@@ -91,13 +91,18 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
   const axiosInstance = getAxiosInstance(db);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
   const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-  return axiosInstance.get(docPath + queryString).then(({ data }) => {
-    return {
-      id: docId,
-      collection,
-      ..._mapValues(data.fields, (value) => convertValues(value)),
-    };
-  });
+  return axiosInstance
+    .get(docPath + queryString)
+    .then(({ data }) => {
+      return {
+        id: docId,
+        collection,
+        ..._mapValues(data.fields, (value) => convertValues(value)),
+      };
+    })
+    .catch((error) => {
+      console.error(error);
+    });
 };
 
 export const fetchDocsById = async (documents, db = 'admin') => {
