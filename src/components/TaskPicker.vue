@@ -3,7 +3,7 @@
   <div class="w-full flex flex-row">
     <PvTabView class="variant-selector">
       <PvTabPanel v-for="(value, key) in tasks" :key="key" :header="key" data-cy="tab-panel-org-header">
-        <div v-for="variant in value">
+        <div v-for="(variant, index) in value" :key="index">
           <VariantCard :variant="variant" />
         </div>
       </PvTabPanel>
