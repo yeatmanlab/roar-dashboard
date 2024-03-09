@@ -60,9 +60,11 @@ const props = defineProps({
 });
 
 const taskOptions = computed(() => {
-  return Object.keys(props.tasks).map((key) => {
+  return Object.entries(props.tasks).map((entry) => {
+    const key = entry[0];
+    const value = entry[1];
     return {
-      label: key,
+      label: value[0].task.name ?? key,
       value: key,
     };
   });

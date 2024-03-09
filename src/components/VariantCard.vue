@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!hasControls"
-    class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-1 hover:surface-hover m-2 mb-2"
+    class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-1 hover:surface-hover"
   >
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
