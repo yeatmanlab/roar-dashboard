@@ -12,37 +12,41 @@
         />
       </div>
       <div>
-        <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
-        <PvButton class="p-0 surface-hover border-none border-circle" @click="isInfoClicked()"
-          ><i class="pi pi-info-circle text-primary"></i
-        ></PvButton>
+        <div class="flex flex-row">
+          <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
+          <PvButton class="p-0 surface-hover border-none border-circle" @click="toggle($event)"
+            ><i class="pi pi-info-circle text-primary"></i
+          ></PvButton>
+        </div>
         <div class="flex align-items-center gap-2">
           <p class="m-0 mt-1 ml-2">
             <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
             <span class="font-bold">Variant id: </span>{{ variant.id }}
           </p>
         </div>
-        <div v-if="showParams" class="flex gap-2 mt-2 flex-column w-full pr-3">
-          <p class="font-bold mt-3 mb-1 ml-3">Parameters:</p>
-          <PvDataTable
-            class="p-datatable-small ml-3 border-1 surface-border"
-            table-style="min-width:40vh"
-            :value="displayParamList(variant.variant.params)"
-            scrollable
-            scroll-height="300px"
-          >
-            <PvColumn
-              field="key"
-              header="Parameter"
-              style="width: 50%; text-align: left; padding-left: 1vh; padding: 0.8vh; margin: 0.3vh"
-            ></PvColumn>
-            <PvColumn
-              field="value"
-              header="Value"
-              style="width: 50%; text-align: left; padding-left: 1vh; padding: 0.8vh"
-            ></PvColumn>
-          </PvDataTable>
-        </div>
+        <PvOverlayPanel ref="op" append-to="body" style="width: 450px">
+          <div class="flex gap-2 flex-column w-full pr-3">
+            <PvDataTable
+              class="p-datatable-small ml-3 border-1 surface-border text-xs"
+              header-style="font-size: small;"
+              table-style="min-width:40vh"
+              :value="displayParamList(variant.variant.params)"
+              scrollable
+              scroll-height="300px"
+            >
+              <PvColumn
+                field="key"
+                header="Parameter"
+                style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
+              ></PvColumn>
+              <PvColumn
+                field="value"
+                header="Value"
+                style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
+              ></PvColumn>
+            </PvDataTable>
+          </div>
+        </PvOverlayPanel>
       </div>
     </div>
   </div>
@@ -165,8 +169,8 @@ const props = defineProps({
 
 const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
-const showParams = ref(false);
 const emit = defineEmits(['remove']);
+const op = ref(null);
 
 const handleRemove = () => {
   emit('remove', props.variant);
@@ -197,7 +201,7 @@ const displayParamList = (inputObj) => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
 };
 
-function isInfoClicked() {
-  showParams.value = !showParams.value;
-}
+const toggle = (event) => {
+  op.value.toggle(event);
+};
 </script>

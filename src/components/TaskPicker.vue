@@ -8,12 +8,13 @@
           :options="taskOptions"
           option-label="label"
           option-value="value"
-          class="w-full"
+          class="w-full mt-1"
         />
         <PvScrollPanel style="height: 26rem; width: 100%">
           <!-- Draggable Zone 1 -->
           <VueDraggableNext
             v-model="currentVariants"
+            :reorderable-columns="true"
             :group="{ name: 'people', pull: 'clone', put: false }"
             :sort="false"
           >
@@ -26,13 +27,13 @@
         </PvScrollPanel>
       </div>
       <div class="variant-selector">
-        <PvScrollPanel style="height: 26rem; width: 100%">
+        <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
             v-model="selectedVariants"
             :group="{ name: 'people', pull: true, put: true }"
             :sort="true"
-            class="w-full h-full"
+            class="w-full h-full overflow-auto"
           >
             <transition-group>
               <div v-for="element in selectedVariants" :key="element.id">
