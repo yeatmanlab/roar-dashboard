@@ -227,7 +227,6 @@ function getKeyByValue(object, value) {
   return Object.keys(object).find((key) => object[key] === value);
 }
 
-
 async function submitUsers() {
   // Reset error users
   activeSubmit.value = true;

@@ -325,7 +325,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
   if (import.meta.env.MODE !== 'LEVANTE' && to.meta?.project === 'LEVANTE') {
-    return { path: "/"}
+    return { path: '/' };
   }
 
   const store = useAuthStore();
