@@ -64,6 +64,7 @@
 import { ref, computed } from 'vue';
 import _startCase from 'lodash/startCase';
 import _find from 'lodash/find';
+import _findIndex from 'lodash/findIndex';
 import { VueDraggableNext } from 'vue-draggable-next';
 import VariantCard from './VariantCard.vue';
 
@@ -97,10 +98,18 @@ const removeCard = (variant) => {
   selectedVariants.value = selectedVariants.value.filter((selectedVariant) => selectedVariant.id !== variant.id);
 };
 const moveCardUp = (variant) => {
-  console.log('moving up', variant);
+  const index = _findIndex(selectedVariants.value, (currentVariant) => currentVariant.id === variant.id);
+  if (index === 0) return;
+  const item = selectedVariants.value[index];
+  selectedVariants.value.splice(index, 1);
+  selectedVariants.value.splice(index - 1, 0, item);
 };
 const moveCardDown = (variant) => {
-  console.log('moving down', variant);
+  const index = _findIndex(selectedVariants.value, (currentVariant) => currentVariant.id === variant.id);
+  if (index === selectedVariants.value.length) return;
+  const item = selectedVariants.value[index];
+  selectedVariants.value.splice(index, 1);
+  selectedVariants.value.splice(index + 1, 0, item);
 };
 </script>
 <style lang="scss">

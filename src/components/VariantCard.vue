@@ -70,10 +70,14 @@
         @click="handleRemove"
         ><i class="pi pi-times text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
-      <PvButton class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+      <PvButton
+        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+        @click="handleMoveUp"
         ><i class="pi pi-sort-up text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
-      <PvButton class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+      <PvButton
+        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+        @click="handleMoveDown"
         ><i class="pi pi-sort-down text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
     </div>
