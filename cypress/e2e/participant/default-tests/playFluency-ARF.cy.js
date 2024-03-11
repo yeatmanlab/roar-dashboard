@@ -28,6 +28,6 @@ describe('Test playthrough of Fluency as a participant', () => {
     cy.visit('/');
     cy.wait(0.2 * timeout);
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-    cy.get('.tabview-nav-link-label').contains('ROAM - Fluency ARF').should('exist');
+    cy.get('.tabview-nav-link-label').contains('ROAM - Single-Digit').should('exist');
   });
 });

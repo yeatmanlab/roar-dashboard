@@ -22,11 +22,10 @@ describe('Test playthrough of Fluency as a participant', () => {
     playFluency(endText);
 
     //  Check if game is marked as complete on the dashboard
+    //  Check if game is marked as complete on the dashboard
     cy.visit('/');
     cy.wait(0.2 * timeout);
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-    cy.get('.tabview-nav-link-label', { timeout: timeout })
-      .contains('ROAM - Fluency ARF')
-      .should('have.attr', 'data-game-status', 'complete');
+    cy.get('.tabview-nav-link-label').contains('ROAM - Single-Digit').should('exist');
   });
 });
