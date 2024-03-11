@@ -24,7 +24,7 @@
     "version": "npm run format && git add -A"
   },
   "dependencies": {
-    "@bdelab/roam-fluency": "^1.10.4",
+    "@bdelab/roam-fluency": "^1.10.5",
     "@bdelab/roar-firekit": "^4.8.6",
     "@bdelab/roar-letter": "^1.6.7",
     "@bdelab/roar-multichoice": "^1.9.4",
@@ -33,6 +33,7 @@
     "@bdelab/roar-swr": "^1.8.4",
     "@bdelab/roar-utils": "^1.0.18",
     "@bdelab/roar-vocab": "^1.6.11",
+    "@esbuild/linux-x64": "^0.20.1",
     "@sentry/browser": "^7.103.0",
     "@sentry/integrations": "^7.103.0",
     "@sentry/vite-plugin": "^2.14.2",
