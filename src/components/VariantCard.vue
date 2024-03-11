@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!hasControls"
-    class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-2 hover:surface-hover"
+    class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover"
   >
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
@@ -276,8 +276,8 @@ const toEntryObjects = (inputObj) => {
 
 const isActive = () => {
   return !showContent.value
-    ? 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-2 hover:surface-hover z-1 relative'
-    : 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-2 hover:surface-hover z-1 relative shadow-2';
+    ? 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative'
+    : 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover z-1 relative shadow-2';
 };
 
 const displayParamList = (inputObj) => {

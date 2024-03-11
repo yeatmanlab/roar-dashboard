@@ -1,30 +1,65 @@
 <template>
   <div>TaskPicker</div>
   <PvPanel header="Task Picker">
-    <div class="w-full flex flex-row">
+    <template #icons>
+      <div class="flex flex-row align-items-center justify-content-end">
+        <!-- <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small> -->
+        <span>Show only named variants</span>
+        <PvInputSwitch v-model="namedOnly" class="ml-2" />
+      </div>
+    </template>
+    <div class="w-full flex flex-row gap-2">
       <div class="variant-selector">
-        <PvDropdown
-          v-model="currentTask"
-          :options="taskOptions"
-          option-label="label"
-          option-value="value"
-          class="w-full mt-1"
-        />
-        <PvScrollPanel style="height: 26rem; width: 100%">
-          <!-- Draggable Zone 1 -->
-          <VueDraggableNext
-            v-model="currentVariants"
-            :reorderable-columns="true"
-            :group="{ name: 'people', pull: 'clone', put: false }"
-            :sort="false"
-          >
-            <transition-group>
-              <div v-for="element in currentVariants" :key="element.id">
-                <VariantCard :variant="element" />
-              </div>
-            </transition-group>
-          </VueDraggableNext>
-        </PvScrollPanel>
+        <div class="flex flex-row">
+          <PvInputText v-model="searchTerm" placeholder="Variant name / ID" />
+          <small>Type 3 letters to search variant names or IDs</small>
+          <PvButton v-if="searchTerm" @click="clearSearch">X</PvButton>
+        </div>
+        <div v-if="!_isEmpty(searchResults)">
+          <PvScrollPanel style="height: 26rem; width: 100%">
+            <!-- Draggable Zone 3 -->
+            <VueDraggableNext
+              v-model="searchResults"
+              :reorderable-columns="true"
+              :group="{ name: 'variants', pull: 'clone', put: false }"
+              :sort="false"
+            >
+              <transition-group>
+                <div v-for="element in searchResults" :key="element.id">
+                  <VariantCard :variant="element" />
+                </div>
+              </transition-group>
+            </VueDraggableNext>
+          </PvScrollPanel>
+        </div>
+        <div v-if="_isEmpty(searchResults)">
+          <PvDropdown
+            v-model="currentTask"
+            :options="taskOptions"
+            option-label="label"
+            option-value="value"
+            class="w-full mt-1"
+          />
+          <PvScrollPanel style="height: 26rem; width: 100%">
+            <div v-if="!currentVariants.length">
+              No variants to show. Make sure 'Show only named variants' is unchecked to view all.
+            </div>
+            <!-- Draggable Zone 1 -->
+            <VueDraggableNext
+              v-model="currentVariants"
+              :reorderable-columns="true"
+              :group="{ name: 'variants', pull: 'clone', put: false }"
+              :sort="false"
+            >
+              <transition-group>
+                <div v-for="element in currentVariants" :key="element.id">
+                  <VariantCard :variant="element" />
+                </div>
+              </transition-group>
+            </VueDraggableNext>
+          </PvScrollPanel>
+        </div>
+        <div v-else>You're searching for {{ searchTerm }}</div>
       </div>
       <div class="w-full xl:w-6 lg:w-6">
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
@@ -32,7 +67,7 @@
           <VueDraggableNext
             v-model="selectedVariants"
             :group="{
-              name: 'people',
+              name: 'variants',
               pull: true,
               put: function (to, from) {
                 console.log(to, from);
@@ -61,10 +96,14 @@
   </PvPanel>
 </template>
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import _startCase from 'lodash/startCase';
 import _find from 'lodash/find';
+import _filter from 'lodash/filter';
 import _findIndex from 'lodash/findIndex';
+import _debounce from 'lodash/debounce';
+import _toLower from 'lodash/toLower';
+import _isEmpty from 'lodash/isEmpty';
 import { VueDraggableNext } from 'vue-draggable-next';
 import VariantCard from './VariantCard.vue';
 
@@ -86,12 +125,48 @@ const taskOptions = computed(() => {
   });
 });
 
+const namedOnly = ref(false);
+
 const currentTask = ref(Object.keys(props.tasks)[0]);
 
 const currentVariants = computed(() => {
+  if (namedOnly.value) {
+    return _filter(props.tasks[currentTask.value], (variant) => variant.variant.name);
+  }
   return props.tasks[currentTask.value];
 });
 const selectedVariants = ref([]);
+
+// Search handlers
+const searchTerm = ref('');
+
+const searchResults = ref([]);
+
+const searchCards = async (term) => {
+  Object.entries(props.tasks).forEach(([taskId, variants]) => {
+    const matchingVariants = _filter(variants, (variant) => {
+      if (_toLower(variant.variant.name).includes(_toLower(term)) || _toLower(variant.id).includes(_toLower(term)))
+        return true;
+      else return false;
+    });
+    searchResults.value.push(...matchingVariants);
+  });
+};
+
+function clearSearch() {
+  searchTerm.value = '';
+  searchResults.value = [];
+}
+
+const debounceSearch = _debounce(searchCards, 250);
+
+watch(searchTerm, (term) => {
+  if (term.length >= 3) {
+    debounceSearch(term);
+  } else {
+    searchResults.value = [];
+  }
+});
 
 // Card event handlers
 const removeCard = (variant) => {
