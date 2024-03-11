@@ -144,6 +144,7 @@ const toggleMenu = (event) => {
 };
 
 import ROARLogo from '@/assets/RoarLogo.vue';
+import LanguageSelector from './LanguageSelector.vue';
 </script>
 
 <style scoped></style>
