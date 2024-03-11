@@ -38,12 +38,14 @@
                 field="key"
                 header="Parameter"
                 style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
-              ></PvColumn>
+              >
+              </PvColumn>
               <PvColumn
                 field="value"
                 header="Value"
                 style="width: 50%; text-align: left; padding-left: 1vh; padding-top: 0.15vh; padding-bottom: 0.1vh"
-              ></PvColumn>
+              >
+              </PvColumn>
             </PvDataTable>
           </div>
         </PvOverlayPanel>
@@ -73,6 +75,7 @@
         <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
         <div class="flex align-items-center gap-2">
           <i class="pi pi-info-circle" style="margin-left: 0.625rem"></i>
+
           <p class="m-0 mt-1">
             <span class="font-bold">Variant name:</span> {{ variant.variant.name }} <br />
             <span class="font-bold">Variant id: </span>{{ variant.id }}
@@ -81,9 +84,7 @@
       </div>
     </div>
     <div class="mr-0 pl-0 flex flex-column justify-content-end">
-      <PvButton class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
-        ><i class="pi pi-pencil text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
-      ></PvButton>
+      <EditVariantDialog :visible="visible" :assessment="variant" :updateVariant="callUpdateVariant" />
       <PvButton
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
         @click="toggleShowContent()"
@@ -115,11 +116,8 @@
           header="Operation"
           style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh"
         ></PvColumn>
-        <PvColumn
-          field="value"
-          header="Value"
-          style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh"
-        ></PvColumn>
+        <PvColumn field="value" header="Value" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
+        </PvColumn>
       </PvDataTable>
     </div>
     <div class="flex mt-2 flex-column w-full pr-3">
@@ -141,11 +139,8 @@
           header="Operation"
           style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh"
         ></PvColumn>
-        <PvColumn
-          field="value"
-          header="Value"
-          style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh"
-        ></PvColumn>
+        <PvColumn field="value" header="Value" style="width: 33%; text-align: left; padding-left: 1vh; padding: 0.8vh">
+        </PvColumn>
       </PvDataTable>
     </div>
   </div>
@@ -154,6 +149,7 @@
 <script setup>
 import { ref } from 'vue';
 import _toPairs from 'lodash/toPairs';
+import EditVariantDialog from '@/components/EditVariantDialog.vue';
 
 const props = defineProps({
   variant: {
@@ -165,7 +161,15 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  updateVariant: {
+    required: true,
+    type: Function,
+  },
 });
+
+const callUpdateVariant = (id, assessment) => {
+  return props.updateVariant(id, assessment);
+};
 
 const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);

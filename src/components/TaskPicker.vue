@@ -20,7 +20,7 @@
           >
             <transition-group>
               <div v-for="element in currentVariants" :key="element.id">
-                <VariantCard :variant="element" />
+                <VariantCard :variant="element" :updateVariant="updateVariant" />
               </div>
             </transition-group>
           </VueDraggableNext>
@@ -53,14 +53,18 @@ import { VueDraggableNext } from 'vue-draggable-next';
 import VariantCard from './VariantCard.vue';
 
 const props = defineProps({
-  tasks: {
+  allVariants: {
     type: Object,
+    required: true,
+  },
+  setVariants: {
+    type: Function,
     required: true,
   },
 });
 
 const taskOptions = computed(() => {
-  return Object.keys(props.tasks).map((key) => {
+  return Object.keys(props.allVariants).map((key) => {
     return {
       label: key,
       value: key,
@@ -68,26 +72,33 @@ const taskOptions = computed(() => {
   });
 });
 
-const currentTask = ref(Object.keys(props.tasks)[0]);
+const updateVariant = (variantId, conditionals) => {
+  console.log('updatevariant taskpicker', variantId, conditionals);
+  // props.selectedVariant[]
+};
 
-const currentVariants = computed(() => {
-  return props.tasks[currentTask.value];
-});
 const selectedVariants = ref([]);
-
 // Card event handlers
 const removeCard = (variant) => {
   selectedVariants.value = selectedVariants.value.filter((selectedVariant) => selectedVariant.id !== variant.id);
 };
+
+const currentTask = ref(Object.keys(props.allVariants)[0]);
+
+const currentVariants = computed(() => {
+  return props.allVariants[currentTask.value];
+});
 </script>
 <style lang="scss">
 .task-tab {
   height: 100%;
   overflow: auto;
 }
+
 .variant-selector {
   width: 50%;
 }
+
 .selected-container {
   width: 100%;
   border: 1px solid var(--surface-d);

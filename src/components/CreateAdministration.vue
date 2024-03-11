@@ -44,7 +44,7 @@
 
         <OrgPicker @selection="selection($event)" />
 
-        <TaskPicker :tasks="variantsByTaskId" />
+        <TaskPicker :allVariants="variantsByTaskId" :set-variants="setVariants" />
 
         <PvPanel class="mt-3" header="Select assessments for this administration">
           <template #icons>
@@ -117,10 +117,6 @@
           </div>
         </PvPanel>
 
-        <div class="card flex justify-content-center">
-          <EditTaskDialog :visible="visible" :assessment="assessment" />
-        </div>
-
         <div class="col-12 mb-3">
           <PvButton label="Create Administration" data-cy="button-create-administration" @click="submit" />
         </div>
@@ -147,7 +143,6 @@ import { useAuthStore } from '@/store/auth';
 import AppSpinner from '@/components/AppSpinner.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { variantsFetcher } from '@/helpers/query/tasks';
-import EditTaskDialog from './tasks/EditTaskDialog.vue';
 import TaskPicker from './TaskPicker.vue';
 
 const router = useRouter();
@@ -216,6 +211,11 @@ const selection = (selected) => {
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
+
+// Card event handlers
+const setVariants = (variants) => {
+  console.log(variants);
+};
 
 let paramPanelRefs = {};
 
