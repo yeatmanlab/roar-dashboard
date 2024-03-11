@@ -14,8 +14,13 @@
       <div>
         <div class="flex flex-row">
           <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
-          <PvButton class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"  @click="toggle($event)"
-            ><i v-tooltip.top="'Click to view params'" class="pi pi-info-circle text-primary p-1 border-circle hover:text-100 hover:bg-primary"></i
+          <PvButton
+            class="p-0 surface-hover border-none border-circle hover:text-100 hover:bg-primary"
+            @click="toggle($event)"
+            ><i
+              v-tooltip.top="'Click to view params'"
+              class="pi pi-info-circle text-primary p-1 border-circle hover:text-100 hover:bg-primary"
+            ></i
           ></PvButton>
         </div>
         <div class="flex align-items-center gap-2">
@@ -26,7 +31,12 @@
         </div>
         <PvOverlayPanel ref="op" append-to="body" style="width: 40vh">
           <div class="flex justify-content-end mt-0 mb-2">
-            <PvButton class="p-0 surface-hover border-none border-circle -rotate-45" @click="visible = true"><i v-tooltip.top="'Click to expand'" class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100 hover:bg-primary"></i></PvButton>
+            <PvButton class="p-0 surface-hover border-none border-circle -rotate-45" @click="visible = true"
+              ><i
+                v-tooltip.top="'Click to expand'"
+                class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100 hover:bg-primary"
+              ></i
+            ></PvButton>
           </div>
           <div class="flex gap-2 flex-column w-full pr-3">
             <PvDataTable
@@ -75,7 +85,10 @@
         <div class="flex flex-row">
           <span class="font-bold" style="margin-left: 0.625rem">{{ variant.task.name }}</span>
           <PvButton class="p-0 surface-hover border-none border-circle" @click="toggle($event)"
-            ><i v-tooltip.top="'Click to view params'" class="pi pi-info-circle text-primary p-1 border-circle hover:text-100 hover:bg-primary"></i
+            ><i
+              v-tooltip.top="'Click to view params'"
+              class="pi pi-info-circle text-primary p-1 border-circle hover:text-100 hover:bg-primary"
+            ></i
           ></PvButton>
         </div>
         <div class="flex align-items-center gap-2">
@@ -87,7 +100,12 @@
       </div>
       <PvOverlayPanel ref="op" append-to="body" class="border-1 surface-border" style="width: 40vh">
         <div class="flex justify-content-end mt-0 mb-2">
-          <PvButton class="p-0 surface-hover border-none border-circle -rotate-45" @click="visible = true"><i v-tooltip.top="'Click to expand'" class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100 hover:bg-primary"></i></PvButton>
+          <PvButton class="p-0 surface-hover border-none border-circle -rotate-45" @click="visible = true"
+            ><i
+              v-tooltip.top="'Click to expand'"
+              class="pi pi-arrows-h border-circle p-2 text-primary hover:text-100 hover:bg-primary"
+            ></i
+          ></PvButton>
         </div>
         <div class="flex gap-2 flex-column w-full pr-3">
           <PvDataTable
