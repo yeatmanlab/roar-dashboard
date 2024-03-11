@@ -79,7 +79,7 @@
         :expanded="expanded"
       />
     </div>
-    <div class="support-wrapper" id="support-graphic">
+    <div id="support-graphic" class="support-wrapper">
       <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">

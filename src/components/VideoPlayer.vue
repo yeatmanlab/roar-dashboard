@@ -28,7 +28,7 @@ export default {
       this.player.log('onPlayerReady', this);
     });
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.player) {
       this.player.dispose();
     }

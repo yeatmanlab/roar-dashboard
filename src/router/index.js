@@ -181,12 +181,6 @@ const routes = [
     meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/register-users',
-    name: 'Register Users',
-    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
-    meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
-  },
-  {
     path: '/signin',
     name: 'SignIn',
     component: () => import('../pages/SignIn.vue'),
@@ -298,6 +292,12 @@ const routes = [
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
   },
   {
+    path: '/survey',
+    name: 'Survey',
+    component: () => import('../pages/LEVANTE/UserSurvey.vue'),
+    meta: { pageTitle: 'Survey' },
+  },
+  {
     path: '/enable-cookies',
     name: 'EnableCookies',
     component: () => import('../pages/EnableCookies.vue'),
@@ -308,6 +308,19 @@ const routes = [
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),
     meta: { pageTitle: 'Whoops! 404 Page!' },
+  },
+  // LEVANTE
+  {
+    path: '/register-users',
+    name: 'Register Users',
+    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
+    meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
+  },
+  {
+    path: '/survey',
+    name: 'Survey',
+    component: () => import('../pages/LEVANTE/UserSurvey.vue'),
+    meta: { pageTitle: 'Survey', project: 'LEVANTE' },
   },
 ];
 
@@ -325,7 +338,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
   if (import.meta.env.MODE !== 'LEVANTE' && to.meta?.project === 'LEVANTE') {
-    return { path: "/"}
+    return { path: '/' };
   }
 
   const store = useAuthStore();
