@@ -94,7 +94,12 @@ export const useAuthStore = () => {
       },
       async logInWithEmailAndPassword({ email, password }) {
         if (this.isFirekitInit) {
-          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {});
+          return this.roarfirekit
+            .logInWithEmailAndPassword({ email, password })
+            .then(() => {})
+            .catch((error) => {
+              console.error('Error signing in:', error);
+            });
         }
       },
       async initiateLoginWithEmailLink({ email }) {
@@ -183,6 +188,11 @@ export const useAuthStore = () => {
       //   await roarfirekit.addUserToAdminRequests();
       //   await this.setRoles();
       // },
+
+      // ------------------ LEVANTE ------------------
+      async createLevanteUsers(userData) {
+        return this.roarfirekit.createLevanteUsersWithEmailPassword(userData);
+      },
     },
     // persist: true
     persist: {
