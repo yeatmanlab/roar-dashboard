@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!hasControls"
-    class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-1 hover:surface-hover"
+    class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-2 hover:surface-hover"
   >
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
@@ -63,7 +63,7 @@
     </div>
   </div>
   <!---------- end card without buttons ----- >-->
-  <div v-else :class="isActive()">
+  <div v-else :class="isActive()" :id="variant.id">
     <div class="ml-0 pl-0">
       <PvButton
         class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
@@ -240,12 +240,19 @@ const props = defineProps({
 
 const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
-const emit = defineEmits(['remove']);
 const op = ref(null);
 const visible = ref(false);
+const showParams = ref(false);
+const emit = defineEmits(['remove', 'moveUp', 'moveDown']);
 
 const handleRemove = () => {
   emit('remove', props.variant);
+};
+const handleMoveUp = () => {
+  emit('moveUp', props.variant);
+};
+const handleMoveDown = () => {
+  emit('moveDown', props.variant);
 };
 
 function toggleShowContent() {
@@ -265,8 +272,8 @@ const toEntryObjects = (inputObj) => {
 
 const isActive = () => {
   return !showContent.value
-    ? 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-1 hover:surface-hover m-2 mb-0 z-1 relative'
-    : 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-1 hover:surface-hover m-2 mb-0 z-1 relative shadow-2';
+    ? 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-2 hover:surface-hover z-1 relative'
+    : 'flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mt-2 hover:surface-hover z-1 relative shadow-2';
 };
 
 const displayParamList = (inputObj) => {

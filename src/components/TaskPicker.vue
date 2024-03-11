@@ -1,8 +1,8 @@
 <template>
   <div>TaskPicker</div>
-  <PvPanel header="Task Picker" style="">
-    <div class="w-full flex flex-column xl:flex-row lg:flex-row">
-      <div class="w-full xl:w-6 lg:w-6">
+  <PvPanel header="Task Picker">
+    <div class="w-full flex flex-row">
+      <div class="variant-selector">
         <PvDropdown
           v-model="currentTask"
           :options="taskOptions"
@@ -31,13 +31,27 @@
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
             v-model="selectedVariants"
-            :group="{ name: 'people', pull: true, put: true }"
+            :group="{
+              name: 'people',
+              pull: true,
+              put: function (to, from) {
+                console.log(to, from);
+                return true;
+              },
+              animation: 100,
+            }"
             :sort="true"
             class="w-full h-full overflow-auto"
           >
             <transition-group>
-              <div v-for="element in selectedVariants" :key="element.id">
-                <VariantCard :variant="element" has-controls @remove="removeCard" />
+              <div v-for="element in selectedVariants" :key="element.id" :id="element.id">
+                <VariantCard
+                  :variant="element"
+                  has-controls
+                  @remove="removeCard"
+                  @moveUp="moveCardUp"
+                  @moveDown="moveCardDown"
+                />
               </div>
             </transition-group>
           </VueDraggableNext>
@@ -49,6 +63,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import _startCase from 'lodash/startCase';
+import _find from 'lodash/find';
 import { VueDraggableNext } from 'vue-draggable-next';
 import VariantCard from './VariantCard.vue';
 
@@ -80,6 +95,12 @@ const selectedVariants = ref([]);
 // Card event handlers
 const removeCard = (variant) => {
   selectedVariants.value = selectedVariants.value.filter((selectedVariant) => selectedVariant.id !== variant.id);
+};
+const moveCardUp = (variant) => {
+  console.log('moving up', variant);
+};
+const moveCardDown = (variant) => {
+  console.log('moving down', variant);
 };
 </script>
 <style lang="scss">
