@@ -228,19 +228,18 @@ const exportToPdf = async () => {
   }
   const supportGraphic = document.getElementById('support-graphic');
   if (supportGraphic !== null) {
-    yCounter = await addElementToPdf(supportGraphic, doc, yCounter);
+    await addElementToPdf(supportGraphic, doc, yCounter);
   }
 
   doc.save(`IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`),
     (exportLoading.value = false);
-
-  return;
 };
 
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId));
 
 const formattedTasks = computed(() => {
   return (
+    // eslint-disable-next-line vue/no-side-effects-in-computed-properties
     tasks?.value
       .sort((a, b) => {
         if (Object.keys(taskDisplayNames).includes(a) && Object.keys(taskDisplayNames).includes(b)) {

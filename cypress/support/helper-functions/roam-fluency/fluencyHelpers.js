@@ -1,6 +1,5 @@
 const timeout = Cypress.env('timeout');
 const participantId = '123456789';
-const practiceNumber = '1';
 const questionInput = '42';
 
 function typeEnter() {
@@ -16,20 +15,14 @@ function playFluencyIntro() {
 
   //   Click textbox and enter random participantId
   cy.get('#input-0', { timeout: timeout }).type(`${participantId} {enter}`);
+  waitTimeout();
   typeEnter();
-
-  //   Input any number
-  cy.get('#practice_number', { timeout: timeout }).type(practiceNumber);
+  waitTimeout();
 
   //   Click enter
-  typeEnter();
+  cy.get('body').type('1 {enter}');
   waitTimeout();
 
-  // Click enter
-  typeEnter();
-  waitTimeout();
-
-  // Click enter
   typeEnter();
   waitTimeout();
 
@@ -37,9 +30,19 @@ function playFluencyIntro() {
   cy.get('body').type('{backspace}');
   waitTimeout();
 
-  //   Enter x2
-  cy.get('body').type('x2 {enter}');
+  // Input example number, enter x1
+  cy.get('#practice_number').type('10');
   waitTimeout();
+
+  cy.get('#practice_number').type('{enter}');
+  typeEnter();
+  waitTimeout();
+
+  //   Enter x2
+  //cy.get("body").type("x2 {enter}");
+  typeEnter();
+  typeEnter();
+  //waitTimeout();
 
   //   Type 4, enter x2
   cy.get('#question_input_key').type('4');
@@ -80,7 +83,6 @@ function checkGameComplete(endText) {
             cy.get('body').type('{enter}');
           });
         cy.log('Game complete.');
-        cy.get('body', { timeout: timeout }).type('{enter}');
       } else {
         cy.log('Continuing game...');
         playFluencyLoop();
