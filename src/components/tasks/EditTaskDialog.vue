@@ -148,7 +148,6 @@ const removeRow = (index) => {
   data.value.splice(index, 1);
 };
 
-compiute;
 
 const conditionals = ref([
   {

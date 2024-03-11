@@ -1,8 +1,8 @@
 <template>
   <div>TaskPicker</div>
   <PvPanel header="Task Picker" style="">
-    <div class="w-full flex flex-row">
-      <div class="variant-selector">
+    <div class="w-full flex flex-column xl:flex-row lg:flex-row">
+      <div class="w-full xl:w-6 lg:w-6">
         <PvDropdown
           v-model="currentTask"
           :options="taskOptions"
@@ -26,7 +26,7 @@
           </VueDraggableNext>
         </PvScrollPanel>
       </div>
-      <div class="variant-selector">
+      <div class="w-full xl:w-6 lg:w-6">
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
@@ -85,9 +85,7 @@ const removeCard = (variant) => {
   height: 100%;
   overflow: auto;
 }
-.variant-selector {
-  width: 50%;
-}
+
 .selected-container {
   width: 100%;
   border: 1px solid var(--surface-d);
