@@ -9,7 +9,7 @@
       </div>
     </template>
     <div class="w-full flex flex-row gap-2">
-      <div class="variant-selector">
+      <div class="w-full">
         <div class="flex flex-row">
           <PvInputText v-model="searchTerm" placeholder="Variant name / ID" />
           <small>Type 3 letters to search variant names or IDs</small>
