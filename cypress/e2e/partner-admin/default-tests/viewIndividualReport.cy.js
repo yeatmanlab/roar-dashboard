@@ -40,8 +40,7 @@ describe('The partner admin can view score reports for a given administration.',
     cy.checkUserList(testUserList);
     checkAssignmentColumns(testAssignments);
     cy.get('button').contains('Report').click();
-    cy.wait(4000);
-    cy.get('div').contains('Individual Score Report');
+    cy.get('div', { timeout: 3 * timeout }).contains('Individual Score Report');
     cy.get('button').contains('Expand All Sections').click();
     cy.get('button').contains('Export to PDF');
     cy.get('div').contains('The ROAR assessements return 3 kinds of scores');
