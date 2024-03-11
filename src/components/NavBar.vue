@@ -3,7 +3,8 @@
     <nav class="container flex flex-row align-items-center">
       <router-link :to="{ name: 'Home' }">
         <div class="navbar-logo">
-          <ROARLogo />
+          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
+          <ROARLogo v-else />
         </div>
       </router-link>
 
@@ -46,6 +47,7 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 
 const init = () => {
@@ -148,6 +150,7 @@ const toggleMenu = (event) => {
 };
 
 import ROARLogo from '@/assets/RoarLogo.vue';
+import LanguageSelector from './LanguageSelector.vue';
 </script>
 
 <style scoped></style>

@@ -1385,7 +1385,6 @@
 .p-dialog .p-dialog-header .p-dialog-header-icon:focus {
   outline: 0 none;
   outline-offset: 0;
-  box-shadow: 0 0 0 1px var(--indigo-500);
 }
 .p-dialog .p-dialog-header .p-dialog-header-icon:last-child {
   margin-right: 0;
@@ -1422,14 +1421,16 @@
 .p-overlaypanel {
   background: var(--surface-a);
   color: var(--text-color);
-  border: 0 none;
   border-radius: var(--border-radius);
   box-shadow:
     0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 .p-overlaypanel .p-overlaypanel-content {
-  padding: 1.25rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 .p-overlaypanel .p-overlaypanel-close {
   background: var(--primary-color);

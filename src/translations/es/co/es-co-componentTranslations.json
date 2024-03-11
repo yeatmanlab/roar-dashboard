@@ -4,7 +4,6 @@
     "atLeastOneUpperCase": "Al menos una letra mayúscula",
     "atLeastOneNumber": "Al menos un número",
     "atLeastOneNumeric": "Al menos un numéro",
-    "bothAllowed": "Ambos están permitidos",
     "buttonLabel": "¡Vamos!",
     "minimumCharacters": "Mínimo 8 caracteres",
     "emailId": "correo electrónico",
@@ -16,6 +15,8 @@
     "passwordPlaceholder": "Contraseña",
     "pickPassword": "Elige una contraseña",
     "signInWithEmailLinkPlaceHolder": "Presiona Vamos para iniciar sesión con un enlace de correo electrónico.",
+    "signInWithEmailLinkInstead": "Iniciar sesión con enlace de correo electrónico",
+    "signInWithPasswordInstead": "Iniciar sesión con contraseña",
     "suggestions": "Sugerencias"
   },
   "cleverLanding": {

@@ -97,42 +97,42 @@ const routes = [
     path: '/game/fluency-arf',
     name: 'Fluency-ARF',
     component: () => import('../components/tasks/TaskFluency.vue'),
-    props: { taskId: 'fluency-arf' },
+    props: { taskId: 'fluency-arf', language: 'en' },
     meta: { pageTitle: 'Fluency-ARF' },
   },
   {
     path: '/game/fluency-arf-es',
     name: 'Fluency-ARF-ES',
     component: () => import('../components/tasks/TaskFluency.vue'),
-    props: { taskId: 'fluency-arf-es' },
+    props: { taskId: 'fluency-arf-es', language: 'es' },
     meta: { pageTitle: 'Fluency-ARF ES' },
   },
   {
     path: '/game/fluency-calf',
     name: 'Fluency-CALF',
     component: () => import('../components/tasks/TaskFluency.vue'),
-    props: { taskId: 'fluency-calf' },
+    props: { taskId: 'fluency-calf', language: 'en' },
     meta: { pageTitle: 'Fluency-CALF' },
   },
   {
     path: '/game/fluency-calf-es',
     name: 'Fluency-CALF-ES',
     component: () => import('../components/tasks/TaskFluency.vue'),
-    props: { taskId: 'fluency-calf-es' },
+    props: { taskId: 'fluency-calf-es', language: 'es' },
     meta: { pageTitle: 'Fluency-CALF ES' },
   },
   {
     path: '/game/fluency-alpaca',
     name: 'Fluency-Alpaca',
     component: () => import('../components/tasks/TaskFluency.vue'),
-    props: { taskId: 'fluency-alpaca' },
+    props: { taskId: 'fluency-alpaca', language: 'en' },
     meta: { pageTitle: 'Fluency-Alpaca' },
   },
   {
     path: '/game/fluency-alpaca-es',
     name: 'Fluency-Alpaca-ES',
     component: () => import('../components/tasks/TaskFluency.vue'),
-    props: { taskId: 'fluency-alpaca-es' },
+    props: { taskId: 'fluency-alpaca-es', language: 'es' },
     meta: { pageTitle: 'Fluency-Alpaca ES' },
   },
   {
@@ -179,12 +179,6 @@ const routes = [
     name: 'RegisterStudents',
     component: () => import('../pages/RegisterStudents.vue'),
     meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
-  },
-  {
-    path: '/register-users',
-    name: 'Register Users',
-    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
-    meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {
     path: '/signin',
@@ -298,6 +292,12 @@ const routes = [
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
   },
   {
+    path: '/survey',
+    name: 'Survey',
+    component: () => import('../pages/LEVANTE/UserSurvey.vue'),
+    meta: { pageTitle: 'Survey' },
+  },
+  {
     path: '/enable-cookies',
     name: 'EnableCookies',
     component: () => import('../pages/EnableCookies.vue'),
@@ -308,6 +308,19 @@ const routes = [
     name: 'NotFound',
     component: () => import('../pages/NotFound.vue'),
     meta: { pageTitle: 'Whoops! 404 Page!' },
+  },
+  // LEVANTE
+  {
+    path: '/register-users',
+    name: 'Register Users',
+    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
+    meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
+  },
+  {
+    path: '/survey',
+    name: 'Survey',
+    component: () => import('../pages/LEVANTE/UserSurvey.vue'),
+    meta: { pageTitle: 'Survey', project: 'LEVANTE' },
   },
 ];
 

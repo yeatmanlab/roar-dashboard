@@ -102,6 +102,9 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
     })
     .catch((error) => {
       console.error(error);
+      return {
+        data: `${error.code === '404' ? 'Document not found' : error.message}`,
+      };
     });
 };
 
@@ -128,4 +131,32 @@ export const fetchDocsById = async (documents, db = 'admin') => {
 export const matchMode2Op = {
   equals: 'EQUAL',
   notEquals: 'NOT_EQUAL',
+};
+
+export const fetchSubcollection = async (collectionPath, subcollectionName, select = [], db = 'admin') => {
+  const axiosInstance = getAxiosInstance(db);
+  // Construct the path to the subcollection
+  const subcollectionPath = `/${collectionPath}/${subcollectionName}`;
+  const queryParams = select.map((field) => `mask.fieldPaths=${field}`).join('&');
+  const queryString = queryParams ? `?${queryParams}` : '';
+
+  return axiosInstance
+    .get(subcollectionPath + queryString)
+    .then(({ data }) => {
+      // Assuming the API returns an array of document data in the subcollection
+      return data.documents
+        ? data.documents.map((doc) => {
+            return {
+              id: doc.name.split('/').pop(), // Extract document ID from the document name/path
+              ..._mapValues(doc.fields, (value) => convertValues(value)),
+            };
+          })
+        : [];
+    })
+    .catch((error) => {
+      console.error(error);
+      return {
+        error: `${error.response.status === 404 ? 'Subcollection not found' : error.message}`,
+      };
+    });
 };
