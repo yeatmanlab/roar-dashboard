@@ -125,7 +125,7 @@ const taskOptions = computed(() => {
   });
 });
 
-const namedOnly = ref(false);
+const namedOnly = ref(true);
 
 const currentTask = ref(Object.keys(props.tasks)[0]);
 
