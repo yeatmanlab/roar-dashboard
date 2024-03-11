@@ -48,12 +48,8 @@
     "chart.js": "^4.3.3",
     "core-tasks": "^1.0.0-alpha.1",
     "dotenv": "^16.3.1",
-    "emailjs-com": "^3.2.0",
-    "firebase": "^9.14.0",
     "html2canvas": "^1.4.1",
-    "jose": "^4.14.4",
     "jspdf": "^2.5.1",
-    "list": "^2.0.19",
     "lodash": "^4.17.21",
     "marked": "^7.0.3",
     "papaparse": "^5.3.2",
@@ -91,7 +87,6 @@
     "prettier": "3.0.3",
     "sass": "^1.50.1",
     "vite": "^4.1.4",
-    "vite-plugin-favicons-inject": "^2.2.0",
-    "vite-plugin-vue-markdown": "^0.22.4"
+    "vite-plugin-favicons-inject": "^2.2.0"
   }
 }
