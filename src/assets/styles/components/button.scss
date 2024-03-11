@@ -76,7 +76,7 @@
 .p-button:focus {
   outline: 0 none;
   outline-offset: 0;
-  box-shadow: 0 0 0 1px var(--indigo-500);
+  // box-shadow: 0 0 0 1px var(--primary-color);
 }
 .p-button .p-button-label {
   transition-duration: 0.2s;

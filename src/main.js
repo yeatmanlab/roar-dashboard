@@ -35,6 +35,7 @@ import PvInputNumber from 'primevue/inputnumber';
 import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvInlineMessage from 'primevue/inlinemessage';
+import PvKnob from 'primevue/knob';
 import PvListbox from 'primevue/listbox';
 import PvMessage from 'primevue/message';
 import PvMenu from 'primevue/menu';
@@ -58,6 +59,7 @@ import PvTag from 'primevue/tag';
 import PvToast from 'primevue/toast';
 import PvTreeTable from 'primevue/treetable';
 import PvTriStateCheckbox from 'primevue/tristatecheckbox';
+import PvImage from 'primevue/image';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -133,6 +135,7 @@ app.component('PvInputNumber', PvInputNumber);
 app.component('PvInputSwitch', PvInputSwitch);
 app.component('PvInputText', PvInputText);
 app.component('PvListbox', PvListbox);
+app.component('PvKnob', PvKnob);
 app.component('PvMessage', PvMessage);
 app.component('PvMenu', PvMenu);
 app.component('PvMultiSelect', PvMultiSelect);
@@ -157,7 +160,7 @@ app.component('PvTreeTable', PvTreeTable);
 app.component('PvTriStateCheckbox', PvTriStateCheckbox);
 app.component('PvDataTable', PvDataTable);
 app.component('PvColumn', PvColumn);
-
+app.component('PvImage', PvImage);
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
 

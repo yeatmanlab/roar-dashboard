@@ -1196,14 +1196,15 @@
 }
 
 .p-scrollpanel .p-scrollpanel-bar {
-  background: var(--surface-b);
+  background: var(--surface-300);
   border: 0 none;
   transition: none;
+  margin-left: 3px;
 }
 .p-scrollpanel .p-scrollpanel-bar:focus {
   outline: 0 none;
   outline-offset: 0;
-  box-shadow: 0 0 0 1px var(--indigo-500);
+  /* box-shadow: 0 0 0 1px var(--indigo-500); */
 }
 
 .p-splitter {
