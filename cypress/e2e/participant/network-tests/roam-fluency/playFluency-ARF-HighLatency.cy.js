@@ -11,7 +11,7 @@ describe('Test playthrough of Fluency as a participant', () => {
 
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
-    cy.get('.p-tabview', { timeout: timeout }).contains('ROAM - Fluency ARF');
+    cy.get('.p-tabview', { timeout: timeout }).contains('ROAM - Single-Digit');
     cy.visit(`/game/fluency-arf`);
 
     //   Click jspsych button to begin
