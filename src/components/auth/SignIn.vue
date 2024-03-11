@@ -16,10 +16,34 @@
       </div>
       <div class="field mt-4 mb-5">
         <div>
+          <!-- Email is currently being evaluated (loading state) -->
           <span v-if="evaluatingEmail">
             <PvSkeleton height="2.75rem" />
           </span>
-          <div v-else-if="allowPassword && allowLink">{{ $t('authSignIn.bothAllowed') }}</div>
+          <!-- Email is entered, Password is desired -->
+          <div v-else-if="allowPassword && allowLink">
+            <PvPassword
+              :id="$t('authSignIn.passwordId')"
+              v-model="v$.password.$model"
+              :class="{ 'p-invalid': invalid }"
+              toggle-mask
+              show-icon="pi pi-eye-slash"
+              hide-icon="pi pi-eye"
+              :feedback="false"
+              :placeholder="$t('authSignIn.passwordPlaceholder')"
+              data-cy="input-password"
+            />
+            <small
+              @click="
+                allowPassword = false;
+                state.usePassword = false;
+              "
+              class="text-link sign-in-method-link"
+              data-cy="sign-in-with-email-link"
+              >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
+            >
+          </div>
+          <!-- Username is entered, Password is desired -->
           <PvPassword
             v-else-if="allowPassword"
             :id="$t('authSignIn.passwordId')"
@@ -47,9 +71,24 @@
               </ul>
             </template>
           </PvPassword>
+          <!-- Email is entered, MagicLink is desired login -->
           <div v-else-if="allowLink">
-            <PvPassword disabled :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')" />
+            <PvPassword
+              :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
+              disabled
+              data-cy="password-disabled-for-email"
+            />
+            <small
+              @click="
+                allowPassword = true;
+                state.usePassword = true;
+              "
+              class="text-link sign-in-method-link"
+              data-cy="sign-in-with-password"
+              >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
+            >
           </div>
+          <!-- Email is entered, however it is an invalid email (prevent login) -->
           <div v-else>
             <PvPassword
               disabled
@@ -85,6 +124,7 @@ const state = reactive({
   email: '',
   password: '',
   useLink: false,
+  usePassword: true,
 });
 
 const rules = {
@@ -137,6 +177,7 @@ const validateRoarEmail = _debounce(
         } else {
           allowLink.value = true;
           allowPassword.value = false;
+          state.usePassword = false;
         }
       }
       state.useLink = allowLink.value;
@@ -176,5 +217,21 @@ watch(
 .submit-button:hover {
   background-color: #b7b5b5;
   color: black;
+}
+.text-link {
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.text-link:hover {
+  color: var(--primary-color-text);
+}
+.sign-in-method-link {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }
 </style>

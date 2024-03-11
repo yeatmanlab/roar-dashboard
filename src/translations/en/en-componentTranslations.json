@@ -4,7 +4,6 @@
     "atLeastOneUpperCase": "At least one uppercase",
     "atLeastOneNumber": "At least one number",
     "atLeastOneNumeric": "At least one numeric",
-    "bothAllowed": "Both are allowed",
     "buttonLabel": "Go!",
     "minimumCharacters": "Minimum 8 characters",
     "emailId": "email",
@@ -15,6 +14,8 @@
     "passwordPlaceholder": "Password",
     "pickPassword": "Pick a password",
     "signInWithEmailLinkPlaceHolder": "Press Go to sign-in with an email link.",
+    "signInWithEmailLinkInstead": "Sign-in using email link",
+    "signInWithPasswordInstead": "Sign-in using password",
     "suggestions": "Suggestions"
   },
   "cleverLanding": {
