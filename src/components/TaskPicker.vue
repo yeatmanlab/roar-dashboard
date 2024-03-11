@@ -43,6 +43,7 @@
           <PvScrollPanel style="height: 26rem; width: 100%">
             <div v-if="!currentVariants.length">
               No variants to show. Make sure 'Show only named variants' is unchecked to view all.
+              <span class="text-link" @click="namedOnly = false">View all</span>
             </div>
             <!-- Draggable Zone 1 -->
             <VueDraggableNext
@@ -226,5 +227,11 @@ const moveCardDown = (variant) => {
 =======>>>>>>>aea85865fd19db50c308bf77bf6d621de224c6a5 .selected-container {
   width: 100%;
   border: 1px solid var(--surface-d);
+}
+.text-link {
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  font-weight: bold;
+  text-decoration: underline;
 }
 </style>
