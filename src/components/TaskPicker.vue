@@ -6,13 +6,16 @@
         <!-- <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small> -->
         <span>Show only named variants</span>
         <PvInputSwitch v-model="namedOnly" class="ml-2" />
+        <button @click="tasksPaneOpen = !tasksPaneOpen">toggle pane</button>
       </div>
     </template>
     <div class="w-full flex flex-row gap-2">
-      <div class="w-full">
+      <div v-if="tasksPaneOpen" class="w-6">
         <div class="flex flex-row">
-          <PvInputText v-model="searchTerm" placeholder="Variant name / ID" />
-          <small>Type 3 letters to search variant names or IDs</small>
+          <div class="flex flex-column flex-grow-1 p-input-icon-left">
+            <i class="pi pi-search" />
+            <PvInputText v-model="searchTerm" placeholder="Variant name / ID" size="small" />
+          </div>
           <PvButton v-if="searchTerm" @click="clearSearch">X</PvButton>
         </div>
         <div v-if="!_isEmpty(searchResults)">
@@ -38,7 +41,7 @@
             :options="taskOptions"
             option-label="label"
             option-value="value"
-            class="w-full mt-1"
+            class="w-full mb-2"
           />
           <PvScrollPanel style="height: 26rem; width: 100%">
             <div v-if="!currentVariants.length">
@@ -60,7 +63,9 @@
             </VueDraggableNext>
           </PvScrollPanel>
         </div>
-        <div v-else>You're searching for {{ searchTerm }}</div>
+      </div>
+      <div v-else class="w-1 bg-gray-400">
+        <i class="pi pi-angle-double-right" />
       </div>
       <div class="w-full xl:w-6 lg:w-6">
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
@@ -155,6 +160,9 @@ const currentVariants = computed(() => {
   }
   return props.allVariants[currentTask.value];
 });
+
+// Pane handlers
+const tasksPaneOpen = ref(true);
 
 // Search handlers
 const searchTerm = ref('');
