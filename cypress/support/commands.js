@@ -20,6 +20,29 @@ Cypress.Commands.add('login', (username, password) => {
   );
 });
 
+Cypress.Commands.add('loginWithEmail', (username, password) => {
+  cy.session([username, password], () => {
+    cy.visit('/', { timeout: Cypress.env('timeout') });
+    // Set username to email, check for existance of 'sign in using password' button)
+    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
+    cy.contains('Sign-in using password');
+
+    // Click button to switch to email / password sign in
+    cy.get('[data-cy="sign-in-with-password"').click();
+
+    // Click button to switch to email magic link sign in
+    cy.get('[data-cy="sign-in-with-email-link"').click();
+
+    // Click button to switch to email / password sign in and log in
+    cy.get('[data-cy="sign-in-with-password"').click();
+    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
+    cy.get('button')
+      .contains('Go!', { timeout: Cypress.env('timeout') })
+      .click();
+    cy.log('Login successful.').wait(3000);
+  });
+});
+
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="button-sign-out"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
