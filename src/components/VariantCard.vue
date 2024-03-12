@@ -249,7 +249,6 @@ const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
 const op = ref(null);
 const visible = ref(false);
-const showParams = ref(false);
 const emit = defineEmits(['remove', 'moveUp', 'moveDown']);
 
 const handleRemove = () => {
