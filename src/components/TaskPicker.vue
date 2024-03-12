@@ -6,19 +6,27 @@
         <!-- <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small> -->
         <span>Show only named variants</span>
         <PvInputSwitch v-model="namedOnly" class="ml-2" />
-        <button @click="tasksPaneOpen = !tasksPaneOpen">toggle pane</button>
+        <!-- <button @click="tasksPaneOpen = !tasksPaneOpen">toggle pane</button> -->
       </div>
     </template>
     <div class="w-full flex flex-row gap-2">
       <div v-if="tasksPaneOpen" class="w-6">
-        <div class="flex flex-row">
+        <div class="flex flex-row mb-2">
           <div class="flex flex-column flex-grow-1 p-input-icon-left">
             <i class="pi pi-search" />
-            <PvInputText v-model="searchTerm" placeholder="Variant name / ID" size="small" />
+            <PvInputText v-model="searchTerm" placeholder="Variant name / ID" />
           </div>
-          <PvButton v-if="searchTerm" @click="clearSearch">X</PvButton>
+          <PvButton v-if="searchTerm" @click="clearSearch" style="margin-right: 0">
+            <i class="pi pi-times" />
+          </PvButton>
         </div>
-        <div v-if="!_isEmpty(searchResults)">
+        <div v-if="searchTerm.length >= 3">
+          <div v-if="isSearching">
+            <span>Searching...</span>
+          </div>
+          <div v-else-if="_isEmpty(searchResults)">
+            <span>No search results for {{ searchTerm }}</span>
+          </div>
           <PvScrollPanel style="height: 26rem; width: 100%">
             <!-- Draggable Zone 3 -->
             <VueDraggableNext
@@ -35,7 +43,7 @@
             </VueDraggableNext>
           </PvScrollPanel>
         </div>
-        <div v-if="_isEmpty(searchResults)">
+        <div v-if="searchTerm.length < 3">
           <PvDropdown
             v-model="currentTask"
             :options="taskOptions"
@@ -67,7 +75,9 @@
       <div v-else class="w-1 bg-gray-400">
         <i class="pi pi-angle-double-right" />
       </div>
+      <div class="divider"></div>
       <div class="w-full xl:w-6 lg:w-6">
+        <div class="mb-2">Selected Variants</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
@@ -166,10 +176,12 @@ const tasksPaneOpen = ref(true);
 
 // Search handlers
 const searchTerm = ref('');
-
 const searchResults = ref([]);
+const isSearching = ref(false);
 
-const searchCards = async (term) => {
+const searchCards = (term) => {
+  isSearching.value = true;
+  searchResults.value = [];
   Object.entries(props.allVariants).forEach(([taskId, variants]) => {
     const matchingVariants = _filter(variants, (variant) => {
       if (_toLower(variant.variant.name).includes(_toLower(term)) || _toLower(variant.id).includes(_toLower(term)))
@@ -178,6 +190,7 @@ const searchCards = async (term) => {
     });
     searchResults.value.push(...matchingVariants);
   });
+  isSearching.value = false;
 };
 
 function clearSearch() {
@@ -234,5 +247,10 @@ const moveCardDown = (variant) => {
   color: var(--text-color-secondary);
   font-weight: bold;
   text-decoration: underline;
+}
+.divider {
+  min-height: 100%;
+  max-width: 0;
+  border-left: 1px solid var(--surface-d);
 }
 </style>
