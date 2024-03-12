@@ -26,7 +26,7 @@
             >
               <transition-group>
                 <div v-for="element in searchResults" :key="element.id">
-                  <VariantCard :variant="element" />
+                  <VariantCard :variant="element" :updateVariant="updateVariant" />
                 </div>
               </transition-group>
             </VueDraggableNext>

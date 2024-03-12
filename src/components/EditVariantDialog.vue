@@ -176,9 +176,10 @@ const callUpdateVariant = (id, conditionals) => {
 };
 
 const handleSubmit = () => {
-  // TODO: Set Assessments conditionals with new conditionals
   console.log(computedConditionals.value);
-  callUpdateVariant(props.assessment.id, conditionals.value);
+  // TODO: Set Assessments conditionals with new conditionals
+  // console.log(computedConditionals.value)
+  callUpdateVariant(props.assessment.id, computedConditionals.value);
   visible.value = false;
 };
 
@@ -187,50 +188,56 @@ const removeRow = (index) => {
 };
 
 const conditionals = ref([
-  [
-    {
-      id: 0,
-      field: 'studentData.grade',
-      op: 'GREATER_THAN',
-      value: 5,
-      conditionalLevel: 'required',
-    },
-    {
-      id: 1,
-      field: 'studentData.grade',
-      op: 'LESS_THAN',
-      value: 12,
-      conditionalLevel: 'required',
-    },
-    {
-      id: 2,
-      field: 'studentData.grade',
-      op: 'LESS_THAN',
-      value: 5,
-      conditionalLevel: 'optional',
-    },
-    {
-      id: 3,
-      field: 'studentData.grade',
-      op: 'GREATER_THAN_OR_EQUAL',
-      value: 1,
-      conditionalLevel: 'optional',
-    },
-  ],
+  {
+    id: 0,
+    field: 'studentData.grade',
+    op: 'GREATER_THAN',
+    value: 5,
+    conditionalLevel: 'required',
+  },
+  {
+    id: 1,
+    field: 'studentData.grade',
+    op: 'LESS_THAN',
+    value: 12,
+    conditionalLevel: 'required',
+  },
+  {
+    id: 2,
+    field: 'studentData.grade',
+    op: 'LESS_THAN',
+    value: 5,
+    conditionalLevel: 'optional',
+  },
+  {
+    id: 3,
+    field: 'studentData.grade',
+    op: 'GREATER_THAN_OR_EQUAL',
+    value: 1,
+    conditionalLevel: 'optional',
+  },
 ]);
 
 const computedConditionals = computed(() => {
-  console.log(conditionals);
-  return conditionals.value.reduce((acc, currentValue) => {
-    console.log('curr', currentValue);
-    // if (currentValue.conditionalLevel) {
-    //   if (acc[currentValue.conditionalLevel]) {
-    //     acc[currentValue.conditionalLevel] = [];
-    //   };
-    //   acc[currentValue.conditionalLevel].push({ op: currentValue.op, field: currentValue.field, value: currentValue.value });
-    // }
-  });
-}, {});
+  return conditionals.value.reduce((acc, conditional) => {
+    if (!acc[conditional.conditionalLevel]) {
+      acc[conditional.conditionalLevel] = [];
+      acc[conditional.conditionalLevel].push({
+        op: conditional.op,
+        field: conditional.field,
+        value: conditional.value,
+      });
+    } else {
+      acc[conditional.conditionalLevel].push({
+        op: conditional.op,
+        field: conditional.field,
+        value: conditional.value,
+      });
+    }
+    return acc;
+  }, {});
+});
+
 const editingRows = ref([]);
 
 const fieldExamples = ref([
