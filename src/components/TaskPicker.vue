@@ -2,7 +2,7 @@
   <div>TaskPicker</div>
   <PvPanel header="Task Picker">
     <template #icons>
-      <div class="flex flex-row align-items-center justify-content-end">
+      <div class="flex flex-row align-items-center justify-content-end w-full xl:w-6 lg:w-6">
         <!-- <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small> -->
         <span>Show only named variants</span>
         <PvInputSwitch v-model="namedOnly" class="ml-2" />
