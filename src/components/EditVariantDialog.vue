@@ -63,7 +63,6 @@
                 placeholder="Type or choose field"
               >
               </PvDropdown>
-              <!-- <PvInputText v-model="data[field]" /> -->
             </template>
           </PvColumn>
           <PvColumn field="op" header="Operator" style="width: 5%" bodyStyle="text-align:center">
@@ -86,7 +85,7 @@
           </PvColumn>
           <PvColumn field="value" header="Value" style="width: 10%" bodyStyle="text-align:center">
             <template #editor="{ data, field }">
-              <PvInputNumber v-model="data[field]" />
+              <PvInputText v-model="data[field]" />
             </template>
           </PvColumn>
           <PvColumn
@@ -125,8 +124,9 @@
             </template>
           </PvColumn>
         </PvDataTable>
-        <div class="mt-2">
+        <div class="mt-2 flex gap-2">
           <PvButton label="Add Condition" @click="addCondition" />
+          <PvButton label="Add Optional Assignment for all" @click="addGlobalOptionalAssignment" />
         </div>
       </div>
       <PvDivider />
@@ -163,6 +163,11 @@ const addCondition = () => {
   editingRows.value = [...editingRows.value, conditions.value[conditions.value.length - 1]];
 };
 
+const addGlobalOptionalAssignment = () => {
+  // TODO: implement global "all" operator
+  console.log('adding global optional');
+};
+
 onMounted(() => {
   console.log('mounted');
   if (props.assessment?.conditions) {
@@ -172,6 +177,14 @@ onMounted(() => {
 });
 
 const handleSubmit = () => {
+  for (const condition of conditions.value) {
+    for (const entry of Object.values(condition)) {
+      if (entry == '') {
+        alert('Please fill in all empty conditional fields');
+        return;
+      }
+    }
+  }
   console.log('submit called');
   props.updateVariant(props.assessment.id, computedConditions.value);
   visible.value = false;
@@ -182,34 +195,34 @@ const removeRow = (index) => {
 };
 
 const conditions = ref([
-  {
-    id: 0,
-    field: 'studentData.grade',
-    op: 'GREATER_THAN',
-    value: 5,
-    conditionalLevel: 'required',
-  },
-  {
-    id: 1,
-    field: 'studentData.grade',
-    op: 'LESS_THAN',
-    value: 12,
-    conditionalLevel: 'required',
-  },
-  {
-    id: 2,
-    field: 'studentData.grade',
-    op: 'LESS_THAN',
-    value: 5,
-    conditionalLevel: 'optional',
-  },
-  {
-    id: 3,
-    field: 'studentData.grade',
-    op: 'GREATER_THAN_OR_EQUAL',
-    value: 1,
-    conditionalLevel: 'optional',
-  },
+  // {
+  //   id: 0,
+  //   field: 'studentData.grade',
+  //   op: 'GREATER_THAN',
+  //   value: 5,
+  //   conditionalLevel: 'required',
+  // },
+  // {
+  //   id: 1,
+  //   field: 'studentData.grade',
+  //   op: 'LESS_THAN',
+  //   value: 12,
+  //   conditionalLevel: 'required',
+  // },
+  // {
+  //   id: 2,
+  //   field: 'studentData.grade',
+  //   op: 'LESS_THAN',
+  //   value: 5,
+  //   conditionalLevel: 'optional',
+  // },
+  // {
+  //   id: 3,
+  //   field: 'studentData.grade',
+  //   op: 'GREATER_THAN_OR_EQUAL',
+  //   value: 1,
+  //   conditionalLevel: 'optional',
+  // },
 ]);
 
 const computedConditions = computed(() => {
@@ -254,6 +267,14 @@ const operators = ref([
 
 const onRowEditSave = (event) => {
   let { newData, index } = event;
+  console.log(newData);
+  for (const val of Object.values(newData)) {
+    // TODO: Push error message to user that a field is not defined
+    if (val == '' || val == undefined) {
+      console.log('empty row');
+      return;
+    }
+  }
 
   // Update the specific row in the conditions array
   conditions.value[index] = newData;
