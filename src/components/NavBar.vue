@@ -1,6 +1,6 @@
 <template>
   <header id="site-header" class="navbar-container">
-    <nav class="container flex flex-row align-items-center">
+    <nav class="container flex flex-row align-items-center justify-content-between">
       <router-link :to="{ name: 'Home' }">
         <div class="navbar-logo">
           <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
@@ -9,7 +9,9 @@
       </router-link>
 
       <div id="navBarRightEnd" class="flex flex-row align-items-center">
-        <LanguageSelector />
+        <div class="">
+          <LanguageSelector />
+        </div>
         <div class="login-container">
           <div v-if="isAdmin">
             <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
@@ -153,4 +155,8 @@ import ROARLogo from '@/assets/RoarLogo.vue';
 import LanguageSelector from './LanguageSelector.vue';
 </script>
 
-<style scoped></style>
+<style scoped>
+nav {
+  min-width: 100%;
+}
+</style>
