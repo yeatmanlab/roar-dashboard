@@ -236,8 +236,8 @@ const props = defineProps({
     default: false,
   },
   updateVariant: {
-    required: true,
     type: Function,
+    required: true,
   },
 });
 
