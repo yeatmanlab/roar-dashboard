@@ -19,7 +19,7 @@ jobs:
           node-version: 'lts/*'
       - name: 'vite build'
         env:
-          NODE_OPTIONS: '--max_old_space_size=4096'
+          NODE_OPTIONS: '--max_old_space_size=8192'
         run: npm ci && npm run build
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy

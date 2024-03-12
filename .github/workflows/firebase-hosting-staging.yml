@@ -16,7 +16,7 @@ jobs:
           node-version: 'lts/*'
       - name: 'vite staging build'
         env:
-          NODE_OPTIONS: '--max_old_space_size=4096'
+          NODE_OPTIONS: '--max_old_space_size=8192'
         run: export VITE_STAGING_BUILD=true && npm ci && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
