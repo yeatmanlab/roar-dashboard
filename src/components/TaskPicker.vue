@@ -43,6 +43,7 @@
           <PvScrollPanel style="height: 26rem; width: 100%">
             <div v-if="!currentVariants.length">
               No variants to show. Make sure 'Show only named variants' is unchecked to view all.
+              <span class="text-link" @click="namedOnly = false">View all</span>
             </div>
             <!-- Draggable Zone 1 -->
             <VueDraggableNext
@@ -119,7 +120,7 @@ const props = defineProps({
 });
 
 const taskOptions = computed(() => {
-  return Object.entries(props.tasks).map((entry) => {
+  return Object.entries(props.allVariants).map((entry) => {
     const key = entry[0];
     const value = entry[1];
     return {
@@ -134,17 +135,17 @@ const updateVariant = (variantId, conditionals) => {
   // props.selectedVariant[]
 };
 
+const selectedVariants = ref([]);
 const namedOnly = ref(true);
 
-const currentTask = ref(Object.keys(props.tasks)[0]);
+const currentTask = ref(Object.keys(props.allVariants)[0]);
 
 const currentVariants = computed(() => {
   if (namedOnly.value) {
-    return _filter(props.tasks[currentTask.value], (variant) => variant.variant.name);
+    return _filter(props.allVariants[currentTask.value], (variant) => variant.variant.name);
   }
-  return props.tasks[currentTask.value];
+  return props.allVariants[currentTask.value];
 });
-const selectedVariants = ref([]);
 
 // Search handlers
 const searchTerm = ref('');
@@ -152,7 +153,7 @@ const searchTerm = ref('');
 const searchResults = ref([]);
 
 const searchCards = async (term) => {
-  Object.entries(props.tasks).forEach(([taskId, variants]) => {
+  Object.entries(props.allVariants).forEach(([taskId, variants]) => {
     const matchingVariants = _filter(variants, (variant) => {
       if (_toLower(variant.variant.name).includes(_toLower(term)) || _toLower(variant.id).includes(_toLower(term)))
         return true;
@@ -209,5 +210,12 @@ const moveCardDown = (variant) => {
 .selected-container {
   width: 100%;
   border: 1px solid var(--surface-d);
+}
+
+.text-link {
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  font-weight: bold;
+  text-decoration: underline;
 }
 </style>
