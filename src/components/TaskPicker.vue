@@ -119,13 +119,9 @@ const props = defineProps({
 });
 
 const taskOptions = computed(() => {
-<<<<<<< HEAD
-  return Object.keys(props.allVariants).map((key) => {
-=======
   return Object.entries(props.tasks).map((entry) => {
     const key = entry[0];
     const value = entry[1];
->>>>>>> aea85865fd19db50c308bf77bf6d621de224c6a5
     return {
       label: value[0].task.name ?? key,
       value: key,
@@ -133,14 +129,11 @@ const taskOptions = computed(() => {
   });
 });
 
-<<<<<<< HEAD
 const updateVariant = (variantId, conditionals) => {
   console.log('updatevariant taskpicker', variantId, conditionals);
   // props.selectedVariant[]
 };
 
-const selectedVariants = ref([]);
-=======
 const namedOnly = ref(true);
 
 const currentTask = ref(Object.keys(props.tasks)[0]);
@@ -184,19 +177,10 @@ watch(searchTerm, (term) => {
   }
 });
 
->>>>>>> aea85865fd19db50c308bf77bf6d621de224c6a5
 // Card event handlers
 const removeCard = (variant) => {
   selectedVariants.value = selectedVariants.value.filter((selectedVariant) => selectedVariant.id !== variant.id);
 };
-<<<<<<< HEAD
-
-const currentTask = ref(Object.keys(props.allVariants)[0]);
-
-const currentVariants = computed(() => {
-  return props.allVariants[currentTask.value];
-});
-=======
 const moveCardUp = (variant) => {
   const index = _findIndex(selectedVariants.value, (currentVariant) => currentVariant.id === variant.id);
   if (index === 0) return;
@@ -211,7 +195,6 @@ const moveCardDown = (variant) => {
   selectedVariants.value.splice(index, 1);
   selectedVariants.value.splice(index + 1, 0, item);
 };
->>>>>>> aea85865fd19db50c308bf77bf6d621de224c6a5
 </script>
 <style lang="scss">
 .task-tab {
@@ -219,11 +202,11 @@ const moveCardDown = (variant) => {
   overflow: auto;
 }
 
-<<<<<<< HEAD .variant-selector {
+.variant-selector {
   width: 50%;
 }
 
-=======>>>>>>>aea85865fd19db50c308bf77bf6d621de224c6a5 .selected-container {
+.selected-container {
   width: 100%;
   border: 1px solid var(--surface-d);
 }
