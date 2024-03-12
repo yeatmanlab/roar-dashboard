@@ -318,7 +318,7 @@ watch(
 }
 
 .switch-container {
-  min-width: 50%;
+  min-width: 24%;
 }
 
 @media screen and (max-width: 1100px) {
