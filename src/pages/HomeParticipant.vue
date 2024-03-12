@@ -13,37 +13,42 @@
           v-if="adminInfo?.length > 1"
           class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4"
         >
-          <PvDropdown
-            v-model="selectedAdmin"
-            :options="adminInfo ?? []"
-            option-label="name"
-            input-id="dd-assignment"
-            data-cy="dropdown-select-administration"
-          />
-          <PvInputSwitch v-model="showOptionalAssessments" data-cy="switch-show-optional-assessments" />
-          <p>Show Optional Assessments</p>
-          <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+          <div class="assignment-select-container flex flex-row justify-content-between">
+            <div class="flex flex-column">
+              <PvDropdown
+                v-model="selectedAdmin"
+                :options="adminInfo ?? []"
+                option-label="name"
+                input-id="dd-assignment"
+                data-cy="dropdown-select-administration"
+                @change="toggleShowOptionalAssessments"
+              />
+              <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+            </div>
+
+            <div
+              v-if="optionalAssessments.length !== 0"
+              class="switch-container flex flex-row align-items-center justify-content-end mr-6"
+            >
+              <PvInputSwitch
+                v-model="showOptionalAssessments"
+                input-id="switch-optional"
+                data-cy="switch-show-optional-assessments"
+              />
+              <label for="switch-optional" class="mr-7">{{ $t('homeParticipant.showOptionalAssignments') }}</label>
+            </div>
+          </div>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
           <Transition name="fade" mode="out-in">
-            <p v-if="showOptionalAssessments && optionalAssessments.length === 0" class="m-auto">
-              No optional games have been assigned.
-            </p>
             <GameTabs
-              v-else-if="showOptionalAssessments"
-              id="optional"
+              v-if="showOptionalAssessments"
               :games="optionalAssessments"
               :sequential="isSequential"
               :user-data="userData"
             />
-            <GameTabs
-              v-else
-              id="required"
-              :games="requiredAssessments"
-              :sequential="isSequential"
-              :user-data="userData"
-            />
+            <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
           </Transition>
         </div>
       </div>
@@ -187,6 +192,9 @@ const noGamesAvailable = computed(() => {
 });
 
 const showOptionalAssessments = ref(null);
+const toggleShowOptionalAssessments = () => {
+  showOptionalAssessments.value = null;
+};
 
 // Assessments to populate the game tabs.
 // Generated based on the current selected admin Id
@@ -303,6 +311,14 @@ watch(
 .dropdown-container {
   margin-top: 2rem;
   margin-left: 2rem;
+}
+
+.assignment-select-container {
+  min-width: 100%;
+}
+
+.switch-container {
+  min-width: 50%;
 }
 
 @media screen and (max-width: 1100px) {
