@@ -14,7 +14,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-      - run: export VITE_STAGING_BUILD=true && npm ci && npm run build
+      - name: 'vite staging build'
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+        run: export VITE_STAGING_BUILD=true && npm ci && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
