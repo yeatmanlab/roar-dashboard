@@ -31,6 +31,8 @@ module.exports = defineConfig({
     partnerAdminId: process.env.PARTNER_ADMIN_ID,
     participantUsername: process.env.PARTICIPANT_USERNAME,
     participantPassword: process.env.PARTICIPANT_PASSWORD,
+    participantEmail: process.env.PARTICIPANT_EMAIL,
+    participantEmailPassword: process.env.PARTICIPANT_EMAIL_PASSWORD,
     testAdministrationName: 'zzzTestAdministration',
     testAdministrationId: 'pdOfQuakqN4re3cI5mr5',
     testAdministratorFirstName: 'zzzTestAdministratorFirstName',

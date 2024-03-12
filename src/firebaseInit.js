@@ -11,6 +11,7 @@ export async function initNewFirekit() {
       db: false,
       functions: false,
     },
+    verboseLogging: true,
   });
   return await firekit.init();
 }

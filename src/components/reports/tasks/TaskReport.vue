@@ -7,10 +7,6 @@
           <!-- The following HTML is from a hard-coded source (below) -->
           <!-- eslint-disable-next-line vue/no-v-html -->
           <p class="mt-1 text-md font-light" v-html="taskInfoById[taskId]?.desc"></p>
-          <!-- <div v-for="definition of taskInfoById[taskId]?.definitions" :key="definition.id" class="my-2">
-            <div class="uppercase text-lg font-bold mb-2">{{ definition?.header }}</div>
-            <div class="text-md font-light">{{ definition?.desc }}</div>
-          </div> -->
         </div>
       </AccordionTab>
     </Accordion>

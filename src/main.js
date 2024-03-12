@@ -4,6 +4,7 @@ import { createHead } from '@vueuse/head';
 import { initSentry } from '@/sentry';
 import router from '@/router/index.js';
 import App from '@/App.vue';
+import { surveyPlugin } from 'survey-vue3-ui';
 
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import TextClamp from 'vue3-text-clamp';
@@ -34,6 +35,7 @@ import PvInputNumber from 'primevue/inputnumber';
 import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvInlineMessage from 'primevue/inlinemessage';
+import PvKnob from 'primevue/knob';
 import PvListbox from 'primevue/listbox';
 import PvMessage from 'primevue/message';
 import PvMenu from 'primevue/menu';
@@ -59,6 +61,7 @@ import PvTreeTable from 'primevue/treetable';
 import PvTriStateCheckbox from 'primevue/tristatecheckbox';
 import PvDialog from 'primevue/dialog';
 import PvSteps from 'primevue/steps';
+import PvImage from 'primevue/image';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -115,6 +118,7 @@ app.use(TextClamp);
 app.use(VueQueryPlugin);
 app.use(i18n);
 app.use(CountryFlag);
+app.use(surveyPlugin);
 
 app.component('PvAccordion', PvAccordion);
 app.component('PvAccordionTab', PvAccordionTab);
@@ -138,6 +142,7 @@ app.component('PvInputNumber', PvInputNumber);
 app.component('PvInputSwitch', PvInputSwitch);
 app.component('PvInputText', PvInputText);
 app.component('PvListbox', PvListbox);
+app.component('PvKnob', PvKnob);
 app.component('PvMessage', PvMessage);
 app.component('PvMenu', PvMenu);
 app.component('PvMultiSelect', PvMultiSelect);
@@ -164,7 +169,7 @@ app.component('PvDataTable', PvDataTable);
 app.component('PvColumn', PvColumn);
 app.component('PvDialog', PvDialog);
 app.component('PvSteps', PvSteps);
-
+app.component('PvImage', PvImage);
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
 

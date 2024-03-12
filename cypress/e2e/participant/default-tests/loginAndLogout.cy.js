@@ -7,5 +7,14 @@ describe('Cypress test to login and logout', () => {
 
     // successfully back at Login page
     cy.contains('Welcome to ROAR!');
+
+    // Login via email / password
+    cy.loginWithEmail(Cypress.env('participantEmail'), Cypress.env('participantEmailPassword'));
+    cy.visit('/');
+
+    cy.get('button', { timeout: 10000 }).contains('Sign Out').click();
+
+    // successfully back at Login page
+    cy.contains('Welcome to ROAR!');
   });
 });

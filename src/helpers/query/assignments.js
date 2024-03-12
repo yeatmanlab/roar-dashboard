@@ -977,9 +977,13 @@ export const assignmentPageFetcher = async (
           return _without(
             data.map(({ found }) => {
               if (found) {
+                const userId = found.name.split('/users/')[1];
                 return {
                   name: found.name,
-                  data: _mapValues(found.fields, (value) => convertValues(value)),
+                  data: {
+                    ..._mapValues(found.fields, (value) => convertValues(value)),
+                    userId,
+                  },
                 };
               }
               return undefined;
