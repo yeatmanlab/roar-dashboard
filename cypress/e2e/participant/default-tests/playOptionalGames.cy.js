@@ -1,18 +1,15 @@
 import { optionalGames } from '../../../fixtures/optionalGamesList';
 
+const administration = Cypress.env('testOptionalRoarAppsAdministration');
+
 function playOptionalGame(game, administration, optional) {
-  try {
-    game.testSpec(administration, optional);
-  } catch (error) {
-    cy.log(`Error playing ${game.name}: ${error.message}`);
-  }
+  game.testSpec(administration, optional);
 }
 
 describe('Play Optional Games', () => {
-  Cypress._.each(optionalGames, (game) => {
+  optionalGames.forEach((game) => {
     it(`Plays ${game.name}`, () => {
-      cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-      playOptionalGame(game, Cypress.env('testOptionalRoarAppsAdministration'), true);
+      playOptionalGame(game, administration, true);
     });
   });
 });

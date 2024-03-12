@@ -1,3 +1,7 @@
 import { playSWR } from '../../../support/helper-functions/roar-swr/swrHelpers.js';
 
-playSWR(Cypress.env('testRoarAppsAdministration'));
+describe('ROAR - Word Play Through', () => {
+  it('Plays Word', () => {
+    playSWR(Cypress.env('testRoarAppsAdministration'));
+  });
+});

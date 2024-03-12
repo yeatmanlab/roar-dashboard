@@ -146,6 +146,12 @@ Cypress.Commands.add('checkUserList', (userList) => {
   });
 });
 
+Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
+  return cy.wrap(null).then(() => {
+    return game?.testSpec(administration, optional);
+  });
+});
+
 Cypress.Commands.add('loginByGoogleApi', () => {
   cy.log('Logging in to Google');
   cy.request({
