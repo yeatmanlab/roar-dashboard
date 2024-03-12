@@ -36,7 +36,7 @@
               :sort="false"
             >
               <transition-group>
-                <div v-for="element in searchResults" :key="element.id">
+                <div v-for="element in searchResults" :key="element.id" :id="element.id">
                   <VariantCard :variant="element" />
                 </div>
               </transition-group>
@@ -82,13 +82,11 @@
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
             v-model="selectedVariants"
+            @move="handleCardMove"
             :group="{
               name: 'variants',
               pull: true,
-              put: function (to, from) {
-                console.log(to, from);
-                return true;
-              },
+              put: true,
               animation: 100,
             }"
             :sort="true"
@@ -207,6 +205,19 @@ watch(searchTerm, (term) => {
     searchResults.value = [];
   }
 });
+
+const handleCardMove = (card) => {
+  console.log('handleCardMove', card);
+  // Check if this variant card is already in the list
+  // const cardVariantId = card.item.id;
+  // console.log('handleCardAdd cardVariantId', cardVariantId);
+  // const index = _findIndex(selectedVariants.value, (element) => element.id === card.item.id);
+  // console.log('found index', index);
+  // if (index != -1) {
+  //   console.log('card is a duplicate');
+  //   return false;
+  // }
+};
 
 // Card event handlers
 const removeCard = (variant) => {
