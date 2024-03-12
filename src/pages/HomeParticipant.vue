@@ -9,7 +9,10 @@
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
           {{ adminInfo.at(0).name }}
         </h2>
-        <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
+        <div
+          v-if="adminInfo?.length > 1"
+          class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4"
+        >
           <PvDropdown
             v-model="selectedAdmin"
             :options="adminInfo ?? []"
@@ -17,11 +20,31 @@
             input-id="dd-assignment"
             data-cy="dropdown-select-administration"
           />
+          <PvInputSwitch v-model="showOptionalAssessments" data-cy="switch-show-optional-assessments" />
+          <p>Show Optional Assessments</p>
           <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <GameTabs :games="assessments" :sequential="isSequential" :user-data="userData" />
+          <Transition name="fade" mode="out-in">
+            <p v-if="showOptionalAssessments && optionalAssessments.length === 0" class="m-auto">
+              No optional games have been assigned.
+            </p>
+            <GameTabs
+              v-else-if="showOptionalAssessments"
+              id="optional"
+              :games="optionalAssessments"
+              :sequential="isSequential"
+              :user-data="userData"
+            />
+            <GameTabs
+              v-else
+              id="required"
+              :games="requiredAssessments"
+              :sequential="isSequential"
+              :user-data="userData"
+            />
+          </Transition>
         </div>
       </div>
     </div>
@@ -155,6 +178,8 @@ const noGamesAvailable = computed(() => {
   return assessments.value.length === 0;
 });
 
+const showOptionalAssessments = ref(null);
+
 // Assessments to populate the game tabs.
 // Generated based on the current selected admin Id
 const assessments = computed(() => {
@@ -164,18 +189,29 @@ const assessments = computed(() => {
       const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
       const matchingAssessments = matchingAssignment?.assessments ?? [];
       const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
+      const optionalAssessment = _find(matchingAssessments, { taskId: assessment.taskId, optional: true });
       const combinedAssessment = {
         ...matchingAssessment,
+        ...optionalAssessment,
         ...assessment,
         taskData: {
           ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
           variantURL: _get(assessment, 'params.variantURL'),
         },
       };
+      console.log('combinedAssessment', combinedAssessment);
       return combinedAssessment;
     });
   }
   return [];
+});
+
+const requiredAssessments = computed(() => {
+  return _filter(assessments.value, (assessment) => !assessment.optional);
+});
+
+const optionalAssessments = computed(() => {
+  return _filter(assessments.value, (assessment) => assessment.optional);
 });
 
 // Grab the sequential key from the current admin's data object
@@ -192,12 +228,12 @@ const isSequential = computed(() => {
 
 // Total games completed from the current list of assessments
 let totalGames = computed(() => {
-  return assessments.value.length ?? 0;
+  return requiredAssessments.value.length ?? 0;
 });
 
 // Total games included in the current assessment
 let completeGames = computed(() => {
-  return _filter(assessments.value, (task) => task.completedOn).length ?? 0;
+  return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
 // Set up studentInfo for sidebar
@@ -223,6 +259,16 @@ watch(
   flex-direction: row;
   padding: 2rem;
   gap: 2rem;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .dropdown-container {

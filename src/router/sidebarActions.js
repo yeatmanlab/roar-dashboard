@@ -64,7 +64,7 @@ const sidebarActionOptions = [
   },
 ];
 
-export const getSidebarActions = ({isSuperAdmin = false, isAdmin = false, includeHomeLink = true}) => {
+export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, includeHomeLink = true }) => {
   if (import.meta.env.MODE === 'LEVANTE') {
     return sidebarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {

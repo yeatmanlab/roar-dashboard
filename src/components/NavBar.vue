@@ -83,9 +83,9 @@ const isAtHome = computed(() => {
 
 const dropDownActions = computed(() => {
   const rawActions = getSidebarActions({
-    isSuperAdmin: isSuperAdmin.value, 
+    isSuperAdmin: isSuperAdmin.value,
     isAdmin: isAdmin.value,
-    includeHomeLink: !isAtHome.value
+    includeHomeLink: !isAtHome.value,
   });
   return rawActions.map((action) => {
     return {

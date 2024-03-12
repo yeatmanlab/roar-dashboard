@@ -1,6 +1,34 @@
 const timeout = Cypress.env('timeout');
 
-export function playSWRGame() {
+export const playSWR = (administration, optional = false) =>
+  describe('Testing playthrough of SWR as a participant', () => {
+    it('ROAR-Word Playthrough Test', () => {
+      cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+      cy.visit('/');
+      cy.selectAdministration(administration);
+
+      if (optional) {
+        cy.switchToOptionalAssessments();
+      }
+
+      cy.get('.p-tabview').contains('ROAR - Word');
+      cy.visit(`/game/swr`);
+
+      cy.get('.jspsych-btn', { timeout: 2 * timeout })
+        .should('be.visible')
+        .click();
+
+      // handles error where full screen throws a permissions error
+      cy.wait(0.1 * timeout);
+      Cypress.on('uncaught:exception', () => {
+        return false;
+      });
+
+      playSWRGame();
+    });
+  });
+
+function playSWRGame(administration) {
   // play tutorial
   cy.contains('Welcome to the world of Lexicality!', { timeout: timeout });
   for (let i = 0; i < 3; i++) {
@@ -26,7 +54,7 @@ export function playSWRGame() {
   // check if game completed
   cy.visit('/');
   cy.wait(0.2 * timeout);
-  cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
+  cy.selectAdministration(administration);
   cy.get('.tabview-nav-link-label').contains('ROAR - Word').should('have.attr', 'data-game-status', 'complete');
 }
 

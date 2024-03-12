@@ -66,6 +66,8 @@ module.exports = defineConfig({
     cypressDownloads: 'cypress/downloads',
     testRoarAppsAdministration: 'zzzCypressTestRoarAppsAdministration',
     testRoarAppsAdministrationId: 'f3UMHUpR8NGLdmACLw9o',
+    testOptionalRoarAppsAdministration: 'zzzCypressTestOptionalRoarAppsAdministration',
+    testOptionalRoarAppsAdministrationId: 'E4fPspL3xNZxhL9F1L3m',
     testUserList: [
       'zzzCypressTestStudent0',
       'zzzCypressTestStudent1',
