@@ -26,7 +26,7 @@
             >
               <transition-group>
                 <div v-for="element in searchResults" :key="element.id">
-                  <VariantCard :variant="element" :updateVariant="updateVariant" />
+                  <VariantCard :variant="element" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -54,7 +54,7 @@
             >
               <transition-group>
                 <div v-for="element in currentVariants" :key="element.id">
-                  <VariantCard :variant="element" />
+                  <VariantCard :variant="element" :update-variant="updateVariant" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -87,6 +87,7 @@
                   @remove="removeCard"
                   @moveUp="moveCardUp"
                   @moveDown="moveCardDown"
+                  :update-variant="updateVariant"
                 />
               </div>
             </transition-group>
@@ -130,8 +131,16 @@ const taskOptions = computed(() => {
   });
 });
 
-const updateVariant = (variantId, conditionals) => {
-  console.log('updatevariant taskpicker', variantId, conditionals);
+const updateVariant = (variantId, conditions) => {
+  const updatedVariants = selectedVariants.value.map((variant) => {
+    if (variant.id === variantId) {
+      return { ...variant, variant: { ...variant.variant, conditions: conditions } };
+    } else {
+      return variant;
+    }
+  });
+  selectedVariants.value = updatedVariants;
+  return;
   // props.selectedVariant[]
 };
 

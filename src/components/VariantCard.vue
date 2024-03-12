@@ -136,7 +136,7 @@
       </PvOverlayPanel>
     </div>
     <div class="mr-0 pl-0 flex flex-column justify-content-end">
-      <EditVariantDialog :visible="visible" :assessment="variant" :updateVariant="callUpdateVariant" />
+      <EditVariantDialog :visible="visible" :assessment="variant" :update-variant="updateVariant" />
       <PvButton
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
         @click="toggleShowContent()"
@@ -240,10 +240,6 @@ const props = defineProps({
     required: true,
   },
 });
-
-const callUpdateVariant = (id, assessment) => {
-  return props.updateVariant(id, assessment);
-};
 
 const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);

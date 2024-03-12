@@ -37,9 +37,9 @@
     <div class="flex flex-column w-full my-3 gap-2">
       <div class="card p-fluid">
         <PvDataTable
-          v-if="conditionals.length > 0"
+          v-if="conditions.length > 0"
           v-model:editingRows="editingRows"
-          :value="conditionals"
+          :value="conditions"
           editMode="row"
           dataKey="id"
           @row-edit-save="onRowEditSave"
@@ -159,35 +159,29 @@ const props = defineProps({
 });
 
 const addCondition = () => {
-  conditionals.value.push({ id: conditionals.value.length, field: '', op: '', value: '', conditionalLevel: '' });
-  editingRows.value = [...editingRows.value, conditionals.value[conditionals.value.length - 1]];
+  conditions.value.push({ id: conditions.value.length, field: '', op: '', value: '', conditionalLevel: '' });
+  editingRows.value = [...editingRows.value, conditions.value[conditions.value.length - 1]];
 };
 
 onMounted(() => {
   console.log('mounted');
-  if (props.assessment?.conditionals) {
-    conditionals.value = props.assessment?.conditionals;
+  if (props.assessment?.conditions) {
+    conditions.value = props.assessment?.conditions;
   }
-  // TODO: set conditionals to prestored
+  // TODO: set conditions to prestored
 });
 
-const callUpdateVariant = (id, conditionals) => {
-  return props.updateVariant(id, conditionals);
-};
-
 const handleSubmit = () => {
-  console.log(computedConditionals.value);
-  // TODO: Set Assessments conditionals with new conditionals
-  // console.log(computedConditionals.value)
-  callUpdateVariant(props.assessment.id, computedConditionals.value);
+  console.log('submit called');
+  props.updateVariant(props.assessment.id, computedConditions.value);
   visible.value = false;
 };
 
 const removeRow = (index) => {
-  conditionals.value.splice(index, 1);
+  conditions.value.splice(index, 1);
 };
 
-const conditionals = ref([
+const conditions = ref([
   {
     id: 0,
     field: 'studentData.grade',
@@ -218,8 +212,8 @@ const conditionals = ref([
   },
 ]);
 
-const computedConditionals = computed(() => {
-  return conditionals.value.reduce((acc, conditional) => {
+const computedConditions = computed(() => {
+  return conditions.value.reduce((acc, conditional) => {
     if (!acc[conditional.conditionalLevel]) {
       acc[conditional.conditionalLevel] = [];
       acc[conditional.conditionalLevel].push({
@@ -261,8 +255,8 @@ const operators = ref([
 const onRowEditSave = (event) => {
   let { newData, index } = event;
 
-  // Update the specific row in the conditionals array
-  conditionals.value[index] = newData;
+  // Update the specific row in the conditions array
+  conditions.value[index] = newData;
 
   // Remove the index from the editingRows array to stop editing
   editingRows.value.splice(editingRows.value.indexOf(index), 1);
