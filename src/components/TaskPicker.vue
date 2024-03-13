@@ -2,8 +2,7 @@
   <div>TaskPicker</div>
   <PvPanel header="Task Picker">
     <template #icons>
-      <div class="flex flex-row align-items-center justify-content-end w-full xl:w-6 lg:w-6">
-        <!-- <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small> -->
+      <div class="flex flex-row">
         <span>Show only named variants</span>
         <PvInputSwitch v-model="namedOnly" class="ml-2" />
         <!-- <button @click="tasksPaneOpen = !tasksPaneOpen">toggle pane</button> -->
@@ -66,7 +65,7 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in currentVariants" :key="element.id">
+                <div v-for="element in currentVariants" :key="element.id" :id="element.id">
                   <VariantCard :variant="element" :update-variant="updateVariant" />
                 </div>
               </transition-group>
