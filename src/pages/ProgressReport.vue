@@ -548,16 +548,11 @@ const exportAll = async () => {
 };
 
 const optionalAssessments = computed(() => {
-  if (administrationInfo.value === undefined) return [];
-  return administrationInfo.value.assessments.filter((assessment) => assessment.optional);
+  return administrationInfo.value?.assessments.filter((assessment) => assessment.optional) || [];
 });
 
 const isOptional = (_taskId) => {
-  for (const assessment of optionalAssessments.value) {
-    if (assessment.taskId === _taskId) {
-      return true;
-    }
-  }
+  return optionalAssessments.value.some((assessment) => assessment.taskId === _taskId);
 };
 
 const columns = computed(() => {
