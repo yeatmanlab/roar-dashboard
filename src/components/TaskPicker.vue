@@ -34,6 +34,7 @@
               :reorderable-columns="true"
               :group="{ name: 'variants', pull: 'clone', put: false }"
               :sort="false"
+              :move="handleCardMove"
             >
               <transition-group>
                 <div v-for="element in searchResults" :key="element.id" :id="element.id">
@@ -62,6 +63,7 @@
               :reorderable-columns="true"
               :group="{ name: 'variants', pull: 'clone', put: false }"
               :sort="false"
+              :move="handleCardMove"
             >
               <transition-group>
                 <div v-for="element in currentVariants" :key="element.id">
@@ -77,12 +79,12 @@
       </div>
       <div class="divider"></div>
       <div class="w-full xl:w-6 lg:w-6">
-        <div class="mb-2">Selected Variants</div>
+        <div class="panel-title mb-2">Selected Variants</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
           <VueDraggableNext
             v-model="selectedVariants"
-            @move="handleCardMove"
+            :move="handleCardMove"
             :group="{
               name: 'variants',
               pull: true,
@@ -121,6 +123,9 @@ import _toLower from 'lodash/toLower';
 import _isEmpty from 'lodash/isEmpty';
 import { VueDraggableNext } from 'vue-draggable-next';
 import VariantCard from './VariantCard.vue';
+import { useToast } from 'primevue/usetoast';
+
+const toast = useToast();
 
 const props = defineProps({
   allVariants: {
@@ -132,6 +137,8 @@ const props = defineProps({
     required: true,
   },
 });
+
+const emit = defineEmits(['variants-changed']);
 
 const taskOptions = computed(() => {
   return Object.entries(props.allVariants).map((entry) => {
@@ -206,18 +213,28 @@ watch(searchTerm, (term) => {
   }
 });
 
+// Handle card move events
+const debounceToast = _debounce(
+  () => {
+    toast.add({ severity: 'error', summary: 'Duplicate', detail: 'That variant is already selected.', life: 3000 });
+  },
+  3000,
+  { leading: true },
+);
+
 const handleCardMove = (card) => {
-  console.log('handleCardMove', card);
   // Check if this variant card is already in the list
-  // const cardVariantId = card.item.id;
-  // console.log('handleCardAdd cardVariantId', cardVariantId);
-  // const index = _findIndex(selectedVariants.value, (element) => element.id === card.item.id);
-  // console.log('found index', index);
-  // if (index != -1) {
-  //   console.log('card is a duplicate');
-  //   return false;
-  // }
+  const cardVariantId = card.dragged.id;
+  const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
+  if (index !== -1) {
+    debounceToast();
+    return false;
+  } else return true;
 };
+
+watch(selectedVariants, (variants) => {
+  emit('variants-changed', variants);
+});
 
 // Card event handlers
 const removeCard = (variant) => {
@@ -263,5 +280,9 @@ const moveCardDown = (variant) => {
   min-height: 100%;
   max-width: 0;
   border-left: 1px solid var(--surface-d);
+}
+.panel-title {
+  font-size: x-large;
+  font-weight: bold;
 }
 </style>
