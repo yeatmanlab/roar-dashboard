@@ -65,7 +65,7 @@
     </div>
   </div>
   <!---------- end card without buttons ----- >-->
-  <div v-else :class="isActive()" :id="variant.id">
+  <div v-else :id="variant.id" :class="isActive()">
     <div class="ml-0 pl-0">
       <PvButton
         class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
