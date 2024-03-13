@@ -29,7 +29,7 @@
     "@bdelab/roar-letter": "^1.9.0",
     "@bdelab/roar-multichoice": "^1.9.4",
     "@bdelab/roar-pa": "^1.6.4",
-    "@bdelab/roar-sre": "^1.13.1",
+    "@bdelab/roar-sre": "^1.13.2",
     "@bdelab/roar-swr": "^1.9.0",
     "@bdelab/roar-utils": "^1.0.18",
     "@bdelab/roar-vocab": "^1.6.11",
