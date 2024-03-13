@@ -201,6 +201,8 @@ const submit = async () => {
     const submittedAssessments = variants.value.map((assessment) => ({
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
+      // Exclude conditions key if there are no conditions to be set.
+      ...(toRaw(assessment.variant.conditions || undefined) && { condition: toRaw(assessment.variant.conditions) }),
     }));
 
     const tasksUnique = checkForUniqueTasks(submittedAssessments);
