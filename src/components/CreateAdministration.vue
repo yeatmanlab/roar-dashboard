@@ -50,7 +50,7 @@
           @variants-changed="handleVariantsChanged"
         />
 
-        <div class="flex flex-row justify-content-end">
+        <div class="flex flex-row justify-content-end mt-2">
           <div class="flex flex-column mt-2 align-items-end">
             <label style="font-weight: bold; font-size: large" class="mb-2">Sequential?</label>
             <span class="flex gap-2">

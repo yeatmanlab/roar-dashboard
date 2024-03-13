@@ -1,5 +1,4 @@
 <template>
-  <div>TaskPicker</div>
   <PvPanel header="Task Picker">
     <template #icons>
       <div class="flex flex-row">
