@@ -26,7 +26,7 @@
           <div v-else-if="_isEmpty(searchResults)">
             <span>No search results for {{ searchTerm }}</span>
           </div>
-          <PvScrollPanel style="height: 26rem; width: 100%">
+          <PvScrollPanel style="height: 31rem; width: 100%; overflow-y: auto">
             <!-- Draggable Zone 3 -->
             <VueDraggableNext
               v-model="searchResults"
@@ -51,7 +51,7 @@
             option-value="value"
             class="w-full mb-2"
           />
-          <PvScrollPanel style="height: 26rem; width: 100%">
+          <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
             <div v-if="!currentVariants.length">
               No variants to show. Make sure 'Show only named variants' is unchecked to view all.
               <span class="text-link" @click="namedOnly = false">View all</span>
