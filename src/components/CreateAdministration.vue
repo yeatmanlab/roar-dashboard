@@ -44,7 +44,11 @@
 
         <OrgPicker @selection="selection($event)" />
 
-        <TaskPicker :allVariants="variantsByTaskId" :set-variants="setVariants" />
+        <TaskPicker
+          :allVariants="variantsByTaskId"
+          :set-variants="setVariants"
+          @variants-changed="handleVariantsChanged"
+        />
 
         <PvPanel class="mt-3" header="Select assessments for this administration">
           <template #icons>
@@ -207,10 +211,14 @@ const selection = (selected) => {
 //      +---------------------------------+
 // -----|       Assessment Selection      |-----
 //      +---------------------------------+
-
+const variants = ref([]);
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
+
+const handleVariantsChanged = (variants) => {
+  console.log('new variants', variants);
+};
 
 // Card event handlers
 const setVariants = (variants) => {

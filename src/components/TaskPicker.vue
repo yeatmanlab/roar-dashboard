@@ -226,7 +226,7 @@ const handleCardMove = (card) => {
   // Check if this variant card is already in the list
   const cardVariantId = card.dragged.id;
   const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
-  if (index !== -1) {
+  if (index !== -1 && card.from !== card.to) {
     debounceToast();
     return false;
   } else return true;
