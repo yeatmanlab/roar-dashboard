@@ -11,7 +11,8 @@
     v-model:visible="visible"
     :draggable="false"
     modal
-    header="Edit Conditions for Assignment"
+    header="Edit Conditions for Assessment"
+    :closeOnEscape="false"
     :style="{ width: '65vw' }"
     :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
   >
@@ -36,6 +37,10 @@
     </div>
     <div class="flex flex-column w-full my-3 gap-2">
       <div class="card p-fluid">
+        <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
+          <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All</div>
+          <PvInputSwitch v-model="optionalForAllFlag" />
+        </div>
         <PvDataTable
           v-if="conditions.length > 0"
           v-model:editingRows="editingRows"
@@ -75,12 +80,12 @@
                 placeholder="Select Operator"
               >
                 <template #option="slotProps">
-                  <PvTag :value="slotProps.option.label" severity="info" />
+                  <PvTag :value="slotProps.option.label" severity="warning" />
                 </template>
               </PvDropdown>
             </template>
             <template #body="slotProps">
-              <PvTag :value="slotProps.data.op" severity="info" />
+              <PvTag :value="slotProps.data.op" severity="warning" />
             </template>
           </PvColumn>
           <PvColumn field="value" header="Value" style="width: 10%" bodyStyle="text-align:center">
@@ -125,13 +130,22 @@
           </PvColumn>
         </PvDataTable>
         <div class="mt-2 flex gap-2">
-          <PvButton label="Add Condition" @click="addCondition" />
-          <PvButton label="Add Optional Assignment for all" @click="addGlobalOptionalAssignment" />
+          <PvButton label="Add Condition" @click="addCondition" class="" />
         </div>
       </div>
       <PvDivider />
+      <div class="flex flex-column align-items-center gap-1 mx-2">
+        <div v-if="optionalAllFlagAndOptionalConditionsPresent" class="text-sm">
+          <PvTag icon="pi pi-info-circle" severity="info">
+            Making the assessment optional for all will override any optional conditions you have added.
+          </PvTag>
+        </div>
+        <div v-if="errorSubmitText.length > 0" class="text-sm">
+          <PvTag icon="pi pi-exclamation-triangle" severity="error">{{ errorSubmitText }}</PvTag>
+        </div>
+      </div>
       <div class="flex justify-content-center gap-2">
-        <PvButton type="button" label="Cancel" severity="secondary" @click="visible = false"></PvButton>
+        <PvButton type="button" label="Cancel" text severity="error" @click="handleClose"></PvButton>
         <PvButton type="button" label="Save" @click="handleSubmit"></PvButton>
       </div>
     </div>
@@ -163,31 +177,53 @@ const addCondition = () => {
   editingRows.value = [...editingRows.value, conditions.value[conditions.value.length - 1]];
 };
 
-const addGlobalOptionalAssignment = () => {
-  // TODO: implement global "all" operator
-  console.log('adding global optional');
-};
+const optionalForAllFlag = ref(false);
+const errorSubmitText = ref('');
+
+const optionalAllFlagAndOptionalConditionsPresent = computed(() => {
+  return optionalForAllFlag.value && computedConditions.value['optional']?.conditions?.length > 0;
+});
 
 onMounted(() => {
-  console.log('mounted');
   if (props.assessment?.conditions) {
     conditions.value = props.assessment?.conditions;
   }
-  // TODO: set conditions to prestored
 });
+
+const handleClose = () => {
+  if (editingRows.value.length > 0) {
+    editingRows.value = [];
+  }
+  visible.value = false;
+};
 
 const handleSubmit = () => {
   let error = false;
+
+  // Check for error where any conditional attribute is empty
   for (const condition of conditions.value) {
     for (const [key, value] of Object.entries(condition)) {
       if (key != 'id' && value == '') {
-        alert('Please fill in all empty conditional fields');
+        errorSubmitText.value = 'Please fill in all empty conditional fields or delete unused rows';
         error = true;
       }
     }
   }
+
+  // Check for error where rows are still being edited
+  if (editingRows.value.length > 0) {
+    error = true;
+    errorSubmitText.value = 'Please save all rows before submitting.';
+  }
+
   if (!error) {
-    props.updateVariant(props.assessment.id, computedConditions.value);
+    errorSubmitText.value = '';
+    // If optionalForAllFlag is true, then overwrite optional conditions by setting optional to true
+    let conditionsCopy = computedConditions.value;
+    if (optionalForAllFlag.value === true) {
+      conditionsCopy['optional'] = true;
+    }
+    props.updateVariant(props.assessment.id, conditionsCopy);
     visible.value = false;
   }
   return;
@@ -197,48 +233,19 @@ const removeRow = (index) => {
   conditions.value.splice(index, 1);
 };
 
-const conditions = ref([
-  // {
-  //   id: 0,
-  //   field: 'studentData.grade',
-  //   op: 'GREATER_THAN',
-  //   value: 5,
-  //   conditionalLevel: 'required',
-  // },
-  // {
-  //   id: 1,
-  //   field: 'studentData.grade',
-  //   op: 'LESS_THAN',
-  //   value: 12,
-  //   conditionalLevel: 'required',
-  // },
-  // {
-  //   id: 2,
-  //   field: 'studentData.grade',
-  //   op: 'LESS_THAN',
-  //   value: 5,
-  //   conditionalLevel: 'optional',
-  // },
-  // {
-  //   id: 3,
-  //   field: 'studentData.grade',
-  //   op: 'GREATER_THAN_OR_EQUAL',
-  //   value: 1,
-  //   conditionalLevel: 'optional',
-  // },
-]);
+const conditions = ref([]);
 
 const computedConditions = computed(() => {
-  return conditions.value.reduce((acc, conditional) => {
+  let precomputedConditions = conditions.value.reduce((acc, conditional) => {
     if (!acc[conditional.conditionalLevel]) {
-      acc[conditional.conditionalLevel] = [];
-      acc[conditional.conditionalLevel].push({
+      acc[conditional.conditionalLevel] = { op: 'AND', conditions: [] };
+      acc[conditional.conditionalLevel].conditions.push({
         op: conditional.op,
         field: conditional.field,
         value: conditional.value,
       });
     } else {
-      acc[conditional.conditionalLevel].push({
+      acc[conditional.conditionalLevel].conditions.push({
         op: conditional.op,
         field: conditional.field,
         value: conditional.value,
@@ -246,6 +253,7 @@ const computedConditions = computed(() => {
     }
     return acc;
   }, {});
+  return precomputedConditions;
 });
 
 const editingRows = ref([]);
@@ -278,7 +286,6 @@ const onRowEditSave = (event) => {
 };
 
 const getConditionalLevelStatusLabel = (status) => {
-  console.log(status);
   switch (status) {
     case 'optional':
       return 'success';
