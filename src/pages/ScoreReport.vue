@@ -786,7 +786,8 @@ const exportSelected = (selectedRows) => {
       }
     }
     for (const assessment of assignment.assessments) {
-      const taskId = assessment.taskId;
+      // If the assessment is optional, append (optional) to the taskId
+      const taskId = isOptional(assessment.taskId) ? `${assessment.taskId} (optional)` : assessment.taskId;
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
@@ -838,7 +839,8 @@ const exportAll = async () => {
       }
     }
     for (const assessment of assignment.assessments) {
-      const taskId = assessment.taskId;
+      // If the assessment is optional, append (optional) to the taskId
+      const taskId = isOptional(assessment.taskId) ? `${assessment.taskId} (optional)` : assessment.taskId;
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
