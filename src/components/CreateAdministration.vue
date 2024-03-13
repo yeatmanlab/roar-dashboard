@@ -170,47 +170,14 @@ const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
 
-const handleVariantsChanged = (variants) => {
-  console.log('new variants', variants);
+const handleVariantsChanged = (newVariants) => {
+  variants.value = newVariants;
 };
 
 // Card event handlers
 const setVariants = (variants) => {
   console.log(variants);
 };
-
-let paramPanelRefs = {};
-
-const toEntryObjects = (inputObj) => {
-  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
-};
-
-const toggle = (event, id) => {
-  paramPanelRefs[id].value.toggle(event);
-};
-
-const assessments = ref([[], []]);
-const assessment = ref({
-  id: '07e91CO5Nn9WHNsUz4qK',
-  variant: {
-    name: 'Same Different Selection',
-    params: { fromDashboard: true, taskName: 'same-different-selection' },
-    lastUpdated: '2024-01-31T00:48:08.810Z',
-    id: '07e91CO5Nn9WHNsUz4qK',
-    parentDoc: 'core-tasks',
-  },
-  task: {
-    id: 'core-tasks',
-    image:
-      'https://imgs.search.brave.com/SOh64AD8PjBSoFCQukI7vBloBK_tNX_45_mZ6e0sv4M/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS12ZWN0b3Iv/d2hpdGUtaXNvbGF0/ZWQtZmVhdGhlci1j/YXJ0b29uXzEzMDgt/MTM4MDg2LmpwZz9z/aXplPTYyNiZleHQ9/anBn',
-    name: 'LEVANTE core tasks',
-    registered: true,
-    description: 'Test for LEVANTE core tasks',
-    lastUpdated: '2024-02-09T00:33:45.740Z',
-  },
-});
-
-const backupImage = '/src/assets/swr-icon.jpeg';
 
 const checkForUniqueTasks = (assignments) => {
   if (_isEmpty(assignments)) return false;
@@ -238,7 +205,7 @@ const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
   if (isFormValid) {
-    const submittedAssessments = assessments.value[1].map((assessment) => ({
+    const submittedAssessments = variants.value.map((assessment) => ({
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
     }));
