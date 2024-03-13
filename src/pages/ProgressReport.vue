@@ -192,7 +192,7 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -476,7 +476,9 @@ const exportSelected = (selectedRows) => {
     }
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
-      if (assessment.completedOn !== undefined) {
+      if (isOptional(taskId)) {
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Optional';
+      } else if (assessment.completedOn !== undefined) {
         tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Completed';
       } else if (assessment.startedOn !== undefined) {
         tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Started';
@@ -513,7 +515,9 @@ const exportAll = async () => {
     }
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
-      if (assessment.completedOn !== undefined) {
+      if (isOptional(taskId)) {
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Optional';
+      } else if (assessment.completedOn !== undefined) {
         tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Completed';
       } else if (assessment.startedOn !== undefined) {
         tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Started';
@@ -527,6 +531,19 @@ const exportAll = async () => {
     computedExportData,
     `roar-progress-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`,
   );
+};
+
+const optionalAssessments = computed(() => {
+  if (administrationInfo.value === undefined) return [];
+  return administrationInfo.value.assessments.filter((assessment) => assessment.optional);
+});
+
+const isOptional = (_taskId) => {
+  for (const assessment of optionalAssessments.value) {
+    if (assessment.taskId === _taskId) {
+      return true;
+    }
+  }
 };
 
 const columns = computed(() => {
@@ -576,7 +593,14 @@ const tableData = computed(() => {
   return assignmentData.value.map(({ user, assignment }) => {
     const status = {};
     for (const assessment of assignment?.assessments || []) {
-      if (assessment.completedOn !== undefined) {
+      console.log('isOptional', isOptional(assessment.taskId));
+      if (isOptional(assessment.taskId)) {
+        status[assessment.taskId] = {
+          value: 'optional',
+          icon: 'pi pi-question',
+          severity: 'info',
+        };
+      } else if (assessment.completedOn !== undefined) {
         status[assessment.taskId] = {
           value: 'completed',
           icon: 'pi pi-check',
