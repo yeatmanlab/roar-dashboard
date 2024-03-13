@@ -50,9 +50,11 @@
             option-label="label"
             option-value="value"
             class="w-full mb-2"
+            placeholder="Select TaskID"
           />
           <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
-            <div v-if="!currentVariants.length">
+            <div v-if="!currentTask">Select a TaskID to display a list of variants.</div>
+            <div v-else-if="!currentVariants.length">
               No variants to show. Make sure 'Show only named variants' is unchecked to view all.
               <span class="text-link" @click="namedOnly = false">View all</span>
             </div>
