@@ -50,79 +50,32 @@
           @variants-changed="handleVariantsChanged"
         />
 
-        <PvPanel class="mt-3" header="Select assessments for this administration">
-          <template #icons>
-            <div class="flex flex-row align-items-center justify-content-end">
-              <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
-              <span>Require sequential?</span>
-              <PvInputSwitch v-model="state.sequential" class="ml-2" />
-            </div>
-          </template>
-
-          <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
-          <PvPickList
-            v-if="assessments[0].length || assessments[1].length"
-            v-model="assessments"
-            data-cy="list-pick-list"
-            :show-source-controls="false"
-            list-style="height: 21.375rem"
-            data-key="id"
-            :striped-rows="true"
-            :pt="{
-              moveAllToTargetButton: { root: { class: 'hide' } },
-              moveAllToSourceButton: { root: { class: 'hide' } },
-              targetMoveTopButton: { root: { class: 'hide' } },
-              targetMoveBottomButton: { root: { class: 'hide' } },
-            }"
-          >
-            <template #sourceheader>Available</template>
-
-            <template #targetheader>Selected</template>
-
-            <template #item="slotProps">
-              <div class="flex flex-wrap p-2 align-items-center gap-3">
-                <img
-                  class="w-4rem shadow-2 flex-shrink-0 border-round"
-                  :src="slotProps.item.task.image || backupImage"
-                  :alt="slotProps.item.task.name"
-                />
-                <div class="flex-1 flex flex-column gap-2">
-                  <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.task.name }}</span>
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-tag text-sm" style="margin-left: 0.625rem"></i>
-                    <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
-                  </div>
-                </div>
-                <PvButton
-                  v-tooltip.right="'Click to view params'"
-                  type="button"
-                  rounded
-                  size="small"
-                  icon="pi pi-info"
-                  @click="toggle($event, slotProps.item.id)"
-                />
-                <PvOverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
-                  <PvDataTable
-                    striped-rows
-                    class="p-datatable-small"
-                    table-style="min-width: 30rem"
-                    :value="toEntryObjects(slotProps.item.variant.params)"
-                  >
-                    <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
-                    <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
-                  </PvDataTable>
-                </PvOverlayPanel>
-              </div>
-            </template>
-          </PvPickList>
-          <div v-else class="loading-container">
-            <AppSpinner style="margin-bottom: 1rem" />
-            <span>Loading Assessments</span>
+        <div class="flex flex-row justify-content-end mt-2">
+          <div class="flex flex-column mt-2 align-items-end">
+            <label style="font-weight: bold; font-size: large" class="mb-2">Sequential?</label>
+            <span class="flex gap-2">
+              <PvRadioButton v-model="state.sequential" inputId="Yes" :value="true" />
+              <label for="Yes">Yes</label>
+              <PvRadioButton v-model="state.sequential" inputId="No" :value="false" />
+              <label for="No">No</label>
+            </span>
+            <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
+              >Please specify sequential behavior.</small
+            >
           </div>
-        </PvPanel>
-
-        <div class="col-12 mb-3">
-          <PvButton label="Create Administration" data-cy="button-create-administration" @click="submit" />
+          <div class="divider ml-2 mr-2" />
+          <div class="mb-2">
+            <div class="mt-2 mb-2">
+              <PvCheckbox :binary="true" v-model="isTestData" inputId="isTestData" />
+              <label for="isTestData" class="ml-2">This is Test Data</label>
+            </div>
+            <PvButton
+              label="Create Administration"
+              data-cy="button-create-administration"
+              @click="submit"
+              style="margin: 0"
+            />
+          </div>
         </div>
       </PvPanel>
     </section>
@@ -170,7 +123,7 @@ const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
 const state = reactive({
   administrationName: '',
   dates: [],
-  sequential: true,
+  sequential: null,
   districts: [],
   schools: [],
   classes: [],
@@ -198,6 +151,7 @@ const v$ = useVuelidate(rules, state);
 const pickListError = ref('');
 const orgError = ref('');
 const submitted = ref(false);
+const isTestData = ref(false);
 
 //      +---------------------------------+
 // -----|          Org Selection          |-----
@@ -216,47 +170,14 @@ const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
 
-const handleVariantsChanged = (variants) => {
-  console.log('new variants', variants);
+const handleVariantsChanged = (newVariants) => {
+  variants.value = newVariants;
 };
 
 // Card event handlers
 const setVariants = (variants) => {
   console.log(variants);
 };
-
-let paramPanelRefs = {};
-
-const toEntryObjects = (inputObj) => {
-  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
-};
-
-const toggle = (event, id) => {
-  paramPanelRefs[id].value.toggle(event);
-};
-
-const assessments = ref([[], []]);
-const assessment = ref({
-  id: '07e91CO5Nn9WHNsUz4qK',
-  variant: {
-    name: 'Same Different Selection',
-    params: { fromDashboard: true, taskName: 'same-different-selection' },
-    lastUpdated: '2024-01-31T00:48:08.810Z',
-    id: '07e91CO5Nn9WHNsUz4qK',
-    parentDoc: 'core-tasks',
-  },
-  task: {
-    id: 'core-tasks',
-    image:
-      'https://imgs.search.brave.com/SOh64AD8PjBSoFCQukI7vBloBK_tNX_45_mZ6e0sv4M/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/ZnJlZS12ZWN0b3Iv/d2hpdGUtaXNvbGF0/ZWQtZmVhdGhlci1j/YXJ0b29uXzEzMDgt/MTM4MDg2LmpwZz9z/aXplPTYyNiZleHQ9/anBn',
-    name: 'LEVANTE core tasks',
-    registered: true,
-    description: 'Test for LEVANTE core tasks',
-    lastUpdated: '2024-02-09T00:33:45.740Z',
-  },
-});
-
-const backupImage = '/src/assets/swr-icon.jpeg';
 
 const checkForUniqueTasks = (assignments) => {
   if (_isEmpty(assignments)) return false;
@@ -269,13 +190,6 @@ const checkForRequiredOrgs = (orgs) => {
   return Boolean(filtered.length);
 };
 
-watch(isLoadingVariants, (value) => {
-  if (!value && allVariants.value.length > 0) {
-    assessments.value = [allVariants.value, []];
-    paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
-  }
-});
-
 //      +---------------------------------+
 // -----|         Form submission         |-----
 //      +---------------------------------+
@@ -284,7 +198,7 @@ const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
   if (isFormValid) {
-    const submittedAssessments = assessments.value[1].map((assessment) => ({
+    const submittedAssessments = variants.value.map((assessment) => ({
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
     }));
@@ -368,6 +282,12 @@ onMounted(async () => {
 .org-dropdown {
   margin-right: 3rem;
   margin-top: 2rem;
+}
+
+.divider {
+  min-height: 100%;
+  max-width: 0;
+  border-left: 1px solid var(--surface-d);
 }
 
 #rectangle {

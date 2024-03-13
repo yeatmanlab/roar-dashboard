@@ -1,5 +1,4 @@
 <template>
-  <div>TaskPicker</div>
   <PvPanel header="Task Picker">
     <template #icons>
       <div class="flex flex-row">
@@ -36,7 +35,7 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in searchResults" :key="element.id" :id="element.id">
+                <div v-for="element in searchResults" :key="element.id" :id="element.id" style="cursor: grab">
                   <VariantCard :variant="element" />
                 </div>
               </transition-group>
@@ -50,9 +49,11 @@
             option-label="label"
             option-value="value"
             class="w-full mb-2"
+            placeholder="Select TaskID"
           />
           <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
-            <div v-if="!currentVariants.length">
+            <div v-if="!currentTask">Select a TaskID to display a list of variants.</div>
+            <div v-else-if="!currentVariants.length">
               No variants to show. Make sure 'Show only named variants' is unchecked to view all.
               <span class="text-link" @click="namedOnly = false">View all</span>
             </div>
@@ -65,7 +66,7 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in currentVariants" :key="element.id" :id="element.id">
+                <div v-for="element in currentVariants" :key="element.id" :id="element.id" style="cursor: grab">
                   <VariantCard :variant="element" :update-variant="updateVariant" />
                 </div>
               </transition-group>
@@ -94,7 +95,7 @@
             class="w-full h-full overflow-auto"
           >
             <transition-group>
-              <div v-for="element in selectedVariants" :key="element.id" :id="element.id">
+              <div v-for="element in selectedVariants" :key="element.id" :id="element.id" style="cursor: grab">
                 <VariantCard
                   :variant="element"
                   has-controls
