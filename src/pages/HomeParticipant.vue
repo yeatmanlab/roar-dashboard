@@ -9,19 +9,47 @@
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
           {{ adminInfo.at(0).name }}
         </h2>
-        <div v-if="adminInfo?.length > 1" class="p-float-label dropdown-container">
-          <PvDropdown
-            v-model="selectedAdmin"
-            :options="adminInfo ?? []"
-            option-label="name"
-            input-id="dd-assignment"
-            data-cy="dropdown-select-administration"
-          />
-          <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+        <div
+          v-if="adminInfo?.length > 1"
+          class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4"
+        >
+          <div class="assignment-select-container flex flex-row justify-content-between">
+            <div class="flex flex-column">
+              <PvDropdown
+                v-model="selectedAdmin"
+                :options="adminInfo ?? []"
+                option-label="name"
+                input-id="dd-assignment"
+                data-cy="dropdown-select-administration"
+                @change="toggleShowOptionalAssessments"
+              />
+              <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+            </div>
+
+            <div
+              v-if="optionalAssessments.length !== 0"
+              class="switch-container flex flex-row align-items-center justify-content-end mr-6"
+            >
+              <PvInputSwitch
+                v-model="showOptionalAssessments"
+                input-id="switch-optional"
+                data-cy="switch-show-optional-assessments"
+              />
+              <label for="switch-optional" class="mr-7">{{ $t('homeParticipant.showOptionalAssignments') }}</label>
+            </div>
+          </div>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <GameTabs :games="assessments" :sequential="isSequential" :user-data="userData" />
+          <Transition name="fade" mode="out-in">
+            <GameTabs
+              v-if="showOptionalAssessments"
+              :games="optionalAssessments"
+              :sequential="isSequential"
+              :user-data="userData"
+            />
+            <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
+          </Transition>
         </div>
       </div>
     </div>
@@ -163,6 +191,11 @@ const noGamesAvailable = computed(() => {
   return assessments.value.length === 0;
 });
 
+const showOptionalAssessments = ref(null);
+const toggleShowOptionalAssessments = () => {
+  showOptionalAssessments.value = null;
+};
+
 // Assessments to populate the game tabs.
 // Generated based on the current selected admin Id
 const assessments = computed(() => {
@@ -172,14 +205,17 @@ const assessments = computed(() => {
       const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
       const matchingAssessments = matchingAssignment?.assessments ?? [];
       const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
+      const optionalAssessment = _find(matchingAssessments, { taskId: assessment.taskId, optional: true });
       const combinedAssessment = {
         ...matchingAssessment,
+        ...optionalAssessment,
         ...assessment,
         taskData: {
           ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
           variantURL: _get(assessment, 'params.variantURL'),
         },
       };
+      console.log('combinedAssessment', combinedAssessment);
       return combinedAssessment;
     });
 
@@ -207,6 +243,14 @@ const assessments = computed(() => {
   return [];
 });
 
+const requiredAssessments = computed(() => {
+  return _filter(assessments.value, (assessment) => !assessment.optional);
+});
+
+const optionalAssessments = computed(() => {
+  return _filter(assessments.value, (assessment) => assessment.optional);
+});
+
 // Grab the sequential key from the current admin's data object
 const isSequential = computed(() => {
   return (
@@ -221,12 +265,12 @@ const isSequential = computed(() => {
 
 // Total games completed from the current list of assessments
 let totalGames = computed(() => {
-  return assessments.value.length ?? 0;
+  return requiredAssessments.value.length ?? 0;
 });
 
 // Total games included in the current assessment
 let completeGames = computed(() => {
-  return _filter(assessments.value, (task) => task.completedOn).length ?? 0;
+  return _filter(requiredAssessments.value, (task) => task.completedOn).length ?? 0;
 });
 
 // Set up studentInfo for sidebar
@@ -254,9 +298,27 @@ watch(
   gap: 2rem;
 }
 
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 .dropdown-container {
   margin-top: 2rem;
   margin-left: 2rem;
+}
+
+.assignment-select-container {
+  min-width: 100%;
+}
+
+.switch-container {
+  min-width: 24%;
 }
 
 @media screen and (max-width: 1100px) {
