@@ -174,10 +174,6 @@ import _toUpper from 'lodash/toUpper';
 
 const visible = ref(false);
 const props = defineProps({
-  visible: {
-    type: Boolean,
-    required: true,
-  },
   assessment: {
     type: Object,
     required: true,

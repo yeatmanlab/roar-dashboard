@@ -151,7 +151,7 @@
     class="flex-1 flex flex-column border-1 border-round surface-border surface-hover mb-2 hover:surface-ground mr-2 ml-2 pb-2"
     style="margin-top: -5px"
   >
-    <div class="flex gap-2 mt-2 flex-column w-full pr-3" v-if="variant.variant?.conditions?.required">
+    <div v-if="variant.variant?.conditions?.required" class="flex gap-2 mt-2 flex-column w-full pr-3">
       <p class="font-bold mt-3 mb-1 ml-3">Required Conditions:</p>
       <PvDataTable
         class="p-datatable-small ml-3 border-1 surface-border"
@@ -171,10 +171,10 @@
         </PvColumn>
       </PvDataTable>
     </div>
-    <div class="flex mt-2 flex-column w-full ml-3 pr-3" v-if="variant.variant?.conditions?.optional === true">
+    <div v-if="variant.variant?.conditions?.optional === true" class="flex mt-2 flex-column w-full ml-3 pr-3">
       <PvTag severity="success"> Assignment optional for all students </PvTag>
     </div>
-    <div class="flex mt-2 flex-column w-full pr-3" v-else-if="variant.variant?.conditions?.optional">
+    <div v-else-if="variant.variant?.conditions?.optional" class="flex mt-2 flex-column w-full pr-3">
       <p class="font-bold mt-3 mb-1 ml-3">Optional Conditions:</p>
       <PvDataTable
         class="p-datatable-small ml-3 border-1 surface-border"
@@ -195,8 +195,8 @@
       </PvDataTable>
     </div>
     <div
-      class="flex mt-2 flex-column w-full px-3 ml-3"
       v-if="!variant.variant?.conditions?.required && !variant.variant?.conditions?.optional"
+      class="flex mt-2 flex-column w-full px-3 ml-3"
     >
       <PvTag severity="danger"> Assignment required for all students </PvTag>
     </div>
