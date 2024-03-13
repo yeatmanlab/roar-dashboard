@@ -190,13 +190,6 @@ const checkForRequiredOrgs = (orgs) => {
   return Boolean(filtered.length);
 };
 
-watch(isLoadingVariants, (value) => {
-  if (!value && allVariants.value.length > 0) {
-    assessments.value = [allVariants.value, []];
-    paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
-  }
-});
-
 //      +---------------------------------+
 // -----|         Form submission         |-----
 //      +---------------------------------+
