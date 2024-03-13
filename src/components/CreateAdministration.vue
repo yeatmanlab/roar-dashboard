@@ -224,7 +224,9 @@ const submit = async () => {
           dateClose: toRaw(state).dates[1],
           sequential: toRaw(state).sequential,
           orgs: orgs,
+          isTestData: isTestData.value,
         };
+        if (isTestData.value) args.isTestData = true;
 
         await roarfirekit.value.createAdministration(args).then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
