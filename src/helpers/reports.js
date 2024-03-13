@@ -151,6 +151,7 @@ export const supportLevelColors = {
   above: 'green',
   some: '#edc037',
   below: '#c93d82',
+  optional: '#ADD8E6',
 };
 
 /*

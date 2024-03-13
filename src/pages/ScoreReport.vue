@@ -197,6 +197,12 @@
             </div>
           </div>
           <div class="legend-entry">
+            <div class="circle tooltip" :style="`background-color: ${optionalAssessmentColor};`" />
+            <div>
+              <div>Optional</div>
+            </div>
+          </div>
+          <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: white`" />
             <div>
               <div>Assessed</div>
@@ -344,6 +350,8 @@ const props = defineProps({
 
 const initialized = ref(false);
 
+const optionalAssessmentColor = '#ADD8E6';
+
 const reportView = ref({ name: 'Score Report', constant: true });
 const reportViews = [
   { name: 'Score Report', constant: true },
@@ -452,7 +460,7 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -932,6 +940,16 @@ const shouldBeOutlined = (taskId) => {
   else return true;
 };
 
+const optionalAssessments = computed(() => {
+  return administrationInfo.value?.assessments.filter((assessment) => assessment.optional) || [];
+});
+
+const isOptional = (_taskId) => {
+  return optionalAssessments.value.some((assessment) => assessment.taskId === _taskId);
+};
+
+const getOptionalScore = (_taskId, _score) => isOptional(_taskId) && _score !== undefined;
+
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
@@ -1026,12 +1044,16 @@ const tableData = computed(() => {
       const rawScore = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
+      const isOptionalScore = getOptionalScore(assessment.taskId, standardScore);
+      const color = isOptionalScore
+        ? optionalAssessmentColor
+        : colorSelection(assessment, rawScore, support_level, tag_color);
       scores[assessment.taskId] = {
         percentile: percentileString,
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: colorSelection(assessment, rawScore, support_level, tag_color),
+        color: color,
       };
     }
     // If this is a district score report, grab school information
