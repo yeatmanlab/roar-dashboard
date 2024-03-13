@@ -8,10 +8,8 @@
         </div>
       </router-link>
 
-      <div id="navBarRightEnd" class="flex flex-row align-items-center">
-        <div class="">
-          <LanguageSelector />
-        </div>
+      <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start">
+        <LanguageSelector />
         <div class="login-container">
           <div v-if="isAdmin">
             <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
