@@ -11,7 +11,7 @@
     v-model:visible="visible"
     :draggable="false"
     modal
-    header="Edit Conditions for Assessment"
+    header="Edit Conditions for Assignment"
     :closeOnEscape="false"
     :style="{ width: '65vw' }"
     :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
@@ -37,9 +37,19 @@
     </div>
     <div class="flex flex-column w-full my-3 gap-2">
       <div class="card p-fluid">
-        <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
-          <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All</div>
-          <PvInputSwitch v-model="optionalForAllFlag" />
+        <div
+          v-if="conditions.length == 0"
+          class="flex flex-column align-items-center justify-content-center py-5 gap-2 bg-gray-200"
+        >
+          <div class="text-2xl uppercase font-bold">No Conditions Added</div>
+          <div v-if="optionalForAllFlag" class="text-sm uppercase text-gray-700">
+            Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all students in
+            administration.
+          </div>
+          <div v-else class="text-sm uppercase text-gray-700">
+            Assignment will be <PvTag severity="danger" class="mx-1">REQUIRED</PvTag> for all students in
+            administration.
+          </div>
         </div>
         <PvDataTable
           v-if="conditions.length > 0"
@@ -129,8 +139,14 @@
             </template>
           </PvColumn>
         </PvDataTable>
-        <div class="mt-2 flex gap-2">
-          <PvButton label="Add Condition" @click="addCondition" class="" />
+        <div class="flex flex-row justify-content-around align-items-center">
+          <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
+            <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
+            <PvInputSwitch v-model="optionalForAllFlag" />
+          </div>
+          <div class="mt-2 flex gap-2">
+            <PvButton label="Add Condition" icon="pi pi-plus" @click="addCondition" class="" />
+          </div>
         </div>
       </div>
       <PvDivider />
@@ -223,6 +239,9 @@ const handleSubmit = () => {
     if (optionalForAllFlag.value === true) {
       conditionsCopy['optional'] = true;
     }
+    if (optionalForAllFlag.value === false) {
+      conditionsCopy['optional'] = false;
+    }
     props.updateVariant(props.assessment.id, conditionsCopy);
     visible.value = false;
   }
@@ -286,11 +305,12 @@ const onRowEditSave = (event) => {
 };
 
 const getConditionalLevelStatusLabel = (status) => {
-  switch (status) {
-    case 'optional':
+  const upperStatus = _toUpper(status);
+  switch (upperStatus) {
+    case 'OPTIONAL':
       return 'success';
 
-    case 'required':
+    case 'REQUIRED':
       return 'danger';
 
     default:

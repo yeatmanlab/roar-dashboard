@@ -35,7 +35,7 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in searchResults" :key="element.id" :id="element.id">
+                <div v-for="element in searchResults" :key="element.id" :id="element.id" style="cursor: grab">
                   <VariantCard :variant="element" />
                 </div>
               </transition-group>
@@ -66,7 +66,7 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in currentVariants" :key="element.id" :id="element.id">
+                <div v-for="element in currentVariants" :key="element.id" :id="element.id" style="cursor: grab">
                   <VariantCard :variant="element" :update-variant="updateVariant" />
                 </div>
               </transition-group>
@@ -95,7 +95,7 @@
             class="w-full h-full overflow-auto"
           >
             <transition-group>
-              <div v-for="element in selectedVariants" :key="element.id" :id="element.id">
+              <div v-for="element in selectedVariants" :key="element.id" :id="element.id" style="cursor: grab">
                 <VariantCard
                   :variant="element"
                   has-controls
