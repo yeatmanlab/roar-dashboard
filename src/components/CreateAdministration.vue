@@ -45,7 +45,7 @@
         <OrgPicker @selection="selection($event)" />
 
         <TaskPicker
-          :allVariants="variantsByTaskId"
+          :all-variants="variantsByTaskId"
           :set-variants="setVariants"
           @variants-changed="handleVariantsChanged"
         />
@@ -54,9 +54,9 @@
           <div class="flex flex-column mt-2 align-items-end">
             <label style="font-weight: bold; font-size: large" class="mb-2">Sequential?</label>
             <span class="flex gap-2">
-              <PvRadioButton v-model="state.sequential" inputId="Yes" :value="true" />
+              <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
               <label for="Yes">Yes</label>
-              <PvRadioButton v-model="state.sequential" inputId="No" :value="false" />
+              <PvRadioButton v-model="state.sequential" input-id="No" :value="false" />
               <label for="No">No</label>
             </span>
             <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
@@ -66,14 +66,14 @@
           <div class="divider ml-2 mr-2" />
           <div class="mb-2">
             <div class="mt-2 mb-2">
-              <PvCheckbox :binary="true" v-model="isTestData" inputId="isTestData" />
+              <PvCheckbox v-model="isTestData" :binary="true" input-id="isTestData" />
               <label for="isTestData" class="ml-2">This is Test Data</label>
             </div>
             <PvButton
               label="Create Administration"
               data-cy="button-create-administration"
-              @click="submit"
               style="margin: 0"
+              @click="submit"
             />
           </div>
         </div>

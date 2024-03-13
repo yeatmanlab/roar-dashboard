@@ -12,11 +12,11 @@
     :draggable="false"
     modal
     header="Edit Conditions for Assignment"
-    :closeOnEscape="false"
+    :close-on-escape="false"
     :style="{ width: '65vw' }"
     :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
   >
-    <div class="flex w-full align-items-center justify-content-space-between">
+    <div class="flex w-full align-items-center justify-content-around">
       <div class="flex flex-column w-full my-3 gap-2">
         <div>
           <div class="text-sm font-light uppercase text-gray-400">Task Name</div>
@@ -25,39 +25,35 @@
           </div>
         </div>
         <div v-if="assessment.variant?.params?.taskName" class="gap-2">
-          <div class="text-sm font-light uppercase text-gray-400">Variant Name</div>
+          <div class="text-sm font-light uppercase text-gray-500">Variant Name</div>
           <div class="text-xl uppercase">
             {{ assessment.variant?.params?.taskName }}
           </div>
         </div>
       </div>
-      <div class="flex w-8 justify-content-end">
-        <img :src="assessment.task.image" class="w-8" />
+      <div class="flex w-6 justify-content-end">
+        <img :src="assessment.task.image" class="w-5" />
       </div>
     </div>
-    <div class="flex flex-column w-full my-3 gap-2">
-      <div class="card p-fluid">
+    <div class="flex flex-column w-full my-2 gap-2">
+      <div class="card p-fluid bg-gray-100 p-3">
+        <div class="text-lg font-normal text-gray-500 uppercase mb-2">Assigned Conditions</div>
         <div
-          v-if="conditions.length == 0"
-          class="flex flex-column align-items-center justify-content-center py-5 gap-2 bg-gray-200"
+          v-if="assignedConditions.length == 0"
+          class="flex flex-column align-items-center justify-content-center py-2 gap-2"
         >
-          <div class="text-2xl uppercase font-bold">No Conditions Added</div>
-          <div v-if="optionalForAllFlag" class="text-sm uppercase text-gray-700">
-            Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all students in
-            administration.
-          </div>
-          <div v-else class="text-sm uppercase text-gray-700">
-            Assignment will be <PvTag severity="danger" class="mx-1">REQUIRED</PvTag> for all students in
+          <div class="text-xl uppercase font-bold">No Conditions Added</div>
+          <div class="text-sm uppercase text-gray-700">
+            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all students in the
             administration.
           </div>
         </div>
         <PvDataTable
-          v-if="conditions.length > 0"
-          v-model:editingRows="editingRows"
-          :value="conditions"
-          editMode="row"
-          dataKey="id"
-          @row-edit-save="onRowEditSave"
+          v-if="assignedConditions.length > 0"
+          v-model:editingRows="assignedEditingRows"
+          :value="assignedConditions"
+          edit-mode="row"
+          data-key="id"
           :pt="{
             table: { style: 'min-width: 50rem' },
             column: {
@@ -66,27 +62,28 @@
               }),
             },
           }"
+          @row-edit-save="onAssignedRowEditSave"
         >
-          <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" bodyStyle="text-align:center">
+          <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
             <template #editor="{ data, field }">
               <PvDropdown
                 v-model="data[field]"
                 :options="fieldExamples"
-                optionLabel="label"
-                optionValue="value"
+                option-label="label"
+                option-value="value"
                 editable
                 placeholder="Type or choose field"
               >
               </PvDropdown>
             </template>
           </PvColumn>
-          <PvColumn field="op" header="Operator" style="width: 5%" bodyStyle="text-align:center">
+          <PvColumn field="op" header="Operator" style="width: 5%" body-style="text-align:center">
             <template #editor="{ data, field }">
               <PvDropdown
                 v-model="data[field]"
                 :options="operators"
-                optionLabel="label"
-                optionValue="value"
+                option-label="label"
+                option-value="value"
                 placeholder="Select Operator"
               >
                 <template #option="slotProps">
@@ -98,54 +95,114 @@
               <PvTag :value="slotProps.data.op" severity="warning" />
             </template>
           </PvColumn>
-          <PvColumn field="value" header="Value" style="width: 10%" bodyStyle="text-align:center">
+          <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
             <template #editor="{ data, field }">
               <PvInputText v-model="data[field]" />
             </template>
           </PvColumn>
-          <PvColumn
-            field="conditionalLevel"
-            header="Conditional Level"
-            style="width: 12%"
-            bodyStyle="text-align:center"
-          >
-            <template #editor="{ data, field }">
-              <PvDropdown
-                v-model="data[field]"
-                :options="conditionalLevels"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Select Level"
-              >
-                <template #option="slotProps">
-                  <PvTag
-                    :value="_toUpper(slotProps.option.label)"
-                    :severity="getConditionalLevelStatusLabel(slotProps.option.label)"
-                  />
-                </template>
-              </PvDropdown>
-            </template>
-            <template #body="slotProps">
-              <PvTag
-                :value="_toUpper(slotProps.data.conditionalLevel)"
-                :severity="getConditionalLevelStatusLabel(slotProps.data.conditionalLevel)"
-              />
-            </template>
-          </PvColumn>
-          <PvColumn :rowEditor="true" style="width: 8%; min-width: 8%" bodyStyle="text-align:center"> </PvColumn>
-          <PvColumn :rowEditor="true" style="width: 5%; max-width: 1rem" bodyStyle="text-align:center">
+          <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
+          <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
             <template #body="{ index }">
-              <PvButton icon="pi pi-trash" @click="removeRow(index)" />
+              <PvButton text icon="pi pi-trash" @click="removeAssignedRow(index)" />
             </template>
           </PvColumn>
         </PvDataTable>
-        <div class="flex flex-row justify-content-around align-items-center">
-          <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
-            <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
-            <PvInputSwitch v-model="optionalForAllFlag" />
+        <div class="flex flex-row-reverse justify-content-between align-items-center">
+          <div class="mt-2 flex">
+            <PvButton label="Add Assigned Condition" icon="pi pi-plus" class="" @click="addAssignedCondition" />
           </div>
-          <div class="mt-2 flex gap-2">
-            <PvButton label="Add Condition" icon="pi pi-plus" @click="addCondition" class="" />
+        </div>
+      </div>
+      <div class="mt-2 flex flex-column gap-2">
+        <div class="card p-fluid bg-gray-100 p-3">
+          <div class="text-lg font-normal text-gray-500 uppercase mb-2">Optional Conditions</div>
+          <div
+            v-if="optionalConditions.length == 0"
+            class="flex flex-column align-items-center justify-content-center py-2 gap-2"
+          >
+            <div class="text-xl uppercase font-bold">No Conditions Added</div>
+            <div v-if="optionalForAllFlag" class="text-sm uppercase text-gray-700">
+              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all students in the
+              administration.
+            </div>
+            <div v-else class="text-sm uppercase text-gray-700">
+              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any students in the
+              administration.
+            </div>
+          </div>
+          <PvDataTable
+            v-if="optionalConditions.length > 0"
+            v-model:editingRows="optionalEditingRows"
+            :value="optionalConditions"
+            edit-mode="row"
+            data-key="id"
+            :pt="{
+              table: { style: 'min-width: 50rem' },
+              column: {
+                bodycell: ({ state }) => ({
+                  style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem',
+                }),
+              },
+            }"
+            @row-edit-save="onOptionalRowEditSave"
+          >
+            <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
+              <template #editor="{ data, field }">
+                <PvDropdown
+                  v-model="data[field]"
+                  :options="fieldExamples"
+                  option-label="label"
+                  option-value="value"
+                  editable
+                  placeholder="Type or choose field"
+                >
+                </PvDropdown>
+              </template>
+            </PvColumn>
+            <PvColumn field="op" header="Operator" style="width: 5%" body-style="text-align:center">
+              <template #editor="{ data, field }">
+                <PvDropdown
+                  v-model="data[field]"
+                  :options="operators"
+                  option-label="label"
+                  option-value="value"
+                  placeholder="Select Operator"
+                >
+                  <template #option="slotProps">
+                    <PvTag :value="slotProps.option.label" severity="warning" />
+                  </template>
+                </PvDropdown>
+              </template>
+              <template #body="slotProps">
+                <PvTag :value="slotProps.data.op" severity="warning" />
+              </template>
+            </PvColumn>
+            <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
+              <template #editor="{ data, field }">
+                <PvInputText v-model="data[field]" />
+              </template>
+            </PvColumn>
+            <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
+            <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
+              <template #body="{ index }">
+                <PvButton icon="pi pi-trash" @click="removeOptionalRow(index)" />
+              </template>
+            </PvColumn>
+          </PvDataTable>
+          <div class="flex flex-row justify-content-between align-items-center">
+            <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
+              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
+              <PvInputSwitch v-model="optionalForAllFlag" @update:model-value="handleOptionalForAllSwitch" />
+            </div>
+            <div class="mt-2 flex gap-2">
+              <PvButton
+                label="Add Optional Condition"
+                icon="pi pi-plus"
+                class=""
+                :disabled="optionalForAllFlag === true"
+                @click="addOptionalCondition"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -170,14 +227,9 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import _toUpper from 'lodash/toUpper';
 
 const visible = ref(false);
 const props = defineProps({
-  visible: {
-    type: Boolean,
-    required: true,
-  },
   assessment: {
     type: Object,
     required: true,
@@ -188,13 +240,31 @@ const props = defineProps({
   },
 });
 
-const addCondition = () => {
-  conditions.value.push({ id: conditions.value.length, field: '', op: '', value: '', conditionalLevel: '' });
-  editingRows.value = [...editingRows.value, conditions.value[conditions.value.length - 1]];
+const addOptionalCondition = () => {
+  optionalConditions.value.push({ id: assignedConditions.value.length, field: '', op: '', value: '' });
+  optionalEditingRows.value = [
+    ...optionalEditingRows.value,
+    optionalConditions.value[optionalConditions.value.length - 1],
+  ];
+};
+
+const addAssignedCondition = () => {
+  assignedConditions.value.push({ id: assignedConditions.value.length, field: '', op: '', value: '' });
+  assignedEditingRows.value = [
+    ...assignedEditingRows.value,
+    assignedConditions.value[assignedConditions.value.length - 1],
+  ];
 };
 
 const optionalForAllFlag = ref(false);
+
 const errorSubmitText = ref('');
+
+const handleOptionalForAllSwitch = () => {
+  if (optionalForAllFlag.value === true) {
+    optionalConditions.value = [];
+  }
+};
 
 const optionalAllFlagAndOptionalConditionsPresent = computed(() => {
   return optionalForAllFlag.value && computedConditions.value['optional']?.conditions?.length > 0;
@@ -202,13 +272,17 @@ const optionalAllFlagAndOptionalConditionsPresent = computed(() => {
 
 onMounted(() => {
   if (props.assessment?.conditions) {
-    conditions.value = props.assessment?.conditions;
+    optionalConditions.value = props.assessments?.conditions?.optional?.conditions;
+    assignedConditions.value = props.assessments?.conditions?.assigned?.conditions;
   }
 });
 
 const handleClose = () => {
-  if (editingRows.value.length > 0) {
-    editingRows.value = [];
+  if (assignedEditingRows.value.length > 0) {
+    assignedEditingRows.value = [];
+  }
+  if (optionalEditingRows.value.length > 0) {
+    optionalEditingRows.value = [];
   }
   visible.value = false;
 };
@@ -217,7 +291,15 @@ const handleSubmit = () => {
   let error = false;
 
   // Check for error where any conditional attribute is empty
-  for (const condition of conditions.value) {
+  for (const condition of assignedConditions.value) {
+    for (const [key, value] of Object.entries(condition)) {
+      if (key != 'id' && value == '') {
+        errorSubmitText.value = 'Please fill in all empty conditional fields or delete unused rows';
+        error = true;
+      }
+    }
+  }
+  for (const condition of optionalConditions.value) {
     for (const [key, value] of Object.entries(condition)) {
       if (key != 'id' && value == '') {
         errorSubmitText.value = 'Please fill in all empty conditional fields or delete unused rows';
@@ -227,7 +309,7 @@ const handleSubmit = () => {
   }
 
   // Check for error where rows are still being edited
-  if (editingRows.value.length > 0) {
+  if (optionalEditingRows.value.length > 0 && assignedEditingRows.value.length > 0) {
     error = true;
     errorSubmitText.value = 'Please save all rows before submitting.';
   }
@@ -239,8 +321,9 @@ const handleSubmit = () => {
     if (optionalForAllFlag.value === true) {
       conditionsCopy['optional'] = true;
     }
+    // if optionalForAllFlag is false, and there are no optional conditions, then set optional to false
     if (optionalForAllFlag.value === false) {
-      conditionsCopy['optional'] = false;
+      conditionsCopy['optional'] = { conditions: optionalConditions, op: 'AND' };
     }
     props.updateVariant(props.assessment.id, conditionsCopy);
     visible.value = false;
@@ -248,44 +331,31 @@ const handleSubmit = () => {
   return;
 };
 
-const removeRow = (index) => {
-  conditions.value.splice(index, 1);
+const removeAssignedRow = (index) => {
+  assignedConditions.value.splice(index, 1);
+};
+const removeOptionalRow = (index) => {
+  optionalConditions.value.splice(index, 1);
 };
 
-const conditions = ref([]);
+const optionalConditions = ref([]);
+const assignedConditions = ref([]);
 
 const computedConditions = computed(() => {
-  let precomputedConditions = conditions.value.reduce((acc, conditional) => {
-    if (!acc[conditional.conditionalLevel]) {
-      acc[conditional.conditionalLevel] = { op: 'AND', conditions: [] };
-      acc[conditional.conditionalLevel].conditions.push({
-        op: conditional.op,
-        field: conditional.field,
-        value: conditional.value,
-      });
-    } else {
-      acc[conditional.conditionalLevel].conditions.push({
-        op: conditional.op,
-        field: conditional.field,
-        value: conditional.value,
-      });
-    }
-    return acc;
-  }, {});
-  return precomputedConditions;
+  return {
+    optional: { op: 'AND', conditions: optionalConditions.value },
+    assigned: { op: 'AND', conditions: assignedConditions.value },
+  };
 });
 
-const editingRows = ref([]);
+const assignedEditingRows = ref([]);
+const optionalEditingRows = ref([]);
 
 const fieldExamples = ref([
   { label: 'studentData.grade', value: 'studentData.grade' },
   { label: 'studentData.schoolLevel', value: 'studentData.schoolLevel' },
 ]);
 
-const conditionalLevels = ref([
-  { label: 'Optional', value: 'optional' },
-  { label: 'Required', value: 'required' },
-]);
 const operators = ref([
   { label: 'Less Than (<)', value: 'LESS_THAN' },
   { label: 'Greater Than (>)', value: 'GREATER_THAN' },
@@ -295,26 +365,21 @@ const operators = ref([
   { label: 'Not Equal (!=)', value: 'NOT_EQUAL' },
 ]);
 
-const onRowEditSave = (event) => {
+const onAssignedRowEditSave = (event) => {
   let { newData, index } = event;
   // Update the specific row in the conditions array
-  conditions.value[index] = newData;
+  assignedConditions.value[index] = newData;
 
   // Remove the index from the editingRows array to stop editing
-  editingRows.value.splice(editingRows.value.indexOf(index), 1);
+  assignedEditingRows.value.splice(assignedEditingRows.value.indexOf(index), 1);
 };
 
-const getConditionalLevelStatusLabel = (status) => {
-  const upperStatus = _toUpper(status);
-  switch (upperStatus) {
-    case 'OPTIONAL':
-      return 'success';
+const onOptionalRowEditSave = (event) => {
+  let { newData, index } = event;
+  // Update the specific row in the conditions array
+  optionalConditions.value[index] = newData;
 
-    case 'REQUIRED':
-      return 'danger';
-
-    default:
-      return null;
-  }
+  // Remove the index from the editingRows array to stop editing
+  optionalEditingRows.value.splice(optionalEditingRows.value.indexOf(index), 1);
 };
 </script>

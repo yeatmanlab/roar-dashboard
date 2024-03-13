@@ -14,7 +14,7 @@
             <i class="pi pi-search" />
             <PvInputText v-model="searchTerm" placeholder="Variant name / ID" />
           </div>
-          <PvButton v-if="searchTerm" @click="clearSearch" style="margin-right: 0">
+          <PvButton v-if="searchTerm" style="margin-right: 0" @click="clearSearch">
             <i class="pi pi-times" />
           </PvButton>
         </div>
@@ -35,7 +35,7 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in searchResults" :key="element.id" :id="element.id" style="cursor: grab">
+                <div v-for="element in searchResults" :id="element.id" :key="element.id" style="cursor: grab">
                   <VariantCard :variant="element" />
                 </div>
               </transition-group>
@@ -66,7 +66,7 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in currentVariants" :key="element.id" :id="element.id" style="cursor: grab">
+                <div v-for="element in currentVariants" :id="element.id" :key="element.id" style="cursor: grab">
                   <VariantCard :variant="element" :update-variant="updateVariant" />
                 </div>
               </transition-group>
@@ -95,14 +95,14 @@
             class="w-full h-full overflow-auto"
           >
             <transition-group>
-              <div v-for="element in selectedVariants" :key="element.id" :id="element.id" style="cursor: grab">
+              <div v-for="element in selectedVariants" :id="element.id" :key="element.id" style="cursor: grab">
                 <VariantCard
                   :variant="element"
                   has-controls
-                  @remove="removeCard"
-                  @moveUp="moveCardUp"
-                  @moveDown="moveCardDown"
                   :update-variant="updateVariant"
+                  @remove="removeCard"
+                  @move-up="moveCardUp"
+                  @move-down="moveCardDown"
                 />
               </div>
             </transition-group>
