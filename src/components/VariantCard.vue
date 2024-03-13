@@ -140,6 +140,7 @@
     <div class="mr-0 pl-0 flex flex-column justify-content-end">
       <EditVariantDialog :visible="visible" :assessment="variant" :update-variant="updateVariant" />
       <PvButton
+        v-if="variant.variant?.conditions?.required || variant.variant?.conditions?.optional"
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
         @click="toggleShowContent()"
         ><i :class="iconClass()" style="font-size: 1rem"></i
@@ -194,12 +195,12 @@
         </PvColumn>
       </PvDataTable>
     </div>
-    <div
+    <!-- <div
       v-if="!variant.variant?.conditions?.required && !variant.variant?.conditions?.optional"
       class="flex mt-2 flex-column w-full px-3 ml-3"
     >
       <PvTag severity="danger"> Assignment required for all students </PvTag>
-    </div>
+    </div> -->
   </div>
   <PvDialog v-model:visible="visible" modal header="Parameters" :style="{ width: '50rem' }">
     <div class="flex gap-2 flex-column w-full pr-3">
