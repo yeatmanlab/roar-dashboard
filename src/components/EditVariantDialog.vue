@@ -177,17 +177,20 @@ onMounted(() => {
 });
 
 const handleSubmit = () => {
+  let error = false;
   for (const condition of conditions.value) {
-    for (const entry of Object.values(condition)) {
-      if (entry == '') {
+    for (const [key, value] of Object.entries(condition)) {
+      if (key != 'id' && value == '') {
         alert('Please fill in all empty conditional fields');
-        return;
+        error = true;
       }
     }
   }
-  console.log('submit called');
-  props.updateVariant(props.assessment.id, computedConditions.value);
-  visible.value = false;
+  if (!error) {
+    props.updateVariant(props.assessment.id, computedConditions.value);
+    visible.value = false;
+  }
+  return;
 };
 
 const removeRow = (index) => {
@@ -267,15 +270,6 @@ const operators = ref([
 
 const onRowEditSave = (event) => {
   let { newData, index } = event;
-  console.log(newData);
-  for (const val of Object.values(newData)) {
-    // TODO: Push error message to user that a field is not defined
-    if (val == '' || val == undefined) {
-      console.log('empty row');
-      return;
-    }
-  }
-
   // Update the specific row in the conditions array
   conditions.value[index] = newData;
 
