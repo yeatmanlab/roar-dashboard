@@ -12,7 +12,7 @@
         <div class="flex flex-row mb-2">
           <div class="flex flex-column flex-grow-1 p-input-icon-left">
             <i class="pi pi-search" />
-            <PvInputText v-model="searchTerm" placeholder="Variant name / ID" />
+            <PvInputText v-model="searchTerm" placeholder="Variant name, ID, or Task ID" />
           </div>
           <PvButton v-if="searchTerm" style="margin-right: 0" @click="clearSearch">
             <i class="pi pi-times" />
@@ -208,7 +208,11 @@ const searchCards = (term) => {
   searchResults.value = [];
   Object.entries(props.allVariants).forEach(([taskId, variants]) => {
     const matchingVariants = _filter(variants, (variant) => {
-      if (_toLower(variant.variant.name).includes(_toLower(term)) || _toLower(variant.id).includes(_toLower(term)))
+      if (
+        _toLower(variant.variant.name).includes(_toLower(term)) ||
+        _toLower(variant.id).includes(_toLower(term)) ||
+        _toLower(variant.task.id).includes(_toLower(term))
+      )
         return true;
       else return false;
     });
