@@ -35,7 +35,13 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in searchResults" :id="element.id" :key="element.id" style="cursor: grab">
+                <div
+                  v-for="element in searchResults"
+                  :id="element.id"
+                  :data-task-id="element.task.id"
+                  :key="element.id"
+                  style="cursor: grab"
+                >
                   <VariantCard :variant="element" />
                 </div>
               </transition-group>
@@ -66,7 +72,13 @@
               :move="handleCardMove"
             >
               <transition-group>
-                <div v-for="element in currentVariants" :id="element.id" :key="element.id" style="cursor: grab">
+                <div
+                  v-for="element in currentVariants"
+                  :id="element.id"
+                  :data-task-id="element.task.id"
+                  :key="element.id"
+                  style="cursor: grab"
+                >
                   <VariantCard :variant="element" :update-variant="updateVariant" />
                 </div>
               </transition-group>
@@ -85,6 +97,7 @@
           <VueDraggableNext
             v-model="selectedVariants"
             :move="handleCardMove"
+            @add="handleCardAdd"
             :group="{
               name: 'variants',
               pull: true,
@@ -95,7 +108,13 @@
             class="w-full h-full overflow-auto"
           >
             <transition-group>
-              <div v-for="element in selectedVariants" :id="element.id" :key="element.id" style="cursor: grab">
+              <div
+                v-for="element in selectedVariants"
+                :id="element.id"
+                :data-task-id="element.task.id"
+                :key="element.id"
+                style="cursor: grab"
+              >
                 <VariantCard
                   :variant="element"
                   has-controls
@@ -221,6 +240,25 @@ const debounceToast = _debounce(
   3000,
   { leading: true },
 );
+
+const handleCardAdd = (card) => {
+  // Check if the current task is already selected.
+  const taskIds = [];
+  // Add fires after the move is complete, so check if there is a duplicate task in the list.
+  for (const variant of selectedVariants.value) {
+    // If the duplicate task is also the current task, send a warn toast.
+    if (taskIds.includes(variant.task.id) && variant.task.id === card.item.dataset.taskId) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Task Selected',
+        detail: 'There is a task with that Task ID already selected.',
+        life: 3000,
+      });
+    } else {
+      taskIds.push(variant.task.id);
+    }
+  }
+};
 
 const handleCardMove = (card) => {
   // Check if this variant card is already in the list
