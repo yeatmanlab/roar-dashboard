@@ -588,7 +588,6 @@ const tableData = computed(() => {
   return assignmentData.value.map(({ user, assignment }) => {
     const status = {};
     for (const assessment of assignment?.assessments || []) {
-      console.log('isOptional', isOptional(assessment.taskId));
       if (isOptional(assessment.taskId)) {
         status[assessment.taskId] = {
           value: 'optional',
