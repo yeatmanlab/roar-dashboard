@@ -7,8 +7,8 @@
         <!-- <button @click="tasksPaneOpen = !tasksPaneOpen">toggle pane</button> -->
       </div>
     </template>
-    <div class="w-full flex flex-row gap-2">
-      <div v-if="tasksPaneOpen" class="w-6">
+    <div class="w-full flex flex-column lg:flex-row gap-2">
+      <div v-if="tasksPaneOpen" class="w-full lg:w-6">
         <div class="flex flex-row mb-2">
           <div class="flex flex-column flex-grow-1 p-input-icon-left">
             <i class="pi pi-search" />
@@ -78,7 +78,7 @@
         <i class="pi pi-angle-double-right" />
       </div>
       <div class="divider"></div>
-      <div class="w-full xl:w-6 lg:w-6">
+      <div class="w-full lg:w-6">
         <div class="panel-title mb-2">Selected Variants</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
@@ -277,9 +277,18 @@ const moveCardDown = (variant) => {
   text-decoration: underline;
 }
 .divider {
-  min-height: 100%;
-  max-width: 0;
-  border-left: 1px solid var(--surface-d);
+  // TODO: Figure out how to reference SCSS variable $lg, rather than 992px
+  @media screen and (min-width: 992px) {
+    min-height: 100%;
+    max-width: 0;
+    border-left: 1px solid var(--surface-d);
+  }
+  // TODO: Figure out how to reference SCSS variable $lg, rather than 992px
+  @media screen and (max-width: 992px) {
+    min-width: 100%;
+    max-height: 0;
+    border-bottom: 1px solid var(--surface-d);
+  }
 }
 .panel-title {
   font-size: x-large;

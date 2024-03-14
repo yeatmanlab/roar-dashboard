@@ -137,7 +137,7 @@
         </div>
       </PvOverlayPanel>
     </div>
-    <div class="mr-0 pl-0 flex flex-column justify-content-end">
+    <div class="mr-0 pl-0 flex flex-column">
       <EditVariantDialog :visible="visible" :assessment="variant" :update-variant="updateVariant" />
       <PvButton
         v-if="variant.variant?.conditions?.required || variant.variant?.conditions?.optional"
@@ -150,7 +150,7 @@
   <div
     v-if="showContent"
     class="flex-1 flex flex-column border-1 border-round surface-border surface-hover mb-2 hover:surface-ground mr-2 ml-2 pb-2"
-    style="margin-top: -5px"
+    style="margin-top: -25px"
   >
     <div
       v-if="variant.variant?.conditions?.assigned?.conditions?.length > 0"
