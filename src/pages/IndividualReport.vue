@@ -254,8 +254,7 @@ const updateTaskData = () => {
 // Watch for changes in taskData and update the taskData with the new optional tasks
 watch(
   () => taskData.value,
-  (newVal, oldVal) => {
-    console.log('taskData changed');
+  () => {
     updateTaskData();
   },
   { deep: true },
