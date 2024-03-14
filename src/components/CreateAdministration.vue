@@ -44,6 +44,21 @@
 
         <OrgPicker @selection="selection($event)" />
 
+        <PvConfirmDialog group="errors" class="confirm">
+          <template #message>
+            <span class="flex flex-column">
+              <span>{{ pickListError }}</span>
+              <span v-if="nonUniqueTasks.length > 0" class="flex flex-column">
+                <span>Task selections must be unique.</span>
+                <span class="mt-2">The following tasks are not unique:</span>
+                <span class="mt-2 font-bold">{{ nonUniqueTasks.join(', ') }}</span>
+              </span>
+              <span v-else>
+                <span>Task selections must not be empty.</span>
+              </span>
+            </span>
+          </template>
+        </PvConfirmDialog>
         <TaskPicker
           :all-variants="variantsByTaskId"
           :set-variants="setVariants"
@@ -94,6 +109,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
 import _groupBy from 'lodash/groupBy';
+import _values from 'lodash/values';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -101,10 +117,12 @@ import AppSpinner from '@/components/AppSpinner.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { variantsFetcher } from '@/helpers/query/tasks';
 import TaskPicker from './TaskPicker.vue';
+import { useConfirm } from 'primevue/useconfirm';
 
 const router = useRouter();
 const toast = useToast();
 const initialized = ref(false);
+const confirm = useConfirm();
 
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
@@ -185,6 +203,14 @@ const checkForUniqueTasks = (assignments) => {
   return uniqueTasks.length === assignments.length;
 };
 
+const nonUniqueTasks = ref('');
+const getNonUniqueTasks = (assignments) => {
+  const grouped = _groupBy(assignments, (assignment) => assignment.taskId);
+  const taskIds = _values(grouped);
+  const filtered = _filter(taskIds, (taskIdArray) => taskIdArray.length > 1);
+  nonUniqueTasks.value = filtered.map((taskIdArray) => taskIdArray[0].taskId);
+};
+
 const checkForRequiredOrgs = (orgs) => {
   const filtered = _filter(orgs, (org) => !_isEmpty(org));
   return Boolean(filtered.length);
@@ -227,7 +253,6 @@ const submit = async () => {
           isTestData: isTestData.value,
         };
         if (isTestData.value) args.isTestData = true;
-
         await roarfirekit.value.createAdministration(args).then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
           administrationQueryKeyIndex.value += 1;
@@ -239,7 +264,14 @@ const submit = async () => {
         orgError.value = 'At least one organization needs to be selected.';
       }
     } else {
-      pickListError.value = 'Task selections must not be empty and must be unique.';
+      getNonUniqueTasks(submittedAssessments);
+      confirm.require({
+        group: 'errors',
+        header: 'Task Selections',
+        icon: 'pi pi-question-circle',
+        acceptLabel: 'Close',
+        acceptIcon: 'pi pi-times',
+      });
     }
   } else {
     console.log('form is invalid');
@@ -292,6 +324,13 @@ onMounted(async () => {
   min-height: 100%;
   max-width: 0;
   border-left: 1px solid var(--surface-d);
+}
+.confirm .p-confirm-dialog-reject {
+  display: none !important;
+}
+
+.confirm .p-dialog-header-close {
+  display: none !important;
 }
 
 #rectangle {
