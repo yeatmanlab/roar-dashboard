@@ -23,6 +23,7 @@
       <div v-if="grade < 6" class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
+          <div class="">Status: Required</div>
           <div class="text-xs uppercase font-thin mb-2 text-gray-400">
             <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Percentile Score</div>
             <div v-else class="scoring-type">Raw Score</div>
@@ -47,6 +48,7 @@
       <div v-else class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
+          <div class="">Status: Required</div>
           <div class="text-xs uppercase font-thin mb-2 text-gray-400">
             <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Standard Score</div>
             <div v-else class="scoring-type">Raw Score</div>
@@ -158,6 +160,15 @@ const computedTaskData = computed(() => {
       }
     });
 });
+
+const getStatus = (_taskId) => {
+  const optionalFilter = props.taskData?.filter((task) => task.taskId === _taskId && task.optional === true);
+  if (optionalFilter.length === 0) {
+    return 'Required';
+  } else {
+    return 'Optional';
+  }
+};
 
 const formattedScoreAttributeMap = {
   wjPercentile: 'Percentile Score',

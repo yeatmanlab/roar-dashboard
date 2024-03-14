@@ -84,7 +84,7 @@
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
             <img src="../assets/support-distribution.svg" class="w-10" />
-            <div class="text-xl font-bold">The ROAR assessements return 3 kinds of scores:</div>
+            <div class="text-xl font-bold">The ROAR assessments return 3 kinds of scores:</div>
             <ul>
               <li>
                 <b>Raw Score: </b>A score that captures your students' general performance on the assessment, such as
@@ -122,8 +122,8 @@
 <script setup>
 import { fetchDocById } from '../helpers/query/utils';
 import { runPageFetcher } from '../helpers/query/runs';
-import { useQuery } from '@tanstack/vue-query';
-import { computed, onMounted, ref } from 'vue';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../store/auth';
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
@@ -235,6 +235,32 @@ const exportToPdf = async () => {
     (exportLoading.value = false);
 };
 
+const optionalAssessments = computed(() =>
+  administrationData.value.assessments.filter((assessment) => assessment.optional),
+);
+
+// Calling the query client to update the cached taskData with the new optional tasks
+const queryClient = useQueryClient();
+
+const updateTaskData = () => {
+  const updatedTasks = taskData.value.map((task) => {
+    const isOptional = optionalAssessments.value.some((assessment) => assessment.taskId === task.taskId);
+    return isOptional ? { ...task, optional: true } : task;
+  });
+
+  queryClient.setQueryData(['runs', props.administrationId, props.userId], updatedTasks);
+};
+
+// Watch for changes in taskData and update the taskData with the new optional tasks
+watch(
+  () => taskData.value,
+  (newVal, oldVal) => {
+    console.log('taskData changed');
+    updateTaskData();
+  },
+  { deep: true },
+);
+
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId));
 
 const formattedTasks = computed(() => {
@@ -298,6 +324,7 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) {
     refresh();
   }
+  updateTaskData();
 });
 </script>
 
