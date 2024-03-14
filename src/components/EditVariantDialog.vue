@@ -323,7 +323,7 @@ const handleSubmit = () => {
     }
     // if optionalForAllFlag is false, and there are no optional conditions, then set optional to false
     if (optionalForAllFlag.value === false) {
-      conditionsCopy['optional'] = { conditions: optionalConditions, op: 'AND' };
+      conditionsCopy['optional'] = { conditions: optionalConditions.value, op: 'AND' };
     }
     props.updateVariant(props.assessment.id, conditionsCopy);
     visible.value = false;
@@ -343,8 +343,8 @@ const assignedConditions = ref([]);
 
 const computedConditions = computed(() => {
   return {
-    optional: { op: 'AND', conditions: optionalConditions.value },
-    assigned: { op: 'AND', conditions: assignedConditions.value },
+    ...(optionalConditions.value.length && { optional: { op: 'AND', conditions: optionalConditions.value } }),
+    ...(assignedConditions.value.length && { assigned: { op: 'AND', conditions: assignedConditions.value } }),
   };
 });
 

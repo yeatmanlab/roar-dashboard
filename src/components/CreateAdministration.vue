@@ -228,7 +228,7 @@ const submit = async () => {
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
       // Exclude conditions key if there are no conditions to be set.
-      ...(toRaw(assessment.variant.conditions || undefined) && { condition: toRaw(assessment.variant.conditions) }),
+      ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
     }));
 
     const tasksUnique = checkForUniqueTasks(submittedAssessments);
@@ -253,12 +253,14 @@ const submit = async () => {
           isTestData: isTestData.value,
         };
         if (isTestData.value) args.isTestData = true;
-        await roarfirekit.value.createAdministration(args).then(() => {
-          toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
-          administrationQueryKeyIndex.value += 1;
 
-          router.push({ name: 'Home' });
-        });
+        console.log(args);
+        // await roarfirekit.value.createAdministration(args).then(() => {
+        //   toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+        //   administrationQueryKeyIndex.value += 1;
+
+        //   router.push({ name: 'Home' });
+        // });
       } else {
         console.log('need at least one org');
         orgError.value = 'At least one organization needs to be selected.';
