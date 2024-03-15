@@ -227,6 +227,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import _isEmpty from 'lodash/isEmpty';
 
 const visible = ref(false);
 const props = defineProps({
@@ -322,7 +323,7 @@ const handleSubmit = () => {
       conditionsCopy['optional'] = true;
     }
     // if optionalForAllFlag is false, and there are no optional conditions, then set optional to false
-    if (optionalForAllFlag.value === false) {
+    if (optionalForAllFlag.value === false && !_isEmpty(optionalConditions.value)) {
       conditionsCopy['optional'] = { conditions: optionalConditions.value, op: 'AND' };
     }
     props.updateVariant(props.assessment.id, conditionsCopy);
@@ -343,8 +344,12 @@ const assignedConditions = ref([]);
 
 const computedConditions = computed(() => {
   return {
-    ...(optionalConditions.value.length && { optional: { op: 'AND', conditions: optionalConditions.value } }),
-    ...(assignedConditions.value.length && { assigned: { op: 'AND', conditions: assignedConditions.value } }),
+    ...(!_isEmpty(optionalConditions.value) && {
+      optional: { op: 'AND', conditions: optionalConditions.value },
+    }),
+    ...(!_isEmpty(assignedConditions.value) && {
+      assigned: { op: 'AND', conditions: assignedConditions.value },
+    }),
   };
 });
 
