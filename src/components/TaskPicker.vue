@@ -38,8 +38,8 @@
                 <div
                   v-for="element in searchResults"
                   :id="element.id"
-                  :data-task-id="element.task.id"
                   :key="element.id"
+                  :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
                   <VariantCard :variant="element" />
@@ -75,8 +75,8 @@
                 <div
                   v-for="element in currentVariants"
                   :id="element.id"
-                  :data-task-id="element.task.id"
                   :key="element.id"
+                  :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
                   <VariantCard :variant="element" :update-variant="updateVariant" />
@@ -97,7 +97,6 @@
           <VueDraggableNext
             v-model="selectedVariants"
             :move="handleCardMove"
-            @add="handleCardAdd"
             :group="{
               name: 'variants',
               pull: true,
@@ -106,13 +105,14 @@
             }"
             :sort="true"
             class="w-full h-full overflow-auto"
+            @add="handleCardAdd"
           >
             <transition-group>
               <div
                 v-for="element in selectedVariants"
                 :id="element.id"
-                :data-task-id="element.task.id"
                 :key="element.id"
+                :data-task-id="element.task.id"
                 style="cursor: grab"
               >
                 <VariantCard
@@ -133,8 +133,6 @@
 </template>
 <script setup>
 import { ref, computed, watch } from 'vue';
-import _startCase from 'lodash/startCase';
-import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _findIndex from 'lodash/findIndex';
 import _debounce from 'lodash/debounce';
@@ -206,7 +204,7 @@ const isSearching = ref(false);
 const searchCards = (term) => {
   isSearching.value = true;
   searchResults.value = [];
-  Object.entries(props.allVariants).forEach(([taskId, variants]) => {
+  Object.values(props.allVariants).forEach((variants) => {
     const matchingVariants = _filter(variants, (variant) => {
       if (
         _toLower(variant.variant.name).includes(_toLower(term)) ||

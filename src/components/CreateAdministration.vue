@@ -98,13 +98,12 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, toRaw, watch, computed } from 'vue';
+import { onMounted, reactive, ref, toRaw, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { useQuery } from '@tanstack/vue-query';
 import _filter from 'lodash/filter';
-import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
@@ -113,7 +112,6 @@ import _values from 'lodash/values';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
-import AppSpinner from '@/components/AppSpinner.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { variantsFetcher } from '@/helpers/query/tasks';
 import TaskPicker from './TaskPicker.vue';
@@ -127,7 +125,7 @@ const confirm = useConfirm();
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
-const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
+const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
   queryFn: () => variantsFetcher(),
   keepPreviousData: true,
@@ -254,7 +252,6 @@ const submit = async () => {
         };
         if (isTestData.value) args.isTestData = true;
 
-        console.log(args);
         await roarfirekit.value.createAdministration(args).then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
           administrationQueryKeyIndex.value += 1;
