@@ -73,6 +73,7 @@ import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _find from 'lodash/find';
+import _without from 'lodash/without';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
@@ -200,24 +201,34 @@ const toggleShowOptionalAssessments = () => {
 // Generated based on the current selected admin Id
 const assessments = computed(() => {
   if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
-    const fetchedAssessments = selectedAdmin.value.assessments.map((assessment) => {
-      // Get the matching assessment from assignmentInfo
-      const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
-      const matchingAssessments = matchingAssignment?.assessments ?? [];
-      const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
-      const optionalAssessment = _find(matchingAssessments, { taskId: assessment.taskId, optional: true });
-      const combinedAssessment = {
-        ...matchingAssessment,
-        ...optionalAssessment,
-        ...assessment,
-        taskData: {
-          ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
-          variantURL: _get(assessment, 'params.variantURL'),
-        },
-      };
-      console.log('combinedAssessment', combinedAssessment);
-      return combinedAssessment;
-    });
+    const fetchedAssessments = _without(
+      selectedAdmin.value.assessments.map((assessment) => {
+        // Get the matching assessment from assignmentInfo
+        const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
+        const matchingAssessments = matchingAssignment?.assessments ?? [];
+        const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
+
+        // If no matching assessments were found, then this assessment is not assigned to the user.
+        // It is in the administration but the user does not meet the conditional requirements for assignment.
+        // Return undefined, which will be filtered out using lodash _without above.
+        if (!matchingAssessment) return undefined;
+        const optionalAssessment = _find(matchingAssessments, { taskId: assessment.taskId, optional: true });
+        const combinedAssessment = {
+          ...matchingAssessment,
+          ...optionalAssessment,
+          ...assessment,
+          taskData: {
+            ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
+            variantURL: _get(assessment, 'params.variantURL'),
+          },
+        };
+        console.log('matchingAssessment', matchingAssessment);
+        console.log('optionalAssessment', optionalAssessment);
+        console.log('combinedAssessment', combinedAssessment);
+        return combinedAssessment;
+      }),
+      undefined,
+    );
 
     if (authStore.userData.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
       // Add survey card before the last task (external MEFS)
