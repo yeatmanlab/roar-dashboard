@@ -23,6 +23,6 @@ export const languageOptions = {
     blockTerminationPhraseFour: 'Has completado el segundo bloque',
     blockTerminationPhraseFive: 'Estás a la mitad del tercer bloque',
     blockTerminationPhraseSix:
-      'Te despides de tus nuevos amigos y abandonas la tierra de Lexicalidad. ¡Hasta la próxima!',
+      'Te despides de tus nuevos amigos y dejas la tierra de Lexicalidad. ¡Hasta una próxima ocasión!',
   },
 };

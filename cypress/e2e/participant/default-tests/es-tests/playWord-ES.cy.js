@@ -3,7 +3,7 @@ import { playSWR } from '../../../../support/helper-functions/roar-swr/swrHelper
 const administration = Cypress.env('testSpanishRoarAppsAdministration');
 const language = 'es';
 
-describe('ROAR - Word Play Through', () => {
+describe('ROAR - Palabra Play Through', () => {
   it('Plays Word', () => {
     playSWR(administration, language);
   });
