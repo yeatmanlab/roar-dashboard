@@ -14,7 +14,7 @@ describe('Test playthrough of Fluency as a participant', () => {
 
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
 
-    cy.get('.p-tabview').contains('ROAM - Single-Digit');
+    cy.get('.p-tabview').contains('ROAM - Single Digit');
     cy.visit(`/game/fluency-arf`);
 
     //   Click jspsych button to begin
@@ -28,6 +28,6 @@ describe('Test playthrough of Fluency as a participant', () => {
     cy.visit('/');
     cy.wait(0.2 * timeout);
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-    cy.get('.tabview-nav-link-label').contains('ROAM - Single-Digit').should('exist');
+    cy.get('.tabview-nav-link-label').contains('ROAM - Single Digit').should('exist');
   });
 });
