@@ -255,12 +255,12 @@ const submit = async () => {
         if (isTestData.value) args.isTestData = true;
 
         console.log(args);
-        // await roarfirekit.value.createAdministration(args).then(() => {
-        //   toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
-        //   administrationQueryKeyIndex.value += 1;
+        await roarfirekit.value.createAdministration(args).then(() => {
+          toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+          administrationQueryKeyIndex.value += 1;
 
-        //   router.push({ name: 'Home' });
-        // });
+          router.push({ name: 'Home' });
+        });
       } else {
         console.log('need at least one org');
         orgError.value = 'At least one organization needs to be selected.';
