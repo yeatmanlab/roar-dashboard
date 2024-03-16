@@ -149,6 +149,9 @@ const handleViewChange = () => {
 };
 
 // Queries for page
+// Boolean ref to keep track of whether this is the initial sort or a user-defined sort
+const initialSort = ref(true);
+
 const orderBy = ref([
   {
     direction: 'ASCENDING',
@@ -192,7 +195,7 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -297,8 +300,8 @@ const {
 
 // Scores count query
 const { data: assignmentCount } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId, filterBy],
-  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value),
+  queryKey: ['assignments', props.administrationId, props.orgId, filterBy, orderBy],
+  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value, orderBy.value),
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000,
@@ -339,6 +342,7 @@ const sortDisplay = computed(() => {
 
 const confirm = useConfirm();
 const onSort = (event) => {
+  initialSort.value = false;
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
     let field = item.field.replace('user', 'userData');
     // Due to differences in the document schemas,
@@ -370,6 +374,16 @@ const onSort = (event) => {
     page.value = 0;
   }
 };
+
+watch(
+  assignmentCount,
+  (count) => {
+    if (initialSort.value && count === 0) {
+      resetFilters();
+    }
+  },
+  { immediate: true },
+);
 
 watch(filterSchools, (newSchools) => {
   // check if filter entry for schools exists
@@ -548,7 +562,8 @@ const columns = computed(() => {
   }
 
   if (tableData.value.length > 0) {
-    const sortedTasks = Object.keys(tableData.value[0].status).sort((p1, p2) => {
+    const allTaskIds = administrationInfo.value.assessments.map((assessment) => assessment.taskId);
+    const sortedTasks = allTaskIds.sort((p1, p2) => {
       if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
         return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
       } else {
