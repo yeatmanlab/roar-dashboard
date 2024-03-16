@@ -410,6 +410,9 @@ const handleExportToPdf = async () => {
 };
 
 // Queries for page
+// Boolean ref to keep track of whether this is the initial sort or a user-defined sort
+const initialSort = ref(true);
+
 const orderBy = ref([
   {
     direction: 'ASCENDING',
@@ -609,6 +612,7 @@ const sortDisplay = computed(() => {
 
 const confirm = useConfirm();
 const onSort = (event) => {
+  initialSort.value = false;
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
     let field = item.field.replace('user', 'userData');
     // Due to differences in the document schemas,
@@ -670,6 +674,16 @@ watch(filterGrades, (newGrades) => {
     value: toRaw(newGrades),
   });
 });
+
+watch(
+  scoresCount,
+  (count) => {
+    if (initialSort.value && count === 0) {
+      resetFilters();
+    }
+  },
+  { immediate: true },
+);
 
 const onFilter = (event) => {
   // Turn off sort when filtering
