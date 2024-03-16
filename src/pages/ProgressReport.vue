@@ -192,7 +192,7 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -548,7 +548,8 @@ const columns = computed(() => {
   }
 
   if (tableData.value.length > 0) {
-    const sortedTasks = Object.keys(tableData.value[0].status).sort((p1, p2) => {
+    const allTaskIds = administrationInfo.value.assessments.map((assessment) => assessment.taskId);
+    const sortedTasks = allTaskIds.sort((p1, p2) => {
       if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
         return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
       } else {
