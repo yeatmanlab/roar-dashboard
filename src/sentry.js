@@ -20,7 +20,6 @@ export function initSentry(app) {
         }),
         Sentry.feedbackIntegration({
           showBranding: false,
-          isNameRequired: true,
           formTitle: 'Report an Issue to ROAR',
           colorScheme: 'light',
           themeLight: {

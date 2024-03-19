@@ -61,5 +61,17 @@
   },
   "tasks": {
     "preparing": "Preparing your game!"
+  },
+  "sentryForm": {
+    "buttonLabel": "Report a Bug",
+    "formTitle": "Report an Issue to ROAR",
+    "nameField": "Name",
+    "namePlaceholder": "Your name",
+    "emailField": "Email",
+    "emailPlaceholder": "your.email@example.org",
+    "descriptionField": "Description",
+    "descriptionPlaceholder": "Please describe the issue you encountered",
+    "submitButtonText": "Send Bug Report",
+    "cancelButtonText": "Cancel"
   }
 }

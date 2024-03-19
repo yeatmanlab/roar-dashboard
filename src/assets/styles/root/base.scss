@@ -12,6 +12,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+// Sentry feedback widget
+#sentry-feedback {
+  --bottom: 1rem;
+  --left: 1rem;
+}
+
 // Placeholder
 ::-webkit-input-placeholder {
   color: var(--text-color-secondary);
