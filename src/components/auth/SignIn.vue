@@ -203,7 +203,6 @@ function checkForCapsLock(e) {
 watch(
   () => state.email,
   async (email) => {
-    // console.log('email', email);
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;
       validateRoarEmail(email);
