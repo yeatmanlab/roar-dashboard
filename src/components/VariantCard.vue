@@ -3,6 +3,23 @@
     v-if="!hasControls"
     class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover"
   >
+    <div class="ml-0 pl-0">
+      <PvButton
+        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+        @click="handleSelect"
+        ><i class="pi pi-check text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
+      ></PvButton>
+      <!-- <PvButton
+        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+        @click="handleMoveUp"
+        ><i class="pi pi-sort-up text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
+      ></PvButton>
+      <PvButton
+        class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
+        @click="handleMoveDown"
+        ><i class="pi pi-sort-down text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
+      ></PvButton> -->
+    </div>
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
         <img
@@ -265,10 +282,13 @@ const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
 const op = ref(null);
 const visible = ref(false);
-const emit = defineEmits(['remove', 'moveUp', 'moveDown']);
+const emit = defineEmits(['remove', 'select', 'moveUp', 'moveDown']);
 
 const handleRemove = () => {
   emit('remove', props.variant);
+};
+const handleSelect = () => {
+  emit('select', props.variant);
 };
 const handleMoveUp = () => {
   emit('moveUp', props.variant);
