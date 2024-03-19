@@ -8,7 +8,7 @@ export function initSentry(app) {
   if (process.env.NODE_ENV === 'production') {
     Sentry.init({
       app,
-      dsn: 'https://f15e3ff866394e93e00514b42113d03d@o4505913837420544.ingest.sentry.io/4506820782129152',
+      dsn: 'https://f15e3ff866394e93e00514b42113d03d@o4505913837420544.ingest.us.sentry.io/4506820782129152',
       integrations: [
         Sentry.replayIntegration({
           maskAllText: true,
@@ -18,20 +18,27 @@ export function initSentry(app) {
         captureConsoleIntegration({
           levels: ['error'],
         }),
+        Sentry.feedbackIntegration({
+          showBranding: false,
+          isNameRequired: true,
+          formTitle: 'Report an Issue to ROAR',
+          colorScheme: 'light',
+          themeLight: {
+            submitBackground: 'darkred',
+            submitBackgroundHover: 'red',
+            border: '2px solid darkred',
+          },
+        }),
         contextLinesIntegration(),
         extraErrorDataIntegration(),
       ],
       attachStacktrace: true,
       // Performance Monitoring
       tracesSampleRate: 0.2, // Capture 20% of the transactions
-      tracePropagationTargets: ['localhost', 'https://roar.education/**/*', regex],
+      tracePropagationTargets: ['localhost:5173', 'https://roar.education/**/*', regex],
       // Session Replay
       replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
       replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
-
-      beforeSend(event) {
-        return event;
-      },
     });
   }
 }
