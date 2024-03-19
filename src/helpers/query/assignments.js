@@ -124,28 +124,12 @@ export const getAssignmentsRequestBody = ({
       });
     }
 
-    if (filter?.value === 'Completed') {
+    if (['Completed', 'Started', 'Assigned'].includes(filter?.value)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
-          field: { fieldPath: `progress.${filter.taskId}` },
+          field: { fieldPath: `progress.${filter.taskId.replace(/-/g, '_')}` },
           op: 'EQUAL',
-          value: { stringValue: 'completed' },
-        },
-      });
-    } else if (filter?.value === 'Started') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: `progress.${filter.taskId}` },
-          op: 'EQUAL',
-          value: { stringValue: 'started' },
-        },
-      });
-    } else if (filter?.value === 'Assigned') {
-      requestBody.structuredQuery.where.compositeFilter.filters.push({
-        fieldFilter: {
-          field: { fieldPath: `progress.${filter.taskId}` },
-          op: 'EQUAL',
-          value: { stringValue: 'assigned' },
+          value: { stringValue: filter.value.toLowerCase() },
         },
       });
     } else if (!_isEmpty(filter)) {
