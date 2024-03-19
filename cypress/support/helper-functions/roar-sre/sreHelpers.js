@@ -1,6 +1,8 @@
+import { languageOptions } from './languageOptions';
+
 const timeout = Cypress.env('timeout');
 
-export const playSRE = (administration, optional = false) => {
+export const playSRE = (administration, language, optional = false) => {
   Cypress.on('uncaught:exception', () => {
     return false;
   });
@@ -13,8 +15,10 @@ export const playSRE = (administration, optional = false) => {
     cy.switchToOptionalAssessments();
   }
 
-  cy.get('.p-tabview').contains('ROAR - Sentence');
-  cy.visit(`/game/sre`);
+  cy.get('.p-tabview', { timeout: 2 * timeout })
+    .contains(languageOptions[language].gameTab)
+    .should('exist');
+  cy.visit(languageOptions[language].url);
 
   cy.get('.jspsych-btn', { timeout: 5 * timeout })
     .should('be.visible')
@@ -39,7 +43,7 @@ export const playSRE = (administration, optional = false) => {
     cy.switchToOptionalAssessments();
   }
 
-  cy.get('.tabview-nav-link-label').contains('ROAR - Sentence').should('exist');
+  cy.get('.tabview-nav-link-label').contains(languageOptions[language].gameTab).should('exist');
 };
 
 function playSREGame() {
