@@ -285,6 +285,8 @@ const selectCard = (variant) => {
   const cardVariantId = variant.id;
   const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
   if (index === -1) {
+    // If this variant is not already selected, check if the taskId is already selected.
+    // If so, warn but add regardless.
     const selectedTasks = selectedVariants.value.map((selectedVariant) => selectedVariant.task.id);
     if (selectedTasks.includes(variant.task.id)) {
       toast.add({
