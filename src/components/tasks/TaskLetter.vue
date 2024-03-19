@@ -6,7 +6,6 @@
   </div>
 </template>
 <script setup>
-import RoarLetter from '@bdelab/roar-letter';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -20,6 +19,8 @@ const props = defineProps({
   taskId: { type: String, required: true, default: 'letter' },
   language: { type: String, required: true, default: 'en' },
 });
+
+let RoarLetter;
 
 const taskId = props.taskId;
 const router = useRouter();
@@ -62,6 +63,7 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  RoarLetter = (await import('@bdelab/roar-letter')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {

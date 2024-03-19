@@ -1,4 +1,4 @@
-import { createApp } from 'vue';
+import { createApp, onMounted } from 'vue';
 import { createPinia } from 'pinia';
 import { createHead } from '@vueuse/head';
 import { initSentry } from '@/sentry';
@@ -94,9 +94,11 @@ const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
 
-if (window.location.origin === 'https://roar.education') {
-  initSentry(app);
-}
+onMounted(() => {
+  if (window.location.origin === 'https://roar.education') {
+    initSentry(app);
+  }
+});
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);

@@ -6,7 +6,6 @@
   </div>
 </template>
 <script setup>
-import RoarVocab from '@bdelab/roar-vocab';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -15,6 +14,8 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
+
+let RoarVocab;
 
 const taskId = 'vocab';
 const router = useRouter();
@@ -57,6 +58,8 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  // Dynamically import the RoarVocab module to reduce chunk size.
+  RoarVocab = (await import('@bdelab/roar-vocab')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {

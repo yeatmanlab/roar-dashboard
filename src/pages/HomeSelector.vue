@@ -31,15 +31,14 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import HomeParticipant from '@/pages/HomeParticipant.vue';
-import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import _get from 'lodash/get';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
-import ConsentModal from '@/components/ConsentModal.vue';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
+
+let HomeParticipant, HomeAdministrator, ConsentModal;
 
 const authStore = useAuthStore();
 const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
@@ -110,6 +109,10 @@ async function checkConsent() {
 const router = useRouter();
 
 onMounted(async () => {
+  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+
   if (requireRefresh.value) {
     requireRefresh.value = false;
     router.go(0);

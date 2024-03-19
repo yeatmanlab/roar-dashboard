@@ -6,7 +6,6 @@
   </div>
 </template>
 <script setup>
-import { TaskLauncher as RoamFluency } from '@bdelab/roam-fluency';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -20,6 +19,8 @@ const props = defineProps({
   taskId: { type: String, required: true, default: 'fluency-arf' },
   language: { type: String, required: true, default: 'en' },
 });
+
+let TaskLauncher;
 
 const taskId = props.taskId;
 const router = useRouter();
@@ -62,6 +63,7 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  TaskLauncher = (await import('@bdelab/roam-fluency')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
@@ -84,7 +86,7 @@ async function startTask() {
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams };
-  const roarApp = new RoamFluency(appKit, gameParams, userParams, 'jspsych-target');
+  const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {

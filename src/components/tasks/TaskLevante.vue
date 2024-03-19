@@ -7,7 +7,6 @@
 </template>
 
 <script setup>
-import { TaskLauncher } from 'core-tasks';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -19,6 +18,9 @@ import { fetchDocById } from '@/helpers/query/utils';
 const props = defineProps({
   taskId: { type: String, required: true, default: 'egma-math' },
 });
+
+let TaskLauncher;
+
 const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
@@ -55,6 +57,7 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  TaskLauncher = (await import('core-tasks')).default;
 });
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
   if (newFirekitInitValue && !newLoadingUserData) await startTask();

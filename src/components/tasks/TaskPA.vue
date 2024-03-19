@@ -6,7 +6,6 @@
   </div>
 </template>
 <script setup>
-import RoarPA from '@bdelab/roar-pa';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -15,6 +14,8 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
+
+let RoarPA;
 
 const taskId = 'pa';
 const router = useRouter();
@@ -57,6 +58,7 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  RoarPA = (await import('@bdelab/roar-pa')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {

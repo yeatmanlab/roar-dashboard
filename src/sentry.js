@@ -16,7 +16,7 @@ export function initSentry(app) {
         }),
         Sentry.browserTracingIntegration(),
         captureConsoleIntegration({
-          levels: ['warning', 'error', 'debug', 'assert'],
+          levels: ['error'],
         }),
         contextLinesIntegration(),
         extraErrorDataIntegration(),

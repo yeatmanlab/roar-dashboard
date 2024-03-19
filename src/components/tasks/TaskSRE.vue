@@ -6,7 +6,6 @@
   </div>
 </template>
 <script setup>
-import RoarSRE from '@bdelab/roar-sre';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -20,6 +19,8 @@ const props = defineProps({
   taskId: { type: String, required: true, default: 'sre' },
   language: { type: String, required: true, default: 'en' },
 });
+
+let RoarSRE;
 
 const taskId = props.taskId;
 const router = useRouter();
@@ -62,6 +63,7 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  RoarSRE = (await import('@bdelab/roar-sre')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {

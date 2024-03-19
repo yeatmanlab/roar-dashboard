@@ -6,7 +6,6 @@
   </div>
 </template>
 <script setup>
-import RoarMultichoice from '@bdelab/roar-multichoice';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -19,6 +18,8 @@ import { fetchDocById } from '@/helpers/query/utils';
 const props = defineProps({
   taskId: { type: String, required: true, default: 'multichoice' },
 });
+
+let RoarMultichoice;
 
 const taskId = props.taskId;
 const router = useRouter();
@@ -61,6 +62,7 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  RoarMultichoice = (await import('@bdelab/roar-multichoice')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {

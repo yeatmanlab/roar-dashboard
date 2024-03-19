@@ -6,7 +6,6 @@
   </div>
 </template>
 <script setup>
-import RoarSWR from '@bdelab/roar-swr';
 import { onMounted, watch, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -16,7 +15,14 @@ import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
-const taskId = 'swr';
+const props = defineProps({
+  taskId: { type: String, required: true, default: 'swr' },
+  language: { type: String, required: true, default: 'en' },
+});
+
+let RoarSWR;
+
+const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -57,6 +63,7 @@ onMounted(async () => {
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+  RoarSWR = (await import('@bdelab/roar-swr')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
@@ -75,7 +82,7 @@ async function startTask() {
     grade: _get(userData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
-    language: 'en',
+    language: props.language,
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams };

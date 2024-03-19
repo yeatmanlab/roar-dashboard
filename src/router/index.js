@@ -41,12 +41,14 @@ const routes = [
     path: '/game/swr',
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
+    props: { taskId: 'swr', language: 'en' },
     meta: { pageTitle: 'SWR' },
   },
   {
     path: '/game/swr-es',
     name: 'SWR-ES',
-    component: () => import('../components/tasks/TaskSWR-ES.vue'),
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: { taskId: 'swr-es', language: 'es' },
     meta: { pageTitle: 'SWR (ES)' },
   },
   {
