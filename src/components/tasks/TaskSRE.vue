@@ -16,7 +16,12 @@ import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
-const taskId = 'sre';
+const props = defineProps({
+  taskId: { type: String, required: true, default: 'sre' },
+  language: { type: String, required: true, default: 'en' },
+});
+
+const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -75,6 +80,7 @@ async function startTask() {
     grade: _get(userData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
+    language: props.language,
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams };

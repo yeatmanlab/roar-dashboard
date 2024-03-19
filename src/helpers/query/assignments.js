@@ -626,7 +626,7 @@ export const getScoresRequestBody = ({
   return requestBody;
 };
 
-export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
+export const assignmentCounter = (adminId, orgType, orgId, filters = [], orderBy = []) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
 
@@ -690,6 +690,7 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
       aggregationQuery: true,
       filter: userFilter || nonOrgFilter,
       grades: gradeFilter,
+      orderBy: toRaw(orderBy),
     });
     return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));

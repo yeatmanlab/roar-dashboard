@@ -26,6 +26,7 @@
     "title": "Consentimiento"
   },
   "homeParticipant": {
+    "showOptionalAssignments": "Mostrar actividades opcionales",
     "loadingAssignments": "Cargando actividades",
     "selectAssignment": "Selecciona una actividad",
     "noAssignments": "¡No tienes actividades!",

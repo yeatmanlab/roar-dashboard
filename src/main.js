@@ -28,6 +28,7 @@ import PvConfirmPopup from 'primevue/confirmpopup';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import PvDataTable from 'primevue/datatable';
 import PvDataView from 'primevue/dataview';
+import PvDialog from 'primevue/dialog';
 import PvDivider from 'primevue/divider';
 import PvDropdown from 'primevue/dropdown';
 import PvFileUpload from 'primevue/fileupload';
@@ -59,7 +60,6 @@ import PvTag from 'primevue/tag';
 import PvToast from 'primevue/toast';
 import PvTreeTable from 'primevue/treetable';
 import PvTriStateCheckbox from 'primevue/tristatecheckbox';
-import PvDialog from 'primevue/dialog';
 import PvSteps from 'primevue/steps';
 import PvImage from 'primevue/image';
 
@@ -100,7 +100,9 @@ pinia.use(piniaPluginPersistedState);
 //   v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
 // });
 
-initSentry(app);
+if (window.location.origin === 'https://roar.education') {
+  initSentry(app);
+}
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
@@ -135,6 +137,7 @@ app.component('PvConfirmPopup', PvConfirmPopup);
 app.component('PvConfirmDialog', PvConfirmDialog);
 app.component('PvDataView', PvDataView);
 app.component('PvDivider', PvDivider);
+app.component('PvDialog', PvDialog);
 app.component('PvDropdown', PvDropdown);
 app.component('PvFileUpload', PvFileUpload);
 app.component('PvInlineMessage', PvInlineMessage);
