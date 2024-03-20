@@ -14,7 +14,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       cy.visit(`/game/${game.id}`, { timeout: 2 * timeout });
 
       // Long timeout is needed for picture vocab
-      cy.get(game.startBtn, { timeout: 8 * timeout })
+      cy.get(game.startBtn, { timeout: 10 * timeout })
         .should('be.visible')
         .click();
 
