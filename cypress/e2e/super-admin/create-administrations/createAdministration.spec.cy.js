@@ -9,6 +9,7 @@ function typeAdministrationName() {
 }
 
 function selectDate() {
+  // eslint-disable-next-line cypress/unsafe-to-chain-command
   cy.get('[data-cy="input-calendar"]')
     .click()
     .get('.p-datepicker-today > span')
@@ -21,40 +22,14 @@ function selectDate() {
 //   cy.get('[data-cy="button-refresh-assessments"]', { timeout: Cypress.env('timeout') }).click();
 // }
 
-function dragVariantCard(variant, x, y) {
-  cy.get('div')
-    .contains(variant)
-    .trigger('mousedown', { which: 1 })
-    .trigger('mousemove', { clientX: 1200, clientY: 0 })
-    .trigger('mouseup', { force: true });
-  // // get draggable element, then
-  //   cy.get("div").contains(variant).then(($el) => {
-  //     cy.get("[data-cy='panel-droppable-zone']").then(($target) => {
-  //
-  //       // x and y positions of draggable object
-  //       const dragX = $el[0].getBoundingClientRect().left
-  //       const dragY = $el[0].getBoundingClientRect().top
-  //
-  //       // x and y positions of droppable object
-  //       const dropX = $target[0].getBoundingClientRect().left
-  //       const dropY = $target[0].getBoundingClientRect().top
-  //
-  //       cy.get("div").contains(variant).trigger("mousedown", { which: 0})
-  //       cy.get("[data-cy='panel-droppable-zone']").trigger("mouseup")
-  //     })
-  //   })
-  // //   get the droppable element, then
-  // //   get the x and y positions of each element
-  // //   wrap the draggable element, trigger mousedown
-  // //   mousemove on the draggable element
-  // //   mousemove to the droppable element
-  // //   mouseup on the droppable element
+function selectVariantCard(variant) {
+  cy.get('[data-cy="selected-variant"]', { timeout: Cypress.env('timeout') }).type(variant);
 }
 
 function selectAndAssignAdministration(variant) {
   cy.get('[data-cy="input-variant-name"]', { timeout: Cypress.env('timeout') }).type(variant);
   cy.wait(0.3 * timeout);
-  dragVariantCard(variant);
+  selectVariantCard(variant);
 }
 
 function checkAdministrationCreated() {
@@ -82,7 +57,7 @@ describe('The admin user can create an administration and assign it to a distric
       selectDate();
       cy.selectTestOrgs();
       selectAndAssignAdministration(variant);
-      // checkAdministrationCreated();
+      checkAdministrationCreated();
     },
   );
 });

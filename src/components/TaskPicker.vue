@@ -124,10 +124,10 @@
                   :variant="element"
                   has-controls
                   :update-variant="updateVariant"
+                  data-cy="card-variant"
                   @remove="removeCard"
                   @move-up="moveCardUp"
                   @move-down="moveCardDown"
-                  data-cy="card-variant"
                 />
               </div>
             </transition-group>
