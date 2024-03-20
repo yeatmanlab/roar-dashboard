@@ -314,6 +314,7 @@ import { useConfirm } from 'primevue/useconfirm';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import {
+  optionalAssessmentColor,
   taskDisplayNames,
   taskInfoById,
   descriptionsByTaskId,
@@ -349,8 +350,6 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
-
-const optionalAssessmentColor = '#ADD8E6';
 
 const reportView = ref({ name: 'Score Report', constant: true });
 const reportViews = [
@@ -460,7 +459,7 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -748,11 +747,12 @@ const getPercentileScores = ({
   percentileScoreDisplayKey,
   rawScoreKey,
   taskId,
+  optional,
 }) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
   let raw = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-  const { support_level, tag_color } = getSupportLevel(grade, percentile, raw, taskId);
+  const { support_level, tag_color } = getSupportLevel(grade, percentile, raw, taskId, optional);
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
@@ -786,8 +786,8 @@ const exportSelected = (selectedRows) => {
       }
     }
     for (const assessment of assignment.assessments) {
-      // If the assessment is optional, append (optional) to the taskId
-      const taskId = isOptional(assessment.taskId) ? `${assessment.taskId} (optional)` : assessment.taskId;
+      const taskId = assessment.taskId;
+      const isOptional = assessment.optional;
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
@@ -799,6 +799,7 @@ const exportSelected = (selectedRows) => {
         percentileScoreDisplayKey,
         rawScoreKey,
         taskId,
+        isOptional,
       });
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
@@ -839,8 +840,7 @@ const exportAll = async () => {
       }
     }
     for (const assessment of assignment.assessments) {
-      // If the assessment is optional, append (optional) to the taskId
-      const taskId = isOptional(assessment.taskId) ? `${assessment.taskId} (optional)` : assessment.taskId;
+      const taskId = assessment.taskId;
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
@@ -942,16 +942,6 @@ const shouldBeOutlined = (taskId) => {
   else return true;
 };
 
-const optionalAssessments = computed(() => {
-  return administrationInfo.value?.assessments.filter((assessment) => assessment.optional) || [];
-});
-
-const isOptional = (_taskId) => {
-  return optionalAssessments.value.some((assessment) => assessment.taskId === _taskId);
-};
-
-const getOptionalScore = (_taskId, _score) => isOptional(_taskId) && _score !== undefined;
-
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
@@ -1010,12 +1000,14 @@ const columns = computed(() => {
 // this function light out color if assessment is not reliable
 function colorSelection(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-    if (support_level == 'Needs Extra Support') {
+    if (support_level === 'Needs Extra Support') {
       return '#d6b8c7';
-    } else if (support_level == 'Developing Skill') {
+    } else if (support_level === 'Developing Skill') {
       return '#e8dbb5';
-    } else if (support_level == 'Achieved Skill') {
+    } else if (support_level === 'Achieved Skill') {
       return '#c0d9bd';
+    } else if (support_level === 'Optional Assessment') {
+      return optionalAssessmentColor;
     }
   } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
     return 'white';
@@ -1030,6 +1022,7 @@ const tableData = computed(() => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of assignment?.assessments ?? []) {
+      console.log(assessment.taskId, assessment.optional);
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         grade,
@@ -1041,15 +1034,13 @@ const tableData = computed(() => {
         percentileScoreDisplayKey,
         rawScoreKey,
         taskId: assessment.taskId,
+        optional: assessment.optional,
       });
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       const rawScore = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      const isOptionalScore = getOptionalScore(assessment.taskId, standardScore);
-      const color = isOptionalScore
-        ? optionalAssessmentColor
-        : colorSelection(assessment, rawScore, support_level, tag_color);
+      const color = colorSelection(assessment, rawScore, support_level, tag_color);
       scores[assessment.taskId] = {
         percentile: percentileString,
         standard: standardScore,

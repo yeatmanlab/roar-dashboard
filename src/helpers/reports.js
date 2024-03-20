@@ -6,6 +6,9 @@ import html2canvas from 'html2canvas';
  *  Key: taskId
  *  Value: { orderindex, displayName }
  */
+
+export const optionalAssessmentColor = '#ADD8E6';
+
 export const taskDisplayNames = {
   letter: {
     name: 'Letter Names and Sounds',
@@ -135,7 +138,7 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
+export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency'];
 
 /*
  *  Scored Tasks
@@ -151,16 +154,22 @@ export const supportLevelColors = {
   above: 'green',
   some: '#edc037',
   below: '#c93d82',
+  optional: optionalAssessmentColor,
 };
 
 /*
  *  Get Support Level
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
-export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
+export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
   let support_level = null;
   let tag_color = null;
-  if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {
+  if (optional) {
+    return {
+      support_level: 'Optional Assessment',
+      tag_color: supportLevelColors.optional,
+    };
+  } else if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {
     return {
       support_level: 'Scores Under Development',
       tag_color: 'white',
