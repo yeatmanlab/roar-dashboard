@@ -397,37 +397,36 @@ async function submitStudents() {
         }
       }
 
-      console.log('submitting', sendObject);
-      // authStore
-      //   .registerWithEmailAndPassword(sendObject)
-      //   .then(() => {
-      //     toast.add({
-      //       severity: 'success',
-      //       summary: 'User Creation Success',
-      //       detail: `${sendObject.email} was sucessfully created.`,
-      //       life: 9000,
-      //     });
-      //     processedUsers = processedUsers + 1;
-      //     if (processedUsers >= totalUsers) {
-      //       activeSubmit.value = false;
-      //       if (errorUsers.value.length === 0) {
-      //         // Processing is finished, and there are no error users.
-      //         router.push({ name: 'Home' });
-      //       }
-      //     }
-      //   })
-      //   .catch((e) => {
-      //     toast.add({
-      //       severity: 'error',
-      //       summary: 'User Creation Failed',
-      //       detail: 'Please see error table below.',
-      //       life: 3000,
-      //     });
-      //     addErrorUser(user, e);
-      //     if (processedUsers >= totalUsers) {
-      //       activeSubmit.value = false;
-      //     }
-      //   });
+      authStore
+        .registerWithEmailAndPassword(sendObject)
+        .then(() => {
+          toast.add({
+            severity: 'success',
+            summary: 'User Creation Success',
+            detail: `${sendObject.email} was sucessfully created.`,
+            life: 9000,
+          });
+          processedUsers = processedUsers + 1;
+          if (processedUsers >= totalUsers) {
+            activeSubmit.value = false;
+            if (errorUsers.value.length === 0) {
+              // Processing is finished, and there are no error users.
+              router.push({ name: 'Home' });
+            }
+          }
+        })
+        .catch((e) => {
+          toast.add({
+            severity: 'error',
+            summary: 'User Creation Failed',
+            detail: 'Please see error table below.',
+            life: 3000,
+          });
+          addErrorUser(user, e);
+          if (processedUsers >= totalUsers) {
+            activeSubmit.value = false;
+          }
+        });
     }
     await delay(1500);
   }
