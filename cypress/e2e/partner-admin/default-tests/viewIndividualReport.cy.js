@@ -32,21 +32,25 @@ function checkAssignmentColumns() {
   });
 }
 
+function checkIndividualScoreReports() {
+  cy.get('button', { timeout: 3 * timeout })
+    .contains('Report')
+    .click();
+  cy.get('div', { timeout: 3 * timeout }).contains('Individual Score Report');
+  cy.get('button', { timeout: 3 * timeout })
+    .contains('Expand All Sections')
+    .click();
+  cy.get('button', { timeout: 3 * timeout }).contains('Export to PDF');
+  cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessments return 3 kinds of scores');
+}
+
 describe('The partner admin can view score reports for a given administration.', () => {
   it('Selects an administration and views its score report.', () => {
     checkUrl();
     cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();
     cy.checkUserList(testUserList);
-    checkAssignmentColumns(testAssignments);
-    cy.get('button', { timeout: 3 * timeout })
-      .contains('Report')
-      .click();
-    cy.get('div', { timeout: 3 * timeout }).contains('Individual Score Report');
-    cy.get('button', { timeout: 3 * timeout })
-      .contains('Expand All Sections')
-      .click();
-    cy.get('button', { timeout: 3 * timeout }).contains('Export to PDF');
-    cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessements return 3 kinds of scores');
+    checkAssignmentColumns();
+    checkIndividualScoreReports();
   });
 });

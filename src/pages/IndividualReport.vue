@@ -84,7 +84,7 @@
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
             <img src="../assets/support-distribution.svg" class="w-10" />
-            <div class="text-xl font-bold">The ROAR assessements return 3 kinds of scores:</div>
+            <div class="text-xl font-bold">The ROAR assessments return 3 kinds of scores:</div>
             <ul>
               <li>
                 <b>Raw Score: </b>A score that captures your students' general performance on the assessment, such as
