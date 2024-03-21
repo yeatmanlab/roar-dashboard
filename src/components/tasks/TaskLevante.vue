@@ -21,7 +21,6 @@ const props = defineProps({
 
 let TaskLauncher;
 
-const task = 'core-tasks';
 const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
@@ -54,7 +53,7 @@ window.addEventListener(
   { once: true },
 );
 onMounted(async () => {
-  TaskLauncher = (await import(task)).default;
+  TaskLauncher = (await import('core-tasks')).default;
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
@@ -74,6 +73,11 @@ async function startTask() {
     birthYear: userDateObj.getFullYear(),
   };
   const gameParams = { ...appKit._taskInfo.variantParams };
+
+  if (TaskLauncher === undefined) {
+    TaskLauncher = (await import('core-tasks')).default;
+  }
+
   const levanteTask = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
   gameStarted.value = true;
   await levanteTask.run().then(async () => {

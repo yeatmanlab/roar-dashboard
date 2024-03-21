@@ -22,7 +22,6 @@ const props = defineProps({
 
 let TaskLauncher;
 
-const task = '@bdelab/roam-fluency';
 const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
@@ -60,10 +59,10 @@ window.addEventListener(
 );
 
 onMounted(async () => {
-  TaskLauncher = (await import(task)).default;
+  TaskLauncher = (await import('@bdelab/roam-fluency')).default;
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
-    await startTask(task);
+    await startTask();
   }
 });
 
@@ -73,7 +72,7 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 
 const { selectedAdmin } = storeToRefs(gameStore);
 
-async function startTask(_task) {
+async function startTask() {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
 
   const userDob = _get(userData.value, 'studentData.dob');
@@ -89,7 +88,7 @@ async function startTask(_task) {
   const gameParams = { ...appKit._taskInfo.variantParams };
 
   if (TaskLauncher === undefined) {
-    TaskLauncher = (await import(_task)).default;
+    TaskLauncher = (await import('@bdelab/roam-fluency')).default;
   }
 
   const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
