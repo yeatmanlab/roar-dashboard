@@ -16,11 +16,12 @@ import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'egma-math' },
+  taskId: { type: String, default: 'egma-math' },
 });
 
 let TaskLauncher;
 
+const task = 'core-tasks';
 const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
@@ -53,11 +54,11 @@ window.addEventListener(
   { once: true },
 );
 onMounted(async () => {
+  TaskLauncher = (await import(task)).default;
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
-  TaskLauncher = (await import('core-tasks')).default;
 });
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
   if (newFirekitInitValue && !newLoadingUserData) await startTask();

@@ -16,12 +16,13 @@ import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'fluency-arf' },
-  language: { type: String, required: true, default: 'en' },
+  taskId: { type: String, default: 'fluency-arf' },
+  language: { type: String, default: 'en' },
 });
 
 let TaskLauncher;
 
+const task = '@bdelab/roam-fluency';
 const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
@@ -59,11 +60,11 @@ window.addEventListener(
 );
 
 onMounted(async () => {
+  TaskLauncher = (await import(task)).default;
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
-    await startTask();
+    await startTask(task);
   }
-  TaskLauncher = (await import('@bdelab/roam-fluency')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
@@ -72,7 +73,7 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 
 const { selectedAdmin } = storeToRefs(gameStore);
 
-async function startTask() {
+async function startTask(_task) {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
 
   const userDob = _get(userData.value, 'studentData.dob');
@@ -86,6 +87,11 @@ async function startTask() {
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams };
+
+  if (TaskLauncher === undefined) {
+    TaskLauncher = (await import(_task)).default;
+  }
+
   const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;

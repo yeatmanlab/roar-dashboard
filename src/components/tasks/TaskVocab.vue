@@ -15,9 +15,15 @@ import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
-let RoarVocab;
+const props = defineProps({
+  taskId: { type: String, required: true, default: 'vocab' },
+  language: { type: String, required: true, default: 'en' },
+});
 
-const taskId = 'vocab';
+let TaskLauncher;
+
+const task = '@bdelab/roar-vocab';
+const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -54,12 +60,11 @@ window.addEventListener(
 );
 
 onMounted(async () => {
+  TaskLauncher = (await import(task)).default;
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
-    await startTask();
+    await startTask(task);
   }
-  // Dynamically import the RoarVocab module to reduce chunk size.
-  RoarVocab = (await import('@bdelab/roar-vocab')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
@@ -68,7 +73,7 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 
 const { selectedAdmin } = storeToRefs(gameStore);
 
-async function startTask() {
+async function startTask(_task) {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
 
   const userDob = _get(userData.value, 'studentData.dob');
@@ -78,10 +83,16 @@ async function startTask() {
     grade: _get(userData.value, 'studentData.grade'),
     birthMonth: userDateObj.getMonth() + 1,
     birthYear: userDateObj.getFullYear(),
+    language: props.language,
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams };
-  const roarApp = new RoarVocab(appKit, gameParams, userParams, 'jspsych-target');
+
+  if (TaskLauncher === undefined) {
+    TaskLauncher = (await import(_task)).default;
+  }
+
+  const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {

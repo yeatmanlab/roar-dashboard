@@ -20,8 +20,9 @@ const props = defineProps({
   language: { type: String, required: true, default: 'en' },
 });
 
-let RoarSRE;
+let TaskLauncher;
 
+const task = '@bdelab/roar-sre';
 const taskId = props.taskId;
 const router = useRouter();
 const gameStarted = ref(false);
@@ -59,11 +60,11 @@ window.addEventListener(
 );
 
 onMounted(async () => {
+  TaskLauncher = (await import(task)).default;
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
-    await startTask();
+    await startTask(task);
   }
-  RoarSRE = (await import('@bdelab/roar-sre')).default;
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
@@ -72,7 +73,7 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 
 const { selectedAdmin } = storeToRefs(gameStore);
 
-async function startTask() {
+async function startTask(_task) {
   const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
 
   const userDob = _get(userData.value, 'studentData.dob');
@@ -86,22 +87,20 @@ async function startTask() {
   };
 
   const gameParams = { ...appKit._taskInfo.variantParams };
-  const roarApp = new RoarSRE(appKit, gameParams, userParams, 'jspsych-target');
+
+  if (TaskLauncher === undefined) {
+    TaskLauncher = (await import(_task)).default;
+  }
+
+  const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
   gameStarted.value = true;
   await roarApp.run().then(async () => {
-    console.log('Finished assessment');
     // Handle any post-game actions.
     await authStore.completeAssessment(selectedAdmin.value.id, taskId);
 
-    console.log('Finished authStore.completeAssessment');
-
     // Navigate to home, but first set the refresh flag to true.
     gameStore.requireHomeRefresh();
-
-    console.log('Finished gameStore.requireHomeRefresh');
-
-    console.log('router.push Home');
     router.push({ name: 'Home' });
   });
 }

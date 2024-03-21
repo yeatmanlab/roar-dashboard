@@ -55,6 +55,7 @@ const routes = [
     path: '/game/pa',
     name: 'PA',
     component: () => import('../components/tasks/TaskPA.vue'),
+    props: { taskId: 'pa', language: 'en' },
     meta: { pageTitle: 'PA' },
   },
   {
@@ -89,26 +90,28 @@ const routes = [
     path: '/game/multichoice',
     name: 'Multichoice',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
+    props: { taskId: 'multichoice', language: 'en' },
     meta: { pageTitle: 'Multichoice' },
   },
   {
     path: '/game/morphology',
     name: 'Morphology',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
-    props: { taskId: 'morphology' },
+    props: { taskId: 'morphology', language: 'en' },
     meta: { pageTitle: 'Morphology' },
   },
   {
     path: '/game/cva',
     name: 'Cva',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
-    props: { taskId: 'cva' },
+    props: { taskId: 'cva', language: 'en' },
     meta: { pageTitle: 'CVA' },
   },
   {
     path: '/game/vocab',
     name: 'Vocab',
     component: () => import('../components/tasks/TaskVocab.vue'),
+    props: { taskId: 'vocab', language: 'en' },
     meta: { pageTitle: 'Vocab' },
   },
   {
