@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/vue';
 import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
+import { i18n } from './translations/i18n';
 
 const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
 
@@ -21,13 +22,16 @@ export function initSentry(app) {
       Sentry.feedbackIntegration({
         showBranding: false,
         showName: false,
+        showEmail: false,
         colorScheme: 'light',
-        formTitle: 'Report an Issue to ROAR',
-        buttonLabel: 'Report an Issue',
-        submitButtonLabel: 'Submit Issue Report',
-        namePlaceholder: 'Your Name (optional)',
-        emailPlaceholder: 'your.email@example.org (optional)',
-        messagePlaceholder: 'What is the issue? What did you want to experience instead? Thank you for sharing.',
+        formTitle: i18n.global.t('sentryForm.formTitle'),
+        buttonLabel: i18n.global.t('sentryForm.buttonLabel'),
+        cancelButtonLabel: i18n.global.t('sentryForm.cancelButtonLabel'),
+        submitButtonLabel: i18n.global.t('sentryForm.submitButtonLabel'),
+        namePlaceholder: i18n.global.t('sentryForm.namePlaceholder'),
+        emailPlaceholder: i18n.global.t('sentryForm.emailPlaceholder'),
+        messageLabel: i18n.global.t('sentryForm.messageLabel'),
+        messagePlaceholder: i18n.global.t('sentryForm.messagePlaceholder'),
       }),
       contextLinesIntegration(),
       extraErrorDataIntegration(),

@@ -63,15 +63,13 @@
     "preparing": "Preparing your game!"
   },
   "sentryForm": {
-    "buttonLabel": "Report a Bug",
     "formTitle": "Report an Issue to ROAR",
-    "nameField": "Name",
-    "namePlaceholder": "Your name",
-    "emailField": "Email",
-    "emailPlaceholder": "your.email@example.org",
-    "descriptionField": "Description",
-    "descriptionPlaceholder": "Please describe the issue you encountered",
-    "submitButtonText": "Send Bug Report",
-    "cancelButtonText": "Cancel"
+    "buttonLabel": "Report an Issue",
+    "submitButtonLabel": "Submit Issue Report",
+    "cancelButtonLabel": "Cancel",
+    "namePlaceholder": "Your Name (optional)",
+    "emailPlaceholder": "your.email@example.org (optional)",
+    "messageLabel": "Description",
+    "messagePlaceholder": "What is the issue? What did you want to experience instead? Thank you for sharing."
   }
 }
