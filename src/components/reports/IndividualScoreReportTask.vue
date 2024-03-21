@@ -32,7 +32,7 @@
           <PvKnob
             v-if="rawOnlyTasks.includes(task.taskId)"
             :model-value="getRawScore(task.taskId)"
-            size="160"
+            :size="160"
             value-color="gray"
             range-color="gray"
           />
@@ -40,27 +40,27 @@
             v-else-if="grade < 6"
             :value-template="getPercentileSuffix(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))"
             :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
-            size="160"
+            :size="160"
             :value-color="
               getSupportLevel(
                 grade,
                 task.scores?.[getPercentileScoreKey(task.taskId, grade)],
                 getRawScore(task.taskId),
                 task.taskId,
-              )
+              ).tag_color
             "
           />
           <PvKnob
             v-else
             :model-value="Math.round(task.scores?.sprStandardScore)"
-            size="160"
+            :size="160"
             :value-color="
               getSupportLevel(
                 grade,
                 task.scores?.[getPercentileScoreKey(task.taskId, grade)],
                 getRawScore(task.taskId),
                 task.taskId,
-              )
+              ).tag_color
             "
             :min="0"
             :max="153"
@@ -109,10 +109,10 @@
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
-            <div v-for="[key, value] in extractScoreNames(task.scores)" :key="key">
+            <div v-for="[key, rawScore, rangeMin, rangeMax] in extractScoreNames(task.scores, task.taskId)" :key="key">
               <div class="flex flex-column align-items-center">
                 <div>
-                  <b>{{ key }}:</b> {{ value }}
+                  <b>{{ key }}:</b> {{ rawScore }} (range: {{ rangeMin }} - {{ rangeMax }})
                 </div>
               </div>
             </div>
@@ -126,7 +126,13 @@
 <script setup>
 import { computed } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
-import { rawOnlyTasks, taskDisplayNames, extendedDescriptions, getSupportLevel } from '@/helpers/reports';
+import {
+  rawOnlyTasks,
+  taskDisplayNames,
+  extendedDescriptions,
+  getSupportLevel,
+  getRawScoreRange,
+} from '@/helpers/reports';
 
 const props = defineProps({
   studentData: {
@@ -181,7 +187,7 @@ const formattedScoreAttributeMap = {
 };
 
 // Converts scores dictionary to array of human readable score names
-const extractScoreNames = (scores) => {
+const extractScoreNames = (scores, taskId) => {
   let formattedScores = {};
   for (const key in scores) {
     if (scores[key] != undefined && !isNaN(scores[key])) {
@@ -193,13 +199,25 @@ const extractScoreNames = (scores) => {
   }
 
   const formattedScoresArray = Object.keys(formattedScores).map((key) => {
-    return [key, formattedScores[key]];
+    let minScore, maxScore;
+    if (key === 'Percentile Score') {
+      minScore = 0;
+      maxScore = 99;
+    } else if (key === 'Standard Score') {
+      minScore = 0;
+      maxScore = 180;
+    } else if (key === 'Raw Score') {
+      const scoreRange = getRawScoreRange(taskId);
+      minScore = scoreRange.min;
+      maxScore = scoreRange.max;
+    }
+    return [key, formattedScores[key], minScore, maxScore];
   });
 
   // Ensure scores are in consistent order
-  console.log(formattedScoresArray);
+  const order = { 'Raw Score': 0, 'Percentile Score': 1, 'Standard Score': 2 };
   return formattedScoresArray.sort((first, second) => {
-    return first[0].localeCompare(second[0]);
+    return order[first[0]] - order[second[0]];
   });
 };
 
