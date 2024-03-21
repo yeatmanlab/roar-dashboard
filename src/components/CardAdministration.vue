@@ -393,6 +393,8 @@ const onExpand = async (node) => {
       return fetchDocById('classes', data.id, ['name', 'schoolId']);
     });
 
+    // Lazy node is a copy of the expanding node. We will insert more detailed
+    // children nodes later.
     const lazyNode = {
       key: node.key,
       data: {
@@ -414,10 +416,15 @@ const onExpand = async (node) => {
 
     lazyNode.children = childNodes;
 
+    // Replace the existing nodes with a map that inserts the child nodes at the
+    // appropriate position
     const newNodes = treeTableOrgs.value.map((n) => {
+      // First, match on the districtId if the expanded school is part of a district
       if (n.data.id === node.data.districtId) {
         const newNode = {
           ...n,
+          // Replace the existing school child nodes with a map that inserts the
+          // classes at the appropriate position
           children: n.children.map((child) => {
             if (child.data.id === node.data.id) {
               return lazyNode;
@@ -426,6 +433,9 @@ const onExpand = async (node) => {
           }),
         };
         return newNode;
+        // Next check to see if the expanded node was the school node itself
+      } else if (n.data.id === node.data.id) {
+        return lazyNode;
       }
 
       return n;

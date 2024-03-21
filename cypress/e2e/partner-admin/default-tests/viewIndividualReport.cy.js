@@ -22,7 +22,7 @@ function clickScoreButton() {
   );
 }
 
-function checkAssignmentColumns() {
+function checkAssignmentColumns(testAssignments) {
   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
@@ -50,7 +50,7 @@ describe('The partner admin can view score reports for a given administration.',
     cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();
     cy.checkUserList(testUserList);
-    checkAssignmentColumns();
+    checkAssignmentColumns(testAssignments);
     checkIndividualScoreReports();
   });
 });

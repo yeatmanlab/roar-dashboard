@@ -65,6 +65,15 @@
         </PvOverlayPanel>
       </div>
     </div>
+    <div class="mr-0 pl-0 flex flex-column">
+      <PvButton
+        v-if="!hasControls"
+        class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
+        @click="handleSelect"
+        data-cy="select-variant"
+        ><i class="pi pi-chevron-right text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
+      ></PvButton>
+    </div>
   </div>
   <!---------- end card without buttons ----- >-->
   <div v-else :id="variant.id" :class="isActive()">
@@ -265,10 +274,13 @@ const backupImage = '/src/assets/roar-logo.png';
 const showContent = ref(false);
 const op = ref(null);
 const visible = ref(false);
-const emit = defineEmits(['remove', 'moveUp', 'moveDown']);
+const emit = defineEmits(['remove', 'select', 'moveUp', 'moveDown']);
 
 const handleRemove = () => {
   emit('remove', props.variant);
+};
+const handleSelect = () => {
+  emit('select', props.variant);
 };
 const handleMoveUp = () => {
   emit('moveUp', props.variant);

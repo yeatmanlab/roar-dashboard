@@ -42,7 +42,7 @@
                   :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
-                  <VariantCard :variant="element" />
+                  <VariantCard :variant="element" @select="selectCard" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -79,7 +79,7 @@
                   :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
-                  <VariantCard :variant="element" :update-variant="updateVariant" />
+                  <VariantCard :variant="element" :update-variant="updateVariant" @select="selectCard" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -279,6 +279,27 @@ watch(selectedVariants, (variants) => {
 // Card event handlers
 const removeCard = (variant) => {
   selectedVariants.value = selectedVariants.value.filter((selectedVariant) => selectedVariant.id !== variant.id);
+};
+const selectCard = (variant) => {
+  // Check if this variant is already in the list
+  const cardVariantId = variant.id;
+  const index = _findIndex(selectedVariants.value, (element) => element.id === cardVariantId);
+  if (index === -1) {
+    // If this variant is not already selected, check if the taskId is already selected.
+    // If so, warn but add regardless.
+    const selectedTasks = selectedVariants.value.map((selectedVariant) => selectedVariant.task.id);
+    if (selectedTasks.includes(variant.task.id)) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Task Selected',
+        detail: 'There is a task with that Task ID already selected.',
+        life: 3000,
+      });
+    }
+    selectedVariants.value.push(variant);
+  } else {
+    debounceToast();
+  }
 };
 const moveCardUp = (variant) => {
   const index = _findIndex(selectedVariants.value, (currentVariant) => currentVariant.id === variant.id);
