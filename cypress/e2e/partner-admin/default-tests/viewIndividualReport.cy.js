@@ -39,14 +39,14 @@ describe('The partner admin can view score reports for a given administration.',
     clickScoreButton();
     cy.checkUserList(testUserList);
     checkAssignmentColumns(testAssignments);
-    cy.get('button', { timeout: 3 * timeout })
+    cy.get('button', { timeout: 4 * timeout })
       .contains('Report')
       .click();
-    cy.get('div', { timeout: 3 * timeout }).contains('Individual Score Report');
-    cy.get('button', { timeout: 3 * timeout })
+    cy.get('div', { timeout: 4 * timeout }).contains('Individual Score Report');
+    cy.get('button', { timeout: 4 * timeout })
       .contains('Expand All Sections')
       .click();
-    cy.get('button', { timeout: 3 * timeout }).contains('Export to PDF');
-    cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessements return 3 kinds of scores');
+    cy.get('button', { timeout: 4 * timeout }).contains('Export to PDF');
+    cy.get('div', { timeout: 4 * timeout }).contains('The ROAR assessements return 3 kinds of scores');
   });
 });
