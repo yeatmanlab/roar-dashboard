@@ -1,7 +1,9 @@
 import * as Sentry from '@sentry/vue';
 import { captureConsoleIntegration, contextLinesIntegration, extraErrorDataIntegration } from '@sentry/integrations';
-import { i18n } from './translations/i18n';
+import { i18n, languageOptions } from './translations/i18n';
 
+// Workaround for using i18n-vue in plain JavaScript; this is a temporary solution until a more robust bug report component is implemented
+const language = i18n.global.locale.value;
 const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
 
 export function initSentry(app) {
@@ -24,14 +26,14 @@ export function initSentry(app) {
           showName: false,
           showEmail: false,
           colorScheme: 'light',
-          formTitle: i18n.global.t('sentryForm.formTitle'),
-          buttonLabel: i18n.global.t('sentryForm.buttonLabel'),
-          cancelButtonLabel: i18n.global.t('sentryForm.cancelButtonLabel'),
-          submitButtonLabel: i18n.global.t('sentryForm.submitButtonLabel'),
-          namePlaceholder: i18n.global.t('sentryForm.namePlaceholder'),
-          emailPlaceholder: i18n.global.t('sentryForm.emailPlaceholder'),
-          messageLabel: i18n.global.t('sentryForm.messageLabel'),
-          messagePlaceholder: i18n.global.t('sentryForm.messagePlaceholder'),
+          formTitle: languageOptions[language].translations.sentryForm.formTitle,
+          buttonLabel: languageOptions[language].translations.sentryForm.buttonLabel,
+          cancelButtonLabel: languageOptions[language].translations.sentryForm.cancelButtonLabel,
+          submitButtonLabel: languageOptions[language].translations.sentryForm.submitButtonLabel,
+          namePlaceholder: languageOptions[language].translations.sentryForm.namePlaceholder,
+          emailPlaceholder: languageOptions[language].translations.sentryForm.emailPlaceholder,
+          messageLabel: languageOptions[language].translations.sentryForm.messageLabel,
+          messagePlaceholder: languageOptions[language].translations.sentryForm.messagePlaceholder,
         }),
         contextLinesIntegration(),
         extraErrorDataIntegration(),
