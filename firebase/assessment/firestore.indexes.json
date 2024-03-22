@@ -1254,6 +1254,29 @@
   "fieldOverrides": [
     {
       "collectionGroup": "runs",
+      "fieldPath": "assignmentId",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
       "fieldPath": "completed",
       "ttl": false,
       "indexes": [
