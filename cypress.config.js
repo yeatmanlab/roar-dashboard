@@ -4,7 +4,7 @@ require('dotenv').config();
 module.exports = defineConfig({
   projectId: 'cobw62',
   e2e: {
-    baseUrl: process.env.CYPRESS_BASE_URL ?? 'http://localhost:4173/',
+    baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173/',
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
     retries: 2,
@@ -18,7 +18,7 @@ module.exports = defineConfig({
     },
   },
   env: {
-    baseUrl: process.env.CYPRESS_BASE_URL ?? 'http://localhost:4173',
+    baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     firestoreUrl: 'https://firestore.googleapis.com/**/*',
     timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
