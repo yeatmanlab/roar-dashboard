@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import { onMounted, watch, ref } from 'vue';
+import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
@@ -27,15 +27,21 @@ const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+
 const initialized = ref(false);
 let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
+const handlePopState = () => {
+  router.go(0);
+};
+
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
+
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
   queryKey: ['userData', authStore.uid, 'studentData'],
   queryFn: () => fetchDocById('users', authStore.uid, ['studentData']),
@@ -43,50 +49,81 @@ const { isLoading: isLoadingUserData, data: userData } = useQuery({
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
 // The following code intercepts the back button and instead forces a refresh.
 // We add { once: true } to prevent an infinite loop.
 window.addEventListener(
   'popstate',
   () => {
-    router.go(0);
+    handlePopState();
   },
   { once: true },
 );
+
 onMounted(async () => {
-  TaskLauncher = (await import('core-tasks')).default;
+  try {
+    TaskLauncher = (await import('core-tasks')).default;
+  } catch (error) {
+    console.error('An error occurred while importing the game module.', error);
+  }
+
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('popstate', handlePopState);
+});
+
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
   if (newFirekitInitValue && !newLoadingUserData) await startTask();
 });
+
 const { selectedAdmin } = storeToRefs(gameStore);
+
 async function startTask() {
-  const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
-  const userDob = _get(userData.value, 'studentData.dob');
-  const userDateObj = new Date(userDob);
-  const userParams = {
-    grade: _get(userData.value, 'studentData.grade'),
-    birthMonth: userDateObj.getMonth() + 1,
-    birthYear: userDateObj.getFullYear(),
-  };
-  const gameParams = { ...appKit._taskInfo.variantParams };
+  try {
+    let checkGameStarted = setInterval(function () {
+      // Poll for the preload trials progress bar to exist and then begin the game
+      let gameLoading = document.body.textContent.includes('loading');
+      if (gameLoading) {
+        gameStarted.value = true;
+        clearInterval(checkGameStarted);
+      }
+    }, 100);
 
-  if (TaskLauncher === undefined) {
-    TaskLauncher = (await import('core-tasks')).default;
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
+
+    const userDob = _get(userData.value, 'studentData.dob');
+    const userDateObj = new Date(userDob);
+
+    const userParams = {
+      grade: _get(userData.value, 'studentData.grade'),
+      birthMonth: userDateObj.getMonth() + 1,
+      birthYear: userDateObj.getFullYear(),
+      language: props.language,
+    };
+
+    const gameParams = { ...appKit._taskInfo.variantParams };
+
+    const levanteTask = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+
+    await levanteTask.run().then(async () => {
+      // Handle any post-game actions.
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+
+      // Navigate to home, but first set the refresh flag to true.
+      gameStore.requireHomeRefresh();
+      router.push({ name: 'Home' });
+    });
+  } catch (error) {
+    console.error('An error occurred while starting the task:', error);
+    alert(
+      'An error occurred while starting the task. Please refresh the page and try again. If the error persists, please submit an issue report.',
+    );
   }
-
-  const levanteTask = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
-  gameStarted.value = true;
-  await levanteTask.run().then(async () => {
-    // Handle any post-game actions.
-    await authStore.completeAssessment(selectedAdmin.value.id, taskId);
-    // Navigate to home, but first set the refresh flag to true.
-    gameStore.requireHomeRefresh();
-    router.push({ name: 'Home' });
-  });
 }
 </script>
 
