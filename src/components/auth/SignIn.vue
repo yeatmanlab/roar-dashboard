@@ -6,12 +6,12 @@
           <PvInputText
             :id="$t('authSignIn.emailId')"
             v-model="v$.email.$model"
-            @keyup="checkForCapsLock"
-            @click="checkForCapsLock"
             :class="{ 'p-invalid': invalid }"
             aria-describedby="email-error"
             :placeholder="$t('authSignIn.emailPlaceholder')"
             data-cy="input-username-email"
+            @keyup="checkForCapsLock"
+            @click="checkForCapsLock"
           />
         </div>
         <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
@@ -27,8 +27,6 @@
             <PvPassword
               :id="$t('authSignIn.passwordId')"
               v-model="v$.password.$model"
-              @keyup="checkForCapsLock"
-              @click="checkForCapsLock"
               :class="{ 'p-invalid': invalid }"
               toggle-mask
               show-icon="pi pi-eye-slash"
@@ -36,6 +34,8 @@
               :feedback="false"
               :placeholder="$t('authSignIn.passwordPlaceholder')"
               data-cy="input-password"
+              @keyup="checkForCapsLock"
+              @click="checkForCapsLock"
             />
             <small
               class="text-link sign-in-method-link"
@@ -52,8 +52,6 @@
             v-else-if="allowPassword"
             :id="$t('authSignIn.passwordId')"
             v-model="v$.password.$model"
-            @keyup="checkForCapsLock"
-            @click="checkForCapsLock"
             :class="{ 'p-invalid': invalid }"
             toggle-mask
             show-icon="pi pi-eye-slash"
@@ -61,6 +59,8 @@
             :feedback="false"
             :placeholder="$t('authSignIn.passwordPlaceholder')"
             data-cy="input-password"
+            @keyup="checkForCapsLock"
+            @click="checkForCapsLock"
           >
             <template #header>
               <h6>{{ $t('authSignIn.pickPassword') }}</h6>

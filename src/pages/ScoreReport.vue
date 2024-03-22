@@ -1079,6 +1079,8 @@ const tableData = computed(() => {
       routeParams: {
         administrationId: props.administrationId,
         userId: _get(user, 'userId'),
+        orgType: props.orgType,
+        orgId: props.orgId,
       },
     };
   });
