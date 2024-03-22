@@ -9,7 +9,7 @@ import html2canvas from 'html2canvas';
 export const taskDisplayNames = {
   letter: {
     name: 'Letter Names and Sounds',
-    extendedTitle: 'ROAR - Letter Names and Sounds',
+    extendedTitle: 'ROAR - Letter',
     extendedName: 'Letter Names and Sounds',
     order: 1,
   },
@@ -407,7 +407,7 @@ export const taskInfoById = {
     header: 'ROAR-LETTER NAMES AND SOUNDS',
     subheader: 'Single Letter Recognition',
     desc:
-      "ROAR-Letter Names and Sounds assesses a student's knowledge of letter " +
+      "ROAR-Letter assesses a student's knowledge of letter " +
       'names and letter sounds. Knowing letter names supports the learning of ' +
       'letter sounds, and knowing letter sounds supports the learning of letter ' +
       'names. Initial knowledge of letter names and letter sounds on entry to ' +

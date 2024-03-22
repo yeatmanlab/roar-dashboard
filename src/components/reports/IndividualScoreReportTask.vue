@@ -1,5 +1,5 @@
 <template>
-  <div v-for="task in computedTaskData" :key="task">
+  <div v-for="task in computedTaskData" :key="task" class="align-self-start">
     <div
       v-if="rawOnlyTasks.includes(task.taskId) && isNaN(getRawScore(task.taskId))"
       class="error flex flex-column md:flex-row align-items-center m-auto p-4 w-5"
@@ -92,6 +92,7 @@
         }}</strong>
         {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
       </div>
+
       <div v-else class="px-4 py-2 score-description">
         {{ studentFirstName }} scored a standard score of
         <strong>{{ Math.round(task.scores?.sprStandardScore) }}</strong
@@ -106,13 +107,17 @@
         }}</strong>
         {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
       </div>
+
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
             <div v-for="[key, rawScore, rangeMin, rangeMax] in extractScoreNames(task.scores, task.taskId)" :key="key">
-              <div class="flex flex-column align-items-center">
-                <div>
-                  <b>{{ key }}:</b> {{ rawScore }} (range: {{ rangeMin }} - {{ rangeMax }})
+              <div class="flex justify-content-between">
+                <div class="mr-2">
+                  <b>{{ key }}</b> <span class="text-500">({{ rangeMin }}-{{ rangeMax }})</span>:
+                </div>
+                <div class="ml-2">
+                  <b>{{ rawScore }}</b>
                 </div>
               </div>
             </div>
@@ -166,7 +171,6 @@ const computedTaskData = computed(() => {
     ?.filter((task) => task.scores != undefined)
     .sort((a, b) => {
       if (Object.keys(taskDisplayNames).includes(a.taskId) && Object.keys(taskDisplayNames).includes(b.taskId)) {
-        console.log(a, b);
         return taskDisplayNames[a.taskId].order - taskDisplayNames[b.taskId].order;
       } else {
         return -1;
@@ -215,7 +219,7 @@ const extractScoreNames = (scores, taskId) => {
   });
 
   // Ensure scores are in consistent order
-  const order = { 'Raw Score': 0, 'Percentile Score': 1, 'Standard Score': 2 };
+  const order = { 'Raw Score': 2, 'Percentile Score': 1, 'Standard Score': 0 };
   return formattedScoresArray.sort((first, second) => {
     return order[first[0]] - order[second[0]];
   });
