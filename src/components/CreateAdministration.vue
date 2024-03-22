@@ -54,7 +54,7 @@
                 <span class="mt-2 font-bold">{{ nonUniqueTasks.join(', ') }}</span>
               </span>
               <span v-else>
-                <span>Task selections must not be empty.</span>
+                <span>No variants selected. You must select at least one variant to be assigned.</span>
               </span>
             </span>
           </template>

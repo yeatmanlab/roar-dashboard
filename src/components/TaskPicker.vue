@@ -272,9 +272,13 @@ const handleCardMove = (card) => {
   } else return true;
 };
 
-watch(selectedVariants, (variants) => {
-  emit('variants-changed', variants);
-});
+watch(
+  selectedVariants,
+  (variants) => {
+    emit('variants-changed', variants);
+  },
+  { deep: true },
+);
 
 // Card event handlers
 const removeCard = (variant) => {
