@@ -301,7 +301,7 @@ const routes = [
     meta: { pageTitle: 'View Scores', requireAdmin: true },
   },
   {
-    path: '/scores/:administrationId/user/:userId',
+    path: '/scores/:administrationId/:orgType/:orgId/user/:userId',
     name: 'StudentReport',
     props: true,
     component: () => import('../pages/IndividualReport.vue'),
