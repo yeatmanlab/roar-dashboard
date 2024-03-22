@@ -7,7 +7,7 @@ import html2canvas from 'html2canvas';
  *  Value: { orderindex, displayName }
  */
 
-export const optionalAssessmentColor = '#ADD8E6';
+export const optionalAssessmentColor = '#03befc';
 
 export const taskDisplayNames = {
   letter: {
@@ -154,7 +154,7 @@ export const supportLevelColors = {
   above: 'green',
   some: '#edc037',
   below: '#c93d82',
-  optional: optionalAssessmentColor,
+  optional: '#03befc',
 };
 
 /*
@@ -166,7 +166,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   let tag_color = null;
   if (optional) {
     return {
-      support_level: 'Optional Assessment',
+      support_level: 'Optional',
       tag_color: supportLevelColors.optional,
     };
   } else if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {

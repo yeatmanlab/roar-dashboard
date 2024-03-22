@@ -1000,20 +1000,19 @@ const columns = computed(() => {
 // this function light out color if assessment is not reliable
 function colorSelection(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-    if (support_level === 'Needs Extra Support') {
+    if (support_level === 'Optional') {
+      return '#a1d8e3';
+    } else if (support_level === 'Needs Extra Support') {
       return '#d6b8c7';
     } else if (support_level === 'Developing Skill') {
       return '#e8dbb5';
     } else if (support_level === 'Achieved Skill') {
       return '#c0d9bd';
-    } else if (support_level === 'Optional Assessment') {
-      return optionalAssessmentColor;
+    } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
+      return 'white';
     }
-  } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
-    return 'white';
-  } else {
-    return tag_color;
   }
+  return tag_color;
 }
 
 const tableData = computed(() => {
@@ -1022,7 +1021,6 @@ const tableData = computed(() => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of assignment?.assessments ?? []) {
-      console.log(assessment.taskId, assessment.optional);
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         grade,

@@ -162,9 +162,6 @@
                   class="circle"
                   :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
                     _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }; ${
-                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                    'outline: 1px dotted #0000CD; outline-offset: 3px'
                   }`"
                 />
               </div>
@@ -511,8 +508,10 @@ let returnScoreTooltip = (colHeader, colData, fieldPath) => {
     toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
   } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
     toolTip += getFlags(getIndexTask(colData, 'letter'), colData);
-    toolTip += colData.scores?.letter?.support_level + '\n' + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
+    toolTip += colData.scores?.letter?.support_level;
+    if (colData.scores?.letter?.raw) {
+      toolTip += '\n' + '\n' + 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
+    }
   } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
     toolTip += getFlags(getIndexTask(colData, 'swr-es'), colData);
     toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
@@ -520,7 +519,7 @@ let returnScoreTooltip = (colHeader, colData, fieldPath) => {
     toolTip += 'Raw Score: ' + colData.scores?.['swr-es']?.raw + '\n';
     toolTip += 'Standardized Score: ' + colData.scores?.['swr-es']?.standard + '\n';
   } else if (taskId && !scoredTasks.includes(taskId)) {
-    if (colData.scores?.[taskId]?.support_level === 'Optional Assessment') {
+    if (colData.scores?.[taskId]?.support_level === 'Optional') {
       toolTip += colData.scores[taskId].support_level + '\n\n';
     }
     toolTip += 'These scores are under development.';
