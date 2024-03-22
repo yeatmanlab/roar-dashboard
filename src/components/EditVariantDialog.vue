@@ -2,6 +2,7 @@
   <!-- <PvButton @click="visible = true"> -->
   <PvButton
     class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
+    data-cy="button-edit-variant"
     @click="visible = true"
   >
     <i class="pi pi-pencil text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i>
@@ -62,6 +63,7 @@
               }),
             },
           }"
+          data-cy="button-assigned-accept"
           @row-edit-save="onAssignedRowEditSave"
         >
           <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
@@ -73,6 +75,7 @@
                 option-value="value"
                 editable
                 placeholder="Type or choose field"
+                data-cy="dropdown-assigned-field"
               >
               </PvDropdown>
             </template>
@@ -85,6 +88,7 @@
                 option-label="label"
                 option-value="value"
                 placeholder="Select Operator"
+                data-cy="dropdown-assigned-operator"
               >
                 <template #option="slotProps">
                   <PvTag :value="slotProps.option.label" severity="warning" />
@@ -97,7 +101,7 @@
           </PvColumn>
           <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
             <template #editor="{ data, field }">
-              <PvInputText v-model="data[field]" />
+              <PvInputText v-model="data[field]" data-cy="assigned-value-content" />
             </template>
           </PvColumn>
           <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
@@ -109,7 +113,13 @@
         </PvDataTable>
         <div class="flex flex-row-reverse justify-content-between align-items-center">
           <div class="mt-2 flex">
-            <PvButton label="Add Assigned Condition" icon="pi pi-plus" class="" @click="addAssignedCondition" />
+            <PvButton
+              label="Add Assigned Condition"
+              icon="pi pi-plus"
+              class=""
+              data-cy="button-assigned-contidion"
+              @click="addAssignedCondition"
+            />
           </div>
         </div>
       </div>
@@ -192,7 +202,11 @@
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
               <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
-              <PvInputSwitch v-model="optionalForAllFlag" @update:model-value="handleOptionalForAllSwitch" />
+              <PvInputSwitch
+                v-model="optionalForAllFlag"
+                data-cy="switch-optional-for-everyone"
+                @update:model-value="handleOptionalForAllSwitch"
+              />
             </div>
             <div class="mt-2 flex gap-2">
               <PvButton
@@ -219,7 +233,7 @@
       </div>
       <div class="flex justify-content-center gap-2">
         <PvButton type="button" label="Cancel" text severity="error" @click="handleClose"></PvButton>
-        <PvButton type="button" label="Save" @click="handleSubmit"></PvButton>
+        <PvButton type="button" label="Save" data-cy="button-save-conditions" @click="handleSubmit"></PvButton>
       </div>
     </div>
   </PvDialog>
