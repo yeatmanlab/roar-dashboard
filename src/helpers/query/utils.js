@@ -63,6 +63,12 @@ export const orderByDefault = [
   },
 ];
 
+export const getProjectId = (project = 'admin') => {
+  const authStore = useAuthStore();
+  const { roarfirekit } = storeToRefs(authStore);
+  return roarfirekit.value.roarConfig?.[project]?.projectId;
+};
+
 export const getAxiosInstance = (db = 'admin') => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);

@@ -7,7 +7,7 @@ import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
-import { convertValues, getAxiosInstance, mapFields } from './utils';
+import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { toRaw } from 'vue';
 
@@ -696,6 +696,8 @@ export const assignmentPageFetcher = async (
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
+  const adminProjectId = getProjectId('admin');
+  const appProjectId = getProjectId('app');
 
   // Only allow one non-org filter
   let nonOrgFilter = null;
@@ -748,7 +750,7 @@ export const assignmentPageFetcher = async (
         _without(
           data.map((scoreDoc) => {
             if (scoreDoc.document?.name) {
-              return _replace(scoreDoc.document.name.split('/runs/')[0], 'gse-roar-assessment', 'gse-roar-admin');
+              return _replace(scoreDoc.document.name.split('/runs/')[0], appProjectId, adminProjectId);
             } else {
               return undefined;
             }
@@ -816,7 +818,7 @@ export const assignmentPageFetcher = async (
             const reliable = _get(_find(scoresData, { id: runId }), 'reliable');
             const engagementFlags = _get(_find(scoresData, { id: runId }), 'engagementFlags');
             if (!scoresObject && runId) {
-              const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
+              const runPath = `projects/${appProjectId}/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
               unretrievedScores.push(runPath);
             }
             return {
