@@ -37,7 +37,7 @@ function checkIndividualScoreReport() {
   cy.get('div', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
   cy.get('button').contains('Expand All Sections').click();
   cy.get('button').contains('Export to PDF');
-  cy.get('div').contains('The ROAR assessements return 3 kinds of scores');
+  cy.get('div').contains('The ROAR assessments return 3 kinds of scores');
 }
 
 describe('The partner admin can view score reports for a given administration.', () => {
