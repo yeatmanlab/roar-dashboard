@@ -70,6 +70,8 @@ module.exports = defineConfig({
     testRoarAppsAdministrationId: 'f3UMHUpR8NGLdmACLw9o',
     testOptionalRoarAppsAdministration: 'zzzCypressTestOptionalRoarAppsAdministration',
     testOptionalRoarAppsAdministrationId: 'E4fPspL3xNZxhL9F1L3m',
+    testSpanishRoarAppsAdministration: 'zzzCypressTestSpanishRoarAppsAdministration',
+    testSpanishRoarAppsAdministrationId: 'dOTQdv6ef2dyNgoTzp42',
     testUserList: [
       'zzzCypressTestStudent0',
       'zzzCypressTestStudent1',
@@ -92,6 +94,7 @@ module.exports = defineConfig({
       'zzzCypressTestStudent18',
       'zzzCypressTestStudent19',
       'zzzCypressTestStudent20',
+      'zzzCypressTestStudent21',
     ],
     roarDemoDistrictName: 'Roar Demo District',
     roarDemoDistrictId: 'dfyDUItJNf3wEoG6Mf8H',

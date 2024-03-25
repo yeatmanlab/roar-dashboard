@@ -99,6 +99,7 @@ export const useAuthStore = () => {
             .then(() => {})
             .catch((error) => {
               console.error('Error signing in:', error);
+              throw error;
             });
         }
       },
