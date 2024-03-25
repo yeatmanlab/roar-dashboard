@@ -115,7 +115,7 @@
                   <b>{{ key }}</b> <span class="text-500">({{ rangeMin }}-{{ rangeMax }})</span>:
                 </div>
                 <div class="ml-2">
-                  <b>{{ rawScore }}</b>
+                  <b>{{ Math.round(rawScore) }}</b>
                 </div>
               </div>
             </div>

@@ -177,7 +177,7 @@ const { data: taskData } = useQuery({
       orgType: props.orgType,
       orgId: props.orgId,
       userId: props.userId,
-      select: ['scores.computed.composite', 'taskId'],
+      select: ['scores.computed.composite', 'taskId', 'reliable', 'engagementFlags'],
       scoreKey: 'scores.computed.composite',
       paginate: false,
     }),
