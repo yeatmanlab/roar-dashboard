@@ -121,8 +121,9 @@
               </div>
             </template>
             <template #body="{ data: colData }">
+              {{ _get(colData, 'optional') }}
               <div
-                v-if="col.tag && _get(colData, col.field) !== undefined"
+                v-if="col.tag && (_get(colData, col.field) !== undefined || _get(colData, 'optional'))"
                 v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
               >
                 <PvTag
@@ -162,7 +163,7 @@
                   class="circle"
                   :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
                     _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }`"
+                  }; outline: 1px dotted #0000CD; outline-offset: 3px`"
                 />
               </div>
               <div v-else-if="col.link">
@@ -262,7 +263,7 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _lowerCase from 'lodash/lowerCase';
-import { scoredTasks } from '@/helpers/reports';
+import { scoredTasks, rawOnlyTasks } from '@/helpers/reports';
 
 /*
 Using the DataTable
@@ -485,46 +486,44 @@ function getFlags(index, ColData) {
   }
 }
 
+function handleToolTip(_taskId, _toolTip, _colHeader, _colData) {
+  if (_colHeader === _taskId && _colData.scores?.[_taskId]?.support_level) {
+    _toolTip += getFlags(getIndexTask(_colData, _taskId), _colData);
+    _toolTip += _colData.scores?.[_taskId]?.support_level + '\n' + '\n';
+    if (!_colData.scores?.[_taskId]?.raw) {
+      _toolTip += 'Awaiting scores';
+    } else {
+      _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
+      _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
+      _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standard + '\n';
+    }
+    if (rawOnlyTasks.includes(_taskId)) {
+      _toolTip += 'These scores are under development';
+    }
+    return _toolTip;
+  }
+}
+
 let returnScoreTooltip = (colHeader, colData, fieldPath) => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
   let toolTip = '';
-  if (colHeader === 'Phoneme' && colData.scores?.pa?.standard) {
-    toolTip += getFlags(getIndexTask(colData, 'pa'), colData);
-    toolTip += colData.scores.pa?.support_level + '\n' + '\n';
-    toolTip += 'Percentile: ' + colData.scores?.pa?.percentile + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.pa?.raw + '\n';
-    toolTip += 'Standardized Score: ' + colData.scores?.pa?.standard + '\n';
-  } else if (colHeader === 'Word' && colData.scores?.swr?.standard) {
-    toolTip += getFlags(getIndexTask(colData, 'swr'), colData);
-    toolTip += colData.scores?.swr?.support_level + '\n' + '\n';
-    toolTip += 'Percentile: ' + colData.scores?.swr?.percentile + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.swr?.raw + '\n';
-    toolTip += 'Standardized Score: ' + colData.scores?.swr?.standard + '\n';
-  } else if (colHeader === 'Sentence' && colData.scores?.sre?.standard) {
-    toolTip += getFlags(getIndexTask(colData, 'sre'), colData);
-    toolTip += colData.scores?.sre?.support_level + '\n' + '\n';
-    toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
-    toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
-  } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
-    toolTip += getFlags(getIndexTask(colData, 'letter'), colData);
-    toolTip += colData.scores?.letter?.support_level;
-    if (colData.scores?.letter?.raw) {
-      toolTip += '\n' + '\n' + 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
-    }
-  } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
-    toolTip += getFlags(getIndexTask(colData, 'swr-es'), colData);
-    toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
-    toolTip += 'Percentile: ' + colData.scores?.['swr-es']?.percentile + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.['swr-es']?.raw + '\n';
-    toolTip += 'Standardized Score: ' + colData.scores?.['swr-es']?.standard + '\n';
-  } else if (taskId && !scoredTasks.includes(taskId)) {
-    if (colData.scores?.[taskId]?.support_level === 'Optional') {
-      toolTip += colData.scores[taskId].support_level + '\n\n';
-    }
-    toolTip += 'These scores are under development.';
-  }
-  return toolTip;
+  return handleToolTip(taskId, toolTip, colHeader, colData);
+  // if (colHeader === 'Phoneme' && colData.scores?.pa?.support_level) {
+  //   return handleToolTip('pa', toolTip, colData)
+  // } else if (colHeader === 'Word' && colData.scores?.swr.support_level) {
+  //   return handleToolTip('swr', toolTip, colData)
+  // } else if (colHeader === 'Sentence' && colData.scores?.sre?.support_level) {
+  //   return handleToolTip('sre', toolTip, colData)
+  // } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
+  //   return handleToolTip('letter', toolTip, colData)
+  // } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
+  //   return handleToolTip('swr-es', toolTip, colData)
+  // } else if (taskId && !scoredTasks.includes(taskId)) {
+  //   return handleToolTip(taskId, toolTip, colData)
+  // }
+  // else {
+  //   return toolTip;
+  // }
 };
 
 const computedData = computed(() => {

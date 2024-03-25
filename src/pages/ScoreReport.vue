@@ -969,6 +969,7 @@ const columns = computed(() => {
     });
     for (const taskId of sortedTasks) {
       let colField;
+      const isOptional = `scores.${taskId}.optional`;
       // Color needs to include a field to allow sorting.
       if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
       if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`;
@@ -979,7 +980,8 @@ const columns = computed(() => {
         dataType: 'score',
         sort: false,
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
-        emptyTag: viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
+        emptyTag:
+          viewMode.value === 'color' || isOptional || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
         tagColor: `scores.${taskId}.color`,
         tagOutlined: shouldBeOutlined(taskId),
       });
@@ -1045,6 +1047,7 @@ const tableData = computed(() => {
         raw: rawScore,
         support_level,
         color: color,
+        optional: assessment.optional,
       };
     }
     // If this is a district score report, grab school information
