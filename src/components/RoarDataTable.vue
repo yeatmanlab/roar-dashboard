@@ -121,7 +121,6 @@
               </div>
             </template>
             <template #body="{ data: colData }">
-              {{ _get(colData, 'optional') }}
               <div
                 v-if="col.tag && (_get(colData, col.field) !== undefined || _get(colData, 'optional'))"
                 v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
@@ -445,18 +444,19 @@ let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DAT
 dateFields = _map(dateFields, (col) => col.field);
 
 let toolTipByHeader = (header) => {
-  if (header === 'Word') {
-    return 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900';
-  } else if (header === 'Letter Names and Sounds') {
-    return 'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90';
-  } else if (header === 'Phoneme') {
-    return 'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57';
-  } else if (header === 'Sentence') {
-    return 'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ';
-  } else if (header === 'Palabra') {
-    return 'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900';
-  }
-  return '';
+  const headerToTooltipMap = {
+    Word: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    'Letter Names and Sounds':
+      'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90',
+    Phoneme:
+      'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
+    Sentence:
+      'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ',
+    Palabra:
+      'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+  };
+
+  return headerToTooltipMap[header] || '';
 };
 
 function getIndexTask(colData, task) {
@@ -467,63 +467,70 @@ function getIndexTask(colData, task) {
   }
 }
 
-function getFlags(index, ColData) {
-  const flags = ColData.assignment.assessments[index].engagementFlags;
-  if (flags !== undefined && flags !== '' && !ColData.assignment.assessments[index].reliable) {
+function getFlags(index, colData) {
+  const flags = colData.assignment.assessments[index].engagementFlags;
+  const flagMessages = {
+    accuracyTooLow: '- Responses were inaccurate',
+    notEnoughResponses: '- Assessment was incomplete',
+    responseTimeTooFast: '- Responses were too fast',
+  };
+
+  // If there are flags and the assessment is not reliable, return the flags
+  if (flags && !colData.assignment.assessments[index].reliable) {
     const reliabilityFlags = Object.keys(flags).map((flag) => {
-      switch (flag) {
-        case 'notEnoughResponses':
-          return 'Assessment was incomplete';
-        case 'responseTimeTooFast':
-          return 'Responses were too fast';
-        default:
-          return _lowerCase(flag);
-      }
+      return flagMessages[flag] || _lowerCase(flag);
     });
-    return reliabilityFlags + '\n\n';
+    // Join the returned flags with a newline character, then add two newlines for spacing
+    return reliabilityFlags.join('\n') + '\n\n';
   } else {
     return '';
   }
 }
 
-function handleToolTip(_taskId, _toolTip, _colHeader, _colData) {
-  if (_colHeader === _taskId && _colData.scores?.[_taskId]?.support_level) {
-    _toolTip += getFlags(getIndexTask(_colData, _taskId), _colData);
-    _toolTip += _colData.scores?.[_taskId]?.support_level + '\n' + '\n';
-    if (!_colData.scores?.[_taskId]?.raw) {
-      _toolTip += 'Awaiting scores';
-    } else {
-      _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
-      _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-      _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standard + '\n';
-    }
-    if (rawOnlyTasks.includes(_taskId)) {
-      _toolTip += 'These scores are under development';
-    }
-    return _toolTip;
+function handleToolTip(_taskId, _toolTip, _colData) {
+  // Get the support level and flags, if they exist
+  _toolTip += _colData.scores?.[_taskId]?.support_level + '\n' + '\n';
+  _toolTip += getFlags(getIndexTask(_colData, _taskId), _colData);
+
+  // If the task does not have a raw score, then display no scores
+  if (!_colData.scores?.[_taskId]?.raw) {
+    _toolTip += 'Awaiting scores';
   }
+  // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
+  else if (rawOnlyTasks.includes(_taskId)) {
+    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n' + '\n';
+    _toolTip += 'These scores are under development';
+  }
+  // If the task is a scored task and has a raw score, then display all scores
+  else {
+    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
+    _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
+    _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standard + '\n';
+  }
+  return _toolTip;
 }
 
 let returnScoreTooltip = (colHeader, colData, fieldPath) => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
   let toolTip = '';
-  return handleToolTip(taskId, toolTip, colHeader, colData);
-  // if (colHeader === 'Phoneme' && colData.scores?.pa?.support_level) {
-  //   return handleToolTip('pa', toolTip, colData)
-  // } else if (colHeader === 'Word' && colData.scores?.swr.support_level) {
-  //   return handleToolTip('swr', toolTip, colData)
-  // } else if (colHeader === 'Sentence' && colData.scores?.sre?.support_level) {
-  //   return handleToolTip('sre', toolTip, colData)
-  // } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
-  //   return handleToolTip('letter', toolTip, colData)
-  // } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
-  //   return handleToolTip('swr-es', toolTip, colData)
-  // } else if (taskId && !scoredTasks.includes(taskId)) {
-  //   return handleToolTip(taskId, toolTip, colData)
-  // }
-  // else {
-  //   return toolTip;
-  // }
+
+  const headerToTaskIdMap = {
+    Phoneme: 'pa',
+    Word: 'swr',
+    Sentence: 'sre',
+    'Letter Names and Sounds': 'letter',
+    Palabra: 'swr-es',
+  };
+
+  const selectedTaskId = headerToTaskIdMap[colHeader];
+  if (selectedTaskId && colData.scores?.[selectedTaskId]?.support_level) {
+    // Handle scored tasks
+    return handleToolTip(selectedTaskId, toolTip, colData);
+    // Handle raw only tasks
+  } else if (taskId && !scoredTasks.includes(taskId)) {
+    return handleToolTip(taskId, toolTip, colData);
+  }
+  return toolTip;
 };
 
 const computedData = computed(() => {
