@@ -73,9 +73,10 @@
     </div>
     <div id="individual-report-cards" class="individual-report-wrapper gap-4">
       <individual-score-report-task
+        v-if="taskData?.length"
         :student-data="studentData"
         :task-data="taskData"
-        :raw-task-data="rawTaskData"
+        :raw-task-data="taskData"
         :expanded="expanded"
       />
     </div>
@@ -84,7 +85,7 @@
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
             <img src="../assets/support-distribution.svg" class="w-10" />
-            <div class="text-xl font-bold">The ROAR assessements return 3 kinds of scores:</div>
+            <div class="text-xl font-bold">The ROAR assessments return 3 kinds of scores:</div>
             <ul>
               <li>
                 <b>Raw Score: </b>A score that captures your students' general performance on the assessment, such as
@@ -146,6 +147,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
 });
 
 const initialized = ref(false);
@@ -159,28 +168,15 @@ const { data: studentData } = useQuery({
 });
 
 const { data: taskData } = useQuery({
-  queryKey: ['runs', props.administrationId, props.userId],
+  queryKey: ['runs', props.administrationId, props.userId, props.orgType, props.orgId],
   queryFn: () =>
     runPageFetcher({
       administrationId: props.administrationId,
+      orgType: props.orgType,
+      orgId: props.orgId,
       userId: props.userId,
       select: ['scores.computed.composite', 'taskId'],
       scoreKey: 'scores.computed.composite',
-      paginate: false,
-    }),
-  enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
-});
-
-const { data: rawTaskData } = useQuery({
-  queryKey: ['runs', props.administrationId, props.userId],
-  queryFn: () =>
-    runPageFetcher({
-      administrationId: props.administrationId,
-      userId: props.userId,
-      select: ['scores.computed', 'taskId'],
-      scoreKey: 'scores.computed',
       paginate: false,
     }),
   enabled: initialized,
@@ -240,7 +236,7 @@ const tasks = computed(() => taskData?.value?.map((assignment) => assignment.tas
 const formattedTasks = computed(() => {
   return (
     // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-    tasks?.value
+    (tasks?.value ?? [])
       .sort((a, b) => {
         if (Object.keys(taskDisplayNames).includes(a) && Object.keys(taskDisplayNames).includes(b)) {
           return taskDisplayNames[a].order - taskDisplayNames[b].order;

@@ -122,6 +122,10 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration, sort = 'desce
     .click();
 });
 
+Cypress.Commands.add('switchToOptionalAssessments', () => {
+  cy.get("[data-cy='switch-show-optional-assessments']").click();
+});
+
 Cypress.Commands.add('inputOrgDetails', (orgName, orgInitials, orgNcesId, orgAddress, orgGrade, orgTag) => {
   // Require orgName and orgInitials
   cy.get('[data-cy="input-org-name"]').type(orgName);
@@ -162,6 +166,12 @@ Cypress.Commands.add('checkUserList', (userList) => {
         const cellText = cell.text();
         expect(userList).to.include(cellText);
       });
+  });
+});
+
+Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
+  return cy.wrap(null).then(() => {
+    return game?.testSpec(administration, optional);
   });
 });
 

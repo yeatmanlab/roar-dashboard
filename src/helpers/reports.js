@@ -8,55 +8,92 @@ import html2canvas from 'html2canvas';
  */
 export const taskDisplayNames = {
   letter: {
-    name: 'Letter Names and Sounds',
-    extendedTitle: 'ROAR - Letter Names and Sounds',
+    name: 'Letter',
+    extendedTitle: 'ROAR - Letter',
     extendedName: 'Letter Names and Sounds',
     order: 1,
   },
-  pa: { name: 'Phoneme', extendedTitle: 'ROAR - Phoneme', extendedName: 'Phonological Awareness', order: 2 },
-  swr: { name: 'Word', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 3 },
-  'swr-es': { name: 'Palabra', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 4 },
-  sre: { name: 'Sentence', extendedTitle: 'ROAR - Sentence', extendedName: 'Sentence Reading Efficiency', order: 5 },
+  'letter-es': {
+    name: 'Letra',
+    extendedTitle: 'ROAR - Letra',
+    extendedName: 'Letter Names and Sounds',
+    order: 2,
+  },
+  pa: { name: 'Phoneme', extendedTitle: 'ROAR - Phoneme', extendedName: 'Phonological Awareness', order: 3 },
+  swr: { name: 'Word', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 4 },
+  'swr-es': { name: 'Palabra', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 5 },
+  sre: { name: 'Sentence', extendedTitle: 'ROAR - Sentence', extendedName: 'Sentence Reading Efficiency', order: 6 },
+  'sre-es': { name: 'Frase', extendedTitle: 'ROAR - Frase', extendedName: 'Sentence Reading Efficiency', order: 7 },
   morphology: {
     name: 'Morphology',
     extendedTitle: 'ROAR - Morphology',
     extendedName: 'Morphological Awareness',
-    order: 6,
+    order: 8,
   },
   cva: {
     name: 'Written-Vocab',
     extendedTitle: 'ROAR - Written Vocabulary',
     extendedName: 'Written Vocabulary',
-    order: 7,
+    order: 9,
   },
   multichoice: {
     name: 'Multichoice',
     extendedTitle: 'ROAR - Multichoice',
     extendedName: 'Multiple Choice Vocabulary',
-    order: 8,
+    order: 10,
   },
-  fluency: { name: 'Fluency', extendedTitle: 'ROAM - Fluency', extendedName: 'Math Fluency', order: 9 },
-  syntax: { name: 'Syntax', extendedTitle: 'ROAR - Syntax', extendedName: 'Syntax', order: 10 },
-  phonics: { name: 'Phonics', extendedTitle: 'ROAR - Phonics', extendedName: 'Phonics', order: 11 },
+  vocab: {
+    name: 'Vocabulary',
+    extendedTitle: 'ROAR - Vocabulary',
+    extendedName: 'Vocabulary',
+    order: 11,
+  },
+  fluency: { name: 'Fluency', extendedTitle: 'ROAM - Fluency', extendedName: 'Math Fluency', order: 12 },
+  'fluency-arf': {
+    name: 'Single Digit Fluency',
+    extendedTitle: 'ROAM - Single Digit',
+    extendedName: 'Math Fluency - Single Digit',
+    order: 13,
+  },
+  'fluency-arf-es': {
+    name: 'Un Dígito',
+    extendedTitle: 'ROAM - Un Dígito',
+    extendedName: 'Math Fluency - Single Digit',
+    order: 14,
+  },
+  'fluency-calf': {
+    name: 'Multi Digit Fluency',
+    extendedTitle: 'ROAM - Multi Digit',
+    extendedName: 'Math Fluency - Multi Digit',
+    order: 15,
+  },
+  'fluency-calf-es': {
+    name: 'Varios Dígitos',
+    extendedTitle: 'ROAM - Varios Dígitos',
+    extendedName: 'Math Fluency - Multi Digit',
+    order: 16,
+  },
+  syntax: { name: 'Syntax', extendedTitle: 'ROAR - Syntax', extendedName: 'Syntax', order: 17 },
+  phonics: { name: 'Phonics', extendedTitle: 'ROAR - Phonics', extendedName: 'Phonics', order: 18 },
   comp: {
     name: 'Comprehension',
     extendedTitle: 'ROAR - Comprehension',
     extendedName: 'Reading Comprehension',
-    order: 12,
+    order: 19,
   },
-  mep: { name: 'MEP', extendedTitle: 'ROAR - MEP', extendedName: 'MEP', order: 12 },
-  'mep-pseudo': { name: 'MEP-Pseudo', extendedTitle: 'ROAR - MEP Pseudo', extendedName: 'MEP-Pseudo', order: 12 },
+  mep: { name: 'MEP', extendedTitle: 'ROAR - MEP', extendedName: 'MEP', order: 20 },
+  'mep-pseudo': { name: 'MEP-Pseudo', extendedTitle: 'ROAR - MEP Pseudo', extendedName: 'MEP-Pseudo', order: 21 },
   ExternalTask: {
     name: 'External Task',
     extendedTitle: 'ROAR - External Task',
     extendedName: 'External Task',
-    order: 13,
+    order: 22,
   },
   ExternalTest: {
     name: 'External Test',
     extendedTitle: 'ROAR- External Test',
     extendedName: 'External Test',
-    order: 13,
+    order: 23,
   },
 };
 
@@ -216,12 +253,51 @@ export const getRawScoreThreshold = (taskId) => {
   return null;
 };
 
+export const getRawScoreRange = (taskId) => {
+  if (taskId.includes('swr')) {
+    return {
+      min: 100,
+      max: 900,
+    };
+  } else if (taskId.includes('letter')) {
+    return {
+      min: 0,
+      max: 90,
+    };
+  } else if (taskId.includes('pa')) {
+    return {
+      min: 0,
+      max: 57,
+    };
+  } else if (taskId.includes('sre')) {
+    return {
+      min: 0,
+      max: 130,
+    };
+  } else if (taskId.includes('morphology')) {
+    return {
+      min: 0,
+      max: 130,
+    };
+  } else if (taskId.includes('cva')) {
+    return {
+      min: 0,
+      max: 130,
+    };
+  }
+  return null;
+};
+
 export const taskInfoById = {
   swr: {
     color: '#E97A49',
     header: 'ROAR-WORD',
     subheader: 'Single Word Recognition',
-    desc: "ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between 100-900 and can be viewed by selecting 'Raw Score' on the table above. <br/><br/> Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below 75% of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. <br/><br/> Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. <br/><br/> Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.",
+    desc: `ROAR - Word evaluates a student's ability to quickly and automatically recognize individual words. To read fluently, students must master fundamental skills of decoding and automaticity. This test measures a student's ability to detect real and made-up words, which can then translate to a student's reading levels and need for support. The student's score will range between ${
+      getRawScoreRange('swr').min
+    }-${
+      getRawScoreRange('swr').max
+    } and can be viewed by selecting 'Raw Score' on the table above. <br/><br/> Students in the pink category need support in word-level decoding. For these students, decoding difficulties are likely the bottleneck for growth in reading fluency and comprehension. Students in grades K-5 in the pink category have word-level decoding skills below 75% of their peers, nationally. Students in grades 6-12 in the pink category have word-level decoding skills below a third-grade level. <br/><br/> Students in the yellow category are still developing their decoding skills and will likely benefit from further practice and/or support in foundational reading skills. <br/><br/> Students in the green category demonstrate that word-level decoding is not holding them back from developing fluency and comprehension of connected text.`,
     definitions: [
       {
         header: 'WHAT IS DECODING',
@@ -237,7 +313,15 @@ export const taskInfoById = {
     header: 'ROAR-PHONEME',
     color: '#52627E',
     subheader: 'Phonological Awareness',
-    desc: "ROAR - Phoneme assesses a student's mastery of phonological awareness through elision and sound matching tasks. Research indicates that phonological awareness, as a foundational pre-reading skill, is crucial for achieving reading fluency. Without support for their foundational reading abilities, students may struggle to catch up in overall reading proficiency. The student's score will range between 0-57 and can be viewed by selecting 'Raw Score' on the table above.",
+    desc:
+      "ROAR - Phoneme assesses a student's mastery of phonological awareness " +
+      'through elision and sound matching tasks. Research indicates that ' +
+      'phonological awareness, as a foundational pre-reading skill, is crucial for ' +
+      'achieving reading fluency. Without support for their foundational reading ' +
+      'abilities, students may struggle to catch up in overall reading proficiency. ' +
+      "The student's score will range between " +
+      `${getRawScoreRange('pa').min}-${getRawScoreRange('pa').max} and can be ` +
+      "viewed by selecting 'Raw Score' on the table above.",
     definitions: [
       {
         header: 'What Does Elision Mean?',
@@ -253,7 +337,26 @@ export const taskInfoById = {
     header: 'ROAR-SENTENCE',
     color: '#92974C',
     subheader: 'SENTENCE READING EFFICIENCY',
-    desc: "ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort. The student's score will range between 0-130 and can be viewed by selecting 'Raw Score' on the table above. <br/><br/> Students in the pink category need support in sentence-reading efficiency to support growth in reading comprehension. Students in grades K-5 in the pink category have sentence-reading efficiency skills below 75% of their peers. Students in grades 6-12 in the pink category have sentence-reading efficiency skills below a third-grade level. <br/><br/> Students in the yellow category are still developing their sentence-reading efficiency skills and will benefit from focused reading practice. <br/><br/> Students in the green category demonstrate that sentence-reading efficiency is not a barrier in their reading.",
+    desc:
+      'ROAR - Sentence examines silent reading fluency and comprehension for ' +
+      'individual sentences. To become fluent readers, students need to decode ' +
+      'words accurately and read sentences smoothly. Poor fluency can make it ' +
+      "harder for students to understand what they're reading. Students who don't " +
+      'receive support for their basic reading skills may find it challenging to ' +
+      'improve their overall reading ability. This assessment is helpful for ' +
+      'identifying students who may struggle with reading comprehension due to ' +
+      'difficulties with decoding words accurately or reading slowly and with ' +
+      `effort. The student's score will range between ${getRawScoreRange('sre').min}-${getRawScoreRange('sre').max} ` +
+      "and can be viewed by selecting 'Raw Score' on the table above. < br />" +
+      '<br /> Students in the pink category need support in sentence-reading ' +
+      'efficiency to support growth in reading comprehension. Students in grades ' +
+      'K-5 in the pink category have sentence-reading efficiency skills below 75% ' +
+      'of their peers. Students in grades 6-12 in the pink category have ' +
+      'sentence-reading efficiency skills below a third-grade level. < br />' +
+      '<br /> Students in the yellow category are still developing their sentence' +
+      '-reading efficiency skills and will benefit from focused reading ' +
+      'practice. < br /> <br /> Students in the green category demonstrate that ' +
+      'sentence-reading efficiency is not a barrier in their reading.',
     definitions: [
       {
         header: 'WHAT IS FLUENCY?',
@@ -268,17 +371,50 @@ export const taskInfoById = {
   morph: {
     header: 'ROAR-MORPHOLOGY (WIP)',
     subheader: 'Single Word Recognition',
-    desc: "ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort. The student's score will range between 0-130 and can be viewed by selecting 'Raw Score' on the table above.",
+    desc:
+      'ROAR - Sentence examines silent reading fluency and comprehension for ' +
+      'individual sentences. To become fluent readers, students need to decode ' +
+      'words accurately and read sentences smoothly. Poor fluency can make it ' +
+      "harder for students to understand what they're reading. Students who don't " +
+      'receive support for their basic reading skills may find it challenging to ' +
+      'improve their overall reading ability. This assessment is helpful for ' +
+      'identifying students who may struggle with reading comprehension due to ' +
+      'difficulties with decoding words accurately or reading slowly and with ' +
+      `effort. The student's score will range between ${getRawScoreRange('morphology').min}-${
+        getRawScoreRange('morphology').max
+      } and can be viewed by ` +
+      "selecting 'Raw Score' on the table above.",
   },
   cva: {
     header: 'ROAR-CVA (WIP)',
     subheader: 'Single Word Recognition',
-    desc: "ROAR - Sentence examines silent reading fluency and comprehension for individual sentences. To become fluent readers, students need to decode words accurately and read sentences smoothly. Poor fluency can make it harder for students to understand what they're reading. Students who don't receive support for their basic reading skills may find it challenging to improve their overall reading ability. This assessment is helpful for identifying students who may struggle with reading comprehension due to difficulties with decoding words accurately or reading slowly and with effort. The student's score will range between 0-130 and can be viewed by selecting 'Raw Score' on the table above.",
+    desc:
+      'ROAR - Sentence examines silent reading fluency and comprehension for ' +
+      'individual sentences. To become fluent readers, students need to decode ' +
+      'words accurately and read sentences smoothly. Poor fluency can make it ' +
+      "harder for students to understand what they're reading. Students who don't " +
+      'receive support for their basic reading skills may find it challenging to ' +
+      'improve their overall reading ability. This assessment is helpful for ' +
+      'identifying students who may struggle with reading comprehension due to ' +
+      'difficulties with decoding words accurately or reading slowly and with ' +
+      `effort. The student's score will range between ${getRawScoreRange('cva').min}-${
+        getRawScoreRange('cva').max
+      } and can be viewed by ` +
+      "selecting 'Raw Score' on the table above.",
   },
   letter: {
     color: '#E19834',
     header: 'ROAR-LETTER NAMES AND SOUNDS',
-    subheader: 'Single Letter Recognition',
-    desc: 'ROAR-Letter Names and Sounds assesses a student’s knowledge of letter names and letter sounds. Knowing letter names supports the learning of letter sounds, and knowing letter sounds supports the learning of letter names. Initial knowledge of letter names and letter sounds on entry to kindergarten has been shown to predict success in learning to read. Learning the connection between letters and the sounds they represent is fundamental for learning to decode and spell words. This assessment provides educators with valuable insights to customize instruction and address any gaps in these foundational skills.',
+    subheader: 'Letter Names and Sounds',
+    desc:
+      "ROAR-Letter assesses a student's knowledge of letter " +
+      'names and letter sounds. Knowing letter names supports the learning of ' +
+      'letter sounds, and knowing letter sounds supports the learning of letter ' +
+      'names. Initial knowledge of letter names and letter sounds on entry to ' +
+      'kindergarten has been shown to predict success in learning to read. Learning ' +
+      'the connection between letters and the sounds they represent is fundamental ' +
+      'for learning to decode and spell words. This assessment provides educators ' +
+      'with valuable insights to customize instruction and address any gaps in ' +
+      'these foundational skills.',
   },
 };

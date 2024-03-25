@@ -25,6 +25,7 @@
     "title": "Consent"
   },
   "homeParticipant": {
+    "showOptionalAssignments": "Show optional assignments",
     "loadingAssignments": "Loading Assignments",
     "selectAssignment": "Select an assignment",
     "noAssignments": "You have no assignments!",

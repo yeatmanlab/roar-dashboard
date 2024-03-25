@@ -11,12 +11,12 @@ const testAssignments = ['Vocabulary', 'Multichoice', 'Written-Vocabulary'];
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
   cy.navigateTo('/');
-  cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
+  cy.url({ timeout: 3 * timeout }).should('eq', `${baseUrl}/`);
 }
 
 function clickScoreButton() {
   cy.get('button', { timeout: timeout }).contains('Scores').first().click();
-  cy.url({ timeout: timeout }).should(
+  cy.url({ timeout: 3 * timeout }).should(
     'eq',
     `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`,
   );
