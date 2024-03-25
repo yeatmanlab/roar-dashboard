@@ -855,6 +855,7 @@ const exportAll = async () => {
     }
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
+      const isOptional = assessment.optional;
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
@@ -866,6 +867,7 @@ const exportAll = async () => {
         percentileScoreDisplayKey,
         rawScoreKey,
         taskId,
+        isOptional,
       });
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
