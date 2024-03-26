@@ -893,7 +893,10 @@ export const assignmentPageFetcher = async (
             const assignmentDoc = _find(scoredAssignments, { userId: userId });
             const userDoc = _find(batchUserDocs, { userId: userId });
             return {
-              user: userDoc.data,
+              user: {
+                ...userDoc.data,
+                userId: userDoc.userId,
+              },
               assignment: assignmentDoc.data,
             };
           } else {
