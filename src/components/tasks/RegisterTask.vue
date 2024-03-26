@@ -125,11 +125,17 @@
 
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
-              <div class="flex justify-content-between">
+              <div class="flex justify-content-between align-items-center">
                 <label for="variant-fields">Select an Existing Task (Task ID) <span class="required">*</span></label>
-                <div class="flex gap-2">
-                  <label class="ml-7" for="chbx">Search registered tasks only?</label>
-                  <PvCheckbox v-model="registeredTasksOnly" input-id="chbx" :binary="true" />
+                <div class="flex flex-column gap-2 align-items-end">
+                  <div class="flex flex-row align-items-center justify-content-end gap-2">
+                    <label class="ml-7" for="chbx-registeredTask">Search registered tasks only?</label>
+                    <PvCheckbox v-model="registeredTasksOnly" input-id="chbx-registeredTask" :binary="true" />
+                  </div>
+                  <div class="flex flex-row align-items-center justify-content-end gap-2">
+                    <label class="ml-7" for="chbx-externalTask">Is this an external task?</label>
+                    <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
+                  </div>
                 </div>
               </div>
               <PvDropdown
@@ -224,6 +230,7 @@ import { taskFetcher } from '@/helpers/query/tasks';
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
+const isExternalTask = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -347,6 +354,8 @@ const handleVariantSubmit = async (isFormValid) => {
     return;
   }
 
+  const convertedParams = convertParamsToObj(variantParams);
+
   // Write variant to Db
   try {
     await authStore.roarfirekit.registerTaskVariant({
@@ -354,11 +363,10 @@ const handleVariantSubmit = async (isFormValid) => {
       taskDescription: variantFields.selectedGame.description,
       taskImage: variantFields.selectedGame.image,
       variantName: variantFields.variantName,
-      // variantDescription,
-      variantParams: {
-        ...convertParamsToObj(variantParams),
-        variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams),
-      },
+      // If this is an external task, build the game variant url with the variant params and append to variant params object for use in game standalone mode
+      variantParams: isExternalTask.value
+        ? { ...convertedParams, variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams) }
+        : convertedParams,
     });
 
     toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully created.', life: 3000 });
