@@ -9,6 +9,10 @@
           <!-- Task name -->
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
+              <div class="flex flex-row align-items-center justify-content-end gap-2">
+                <label class="ml-7" for="chbx-externalTask">Is this an external task?</label>
+                <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
+              </div>
               <div class="p-input-icon-right">
                 <label for="taskName">Task Name <span class="required">*</span></label>
                 <PvInputText
@@ -49,7 +53,7 @@
             </section>
             <!--Task URL-->
             <section class="form-section">
-              <div>
+              <div v-if="isExternalTask">
                 <label for="taskURL">Task URL <span class="required">*</span></label>
                 <PvInputText
                   v-model="t$.taskURL.$model"
@@ -128,11 +132,11 @@
               <div class="flex justify-content-between align-items-center">
                 <label for="variant-fields">Select an Existing Task (Task ID) <span class="required">*</span></label>
                 <div class="flex flex-column gap-2 align-items-end">
-                  <div class="flex flex-row align-items-center justify-content-end gap-2">
+                  <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
                     <label class="ml-7" for="chbx-registeredTask">Search registered tasks only?</label>
                     <PvCheckbox v-model="registeredTasksOnly" input-id="chbx-registeredTask" :binary="true" />
                   </div>
-                  <div class="flex flex-row align-items-center justify-content-end gap-2">
+                  <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-0">
                     <label class="ml-7" for="chbx-externalTask">Is this an external task?</label>
                     <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
                   </div>
@@ -218,8 +222,8 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue';
-import { required, url } from '@vuelidate/validators';
+import { reactive, ref, onMounted, computed } from 'vue';
+import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -266,9 +270,13 @@ const taskFields = reactive({
   external: true,
 });
 
+const isExternal = computed(() => {
+  return isExternalTask.value;
+});
+
 const taskRules = {
   taskName: { required },
-  taskURL: { required, url },
+  taskURL: { required: requiredIf(isExternal), url },
   taskId: { required },
 };
 
@@ -328,19 +336,21 @@ const handleNewTaskSubmit = async (isFormValid) => {
     return;
   }
 
+  let newTaskObject = reactive({
+    taskId: taskFields.taskId,
+    taskName: taskFields.taskName,
+    taskDescription: taskFields.description,
+    taskImage: taskFields.coverImage,
+    variantParams: convertParamsToObj(taskParams),
+  });
+
+  if (isExternalTask.value) {
+    newTaskObject.taskURL = buildTaskURL(taskFields.taskURL, taskParams);
+  }
+
   // Write task variant to DB
   try {
-    await authStore.roarfirekit.registerTaskVariant({
-      taskId: taskFields.taskId,
-      taskName: taskFields.taskName,
-      taskDescription: taskFields.description,
-      taskImage: taskFields.coverImage,
-      taskURL: buildTaskURL(taskFields.taskURL, taskParams),
-      // variantName,
-      // variantDescription,
-      variantParams: convertParamsToObj(taskParams),
-    });
-
+    await authStore.roarfirekit.registerTaskVariant({ ...newTaskObject });
     created.value = true;
   } catch (error) {
     console.error(error);
