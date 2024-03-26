@@ -73,9 +73,10 @@
     </div>
     <div id="individual-report-cards" class="individual-report-wrapper gap-4">
       <individual-score-report-task
+        v-if="taskData?.length"
         :student-data="studentData"
         :task-data="taskData"
-        :raw-task-data="rawTaskData"
+        :raw-task-data="taskData"
         :expanded="expanded"
       />
     </div>
@@ -120,7 +121,7 @@
 </template>
 
 <script setup>
-import { fetchDocById } from '../helpers/query/utils';
+import { fetchDocById, fetchSubcollection } from '../helpers/query/utils';
 import { runPageFetcher } from '../helpers/query/runs';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -146,6 +147,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
 });
 
 const initialized = ref(false);
@@ -158,29 +167,24 @@ const { data: studentData } = useQuery({
   staleTime: 5 * 60 * 1000,
 });
 
-const { data: taskData } = useQuery({
-  queryKey: ['runs', props.administrationId, props.userId],
-  queryFn: () =>
-    runPageFetcher({
-      administrationId: props.administrationId,
-      userId: props.userId,
-      select: ['scores.computed.composite', 'taskId'],
-      scoreKey: 'scores.computed.composite',
-      paginate: false,
-    }),
+const { data: assignmentData } = useQuery({
+  queryKey: ['assignments', props.userId],
+  queryFn: () => fetchSubcollection(`users/${props.userId}`, 'assignments'),
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
 });
 
-const { data: rawTaskData } = useQuery({
-  queryKey: ['runs', props.administrationId, props.userId],
+const { data: taskData } = useQuery({
+  queryKey: ['runs', props.administrationId, props.userId, props.orgType, props.orgId],
   queryFn: () =>
     runPageFetcher({
       administrationId: props.administrationId,
+      orgType: props.orgType,
+      orgId: props.orgId,
       userId: props.userId,
-      select: ['scores.computed', 'taskId'],
-      scoreKey: 'scores.computed',
+      select: ['scores.computed.composite', 'taskId'],
+      scoreKey: 'scores.computed.composite',
       paginate: false,
     }),
   enabled: initialized,
@@ -235,9 +239,13 @@ const exportToPdf = async () => {
     (exportLoading.value = false);
 };
 
-const optionalAssessments = computed(() =>
-  administrationData.value.assessments.filter((assessment) => assessment.optional),
+const currentAssessment = computed(() =>
+  assignmentData.value.filter((assignment) => assignment.id === props.administrationId),
 );
+
+const optionalAssessments = computed(() => {
+  return currentAssessment.value[0].assessments.filter((assessment) => assessment.optional);
+});
 
 // Calling the query client to update the cached taskData with the new optional tasks
 const queryClient = useQueryClient();
@@ -245,10 +253,11 @@ const queryClient = useQueryClient();
 const updateTaskData = () => {
   const updatedTasks = taskData.value.map((task) => {
     const isOptional = optionalAssessments.value.some((assessment) => assessment.taskId === task.taskId);
+    console.log(task.taskId, isOptional);
     return isOptional ? { ...task, optional: true } : task;
   });
 
-  queryClient.setQueryData(['runs', props.administrationId, props.userId], updatedTasks);
+  queryClient.setQueryData(['runs', props.administrationId, props.userId, props.orgType, props.orgId], updatedTasks);
 };
 
 // Watch for changes in taskData and update the taskData with the new optional tasks
@@ -265,7 +274,7 @@ const tasks = computed(() => taskData?.value?.map((assignment) => assignment.tas
 const formattedTasks = computed(() => {
   return (
     // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-    tasks?.value
+    (tasks?.value ?? [])
       .sort((a, b) => {
         if (Object.keys(taskDisplayNames).includes(a) && Object.keys(taskDisplayNames).includes(b)) {
           return taskDisplayNames[a].order - taskDisplayNames[b].order;

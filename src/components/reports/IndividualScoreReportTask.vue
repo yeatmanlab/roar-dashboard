@@ -1,5 +1,5 @@
 <template>
-  <div v-for="task in computedTaskData" :key="task">
+  <div v-for="task in computedTaskData" :key="task" class="align-self-start">
     <div
       v-if="rawOnlyTasks.includes(task.taskId) && isNaN(getRawScore(task.taskId))"
       class="error flex flex-column md:flex-row align-items-center m-auto p-4 w-5"
@@ -20,54 +20,69 @@
     </div>
 
     <div v-else class="flex flex-column align-items-center mb-1 p-1 score-card">
-      <div v-if="grade < 6" class="flex flex-column md:flex-row align-items-center">
+      <div class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
           <div class="m-2">Status: {{ getStatus(task) }}</div>
           <div class="text-xs uppercase font-thin mb-2 text-gray-400">
-            <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Percentile Score</div>
+            <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">
+              {{ grade < 6 ? 'Percentile Score' : 'Standard Score' }}
+            </div>
             <div v-else class="scoring-type">Raw Score</div>
           </div>
           <PvKnob
             v-if="rawOnlyTasks.includes(task.taskId)"
             :model-value="getRawScore(task.taskId)"
-            size="160"
+            :size="160"
             value-color="gray"
             range-color="gray"
           />
           <PvKnob
-            v-else
+            v-else-if="grade < 6"
             :value-template="getPercentileSuffix(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))"
             :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
-            size="160"
-            :value-color="getColorByPercentile(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
+            :size="160"
+            :value-color="
+              getSupportLevel(
+                grade,
+                task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+                getRawScore(task.taskId),
+                task.taskId,
+              ).tag_color
+            "
           />
-        </div>
-      </div>
-
-      <div v-else class="flex flex-column md:flex-row align-items-center">
-        <div class="flex flex-column justify-content-center align-items-center mt-2">
-          <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
-          <div class="m-2">Status: {{ getStatus(task) }}</div>
-          <div class="text-xs uppercase font-thin mb-2 text-gray-400">
-            <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Standard Score</div>
-            <div v-else class="scoring-type">Raw Score</div>
+          <div v-else class="flex flex-column md:flex-row align-items-center">
+            <div class="flex flex-column justify-content-center align-items-center mt-2">
+              <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
+              <div class="m-2">Status: {{ getStatus(task) }}</div>
+              <div class="text-xs uppercase font-thin mb-2 text-gray-400">
+                <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Standard Score</div>
+                <div v-else class="scoring-type">Raw Score</div>
+              </div>
+              <PvKnob
+                v-if="rawOnlyTasks.includes(task.taskId)"
+                :model-value="getRawScore(task.taskId)"
+                size="160"
+                value-color="gray"
+                range-color="gray"
+              />
+              <PvKnob
+                v-else
+                :model-value="Math.round(task.scores?.sprStandardScore)"
+                :size="160"
+                :value-color="
+                  getSupportLevel(
+                    grade,
+                    task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+                    getRawScore(task.taskId),
+                    task.taskId,
+                  ).tag_color
+                "
+                :min="0"
+                :max="153"
+              />
+            </div>
           </div>
-          <PvKnob
-            v-if="rawOnlyTasks.includes(task.taskId)"
-            :model-value="getRawScore(task.taskId)"
-            size="160"
-            value-color="gray"
-            range-color="gray"
-          />
-          <PvKnob
-            v-else
-            :model-value="Math.round(task.scores?.sprStandardScore)"
-            size="160"
-            :value-color="getColorByPercentile(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
-            :min="0"
-            :max="153"
-          />
         </div>
       </div>
 
@@ -86,26 +101,41 @@
           percentile</strong
         >, which indicates they
         <strong :style="{ color: supportColor }">{{
-          getSupportLevel(task.scores?.[getPercentileScoreKey(task.taskId, grade)])
+          getSupportLevelLanguage(
+            grade,
+            task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+            getRawScore(task.taskId),
+            task.taskId,
+          )
         }}</strong>
-        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
+        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
       </div>
+
       <div v-else class="px-4 py-2 score-description">
         {{ studentFirstName }} scored a standard score of
-        <strong>{{ Math.round(task.scores?.sprStandardScore) }}</strong>
-        which indicates they
+        <strong>{{ Math.round(task.scores?.sprStandardScore) }}</strong
+        >, which indicates they
         <strong :style="{ color: supportColor }">{{
-          getSupportLevel(task.scores?.[getPercentileScoreKey(task.taskId, grade)])
+          getSupportLevelLanguage(
+            grade,
+            task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+            getRawScore(task.taskId),
+            task.taskId,
+          )
         }}</strong>
-        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
+        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
       </div>
+
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
-            <div v-for="[key, value] in extractScoreNames(task.scores)" :key="key">
-              <div class="flex flex-column align-items-center">
-                <div>
-                  <b>{{ key }}:</b> {{ value }}
+            <div v-for="[key, rawScore, rangeMin, rangeMax] in extractScoreNames(task.scores, task.taskId)" :key="key">
+              <div class="flex justify-content-between">
+                <div class="mr-2">
+                  <b>{{ key }}</b> <span class="text-500">({{ rangeMin }}-{{ rangeMax }})</span>:
+                </div>
+                <div class="ml-2">
+                  <b>{{ rawScore }}</b>
                 </div>
               </div>
             </div>
@@ -119,7 +149,13 @@
 <script setup>
 import { computed } from 'vue';
 import { getGrade } from '@bdelab/roar-utils';
-import { rawOnlyTasks, taskDisplayNames, extendedDescriptions } from '@/helpers/reports';
+import {
+  rawOnlyTasks,
+  taskDisplayNames,
+  extendedDescriptions,
+  getSupportLevel,
+  getRawScoreRange,
+} from '@/helpers/reports';
 
 const props = defineProps({
   studentData: {
@@ -153,7 +189,6 @@ const computedTaskData = computed(() => {
     ?.filter((task) => task.scores != undefined)
     .sort((a, b) => {
       if (Object.keys(taskDisplayNames).includes(a.taskId) && Object.keys(taskDisplayNames).includes(b.taskId)) {
-        console.log(a, b);
         return taskDisplayNames[a.taskId].order - taskDisplayNames[b.taskId].order;
       } else {
         return -1;
@@ -178,7 +213,7 @@ const formattedScoreAttributeMap = {
 };
 
 // Converts scores dictionary to array of human readable score names
-const extractScoreNames = (scores) => {
+const extractScoreNames = (scores, taskId) => {
   let formattedScores = {};
   for (const key in scores) {
     if (scores[key] != undefined && !isNaN(scores[key])) {
@@ -190,30 +225,29 @@ const extractScoreNames = (scores) => {
   }
 
   const formattedScoresArray = Object.keys(formattedScores).map((key) => {
-    return [key, formattedScores[key]];
+    let minScore, maxScore;
+    if (key === 'Percentile Score') {
+      minScore = 0;
+      maxScore = 99;
+    } else if (key === 'Standard Score') {
+      minScore = 0;
+      maxScore = 180;
+    } else if (key === 'Raw Score') {
+      const scoreRange = getRawScoreRange(taskId);
+      minScore = scoreRange.min;
+      maxScore = scoreRange.max;
+    }
+    return [key, formattedScores[key], minScore, maxScore];
   });
 
   // Ensure scores are in consistent order
-  console.log(formattedScoresArray);
+  const order = { 'Raw Score': 2, 'Percentile Score': 1, 'Standard Score': 0 };
   return formattedScoresArray.sort((first, second) => {
-    return first[0].localeCompare(second[0]);
+    return order[first[0]] - order[second[0]];
   });
 };
 
 let supportColor = null;
-
-function getColorByPercentile(percentile) {
-  if (percentile !== undefined) {
-    if (percentile >= 50) {
-      return 'green';
-    } else if (percentile > 25 && percentile < 50) {
-      return 'rgb(237, 192, 55)';
-    } else {
-      return 'rgb(201, 61, 130)';
-    }
-  }
-  return;
-}
 
 const getPercentileScoreKey = (taskId, grade) => {
   if (taskId === 'swr' || taskId === 'swr-es') {
@@ -244,14 +278,15 @@ const getRawScore = (taskId) => {
   return task.scores;
 };
 
-function getSupportLevel(percentile) {
-  if (percentile !== undefined) {
-    if (percentile >= 50) {
-      return 'have achieved skill';
-    } else if (percentile > 25 && percentile < 50) {
-      return 'are developing this skill';
-    } else {
-      return 'need extra support';
+function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
+  const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
+  if (support_level) {
+    if (support_level === 'Achieved Skill') {
+      return 'have achieved the skill of';
+    } else if (support_level === 'Developing Skill') {
+      return 'are developing the skill of';
+    } else if (support_level === 'Needs Extra Support') {
+      return 'need extra support in';
     }
   }
 }

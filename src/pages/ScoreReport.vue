@@ -410,6 +410,9 @@ const handleExportToPdf = async () => {
 };
 
 // Queries for page
+// Boolean ref to keep track of whether this is the initial sort or a user-defined sort
+const initialSort = ref(true);
+
 const orderBy = ref([
   {
     direction: 'ASCENDING',
@@ -452,7 +455,7 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -567,8 +570,8 @@ const {
 
 // Scores count query
 const { data: scoresCount } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId, filterBy],
-  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value),
+  queryKey: ['assignments', props.administrationId, props.orgId, filterBy, orderBy],
+  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value, orderBy.value),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000,
@@ -609,6 +612,7 @@ const sortDisplay = computed(() => {
 
 const confirm = useConfirm();
 const onSort = (event) => {
+  initialSort.value = false;
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
     let field = item.field.replace('user', 'userData');
     // Due to differences in the document schemas,
@@ -670,6 +674,16 @@ watch(filterGrades, (newGrades) => {
     value: toRaw(newGrades),
   });
 });
+
+watch(
+  scoresCount,
+  (count) => {
+    if (initialSort.value && count === 0) {
+      resetFilters();
+    }
+  },
+  { immediate: true },
+);
 
 const onFilter = (event) => {
   // Turn off sort when filtering
@@ -1065,14 +1079,16 @@ const tableData = computed(() => {
       routeParams: {
         administrationId: props.administrationId,
         userId: _get(user, 'userId'),
+        orgType: props.orgType,
+        orgId: props.orgId,
       },
     };
   });
 });
 
 const allTasks = computed(() => {
-  if (tableData.value.length > 0) {
-    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
+  if (administrationInfo.value?.assessments?.length > 0) {
+    return administrationInfo.value?.assessments?.map((assessment) => assessment.taskId);
   } else return [];
 });
 
