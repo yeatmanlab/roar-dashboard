@@ -6,7 +6,7 @@ const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
 const testUserList = Cypress.env('testUserList');
-const testAssignments = ['Vocabulary', 'Multichoice', 'Written-Vocabulary'];
+const testAssignments = ['Vocabulary', 'Multichoice', 'Written-Vocab'];
 
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
