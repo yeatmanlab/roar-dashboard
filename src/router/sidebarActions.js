@@ -62,6 +62,12 @@ const sidebarActionOptions = [
     requiresAdmin: true,
     project: 'LEVANTE',
   },
+  {
+    title: 'Register New Family',
+    icon: 'pi pi-pencil',
+    buttonLink: { name: 'Register' },
+    requiresSuperAdmin: true,
+  },
 ];
 
 export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, includeHomeLink = true }) => {

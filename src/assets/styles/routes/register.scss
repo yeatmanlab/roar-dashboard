@@ -1,0 +1,78 @@
+body.page-register {
+  padding: 0;
+  max-width: 100vw;
+  min-height: 100vh;
+  background: var(--primary-color);
+}
+
+#register-container {
+  @extend #signin-container;
+
+  .register-title {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+}
+
+#register {
+  @extend #signin;
+
+  > div {
+    width: 100%;
+  }
+
+  form {
+    width: 100%;
+    padding-inline: 2rem;
+  }
+
+  .form-section {
+    margin-block: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 2rem;
+
+    label {
+      margin-block: 0.5rem;
+      display: inline-block;
+    }
+
+    > div {
+      width: calc(50% - 1rem);
+      margin-bottom: 0.5rem;
+
+      &:only-of-type {
+        width: 100%;
+      }
+    }
+
+    small {
+      width: 100%;
+    }
+  }
+
+  .form-submit {
+    margin-top: 2rem;
+  }
+}
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999; /* Ensure a higher z-index value than other elements */
+}
+
+.dialog-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  max-width: 80vw; /* Adjust the maximum width as needed */
+  text-align: center;
+}

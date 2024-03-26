@@ -60,6 +60,7 @@ import PvTag from 'primevue/tag';
 import PvToast from 'primevue/toast';
 import PvTreeTable from 'primevue/treetable';
 import PvTriStateCheckbox from 'primevue/tristatecheckbox';
+import PvSteps from 'primevue/steps';
 import PvImage from 'primevue/image';
 
 // PrimeVue directive imports
@@ -83,6 +84,7 @@ import 'primeflex/primeflex.scss'; // primeflex
 
 import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import './assets/styles/theme.scss'; // ROAR theme
+// import { VueRecaptchaPlugin } from 'vue-recaptcha';
 
 // translations
 import { i18n } from '@/translations/i18n.js';
@@ -94,7 +96,12 @@ const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
 
+// app.use(VueRecaptchaPlugin, {
+//   v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
+// });
+
 initSentry(app);
+
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
@@ -162,6 +169,8 @@ app.component('PvTreeTable', PvTreeTable);
 app.component('PvTriStateCheckbox', PvTriStateCheckbox);
 app.component('PvDataTable', PvDataTable);
 app.component('PvColumn', PvColumn);
+app.component('PvDialog', PvDialog);
+app.component('PvSteps', PvSteps);
 app.component('PvImage', PvImage);
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
