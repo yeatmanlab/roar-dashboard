@@ -162,7 +162,7 @@ const studentFirstName = computed(() => {
   return props.studentData.name.first;
 });
 
-const grade = computed(() => props.studentData?.studentData?.grade);
+const grade = computed(() => getGrade(props.studentData?.studentData?.grade));
 
 // Filters for non-null scores and sorts
 const computedTaskData = computed(() => {

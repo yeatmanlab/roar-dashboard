@@ -1,4 +1,5 @@
 import html2canvas from 'html2canvas';
+import { getGrade } from '@bdelab/roar-utils';
 
 /*
  *  Task Display Names
@@ -203,7 +204,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
       tag_color: 'white',
     };
   }
-  if (percentile !== undefined && (grade < 6 || grade === 'K')) {
+  if (percentile !== undefined && getGrade(grade) < 6) {
     if (percentile >= 50) {
       support_level = 'Achieved Skill';
       tag_color = supportLevelColors.above;
