@@ -67,8 +67,6 @@
 
 <script setup>
 import { onMounted, ref, watch, computed } from 'vue';
-import GameTabs from '../components/GameTabs.vue';
-import ParticipantSidebar from '../components/ParticipantSidebar.vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
@@ -80,6 +78,8 @@ import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
+
+let GameTabs, ParticipantSidebar;
 
 let unsubscribe;
 const initialized = ref(false);
@@ -95,7 +95,9 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-onMounted(() => {
+onMounted(async () => {
+  GameTabs = (await import('../components/GameTabs.vue')).default;
+  ParticipantSidebar = (await import('../components/ParticipantSidebar.vue')).default;
   if (roarfirekit.value.restConfig) init();
 });
 

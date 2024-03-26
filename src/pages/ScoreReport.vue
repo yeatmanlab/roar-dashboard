@@ -320,9 +320,11 @@ import {
   addElementToPdf,
   getScoreKeys,
 } from '@/helpers/reports.js';
-import TaskReport from '@/components/reports/tasks/TaskReport.vue';
-import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
-import NextSteps from '@/assets/NextSteps.pdf';
+// import TaskReport from '@/components/reports/tasks/TaskReport.vue';
+// import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
+// import NextSteps from '@/assets/NextSteps.pdf';
+
+let TaskReport, DistributionChartOverview, NextSteps;
 
 const authStore = useAuthStore();
 
@@ -534,7 +536,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = parseGrade(school.lowGrade) + ' ' + school.name;
+      acc[school.id] = getGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -1087,18 +1089,13 @@ function rawScoreByTaskId(taskId) {
   return 'roarScore';
 }
 
-const parseGrade = (grade) => {
-  const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
-  return gradeZero.includes(String(grade)?.toLowerCase()) ? 0 : parseInt(grade);
-};
-
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
   const computedScores = {};
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
     const rawScore = _get(scores, rawScoreByTaskId(taskId));
-    const grade = parseGrade(user?.data?.grade);
+    const grade = getGrade(user?.data?.grade);
     if (grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
@@ -1163,6 +1160,9 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 onMounted(async () => {
+  TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
+  DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
+  NextSteps = (await import('@/assets/NextSteps.pdf')).default;
   if (roarfirekit.value.restConfig) refresh();
 });
 </script>

@@ -6,7 +6,7 @@ const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
 const testUserList = Cypress.env('testUserList');
-const testAssignments = ['Vocabulary', 'Multichoice', 'Written-Vocab'];
+const testAssignments = Cypress.env('testAssignmentsList');
 
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
@@ -22,14 +22,26 @@ function clickScoreButton() {
   );
 }
 
-function checkAssignmentColumns() {
+function checkAssignmentColumns(assignments) {
   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
-    testAssignments.forEach((assignment) => {
+    assignments.forEach((assignment) => {
       expect(tableHeaders).to.include(assignment);
     });
   });
+}
+
+function checkIndividualScoreReports() {
+  cy.get('button', { timeout: 3 * timeout })
+    .contains('Report')
+    .click();
+  cy.get('div', { timeout: 3 * timeout }).contains('Individual Score Report');
+  cy.get('button', { timeout: 3 * timeout })
+    .contains('Expand All Sections')
+    .click();
+  cy.get('button', { timeout: 3 * timeout }).contains('Export to PDF');
+  cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessments return 3 kinds of scores');
 }
 
 describe('The partner admin can view score reports for a given administration.', () => {
@@ -39,14 +51,6 @@ describe('The partner admin can view score reports for a given administration.',
     clickScoreButton();
     cy.checkUserList(testUserList);
     checkAssignmentColumns(testAssignments);
-    cy.get('button', { timeout: 6 * timeout })
-      .contains('Report')
-      .click();
-    cy.get('div', { timeout: 6 * timeout }).contains('Individual Score Report');
-    cy.get('button', { timeout: 6 * timeout })
-      .contains('Expand All Sections')
-      .click();
-    cy.get('button', { timeout: 6 * timeout }).contains('Export to PDF');
-    cy.get('div', { timeout: 6 * timeout }).contains('The ROAR assessements return 3 kinds of scores');
+    checkIndividualScoreReports();
   });
 });

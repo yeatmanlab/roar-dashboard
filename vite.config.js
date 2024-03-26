@@ -33,6 +33,25 @@ export default defineConfig({
   build: {
     cssCodeSplit: true,
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          lodash: ['lodash'],
+          tanstack: ['@tanstack/vue-query'],
+          chartJs: ['chart.js'],
+          sentry: ['@sentry/browser', '@sentry/integrations', '@sentry/vue', '@sentry/wasm'],
+          fluency: ['@bdelab/roam-fluency'],
+          firekit: ['@bdelab/roar-firekit'],
+          letter: ['@bdelab/roar-letter'],
+          multichoice: ['@bdelab/roar-multichoice'],
+          phoneme: ['@bdelab/roar-pa'],
+          sre: ['@bdelab/roar-sre'],
+          swr: ['@bdelab/roar-swr'],
+          utils: ['@bdelab/roar-utils'],
+          vocab: ['@bdelab/roar-vocab'],
+        },
+      },
+    },
   },
   optimizeDeps: {
     include: ['@bdelab/roar-firekit', 'vue-google-maps-community-fork', 'fast-deep-equal'],

@@ -62,5 +62,15 @@
   },
   "tasks": {
     "preparing": "¡Preparando tu juego!"
+  },
+  "sentryForm": {
+    "formTitle": "Reportar un problema a ROAR",
+    "buttonLabel": "Reportar un problema",
+    "submitButtonLabel": "Enviar informe de problema",
+    "cancelButtonLabel": "Cancelar",
+    "namePlaceholder": "Tu nombre (opcional)",
+    "emailPlaceholder": "tu.email@example.org (opcional)",
+    "messageLabel": "Descripción",
+    "messagePlaceholder": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir."
   }
 }

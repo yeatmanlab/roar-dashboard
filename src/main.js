@@ -100,9 +100,8 @@ pinia.use(piniaPluginPersistedState);
 //   v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
 // });
 
-if (window.location.origin === 'https://roar.education') {
-  initSentry(app);
-}
+initSentry(app);
+
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);

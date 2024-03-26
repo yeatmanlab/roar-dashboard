@@ -6,8 +6,7 @@
   </div>
 </template>
 <script setup>
-import { TaskLauncher as RoamFluency } from '@bdelab/roam-fluency';
-import { onMounted, watch, ref } from 'vue';
+import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
@@ -17,9 +16,11 @@ import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
 
 const props = defineProps({
-  taskId: { type: String, required: true, default: 'fluency-arf' },
-  language: { type: String, required: true, default: 'en' },
+  taskId: { type: String, default: 'fluency-arf' },
+  language: { type: String, default: 'en' },
 });
+
+let TaskLauncher;
 
 const taskId = props.taskId;
 const router = useRouter();
@@ -33,6 +34,9 @@ let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
+};
+const handlePopState = () => {
+  router.go(0);
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
@@ -52,16 +56,26 @@ const { isLoading: isLoadingUserData, data: userData } = useQuery({
 window.addEventListener(
   'popstate',
   () => {
-    router.go(0);
+    handlePopState();
   },
   { once: true },
 );
 
 onMounted(async () => {
+  try {
+    TaskLauncher = (await import('@bdelab/roam-fluency')).default;
+  } catch (error) {
+    console.error('An error occurred while importing the game module.', error);
+  }
+
   if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('popstate', handlePopState);
 });
 
 watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
@@ -71,30 +85,46 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 const { selectedAdmin } = storeToRefs(gameStore);
 
 async function startTask() {
-  const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
+  try {
+    let checkGameStarted = setInterval(function () {
+      // Poll for the preload trials progress bar to exist and then begin the game
+      let gameLoading = document.body.textContent.includes('loading');
+      if (gameLoading) {
+        gameStarted.value = true;
+        clearInterval(checkGameStarted);
+      }
+    }, 100);
 
-  const userDob = _get(userData.value, 'studentData.dob');
-  const userDateObj = new Date(userDob);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
 
-  const userParams = {
-    grade: _get(userData.value, 'studentData.grade'),
-    birthMonth: userDateObj.getMonth() + 1,
-    birthYear: userDateObj.getFullYear(),
-    language: props.language,
-  };
+    const userDob = _get(userData.value, 'studentData.dob');
+    const userDateObj = new Date(userDob);
 
-  const gameParams = { ...appKit._taskInfo.variantParams };
-  const roarApp = new RoamFluency(appKit, gameParams, userParams, 'jspsych-target');
+    const userParams = {
+      grade: _get(userData.value, 'studentData.grade'),
+      birthMonth: userDateObj.getMonth() + 1,
+      birthYear: userDateObj.getFullYear(),
+      language: props.language,
+    };
 
-  gameStarted.value = true;
-  await roarApp.run().then(async () => {
-    // Handle any post-game actions.
-    await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+    const gameParams = { ...appKit._taskInfo.variantParams };
 
-    // Navigate to home, but first set the refresh flag to true.
-    gameStore.requireHomeRefresh();
-    router.push({ name: 'Home' });
-  });
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+
+    await roarApp.run().then(async () => {
+      // Handle any post-game actions.
+      await authStore.completeAssessment(selectedAdmin.value.id, taskId);
+
+      // Navigate to home, but first set the refresh flag to true.
+      gameStore.requireHomeRefresh();
+      router.push({ name: 'Home' });
+    });
+  } catch (error) {
+    console.error('An error occurred while starting the task:', error);
+    alert(
+      'An error occurred while starting the task. Please refresh the page and try again. If the error persists, please submit an issue report.',
+    );
+  }
 }
 </script>
 <style>
