@@ -82,7 +82,13 @@ const isAdmin = computed(() => {
   return true;
 });
 
-const consentType = computed(() => (isAdmin.value ? 'tos' : i18n.locale.value === 'es' ? 'assent-es' : 'assent'));
+const consentType = computed(() => {
+  if (isAdmin.value) {
+    return 'tos';
+  } else {
+    return i18n.locale.value.includes('es') ? 'assent-es' : 'assent';
+  }
+});
 const showConsent = ref(false);
 const confirmText = ref('');
 const consentVersion = ref('');
