@@ -50,6 +50,7 @@ module.exports = defineConfig({
     testClassInitials: 'TC',
     testGroupName: 'zzzTestGroup',
     testGroupInitials: 'TG',
+    testAssignmentsList: ['Vocabulary', 'Multichoice', 'Written-Vocab'],
     testPartnerAdministrationName: 'zzzCypressTestAdministration',
     testPartnerAdministrationId: 'pdOfQuakqN4re3cI5mr5',
     testPartnerDistrictName: 'zzzCypressTestDistrict',
