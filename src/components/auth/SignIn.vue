@@ -10,6 +10,8 @@
             aria-describedby="email-error"
             :placeholder="$t('authSignIn.emailPlaceholder')"
             data-cy="input-username-email"
+            @keyup="checkForCapsLock"
+            @click="checkForCapsLock"
           />
         </div>
         <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
@@ -32,6 +34,8 @@
               :feedback="false"
               :placeholder="$t('authSignIn.passwordPlaceholder')"
               data-cy="input-password"
+              @keyup="checkForCapsLock"
+              @click="checkForCapsLock"
             />
             <small
               class="text-link sign-in-method-link"
@@ -55,6 +59,8 @@
             :feedback="false"
             :placeholder="$t('authSignIn.passwordPlaceholder')"
             data-cy="input-password"
+            @keyup="checkForCapsLock"
+            @click="checkForCapsLock"
           >
             <template #header>
               <h6>{{ $t('authSignIn.pickPassword') }}</h6>
@@ -96,6 +102,7 @@
               :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
             />
           </div>
+          <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
       <PvButton type="submit" :label="$t('authSignIn.buttonLabel') + ' &rarr;'" class="submit-button" />
@@ -135,6 +142,7 @@ const rules = {
 };
 const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
+const capsLockEnabled = ref(false);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
@@ -187,6 +195,10 @@ const validateRoarEmail = _debounce(
   250,
   { maxWait: 1000 },
 );
+
+function checkForCapsLock(e) {
+  capsLockEnabled.value = e.getModifierState('CapsLock');
+}
 
 watch(
   () => state.email,

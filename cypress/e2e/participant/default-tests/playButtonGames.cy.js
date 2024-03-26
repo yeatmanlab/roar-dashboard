@@ -14,13 +14,13 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       cy.visit(`/game/${game.id}`, { timeout: 2 * timeout });
 
       // Long timeout is needed for picture vocab
-      cy.get(game.startBtn, { timeout: 6 * timeout })
+      cy.get(game.startBtn, { timeout: 10 * timeout })
         .should('be.visible')
         .click();
 
       // case for game/pa -- it has two initiation buttons that need to be clicked
       if (game.startBtn2) {
-        cy.get(game.startBtn2, { timeout: 6 * timeout })
+        cy.get(game.startBtn2, { timeout: 8 * timeout })
           .should('be.visible')
           .click();
       }

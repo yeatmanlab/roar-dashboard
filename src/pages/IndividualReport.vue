@@ -73,9 +73,10 @@
     </div>
     <div id="individual-report-cards" class="individual-report-wrapper gap-4">
       <individual-score-report-task
+        v-if="taskData?.length"
         :student-data="studentData"
         :task-data="taskData"
-        :raw-task-data="rawTaskData"
+        :raw-task-data="taskData"
         :expanded="expanded"
       />
     </div>
@@ -87,19 +88,21 @@
             <div class="text-xl font-bold">The ROAR assessements return 3 kinds of scores:</div>
             <ul>
               <li>
-                <b>Raw Score: </b>A score that captures your students' general performance on the assessment, such as
-                total items correct. This score is difficult to interpret on its own which is why it is used to generate
-                standard scores and percentiles
+                <b>Standard Score: </b>A <b>standard score </b>is a way of showing how your child's test performance
+                compares to other kids of the same age or grade. Standard Scores have a range of 0-180. The standard
+                score is comparable within a grade level, but not across grade levels or over time.
               </li>
               <li>
-                <b>Standard Score: </b>A score that compares your students' performance to the performance of other
-                students in their age of grade group. This score gives you a glimpse of your student's understanding of
-                the tested skill compared to their peers
+                <b>Percentile: </b>A <b>percentile </b>is a score that tells you what percentage of people your child
+                scored the same as or better than on a test. For example, if your child is in the 70th percentile, it
+                means they scored higher than 70% of the kids who took the same test. It's a way of comparing your
+                child's performance with others. score.
               </li>
               <li>
-                <b>Percentile: </b>A score that defines which percent of scores fall below your student's scores. For
-                example, if your student is in the 74th percentile, then 74 percent of scores are lower than their
-                score.
+                <b>Raw Score: </b>A <b>raw score</b> is the basic measure of a student’s performance on the test.
+                Depending on the test, the raw score is based on a number of factors. These may include the number of
+                items a student answered correctly or incorrectly, and the difficulty of the items. The raw score is
+                comparable across grade levels and over time.
               </li>
             </ul>
           </div>
@@ -146,6 +149,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  orgType: {
+    type: String,
+    required: true,
+  },
+  orgId: {
+    type: String,
+    required: true,
+  },
 });
 
 const initialized = ref(false);
@@ -159,28 +170,15 @@ const { data: studentData } = useQuery({
 });
 
 const { data: taskData } = useQuery({
-  queryKey: ['runs', props.administrationId, props.userId],
+  queryKey: ['runs', props.administrationId, props.userId, props.orgType, props.orgId],
   queryFn: () =>
     runPageFetcher({
       administrationId: props.administrationId,
+      orgType: props.orgType,
+      orgId: props.orgId,
       userId: props.userId,
-      select: ['scores.computed.composite', 'taskId'],
+      select: ['scores.computed.composite', 'taskId', 'reliable', 'engagementFlags'],
       scoreKey: 'scores.computed.composite',
-      paginate: false,
-    }),
-  enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
-});
-
-const { data: rawTaskData } = useQuery({
-  queryKey: ['runs', props.administrationId, props.userId],
-  queryFn: () =>
-    runPageFetcher({
-      administrationId: props.administrationId,
-      userId: props.userId,
-      select: ['scores.computed', 'taskId'],
-      scoreKey: 'scores.computed',
       paginate: false,
     }),
   enabled: initialized,
@@ -240,7 +238,7 @@ const tasks = computed(() => taskData?.value?.map((assignment) => assignment.tas
 const formattedTasks = computed(() => {
   return (
     // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-    tasks?.value
+    (tasks?.value ?? [])
       .sort((a, b) => {
         if (Object.keys(taskDisplayNames).includes(a) && Object.keys(taskDisplayNames).includes(b)) {
           return taskDisplayNames[a].order - taskDisplayNames[b].order;

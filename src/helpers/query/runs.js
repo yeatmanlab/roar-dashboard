@@ -44,6 +44,7 @@ export const getRunsRequestBody = ({
   ];
 
   if (administrationId && (orgId || !allDescendants)) {
+    console.log('adding assignmentId and bestRun to structuredQuery');
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -67,6 +68,7 @@ export const getRunsRequestBody = ({
     };
 
     if (orgId) {
+      console.log('adding orgId to structuredQuery');
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },

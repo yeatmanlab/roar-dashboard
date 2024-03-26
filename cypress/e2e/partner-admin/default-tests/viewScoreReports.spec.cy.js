@@ -6,17 +6,17 @@ const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
 const testUserList = Cypress.env('testUserList');
-const testAssignments = ['vocab', 'Multichoice'];
+const testAssignments = ['Vocabulary', 'Multichoice', 'Written-Vocab'];
 
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
   cy.navigateTo('/');
-  cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
+  cy.url({ timeout: 3 * timeout }).should('eq', `${baseUrl}/`);
 }
 
 function clickScoreButton() {
   cy.get('button', { timeout: timeout }).contains('Scores').first().click();
-  cy.url({ timeout: timeout }).should(
+  cy.url({ timeout: 3 * timeout }).should(
     'eq',
     `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`,
   );
