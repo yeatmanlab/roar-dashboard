@@ -82,7 +82,7 @@ const isAdmin = computed(() => {
   return true;
 });
 
-const consentType = computed(() => (isAdmin.value ? 'tos' : 'assent'));
+const consentType = computed(() => (isAdmin.value ? 'tos' : i18n.locale.value === 'es' ? 'assent-es' : 'assent'));
 const showConsent = ref(false);
 const confirmText = ref('');
 const consentVersion = ref('');
@@ -130,7 +130,8 @@ watch(isLoading, async (newValue) => {
 const { idle } = useIdle(20 * 60 * 1000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
-const { t } = useI18n();
+const i18n = useI18n();
+const t = i18n.t;
 
 watch(idle, (idleValue) => {
   if (idleValue) {
