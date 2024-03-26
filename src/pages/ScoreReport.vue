@@ -318,6 +318,7 @@ import {
   rawOnlyTasks,
   scoredTasks,
   addElementToPdf,
+  getScoreKeys,
 } from '@/helpers/reports.js';
 import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
@@ -793,7 +794,7 @@ const exportSelected = (selectedRows) => {
     }
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
-      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
       );
@@ -845,7 +846,7 @@ const exportAll = async () => {
     }
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
-      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
       );
@@ -876,66 +877,9 @@ const exportAll = async () => {
   return;
 };
 
-function getScoreKeys(row, grade) {
+function getScoreKeysByRow(row, grade) {
   const taskId = row.taskId;
-  let percentileScoreKey = undefined;
-  let percentileScoreDisplayKey = undefined;
-  let standardScoreKey = undefined;
-  let standardScoreDisplayKey = undefined;
-  let rawScoreKey = undefined;
-  if (taskId === 'swr' || taskId === 'swr-es') {
-    if (grade < 6) {
-      percentileScoreKey = 'wjPercentile';
-      percentileScoreDisplayKey = 'wjPercentile';
-      standardScoreKey = 'standardScore';
-      standardScoreDisplayKey = 'standardScore';
-    } else {
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentile';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScore';
-    }
-    rawScoreKey = 'roarScore';
-  }
-  if (taskId === 'pa') {
-    if (grade < 6) {
-      percentileScoreKey = 'percentile';
-      percentileScoreDisplayKey = 'percentile';
-      standardScoreKey = 'standardScore';
-      standardScoreDisplayKey = 'standardScore';
-    } else {
-      // These are string values intended for display
-      //   they include '>' when the ceiling is hit
-      // Replace them with non '-String' versions for
-      //   comparison.
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentileString';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScoreString';
-    }
-    rawScoreKey = 'roarScore';
-  }
-  if (taskId === 'sre') {
-    if (grade < 6) {
-      percentileScoreKey = 'tosrecPercentile';
-      percentileScoreDisplayKey = 'tosrecPercentile';
-      standardScoreKey = 'tosrecSS';
-      standardScoreDisplayKey = 'tosrecSS';
-    } else {
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentile';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScore';
-    }
-    rawScoreKey = 'sreScore';
-  }
-  return {
-    percentileScoreKey,
-    percentileScoreDisplayKey,
-    standardScoreKey,
-    standardScoreDisplayKey,
-    rawScoreKey,
-  };
+  return getScoreKeys(taskId, grade);
 }
 
 const refreshing = ref(false);
@@ -1024,7 +968,7 @@ const tableData = computed(() => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of assignment?.assessments ?? []) {
-      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
         assessment,
         grade,
       );
