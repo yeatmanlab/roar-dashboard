@@ -3,7 +3,7 @@
   <PvTabView>
     <PvTabPanel header="Register Task">
       <div v-if="!created" class="card">
-        <h1 class="text-center">Register a new task</h1>
+        <h1 class="text-center">Register a New Task</h1>
         <!-- <p class="login-title" align="left">Register for ROAR</p> -->
         <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!t$.$invalid)">
           <!-- Task name -->
@@ -125,7 +125,7 @@
     <PvTabPanel header="Register Variant">
       <div class="card">
         <form class="p-fluid" @submit.prevent="handleVariantSubmit(!v$.$invalid)">
-          <h1 class="text-center">Register a new Variant</h1>
+          <h1 class="text-center">Register a New Variant</h1>
 
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
