@@ -1,4 +1,5 @@
 import html2canvas from 'html2canvas';
+import { getGrade } from '@bdelab/roar-utils';
 
 /*
  *  Task Display Names
@@ -203,7 +204,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
       tag_color: 'white',
     };
   }
-  if (percentile !== undefined && grade < 6) {
+  if (percentile !== undefined && getGrade(grade) < 6) {
     if (percentile >= 50) {
       support_level = 'Achieved Skill';
       tag_color = supportLevelColors.above;
@@ -232,6 +233,67 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
     tag_color,
   };
 };
+
+export function getScoreKeys(taskId, grade) {
+  let percentileScoreKey = undefined;
+  let percentileScoreDisplayKey = undefined;
+  let standardScoreKey = undefined;
+  let standardScoreDisplayKey = undefined;
+  let rawScoreKey = undefined;
+  if (taskId === 'swr' || taskId === 'swr-es') {
+    if (grade < 6) {
+      percentileScoreKey = 'wjPercentile';
+      percentileScoreDisplayKey = 'wjPercentile';
+      standardScoreKey = 'standardScore';
+      standardScoreDisplayKey = 'standardScore';
+    } else {
+      percentileScoreKey = 'sprPercentile';
+      percentileScoreDisplayKey = 'sprPercentile';
+      standardScoreKey = 'sprStandardScore';
+      standardScoreDisplayKey = 'sprStandardScore';
+    }
+    rawScoreKey = 'roarScore';
+  }
+  if (taskId === 'pa') {
+    if (grade < 6) {
+      percentileScoreKey = 'percentile';
+      percentileScoreDisplayKey = 'percentile';
+      standardScoreKey = 'standardScore';
+      standardScoreDisplayKey = 'standardScore';
+    } else {
+      // These are string values intended for display
+      //   they include '>' when the ceiling is hit
+      // Replace them with non '-String' versions for
+      //   comparison.
+      percentileScoreKey = 'sprPercentile';
+      percentileScoreDisplayKey = 'sprPercentileString';
+      standardScoreKey = 'sprStandardScore';
+      standardScoreDisplayKey = 'sprStandardScoreString';
+    }
+    rawScoreKey = 'roarScore';
+  }
+  if (taskId === 'sre') {
+    if (grade < 6) {
+      percentileScoreKey = 'tosrecPercentile';
+      percentileScoreDisplayKey = 'tosrecPercentile';
+      standardScoreKey = 'tosrecSS';
+      standardScoreDisplayKey = 'tosrecSS';
+    } else {
+      percentileScoreKey = 'sprPercentile';
+      percentileScoreDisplayKey = 'sprPercentile';
+      standardScoreKey = 'sprStandardScore';
+      standardScoreDisplayKey = 'sprStandardScore';
+    }
+    rawScoreKey = 'sreScore';
+  }
+  return {
+    percentileScoreKey,
+    percentileScoreDisplayKey,
+    standardScoreKey,
+    standardScoreDisplayKey,
+    rawScoreKey,
+  };
+}
 
 export const getRawScoreThreshold = (taskId) => {
   if (taskId === 'swr') {

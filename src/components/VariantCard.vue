@@ -69,7 +69,7 @@
       <PvButton
         v-if="!hasControls"
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
-        data-cy="select-variant"
+        data-cy="selected-variant"
         @click="handleSelect"
         ><i class="pi pi-chevron-right text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i
       ></PvButton>
