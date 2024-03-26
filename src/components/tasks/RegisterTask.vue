@@ -222,7 +222,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, computed } from 'vue';
+import { reactive, ref, onMounted } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
@@ -270,13 +270,9 @@ const taskFields = reactive({
   external: true,
 });
 
-const isExternal = computed(() => {
-  return isExternalTask.value;
-});
-
 const taskRules = {
   taskName: { required },
-  taskURL: { required: requiredIf(isExternal), url },
+  taskURL: { required: requiredIf(isExternalTask.value), url },
   taskId: { required },
 };
 
