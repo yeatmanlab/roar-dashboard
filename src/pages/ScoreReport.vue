@@ -320,9 +320,11 @@ import {
   addElementToPdf,
   getScoreKeys,
 } from '@/helpers/reports.js';
-import TaskReport from '@/components/reports/tasks/TaskReport.vue';
-import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
-import NextSteps from '@/assets/NextSteps.pdf';
+// import TaskReport from '@/components/reports/tasks/TaskReport.vue';
+// import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
+// import NextSteps from '@/assets/NextSteps.pdf';
+
+let TaskReport, DistributionChartOverview, NextSteps;
 
 const authStore = useAuthStore();
 
@@ -1158,6 +1160,9 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 onMounted(async () => {
+  TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
+  DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
+  NextSteps = (await import('@/assets/NextSteps.pdf')).default;
   if (roarfirekit.value.restConfig) refresh();
 });
 </script>

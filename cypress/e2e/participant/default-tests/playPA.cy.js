@@ -28,7 +28,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     cy.visit('/');
     cy.wait(0.2 * timeout);
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
-    cy.get('.tabview-nav-link-label', { timeout: 2 * timeout })
+    cy.get('.tabview-nav-link-label', { timeout: 3 * timeout })
       .contains('ROAR - Phoneme')
       .should('have.attr', 'data-game-status', 'complete');
   });

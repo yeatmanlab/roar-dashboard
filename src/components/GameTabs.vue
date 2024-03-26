@@ -72,7 +72,7 @@
   </div>
 </template>
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _findIndex from 'lodash/findIndex';
@@ -80,7 +80,12 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import VideoPlayer from '@/components/VideoPlayer.vue';
+
+let VideoPlayer;
+
+onMounted(async () => {
+  VideoPlayer = (await import('@/components/VideoPlayer.vue')).default;
+});
 
 const { t } = useI18n();
 
