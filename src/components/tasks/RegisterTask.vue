@@ -336,12 +336,14 @@ const handleNewTaskSubmit = async (isFormValid) => {
     return;
   }
 
+  const convertedParams = convertParamsToObj(taskParams);
+
   let newTaskObject = reactive({
     taskId: taskFields.taskId,
     taskName: taskFields.taskName,
     taskDescription: taskFields.description,
     taskImage: taskFields.coverImage,
-    variantParams: convertParamsToObj(taskParams),
+    variantParams: convertedParams,
   });
 
   if (isExternalTask.value) {
@@ -366,18 +368,24 @@ const handleVariantSubmit = async (isFormValid) => {
 
   const convertedParams = convertParamsToObj(variantParams);
 
+  const newVariantObject = reactive({
+    taskId: variantFields.selectedGame.id,
+    taskDescription: variantFields.selectedGame.description,
+    taskImage: variantFields.selectedGame.image,
+    variantName: variantFields.variantName,
+    variantParams: convertedParams,
+  });
+
+  if (isExternalTask.value) {
+    newVariantObject.variantParams = {
+      ...convertedParams,
+      variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams),
+    };
+  }
+
   // Write variant to Db
   try {
-    await authStore.roarfirekit.registerTaskVariant({
-      taskId: variantFields.selectedGame.id,
-      taskDescription: variantFields.selectedGame.description,
-      taskImage: variantFields.selectedGame.image,
-      variantName: variantFields.variantName,
-      // If this is an external task, build the game variant url with the variant params and append to variant params object for use in game standalone mode
-      variantParams: isExternalTask.value
-        ? { ...convertedParams, variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams) }
-        : convertedParams,
-    });
+    await authStore.roarfirekit.registerTaskVariant({ ...newVariantObject });
 
     toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully created.', life: 3000 });
 
