@@ -49,9 +49,9 @@ export const playSRE = (administration, language, optional = false) => {
 function playSREGame() {
   for (let i = 0; i < 80; i++) {
     cy.log('loop 0', i);
-    cy.wait(0.1 * timeout);
+    cy.wait(0.3 * timeout);
     cy.get('body').type('{leftarrow}{rightarrow}');
-    cy.wait(0.1 * timeout);
+    cy.wait(0.3 * timeout);
     cy.get('body').type('{leftarrow}{rightarrow}');
   }
 }
