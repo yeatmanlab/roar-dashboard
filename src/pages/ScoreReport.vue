@@ -534,7 +534,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = parseGrade(school.lowGrade) + ' ' + school.name;
+      acc[school.id] = getGrade(school.lowGrade) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -1087,18 +1087,13 @@ function rawScoreByTaskId(taskId) {
   return 'roarScore';
 }
 
-const parseGrade = (grade) => {
-  const gradeZero = ['kindergarten', 'preschool', 'k', 'pk', 'tk', 'prekindergarten'];
-  return gradeZero.includes(String(grade)?.toLowerCase()) ? 0 : parseInt(grade);
-};
-
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
   const computedScores = {};
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
     const rawScore = _get(scores, rawScoreByTaskId(taskId));
-    const grade = parseGrade(user?.data?.grade);
+    const grade = getGrade(user?.data?.grade);
     if (grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
