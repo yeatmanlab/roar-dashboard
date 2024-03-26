@@ -69,8 +69,10 @@
               />
               <PvKnob
                 v-else
-                :value-template="getPercentileSuffix(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))"
-            :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
+                :value-template="
+                  getPercentileSuffix(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))
+                "
+                :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
                 :size="160"
                 :value-color="
                   getSupportLevel(
@@ -80,7 +82,6 @@
                     task.taskId,
                   ).tag_color
                 "
-
               />
             </div>
           </div>
