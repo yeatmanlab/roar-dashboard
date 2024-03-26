@@ -12,7 +12,7 @@
         <div class="flex flex-row mb-2">
           <div class="flex flex-column flex-grow-1 p-input-icon-left">
             <i class="pi pi-search" />
-            <PvInputText v-model="searchTerm" placeholder="Variant name, ID, or Task ID" />
+            <PvInputText v-model="searchTerm" placeholder="Variant name, ID, or Task ID" data-cy="input-variant-name" />
           </div>
           <PvButton v-if="searchTerm" style="margin-right: 0" @click="clearSearch">
             <i class="pi pi-times" />
@@ -42,7 +42,7 @@
                   :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
-                  <VariantCard :variant="element" @select="selectCard" />
+                  <VariantCard :variant="element" data-cy="card-variant" @select="selectCard" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -79,7 +79,12 @@
                   :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
-                  <VariantCard :variant="element" :update-variant="updateVariant" @select="selectCard" />
+                  <VariantCard
+                    :variant="element"
+                    :update-variant="updateVariant"
+                    data-cy="card-variant"
+                    @select="selectCard"
+                  />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -90,7 +95,7 @@
         <i class="pi pi-angle-double-right" />
       </div>
       <div class="divider"></div>
-      <div class="w-full lg:w-6">
+      <div class="w-full lg:w-6" data-cy="panel-droppable-zone">
         <div class="panel-title mb-2">Selected Variants</div>
         <PvScrollPanel style="height: 32rem; width: 100%; overflow-y: auto">
           <!-- Draggable Zone 2 -->
@@ -119,6 +124,7 @@
                   :variant="element"
                   has-controls
                   :update-variant="updateVariant"
+                  data-cy="card-variant"
                   @remove="removeCard"
                   @move-up="moveCardUp"
                   @move-down="moveCardDown"
