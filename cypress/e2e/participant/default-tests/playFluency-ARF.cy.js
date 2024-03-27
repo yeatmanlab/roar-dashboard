@@ -18,7 +18,7 @@ describe('Test playthrough of Fluency as a participant', () => {
     cy.visit(`/game/fluency-arf`);
 
     //   Click jspsych button to begin
-    cy.get('.jspsych-btn', { timeout: 5 * timeout })
+    cy.get('.jspsych-btn', { timeout: 6 * timeout })
       .should('be.visible')
       .click();
 

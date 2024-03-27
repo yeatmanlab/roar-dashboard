@@ -94,9 +94,7 @@ const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
 
-if (window.location.origin === 'https://roar.education') {
-  initSentry(app);
-}
+initSentry(app);
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
