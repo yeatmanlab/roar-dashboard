@@ -22,7 +22,9 @@
     "cleverLoading": "Loading your data from Clever..."
   },
   "consentModal": {
-    "title": "Consent"
+    "title": "Consent",
+    "acceptButton": "Continue",
+    "toastHeader": "Confirmed"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Show optional assignments",
@@ -61,5 +63,15 @@
   },
   "tasks": {
     "preparing": "Preparing your game!"
+  },
+  "sentryForm": {
+    "formTitle": "Report an Issue to ROAR",
+    "buttonLabel": "Report an Issue",
+    "submitButtonLabel": "Submit Issue Report",
+    "cancelButtonLabel": "Cancel",
+    "namePlaceholder": "Your Name (optional)",
+    "emailPlaceholder": "your.email@example.org (optional)",
+    "messageLabel": "Description",
+    "messagePlaceholder": "What is the issue? What did you want to experience instead? Thank you for sharing."
   }
 }

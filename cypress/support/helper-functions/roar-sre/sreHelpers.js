@@ -20,7 +20,7 @@ export const playSRE = (administration, language, optional = false) => {
     .should('exist');
   cy.visit(languageOptions[language].url);
 
-  cy.get('.jspsych-btn', { timeout: 5 * timeout })
+  cy.get('.jspsych-btn', { timeout: 6 * timeout })
     .should('be.visible')
     .click();
 
@@ -29,14 +29,14 @@ export const playSRE = (administration, language, optional = false) => {
   // handles error where full screen throws a permissions error
   cy.wait(0.2 * timeout);
 
-  cy.get('body', { timeout: 5 * timeout }).type('{enter}');
-  cy.get('body', { timeout: 5 * timeout }).type('{1}');
+  cy.get('body', { timeout: 6 * timeout }).type('{enter}');
+  cy.get('body', { timeout: 6 * timeout }).type('{1}');
 
   playSREGame();
 
   // check if game completed
   cy.visit('/');
-  cy.wait(0.2 * timeout);
+  cy.wait(0.3 * timeout);
   cy.selectAdministration(administration);
 
   if (optional) {

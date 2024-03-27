@@ -22,11 +22,11 @@ function clickScoreButton() {
   );
 }
 
-function checkAssignmentColumns() {
+function checkAssignmentColumns(assignments) {
   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
-    testAssignments.forEach((assignment) => {
+    assignments.forEach((assignment) => {
       expect(tableHeaders).to.include(assignment);
     });
   });

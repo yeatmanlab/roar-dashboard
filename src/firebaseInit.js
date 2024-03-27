@@ -1,10 +1,12 @@
 import { RoarFirekit } from '@bdelab/roar-firekit';
-import firebaseConfig from './config/firebase';
-import levanteFirebaseConfig from './config/levanteFirebase';
+import roarFirebaseConfig from './config/firebaseRoar';
+import levanteFirebaseConfig from './config/firebaseLevante';
+
+const roarConfig = import.meta.env.MODE === 'LEVANTE' ? levanteFirebaseConfig : roarFirebaseConfig;
 
 export async function initNewFirekit() {
   const firekit = new RoarFirekit({
-    roarConfig: import.meta.env.MODE === 'LEVANTE' ? levanteFirebaseConfig : firebaseConfig,
+    roarConfig,
     authPersistence: 'session',
     markRawConfig: {
       auth: false,
