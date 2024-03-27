@@ -23,7 +23,9 @@
     "cleverLoading": "Cargando tus datos desde Clever..."
   },
   "consentModal": {
-    "title": "Consentimiento"
+    "title": "Consentimiento",
+    "acceptButton": "Continuar",
+    "toastHeader": "Confirmado"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Mostrar actividades opcionales",

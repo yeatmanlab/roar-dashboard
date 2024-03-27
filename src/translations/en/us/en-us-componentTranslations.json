@@ -22,7 +22,9 @@
     "cleverLoading": "Loading your data from Clever..."
   },
   "consentModal": {
-    "title": "Consent"
+    "title": "Consent",
+    "acceptButton": "Continue",
+    "toastHeader": "Confirmed"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Show optional assignments",
