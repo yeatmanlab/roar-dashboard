@@ -428,7 +428,7 @@ async function submitStudents() {
           }
         });
     }
-    await delay(1500);
+    await delay(2250);
   }
 }
 
