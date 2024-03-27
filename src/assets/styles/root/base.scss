@@ -12,6 +12,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+// Sentry feedback widget
+#sentry-feedback {
+  max-width: fit-content;
+  opacity: 0.85;
+  --bottom: 1rem;
+  --left: 1rem;
+  --border: 1px solid var(--primary-color);
+  --background-hover: var(--red-100);
+  --submit-border: var(--primary-color);
+  --submit-background: var(--primary-color);
+  --submit-background-hover: var(--primary-color-hover);
+  --cancel-background-hover: var(--red-100);
+}
+
 // Placeholder
 ::-webkit-input-placeholder {
   color: var(--text-color-secondary);

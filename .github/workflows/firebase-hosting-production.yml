@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 'lts/*'
       - name: 'vite production build'
-        env:
-          NODE_OPTIONS: '--max_old_space_size=8192'
+        #        env:
+        #          NODE_OPTIONS: '--max_old_space_size=8192'
         run: npm ci && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
