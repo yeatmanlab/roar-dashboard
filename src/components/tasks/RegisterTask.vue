@@ -3,12 +3,16 @@
   <PvTabView>
     <PvTabPanel header="Register Task">
       <div v-if="!created" class="card">
-        <h1 class="text-center">Register a new task</h1>
+        <h1 class="text-center">Register a New Task</h1>
         <!-- <p class="login-title" align="left">Register for ROAR</p> -->
         <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!t$.$invalid)">
           <!-- Task name -->
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
+              <div class="flex flex-row align-items-center justify-content-end gap-2">
+                <label class="ml-7" for="chbx-externalTask">Is this an external task?</label>
+                <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
+              </div>
               <div class="p-input-icon-right">
                 <label for="taskName">Task Name <span class="required">*</span></label>
                 <PvInputText
@@ -49,7 +53,7 @@
             </section>
             <!--Task URL-->
             <section class="form-section">
-              <div>
+              <div v-if="isExternalTask">
                 <label for="taskURL">Task URL <span class="required">*</span></label>
                 <PvInputText
                   v-model="t$.taskURL.$model"
@@ -121,15 +125,21 @@
     <PvTabPanel header="Register Variant">
       <div class="card">
         <form class="p-fluid" @submit.prevent="handleVariantSubmit(!v$.$invalid)">
-          <h1 class="text-center">Register a new Variant</h1>
+          <h1 class="text-center">Register a New Variant</h1>
 
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
-              <div class="flex justify-content-between">
+              <div class="flex justify-content-between align-items-center">
                 <label for="variant-fields">Select an Existing Task (Task ID) <span class="required">*</span></label>
-                <div class="flex gap-2">
-                  <label class="ml-7" for="chbx">Search registered tasks only?</label>
-                  <PvCheckbox v-model="registeredTasksOnly" input-id="chbx" :binary="true" />
+                <div class="flex flex-column gap-2 align-items-end">
+                  <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
+                    <label class="ml-7" for="chbx-registeredTask">Search registered tasks only?</label>
+                    <PvCheckbox v-model="registeredTasksOnly" input-id="chbx-registeredTask" :binary="true" />
+                  </div>
+                  <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-0">
+                    <label class="ml-7" for="chbx-externalTask">Is this an external task?</label>
+                    <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
+                  </div>
                 </div>
               </div>
               <PvDropdown
@@ -213,7 +223,7 @@
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue';
-import { required, url } from '@vuelidate/validators';
+import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -224,6 +234,7 @@ import { taskFetcher } from '@/helpers/query/tasks';
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
+const isExternalTask = ref(false);
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -261,7 +272,7 @@ const taskFields = reactive({
 
 const taskRules = {
   taskName: { required },
-  taskURL: { required, url },
+  taskURL: { required: requiredIf(isExternalTask.value), url },
   taskId: { required },
 };
 
@@ -321,19 +332,23 @@ const handleNewTaskSubmit = async (isFormValid) => {
     return;
   }
 
+  const convertedParams = convertParamsToObj(taskParams);
+
+  let newTaskObject = reactive({
+    taskId: taskFields.taskId,
+    taskName: taskFields.taskName,
+    taskDescription: taskFields.description,
+    taskImage: taskFields.coverImage,
+    variantParams: convertedParams,
+  });
+
+  if (isExternalTask.value) {
+    newTaskObject.taskURL = buildTaskURL(taskFields.taskURL, taskParams);
+  }
+
   // Write task variant to DB
   try {
-    await authStore.roarfirekit.registerTaskVariant({
-      taskId: taskFields.taskId,
-      taskName: taskFields.taskName,
-      taskDescription: taskFields.description,
-      taskImage: taskFields.coverImage,
-      taskURL: buildTaskURL(taskFields.taskURL, taskParams),
-      // variantName,
-      // variantDescription,
-      variantParams: convertParamsToObj(taskParams),
-    });
-
+    await authStore.roarfirekit.registerTaskVariant({ ...newTaskObject });
     created.value = true;
   } catch (error) {
     console.error(error);
@@ -347,19 +362,26 @@ const handleVariantSubmit = async (isFormValid) => {
     return;
   }
 
+  const convertedParams = convertParamsToObj(variantParams);
+
+  const newVariantObject = reactive({
+    taskId: variantFields.selectedGame.id,
+    taskDescription: variantFields.selectedGame.description,
+    taskImage: variantFields.selectedGame.image,
+    variantName: variantFields.variantName,
+    variantParams: convertedParams,
+  });
+
+  if (isExternalTask.value) {
+    newVariantObject.variantParams = {
+      ...convertedParams,
+      variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams),
+    };
+  }
+
   // Write variant to Db
   try {
-    await authStore.roarfirekit.registerTaskVariant({
-      taskId: variantFields.selectedGame.id,
-      taskDescription: variantFields.selectedGame.description,
-      taskImage: variantFields.selectedGame.image,
-      variantName: variantFields.variantName,
-      // variantDescription,
-      variantParams: {
-        ...convertParamsToObj(variantParams),
-        variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams),
-      },
-    });
+    await authStore.roarfirekit.registerTaskVariant({ ...newVariantObject });
 
     toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully created.', life: 3000 });
 
