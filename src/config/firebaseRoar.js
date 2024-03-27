@@ -5,6 +5,7 @@ let appConfig;
 let adminConfig;
 
 const isEmulated = import.meta.env.VITE_FIREBASE_EMULATOR === 'true';
+const useSandbox = import.meta.env.VITE_FIREBASE_DATA_SOURCE === 'sandbox';
 const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
 
 if (isEmulated) {
@@ -27,6 +28,25 @@ if (isEmulated) {
       auth: adminFirebaseConfig.emulators.auth.port,
       functions: adminFirebaseConfig.emulators.functions.port,
     },
+  };
+} else if (useSandbox) {
+  console.log('Using sandbox data from the dev Firebase projects');
+  appConfig = {
+    apiKey: 'AIzaSyCEUxEgYMp4fg2zORT0lsgn4Q6CCoMVzjU',
+    authDomain: 'gse-roar-assessment-dev.firebaseapp.com',
+    projectId: 'gse-roar-assessment-dev',
+    storageBucket: 'gse-roar-assessment-dev.appspot.com',
+    messagingSenderId: '26086061121',
+    appId: '1:26086061121:web:262163d6c145b7a80bc2c0',
+  };
+
+  adminConfig = {
+    apiKey: 'AIzaSyCl-JsYraUfofQZXpzshQ6s-E0nYzlCvvg',
+    authDomain: 'gse-roar-admin-dev.firebaseapp.com',
+    projectId: 'gse-roar-admin-dev',
+    storageBucket: 'gse-roar-admin-dev.appspot.com',
+    messagingSenderId: '401455396681',
+    appId: '1:401455396681:web:859ea073a116d0aececc98',
   };
 } else {
   appConfig = {
