@@ -15,6 +15,7 @@ const playTrial = (targetText) => {
   cy.get('body', { timeout: timeout })
     .invoke('text')
     .then((text) => {
+      cy.log('target', text, 'targetext', targetText);
       //   Check for re-route to dashboard from game and assume game complete
       if (text.includes('Sign Out')) {
         cy.log('Rerouted to dashboard from game; game complete.');
@@ -90,8 +91,6 @@ function playSecondTutorial() {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get('.continue', { timeout: 2 * timeout }).click();
-  cy.wait(timeout);
   cy.get('img[src*="nut.webp"]', { timeout: timeout }).click();
   cy.wait(2 * timeout);
   cy.get('img[src*="wash.webp"]', { timeout: timeout }).click();
@@ -103,9 +102,6 @@ function playThirdTutorial() {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get('.continue', { timeout: 2 * timeout }).click();
-  cy.get('.continue', { timeout: 2 * timeout }).click();
-  cy.wait(2 * timeout);
   cy.get('img[src*="/ball.webp"]', { timeout: timeout }).click();
   cy.wait(2 * timeout);
   cy.get('img[src*="/rain.webp"]', { timeout: timeout }).click();
@@ -113,27 +109,47 @@ function playThirdTutorial() {
   cy.get('.continue').click();
 }
 
-export function playPA(startText, endText, breakText) {
+export function playPA(startText, breakText, endText) {
   playIntro(startText);
 
   playFirstTutorial();
-  playTrial(breakText.breakText1);
   //  fsmBreak
   cy.log('break 1');
-  cy.get('.continue', { timeout: 2 * timeout }).click();
-  playTrial(endText.endText1);
+  playTrial(breakText);
 
+  cy.get('.continue', { timeout: 2 * timeout }).click();
   playSecondTutorial();
-  playTrial(breakText.breakText2);
+  playTrial(breakText);
   //  lsmBreak
   cy.log('break 2');
   cy.get('.continue', { timeout: 2 * timeout }).click();
   playTrial(endText.endText2);
 
+  cy.get('.continue', { timeout: 2 * timeout }).click();
   playThirdTutorial();
-  playTrial(breakText.breakText3);
   //  delBreak
   cy.log('break 3');
-  cy.get('.continue', { timeout: 2 * timeout }).click();
   playTrial(endText.endText3);
+  // playIntro(startText);
+
+  // playFirstTutorial();
+  // playTrial(breakText.breakText1);
+  // //  fsmBreak
+  // cy.log('break 1');
+  // cy.get('.continue', { timeout: 2 * timeout }).click();
+  // playTrial(endText.endText1);
+
+  // playSecondTutorial();
+  // playTrial(breakText.breakText2);
+  // //  lsmBreak
+  // cy.log('break 2');
+  // cy.get('.continue', { timeout: 2 * timeout }).click();
+  // playTrial(endText.endText2);
+
+  // playThirdTutorial();
+  // playTrial(breakText.breakText3);
+  // //  delBreak
+  // cy.log('break 3');
+  // cy.get('.continue', { timeout: 2 * timeout }).click();
+  // playTrial(endText.endText3);
 }
