@@ -492,6 +492,8 @@ const exportSelected = (selectedRows) => {
       const taskId = assessment.taskId;
       if (assessment.completedOn !== undefined) {
         tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Completed';
+      } else if (assessment.optional) {
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Optional';
       } else if (assessment.startedOn !== undefined) {
         tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Started';
       } else {
@@ -529,6 +531,8 @@ const exportAll = async () => {
       const taskId = assessment.taskId;
       if (assessment.completedOn !== undefined) {
         tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Completed';
+      } else if (assessment.optional) {
+        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Optional';
       } else if (assessment.startedOn !== undefined) {
         tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Started';
       } else {
@@ -591,7 +595,13 @@ const tableData = computed(() => {
   return assignmentData.value.map(({ user, assignment }) => {
     const status = {};
     for (const assessment of assignment?.assessments || []) {
-      if (assessment.completedOn !== undefined) {
+      if (assessment.optional) {
+        status[assessment.taskId] = {
+          value: 'optional',
+          icon: 'pi pi-question',
+          severity: 'info',
+        };
+      } else if (assessment.completedOn !== undefined) {
         status[assessment.taskId] = {
           value: 'completed',
           icon: 'pi pi-check',
