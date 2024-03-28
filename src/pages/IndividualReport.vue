@@ -109,7 +109,7 @@
           </div>
         </PvAccordionTab>
       </PvAccordion>
-      <div data-html2canvas-ignore="true">
+      <div data-html2canvas-ignore="true" class="w-full">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Next Steps">
             <div class="text-lg">
