@@ -537,6 +537,40 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "userData.grade",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userData.schoolLevel",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scores.computed.composite.categoryScore",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "runs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "readOrgs.districts",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "assignmentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "bestRun",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "taskId",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "userData.schoolLevel",
           "order": "ASCENDING"
         }
