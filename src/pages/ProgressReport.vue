@@ -140,8 +140,8 @@ const initialized = ref(false);
 
 const reportView = ref({ name: 'Progress Report', constant: true });
 const reportViews = [
-  { name: 'Score Report', constant: false },
   { name: 'Progress Report', constant: true },
+  { name: 'Score Report', constant: false },
 ];
 
 const handleViewChange = () => {
