@@ -22,41 +22,42 @@
         <p v-if="administrationData?.name"><strong>Administration:</strong> {{ administrationData?.name }}</p>
       </div>
     </div>
+    <div class="welcome-banner">
+      <div class="banner-text">Welcome to your ROAR Score Report</div>
+      <div class="flex">
+        <PvButton
+          outlined
+          class="text-white"
+          :label="!expanded ? 'Expand All Sections' : 'Collapse All Sections'"
+          :icon="!expanded ? 'pi pi-plus' : 'pi pi-minus'"
+          icon-pos="right"
+          data-html2canvas-ignore="true"
+          @click="setExpand"
+        />
+        <PvButton
+          outlined
+          class="text-white"
+          label="Export to PDF"
+          :icon="exportLoading ? 'pi pi-spin pi-spinner' : 'pi pi-download'"
+          :disabled="exportLoading"
+          icon-pos="right"
+          data-html2canvas-ignore="true"
+          @click="exportToPdf"
+        />
+      </div>
+    </div>
 
-    <div v-if="taskData?.length === 0" class="flex flex-column align-items-center mt-8">
-      <div class="p-4">It looks like {{ studentFirstName }} is still working on completing their assigned games!</div>
-
-      <h3>
+    <div v-if="taskData?.length === 0" class="flex flex-column align-items-center py-6 bg-gray-100">
+      <div class="my-2 text-2xl font-bold text-gray-600">
+        It looks like {{ studentFirstName }} is still working on completing their assigned games!
+      </div>
+      <div class="text-md font-light">
         {{ studentFirstName }}'s individual score report will be built when the student has completed at least one
         assessment.
-      </h3>
+      </div>
     </div>
 
     <div v-else id="individual-report-banner" class="welcome-card mt-2 mb-4">
-      <div class="welcome-banner">
-        <div class="banner-text">Welcome to your ROAR Score Report</div>
-        <div class="flex">
-          <PvButton
-            outlined
-            class="text-white"
-            :label="!expanded ? 'Expand All Sections' : 'Collapse All Sections'"
-            :icon="!expanded ? 'pi pi-plus' : 'pi pi-minus'"
-            icon-pos="right"
-            data-html2canvas-ignore="true"
-            @click="setExpand"
-          />
-          <PvButton
-            outlined
-            class="text-white"
-            label="Export to PDF"
-            :icon="exportLoading ? 'pi pi-spin pi-spinner' : 'pi pi-download'"
-            :disabled="exportLoading"
-            icon-pos="right"
-            data-html2canvas-ignore="true"
-            @click="exportToPdf"
-          />
-        </div>
-      </div>
       <div class="p-3 text-lg">
         The Rapid Online Assessment of Reading (ROAR) assesses students across a range of foundational reading skills.
         <div class="mt-2">{{ studentFirstName }} completed the following games:</div>
