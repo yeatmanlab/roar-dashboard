@@ -109,16 +109,20 @@
           </div>
         </PvAccordionTab>
       </PvAccordion>
-      <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
-        <PvAccordionTab header="Next Steps">
-          <div class="text-lg">
-            This score report provides a broad overview of your student’s reading development. Understand that a
-            student’s progress may not be linear, and their scores are not fixed- everyone has room to grow and learn.
-            To learn more about any given test or subskill, and to find more resources for supporting your student
-            <a :href="NextSteps" class="hover:text-red-700" target="_blank">click here.</a>
-          </div>
-        </PvAccordionTab>
-      </PvAccordion>
+      <div data-html2canvas-ignore="true">
+        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+          <PvAccordionTab header="Next Steps">
+            <div class="text-lg">
+              This score report provides a broad overview of your student’s reading development. Understand that a
+              student’s progress may not be linear, and their scores are not fixed- everyone has room to grow and learn.
+              To learn more about any given test or subskill, and to find more resources for supporting your student
+              <a :href="NextSteps" class="hover:text-red-700" data-html2canvas-ignore="true" target="_blank"
+                >click here.</a
+              >
+            </div>
+          </PvAccordionTab>
+        </PvAccordion>
+      </div>
     </div>
   </div>
 </template>
@@ -235,8 +239,23 @@ const exportToPdf = async () => {
   }
   const supportGraphic = document.getElementById('support-graphic');
   if (supportGraphic !== null) {
-    await addElementToPdf(supportGraphic, doc, yCounter);
+    yCounter = await addElementToPdf(supportGraphic, doc, yCounter);
   }
+
+  yCounter += 10;
+  doc.setFontSize(12);
+  doc.text(
+    'This score report provides a broad overview of your student’s reading development. Understand that a student’s progress may not be linear, and their scores are not fixed - everyone has room to grow and learn. To learn more about any given test or subskill, and to find more resources for supporting your student, click the following link. ',
+    15,
+    yCounter,
+    { maxWidth: 180 },
+  );
+  yCounter += 25;
+  doc.setTextColor(0, 0, 255);
+  doc.textWithLink('Next Steps', 15, yCounter, {
+    url: 'https://roar.education/assets/NextSteps-a446d6a7.pdf',
+    color: 'blue',
+  });
 
   doc.save(`IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`),
     (exportLoading.value = false);
