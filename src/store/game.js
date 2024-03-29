@@ -10,8 +10,6 @@ export const useGameStore = () => {
         requireRefresh: false,
         // LEVANTE
         isSurveyCompleted: false,
-        // LEVANTE
-        isSurveyCompleted: false,
       };
     },
     actions: {

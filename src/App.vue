@@ -22,7 +22,6 @@
 
 <script setup>
 import { computed, onBeforeMount } from 'vue';
-import { computed, onBeforeMount } from 'vue';
 import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
 import { ref } from 'vue';

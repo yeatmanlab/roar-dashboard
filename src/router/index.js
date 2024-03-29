@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
+import { administrationCounter } from '../helpers/query/administrations';
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -108,11 +109,11 @@ const routes = [
     meta: { pageTitle: 'Fluency-ARF ES' },
   },
   {
-  path: '/game/fluency-arf-es',
-  name: 'Fluency-ARF-ES',
-  component: () => import('../components/tasks/TaskFluency.vue'),
-  props: { taskId: 'fluency-arf-es' },
-  meta: { pageTitle: 'Fluency-ARF ES' },
+    path: '/game/fluency-arf-es',
+    name: 'Fluency-ARF-ES',
+    component: () => import('../components/tasks/TaskFluency.vue'),
+    props: { taskId: 'fluency-arf-es' },
+    meta: { pageTitle: 'Fluency-ARF ES' },
   },
   {
     path: '/game/fluency-calf',
@@ -122,11 +123,11 @@ const routes = [
     meta: { pageTitle: 'Fluency-CALF' },
   },
   {
-  path: '/game/fluency-calf-es',
-  name: 'Fluency-CALF-ES',
-  component: () => import('../components/tasks/TaskFluency.vue'),
-  props: { taskId: 'fluency-calf-es' },
-  meta: { pageTitle: 'Fluency-CALF ES' },
+    path: '/game/fluency-calf-es',
+    name: 'Fluency-CALF-ES',
+    component: () => import('../components/tasks/TaskFluency.vue'),
+    props: { taskId: 'fluency-calf-es' },
+    meta: { pageTitle: 'Fluency-CALF ES' },
   },
   {
     path: '/game/fluency-calf-es',
@@ -143,11 +144,11 @@ const routes = [
     meta: { pageTitle: 'Fluency-Alpaca' },
   },
   {
-  path: '/game/fluency-alpaca-es',
-  name: 'Fluency-Alpaca-es',
-  component: () => import('../components/tasks/TaskFluency.vue'),
-  props: { taskId: 'fluency-alpaca-es' },
-  meta: { pageTitle: 'Fluency-Alpaca ES' },
+    path: '/game/fluency-alpaca-es',
+    name: 'Fluency-Alpaca-es',
+    component: () => import('../components/tasks/TaskFluency.vue'),
+    props: { taskId: 'fluency-alpaca-es' },
+    meta: { pageTitle: 'Fluency-Alpaca ES' },
   },
   {
     path: '/game/fluency-alpaca-es',
@@ -349,6 +350,14 @@ const routes = [
     component: () => import('../pages/LEVANTE/UserSurvey.vue'),
     meta: { pageTitle: 'Survey', project: 'LEVANTE' },
   },
+
+  // EMULATOR TEST PAGE
+  {
+    path: '/emulator',
+    name: 'Emulator',
+    component: () => import('../pages/LEVANTE/LevanteEmulator.vue'),
+    meta: { pageTitle: 'Emulator' },
+  },
 ];
 
 const router = createRouter({
@@ -362,10 +371,10 @@ const router = createRouter({
   },
 });
 
-router.beforeEach(async (to) => {
+router.beforeEach((to, from, next) => {
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
   if (import.meta.env.MODE !== 'LEVANTE' && to.meta?.project === 'LEVANTE') {
-    return { path: '/' };
+    return { name: 'Home' };
   }
 
   const store = useAuthStore();
@@ -380,14 +389,35 @@ router.beforeEach(async (to) => {
   ) {
     return { name: 'SignIn' };
   }
-  // Check if user is an admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin) {
-    return { name: 'Home' };
-  }
 
-  // Check if user is a super admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin) {
-    return { name: 'Home' };
+  // Check if the route requires admin rights and the user is an admin.
+  const requiresAdmin = _get(to, 'meta.requireAdmin', false);
+  const requiresSuperAdmin = _get(to, 'meta.requireSuperAdmin', false);
+
+  // Check user roles
+  const isUserAdmin = store.isUserAdmin;
+  const isUserSuperAdmin = store.isUserSuperAdmin;
+  console.log('isUserAdmin', isUserAdmin);
+  console.log('isUserSuperAdmin', isUserSuperAdmin);
+
+  // All current conditions:
+  // 1. Super Admin: true, Admin: true
+  // 2. Super Admin: false, Admin: true (Only exits because requiresSuperAdmin is not defined on every route)
+  // 3. Super Admin: false, Admin: false (Allowed routes for all users)
+  // (Also exists because requiresAdmin/requiresSuperAdmin is not defined on every route)
+
+  if (requiresAdmin || requiresSuperAdmin) {
+    console.log('requiresAdmin or requiresSuperAdmin');
+    if (isUserSuperAdmin || isUserAdmin) {
+      // Currently no difference between admin and super admin
+      next();
+    } else {
+      // Block routing if user lacks permissions
+      next({ name: 'Home' });
+    }
+  } else {
+    // Allow all users to access the route
+    next();
   }
 });
 

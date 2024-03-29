@@ -127,7 +127,7 @@ import { onMounted, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import _filter from 'lodash/filter';
 import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
@@ -143,6 +143,7 @@ import { variantsFetcher } from '@/helpers/query/tasks';
 const router = useRouter();
 const toast = useToast();
 const initialized = ref(false);
+const queryClient = useQueryClient();
 
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
@@ -228,7 +229,7 @@ const checkForRequiredOrgs = (orgs) => {
 };
 
 watch(isLoadingVariants, (value) => {
-  if (!value && allVariants.value.length > 0) {
+  if (!value && allVariants.value?.length > 0) {
     assessments.value = [allVariants.value, []];
     paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
   }
@@ -270,7 +271,12 @@ const submit = async () => {
 
         await roarfirekit.value.createAdministration(args).then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+          // Used to rerender component. However, this does not invalidate the query.
           administrationQueryKeyIndex.value += 1;
+
+          // invalidate the query
+          // Can be further specified if many other queries use this key
+          queryClient.invalidateQueries('administrations');
 
           router.push({ name: 'Home' });
         });

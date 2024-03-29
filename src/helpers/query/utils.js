@@ -67,6 +67,7 @@ export const getAxiosInstance = (db = 'admin') => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
+
   return axios.create(axiosOptions);
 };
 

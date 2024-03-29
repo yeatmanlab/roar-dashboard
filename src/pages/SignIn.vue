@@ -8,8 +8,6 @@
         <div class="signin-logo">
           <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
           <ROARLogoShort v-else />
-          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
-          <ROARLogoShort v-else />
         </div>
       </header>
       <h1>{{ $t('pageSignIn.welcome') }}</h1>
@@ -64,8 +62,8 @@ authStore.$subscribe(() => {
   if (authStore.uid) {
     if (authStore.userData && isLevante) {
       if (
-        toRaw(authStore.userData.userType.toLowerCase()) === 'parent' ||
-        toRaw(authStore.userData.userType.toLowerCase()) === 'teacher'
+        toRaw(authStore.userData?.userType?.toLowerCase()) === 'parent' ||
+        toRaw(authStore.userData?.userType?.toLowerCase()) === 'teacher'
       ) {
         router.push({ name: 'Survey' });
         return;
@@ -144,6 +142,7 @@ const authWithEmail = (state) => {
       })
       .catch((e) => {
         incorrect.value = true;
+        console.log('Error signing (client)');
         if (['auth/user-not-found', 'auth/wrong-password'].includes(e.code)) {
           return;
         } else {

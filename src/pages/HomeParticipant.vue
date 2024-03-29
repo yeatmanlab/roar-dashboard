@@ -4,7 +4,6 @@
       <div v-if="isFetching || consentSpinner" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
-        <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
       <div v-else>
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
@@ -50,7 +49,6 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
 

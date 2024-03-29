@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "hs-levante-assessment-dev",
+    "admin": "hs-levante-admin-dev",
+    "assessment": "hs-levante-assessment-dev"
+  },
+  "targets": {},
+  "etags": {}
+}

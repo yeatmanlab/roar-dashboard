@@ -6,27 +6,27 @@
   "emulators": {
     "auth": {
       "host": "127.0.0.1",
-      "port": 9096
+      "port": 9099
     },
     "firestore": {
       "host": "127.0.0.1",
-      "port": 8083
+      "port": 8080
     },
     "functions": {
       "host": "127.0.0.1",
-      "port": 5003
+      "port": 5001
     },
     "ui": {
       "host": "127.0.0.1",
-      "port": 4002
+      "port": 4000
     },
     "hub": {
       "host": "127.0.0.1",
-      "port": 4402
+      "port": 4400
     },
     "logging": {
       "host": "127.0.0.1",
-      "port": 4501
+      "port": 4500
     },
     "singleProjectMode": false
   }

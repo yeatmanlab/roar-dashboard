@@ -66,14 +66,10 @@ const addMessages = (errorCode) => {
 const loginFromEmailLink = async (email) => {
   unsubscribe();
   const emailLink = window.location.href;
-  console.log('Email link', emailLink);
-  console.log('Email in loginFromEmailLink', email);
   await authStore
     .signInWithEmailLink({ email, emailLink })
     .catch((error) => {
-      console.log('Hit error');
       if (error.code === 'auth/invalid-action-code') {
-        console.log('Hit invalid action code');
         addMessages(error.code);
         setTimeout(() => {
           router.replace({ name: 'SignIn' });

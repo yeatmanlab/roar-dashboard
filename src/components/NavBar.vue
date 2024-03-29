@@ -1,7 +1,6 @@
 <template>
   <header id="site-header" class="navbar-container">
     <nav class="container flex flex-row align-items-center">
-    <nav class="container flex flex-row align-items-center">
       <router-link :to="{ name: 'Home' }">
         <div class="navbar-logo">
           <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
@@ -12,7 +11,7 @@
       <div id="navBarRightEnd" class="flex flex-row align-items-center">
         <LanguageSelector />
         <div class="login-container">
-          <div v-if="isAdmin">
+          <div v-if="authStore.isUserAdmin">
             <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
             <PvMenu ref="menu" :model="dropDownActions" :popup="true">
               <template #item="{ item }">
@@ -32,7 +31,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, toRaw } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
@@ -72,12 +71,6 @@ const { data: userClaims } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const isAdmin = computed(() => {
-  if (userClaims.value?.claims?.super_admin) return true;
-  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
-  return true;
-});
-
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
 const isAtHome = computed(() => {
@@ -87,9 +80,11 @@ const isAtHome = computed(() => {
 const dropDownActions = computed(() => {
   const rawActions = getSidebarActions({
     isSuperAdmin: isSuperAdmin.value,
-    isAdmin: isAdmin.value,
+    isAdmin: authStore.isUserAdmin,
     includeHomeLink: !isAtHome.value,
   });
+  console.log('rawActions in dropDownActions:', rawActions);
+
   return rawActions.map((action) => {
     return {
       label: action.title,
@@ -147,6 +142,8 @@ if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') ==
 }
 
 const toggleMenu = (event) => {
+  console.log('event in toggleMenu:', event);
+  console.log('menu.value in toggleMenu:', menu.value);
   menu.value.toggle(event);
 };
 

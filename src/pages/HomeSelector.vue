@@ -19,7 +19,6 @@
   <PvConfirmDialog group="inactivity-logout" class="confirm">
     <template #message>
       {{ $t('homeSelector.inactivityLogout', { timeLeft: timeLeft }) }}
-      {{ $t('homeSelector.inactivityLogout', { timeLeft: timeLeft }) }}
     </template>
   </PvConfirmDialog>
 </template>

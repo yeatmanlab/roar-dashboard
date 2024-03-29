@@ -84,11 +84,6 @@ import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue
 import './assets/styles/theme.scss'; // ROAR theme
 
 // translations
-import { i18n } from '@/translations/i18n.js';
-// https://www.npmjs.com/package/vue-country-flag-next
-import CountryFlag from 'vue-country-flag-next';
-
-// translations
 import { i18n } from './translations/i18n.js';
 // https://www.npmjs.com/package/vue-country-flag-next
 import CountryFlag from 'vue-country-flag-next';
