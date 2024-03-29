@@ -14,7 +14,7 @@
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
-          <div id="languageSelect" class="m-4">
+          <div id="languageSelect" class="m-4 flex justify-content-center">
             <LanguageSelector />
           </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" />

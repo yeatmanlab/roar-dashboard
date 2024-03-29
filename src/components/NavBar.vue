@@ -9,21 +9,33 @@
       </router-link>
 
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start">
-        <LanguageSelector />
-        <div class="login-container">
-          <div v-if="isAdmin">
+        <div class="login-container gap-2">
+          <div class="">
+            <LanguageSelector />
+          </div>
+          <div v-if="isAdmin" class="flex align-items-center">
             <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
-            <PvMenu ref="menu" :model="dropDownActions" :popup="true">
+            <PvMenu ref="menu" :model="dropDownActions" :popup="true" class="p-1">
               <template #item="{ item }">
                 <div class="cursor-pointer hover:surface-200">
-                  <i :class="item.icon" class="p-1 pb-2 pt-2 text-sm cursor-pointer"></i> {{ item.label }}
+                  <i :class="item.icon" class="pb-2 pt-2 mx-1 my-1 text-sm cursor-pointer"></i> {{ item.label }}
                 </div>
               </template>
             </PvMenu>
           </div>
-          <router-link :to="{ name: 'SignOut' }" class="signout-button">
-            <PvButton data-cy="button-sign-out" class="no-underline">{{ $t('navBar.signOut') }}</PvButton>
-          </router-link>
+          <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
+            <div class="text-lg font-bold text-gray-600">
+              {{ userDisplayName }}
+            </div>
+            <router-link :to="{ name: 'SignOut' }" class="signout-button">
+              <PvButton data-cy="button-sign-out" class="no-underline h-2 p-1">{{ $t('navBar.signOut') }}</PvButton>
+            </router-link>
+          </div>
+          <div v-else>
+            <router-link :to="{ name: 'SignOut' }" class="signout-button">
+              <PvButton data-cy="button-sign-out" class="no-underline p-2">{{ $t('navBar.signOut') }}</PvButton>
+            </router-link>
+          </div>
         </div>
       </div>
     </nav>
@@ -41,12 +53,15 @@ import _union from 'lodash/union';
 import { getSidebarActions } from '@/router/sidebarActions';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
+import ROARLogo from '@/assets/RoarLogo.vue';
+import LanguageSelector from './LanguageSelector.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
+const userMenu = ref();
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 
@@ -70,6 +85,28 @@ const { data: userClaims } = useQuery({
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+const isWideScreen = computed(() => {
+  return window.innerWidth > 768;
+});
+
+const userDisplayName = computed(() => {
+  const email = authStore?.userData?.email;
+  const displayName = authStore?.userData?.displayName;
+  const username = authStore?.userData?.username;
+  console.log(authStore.userData.username)
+  return username || email || displayName || "User";
+})
+
+const userMenuOptions = [
+  {
+    label: "signout",
+    icon: 'pi pi-sign-out',
+    command: () => {
+      authStore.signOut();
+    },
+  },
+]
 
 const isAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;
@@ -149,12 +186,22 @@ const toggleMenu = (event) => {
   menu.value.toggle(event);
 };
 
-import ROARLogo from '@/assets/RoarLogo.vue';
-import LanguageSelector from './LanguageSelector.vue';
+const toggleUserMenu = (event) => {
+  userMenu.value.toggle(event)
+}
+
 </script>
 
 <style scoped>
 nav {
   min-width: 100%;
+}
+
+.nav-user-wrapper {
+  display: flex;
+  align-items: center;
+  outline: 1.2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.3rem;
+  padding: 0.5rem .8rem;
 }
 </style>
