@@ -72,7 +72,7 @@ function playFluencyLoop() {
   waitTimeout();
 }
 
-function checkGameComplete(endText, continueText) {
+function checkGameComplete(endText, continueText = null) {
   cy.get('body')
     .invoke('text')
     .then((text) => {
@@ -83,7 +83,7 @@ function checkGameComplete(endText, continueText) {
             cy.get('body').type('{enter}');
           });
         cy.log('Game complete.');
-      } else if (text.includes(continueText)) {
+      } else if (continueText && text.includes(continueText)) {
         cy.log('Game break found with text', continueText);
         cy.get('body', { timeout: timeout }).type('{enter}');
       } else {
@@ -94,7 +94,7 @@ function checkGameComplete(endText, continueText) {
     });
 }
 
-export function playFluency(endText, continueText) {
+export function playFluency(endText, continueText = null) {
   playFluencyIntro();
   checkGameComplete(endText, continueText);
 }
