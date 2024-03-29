@@ -3,6 +3,7 @@ import { playFluency } from '../../../../support/helper-functions/roam-fluency/f
 const timeout = Cypress.env('timeout');
 const administration = Cypress.env('testSpanishRoarAppsAdministration');
 const endText = 'Has terminado.';
+const continueText = 'continuar';
 
 describe('Test playthrough of Fluency ARF ES as a participant', () => {
   it('Fluency Playthrough Test', () => {
@@ -23,7 +24,7 @@ describe('Test playthrough of Fluency ARF ES as a participant', () => {
       .should('be.visible')
       .click();
 
-    playFluency(endText);
+    playFluency(endText, continueText);
 
     //  Check if game is marked as complete on the dashboard
     cy.visit('/');
