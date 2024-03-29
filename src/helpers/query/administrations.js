@@ -255,3 +255,7 @@ export const administrationPageFetcher = async (
     return administrations.slice(page.value * pageLimit.value, (page.value + 1) * pageLimit.value);
   }
 };
+
+// export const getOpenAdministrations = async (isSuperAdmin, adminOrgs) => {
+//
+// });
