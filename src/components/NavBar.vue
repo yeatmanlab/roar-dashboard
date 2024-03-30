@@ -10,11 +10,53 @@
 
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start">
         <div class="login-container gap-2">
-          <div class="">
-            <LanguageSelector />
+          <div v-if="isWideScreen">
+            <div v-if="isAdmin" class="flex align-items-center">
+              <div v-if="isSuperAdmin" class="flex justify-content-center align-items-center">
+                <div>
+                  <PvButton
+                    text
+                    label="Register"
+                    @click="toggleRegisterMenu"
+                    icon="pi pi-chevron-down"
+                    iconPos="right"
+                  />
+                  <PvMenu ref="registerMenu" :model="registerActions" :popup="true" class="p-1">
+                    <template #item="{ item }">
+                      <div class="cursor-pointer hover:surface-200">
+                        <i :class="item.icon" class="pb-2 pt-2 my-1 text-sm cursor-pointer"></i> {{ item.label }}
+                      </div>
+                    </template>
+                  </PvMenu>
+                </div>
+                <div>
+                  <PvButton text label="Create" @click="toggleCreateMenu" icon="pi pi-chevron-down" iconPos="right" />
+                  <PvMenu ref="createMenu" :model="createActions" :popup="true" class="p-1">
+                    <template #item="{ item }">
+                      <div class="cursor-pointer hover:surface-200">
+                        <i :class="item.icon" class="pb-2 pt-2 mx-2 my-1 text-sm cursor-pointer"></i> {{ item.label }}
+                      </div>
+                    </template>
+                  </PvMenu>
+                </div>
+                <div class="flex">
+                  <router-link to="/list-orgs" class="">
+                    <PvButton text label="List Orgs" @click="" />
+                  </router-link>
+                </div>
+              </div>
+              <div v-else class="flex">
+                <router-link to="/list-orgs" class="">
+                  <PvButton text label="List Orgs" @click="" />
+                </router-link>
+                <router-link to="/" class="">
+                  <PvButton text label="View Administrations" @click="" />
+                </router-link>
+              </div>
+            </div>
           </div>
-          <div v-if="isAdmin" class="flex align-items-center">
-            <PvButton label="Menu" icon="pi pi-bars" @click="toggleMenu" />
+          <div v-else>
+            <PvButton label="Menu" @click="toggleMenu" icon="pi pi-bars" iconPos="right" />
             <PvMenu ref="menu" :model="dropDownActions" :popup="true" class="p-1">
               <template #item="{ item }">
                 <div class="cursor-pointer hover:surface-200">
@@ -35,6 +77,9 @@
             <router-link :to="{ name: 'SignOut' }" class="signout-button">
               <PvButton data-cy="button-sign-out" class="no-underline p-2">{{ $t('navBar.signOut') }}</PvButton>
             </router-link>
+          </div>
+          <div class="">
+            <LanguageSelector />
           </div>
         </div>
       </div>
@@ -61,7 +106,8 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
-const userMenu = ref();
+const registerMenu = ref();
+const createMenu = ref();
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 
@@ -94,19 +140,18 @@ const userDisplayName = computed(() => {
   const email = authStore?.userData?.email;
   const displayName = authStore?.userData?.displayName;
   const username = authStore?.userData?.username;
-  console.log(authStore.userData.username)
-  return username || email || displayName || "User";
-})
+  return username || email || displayName || 'User';
+});
 
 const userMenuOptions = [
   {
-    label: "signout",
+    label: 'signout',
     icon: 'pi pi-sign-out',
     command: () => {
       authStore.signOut();
     },
   },
-]
+];
 
 const isAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;
@@ -120,13 +165,16 @@ const isAtHome = computed(() => {
   return router.currentRoute.value.fullPath === '/';
 });
 
-const dropDownActions = computed(() => {
-  const rawActions = getSidebarActions({
+const rawActions = computed(() => {
+  return getSidebarActions({
     isSuperAdmin: isSuperAdmin.value,
     isAdmin: isAdmin.value,
     includeHomeLink: !isAtHome.value,
   });
-  return rawActions.map((action) => {
+});
+
+const dropDownActions = computed(() => {
+  return rawActions.value.map((action) => {
     return {
       label: action.title,
       icon: action.icon,
@@ -135,6 +183,34 @@ const dropDownActions = computed(() => {
       },
     };
   });
+});
+
+const registerActions = computed(() => {
+  return rawActions.value
+    .filter((action) => action.category === 'register')
+    .map((action) => {
+      return {
+        label: action.title,
+        icon: action.icon,
+        command: () => {
+          router.push(action.buttonLink);
+        },
+      };
+    });
+});
+
+const createActions = computed(() => {
+  return rawActions.value
+    .filter((action) => action.category === 'create')
+    .map((action) => {
+      return {
+        label: action.title,
+        icon: action.icon,
+        command: () => {
+          router.push(action.buttonLink);
+        },
+      };
+    });
 });
 
 let dropdownItems = ref([
@@ -185,11 +261,12 @@ if (authStore.isAuthenticated && _get(roarfirekit.value, 'userData.userType') ==
 const toggleMenu = (event) => {
   menu.value.toggle(event);
 };
-
-const toggleUserMenu = (event) => {
-  userMenu.value.toggle(event)
-}
-
+const toggleRegisterMenu = (event) => {
+  registerMenu.value.toggle(event);
+};
+const toggleCreateMenu = (event) => {
+  createMenu.value.toggle(event);
+};
 </script>
 
 <style scoped>
@@ -197,11 +274,16 @@ nav {
   min-width: 100%;
 }
 
+.signout-button {
+  font-size: 0.6rem !important;
+  font-weight: 500;
+}
+
 .nav-user-wrapper {
   display: flex;
   align-items: center;
   outline: 1.2px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.3rem;
-  padding: 0.5rem .8rem;
+  padding: 0.5rem 0.8rem;
 }
 </style>

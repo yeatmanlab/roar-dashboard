@@ -1,11 +1,16 @@
 <template>
   <div class="flex align-items-center gap-1">
-    <PvDropdown v-model="$i18n.locale" class="" :options="languageDropdownOptions" option-label="name"
-      option-value="value" placeholder="Select language" :highlight-on-select="true">
+    <PvDropdown
+      v-model="$i18n.locale"
+      class=""
+      :options="languageDropdownOptions"
+      option-label="name"
+      option-value="value"
+      placeholder="Select language"
+      :highlight-on-select="true"
+    >
       <template #header>
-        <div class="m-2 font-bold uppercase text-sm text-gray-500">
-        Set Locale 
-        </div>
+        <div class="m-2 font-bold uppercase text-sm text-gray-500">Set Locale</div>
       </template>
       <template #value="locale">
         <div v-if="locale.value" class="flex flex-row justify-content-center align-items-center">

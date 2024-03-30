@@ -2010,6 +2010,7 @@
   color: var(--text-color);
   transition: none;
   border-radius: 0;
+  min-width: max-content;
 }
 .p-menu .p-menuitem > .p-menuitem-content .p-menuitem-link {
   padding: var(--inline-spacing-larger) 1rem;
