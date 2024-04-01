@@ -446,7 +446,7 @@ dateFields = _map(dateFields, (col) => col.field);
 let toolTipByHeader = (header) => {
   const headerToTooltipMap = {
     Word: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
-    'Letter Names and Sounds':
+    Letter:
       'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90',
     Phoneme:
       'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
