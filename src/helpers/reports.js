@@ -129,7 +129,7 @@ export const descriptionsByTaskId = {
   pa: {
     header: 'ROAR-Phonological Awareness (ROAR-Phoneme)',
     description:
-      ' measures the ability to hear and manipulate the individual sounds within words (sound matching and elision). This skill is crucial for building further reading skills, such as decoding.',
+      ' measures the ability to hear and manipulate the individual sounds within words.',
   },
   swr: {
     header: 'ROAR-Single Word Recognition (ROAR-Word)',
