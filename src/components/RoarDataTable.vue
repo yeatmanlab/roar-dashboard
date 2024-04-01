@@ -226,7 +226,7 @@
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Green', 'Yellow', 'Pink']"
+                  :options="['Green', 'Yellow', 'Pink', 'Any']"
                   style="margin-bottom: 0.5rem"
                 />
               </div>

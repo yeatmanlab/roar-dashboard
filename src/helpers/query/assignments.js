@@ -496,6 +496,17 @@ export const getFilteredScoresRequestBody = ({
           },
         },
       );
+    } else if (filter.value === 'Any') {
+      // If the filter requests any support category, define filters in which
+      // the filter field is defined.
+      requestBody.structuredQuery.where.compositeFilter.filters[4].compositeFilter.filters[0].compositeFilter.filters.push(
+        {
+          unaryFilter: {
+            field: { fieldPath: filter.field },
+            op: 'IS_NOT_NULL',
+          },
+        },
+      );
     }
     if (!_isEmpty(grades)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
