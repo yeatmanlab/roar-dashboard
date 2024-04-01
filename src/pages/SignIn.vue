@@ -62,8 +62,8 @@ authStore.$subscribe(() => {
   if (authStore.uid) {
     if (authStore.userData && isLevante) {
       if (
-        toRaw(authStore.userData.userType.toLowerCase()) === 'parent' ||
-        toRaw(authStore.userData.userType.toLowerCase()) === 'teacher'
+        toRaw(authStore.userData?.userType?.toLowerCase()) === 'parent' ||
+        toRaw(authStore.userData?.userType?.toLowerCase()) === 'teacher'
       ) {
         router.push({ name: 'Survey' });
         return;

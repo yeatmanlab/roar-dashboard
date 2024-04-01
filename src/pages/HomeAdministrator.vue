@@ -47,8 +47,11 @@
               </template>
               <template #empty>
                 <div>
-                  There are no administrations to display. Please contact a lab administrator to add you as an admin to
-                  an administration.
+                  {{
+                    isLevante
+                      ? 'There are no adminstrations to display. You can create an administration by nagivating to the Create administration page from the dropdown menu.'
+                      : 'There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.'
+                  }}
                 </div>
               </template>
             </PvDataView>
@@ -75,6 +78,7 @@ import { useQuery } from '@tanstack/vue-query';
 const initialized = ref(false);
 const page = ref(0);
 const pageLimit = ref(10);
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
 

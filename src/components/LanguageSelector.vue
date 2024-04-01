@@ -54,10 +54,6 @@ const languageDropdownOptions = computed(() => {
   });
 });
 
-const getCountryName = (locale) => {
-  return languageOptions[locale].country;
-};
-
 const getCountryFlag = (locale) => {
   return languageOptions[locale].code;
 };

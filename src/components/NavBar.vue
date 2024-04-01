@@ -13,7 +13,7 @@
               </router-link>
             </template>
             <template #menubuttonicon>
-              <PvButton icon="pi pi-bars" @click="toggleMenu" label="Menu" />
+              <PvButton icon="pi pi-bars" label="Menu" @click="toggleMenu" />
             </template>
             <template #end>
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
@@ -49,9 +49,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import _get from 'lodash/get';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
+import _get from 'lodash/get';
 import { getSidebarActions } from '@/router/sidebarActions';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
@@ -84,6 +84,8 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
+
+// ---------------------------------------------------------------
 
 const { data: userClaims, isLoading: userClaimsLoading } = useQuery({
   queryKey: ['userClaims', authStore.uid],
@@ -161,7 +163,7 @@ const isAtHome = computed(() => {
 const rawActions = computed(() => {
   return getSidebarActions({
     isSuperAdmin: isSuperAdmin.value,
-    isAdmin: isAdmin.value,
+    isAdmin: authStore.isUserAdmin,
     includeHomeLink: !isAtHome.value,
   });
 });

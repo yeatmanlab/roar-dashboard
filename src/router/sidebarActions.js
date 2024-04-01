@@ -81,14 +81,23 @@ const sidebarActionOptions = [
   },
 ];
 
-export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, includeHomeLink = true }) => {
+export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
   if (import.meta.env.MODE === 'LEVANTE') {
     return sidebarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {
-        if ((action.requiresSuperAdmin && !isSuperAdmin) || (action.requiresAdmin && !isAdmin)) {
+        // If the action requires admin and the user is an admin, or if the action
+        // requires super admin and the user is a super admin,
+        // or if the action does not require admin or super admin,
+        // the action will be in the dropdown
+        if (
+          (action.requiresAdmin && isAdmin) ||
+          (action.requiresSuperAdmin && isSuperAdmin) ||
+          (!action.requiresAdmin && !action.requiresSuperAdmin)
+        ) {
+          return true;
+        } else {
           return false;
         }
-        return true;
       }
     });
   } else {
