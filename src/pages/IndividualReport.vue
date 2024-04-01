@@ -128,7 +128,7 @@
 </template>
 
 <script setup>
-import { fetchDocById, fetchSubcollection } from '../helpers/query/utils';
+import { fetchDocById } from '../helpers/query/utils';
 import { runPageFetcher } from '../helpers/query/runs';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -175,8 +175,8 @@ const { data: studentData } = useQuery({
 });
 
 const { data: assignmentData } = useQuery({
-  queryKey: ['assignments', props.userId],
-  queryFn: () => fetchSubcollection(`users/${props.userId}`, 'assignments'),
+  queryKey: ['assignments', props.administrationId],
+  queryFn: () => fetchDocById('users', `${props.userId}/assignments/${props.administrationId}`),
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
@@ -261,21 +261,16 @@ const exportToPdf = async () => {
     (exportLoading.value = false);
 };
 
-const currentAssessment = computed(() =>
-  assignmentData.value.filter((assignment) => assignment.id === props.administrationId),
-);
-
 const optionalAssessments = computed(() => {
-  return currentAssessment.value[0].assessments.filter((assessment) => assessment.optional);
+  return assignmentData?.value?.assessments.filter((assessment) => assessment.optional);
 });
 
 // Calling the query client to update the cached taskData with the new optional tasks
 const queryClient = useQueryClient();
 
 const updateTaskData = () => {
-  const updatedTasks = taskData.value.map((task) => {
-    const isOptional = optionalAssessments.value.some((assessment) => assessment.taskId === task.taskId);
-    console.log(task.taskId, isOptional);
+  const updatedTasks = taskData?.value?.map((task) => {
+    const isOptional = optionalAssessments?.value?.some((assessment) => assessment.taskId === task.taskId);
     return isOptional ? { ...task, optional: true } : task;
   });
 

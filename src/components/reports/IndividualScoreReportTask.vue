@@ -52,39 +52,20 @@
             :min="0"
             :max="153"
           />
-          <div v-else class="flex flex-column md:flex-row align-items-center">
-            <div class="flex flex-column justify-content-center align-items-center mt-2">
-              <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
-              <div class="m-2">Status: {{ getStatus(task) }}</div>
-              <div class="text-xs uppercase font-thin mb-2 text-gray-400">
-                <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">Standard Score</div>
-                <div v-else class="scoring-type">Raw Score</div>
-              </div>
-              <PvKnob
-                v-if="rawOnlyTasks.includes(task.taskId)"
-                :model-value="getRawScore(task.taskId)"
-                size="160"
-                value-color="gray"
-                range-color="gray"
-              />
-              <PvKnob
-                v-else
-                :value-template="
-                  getPercentileSuffix(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))
-                "
-                :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
-                :size="160"
-                :value-color="
-                  getSupportLevel(
-                    grade,
-                    task.scores?.[getPercentileScoreKey(task.taskId, grade)],
-                    getRawScore(task.taskId),
-                    task.taskId,
-                  ).tag_color
-                "
-              />
-            </div>
-          </div>
+          <PvKnob
+            v-else
+            :value-template="getPercentileSuffix(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))"
+            :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
+            :size="160"
+            :value-color="
+              getSupportLevel(
+                grade,
+                task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+                getRawScore(task.taskId),
+                task.taskId,
+              ).tag_color
+            "
+          />
         </div>
       </div>
 
