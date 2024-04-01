@@ -518,7 +518,7 @@ let returnScoreTooltip = (colHeader, colData, fieldPath) => {
     Phoneme: 'pa',
     Word: 'swr',
     Sentence: 'sre',
-    'Letter Names and Sounds': 'letter',
+    Letter: 'letter',
     Palabra: 'swr-es',
   };
 
