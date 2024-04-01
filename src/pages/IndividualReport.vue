@@ -175,7 +175,7 @@ const { data: studentData } = useQuery({
 });
 
 const { data: assignmentData } = useQuery({
-  queryKey: ['assignments', props.administrationId],
+  queryKey: ['assignments', props.userId, props.administrationId],
   queryFn: () => fetchDocById('users', `${props.userId}/assignments/${props.administrationId}`),
   enabled: initialized,
   keepPreviousData: true,
