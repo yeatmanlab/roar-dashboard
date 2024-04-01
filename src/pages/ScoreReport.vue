@@ -56,7 +56,7 @@
             </div>
             <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
-                <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width:33%">
+                <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                   <div class="distribution-overview-wrapper">
                     <DistributionChartOverview
                       :runs="runsByTaskId[taskId]"
