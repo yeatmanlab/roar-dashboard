@@ -135,7 +135,6 @@ const minGradeByRuns = computed(() => {
   display: flex;
   height: 100%;
   flex-wrap: wrap;
-  align-items: center;
   justify-content: space-around;
 }
 
