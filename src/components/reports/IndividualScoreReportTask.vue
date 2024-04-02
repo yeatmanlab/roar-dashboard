@@ -135,6 +135,7 @@
           </PvAccordionTab>
         </PvAccordion>
       </div>
+      <div v-if="task.taskId === 'letter'">letter scores</div>
     </div>
   </div>
 </template>
@@ -297,7 +298,6 @@ const getPercentileScoreKey = (taskId, grade) => {
 
 const getRawScore = (taskId) => {
   const task = props.taskData.find((task) => task.taskId === taskId);
-  console.log('rawscore', task);
   return task.scores.composite;
 };
 
