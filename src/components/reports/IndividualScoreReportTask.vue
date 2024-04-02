@@ -123,19 +123,36 @@
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
             <div v-for="[key, rawScore, rangeMin, rangeMax] in extractScoreNames(task.scores, task.taskId)" :key="key">
-              <div class="flex justify-content-between">
+              <div class="flex justify-content-between score-table">
                 <div class="mr-2">
-                  <b>{{ key }}</b> <span class="text-500">({{ rangeMin }}-{{ rangeMax }})</span>:
+                  <b>{{ key }}</b
+                  ><span class="text-500" v-if="rangeMax"> ({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
                 </div>
                 <div class="ml-2">
-                  <b>{{ Math.round(rawScore) }}</b>
+                  <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
                 </div>
               </div>
             </div>
           </PvAccordionTab>
         </PvAccordion>
       </div>
-      <div v-if="task.taskId === 'letter'">letter scores</div>
+      <div v-if="task.taskId === 'letter'">
+        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+          <PvAccordionTab header="Score Breakdown">
+            <div v-for="[key, rawScore, rangeMin, rangeMax] in extractScoreNames(task.scores, task.taskId)" :key="key">
+              <div class="flex justify-content-between score-table">
+                <div class="mr-2">
+                  <b>{{ key }}</b
+                  ><span class="text-500" v-if="rangeMax">({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
+                </div>
+                <div class="ml-2">
+                  <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
+                </div>
+              </div>
+            </div>
+          </PvAccordionTab>
+        </PvAccordion>
+      </div>
     </div>
   </div>
 </template>
@@ -143,6 +160,7 @@
 <script setup>
 import { computed } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
+import _toUpper from 'lodash/toupper';
 import { getGrade } from '@bdelab/roar-utils';
 import {
   rawOnlyTasks,
@@ -190,7 +208,6 @@ const computedTaskData = computed(() => {
       // check if reliable key exists on task -- if it does, push a tag representing the tag
       if ('reliable' in task) {
         const tags = [];
-        console.log(props.taskData);
         if (task.reliable === false) {
           tags.push({
             value: 'Unreliable',
@@ -240,11 +257,11 @@ const formattedScoreAttributeMap = {
 // Converts scores dictionary to array of human readable score names
 const extractScoreNames = (scores, taskId) => {
   let formattedScores = {};
-  for (const key in scores) {
-    if (scores[key] != undefined && !isNaN(scores[key])) {
+  for (const key in scores.composite) {
+    if (scores.composite[key] != undefined && !isNaN(scores.composite[key])) {
       if (formattedScoreAttributeMap[key] !== undefined) {
         const formattedScoreAttribute = formattedScoreAttributeMap[key];
-        formattedScores[formattedScoreAttribute] = scores[key];
+        formattedScores[formattedScoreAttribute] = scores.composite[key];
       }
     }
   }
@@ -264,6 +281,43 @@ const extractScoreNames = (scores, taskId) => {
     }
     return [key, formattedScores[key], minScore, maxScore];
   });
+
+  if (taskId === 'pa') {
+    const first = scores?.FSM?.roarScore;
+    const last = scores?.LSM?.roarScore;
+    const deletion = scores?.DEL?.roarScore;
+    let skills = [];
+    if (first < 15) skills.push('FSM');
+    if (last < 15) skills.push('LSM');
+    if (deletion < 15) skills.push('DEL');
+
+    const skillsString = skills.length >= 0 ? skills.join(', ') : 'None';
+
+    formattedScoresArray.push(['First Sound Matching (FSM)', first]);
+    formattedScoresArray.push(['Last Sound Matching (LSM)', last]);
+    formattedScoresArray.push(['Deletion (DEL)', deletion]);
+    formattedScoresArray.push(['Skills to work on', skillsString]);
+  } else if (taskId === 'letter') {
+    formattedScoresArray;
+    const incorrectLetters = [
+      scores?.UppercaseNames?.upperIncorrect ?? ''.split(','),
+      scores?.LowercaseNames?.lowerIncorrect ?? ''.split(','),
+    ]
+      .sort((a, b) => _toUpper(a) - _toUpper(b))
+      .filter(Boolean)
+      .join(', ');
+
+    const incorrectPhonemes = scores?.Phonemes?.phonemeIncorrect ?? ''.split(',').join(', ');
+
+    const lowerCaseScore = scores?.LowercaseNames?.subScore;
+    const upperCaseScore = scores?.UppercaseNames?.subScore;
+    const letterSoundsScore = scores?.Phonemes?.subScore;
+    formattedScoresArray.push(['Lower Case Letters', lowerCaseScore, 0, 26]);
+    formattedScoresArray.push(['Upper Case Letters', upperCaseScore, 0, 26]);
+    formattedScoresArray.push(['Letter Sounds', letterSoundsScore, 0, 38]);
+    formattedScoresArray.push(['Letters to work on', incorrectLetters]);
+    formattedScoresArray.push(['Sounds to work on', incorrectPhonemes]);
+  }
 
   // Ensure scores are in consistent order
   const order = { 'Raw Score': 2, 'Percentile Score': 1, 'Standard Score': 0 };
@@ -362,6 +416,10 @@ function getPercentileSuffix(percentile) {
   font-size: 1.1rem;
   margin-top: 1rem;
   max-width: 22rem;
+}
+
+.score-table {
+  max-width: 18rem;
 }
 
 .header-task-name {
