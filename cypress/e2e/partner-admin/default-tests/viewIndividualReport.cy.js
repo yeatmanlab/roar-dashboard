@@ -32,11 +32,11 @@ function checkAssignmentColumns(assignments) {
   });
 }
 
-function checkIndividualScoreReports() {
+function checkIndividualScoreReport() {
   cy.get('button', { timeout: 3 * timeout })
     .contains('Report')
     .click();
-  cy.get('div', { timeout: 3 * timeout }).contains('Individual Score Report');
+  cy.get('div', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
   cy.get('button', { timeout: 3 * timeout })
     .contains('Expand All Sections')
     .click();
@@ -51,6 +51,6 @@ describe('The partner admin can view score reports for a given administration.',
     clickScoreButton();
     cy.checkUserList(testUserList);
     checkAssignmentColumns(testAssignments);
-    checkIndividualScoreReports();
+    checkIndividualScoreReport();
   });
 });

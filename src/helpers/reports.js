@@ -7,6 +7,9 @@ import { getGrade } from '@bdelab/roar-utils';
  *  Key: taskId
  *  Value: { orderindex, displayName }
  */
+
+export const optionalAssessmentColor = '#03befc';
+
 export const taskDisplayNames = {
   letter: {
     name: 'Letter',
@@ -172,7 +175,7 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['letter', 'multichoice', 'vocab', 'fluency'];
+export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency'];
 
 /*
  *  Scored Tasks
@@ -188,16 +191,22 @@ export const supportLevelColors = {
   above: 'green',
   some: '#edc037',
   below: '#c93d82',
+  optional: '#03befc',
 };
 
 /*
  *  Get Support Level
  *  Function to take scores, taskId, and grade and return the proper support category for the run.
  */
-export const getSupportLevel = (grade, percentile, rawScore, taskId) => {
+export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
   let support_level = null;
   let tag_color = null;
-  if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {
+  if (optional) {
+    return {
+      support_level: 'Optional',
+      tag_color: supportLevelColors.optional,
+    };
+  } else if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {
     return {
       support_level: 'Scores Under Development',
       tag_color: 'white',

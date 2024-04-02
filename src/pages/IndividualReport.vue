@@ -22,41 +22,42 @@
         <p v-if="administrationData?.name"><strong>Administration:</strong> {{ administrationData?.name }}</p>
       </div>
     </div>
+    <div class="welcome-banner">
+      <div class="banner-text">Welcome to your ROAR Score Report</div>
+      <div class="flex">
+        <PvButton
+          outlined
+          class="text-white"
+          :label="!expanded ? 'Expand All Sections' : 'Collapse All Sections'"
+          :icon="!expanded ? 'pi pi-plus' : 'pi pi-minus'"
+          icon-pos="right"
+          data-html2canvas-ignore="true"
+          @click="setExpand"
+        />
+        <PvButton
+          outlined
+          class="text-white"
+          label="Export to PDF"
+          :icon="exportLoading ? 'pi pi-spin pi-spinner' : 'pi pi-download'"
+          :disabled="exportLoading"
+          icon-pos="right"
+          data-html2canvas-ignore="true"
+          @click="exportToPdf"
+        />
+      </div>
+    </div>
 
-    <div v-if="taskData?.length === 0" class="flex flex-column align-items-center mt-8">
-      <div class="p-4">It looks like {{ studentFirstName }} is still working on completing their assigned games!</div>
-
-      <h3>
+    <div v-if="taskData?.length === 0" class="flex flex-column align-items-center py-6 bg-gray-100">
+      <div class="my-2 text-2xl font-bold text-gray-600">
+        It looks like {{ studentFirstName }} is still working on completing their assigned games!
+      </div>
+      <div class="text-md font-light">
         {{ studentFirstName }}'s individual score report will be built when the student has completed at least one
         assessment.
-      </h3>
+      </div>
     </div>
 
     <div v-else id="individual-report-banner" class="welcome-card mt-2 mb-4">
-      <div class="welcome-banner">
-        <div class="banner-text">Welcome to your ROAR Score Report</div>
-        <div class="flex">
-          <PvButton
-            outlined
-            class="text-white"
-            :label="!expanded ? 'Expand All Sections' : 'Collapse All Sections'"
-            :icon="!expanded ? 'pi pi-plus' : 'pi pi-minus'"
-            icon-pos="right"
-            data-html2canvas-ignore="true"
-            @click="setExpand"
-          />
-          <PvButton
-            outlined
-            class="text-white"
-            label="Export to PDF"
-            :icon="exportLoading ? 'pi pi-spin pi-spinner' : 'pi pi-download'"
-            :disabled="exportLoading"
-            icon-pos="right"
-            data-html2canvas-ignore="true"
-            @click="exportToPdf"
-          />
-        </div>
-      </div>
       <div class="p-3 text-lg">
         The Rapid Online Assessment of Reading (ROAR) assesses students across a range of foundational reading skills.
         <div class="mt-2">{{ studentFirstName }} completed the following games:</div>
@@ -108,16 +109,20 @@
           </div>
         </PvAccordionTab>
       </PvAccordion>
-      <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
-        <PvAccordionTab header="Next Steps">
-          <div class="text-lg">
-            This score report provides a broad overview of your student’s reading development. Understand that a
-            student’s progress may not be linear, and their scores are not fixed- everyone has room to grow and learn.
-            To learn more about any given test or subskill, and to find more resources for supporting your student
-            <a :href="NextSteps" class="hover:text-red-700" target="_blank">click here.</a>
-          </div>
-        </PvAccordionTab>
-      </PvAccordion>
+      <div data-html2canvas-ignore="true" class="w-full">
+        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+          <PvAccordionTab header="Next Steps">
+            <div class="text-lg">
+              This score report provides a broad overview of your student’s reading development. Understand that a
+              student’s progress may not be linear, and their scores are not fixed- everyone has room to grow and learn.
+              To learn more about any given test or subskill, and to find more resources for supporting your student
+              <a :href="NextSteps" class="hover:text-red-700" data-html2canvas-ignore="true" target="_blank"
+                >click here.</a
+              >
+            </div>
+          </PvAccordionTab>
+        </PvAccordion>
+      </div>
     </div>
   </div>
 </template>
@@ -125,8 +130,8 @@
 <script setup>
 import { fetchDocById } from '../helpers/query/utils';
 import { runPageFetcher } from '../helpers/query/runs';
-import { useQuery } from '@tanstack/vue-query';
-import { computed, onMounted, ref } from 'vue';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../store/auth';
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
@@ -164,6 +169,14 @@ const initialized = ref(false);
 const { data: studentData } = useQuery({
   queryKey: ['users', props.userId],
   queryFn: () => fetchDocById('users', props.userId),
+  enabled: initialized,
+  keepPreviousData: true,
+  staleTime: 5 * 60 * 1000,
+});
+
+const { data: assignmentData } = useQuery({
+  queryKey: ['assignments', props.userId, props.administrationId],
+  queryFn: () => fetchDocById('users', `${props.userId}/assignments/${props.administrationId}`),
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
@@ -226,12 +239,52 @@ const exportToPdf = async () => {
   }
   const supportGraphic = document.getElementById('support-graphic');
   if (supportGraphic !== null) {
-    await addElementToPdf(supportGraphic, doc, yCounter);
+    yCounter = await addElementToPdf(supportGraphic, doc, yCounter);
   }
+
+  yCounter += 10;
+  doc.setFontSize(12);
+  doc.text(
+    'This score report provides a broad overview of your student’s reading development. Understand that a student’s progress may not be linear, and their scores are not fixed - everyone has room to grow and learn. To learn more about any given test or subskill, and to find more resources for supporting your student, click the following link. ',
+    15,
+    yCounter,
+    { maxWidth: 180 },
+  );
+  yCounter += 25;
+  doc.setTextColor(0, 0, 255);
+  doc.textWithLink('Next Steps', 15, yCounter, {
+    url: 'https://roar.education/assets/NextSteps-a446d6a7.pdf',
+    color: 'blue',
+  });
 
   doc.save(`IndividualScoreReport_${studentFirstName.value}${studentLastName.value}.pdf`),
     (exportLoading.value = false);
 };
+
+const optionalAssessments = computed(() => {
+  return assignmentData?.value?.assessments.filter((assessment) => assessment.optional);
+});
+
+// Calling the query client to update the cached taskData with the new optional tasks
+const queryClient = useQueryClient();
+
+const updateTaskData = () => {
+  const updatedTasks = taskData?.value?.map((task) => {
+    const isOptional = optionalAssessments?.value?.some((assessment) => assessment.taskId === task.taskId);
+    return isOptional ? { ...task, optional: true } : task;
+  });
+
+  queryClient.setQueryData(['runs', props.administrationId, props.userId, props.orgType, props.orgId], updatedTasks);
+};
+
+// Watch for changes in taskData and update the taskData with the new optional tasks
+watch(
+  () => taskData.value,
+  () => {
+    updateTaskData();
+  },
+  { deep: true },
+);
 
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId));
 
@@ -296,6 +349,7 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) {
     refresh();
   }
+  updateTaskData();
 });
 </script>
 

@@ -23,6 +23,7 @@
       <div class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
+          <div class="m-2">Status: {{ getStatus(task) }}</div>
           <div class="text-xs uppercase font-thin mb-2 text-gray-400">
             <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">
               {{ grade >= 6 ? 'Standard Score' : 'Percentile Score' }}
@@ -176,6 +177,10 @@ const computedTaskData = computed(() => {
       }
     });
 });
+
+const getStatus = (_task) => {
+  return _task.optional ? 'Optional' : 'Required';
+};
 
 const formattedScoreAttributeMap = {
   wjPercentile: 'Percentile Score',
