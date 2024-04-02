@@ -77,7 +77,6 @@
         v-if="taskData?.length"
         :student-data="studentData"
         :task-data="taskData"
-        :raw-task-data="taskData"
         :expanded="expanded"
       />
     </div>
@@ -190,8 +189,8 @@ const { data: taskData } = useQuery({
       orgType: props.orgType,
       orgId: props.orgId,
       userId: props.userId,
-      select: ['scores.computed.composite', 'taskId', 'reliable', 'engagementFlags'],
-      scoreKey: 'scores.computed.composite',
+      select: ['scores.computed', 'taskId', 'reliable', 'engagementFlags'],
+      scoreKey: 'scores.computed',
       paginate: false,
     }),
   enabled: initialized,

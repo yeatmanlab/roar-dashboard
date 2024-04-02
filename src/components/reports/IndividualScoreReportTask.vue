@@ -11,7 +11,7 @@
     <div
       v-else-if="
         !rawOnlyTasks.includes(task.taskId) &&
-        isNaN(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))
+        isNaN(Math.round(task.scores?.composite[getPercentileScoreKey(task.taskId, grade)]))
       "
       class="error flex justify-content-center md:flex-row align-items-center m-auto p-4 w-5"
     >
@@ -29,6 +29,16 @@
               {{ grade >= 6 ? 'Standard Score' : 'Percentile Score' }}
             </div>
             <div v-else class="scoring-type">Raw Score</div>
+            <div v-for="tag in task.tags" class="flex w-full align-items-center justify-content-center">
+              <PvTag
+                v-tooltip.top="tag.tooltip"
+                :icon="tag.icon"
+                key="tag"
+                :value="tag.value"
+                :severity="tag.severity"
+                class="text-sm"
+              />
+            </div>
           </div>
           <PvKnob
             v-if="rawOnlyTasks.includes(task.taskId)"
@@ -39,12 +49,12 @@
           />
           <PvKnob
             v-else-if="grade >= 6"
-            :model-value="Math.round(task.scores?.sprStandardScore)"
+            :model-value="Math.round(task.scores?.composite.sprStandardScore)"
             :size="180"
             :value-color="
               getSupportLevel(
                 grade,
-                task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+                task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
                 returnRawScore(task.taskId, grade),
                 task.taskId,
               ).tag_color
@@ -54,13 +64,15 @@
           />
           <PvKnob
             v-else
-            :value-template="getPercentileSuffix(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))"
-            :model-value="Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)])"
+            :value-template="
+              getPercentileSuffix(Math.round(task.scores?.composite[getPercentileScoreKey(task.taskId, grade)]))
+            "
+            :model-value="Math.round(task.scores?.composite[getPercentileScoreKey(task.taskId, grade)])"
             :size="160"
             :value-color="
               getSupportLevel(
                 grade,
-                task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+                task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
                 getRawScore(task.taskId),
                 task.taskId,
               ).tag_color
@@ -76,12 +88,12 @@
       </div>
       <div v-else-if="grade >= 6" class="px-4 py-2 score-description">
         {{ studentFirstName }} scored a standard score of
-        <strong>{{ Math.round(task.scores?.sprStandardScore) }}</strong
+        <strong>{{ Math.round(task.scores?.composite.sprStandardScore) }}</strong
         >, which indicates they
         <strong>{{
           getSupportLevelLanguage(
             grade,
-            task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+            task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
             getRawScore(task.taskId),
             task.taskId,
           )
@@ -93,14 +105,14 @@
         {{ studentFirstName }} scored in the
         <strong
           >{{
-            getPercentileWithSuffix(Math.round(task.scores?.[getPercentileScoreKey(task.taskId, grade)]))
+            getPercentileWithSuffix(Math.round(task.scores?.composite[getPercentileScoreKey(task.taskId, grade)]))
           }}
           percentile</strong
         >, which indicates they
         <strong>{{
           getSupportLevelLanguage(
             grade,
-            task.scores?.[getPercentileScoreKey(task.taskId, grade)],
+            task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
             getRawScore(task.taskId),
             task.taskId,
           )
@@ -129,6 +141,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import _lowerCase from 'lodash/lowerCase';
 import { getGrade } from '@bdelab/roar-utils';
 import {
   rawOnlyTasks,
@@ -145,10 +158,6 @@ const props = defineProps({
     required: true,
   },
   taskData: {
-    type: Object,
-    required: true,
-  },
-  rawTaskData: {
     type: Object,
     required: true,
   },
@@ -175,6 +184,39 @@ const computedTaskData = computed(() => {
       } else {
         return -1;
       }
+    })
+    .map((task) => {
+      // check if reliable key exists on task -- if it does, push a tag representing the tag
+      if ('reliable' in task) {
+        const tags = [];
+        console.log(props.taskData);
+        if (task.reliable === false) {
+          tags.push({
+            value: 'Unreliable',
+            icon: 'pi pi-times',
+            severity: 'warning',
+            tooltip: `The run was marked unreliable because of the following flags: \n \n ${Object.keys(
+              task.engagementFlags,
+            )
+              .map((flag) => _lowerCase(flag))
+              .join(', ')}`,
+          });
+        } else {
+          tags.push({
+            value: 'Reliable',
+            severity: 'success',
+            icon: 'pi pi-check',
+            tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
+          });
+        }
+
+        // update task with tags
+        task = {
+          ...task,
+          tags: tags,
+        };
+      }
+      return task;
     });
 });
 
@@ -254,14 +296,15 @@ const getPercentileScoreKey = (taskId, grade) => {
 };
 
 const getRawScore = (taskId) => {
-  const task = props.rawTaskData.find((task) => task.taskId === taskId);
-  return task.scores;
+  const task = props.taskData.find((task) => task.taskId === taskId);
+  console.log('rawscore', task);
+  return task.scores.composite;
 };
 
 const returnRawScore = (taskId, grade) => {
-  const task = props.rawTaskData.find((task) => task.taskId === taskId);
+  const task = props.taskData.find((task) => task.taskId === taskId);
   const { rawScoreKey } = getScoreKeys(taskId, grade);
-  return task.scores[rawScoreKey];
+  return task.scores.composite[rawScoreKey];
 };
 
 function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
