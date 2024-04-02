@@ -9,19 +9,19 @@
       </router-link>
 
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start">
-        <div class="login-container gap-2">
+        <div class="login-container gap-1">
           <div v-if="isWideScreen">
             <div v-if="isAdmin" class="flex align-items-center">
               <div v-if="isSuperAdmin" class="flex justify-content-center align-items-center">
                 <div>
                   <PvButton
                     text
-                    label="Register"
+                    label="Organizations"
                     @click="toggleRegisterMenu"
                     icon="pi pi-chevron-down"
                     iconPos="right"
                   />
-                  <PvMenu ref="registerMenu" :model="registerActions" :popup="true" class="p-1">
+                  <PvMenu ref="registerMenu" :model="orgActions" :popup="true" class="p-1">
                     <template #item="{ item }">
                       <div class="cursor-pointer hover:surface-200">
                         <i :class="item.icon" class="pb-2 pt-2 my-1 text-sm cursor-pointer"></i> {{ item.label }}
@@ -30,8 +30,8 @@
                   </PvMenu>
                 </div>
                 <div>
-                  <PvButton text label="Create" @click="toggleCreateMenu" icon="pi pi-chevron-down" iconPos="right" />
-                  <PvMenu ref="createMenu" :model="createActions" :popup="true" class="p-1">
+                  <PvButton text label="Users" @click="toggleCreateMenu" icon="pi pi-chevron-down" iconPos="right" />
+                  <PvMenu ref="createMenu" :model="userActions" :popup="true" class="p-1">
                     <template #item="{ item }">
                       <div class="cursor-pointer hover:surface-200">
                         <i :class="item.icon" class="pb-2 pt-2 mx-2 my-1 text-sm cursor-pointer"></i> {{ item.label }}
@@ -40,8 +40,8 @@
                   </PvMenu>
                 </div>
                 <div class="flex">
-                  <router-link to="/list-orgs" class="">
-                    <PvButton text label="List Orgs" @click="" />
+                  <router-link to="/register-game" class="">
+                    <PvButton text label="Register Task" @click="" />
                   </router-link>
                 </div>
               </div>
@@ -75,7 +75,7 @@
           </div>
           <div v-else>
             <router-link :to="{ name: 'SignOut' }" class="signout-button">
-              <PvButton data-cy="button-sign-out" class="no-underline p-2">{{ $t('navBar.signOut') }}</PvButton>
+              <PvButton data-cy="button-sign-out" class="no-underline">{{ $t('navBar.signOut') }}</PvButton>
             </router-link>
           </div>
           <div class="">
@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
@@ -108,6 +108,7 @@ const initialized = ref(false);
 const menu = ref();
 const registerMenu = ref();
 const createMenu = ref();
+const screenWidth = ref(window.innerWidth);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 
@@ -122,6 +123,11 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
+  window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
 });
 
 const { data: userClaims } = useQuery({
@@ -133,14 +139,23 @@ const { data: userClaims } = useQuery({
 });
 
 const isWideScreen = computed(() => {
-  return window.innerWidth > 768;
+  return screenWidth.value > 728;
 });
+
+const handleResize = () => {
+  screenWidth.value = window.innerWidth;
+  return;
+};
 
 const userDisplayName = computed(() => {
   const email = authStore?.userData?.email;
   const displayName = authStore?.userData?.displayName;
   const username = authStore?.userData?.username;
-  return username || email || displayName || 'User';
+  console.log(authStore);
+  if (isAdmin) {
+    return username || email || displayName || 'Admin';
+  } else {
+  }
 });
 
 const userMenuOptions = [
@@ -185,9 +200,9 @@ const dropDownActions = computed(() => {
   });
 });
 
-const registerActions = computed(() => {
+const orgActions = computed(() => {
   return rawActions.value
-    .filter((action) => action.category === 'register')
+    .filter((action) => action.category === 'orgs')
     .map((action) => {
       return {
         label: action.title,
@@ -199,9 +214,9 @@ const registerActions = computed(() => {
     });
 });
 
-const createActions = computed(() => {
+const userActions = computed(() => {
   return rawActions.value
-    .filter((action) => action.category === 'create')
+    .filter((action) => action.category === 'users')
     .map((action) => {
       return {
         label: action.title,

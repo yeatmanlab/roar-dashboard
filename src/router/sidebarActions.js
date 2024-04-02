@@ -15,7 +15,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: false,
     requiresAdmin: false,
     project: 'ALL',
-    category: 'list',
+    category: 'orgs',
   },
   {
     title: 'Create organization',
@@ -24,7 +24,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
-    category: 'create',
+    category: 'orgs',
   },
   {
     title: 'Register students',
@@ -33,7 +33,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ROAR',
-    category: 'register',
+    category: 'users',
   },
   {
     title: 'Register administrator',
@@ -41,7 +41,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateAdministrator' },
     requiresSuperAdmin: true,
     project: 'ALL',
-    category: 'register',
+    category: 'users',
   },
   {
     title: 'Create administration',
@@ -50,7 +50,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
-    category: 'create',
+    category: 'orgs',
   },
   {
     title: 'Register Task',
@@ -59,7 +59,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
-    category: 'register',
+    category: 'register-task',
   },
   {
     title: 'Register Users',
@@ -68,7 +68,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'LEVANTE',
-    category: 'register',
+    category: 'users',
   },
 ];
 
