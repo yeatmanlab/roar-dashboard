@@ -71,8 +71,8 @@
           <template #body="{ node }">
             <PvChart
               type="bar"
-              :data="setBarChartData(node.data.id)"
-              :options="setBarChartOptions(node.data.id)"
+              :data="setBarChartData(node.data.stats)"
+              :options="setBarChartOptions(node.data.stats)"
               class="h-3rem"
             />
           </template>
@@ -132,7 +132,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
+import { batchGetDocs, fetchDocById } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
 import { useAuthStore } from '@/store/auth';
 import { removeEmptyOrgs } from '@/helpers';
@@ -142,6 +142,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
+import _zip from 'lodash/zip';
 
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
@@ -257,44 +258,44 @@ const singularOrgTypes = {
 
 // dsgf: districts, schools, groups, families
 const fetchTreeOrgs = async () => {
-  const promises = [];
-  for (const orgType of ['districts', 'schools', 'groups', 'families']) {
-    for (const org of props.assignees[orgType] ?? []) {
-      promises.push(fetchDocById(orgType, org, ['name', 'schools', 'classes', 'districtId']));
-    }
-  }
+  const orgTypes = ['districts', 'schools', 'groups', 'families'];
+  const orgPaths = _flattenDeep(
+    orgTypes.map((orgType) => props.assignees[orgType].map((orgId) => `${orgType}/${orgId}`) ?? []),
+  );
 
-  const dsgfOrgs = await Promise.allSettled(promises).then((promiseResults) => {
-    return _without(
-      promiseResults.map((promiseResult, index) => {
-        const { status, value: org } = promiseResult;
-        if (status === 'fulfilled') {
-          const { classes, schools, collection, ...nodeData } = org;
-          const node = {
-            key: String(index),
-            data: {
-              orgType: singularOrgTypes[collection],
-              schools,
-              classes,
-              ...nodeData,
-            },
-          };
-          if (classes)
-            node.children = classes.map((classId) => {
-              return {
-                key: `${node.key}-${classId}`,
-                data: {
-                  orgType: 'class',
-                  id: classId,
-                },
-              };
-            });
-          return node;
-        }
-        return undefined;
-      }),
-      undefined,
-    );
+  const statsPaths = _flattenDeep(
+    orgTypes.map(
+      (orgType) => props.assignees[orgType].map((orgId) => `administrations/${props.id}/stats/${orgId}`) ?? [],
+    ),
+  );
+
+  const promises = [batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'districtId']), batchGetDocs(statsPaths)];
+
+  const [orgDocs, statsDocs] = await Promise.all(promises);
+
+  const dsgfOrgs = _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
+    const { classes, schools, collection, ...nodeData } = orgDoc;
+    const node = {
+      key: String(index),
+      data: {
+        orgType: singularOrgTypes[collection],
+        schools,
+        classes,
+        stats,
+        ...nodeData,
+      },
+    };
+    if (classes)
+      node.children = classes.map((classId) => {
+        return {
+          key: `${node.key}-${classId}`,
+          data: {
+            orgType: 'class',
+            id: classId,
+          },
+        };
+      });
+    return node;
   });
 
   const dependentSchoolIds = _flattenDeep(dsgfOrgs.map((node) => node.data.schools ?? []));
@@ -513,8 +514,8 @@ const getBorderRadii = (left, middle, right) => {
   return borderRadii;
 };
 
-const setBarChartData = (orgId) => {
-  let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId]?.assignment || {};
+const setBarChartData = (orgStats) => {
+  let { assigned = 0, started = 0, completed = 0 } = orgStats?.assignment || {};
   const documentStyle = getComputedStyle(document.documentElement);
 
   started -= completed;
@@ -559,8 +560,8 @@ const setBarChartData = (orgId) => {
   return chartData;
 };
 
-const setBarChartOptions = (orgId) => {
-  let { assigned = 0 } = props.stats[orgId]?.assignment || {};
+const setBarChartOptions = (orgStats) => {
+  let { assigned = 0 } = orgStats?.assignment || {};
 
   const min = 0;
   const max = assigned;

@@ -161,23 +161,15 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
     };
   });
 
-  // Create a list of all the stats collection paths we need to fetch
-  const statsCollections = data
+  // Create a list of all the stats document paths we need to get
+  const statsPaths = data
     // First filter out any missing administration documents
     .filter((item) => item.document !== undefined)
-    // Then map to a list of each stats document
-    .map(({ document }) => `${document.name}/stats`);
-
-  const statsPaths = _flatten(
-    administrationData.map((a) => {
-      const rootCollection = statsCollections.find((collection) => collection.includes(a.id));
-      const assignedOrgIds = _flatten(Object.values(a.assignedOrgs));
-      assignedOrgIds.push('total');
-      return assignedOrgIds.map((orgId) => `${rootCollection}/${orgId}`);
-    }),
-  );
+    // Then map to the total stats document
+    .map(({ document }) => `${document.name}/stats/total`);
 
   const axiosInstance = getAxiosInstance();
+
   const batchStatsDocs = await axiosInstance
     .post(':batchGet', {
       documents: statsPaths,
@@ -198,15 +190,10 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
     });
 
   const administrations = administrationData.map((administration) => {
-    const thisAdminStats = batchStatsDocs.filter((statsDoc) => statsDoc.name.includes(administration.id));
-    const stats = Object.fromEntries(
-      thisAdminStats.map((statsDoc) => {
-        return [statsDoc.name.split('/stats/')[1], statsDoc.data];
-      }),
-    );
+    const thisAdminStats = batchStatsDocs.find((statsDoc) => statsDoc.name.includes(administration.id));
     return {
       ...administration,
-      stats,
+      stats: { total: thisAdminStats.data },
     };
   });
 
