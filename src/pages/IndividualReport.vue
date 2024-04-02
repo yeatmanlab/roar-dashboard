@@ -130,8 +130,8 @@
 <script setup>
 import { fetchDocById } from '../helpers/query/utils';
 import { runPageFetcher } from '../helpers/query/runs';
-import { useQuery } from '@tanstack/vue-query';
-import { computed, onMounted, ref } from 'vue';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../store/auth';
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
@@ -169,6 +169,14 @@ const initialized = ref(false);
 const { data: studentData } = useQuery({
   queryKey: ['users', props.userId],
   queryFn: () => fetchDocById('users', props.userId),
+  enabled: initialized,
+  keepPreviousData: true,
+  staleTime: 5 * 60 * 1000,
+});
+
+const { data: assignmentData } = useQuery({
+  queryKey: ['assignments', props.userId, props.administrationId],
+  queryFn: () => fetchDocById('users', `${props.userId}/assignments/${props.administrationId}`),
   enabled: initialized,
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000,
@@ -253,6 +261,31 @@ const exportToPdf = async () => {
     (exportLoading.value = false);
 };
 
+const optionalAssessments = computed(() => {
+  return assignmentData?.value?.assessments.filter((assessment) => assessment.optional);
+});
+
+// Calling the query client to update the cached taskData with the new optional tasks
+const queryClient = useQueryClient();
+
+const updateTaskData = () => {
+  const updatedTasks = taskData?.value?.map((task) => {
+    const isOptional = optionalAssessments?.value?.some((assessment) => assessment.taskId === task.taskId);
+    return isOptional ? { ...task, optional: true } : task;
+  });
+
+  queryClient.setQueryData(['runs', props.administrationId, props.userId, props.orgType, props.orgId], updatedTasks);
+};
+
+// Watch for changes in taskData and update the taskData with the new optional tasks
+watch(
+  () => taskData.value,
+  () => {
+    updateTaskData();
+  },
+  { deep: true },
+);
+
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId));
 
 const formattedTasks = computed(() => {
@@ -316,6 +349,7 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) {
     refresh();
   }
+  updateTaskData();
 });
 </script>
 
