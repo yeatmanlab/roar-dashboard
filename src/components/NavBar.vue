@@ -157,15 +157,13 @@ const userDisplayName = computed(() => {
     if (email && email.split('@')[1] === 'roar-auth.com') {
       email = email.split('@')[0];
     }
-    console.log('userdata', authStore.userData);
     const displayName = authStore?.userData?.displayName;
     const username = authStore?.userData?.username;
     const firstName = authStore?.userData?.name?.first;
-    console.log('email', email);
-    if (isAdmin.value) {
-      return displayName || username || email || 'Admin';
+    if (isAdmin.value === true) {
+      return 'Hi ' + (displayName || username || email || 'Admin') + '!';
     } else {
-      return 'Hi ' + (firstName || displayName || username || email || 'User') + '! 👋';
+      return 'Hi ' + (firstName || displayName || username || email || 'User') + '!';
     }
   }
 });
@@ -317,6 +315,7 @@ nav {
 .roar-logo {
   width: 10px;
 }
+
 .navbar-logo {
   width: 10px;
 }
