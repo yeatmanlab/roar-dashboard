@@ -204,7 +204,6 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
         return [statsDoc.name.split('/stats/')[1], statsDoc.data];
       }),
     );
-    console.log(stats);
     return {
       ...administration,
       stats,
