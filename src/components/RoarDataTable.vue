@@ -33,7 +33,7 @@
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
-      <span class="flex flex-row flex-wrap justify-content-end">
+      <span class="flex flex-row flex-wrap justify-content-end gap-2">
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"

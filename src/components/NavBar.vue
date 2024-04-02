@@ -4,7 +4,9 @@
       <router-link :to="{ name: 'Home' }">
         <div class="navbar-logo">
           <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
-          <ROARLogo v-else />
+          <div v-else class="">
+            <ROARLogo width="10" />
+          </div>
         </div>
       </router-link>
 
@@ -151,13 +153,19 @@ const userDisplayName = computed(() => {
   if (!userClaimsLoading) {
     return '';
   } else {
-    const email = authStore?.userData?.email;
+    let email = authStore?.userData?.email;
+    if (email && email.split('@')[1] === 'roar-auth.com') {
+      email = email.split('@')[0];
+    }
+    console.log('userdata', authStore.userData);
     const displayName = authStore?.userData?.displayName;
     const username = authStore?.userData?.username;
+    const firstName = authStore?.userData?.name?.first;
+    console.log('email', email);
     if (isAdmin.value) {
       return displayName || username || email || 'Admin';
     } else {
-      return displayName || username || email || 'User';
+      return 'Hi ' + (firstName || displayName || username || email || 'User') + '! 👋';
     }
   }
 });
@@ -304,5 +312,12 @@ nav {
   outline: 1.2px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.3rem;
   padding: 0.5rem 0.8rem;
+}
+
+.roar-logo {
+  width: 10px;
+}
+.navbar-logo {
+  width: 10px;
 }
 </style>

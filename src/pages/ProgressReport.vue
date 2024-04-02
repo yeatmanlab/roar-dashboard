@@ -669,10 +669,6 @@ onMounted(async () => {
 </script>
 
 <style>
-.p-button {
-  margin: 0px 8px;
-}
-
 .loading-container {
   text-align: center;
 }
