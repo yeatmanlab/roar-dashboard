@@ -500,7 +500,7 @@ service cloud.firestore {
       allow update: if loggedIn() && canUpdate() && keysNotUpdated(['createdBy']);
       allow delete: if false;
 
-      match /stats/completion {
+      match /stats/{anyDocumentInThisCollection=**} {
         function getParentAdministration() {
           return get(/databases/$(database)/documents/administrations/$(administrationId)).data;
         }
