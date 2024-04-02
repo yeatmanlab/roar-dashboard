@@ -84,8 +84,8 @@
       <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
-            <img src="../assets/support-distribution.svg" class="w-10" />
-            <div class="text-xl font-bold">The ROAR assessments return 3 kinds of scores:</div>
+            <img src="../assets/support-distribution.png" />
+            <div class="text-xl font-bold mt-2">The ROAR assessments return 3 kinds of scores:</div>
             <ul>
               <li>
                 <b>Standard Score: </b>A <b>standard score </b>is a way of showing how your child's test performance
