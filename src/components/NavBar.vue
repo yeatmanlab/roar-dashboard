@@ -130,7 +130,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-const { data: userClaims } = useQuery({
+const { data: userClaims, isLoading: userClaimsLoading } = useQuery({
   queryKey: ['userClaims', authStore.uid],
   queryFn: () => fetchDocById('userClaims', authStore.uid),
   keepPreviousData: true,
@@ -148,13 +148,17 @@ const handleResize = () => {
 };
 
 const userDisplayName = computed(() => {
-  const email = authStore?.userData?.email;
-  const displayName = authStore?.userData?.displayName;
-  const username = authStore?.userData?.username;
-  console.log(authStore);
-  if (isAdmin) {
-    return username || email || displayName || 'Admin';
+  if (!userClaimsLoading) {
+    return '';
   } else {
+    const email = authStore?.userData?.email;
+    const displayName = authStore?.userData?.displayName;
+    const username = authStore?.userData?.username;
+    if (isAdmin.value) {
+      return displayName || username || email || 'Admin';
+    } else {
+      return displayName || username || email || 'User';
+    }
   }
 });
 
