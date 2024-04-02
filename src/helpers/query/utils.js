@@ -165,7 +165,7 @@ export const batchGetDocs = async (docPaths, select = [], db = 'admin') => {
       );
     });
 
-  return docPaths.map((docPath) => batchDocs.find((doc) => doc.name.includes(docPath))).map((doc) => doc.data);
+  return docPaths.map((docPath) => batchDocs.find((doc) => doc.name.includes(docPath))).map((doc) => doc?.data);
 };
 
 export const matchMode2Op = {

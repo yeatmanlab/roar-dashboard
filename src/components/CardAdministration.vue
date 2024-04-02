@@ -313,27 +313,36 @@ const fetchTreeOrgs = async () => {
     return node.data.orgType === 'school' && !independentSchoolIds.includes(node.data.id);
   });
 
-  const classPromises = independentClassIds.map((classId) => fetchDocById('classes', classId, ['name', 'schoolId']));
-  const independentClasses = await Promise.allSettled(classPromises).then((promiseResults) => {
-    return _without(
-      promiseResults.map((promiseResult, index) => {
-        const { status, value: org } = promiseResult;
-        if (status === 'fulfilled') {
-          const { collection, ...nodeData } = org;
-          const node = {
-            key: String(dsgfOrgs.length + index),
-            data: {
-              orgType: singularOrgTypes[collection],
-              ...nodeData,
-            },
-          };
-          return node;
-        }
-        return undefined;
-      }),
-      undefined,
-    );
-  });
+  const independentClassPaths = independentClassIds.map((classId) => `classes/${classId}`);
+  const independentClassStatPaths = independentClassIds.map(
+    (classId) => `administrations/${props.id}/stats/${classId}`,
+  );
+
+  const classPromises = [
+    batchGetDocs(independentClassPaths, ['name', 'schoolId']),
+    batchGetDocs(independentClassStatPaths),
+  ];
+
+  const [classDocs, classStats] = await Promise.all(classPromises);
+
+  const independentClasses = _without(
+    _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
+      const { collection = 'classes', ...nodeData } = orgDoc ?? {};
+
+      if (_isEmpty(nodeData)) return undefined;
+
+      const node = {
+        key: String(dsgfOrgs.length + index),
+        data: {
+          orgType: singularOrgTypes[collection],
+          ...(stats && { stats }),
+          ...nodeData,
+        },
+      };
+      return node;
+    }),
+    undefined,
+  );
 
   const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === 'district');
   treeTableOrgs.push(...independentSchools);
@@ -390,9 +399,12 @@ const onExpand = async (node) => {
   if (node.data.orgType === 'school' && node.children?.length > 0 && !node.data.expanded) {
     expanding.value = true;
 
-    const promises = node.children.map(({ data }) => {
-      return fetchDocById('classes', data.id, ['name', 'schoolId']);
-    });
+    const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
+    const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
+
+    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId']), batchGetDocs(statPaths)];
+
+    const [classDocs, classStats] = await Promise.all(classPromises);
 
     // Lazy node is a copy of the expanding node. We will insert more detailed
     // children nodes later.
@@ -404,16 +416,23 @@ const onExpand = async (node) => {
       },
     };
 
-    const childNodes = (await Promise.all(promises)).map((classData, index) => {
-      const { collection, ...nodeData } = classData;
-      return {
-        key: `${node.key}-${index}`,
-        data: {
-          orgType: singularOrgTypes[collection],
-          ...nodeData,
-        },
-      };
-    });
+    const childNodes = _without(
+      _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
+        const { collection = 'classes', ...nodeData } = orgDoc ?? {};
+
+        if (_isEmpty(nodeData)) return undefined;
+
+        return {
+          key: `${node.key}-${index}`,
+          data: {
+            orgType: singularOrgTypes[collection],
+            ...(stats && { stats }),
+            ...nodeData,
+          },
+        };
+      }),
+      undefined,
+    );
 
     lazyNode.children = childNodes;
 
