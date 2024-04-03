@@ -45,7 +45,7 @@ const sidebarActionOptions = [
   },
   {
     title: 'Create administration',
-    icon: 'pi pi-question-circle',
+    icon: 'pi pi-sliders-h',
     buttonLink: { name: 'CreateAdministration' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
@@ -54,7 +54,7 @@ const sidebarActionOptions = [
   },
   {
     title: 'View administrations',
-    icon: 'pi pi-question-circle',
+    icon: 'pi pi-list',
     buttonLink: { name: 'Home' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
