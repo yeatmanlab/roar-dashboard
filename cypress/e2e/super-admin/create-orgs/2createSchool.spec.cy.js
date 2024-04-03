@@ -1,3 +1,7 @@
+import { randomizeOrgName } from '../../../support/utils';
+
+const randomSchoolName = randomizeOrgName(Cypress.env('testSchoolName'));
+
 function selectSchoolsFromDropdown() {
   cy.get('[data-cy="dropdown-org-type"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('li', { timeout: Cypress.env('timeout') })
@@ -15,17 +19,16 @@ function inputParentOrgDetails() {
 }
 
 function createSchool() {
-  cy.get('[data-cy="button-create-org"]', { timeout: Cypress.env('timeout') })
-    .click()
-    .wait(3000);
+  cy.get('[data-cy="button-create-org"]', { timeout: Cypress.env('timeout') }).click();
+  cy.wait(3000);
 }
 
-function checkSchoolCreated() {
+function checkSchoolCreated(_orgName) {
   cy.get('a')
     .contains('Schools', { timeout: Cypress.env('timeout') })
     .click();
   inputParentOrgDetails();
-  cy.get('div', { timeout: Cypress.env('timeout') }).should('contain.text', Cypress.env('testSchoolName'));
+  cy.get('div', { timeout: Cypress.env('timeout') }).should('contain.text', _orgName);
   cy.log('School successfully created.');
 }
 
@@ -41,7 +44,7 @@ describe('The admin user can navigate to the create organizations page, and crea
       inputParentOrgDetails();
 
       cy.inputOrgDetails(
-        Cypress.env('testSchoolName'),
+        randomSchoolName,
         Cypress.env('testSchoolInitials'),
         Cypress.env('testSchoolNcesId'),
         Cypress.env('stanfordUniversityAddress'),
@@ -51,6 +54,8 @@ describe('The admin user can navigate to the create organizations page, and crea
 
       createSchool();
 
+      // allow time for the org to be created
+      cy.wait(Cypress.env('timeout'));
       cy.navigateTo('/list-orgs');
       checkSchoolCreated();
     },

@@ -90,7 +90,6 @@ Cypress.Commands.add(
 
     cy.get('span').contains('Groups').click();
     cy.get('ul > li').contains(testGroupName).click({ animationDistanceThreshold: 20 });
-    cy.get('ul > li').contains('Kyle Test Group').click({ animationDistanceThreshold: 20 });
   },
 );
 
@@ -126,37 +125,40 @@ Cypress.Commands.add('switchToOptionalAssessments', () => {
   cy.get("[data-cy='switch-show-optional-assessments']").click();
 });
 
-Cypress.Commands.add('inputOrgDetails', (orgName, orgInitials, orgNcesId, orgAddress, orgGrade, orgTag) => {
-  // Require orgName and orgInitials
-  cy.get('[data-cy="input-org-name"]').type(orgName);
-  cy.get('[data-cy="input-org-initials"]').type(orgInitials);
+Cypress.Commands.add(
+  'inputOrgDetails',
+  (orgName, orgInitials, orgNcesId = null, orgAddress = null, orgGrade = null, orgTag = null) => {
+    // Require orgName and orgInitials
+    cy.get('[data-cy="input-org-name"]').type(orgName);
+    cy.get('[data-cy="input-org-initials"]').type(orgInitials);
 
-  if (orgNcesId) {
-    cy.get('[data-cy="input-nces-id"]').type(orgNcesId);
-  }
+    if (orgNcesId) {
+      cy.get('[data-cy="input-nces-id"]').type(orgNcesId);
+    }
 
-  if (orgGrade) {
-    cy.get('[data-cy="dropdown-grade"').click().get('li').contains(orgGrade).click();
-  }
+    if (orgGrade) {
+      cy.get('[data-cy="dropdown-grade"]').click().get('ul > li').contains(orgGrade).click();
+    }
 
-  if (orgAddress) {
-    // cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
-    cy.get('input[placeholder="Enter a location"]')
-      .type(`${orgAddress}`)
-      .wait(1000)
-      .type('{downarrow}{enter}')
-      .wait(1000);
-    expect(cy.get('[data-cy="chip-address"]').should('contain.text', orgAddress));
-  }
+    if (orgAddress) {
+      // cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
+      cy.get('input[placeholder="Enter a location"]')
+        .type(`${orgAddress}`)
+        .wait(1000)
+        .type('{downarrow}{enter}')
+        .wait(1000);
+      expect(cy.get('[data-cy="chip-address"]').should('contain.text', orgAddress));
+    }
 
-  if (orgTag) {
-    cy.get('[data-cy="input-autocomplete"]').type(orgTag).wait(1000).type('{downarrow}{enter}');
-  }
+    if (orgTag) {
+      cy.get('[data-cy="input-autocomplete"]').type(orgTag).wait(1000).type('{downarrow}{enter}');
+    }
 
-  // Always input test tag
-  cy.get('[data-pc-section="dropdownbutton"]').click();
-  cy.get('li').contains('test').click();
-});
+    // Always input test tag
+    cy.get('[data-pc-section="dropdownbutton"]').click();
+    cy.get('li').contains('test').click();
+  },
+);
 
 Cypress.Commands.add('checkUserList', (userList) => {
   cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
