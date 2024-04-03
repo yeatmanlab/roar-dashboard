@@ -213,11 +213,11 @@ const computedTaskData = computed(() => {
             value: 'Unreliable',
             icon: 'pi pi-times',
             severity: 'warning',
-            tooltip: `The run was marked unreliable because of the following flags: \n \n ${Object.keys(
-              task.engagementFlags,
-            )
-              .map((flag) => _lowerCase(flag))
-              .join(', ')}`,
+            tooltip: task.engagementFlags
+              ? `The run was marked unreliable because of the following flags: \n \n ${Object.keys(task.engagementFlags)
+                  .map((flag) => _lowerCase(flag))
+                  .join(', ')}`
+              : 'The run was marked as unreliable.',
           });
         } else {
           tags.push({
