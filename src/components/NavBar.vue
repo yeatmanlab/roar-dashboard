@@ -139,9 +139,9 @@ const userDisplayName = computed(() => {
     const username = authStore?.userData?.username;
     const firstName = authStore?.userData?.name?.first;
     if (isAdmin.value === true) {
-      return 'Hi ' + (displayName || username || email || 'Admin') + '!';
+      return 'Hi, ' + (displayName || username || email || 'Admin') + '!';
     } else {
-      return 'Hi ' + (firstName || displayName || username || email || 'User') + '!';
+      return 'Hi, ' + (firstName || displayName || username || email || 'User') + '!';
     }
   }
 });
