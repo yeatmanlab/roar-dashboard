@@ -160,7 +160,7 @@
 <script setup>
 import { computed } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
-import _toUpper from 'lodash/toupper';
+import _toUpper from 'lodash/toUpper';
 import { getGrade } from '@bdelab/roar-utils';
 import {
   rawOnlyTasks,
