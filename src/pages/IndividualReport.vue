@@ -77,7 +77,6 @@
         v-if="taskData?.length"
         :student-data="studentData"
         :task-data="taskData"
-        :raw-task-data="taskData"
         :expanded="expanded"
       />
     </div>
@@ -85,8 +84,8 @@
       <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
-            <img src="../assets/support-distribution.svg" class="w-10" />
-            <div class="text-xl font-bold">The ROAR assessments return 3 kinds of scores:</div>
+            <img src="../assets/support-distribution.png" />
+            <div class="text-xl font-bold mt-2">The ROAR assessments return 3 kinds of scores:</div>
             <ul>
               <li>
                 <b>Standard Score: </b>A <b>standard score </b>is a way of showing how your child's test performance
@@ -190,8 +189,8 @@ const { data: taskData } = useQuery({
       orgType: props.orgType,
       orgId: props.orgId,
       userId: props.userId,
-      select: ['scores.computed.composite', 'taskId', 'reliable', 'engagementFlags'],
-      scoreKey: 'scores.computed.composite',
+      select: ['scores.computed', 'taskId', 'reliable', 'engagementFlags'],
+      scoreKey: 'scores.computed',
       paginate: false,
     }),
   enabled: initialized,
