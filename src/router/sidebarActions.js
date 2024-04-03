@@ -6,16 +6,16 @@ const sidebarActionOptions = [
     requiresSuperAdmin: false,
     requiresAdmin: false,
     project: 'ALL',
-    category: 'home',
+    category: 'Home',
   },
   {
     title: 'List organizations',
     icon: 'pi pi-list',
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
-    requiresAdmin: false,
+    requiresAdmin: true,
     project: 'ALL',
-    category: 'orgs',
+    category: 'Organizations',
   },
   {
     title: 'Create organization',
@@ -24,7 +24,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
-    category: 'orgs',
+    category: 'Organizations',
   },
   {
     title: 'Register students',
@@ -33,7 +33,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ROAR',
-    category: 'users',
+    category: 'Users',
   },
   {
     title: 'Register administrator',
@@ -41,7 +41,7 @@ const sidebarActionOptions = [
     buttonLink: { name: 'CreateAdministrator' },
     requiresSuperAdmin: true,
     project: 'ALL',
-    category: 'users',
+    category: 'Users',
   },
   {
     title: 'Create administration',
@@ -50,7 +50,16 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
-    category: 'orgs',
+    category: 'Administrations',
+  },
+  {
+    title: 'View administrations',
+    icon: 'pi pi-question-circle',
+    buttonLink: { name: 'Home' },
+    requiresSuperAdmin: false,
+    requiresAdmin: true,
+    project: 'ALL',
+    category: 'Administrations',
   },
   {
     title: 'Register Task',
@@ -59,7 +68,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',
-    category: 'register-task',
+    category: 'Administrations',
   },
   {
     title: 'Register Users',
@@ -68,7 +77,7 @@ const sidebarActionOptions = [
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'LEVANTE',
-    category: 'users',
+    category: 'Users',
   },
 ];
 
@@ -88,16 +97,19 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, inclu
         if (action.requiresSuperAdmin && !isSuperAdmin) {
           return false;
         }
+        if (action.requiresAdmin && !isAdmin) {
+          return false;
+        }
         return true;
       }
     });
-    const actionsWithHomeLink = actions.filter((action) => {
-      if (!includeHomeLink && action.buttonLink.name === 'Home') {
-        return false;
-      }
-      return true;
-    });
+    // const actionsWithHomeLink = actions.filter((action) => {
+    //   if (!includeHomeLink && action.buttonLink.name === 'Home') {
+    //     return false;
+    //   }
+    //   return true;
+    // });
 
-    return actionsWithHomeLink;
+    return actions;
   }
 };
