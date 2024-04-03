@@ -12,7 +12,7 @@ export default defineConfig({
     Vue({
       include: [/\.vue$/, /\.md$/],
     }),
-    // vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
+    vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
     ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
     nodePolyfills({
       globals: {

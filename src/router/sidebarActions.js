@@ -103,12 +103,6 @@ export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false, inclu
         return true;
       }
     });
-    // const actionsWithHomeLink = actions.filter((action) => {
-    //   if (!includeHomeLink && action.buttonLink.name === 'Home') {
-    //     return false;
-    //   }
-    //   return true;
-    // });
 
     return actions;
   }
