@@ -1,12 +1,12 @@
 <template>
   <header id="site-header" class="navbar-container">
-    <nav class="container flex flex-row align-items-center justify-content-between w-full">
+    <nav class="flex flex-row align-items-center justify-content-between w-full">
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
           <PvMenubar :model="computedItems" class="w-full">
             <template #start>
               <router-link :to="{ name: 'Home' }">
-                <div class="navbar-logo mr-5">
+                <div class="navbar-logo mx-3">
                   <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
                   <ROARLogo v-else />
                 </div>
@@ -16,7 +16,7 @@
               <PvButton icon="pi pi-bars" @click="toggleMenu" label="Menu" />
             </template>
             <template #end>
-              <div class="flex gap-2 align-items-center justify-content-center">
+              <div class="flex gap-2 align-items-center justify-content-center mr-3">
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
                   <div class="text-lg font-bold text-gray-600">
                     {{ userDisplayName }}
