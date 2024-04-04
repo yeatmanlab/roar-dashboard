@@ -2010,6 +2010,7 @@
   color: var(--text-color);
   transition: none;
   border-radius: 0;
+  min-width: max-content;
 }
 .p-menu .p-menuitem > .p-menuitem-content .p-menuitem-link {
   padding: var(--inline-spacing-larger) 1rem;
@@ -2069,6 +2070,7 @@
     0 0 #0000,
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  width: max-content;
 }
 .p-menu .p-submenu-header {
   margin: 0;
@@ -2236,8 +2238,8 @@
   }
   .p-menubar .p-menubar-button {
     display: flex;
-    width: 2rem;
-    height: 2rem;
+    width: 6rem;
+    height: 4rem;
     color: var(--text-color-secondary);
     border-radius: 50%;
     transition: none;

@@ -24,7 +24,7 @@
     </div>
     <div class="welcome-banner">
       <div class="banner-text">Welcome to your ROAR Score Report</div>
-      <div class="flex">
+      <div class="flex gap-2">
         <PvButton
           outlined
           class="text-white"

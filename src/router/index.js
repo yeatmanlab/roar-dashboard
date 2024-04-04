@@ -196,6 +196,7 @@ const routes = [
       const store = useAuthStore();
       if (store.isAuthenticated) {
         await store.signOut();
+        store.userData = null;
       }
       return { name: 'SignIn' };
     },
