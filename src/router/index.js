@@ -267,6 +267,13 @@ const routes = [
     meta: { pageTitle: 'List users', requireAdmin: true },
   },
   {
+    path: '/invite-users/:orgType/:orgId/:orgName',
+    name: 'InviteUsers',
+    props: true,
+    component: () => import('../pages/InviteUsers.vue'),
+    meta: { pageTitle: 'Invite users to an organization', requireSuperAdmin: true },
+  },
+  {
     path: '/administration/:administrationId/:orgType/:orgId',
     name: 'ViewAdministration',
     props: true,
