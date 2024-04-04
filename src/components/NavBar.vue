@@ -141,7 +141,7 @@ const userDisplayName = computed(() => {
     if (isAdmin.value === true) {
       return 'Hi, ' + (displayName || username || email || 'Admin') + '!';
     } else {
-      return 'Hi, ' + (firstName || displayName || username || email || 'User') + '!';
+      return 'Hi, ' + (firstName || displayName || username || email || 'User') + '! 👋';
     }
   }
 });
