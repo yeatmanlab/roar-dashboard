@@ -189,11 +189,11 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
       );
     });
 
-  const administrations = administrationData.map((administration) => {
+  const administrations = administrationData?.map((administration) => {
     const thisAdminStats = batchStatsDocs.find((statsDoc) => statsDoc.name.includes(administration.id));
     return {
       ...administration,
-      stats: { total: thisAdminStats.data },
+      stats: { total: thisAdminStats?.data },
     };
   });
 
