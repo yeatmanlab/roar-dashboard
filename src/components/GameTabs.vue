@@ -61,7 +61,7 @@
               <VideoPlayer
                 :options="returnVideoOptions(game.taskData?.tutorialVideo)"
                 :onVideoEnd="updateVideoCompleted"
-                :onVideoStarted="updateVideoStarted"
+                :onVideoStart="updateVideoStarted"
                 :taskId="game.taskId"
               />
             </div>
@@ -100,7 +100,7 @@ const taskCompletedMessage = computed(() => {
 
 const updateVideoStarted = async (taskId) => {
   try {
-    await authStore.roarfirekit.updateVideoCompletion(selectedAdmin.value.id, taskId, 'started');
+    await authStore.roarfirekit.updateVideoMetadata(selectedAdmin.value.id, taskId, 'started');
   } catch (e) {
     console.log('Error while updating video completion', e);
   }
@@ -108,7 +108,7 @@ const updateVideoStarted = async (taskId) => {
 
 const updateVideoCompleted = async (taskId) => {
   try {
-    await authStore.roarfirekit.updateVideoCompletion(selectedAdmin.value.id, taskId, 'completed');
+    await authStore.roarfirekit.updateVideoMetadata(selectedAdmin.value.id, taskId, 'completed');
   } catch (e) {
     console.log('Error while updating video completion', e);
   }
