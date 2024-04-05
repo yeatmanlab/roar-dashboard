@@ -358,7 +358,6 @@ const handleNewTaskSubmit = async (isFormValid) => {
 
   const convertedParams = convertParamsToObj(taskParams);
 
-  // TODO: add demo and test data here
   let newTaskObject = reactive({
     taskId: taskFields.taskId,
     taskName: taskFields.taskName,
