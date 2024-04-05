@@ -102,7 +102,7 @@ const updateVideoStarted = async (taskId) => {
   try {
     await authStore.roarfirekit.updateVideoMetadata(selectedAdmin.value.id, taskId, 'started');
   } catch (e) {
-    console.log('Error while updating video completion', e);
+    console.error('Error while updating video completion', e);
   }
 };
 
@@ -110,7 +110,7 @@ const updateVideoCompleted = async (taskId) => {
   try {
     await authStore.roarfirekit.updateVideoMetadata(selectedAdmin.value.id, taskId, 'completed');
   } catch (e) {
-    console.log('Error while updating video completion', e);
+    console.error('Error while updating video completion', e);
   }
 };
 
