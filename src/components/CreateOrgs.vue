@@ -165,11 +165,11 @@
         <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
           <div class="flex flex-row align-items-center">
             <PvCheckbox v-model="isDemoData" input-id="chbx-externalTask" :binary="true" />
-            <label class="ml-1 mr-5" for="chbx-externalTask">Mark as <b>Demo Organization</b></label>
+            <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Demo Organization</b></label>
           </div>
           <div class="flex flex-row align-items-center">
             <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
-            <label class="ml-1 mr-5" for="chbx-externalTask">Mark as <b>Test Organization</b></label>
+            <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Test Organization</b></label>
           </div>
         </div>
 

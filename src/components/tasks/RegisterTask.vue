@@ -109,15 +109,15 @@
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
               <PvCheckbox v-model="isDemoData" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-5" for="chbx-externalTask">Mark as <b>Demo Task</b></label>
+              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Demo Task</b></label>
             </div>
             <div class="flex flex-row align-items-center">
               <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-5" for="chbx-externalTask">Mark as <b>Test Task</b></label>
+              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Test Task</b></label>
             </div>
             <div class="flex flex-row align-items-center">
               <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-5" for="chbx-externalTask">Mark as <b>External Task</b> </label>
+              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Task</b> </label>
             </div>
           </div>
           <div class="form-submit">

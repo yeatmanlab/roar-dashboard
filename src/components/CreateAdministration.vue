@@ -65,23 +65,25 @@
           @variants-changed="handleVariantsChanged"
         />
 
-        <div class="flex flex-column justify-content-center mt-2">
-          <div class="flex flex-column mt-2 align-items-center">
-            <label style="font-weight: bold; font-size: large" class="mb-2">Sequential?</label>
-            <span class="flex gap-2">
-              <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
-              <label for="Yes">Yes</label>
-              <PvRadioButton
-                v-model="state.sequential"
-                data-cy="radio-button-not-sequential"
-                input-id="No"
-                :value="false"
-              />
-              <label for="No">No</label>
-            </span>
-            <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
-              >Please specify sequential behavior.</small
-            >
+        <div class="flex flex-column justify-content-center mt-5">
+          <div class="flex flex-column mt-2 align-items-center justify-content-center">
+            <div class="flex">
+              <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
+              <span class="flex gap-2">
+                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
+                <label for="Yes">Yes</label>
+                <PvRadioButton
+                  v-model="state.sequential"
+                  data-cy="radio-button-not-sequential"
+                  input-id="No"
+                  :value="false"
+                />
+                <label for="No">No</label>
+              </span>
+              <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
+                >Please specify sequential behavior.</small
+              >
+            </div>
             <div class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
               <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
@@ -333,6 +335,7 @@ onMounted(async () => {
   max-width: 0;
   border-left: 1px solid var(--surface-d);
 }
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }
