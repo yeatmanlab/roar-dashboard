@@ -32,6 +32,12 @@ const routes = [
     meta: { pageTitle: 'Logging You In' },
   },
   {
+    path: '/classlink-user',
+    name: 'ClassLinkLanding',
+    component: () => import('../pages/ClassLinkLanding.vue'),
+    meta: { pageTitle: 'Logging You In' },
+  },
+  {
     path: '/game/swr',
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
@@ -253,6 +259,14 @@ const routes = [
     component: () => import('../components/auth/AuthClever.vue'),
     props: (route) => ({ code: route.query.code }),
     meta: { pageTitle: 'Clever Authentication' },
+  },
+  {
+    path: '/auth-classlink',
+    name: 'AuthClassLink',
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import('../components/auth/AuthClassLink.vue'),
+    props: (route) => ({ code: route.query.code }),
+    meta: { pageTitle: 'ClassLink Authentication' },
   },
   {
     path: '/auth-email-link',

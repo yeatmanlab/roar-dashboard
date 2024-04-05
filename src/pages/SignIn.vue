@@ -23,12 +23,16 @@
           <h4 class="signin-option-title">{{ $t('pageSignIn.loginWith') }}</h4>
           <div class="flex">
             <PvButton label="Sign in with Google" class="signin-button" @click="authWithGoogle">
-              <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
+              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="signin-button-icon" />
               <span>Google</span>
             </PvButton>
             <PvButton v-if="!isLevante" class="signin-button" @click="authWithClever">
-              <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
+              <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="signin-button-icon" />
               <span>Clever</span>
+            </PvButton>
+            <PvButton v-if="!isLevante" class="signin-button" @click="authWithClassLink">
+              <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="signin-button-icon" />
+              <span>ClassLink</span>
             </PvButton>
           </div>
         </section>
@@ -62,7 +66,7 @@ const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { spinner, authFromClever } = storeToRefs(authStore);
+const { spinner, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
@@ -78,6 +82,11 @@ authStore.$subscribe(() => {
 
     if (authFromClever.value) {
       router.push({ name: 'CleverLanding' });
+    } else {
+      router.push({ name: 'Home' });
+    }
+    if (authFromClassLink.value) {
+      router.push({ name: 'ClassLinkLanding' });
     } else {
       router.push({ name: 'Home' });
     }
@@ -113,6 +122,16 @@ const authWithClever = () => {
     authStore.signInWithCleverRedirect();
   } else {
     authStore.signInWithCleverRedirect();
+    // authStore.signInWithCleverPopup();
+    spinner.value = true;
+  }
+};
+
+const authWithClassLink = () => {
+  if (isMobileBrowser()) {
+    authStore.signInWithClassLinkRedirect();
+  } else {
+    authStore.signInWithClassLinkRedirect();
     // authStore.signInWithCleverPopup();
     spinner.value = true;
   }
@@ -160,6 +179,10 @@ onMounted(() => {
   if (authStore.cleverOAuthRequested) {
     authStore.cleverOAuthRequested = false;
     authWithClever();
+  }
+  if (authStore.classLinkOAuthRequested) {
+    authStore.classLinkOAuthRequested = false;
+    authWithClassLink();
   }
 });
 

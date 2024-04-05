@@ -22,6 +22,9 @@
   "cleverLanding": {
     "cleverLoading": "Cargando tus datos desde Clever..."
   },
+  "classLinkLanding": {
+    "classLinkLoading": "Cargando tus datos desde ClassLink..."
+  },
   "consentModal": {
     "title": "Consentimiento",
     "acceptButton": "Continuar",
