@@ -62,8 +62,7 @@
     "welcome": "Welcome to ROAR!"
   },
   "tasks": {
-    "preparing": "Preparing your game!",
-    "loading": "loading"
+    "preparing": "Preparing your game!"
   },
   "sentryForm": {
     "formTitle": "Report an Issue to ROAR",
