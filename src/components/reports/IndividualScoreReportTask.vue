@@ -72,7 +72,7 @@
               getSupportLevel(
                 grade,
                 task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
-                getRawScore(task.taskId),
+                returnRawScore(task.taskId, grade),
                 task.taskId,
               ).tag_color
             "
@@ -93,7 +93,7 @@
           getSupportLevelLanguage(
             grade,
             task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
-            getRawScore(task.taskId),
+            returnRawScore(task.taskId, grade),
             task.taskId,
           )
         }}</strong>
@@ -112,7 +112,7 @@
           getSupportLevelLanguage(
             grade,
             task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
-            getRawScore(task.taskId),
+            returnRawScore(task.taskId, grade),
             task.taskId,
           )
         }}</strong>
