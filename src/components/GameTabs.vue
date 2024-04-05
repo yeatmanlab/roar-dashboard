@@ -60,9 +60,9 @@
             <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
               <VideoPlayer
                 :options="returnVideoOptions(game.taskData?.tutorialVideo)"
-                :onVideoEnd="updateVideoCompleted"
-                :onVideoStart="updateVideoStarted"
-                :taskId="game.taskId"
+                :on-video-end="updateVideoCompleted"
+                :on-video-start="updateVideoStarted"
+                :task-id="game.taskId"
               />
             </div>
             <div v-else>
