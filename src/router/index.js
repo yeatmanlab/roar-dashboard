@@ -53,6 +53,13 @@ const routes = [
     meta: { pageTitle: 'PA' },
   },
   {
+    path: '/game/pa-es',
+    name: 'PA-ES',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: { taskId: 'pa-es', language: 'es' },
+    meta: { pageTitle: 'PA-ES' },
+  },
+  {
     path: '/game/sre',
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),

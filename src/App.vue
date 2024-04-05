@@ -45,6 +45,7 @@ const navbarBlacklist = ref([
   'SRE',
   'SRE-ES',
   'PA',
+  'PA-ES',
   'Letter',
   'Letter-ES',
   'Vocab',
