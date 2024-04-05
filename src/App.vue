@@ -13,7 +13,7 @@
   </AppHead>
   <div>
     <PvToast />
-    <NavBar v-if="!navbarBlacklist.includes($route.name)" />
+    <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
   </div>
 
@@ -21,10 +21,9 @@
 </template>
 
 <script setup>
-import { computed, onBeforeMount } from 'vue';
+import { computed, onBeforeMount, ref } from 'vue';
 import NavBar from '@/components/NavBar.vue';
 import { useAuthStore } from '@/store/auth';
-import { ref } from 'vue';
 import { fetchDocById } from '@/helpers/query/utils';
 import AppHead from '@/components/AppHead.vue';
 import { i18n } from '@/translations/i18n';
@@ -36,6 +35,7 @@ const pageTitle = computed(() => {
   const fallbackLocale = i18n.global.fallbackLocale.value;
   return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
 });
+const isAuthStoreReady = ref(false);
 
 const navbarBlacklist = ref([
   'SignIn',
@@ -72,5 +72,6 @@ onBeforeMount(async () => {
       authStore.userClaims = userClaims;
     }
   });
+  isAuthStoreReady.value = true;
 });
 </script>
