@@ -14,7 +14,6 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
-import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
   taskId: { type: String, default: 'fluency-arf' },
@@ -29,7 +28,6 @@ const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
-const { t } = useI18n();
 
 const initialized = ref(false);
 let unsubscribe;
@@ -90,7 +88,7 @@ async function startTask() {
   try {
     let checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.body.textContent.includes(t('tasks.loading'));
+      let gameLoading = document.querySelector('.jspsych-content-wrapper');
       if (gameLoading) {
         gameStarted.value = true;
         clearInterval(checkGameStarted);
