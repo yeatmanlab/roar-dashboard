@@ -7,7 +7,7 @@ module.exports = defineConfig({
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173/',
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
-    retries: 2,
+    // retries: 2,
     setupNodeEvents(on) {
       on('task', {
         log(message) {
@@ -38,7 +38,7 @@ module.exports = defineConfig({
     testAdministratorFirstName: 'Cypress Test Administrator First Name',
     testAdministratorMiddleName: 'Cypress Test Administrator Middle Name',
     testAdministratorLastName: 'Cypress Test Administrator Last Name',
-    testAdministratorEmail: 'Cypress Test Administrator Email',
+    testAdministratorEmail: 'CypressTestAdministratorEmail',
     testDistrictName: 'Cypress Test District',
     testDistrictInitials: 'SATD',
     testDistrictNcesId: '0123456789',

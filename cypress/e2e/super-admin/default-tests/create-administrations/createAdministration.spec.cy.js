@@ -1,4 +1,4 @@
-import { randomizeOrgName } from '../../../support/utils';
+import { randomizeName } from '../../../../support/utils';
 
 const timeout = Cypress.env('timeout');
 const today = new Date().getDate();
@@ -6,7 +6,7 @@ const variant = 'word-default';
 const assignedvalue = '5';
 const assignedvalue2 = 'postsecondary';
 
-const randomAdministrationName = randomizeOrgName(Cypress.env('testAdministrationName'));
+const randomAdministrationName = randomizeName(Cypress.env('testAdministrationName'));
 
 function typeAdministrationName() {
   cy.get('[data-cy="input-administration-name"]', { timeout: Cypress.env('timeout') }).type(randomAdministrationName);

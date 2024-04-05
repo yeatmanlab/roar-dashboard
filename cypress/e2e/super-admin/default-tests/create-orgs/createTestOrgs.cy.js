@@ -1,15 +1,15 @@
-import { randomizeOrgName } from '../../../support/utils';
+import { randomizeName } from '../../../../support/utils';
 import {
   selectOrgFromDropdown,
   checkOrgCreated,
   clickCreateOrg,
   inputParentOrgDetails,
-} from '../../../support/helper-functions/super-admin/superAdminHelpers';
+} from '../../../../support/helper-functions/super-admin/superAdminHelpers';
 
-const randomDistrictName = randomizeOrgName(Cypress.env('testDistrictName'));
-const randomSchoolName = randomizeOrgName(Cypress.env('testSchoolName'));
-const randomClassName = randomizeOrgName(Cypress.env('testClassName'));
-const randomGroupName = randomizeOrgName(Cypress.env('testGroupName'));
+const randomDistrictName = randomizeName(Cypress.env('testDistrictName'));
+const randomSchoolName = randomizeName(Cypress.env('testSchoolName'));
+const randomClassName = randomizeName(Cypress.env('testClassName'));
+const randomGroupName = randomizeName(Cypress.env('testGroupName'));
 
 const randomOrgs = [
   { orgType: 'District', name: randomDistrictName, initials: 'CTD', grade: null },
