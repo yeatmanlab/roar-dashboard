@@ -261,6 +261,10 @@ const submit = async () => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
           administrationQueryKeyIndex.value += 1;
 
+          // TODO: Invalidate for administrations query.
+          // This does not work in prod for some reason.
+          // queryClient.invalidateQueries({ queryKey: ['administrations'] })
+
           router.push({ name: 'Home' });
         });
       } else {

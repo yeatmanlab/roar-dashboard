@@ -151,10 +151,16 @@ const submit = async () => {
     orgs.schools = _union(orgs.schools, [_class.schoolId]);
   }
 
-  await roarfirekit.value.createAdministrator(email.value, name, orgs, adminOrgs).then(() => {
-    toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
-    router.push({ name: 'Home' });
-  });
+  await roarfirekit.value
+    .createAdministrator(email.value, name, orgs, adminOrgs)
+    .then(() => {
+      toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
+      router.push({ name: 'Home' });
+    })
+    .catch((error) => {
+      toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 5000 });
+      console.error(error);
+    });
 };
 </script>
 

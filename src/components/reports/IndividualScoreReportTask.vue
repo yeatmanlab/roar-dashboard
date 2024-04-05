@@ -29,11 +29,10 @@
               {{ grade >= 6 ? 'Standard Score' : 'Percentile Score' }}
             </div>
             <div v-else class="scoring-type">Raw Score</div>
-            <div v-for="tag in task.tags" class="flex w-full align-items-center justify-content-center">
+            <div v-for="tag in task.tags" :key="tag" class="flex w-full align-items-center justify-content-center">
               <PvTag
                 v-tooltip.top="tag.tooltip"
                 :icon="tag.icon"
-                key="tag"
                 :value="tag.value"
                 :severity="tag.severity"
                 class="text-sm"
@@ -126,7 +125,7 @@
               <div class="flex justify-content-between score-table">
                 <div class="mr-2">
                   <b>{{ key }}</b
-                  ><span class="text-500" v-if="rangeMax"> ({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
+                  ><span v-if="rangeMax" class="text-500"> ({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
                 </div>
                 <div class="ml-2">
                   <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
@@ -143,7 +142,7 @@
               <div class="flex justify-content-between score-table">
                 <div class="mr-2">
                   <b>{{ key }}</b
-                  ><span class="text-500" v-if="rangeMax">({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
+                  ><span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
                 </div>
                 <div class="ml-2">
                   <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
