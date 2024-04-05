@@ -162,6 +162,16 @@
             </span>
           </div>
         </div>
+        <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
+          <div class="flex flex-row align-items-center">
+            <PvCheckbox v-model="isDemoData" input-id="chbx-externalTask" :binary="true" />
+            <label class="ml-1 mr-5" for="chbx-externalTask">Mark as <b>Demo Organization</b></label>
+          </div>
+          <div class="flex flex-row align-items-center">
+            <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
+            <label class="ml-1 mr-5" for="chbx-externalTask">Mark as <b>Test Organization</b></label>
+          </div>
+        </div>
 
         <PvDivider />
 
@@ -195,6 +205,8 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { orgFetcher } from '@/helpers/query/orgs';
 
 const initialized = ref(false);
+const isTestData = ref(false);
+const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -411,7 +423,7 @@ const submit = async () => {
         });
     } else {
       await roarfirekit.value
-        .createOrg(orgType.value.firestoreCollection, orgData)
+        .createOrg(orgType.value.firestoreCollection, orgData, isTestData, isDemoData)
         .then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
           submitted.value = false;
