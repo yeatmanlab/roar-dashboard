@@ -20,7 +20,7 @@ const props = defineProps({
   taskId: { type: String, default: 'egma-math' },
 });
 
-let TaskLauncher;
+let levanteTaskLauncher;
 
 const taskId = props.taskId;
 const router = useRouter();
@@ -63,7 +63,8 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('core-tasks')).default;
+    const { TaskLauncher } = await import('core-tasks');
+    levanteTaskLauncher = TaskLauncher;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -109,7 +110,7 @@ async function startTask() {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const levanteTask = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
     await levanteTask.run().then(async () => {
       // Handle any post-game actions.
@@ -129,6 +130,8 @@ async function startTask() {
 </script>
 
 <style>
+@import 'core-tasks/lib/resources/core-tasks.css';
+
 .game-target {
   position: absolute;
   top: 0;
