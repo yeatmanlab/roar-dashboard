@@ -58,7 +58,12 @@
           </div>
           <div class="roar-game-image">
             <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
-              <VideoPlayer :options="returnVideoOptions(game.taskData?.tutorialVideo)" />
+              <VideoPlayer
+                :options="returnVideoOptions(game.taskData?.tutorialVideo)"
+                :onVideoEnd="updateVideoCompleted"
+                :onVideoStart="updateVideoStarted"
+                :taskId="game.taskId"
+              />
             </div>
             <div v-else>
               <img v-if="game.taskData.image" :src="game.taskData.image" />
@@ -92,6 +97,22 @@ const { t } = useI18n();
 const taskCompletedMessage = computed(() => {
   return t('gameTabs.taskCompleted');
 });
+
+const updateVideoStarted = async (taskId) => {
+  try {
+    await authStore.roarfirekit.updateVideoMetadata(selectedAdmin.value.id, taskId, 'started');
+  } catch (e) {
+    console.error('Error while updating video completion', e);
+  }
+};
+
+const updateVideoCompleted = async (taskId) => {
+  try {
+    await authStore.roarfirekit.updateVideoMetadata(selectedAdmin.value.id, taskId, 'completed');
+  } catch (e) {
+    console.error('Error while updating video completion', e);
+  }
+};
 
 const props = defineProps({
   games: { type: Array, required: true },
