@@ -130,8 +130,6 @@ async function startTask() {
 </script>
 
 <style>
-@import 'core-tasks/lib/resources/core-tasks.css';
-
 .game-target {
   position: absolute;
   top: 0;
