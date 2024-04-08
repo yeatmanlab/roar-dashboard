@@ -23,7 +23,6 @@
       <div class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
-          <div class="m-2">Status: {{ getStatus(task) }}</div>
           <div class="text-xs uppercase font-thin mb-2 text-gray-400">
             <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">
               {{ grade >= 6 ? 'Standard Score' : 'Percentile Score' }}
@@ -205,8 +204,23 @@ const computedTaskData = computed(() => {
     })
     .map((task) => {
       // check if reliable key exists on task -- if it does, push a tag representing the tag
+      const tags = [];
+      if (task.optional === true) {
+        tags.push({
+          icon: 'info',
+          value: 'Optional',
+          severity: 'secondary',
+          tooltip: 'This task was a optional assignment.',
+        });
+      } else {
+        tags.push({
+          icon: 'info',
+          value: 'Required',
+          severity: 'secondary',
+          tooltip: 'This task was a required assignment.',
+        });
+      }
       if ('reliable' in task) {
-        const tags = [];
         if (task.reliable === false) {
           tags.push({
             value: 'Unreliable',
@@ -226,13 +240,12 @@ const computedTaskData = computed(() => {
             tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
           });
         }
-
         // update task with tags
-        task = {
-          ...task,
-          tags: tags,
-        };
       }
+      task = {
+        ...task,
+        tags: tags,
+      };
       return task;
     });
 });
