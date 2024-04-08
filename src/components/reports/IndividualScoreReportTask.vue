@@ -213,14 +213,14 @@ const computedTaskData = computed(() => {
       const tags = [];
       if (task.optional === true) {
         tags.push({
-          icon: 'info',
+          icon: '',
           value: 'Optional',
           severity: 'secondary',
           tooltip: 'This task was a optional assignment.',
         });
       } else {
         tags.push({
-          icon: 'info',
+          icon: '',
           value: 'Required',
           severity: 'secondary',
           tooltip: 'This task was a required assignment.',
@@ -246,8 +246,8 @@ const computedTaskData = computed(() => {
             tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
           });
         }
-        // update task with tags
       }
+      // update task with tags
       task = {
         ...task,
         tags: tags,
@@ -255,10 +255,6 @@ const computedTaskData = computed(() => {
       return task;
     });
 });
-
-const getStatus = (_task) => {
-  return _task.optional ? 'Optional' : 'Required';
-};
 
 const formattedScoreAttributeMap = {
   wjPercentile: 'Percentile Score',
