@@ -108,15 +108,15 @@
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
-              <PvCheckbox v-model="isDemoData" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Demo Task</b></label>
+              <PvCheckbox v-model="taskCheckboxData" inputId="chbx-demoTask" value="isDemoTask" />
+              <label class="ml-1 mr-3" for="chbx-demoTask">Mark as <b>Demo Task</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Test Task</b></label>
+              <PvCheckbox v-model="taskCheckboxData" inputId="chbx-testTask" value="isTestTask" />
+              <label class="ml-1 mr-3" for="chbx-testTask">Mark as <b>Test Task</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
+              <PvCheckbox v-model="taskCheckboxData" input-id="chbx-externalTask" value="isExternalTask" />
               <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Task</b> </label>
             </div>
           </div>
@@ -222,16 +222,31 @@
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
-              <PvCheckbox v-model="isDemoData" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Demo Variant</b></label>
+              <PvCheckbox
+                v-model="variantCheckboxData"
+                inputId="chbx-demoVariant"
+                name="variantCheckboxData"
+                value="isDemoVariant"
+              />
+              <label class="ml-1 mr-3" for="chbx-demoVariant">Mark as <b>Demo Variant</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Demo Variant</b></label>
+              <PvCheckbox
+                v-model="variantCheckboxData"
+                inputId="chbx-testVariant"
+                name="variantCheckboxData"
+                value="isTestVariant"
+              />
+              <label class="ml-1 mr-3" for="chbx-testVariant">Mark as <b>Test Variant</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Variant</b></label>
+              <PvCheckbox
+                v-model="variantCheckboxData"
+                inputId="chbx-externalVariant"
+                name="variantCheckboxData"
+                value="isExternalVariant"
+              />
+              <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>External Variant</b></label>
             </div>
           </div>
           <div class="form-submit">
@@ -244,7 +259,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, computed } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
@@ -256,11 +271,11 @@ import { taskFetcher } from '@/helpers/query/tasks';
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
-const isExternalTask = ref(false);
-const isDemoData = ref(false);
-const isTestData = ref(false);
+const taskCheckboxData = ref();
+const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
 
 let unsubscribe;
 const init = () => {
@@ -351,6 +366,8 @@ const created = ref(false);
 
 const handleNewTaskSubmit = async (isFormValid) => {
   submitted.value = true;
+  const isDemoData = !!taskCheckboxData.value?.find((item) => item === 'isDemoTask');
+  const isTestData = !!taskCheckboxData.value?.find((item) => item === 'isTestTask');
 
   if (!isFormValid) {
     return;
@@ -364,9 +381,8 @@ const handleNewTaskSubmit = async (isFormValid) => {
     taskDescription: taskFields.description,
     taskImage: taskFields.coverImage,
     variantParams: convertedParams,
-    // TODO: Check if this is the valid way to see demo/test data values
-    demoData: { task: isDemoData.value, variant: isDemoData.value },
-    testData: { task: isTestData.value, variant: isTestData.value },
+    demoData: { task: isDemoData, variant: isDemoData },
+    testData: { task: isTestData, variant: isTestData },
   });
 
   if (isExternalTask.value) {
@@ -384,6 +400,9 @@ const handleNewTaskSubmit = async (isFormValid) => {
 
 const handleVariantSubmit = async (isFormValid) => {
   submitted.value = true;
+  const isDemoData = !!variantCheckboxData.value?.find((item) => item === 'isDemoVariant');
+  const isTestData = !!variantCheckboxData.value?.find((item) => item === 'isTestVariant');
+  const isExternalVariant = !!variantCheckboxData.value?.find((item) => item === 'isExternalVariant');
 
   if (!isFormValid) {
     return;
@@ -398,11 +417,11 @@ const handleVariantSubmit = async (isFormValid) => {
     variantName: variantFields.variantName,
     variantParams: convertedParams,
     // TODO: Check if this is the valid way to see demo/test data values
-    demoData: { task: false, variant: isDemoData.value },
-    testData: { task: false, variant: isTestData.value },
+    demoData: { task: variantFields.selectedGame?.demoData, variant: isDemoData },
+    testData: { task: variantFields.selectedGame?.testData, variant: isTestData },
   });
 
-  if (isExternalTask.value) {
+  if (isExternalVariant) {
     newVariantObject.variantParams = {
       ...convertedParams,
       variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams),
