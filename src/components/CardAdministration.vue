@@ -260,12 +260,12 @@ const singularOrgTypes = {
 const fetchTreeOrgs = async () => {
   const orgTypes = ['districts', 'schools', 'groups', 'families'];
   const orgPaths = _flattenDeep(
-    orgTypes.map((orgType) => props.assignees[orgType].map((orgId) => `${orgType}/${orgId}`) ?? []),
+    orgTypes.map((orgType) => (props.assignees[orgType] ?? []).map((orgId) => `${orgType}/${orgId}`) ?? []),
   );
 
   const statsPaths = _flattenDeep(
     orgTypes.map(
-      (orgType) => props.assignees[orgType].map((orgId) => `administrations/${props.id}/stats/${orgId}`) ?? [],
+      (orgType) => (props.assignees[orgType] ?? []).map((orgId) => `administrations/${props.id}/stats/${orgId}`) ?? [],
     ),
   );
 
