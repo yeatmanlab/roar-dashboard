@@ -3,19 +3,17 @@ import { getFirestore, collection, query, where, getDocs, Timestamp } from 'fire
 // import admin from '../../../src/config/firebaseRoar'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBz0CTdyfgNXr7VJqcYOPlG609XDs97Tn8',
+  apiKey: 'AIzaSyCl-JsYraUfofQZXpzshQ6s-E0nYzlCvvg',
 
-  authDomain: 'gse-roar-admin.firebaseapp.com',
+  authDomain: 'gse-roar-admin-dev.firebaseapp.com',
 
-  projectId: 'gse-roar-admin',
+  projectId: 'gse-roar-admin-dev',
 
-  storageBucket: 'gse-roar-admin.appspot.com',
+  storageBucket: 'gse-roar-admin-dev.appspot.com',
 
-  messagingSenderId: '1062489366521',
+  messagingSenderId: '401455396681',
 
-  appId: '1:1062489366521:web:d0b8b5371a67332d1d2728',
-
-  measurementId: 'G-YYE3YN0S99',
+  appId: '1:401455396681:web:859ea073a116d0aececc98',
 };
 
 const app = initializeApp(firebaseConfig);
