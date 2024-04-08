@@ -23,18 +23,24 @@
       <div class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
-          <div class="text-xs uppercase font-thin mb-2 text-gray-400">
+          <div class="text-xs uppercase font-thin text-gray-400">
             <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">
               {{ grade >= 6 ? 'Standard Score' : 'Percentile Score' }}
             </div>
             <div v-else class="scoring-type">Raw Score</div>
-            <div v-for="tag in task.tags" :key="tag" class="flex w-full align-items-center justify-content-center">
+          </div>
+          <div class="flex gap-2 mb-2">
+            <div
+              v-for="tag in task.tags"
+              :key="tag"
+              class="flex flex-row w-full align-items-center justify-content-center"
+            >
               <PvTag
                 v-tooltip.top="tag.tooltip"
                 :icon="tag.icon"
                 :value="tag.value"
                 :severity="tag.severity"
-                class="text-sm"
+                class="text-xs"
               />
             </div>
           </div>
