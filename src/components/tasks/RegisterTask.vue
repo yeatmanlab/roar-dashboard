@@ -102,8 +102,8 @@
           </div>
 
           <div class="w-full flex justify-content-end">
-            <div class="w-3">
-              <PvButton label="Add Field" text @click="addField(taskParams)" />
+            <div class="w-2">
+              <PvButton label="Add Field" text @click="addField(taskParams)" icon="pi pi-plus" />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
@@ -216,7 +216,7 @@
           </div>
 
           <div class="w-full flex justify-content-end">
-            <div class="w-3">
+            <div class="w-2">
               <PvButton icon="pi pi-plus" label="Add Field" text @click="addField(variantParams)" />
             </div>
           </div>
@@ -417,8 +417,8 @@ const handleVariantSubmit = async (isFormValid) => {
     variantName: variantFields.variantName,
     variantParams: convertedParams,
     // TODO: Check if this is the valid way to see demo/test data values
-    demoData: { task: variantFields.selectedGame?.demoData, variant: isDemoData },
-    testData: { task: variantFields.selectedGame?.testData, variant: isTestData },
+    demoData: { task: !!variantFields.selectedGame?.demoData, variant: isDemoData },
+    testData: { task: !!variantFields.selectedGame?.testData, variant: isTestData },
   });
 
   if (isExternalVariant) {
