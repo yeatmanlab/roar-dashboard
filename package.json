@@ -31,7 +31,7 @@
     "@bdelab/roar-firekit": "^4.9.0",
     "@bdelab/roar-letter": "^1.10.0",
     "@bdelab/roar-multichoice": "^1.11.1",
-    "@bdelab/roar-pa": "^1.7.0",
+    "@bdelab/roar-pa": "^1.7.1",
     "@bdelab/roar-sre": "^1.13.3",
     "@bdelab/roar-swr": "^1.9.2",
     "@bdelab/roar-utils": "^1.2.1",
