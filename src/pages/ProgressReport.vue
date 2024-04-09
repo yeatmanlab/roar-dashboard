@@ -13,7 +13,7 @@
             <div>
               <div class="uppercase font-light text-gray-500 text-md">Administration</div>
               <div class="administration-name uppercase">
-                {{ administrationInfo?.name }}
+                {{ getTitle(administrationInfo) }}
               </div>
             </div>
           </div>
@@ -195,11 +195,19 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+function getTitle(info) {
+  if (isSuperAdmin.value) {
+    return info.name;
+  } else {
+    return info.publicName || info.name;
+  }
+}
 
 const { data: orgInfo } = useQuery({
   queryKey: ['orgInfo', props.orgId],
@@ -543,7 +551,7 @@ const exportAll = async () => {
   });
   exportCsv(
     computedExportData,
-    `roar-progress-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`,
+    `roar-progress-${_kebabCase(getTitle(administrationInfo.value))}-${_kebabCase(orgInfo.value.name)}.csv`,
   );
 };
 

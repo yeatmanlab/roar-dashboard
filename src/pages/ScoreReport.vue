@@ -19,7 +19,7 @@
                 <div>
                   <div class="uppercase font-light text-gray-500 text-sm">Administration</div>
                   <div class="administration-name mb-4">
-                    {{ _toUpper(administrationInfo?.name) }}
+                    {{ _toUpper(getTitle(administrationInfo)) }}
                   </div>
                 </div>
                 <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
@@ -412,7 +412,7 @@ const handleExportToPdf = async () => {
     yCounter = await addElementToPdf(closing, doc, yCounter);
   }
 
-  doc.save(`roar-scores-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.pdf`);
+  doc.save(`roar-scores-${_kebabCase(getTitle(administrationInfo.value))}-${_kebabCase(orgInfo.value.name)}.pdf`);
   exportLoading.value = false;
   window.scrollTo(0, 0);
 
@@ -465,11 +465,19 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+function getTitle(info) {
+  if (isSuperAdmin.value) {
+    return info.name;
+  } else {
+    return info.publicName || info.name;
+  }
+}
 
 const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
   queryKey: ['orgInfo', props.orgId],
@@ -886,7 +894,7 @@ const exportAll = async () => {
   });
   exportCsv(
     computedExportData,
-    `roar-scores-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`,
+    `roar-scores-${_kebabCase(getTitle(administrationInfo.value))}-${_kebabCase(orgInfo.value.name)}.csv`,
   );
   return;
 };
