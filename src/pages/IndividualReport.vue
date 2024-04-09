@@ -84,7 +84,7 @@
       <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
-            <img src="../assets/support-distribution.png" />
+            <img src="../assets/support-distribution.png" width="650" />
             <div class="text-xl font-bold mt-2">The ROAR assessments return 3 kinds of scores:</div>
             <ul>
               <li>
