@@ -13,6 +13,7 @@ export async function initNewFirekit() {
       db: false,
       functions: false,
     },
+
     verboseLogging: import.meta.env.MODE === 'LEVANTE' ? false : true,
   });
   return await firekit.init();
