@@ -8,6 +8,11 @@ const endBlockText = {
   endText3: 'You have helped me and all my friends!',
 };
 const breakBlockText = 'Take a break if needed';
+const breakBlockText2 = {
+  break1: 'Great job',
+  break2: 'Look at all those carrots',
+  break3: 'You are doing great',
+};
 
 describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
   it(`ROAR-Phoneme Playthrough Test`, () => {
@@ -19,7 +24,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
     // cy.get(".p-tabview").contains(pa.name);
     cy.visit('/game/pa');
 
-    playPA(startText, breakBlockText, endBlockText);
+    playPA(startText, breakBlockText, breakBlockText2, endBlockText);
 
     cy.visit('/');
     cy.wait(0.2 * timeout);
