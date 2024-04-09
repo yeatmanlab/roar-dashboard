@@ -13,7 +13,7 @@
   </AppHead>
   <div>
     <PvToast />
-    <NavBar v-if="!navbarBlacklist.includes($route.name)" />
+    <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
   </div>
 
@@ -35,6 +35,7 @@ const pageTitle = computed(() => {
   const fallbackLocale = i18n.global.fallbackLocale.value;
   return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
 });
+const isAuthStoreReady = ref(false);
 
 const navbarBlacklist = ref([
   'SignIn',
@@ -71,5 +72,6 @@ onBeforeMount(async () => {
       authStore.userClaims = userClaims;
     }
   });
+  isAuthStoreReady.value = true;
 });
 </script>
