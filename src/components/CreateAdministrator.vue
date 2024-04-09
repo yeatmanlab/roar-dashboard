@@ -48,11 +48,17 @@
           </div>
 
           <OrgPicker @selection="selection($event)" />
+          <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
+              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Test Administrator</b></label>
+            </div>
+          </div>
 
           <PvDivider />
 
-          <div class="grid">
-            <div class="col-12">
+          <div class="flex w-full align-items-center justify-content-center">
+            <div class="">
               <PvButton label="Create Administrator" data-cy="button-create-administrator" @click="submit" />
             </div>
           </div>
@@ -87,6 +93,7 @@ const firstName = ref();
 const middleName = ref();
 const lastName = ref();
 const email = ref();
+const isTestData = ref(false);
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -152,7 +159,7 @@ const submit = async () => {
   }
 
   await roarfirekit.value
-    .createAdministrator(email.value, name, orgs, adminOrgs)
+    .createAdministrator(email.value, name, orgs, adminOrgs, isTestData)
     .then(() => {
       toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
       router.push({ name: 'Home' });

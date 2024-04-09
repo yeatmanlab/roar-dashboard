@@ -57,7 +57,7 @@ function checkTableColumn(headers, value) {
 describe('The partner admin can view score reports for a given administration and filter by school.', () => {
   it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {
     checkUrl();
-    cy.getAdministrationCard(roarDemoAdministrationName, 'ascending');
+    cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
     clickScoreButton();
     setFilterBySchool('zzzCypressTestSchool');
     checkTableColumn(headers, 'zzzCypressTestSchool');
@@ -67,7 +67,7 @@ describe('The partner admin can view score reports for a given administration an
 describe('The partner admin can view score reports for a given administration and filter by grade', () => {
   it('Selects an administration, views its score report, then accessed the filter bar to filter by grade', () => {
     checkUrl();
-    cy.getAdministrationCard(roarDemoAdministrationName, 'ascending');
+    cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
     clickScoreButton();
     setFilterByGrade('3');
     checkTableColumn(['Grade'], '3');
@@ -77,7 +77,7 @@ describe('The partner admin can view score reports for a given administration an
 describe('The partner admin can view score reports for a given administration and filter by both school and grade', () => {
   it('Selects an administration, views its score report, then accessed the filter bar to filter by both school grade', () => {
     checkUrl();
-    cy.getAdministrationCard(roarDemoAdministrationName, 'ascending');
+    cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
     clickScoreButton();
     setFilterByGrade('5');
     setFilterBySchool('zzzCypressTestSchool');

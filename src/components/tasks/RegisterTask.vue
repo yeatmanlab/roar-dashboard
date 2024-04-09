@@ -2,17 +2,13 @@
   <PvToast />
   <PvTabView>
     <PvTabPanel header="Register Task">
-      <div v-if="!created" class="card">
-        <h1 class="text-center">Register a New Task</h1>
+      <div v-if="!created" class="card px-3">
+        <h1 class="text-center font-bold">Register a New Task</h1>
         <!-- <p class="login-title" align="left">Register for ROAR</p> -->
         <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!t$.$invalid)">
           <!-- Task name -->
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
-              <div class="flex flex-row align-items-center justify-content-end gap-2">
-                <label class="ml-7" for="chbx-externalTask">Is this an external task?</label>
-                <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
-              </div>
               <div class="p-input-icon-right">
                 <label for="taskName">Task Name <span class="required">*</span></label>
                 <PvInputText
@@ -101,14 +97,31 @@
 
               <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <PvButton icon="pi pi-trash" class="p-button-danger delete-btn" @click="removeField(taskParams, index)" />
+              <PvButton icon="pi pi-trash" text class="delete-btn" @click="removeField(taskParams, index)" />
             </div>
           </div>
 
-          <PvButton label="Add Field" class="p-button-success" @click="addField(taskParams)" />
-
+          <div class="w-full flex justify-content-end">
+            <div class="w-2">
+              <PvButton label="Add Field" text @click="addField(taskParams)" icon="pi pi-plus" />
+            </div>
+          </div>
+          <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox v-model="taskCheckboxData" inputId="chbx-demoTask" value="isDemoTask" />
+              <label class="ml-1 mr-3" for="chbx-demoTask">Mark as <b>Demo Task</b></label>
+            </div>
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox v-model="taskCheckboxData" inputId="chbx-testTask" value="isTestTask" />
+              <label class="ml-1 mr-3" for="chbx-testTask">Mark as <b>Test Task</b></label>
+            </div>
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox v-model="taskCheckboxData" input-id="chbx-externalTask" value="isExternalTask" />
+              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Task</b> </label>
+            </div>
+          </div>
           <div class="form-submit">
-            <PvButton type="submit" label="Submit" class="submit-button" />
+            <PvButton type="submit" label="Submit" class="submit-button" severity="primary" />
           </div>
         </form>
       </div>
@@ -123,9 +136,9 @@
     </PvTabPanel>
 
     <PvTabPanel header="Register Variant">
-      <div class="card">
+      <div class="card px-3">
         <form class="p-fluid" @submit.prevent="handleVariantSubmit(!v$.$invalid)">
-          <h1 class="text-center">Register a New Variant</h1>
+          <h1 class="text-center font-bold">Register a New Variant</h1>
 
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
@@ -135,10 +148,6 @@
                   <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
                     <label class="ml-7" for="chbx-registeredTask">Search registered tasks only?</label>
                     <PvCheckbox v-model="registeredTasksOnly" input-id="chbx-registeredTask" :binary="true" />
-                  </div>
-                  <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-0">
-                    <label class="ml-7" for="chbx-externalTask">Is this an external task?</label>
-                    <PvCheckbox v-model="isExternalTask" input-id="chbx-externalTask" :binary="true" />
                   </div>
                 </div>
               </div>
@@ -202,18 +211,46 @@
 
               <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <PvButton
-                icon="pi pi-trash"
-                class="p-button-danger delete-btn"
-                @click="removeField(variantParams, index)"
-              />
+              <PvButton icon="pi pi-trash" class="delete-btn" @click="removeField(variantParams, index)" text />
             </div>
           </div>
 
-          <PvButton label="Add Field" class="p-button-success" @click="addField(variantParams)" />
-
+          <div class="w-full flex justify-content-end">
+            <div class="w-2">
+              <PvButton icon="pi pi-plus" label="Add Field" text @click="addField(variantParams)" />
+            </div>
+          </div>
+          <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox
+                v-model="variantCheckboxData"
+                inputId="chbx-demoVariant"
+                name="variantCheckboxData"
+                value="isDemoVariant"
+              />
+              <label class="ml-1 mr-3" for="chbx-demoVariant">Mark as <b>Demo Variant</b></label>
+            </div>
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox
+                v-model="variantCheckboxData"
+                inputId="chbx-testVariant"
+                name="variantCheckboxData"
+                value="isTestVariant"
+              />
+              <label class="ml-1 mr-3" for="chbx-testVariant">Mark as <b>Test Variant</b></label>
+            </div>
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox
+                v-model="variantCheckboxData"
+                inputId="chbx-externalVariant"
+                name="variantCheckboxData"
+                value="isExternalVariant"
+              />
+              <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>External Variant</b></label>
+            </div>
+          </div>
           <div class="form-submit">
-            <PvButton type="submit" label="Submit" class="submit-button" />
+            <PvButton type="submit" label="Submit" class="submit-button" severity="primary" />
           </div>
         </form>
       </div>
@@ -222,7 +259,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, computed } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
@@ -234,9 +271,11 @@ import { taskFetcher } from '@/helpers/query/tasks';
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
-const isExternalTask = ref(false);
+const taskCheckboxData = ref();
+const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
 
 let unsubscribe;
 const init = () => {
@@ -327,6 +366,8 @@ const created = ref(false);
 
 const handleNewTaskSubmit = async (isFormValid) => {
   submitted.value = true;
+  const isDemoData = !!taskCheckboxData.value?.find((item) => item === 'isDemoTask');
+  const isTestData = !!taskCheckboxData.value?.find((item) => item === 'isTestTask');
 
   if (!isFormValid) {
     return;
@@ -340,6 +381,8 @@ const handleNewTaskSubmit = async (isFormValid) => {
     taskDescription: taskFields.description,
     taskImage: taskFields.coverImage,
     variantParams: convertedParams,
+    demoData: { task: isDemoData, variant: isDemoData },
+    testData: { task: isTestData, variant: isTestData },
   });
 
   if (isExternalTask.value) {
@@ -357,6 +400,9 @@ const handleNewTaskSubmit = async (isFormValid) => {
 
 const handleVariantSubmit = async (isFormValid) => {
   submitted.value = true;
+  const isDemoData = !!variantCheckboxData.value?.find((item) => item === 'isDemoVariant');
+  const isTestData = !!variantCheckboxData.value?.find((item) => item === 'isTestVariant');
+  const isExternalVariant = !!variantCheckboxData.value?.find((item) => item === 'isExternalVariant');
 
   if (!isFormValid) {
     return;
@@ -370,9 +416,12 @@ const handleVariantSubmit = async (isFormValid) => {
     taskImage: variantFields.selectedGame.image,
     variantName: variantFields.variantName,
     variantParams: convertedParams,
+    // TODO: Check if this is the valid way to see demo/test data values
+    demoData: { task: !!variantFields.selectedGame?.demoData, variant: isDemoData },
+    testData: { task: !!variantFields.selectedGame?.testData, variant: isTestData },
   });
 
-  if (isExternalTask.value) {
+  if (isExternalVariant) {
     newVariantObject.variantParams = {
       ...convertedParams,
       variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams),
@@ -446,8 +495,6 @@ function resetVariantForm() {
   margin-top: 1rem;
   margin-bottom: 0.5rem;
   display: flex;
-  background-color: #3db1f9;
-  color: black;
   border: none;
   width: 11.75rem;
 }
