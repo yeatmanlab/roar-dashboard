@@ -2,27 +2,29 @@
   <main class="container main">
     <section class="main-body">
       <div>
-        <div class="flex align-items-center justify-content-between">
+        <div class="flex flex-wrap align-items-center justify-content-between">
           <div class="flex-column flex-wrap gap-2">
             <div class="text-3xl font-bold text-gray-600">Your Administrations</div>
           </div>
           <div class="flex gap-3 align-items-center justify-content-start p-3">
             <div class="flex flex-column gap-1">
-              <small id="search-help" class="text-gray-500">Search by administration name</small>
+              <small id="search-help" class="text-gray-400">Search by administration name</small>
               <div class="flex align-items-center">
-                <PvInputText
-                  id="search"
-                  v-model="searchInput"
-                  @keyup.enter="onSearch"
-                  placeholder="Search administrations"
-                >
-                </PvInputText>
-                <PvButton icon="pi pi-search" text @click="onSearch" class="text-xs" />
+                <PvInputGroup>
+                  <PvInputText
+                    id="search"
+                    v-model="searchInput"
+                    @keyup.enter="onSearch"
+                    placeholder="Search administrations"
+                  >
+                  </PvInputText>
+                  <PvButton icon="pi pi-search" @click="onSearch" class="text-xs" />
+                </PvInputGroup>
               </div>
             </div>
 
             <div class="flex flex-column gap-1">
-              <small for="dd-sort" class="text-gray-500">Sort by</small>
+              <small for="dd-sort" class="text-gray-400">Sort by</small>
               <PvDropdown
                 v-model="sortKey"
                 input-id="dd-sort"
@@ -34,8 +36,13 @@
             </div>
           </div>
         </div>
-        <div v-if="search.length > 0">
-          You searched for <strong>{{ search }}</strong>
+        <div
+          v-if="search.length > 0"
+          class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 search-wrapper"
+        >
+          <div>
+            You searched for <strong>{{ search }}</strong>
+          </div>
           <PvButton text @click="clearSearch" class="text-xs p-2"> Clear Search </PvButton>
         </div>
         <div v-if="initialized && !isLoadingAdministrations">
@@ -45,7 +52,7 @@
               :value="filteredAdministrations"
               paginator
               paginator-position="both"
-              :total-records="filteredAdministrations.length"
+              :total-records="filteredAdministrations?.length"
               :rows="pageLimit"
               :rows-per-page-options="[3, 5, 10, 25]"
               data-key="id"
@@ -140,14 +147,6 @@ const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
 
-const { data: totalRecords } = useQuery({
-  queryKey: ['countAdministrations', orderBy, isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationCounter(orderBy, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
-  enabled: canQueryAdministrations,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
 const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
@@ -159,7 +158,13 @@ const {
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
   onSuccess: (data) => {
-    filteredAdministrations.value = data;
+    console.log(data);
+    if (!search.value) filteredAdministrations.value = data;
+    else {
+      filteredAdministrations.value = data.filter((item) =>
+        item.name.toLowerCase().includes(search.value.toLowerCase()),
+      );
+    }
   },
 });
 
@@ -172,7 +177,6 @@ const clearSearch = () => {
 };
 
 const onSearch = () => {
-  console.log('search called', administrations.value);
   search.value = searchInput.value;
   if (!search.value) filteredAdministrations.value = administrations.value;
   else {
@@ -297,5 +301,9 @@ const onSortChange = (event) => {
 .loading-container {
   width: 100%;
   text-align: center;
+}
+
+.search-wrapper {
+  border-radius: 0.3rem;
 }
 </style>
