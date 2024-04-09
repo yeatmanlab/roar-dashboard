@@ -23,19 +23,24 @@
       <div class="flex flex-column md:flex-row align-items-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
-          <div class="m-2">Status: {{ getStatus(task) }}</div>
-          <div class="text-xs uppercase font-thin mb-2 text-gray-400">
+          <div class="text-xs uppercase font-thin text-gray-400">
             <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">
               {{ grade >= 6 ? 'Standard Score' : 'Percentile Score' }}
             </div>
             <div v-else class="scoring-type">Raw Score</div>
-            <div v-for="tag in task.tags" :key="tag" class="flex w-full align-items-center justify-content-center">
+          </div>
+          <div class="flex gap-2 mb-2">
+            <div
+              v-for="tag in task.tags"
+              :key="tag"
+              class="flex flex-row w-full align-items-center justify-content-center"
+            >
               <PvTag
                 v-tooltip.top="tag.tooltip"
                 :icon="tag.icon"
                 :value="tag.value"
                 :severity="tag.severity"
-                class="text-sm"
+                class="text-xs"
               />
             </div>
           </div>
@@ -205,8 +210,23 @@ const computedTaskData = computed(() => {
     })
     .map((task) => {
       // check if reliable key exists on task -- if it does, push a tag representing the tag
+      const tags = [];
+      if (task.optional === true) {
+        tags.push({
+          icon: '',
+          value: 'Optional',
+          severity: 'secondary',
+          tooltip: 'This task was a optional assignment.',
+        });
+      } else {
+        tags.push({
+          icon: '',
+          value: 'Required',
+          severity: 'secondary',
+          tooltip: 'This task was a required assignment.',
+        });
+      }
       if ('reliable' in task) {
-        const tags = [];
         if (task.reliable === false) {
           tags.push({
             value: 'Unreliable',
@@ -226,20 +246,15 @@ const computedTaskData = computed(() => {
             tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
           });
         }
-
-        // update task with tags
-        task = {
-          ...task,
-          tags: tags,
-        };
       }
+      // update task with tags
+      task = {
+        ...task,
+        tags: tags,
+      };
       return task;
     });
 });
-
-const getStatus = (_task) => {
-  return _task.optional ? 'Optional' : 'Required';
-};
 
 const formattedScoreAttributeMap = {
   wjPercentile: 'Percentile Score',
