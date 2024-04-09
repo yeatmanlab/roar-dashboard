@@ -97,7 +97,7 @@ module.exports = defineConfig({
       'zzzCypressTestStudent20',
       'zzzCypressTestStudent21',
     ],
-    roarDemoDistrictName: 'Roar Demo District',
+    roarDemoDistrictName: 'zzzCypressTestAdministration',
     roarDemoDistrictId: 'dfyDUItJNf3wEoG6Mf8H',
     roarDemoAdministrationName: 'zzzCypressTestAdministration',
     roarDemoAdministrationId: 'EWC9corgcnipev7ZnmuN',
