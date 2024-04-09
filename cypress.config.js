@@ -99,7 +99,7 @@ module.exports = defineConfig({
     ],
     roarDemoDistrictName: 'Roar Demo District',
     roarDemoDistrictId: 'dfyDUItJNf3wEoG6Mf8H',
-    roarDemoAdministrationName: 'ROAR demo administration',
+    roarDemoAdministrationName: 'zzzCypressTestAdministration',
     roarDemoAdministrationId: 'EWC9corgcnipev7ZnmuN',
   },
 });

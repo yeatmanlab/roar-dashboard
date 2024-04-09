@@ -1,7 +1,6 @@
-const roarDemoDistrictName = Cypress.env('roarDemoDistrictName');
-const roarDemoDistrictId = Cypress.env('roarDemoDistrictId');
-const roarDemoAdministrationName = Cypress.env('roarDemoAdministrationName');
-const roarDemoAdministrationId = Cypress.env('roarDemoAdministrationId');
+const roarDemoDistrictId = Cypress.env('testDistrictId');
+const roarDemoAdministrationName = Cypress.env('testPartnerAdministrationName');
+const roarDemoAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
 const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 const timeout = Cypress.env('timeout');
@@ -60,8 +59,8 @@ describe('The partner admin can view score reports for a given administration an
     checkUrl();
     cy.getAdministrationCard(roarDemoAdministrationName, 'ascending');
     clickScoreButton();
-    setFilterBySchool('Cypress High School');
-    checkTableColumn(headers, 'Cypress High School');
+    setFilterBySchool('zzzCypressTestSchool');
+    checkTableColumn(headers, 'zzzCypressTestSchool');
   });
 });
 
@@ -80,9 +79,9 @@ describe('The partner admin can view score reports for a given administration an
     checkUrl();
     cy.getAdministrationCard(roarDemoAdministrationName, 'ascending');
     clickScoreButton();
-    setFilterByGrade('9');
-    setFilterBySchool('Cypress High School');
-    checkTableColumn(headers, 'Cypress High School');
-    checkTableColumn(['Grade'], '9');
+    setFilterByGrade('5');
+    setFilterBySchool('zzzCypressTestSchool');
+    checkTableColumn(headers, 'zzzCypressTestSchool');
+    checkTableColumn(['Grade'], '5');
   });
 });
