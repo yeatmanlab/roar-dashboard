@@ -37,6 +37,7 @@ const getAdministrationsRequestBody = ({
         fields: [
           { fieldPath: 'id' },
           { fieldPath: 'name' },
+          { fieldPath: 'publicName' },
           { fieldPath: 'assessments' },
           { fieldPath: 'dateClosed' },
           { fieldPath: 'dateCreated' },
@@ -151,6 +152,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
     return {
       id: a.id,
       name: a.name,
+      publicName: a.publicName,
       dates: {
         start: a.dateOpened,
         end: a.dateClosed,

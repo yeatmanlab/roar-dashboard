@@ -6,16 +6,32 @@
 
         <PvDivider />
         <div class="formgrid grid mt-5">
-          <div class="field col">
+          <div class="field col flex flex-row gap-5">
             <span class="p-float-label">
               <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
                 data-cy="input-administration-name"
               />
-              <label for="administration-name">Administration Name</label>
-              <small v-if="v$.administrationName.$invalid && submitted" class="p-error"
+              <label for="administration-name" class="w-full">Administration Name</label>
+              <small
+                v-if="v$.administrationName.$invalid && submitted"
+                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your administration</small
+              >
+            </span>
+            <span class="p-float-label">
+              <PvInputText
+                id="administration-public-name"
+                v-model="state.administrationPublicName"
+                style="width: 20vh"
+                data-cy="input-administration-name"
+              />
+              <label for="administration-public-name" class="w-full">Administration Public Name</label>
+              <small
+                v-if="v$.administrationPublicName.$invalid && submitted"
+                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                >Please name your administration public name</small
               >
             </span>
           </div>
@@ -145,6 +161,7 @@ const { data: allVariants } = useQuery({
 //      +---------------------------------+
 const state = reactive({
   administrationName: '',
+  administrationPublicName: '',
   dates: [],
   sequential: null,
   districts: [],
@@ -162,6 +179,7 @@ const minStartDate = ref(new Date());
 
 const rules = {
   administrationName: { required },
+  administrationPublicName: { required },
   dates: {
     required,
     minLength: minLength(2),
@@ -250,6 +268,7 @@ const submit = async () => {
       if (orgsValid) {
         const args = {
           name: toRaw(state).administrationName,
+          publicName: toRaw(state).administrationPublicName,
           assessments: submittedAssessments,
           dateOpen: toRaw(state).dates[0],
           dateClose: toRaw(state).dates[1],

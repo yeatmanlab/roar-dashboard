@@ -34,7 +34,7 @@
                     v-for="item in slotProps.items"
                     :id="item.id"
                     :key="item.id"
-                    :title="item.name"
+                    :title="getTitle(item)"
                     :stats="item.stats"
                     :dates="item.dates"
                     :assignees="item.assignedOrgs"
@@ -113,6 +113,14 @@ const orderBy = ref(orderByDefault);
 const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
+function getTitle(item) {
+  if (isSuperAdmin.value) {
+    return item.name;
+  } else {
+    // Check if publicName exists, otherwise fallback to name
+    return item.publicName || item.name;
+  }
+}
 
 const { data: totalRecords } = useQuery({
   queryKey: ['countAdministrations', orderBy, isSuperAdmin, administrationQueryKeyIndex],
