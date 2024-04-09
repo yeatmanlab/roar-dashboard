@@ -6,14 +6,21 @@
           <div class="flex-column flex-wrap gap-2">
             <div class="text-3xl font-bold text-gray-600">Your Administrations</div>
           </div>
-          <div class="flex gap-3 align-items-center justify-content-around p-3">
+          <div class="flex gap-3 align-items-center justify-content-start p-3">
             <div class="flex flex-column gap-1">
               <small id="search-help" class="text-gray-500">Search by administration name</small>
-              <div class="flex">
-                <PvInputText id="search" v-model="search" placeholder="Search Administrations" />
-                <PvButton icon="pi pi-search" text @click="onSearch" />
+              <div class="flex align-items-center">
+                <PvInputText
+                  id="search"
+                  v-model="searchInput"
+                  @keyup.enter="onSearch"
+                  placeholder="Search administrations"
+                >
+                </PvInputText>
+                <PvButton icon="pi pi-search" text @click="onSearch" class="text-xs" />
               </div>
             </div>
+
             <div class="flex flex-column gap-1">
               <small for="dd-sort" class="text-gray-500">Sort by</small>
               <PvDropdown
@@ -27,19 +34,21 @@
             </div>
           </div>
         </div>
+        <div v-if="search.length > 0">
+          You searched for <strong>{{ search }}</strong>
+          <PvButton text @click="clearSearch" class="text-xs p-2"> Clear Search </PvButton>
+        </div>
         <div v-if="initialized && !isLoadingAdministrations">
           <PvBlockUI :blocked="isFetchingAdministrations">
             <PvDataView
               :key="dataViewKey"
               :value="filteredAdministrations"
-              lazy
               paginator
               paginator-position="both"
               :total-records="filteredAdministrations.length"
               :rows="pageLimit"
               :rows-per-page-options="[3, 5, 10, 25]"
               data-key="id"
-              @page="onPage($event)"
             >
               <template #list="slotProps">
                 <div class="mb-2 w-full">
@@ -92,6 +101,7 @@ import { useQuery } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const page = ref(0);
+const searchInput = ref('');
 const search = ref('');
 const pageLimit = ref(10);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
@@ -153,23 +163,24 @@ const {
   },
 });
 
-const filteredAdministrations = ref([]);
+const filteredAdministrations = ref(administrations.value);
+
+const clearSearch = () => {
+  search.value = '';
+  searchInput.value = '';
+  filteredAdministrations.value = administrations.value;
+};
 
 const onSearch = () => {
-  console.log(administrations.value);
+  console.log('search called', administrations.value);
+  search.value = searchInput.value;
   if (!search.value) filteredAdministrations.value = administrations.value;
   else {
     const searchedAdministrations = administrations.value.filter((item) =>
       item.name.toLowerCase().includes(search.value.toLowerCase()),
     );
-    console.log('filteredAdministrations', searchedAdministrations, search.value);
     filteredAdministrations.value = searchedAdministrations;
   }
-};
-
-const onPage = (event) => {
-  pageLimit.value = event.rows;
-  page.value = event.page;
 };
 
 const sortOptions = ref([
