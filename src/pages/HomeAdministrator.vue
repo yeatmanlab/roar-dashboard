@@ -98,7 +98,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, reactive } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
 import { administrationCounter, administrationPageFetcher, getTitle } from '../helpers/query/administrations';
@@ -147,21 +147,21 @@ const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
 
+// TODO: Refactor the query to be non paginated
 const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
-  queryKey: ['administrations', orderBy, page, 10000, isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationPageFetcher(orderBy, 10000, page, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  queryKey: ['administrations', orderBy, isSuperAdmin, administrationQueryKeyIndex],
+  queryFn: () => administrationFetcher(orderBy, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
   onSuccess: (data) => {
-    console.log(data);
     if (!search.value) filteredAdministrations.value = data;
     else {
-      filteredAdministrations.value = data.filter((item) =>
+      filteredAdministrations.value = data?.filter((item) =>
         item.name.toLowerCase().includes(search.value.toLowerCase()),
       );
     }

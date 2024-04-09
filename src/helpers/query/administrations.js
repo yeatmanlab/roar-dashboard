@@ -272,3 +272,56 @@ export const administrationPageFetcher = async (
     return administrations.slice(page.value * pageLimit.value, (page.value + 1) * pageLimit.value);
   }
 };
+
+// Non paginated version of administrationPageFetcher
+export const administrationFetcher = async (orderBy, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs) => {
+  const axiosInstance = getAxiosInstance();
+  if (isSuperAdmin.value) {
+    const requestBody = getAdministrationsRequestBody({
+      aggregationQuery: false,
+      orderBy: orderBy.value,
+      paginate: false,
+      skinnyQuery: false,
+    });
+    return axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+      return mapAdministrations({ isSuperAdmin, data, adminOrgs });
+    });
+  } else {
+    const promises = [];
+    // Iterate through each adminOrg type
+    for (const [orgType, orgIds] of Object.entries(adminOrgs.value)) {
+      // Then chunk those arrays into chunks of 10
+      if ((orgIds ?? []).length > 0) {
+        const requestBodies = _chunk(orgIds, 10).map((orgChunk) =>
+          getAdministrationsRequestBody({
+            aggregationQuery: false,
+            paginate: false,
+            skinnyQuery: false,
+            assigningOrgCollection: orgType,
+            assigningOrgIds: orgChunk,
+          }),
+        );
+        // Map all of those request bodies into axios promises
+        promises.push(
+          requestBodies.map((requestBody) =>
+            axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+              return mapAdministrations({ isSuperAdmin, data, adminOrgs: exhaustiveAdminOrgs });
+            }),
+          ),
+        );
+      }
+    }
+
+    const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
+    const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
+    const flattened = _flatten(await Promise.all(_flatten(promises)));
+    const administrations = _uniqBy(flattened, 'id')
+      .filter((a) => a[orderField] !== undefined)
+      .sort((a, b) => {
+        if (orderDirection === 'ASCENDING') return 2 * +(a[orderField] > b[orderField]) - 1;
+        if (orderDirection === 'DESCENDING') return 2 * +(b[orderField] > a[orderField]) - 1;
+        return 0;
+      });
+    return administrations;
+  }
+};
