@@ -11,13 +11,13 @@
               <small id="search-help" class="text-gray-400">Search by administration name</small>
               <div class="flex align-items-center">
                 <PvInputGroup>
-                  <PvInputText
-                    id="search"
+                  <PvAutoComplete
                     v-model="searchInput"
+                    placeholder="Search Administrations"
+                    :suggestions="searchSuggestions"
+                    @complete="autocomplete"
                     @keyup.enter="onSearch"
-                    placeholder="Search administrations"
-                  >
-                  </PvInputText>
+                  />
                   <PvButton icon="pi pi-search" @click="onSearch" class="text-xs" />
                 </PvInputGroup>
               </div>
@@ -108,6 +108,8 @@ import { useQuery } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const page = ref(0);
+const searchSuggestions = ref([]);
+const adminSearchTokens = ref([]);
 const searchInput = ref('');
 const search = ref('');
 const pageLimit = ref(10);
@@ -147,18 +149,23 @@ const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
 
-// TODO: Refactor the query to be non paginated
 const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
-  queryKey: ['administrations', orderBy, isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationFetcher(orderBy, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  queryKey: ['administrations', orderBy, 0, Number.MAX_SAFE_INTEGER, isSuperAdmin, administrationQueryKeyIndex],
+  queryFn: () =>
+    administrationPageFetcher(orderBy, 0, Number.MAX_SAFE_INTEGER, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
   onSuccess: (data) => {
+    for (const admin of data) {
+      adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));
+    }
+    // remove duplicates from array
+    adminSearchTokens.value = [...new Set(adminSearchTokens.value)];
     if (!search.value) filteredAdministrations.value = data;
     else {
       filteredAdministrations.value = data?.filter((item) =>
@@ -185,6 +192,12 @@ const onSearch = () => {
     );
     filteredAdministrations.value = searchedAdministrations;
   }
+};
+
+const autocomplete = () => {
+  searchSuggestions.value = adminSearchTokens.value
+    // .flat()
+    .filter((item) => item.toLowerCase().includes(searchInput.value.toLowerCase()));
 };
 
 const sortOptions = ref([
