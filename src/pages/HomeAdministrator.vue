@@ -1,28 +1,41 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel header="Your administrations">
-        <template #icons>
-          <label class="mr-2" for="dd-sort">Sort by</label>
-          <PvDropdown
-            v-model="sortKey"
-            input-id="dd-sort"
-            :options="sortOptions"
-            option-label="label"
-            data-cy="dropdown-sort-administrations"
-            @change="onSortChange($event)"
-          />
-        </template>
-
+      <div>
+        <div class="flex align-items-center justify-content-between">
+          <div class="flex-column flex-wrap gap-2">
+            <div class="text-3xl font-bold text-gray-600">Your Administrations</div>
+          </div>
+          <div class="flex gap-3 align-items-center justify-content-around p-3">
+            <div class="flex flex-column gap-1">
+              <small id="search-help" class="text-gray-500">Search by administration name</small>
+              <div class="flex">
+                <PvInputText id="search" v-model="search" placeholder="Search Administrations" />
+                <PvButton icon="pi pi-search" text @click="onSearch" />
+              </div>
+            </div>
+            <div class="flex flex-column gap-1">
+              <small for="dd-sort" class="text-gray-500">Sort by</small>
+              <PvDropdown
+                v-model="sortKey"
+                input-id="dd-sort"
+                :options="sortOptions"
+                option-label="label"
+                data-cy="dropdown-sort-administrations"
+                @change="onSortChange($event)"
+              />
+            </div>
+          </div>
+        </div>
         <div v-if="initialized && !isLoadingAdministrations">
           <PvBlockUI :blocked="isFetchingAdministrations">
             <PvDataView
               :key="dataViewKey"
-              :value="administrations"
+              :value="filteredAdministrations"
               lazy
               paginator
               paginator-position="both"
-              :total-records="totalRecords"
+              :total-records="filteredAdministrations.length"
               :rows="pageLimit"
               :rows-per-page-options="[3, 5, 10, 25]"
               data-key="id"
@@ -49,8 +62,10 @@
                 <div>
                   {{
                     isLevante
-                      ? 'There are no adminstrations to display. You can create an administration by nagivating to the Create administration page from the dropdown menu.'
-                      : 'There are no administrations to display. Please contact a lab administrator to add you as an admin to an administration.'
+                      ? 'There are no administrations to display. You can create an administration by navigating to the' +
+                        'Create administration page from the dropdown menu.'
+                      : 'There are no administrations to display. Please contact a lab administrator to add you as an admin' +
+                        ' to an administration.'
                   }}
                 </div>
               </template>
@@ -61,13 +76,13 @@
           <AppSpinner style="margin-bottom: 1rem" />
           <span>Loading Administrations</span>
         </div>
-      </PvPanel>
+      </div>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, reactive } from 'vue';
 import { storeToRefs } from 'pinia';
 import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
 import { administrationCounter, administrationPageFetcher, getTitle } from '../helpers/query/administrations';
@@ -77,6 +92,7 @@ import { useQuery } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const page = ref(0);
+const search = ref('');
 const pageLimit = ref(10);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
@@ -127,12 +143,29 @@ const {
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
-  queryKey: ['administrations', orderBy, page, pageLimit, isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationPageFetcher(orderBy, pageLimit, page, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  queryKey: ['administrations', orderBy, page, 10000, isSuperAdmin, administrationQueryKeyIndex],
+  queryFn: () => administrationPageFetcher(orderBy, 10000, page, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
+  onSuccess: (data) => {
+    filteredAdministrations.value = data;
+  },
 });
+
+const filteredAdministrations = ref([]);
+
+const onSearch = () => {
+  console.log(administrations.value);
+  if (!search.value) filteredAdministrations.value = administrations.value;
+  else {
+    const searchedAdministrations = administrations.value.filter((item) =>
+      item.name.toLowerCase().includes(search.value.toLowerCase()),
+    );
+    console.log('filteredAdministrations', searchedAdministrations, search.value);
+    filteredAdministrations.value = searchedAdministrations;
+  }
+};
 
 const onPage = (event) => {
   pageLimit.value = event.rows;
