@@ -17,6 +17,7 @@
                     :suggestions="searchSuggestions"
                     @complete="autocomplete"
                     @keyup.enter="onSearch"
+                    data-cy="search-input"
                   />
                   <PvButton icon="pi pi-search" @click="onSearch" class="text-xs" />
                 </PvInputGroup>
