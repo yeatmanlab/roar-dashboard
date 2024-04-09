@@ -103,16 +103,16 @@
 
           <div class="w-full flex justify-content-end">
             <div class="w-2">
-              <PvButton label="Add Field" text @click="addField(taskParams)" icon="pi pi-plus" />
+              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(taskParams)" />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
-              <PvCheckbox v-model="taskCheckboxData" inputId="chbx-demoTask" value="isDemoTask" />
+              <PvCheckbox v-model="taskCheckboxData" input-id="chbx-demoTask" value="isDemoTask" />
               <label class="ml-1 mr-3" for="chbx-demoTask">Mark as <b>Demo Task</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox v-model="taskCheckboxData" inputId="chbx-testTask" value="isTestTask" />
+              <PvCheckbox v-model="taskCheckboxData" input-id="chbx-testTask" value="isTestTask" />
               <label class="ml-1 mr-3" for="chbx-testTask">Mark as <b>Test Task</b></label>
             </div>
             <div class="flex flex-row align-items-center">
@@ -211,7 +211,7 @@
 
               <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <PvButton icon="pi pi-trash" class="delete-btn" @click="removeField(variantParams, index)" text />
+              <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(variantParams, index)" />
             </div>
           </div>
 
@@ -224,7 +224,7 @@
             <div class="flex flex-row align-items-center">
               <PvCheckbox
                 v-model="variantCheckboxData"
-                inputId="chbx-demoVariant"
+                input-id="chbx-demoVariant"
                 name="variantCheckboxData"
                 value="isDemoVariant"
               />
@@ -233,7 +233,7 @@
             <div class="flex flex-row align-items-center">
               <PvCheckbox
                 v-model="variantCheckboxData"
-                inputId="chbx-testVariant"
+                input-id="chbx-testVariant"
                 name="variantCheckboxData"
                 value="isTestVariant"
               />
@@ -242,7 +242,7 @@
             <div class="flex flex-row align-items-center">
               <PvCheckbox
                 v-model="variantCheckboxData"
-                inputId="chbx-externalVariant"
+                input-id="chbx-externalVariant"
                 name="variantCheckboxData"
                 value="isExternalVariant"
               />
