@@ -72,6 +72,7 @@
                     :dates="item.dates"
                     :assignees="item.assignedOrgs"
                     :assessments="item.assessments"
+                    :publicName="item.publicName ?? item.name"
                     :show-params="isSuperAdmin"
                     :is-super-admin="isSuperAdmin"
                     data-cy="h2-card-admin-title"
