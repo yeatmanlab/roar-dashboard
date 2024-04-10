@@ -1,5 +1,5 @@
 const roarDemoAdministrationName = Cypress.env('testPartnerAdministrationName');
-const timeout = Cypress.env('timeout')
+const timeout = Cypress.env('timeout');
 describe(
   'The admin user can navigate to the view administration page, ' + 'and can see search for an administration',
   () => {
@@ -8,7 +8,7 @@ describe(
       cy.navigateTo('/');
       cy.get("[data-cy='search-input'").click().type(roarDemoAdministrationName).type('{enter}');
       cy.get('body').contains('You searched for');
-      cy.get('[data-cy="h2-card-admin-title"]', {timeout: timeout}).contains(roarDemoAdministrationName) 
+      cy.get('[data-cy="h2-card-admin-title"]', { timeout: timeout }).contains(roarDemoAdministrationName);
     });
   },
 );

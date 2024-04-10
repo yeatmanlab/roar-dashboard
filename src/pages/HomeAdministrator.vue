@@ -22,7 +22,7 @@
               :sortField="sortField"
             >
               <template #header>
-                <div class="flex gap-3 align-items-center justify-content-start p-3">
+                <div class="flex gap-3 align-items-center justify-content-start">
                   <div class="flex flex-column gap-1">
                     <small id="search-help" class="text-gray-400">Search by administration name</small>
                     <div class="flex align-items-center">
@@ -53,7 +53,7 @@
                 </div>
                 <div
                   v-if="search.length > 0"
-                  class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 search-wrapper"
+                  class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 search-wrapper"
                 >
                   <div>
                     You searched for <strong>{{ search }}</strong>
