@@ -4,47 +4,8 @@
       <div>
         <div class="flex flex-wrap align-items-center justify-content-between">
           <div class="flex-column flex-wrap gap-2">
-            <div class="text-3xl font-bold text-gray-600">Your Administrations</div>
+            <div class="text-3xl font-bold text-gray-600 mb-3">Your Administrations</div>
           </div>
-          <div class="flex gap-3 align-items-center justify-content-start p-3">
-            <div class="flex flex-column gap-1">
-              <small id="search-help" class="text-gray-400">Search by administration name</small>
-              <div class="flex align-items-center">
-                <PvInputGroup>
-                  <PvAutoComplete
-                    v-model="searchInput"
-                    placeholder="Search Administrations"
-                    :suggestions="searchSuggestions"
-                    @complete="autocomplete"
-                    @keyup.enter="onSearch"
-                    data-cy="search-input"
-                  />
-                  <PvButton icon="pi pi-search" @click="onSearch" class="text-xs" />
-                </PvInputGroup>
-              </div>
-            </div>
-
-            <div class="flex flex-column gap-1">
-              <small for="dd-sort" class="text-gray-400">Sort by</small>
-              <PvDropdown
-                v-model="sortKey"
-                input-id="dd-sort"
-                :options="sortOptions"
-                option-label="label"
-                data-cy="dropdown-sort-administrations"
-                @change="onSortChange($event)"
-              />
-            </div>
-          </div>
-        </div>
-        <div
-          v-if="search.length > 0"
-          class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 search-wrapper"
-        >
-          <div>
-            You searched for <strong>{{ search }}</strong>
-          </div>
-          <PvButton text @click="clearSearch" class="text-xs p-2"> Clear Search </PvButton>
         </div>
         <div v-if="initialized && !isLoadingAdministrations">
           <PvBlockUI :blocked="isFetchingAdministrations">
@@ -57,7 +18,49 @@
               :rows="pageLimit"
               :rows-per-page-options="[3, 5, 10, 25]"
               data-key="id"
+              :sortOrder="sortOrder"
+              :sortField="sortField"
             >
+              <template #header>
+                <div class="flex gap-3 align-items-center justify-content-start p-3">
+                  <div class="flex flex-column gap-1">
+                    <small id="search-help" class="text-gray-400">Search by administration name</small>
+                    <div class="flex align-items-center">
+                      <PvInputGroup>
+                        <PvAutoComplete
+                          v-model="searchInput"
+                          placeholder="Search Administrations"
+                          :suggestions="searchSuggestions"
+                          @complete="autocomplete"
+                          @keyup.enter="onSearch"
+                          data-cy="search-input"
+                        />
+                        <PvButton icon="pi pi-search" @click="onSearch" class="text-xs" />
+                      </PvInputGroup>
+                    </div>
+                  </div>
+                  <div class="flex flex-column gap-1">
+                    <small for="dd-sort" class="text-gray-400">Sort by</small>
+                    <PvDropdown
+                      v-model="sortKey"
+                      input-id="dd-sort"
+                      :options="sortOptions"
+                      option-label="label"
+                      data-cy="dropdown-sort-administrations"
+                      @change="onSortChange($event)"
+                    />
+                  </div>
+                </div>
+                <div
+                  v-if="search.length > 0"
+                  class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 search-wrapper"
+                >
+                  <div>
+                    You searched for <strong>{{ search }}</strong>
+                  </div>
+                  <PvButton text @click="clearSearch" class="text-xs p-2"> Clear Search </PvButton>
+                </div>
+              </template>
               <template #list="slotProps">
                 <div class="mb-2 w-full">
                   <CardAdministration
@@ -102,7 +105,7 @@
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
-import { administrationCounter, administrationPageFetcher, getTitle } from '../helpers/query/administrations';
+import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -162,6 +165,7 @@ const {
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
   onSuccess: (data) => {
+    console.log('success', data);
     for (const admin of data) {
       adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));
     }
@@ -196,9 +200,9 @@ const onSearch = () => {
 };
 
 const autocomplete = () => {
-  searchSuggestions.value = adminSearchTokens.value
-    // .flat()
-    .filter((item) => item.toLowerCase().includes(searchInput.value.toLowerCase()));
+  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
+    item.toLowerCase().includes(searchInput.value.toLowerCase()),
+  );
 };
 
 const sortOptions = ref([
@@ -224,7 +228,7 @@ const sortOptions = ref([
     label: 'Start date (ascending)',
     value: [
       {
-        field: { fieldPath: 'dateOpened' },
+        field: { fieldPath: 'dates.start' },
         direction: 'ASCENDING',
       },
     ],
@@ -233,7 +237,7 @@ const sortOptions = ref([
     label: 'Start date (descending)',
     value: [
       {
-        field: { fieldPath: 'dateOpened' },
+        field: { fieldPath: 'dates.start' },
         direction: 'DESCENDING',
       },
     ],
@@ -242,7 +246,7 @@ const sortOptions = ref([
     label: 'End date (ascending)',
     value: [
       {
-        field: { fieldPath: 'dateClosed' },
+        field: { fieldPath: 'dates.end' },
         direction: 'ASCENDING',
       },
     ],
@@ -251,7 +255,7 @@ const sortOptions = ref([
     label: 'End date (descending)',
     value: [
       {
-        field: { fieldPath: 'dateClosed' },
+        field: { fieldPath: 'dates.end' },
         direction: 'DESCENDING',
       },
     ],
@@ -260,7 +264,7 @@ const sortOptions = ref([
     label: 'Creation date (ascending)',
     value: [
       {
-        field: { fieldPath: 'dateCreated' },
+        field: { fieldPath: 'dates.created' },
         direction: 'ASCENDING',
       },
     ],
@@ -269,20 +273,36 @@ const sortOptions = ref([
     label: 'Creation date (descending)',
     value: [
       {
-        field: { fieldPath: 'dateCreated' },
+        field: { fieldPath: 'dates.created' },
         direction: 'DESCENDING',
       },
     ],
   },
 ]);
 const sortKey = ref(sortOptions.value[0]);
-
+const sortOrder = ref();
+const sortField = ref();
 const dataViewKey = ref(0);
 
 const onSortChange = (event) => {
   dataViewKey.value += 1;
   page.value = 0;
-  orderBy.value = event.value.value;
+  const value = event.value.value;
+  const sortValue = event.value;
+
+  if (!isSuperAdmin && sortValue[0].field.fieldPath === 'name') {
+    // catches edge case where a partner admin should sort by the public name attribute
+    sortField.value = 'publicName';
+  } else {
+    sortField.value = value[0].field?.fieldPath;
+  }
+  if (value[0].direction === 'DESCENDING') {
+    sortOrder.value = -1;
+  } else {
+    sortOrder.value = 1;
+  }
+
+  sortKey.value = sortValue;
 };
 </script>
 
@@ -296,7 +316,6 @@ const onSortChange = (event) => {
 }
 
 .card-wrapper {
-  /* margin-right: 1rem; */
   width: 100%;
   text-decoration: none;
   color: inherit;

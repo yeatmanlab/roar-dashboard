@@ -165,6 +165,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
       dates: {
         start: a.dateOpened,
         end: a.dateClosed,
+        created: a.dateCreated,
       },
       assessments: a.assessments,
       assignedOrgs,
