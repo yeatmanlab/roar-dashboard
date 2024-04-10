@@ -13,7 +13,7 @@
             <div>
               <div class="uppercase font-light text-gray-500 text-md">Administration</div>
               <div class="administration-name uppercase">
-                {{ administrationInfo?.name }}
+                {{ getTitle(administrationInfo, isSuperAdmin) }}
               </div>
             </div>
           </div>
@@ -118,6 +118,7 @@ import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { useConfirm } from 'primevue/useconfirm';
 import { taskDisplayNames } from '@/helpers/reports.js';
+import { getTitle } from '../helpers/query/administrations';
 
 const authStore = useAuthStore();
 
@@ -195,7 +196,7 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'assessments']),
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -543,7 +544,9 @@ const exportAll = async () => {
   });
   exportCsv(
     computedExportData,
-    `roar-progress-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`,
+    `roar-progress-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+      orgInfo.value.name,
+    )}.csv`,
   );
 };
 

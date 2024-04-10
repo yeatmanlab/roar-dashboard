@@ -6,6 +6,15 @@ import _without from 'lodash/without';
 import { convertValues, getAxiosInstance, mapFields, orderByDefault } from './utils';
 import { filterAdminOrgs } from '@/helpers';
 
+export function getTitle(item, isSuperAdmin) {
+  if (isSuperAdmin) {
+    return item.name;
+  } else {
+    // Check if publicName exists, otherwise fallback to name
+    return item.publicName ?? item.name;
+  }
+}
+
 const getAdministrationsRequestBody = ({
   orderBy,
   aggregationQuery,
@@ -37,6 +46,7 @@ const getAdministrationsRequestBody = ({
         fields: [
           { fieldPath: 'id' },
           { fieldPath: 'name' },
+          { fieldPath: 'publicName' },
           { fieldPath: 'assessments' },
           { fieldPath: 'dateClosed' },
           { fieldPath: 'dateCreated' },
@@ -151,6 +161,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
     return {
       id: a.id,
       name: a.name,
+      publicName: a.publicName,
       dates: {
         start: a.dateOpened,
         end: a.dateClosed,

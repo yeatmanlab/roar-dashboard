@@ -150,6 +150,7 @@ const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 const props = defineProps({
   id: { type: String, required: true },
   title: { type: String, required: true },
+  publicName: { type: String, required: true },
   stats: { type: Object, required: false, default: () => ({}) },
   dates: { type: Object, required: true },
   assignees: { type: Object, required: true },
