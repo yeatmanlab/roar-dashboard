@@ -280,7 +280,7 @@ const extractScoreNames = (scores, taskId) => {
     }
   }
 
-  const formattedScoresArray = Object.keys(formattedScores).map((key) => {
+  let formattedScoresArray = Object.keys(formattedScores).map((key) => {
     let minScore, maxScore;
     if (key === 'Percentile Score') {
       minScore = 0;
@@ -295,6 +295,11 @@ const extractScoreNames = (scores, taskId) => {
     }
     return [key, formattedScores[key], minScore, maxScore];
   });
+
+  // Remove percentile key if user is in grade 6 or higher
+  if (grade.value >= 6) {
+    formattedScoresArray = formattedScoresArray.filter(([key]) => key !== 'Percentile Score');
+  }
 
   if (taskId === 'pa') {
     const first = scores?.FSM?.roarScore;
