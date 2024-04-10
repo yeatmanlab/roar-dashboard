@@ -158,14 +158,12 @@ const {
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
-  queryKey: ['administrations', orderBy, 0, Number.MAX_SAFE_INTEGER, isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () =>
-    administrationPageFetcher(orderBy, 0, Number.MAX_SAFE_INTEGER, isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  queryKey: ['administrations', orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
+  queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
   onSuccess: (data) => {
-    console.log('success', data);
     for (const admin of data) {
       adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));
     }
