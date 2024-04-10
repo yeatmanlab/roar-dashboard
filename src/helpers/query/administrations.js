@@ -6,6 +6,15 @@ import _without from 'lodash/without';
 import { convertValues, getAxiosInstance, mapFields, orderByDefault } from './utils';
 import { filterAdminOrgs } from '@/helpers';
 
+export function getTitle(item, isSuperAdmin) {
+  if (isSuperAdmin) {
+    return item.name;
+  } else {
+    // Check if publicName exists, otherwise fallback to name
+    return item.publicName ?? item.name;
+  }
+}
+
 const getAdministrationsRequestBody = ({
   orderBy,
   aggregationQuery,

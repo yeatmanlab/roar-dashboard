@@ -34,7 +34,7 @@
                     v-for="item in slotProps.items"
                     :id="item.id"
                     :key="item.id"
-                    :title="getTitle(item)"
+                    :title="getTitle(item, isSuperAdmin)"
                     :stats="item.stats"
                     :dates="item.dates"
                     :assignees="item.assignedOrgs"
@@ -70,7 +70,7 @@
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
-import { administrationCounter, administrationPageFetcher } from '../helpers/query/administrations';
+import { administrationCounter, administrationPageFetcher, getTitle } from '../helpers/query/administrations';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -113,14 +113,6 @@ const orderBy = ref(orderByDefault);
 const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
-function getTitle(item) {
-  if (isSuperAdmin.value) {
-    return item.name;
-  } else {
-    // Check if publicName exists, otherwise fallback to name
-    return item.publicName || item.name;
-  }
-}
 
 const { data: totalRecords } = useQuery({
   queryKey: ['countAdministrations', orderBy, isSuperAdmin, administrationQueryKeyIndex],

@@ -27,11 +27,11 @@
                 style="width: 20vh"
                 data-cy="input-administration-name"
               />
-              <label for="administration-public-name" class="w-full">Administration Public Name</label>
+              <label for="administration-public-name" class="w-full">Public Administration Name</label>
               <small
                 v-if="v$.administrationPublicName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
-                >Please name your administration public name</small
+                >Please provide a public-facing name for this administration</small
               >
             </span>
           </div>
