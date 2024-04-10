@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "2.3.0",
+  "version": "2.3.1",
   "scripts": {
     "build": "export VITE_FIREBASE_DATA_SOURCE=live && vite build",
     "build:sandbox": "export VITE_FIREBASE_DATA_SOURCE=sandbox && vite build",
