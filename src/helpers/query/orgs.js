@@ -241,15 +241,16 @@ export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminO
   } else {
     if (['groups', 'families'].includes(orgType)) {
       const promises = (adminOrgs.value[orgType] ?? []).map((orgId) => {
-        return fetchDocById(orgType, orgId, ['name', 'id']);
+        return fetchDocById(orgType, orgId, select);
       });
       return Promise.all(promises);
     } else if (orgType === 'districts') {
       // First grab all the districts in adminOrgs
       const promises = (adminOrgs.value[orgType] ?? []).map((orgId) => {
-        return fetchDocById(orgType, orgId, ['name', 'id']);
+        return fetchDocById(orgType, orgId, select);
       });
 
+      // Then add all of the district IDs listed in the docs for each school and class in adminOrgs.
       const schoolPromises = (adminOrgs.value['schools'] ?? []).map((schoolId) => {
         return fetchDocById('schools', schoolId, ['districtId']);
       });
@@ -264,7 +265,7 @@ export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminO
       districtIds.push(...classes.map((class_) => class_.districtId));
 
       for (const districtId of districtIds) {
-        promises.push(fetchDocById(orgType, districtId, ['name', 'id']));
+        promises.push(fetchDocById(orgType, districtId, select));
       }
 
       return Promise.all(promises);
@@ -272,13 +273,13 @@ export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminO
       const districtDoc = await fetchDocById('districts', selectedDistrict.value, ['schools']);
       if ((adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {
         const promises = (districtDoc.schools ?? []).map((schoolId) => {
-          return fetchDocById('schools', schoolId, ['name', 'id']);
+          return fetchDocById('schools', schoolId, select);
         });
         return Promise.all(promises);
       } else if ((adminOrgs.value['schools'] ?? []).length > 0) {
         const schoolIds = _intersection(adminOrgs.value['schools'], districtDoc.schools);
         const promises = (schoolIds ?? []).map((schoolId) => {
-          return fetchDocById('schools', schoolId, ['name', 'id']);
+          return fetchDocById('schools', schoolId, select);
         });
         return Promise.all(promises);
       } else if ((adminOrgs.value['classes'] ?? []).length > 0) {
@@ -291,7 +292,7 @@ export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminO
           classes.map((class_) => class_.schoolId),
         );
         const promises = (schoolIds ?? []).map((schoolId) => {
-          return fetchDocById('schools', schoolId, ['name', 'id']);
+          return fetchDocById('schools', schoolId, select);
         });
         return Promise.all(promises);
       }
