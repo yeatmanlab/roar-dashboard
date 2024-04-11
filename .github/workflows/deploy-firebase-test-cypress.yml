@@ -31,9 +31,19 @@ jobs:
     outputs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
+  run-dev-server:
+    name: Run dev server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      - run: npm ci && npm run dev
+
   cypress-run:
     name: Run Cypress Tests
-    needs: [build-and-preview]
+    needs: [build-and-preview, run-dev-server]
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -57,8 +67,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Run dev server
-        run: npm ci && npm run dev
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
