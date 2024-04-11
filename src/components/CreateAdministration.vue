@@ -107,7 +107,7 @@ import { onMounted, reactive, ref, toRaw, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import _filter from 'lodash/filter';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
@@ -126,9 +126,10 @@ const router = useRouter();
 const toast = useToast();
 const initialized = ref(false);
 const confirm = useConfirm();
+const queryClient = useQueryClient();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
@@ -259,11 +260,11 @@ const submit = async () => {
 
         await roarfirekit.value.createAdministration(args).then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
-          administrationQueryKeyIndex.value += 1;
+          // administrationQueryKeyIndex.value += 1;
 
           // TODO: Invalidate for administrations query.
           // This does not work in prod for some reason.
-          // queryClient.invalidateQueries({ queryKey: ['administrations'] })
+          queryClient.invalidateQueries({ queryKey: ['administrations'] });
 
           router.push({ name: 'Home' });
         });

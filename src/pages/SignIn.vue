@@ -60,6 +60,7 @@ const { spinner, authFromClever } = storeToRefs(authStore);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
+    console.log('authStore userData: ', authStore.userData);
     if (authStore.userData && isLevante) {
       if (
         toRaw(authStore.userData?.userType?.toLowerCase()) === 'parent' ||
