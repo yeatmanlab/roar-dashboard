@@ -554,7 +554,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = getGrade(school.lowGrade) + ' ' + school.name;
+      acc[school.id] = getGrade(school.lowGrade ?? 0) + ' ' + school.name;
       return acc;
     }, {});
   } else {
