@@ -1,3 +1,14 @@
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
+export function signInAsSuperAdmin(firebaseAuth) {
+  const auth = getAuth(firebaseAuth);
+  cy.then(() =>
+    signInWithEmailAndPassword(auth, 'testsuperadmin1@roar-auth.com', Cypress.env('superAdminPassword')),
+  ).then((userCredential) => {
+    cy.log('User: ', userCredential.user);
+  });
+}
+
 export function selectOrgFromDropdown(orgType) {
   cy.get('[data-cy="dropdown-org-type"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('li').contains(orgType).click();

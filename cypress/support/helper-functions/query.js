@@ -1,28 +1,54 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
-// import admin from '../../../src/config/firebaseRoar'
+import { collection, deleteDoc, doc, getDoc, getDocs, query, Timestamp, updateDoc, where } from 'firebase/firestore';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyCl-JsYraUfofQZXpzshQ6s-E0nYzlCvvg',
+async function getUserId(user, adminFirestore) {
+  console.log('Grabbing userId for user', user);
+  const adminUsersRef = collection(adminFirestore, 'users');
+  const userQuery = await query(adminUsersRef, where('username', '==', user));
+  const userSnapshot = await getDocs(userQuery);
+  const userIds = userSnapshot.docs.map((doc) => doc.id);
+  cy.log(user, userIds);
+  return userIds[0]; // return the first user ID
+}
 
-  authDomain: 'gse-roar-admin-dev.firebaseapp.com',
+async function resetAssignmentDoc(assignmentRef, assignmentData) {
+  for (const assessment of assignmentData.assessments) {
+    cy.log('Deleting assessment data for task', assessment.taskId);
+    delete assessment.allRunIds;
+    delete assessment.runId;
+    delete assessment.startedOn;
+    delete assessment.completedOn;
+  }
+  delete assignmentData.completed;
+  delete assignmentData.started;
+  await updateDoc(assignmentRef, assignmentData);
+}
 
-  projectId: 'gse-roar-admin-dev',
+export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) {
+  cy.then(async () => {
+    const userId = await getUserId(user, adminFirestore);
+    cy.log('Found user', user, 'with userId', userId);
 
-  storageBucket: 'gse-roar-admin-dev.appspot.com',
+    const runsCollectionRef = await collection(assessmentFirestore, 'users', userId, 'runs');
+    const runsSnapshot = await getDocs(runsCollectionRef);
+    cy.log('Found', runsSnapshot.size, 'runs for user', user);
 
-  messagingSenderId: '401455396681',
+    //   Loop through each run, get the assignmentId, and reset the assignment
+    for (const run of runsSnapshot.docs) {
+      const runData = run.data();
+      const runDataId = run.id;
 
-  appId: '1:401455396681:web:859ea073a116d0aececc98',
-};
+      const assignmentId = runData.assignmentId;
+      const assignmentRef = await doc(adminFirestore, 'users', userId, 'assignments', assignmentId);
+      const assignmentDoc = await getDoc(assignmentRef);
+      const assignmentData = assignmentDoc.data();
+      await resetAssignmentDoc(assignmentRef, assignmentData);
+      await deleteDoc(doc(assessmentFirestore, 'users', userId, 'runs', runDataId));
+    }
+  });
+}
 
-const app = initializeApp(firebaseConfig);
-
-const db = getFirestore(app);
-
-const currentTime = Timestamp.now();
-
-export const getOpenAdministrations = async () => {
+export const getOpenAdministrations = async (db) => {
+  const currentTime = Timestamp.now();
   const admins = [];
   const administrationsRef = collection(db, 'administrations');
   const q = query(administrationsRef, where('dateClosed', '>=', currentTime));

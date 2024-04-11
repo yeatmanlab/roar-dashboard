@@ -1,18 +1,17 @@
+import { signInAsSuperAdmin } from '../../support/helper-functions/super-admin/superAdminHelpers';
+import { getDevFirebase } from '../../support/helper-functions/devFirebase';
 import { getOpenAdministrations } from '../../support/helper-functions/query';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
+const adminAuth = getDevFirebase('admin').auth;
+const adminFirestore = getDevFirebase('admin').db;
 
 describe('Get Open Administrations', () => {
   before(() => {
-    const auth = getAuth();
-    cy.then(() =>
-      signInWithEmailAndPassword(auth, 'testsuperadmin1@roar-auth.com', Cypress.env('superAdminPassword')),
-    ).then((userCredential) => {
-      cy.log('User: ', userCredential.user);
-    });
+    signInAsSuperAdmin(adminAuth);
   });
 
   it('should return open administrations', () => {
-    cy.then(() => getOpenAdministrations()).then((admins) => {
+    cy.then(() => getOpenAdministrations(adminFirestore)).then((admins) => {
       cy.log(admins.length);
       cy.log(admins);
       admins.forEach((admin) => {

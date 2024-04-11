@@ -3,6 +3,8 @@ import * as adminFirebaseConfig from '../../firebase/admin/firebase.json';
 
 let appConfig;
 let adminConfig;
+let devAppConfig;
+let devAdminConfig;
 
 const isEmulated = import.meta.env.VITE_FIREBASE_EMULATOR === 'true';
 const useSandbox = import.meta.env.VITE_FIREBASE_DATA_SOURCE === 'sandbox';
