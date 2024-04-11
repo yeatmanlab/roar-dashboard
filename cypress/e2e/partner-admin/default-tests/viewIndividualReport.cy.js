@@ -41,7 +41,7 @@ function checkIndividualScoreReport() {
     .contains('Expand All Sections')
     .click();
   cy.get('button', { timeout: 3 * timeout }).contains('Export to PDF');
-  cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessments return 3 kinds of scores');
+  cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessments return these kinds of scores');
 }
 
 describe('The partner admin can view score reports for a given administration.', () => {

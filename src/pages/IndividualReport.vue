@@ -84,15 +84,15 @@
       <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
-            <img src="../assets/support-distribution.png" width="650" />
-            <div class="text-xl font-bold mt-2">The ROAR assessments return 3 kinds of scores:</div>
+            <img v-if="!(studentData?.studentData?.grade > 6)" src="../assets/support-distribution.png" width="650" />
+            <div class="text-xl font-bold mt-2">The ROAR assessments return these kinds of scores:</div>
             <ul>
               <li>
                 <b>Standard Score: </b>A <b>standard score </b>is a way of showing how your child's test performance
                 compares to other kids of the same age or grade. Standard Scores have a range of 0-180. The standard
                 score is comparable within a grade level, but not across grade levels or over time.
               </li>
-              <li>
+              <li v-if="!(studentData?.studentData?.grade > 6)">
                 <b>Percentile: </b>A <b>percentile </b>is a score that tells you what percentage of people your child
                 scored the same as or better than on a test. For example, if your child is in the 70th percentile, it
                 means they scored higher than 70% of the kids who took the same test. It's a way of comparing your
@@ -105,6 +105,29 @@
                 comparable across grade levels and over time.
               </li>
             </ul>
+            <div>
+              <b>ROAR</b> assesses foundational reading skills that are ideally in place before 5th grade.
+              <br />
+              <br />
+              In Grades 6–12, skills that <span class="text-pink-600 font-bold">need extra support (pink) </span>are at
+              or below a 3rd-grade level. Students with this support level likely need additional systematic, intensive
+              instruction on this skill in order to access grade-level reading.
+              <br />
+              <br />
+              Skills that are <span class="text-yellow-600 font-bold"> developing (yellow) </span> are between a 3rd-
+              and 5th-grade level. Students with this support level may need additional instruction on this skill in
+              order to access grade-level reading.
+              <br />
+              <br />
+              Skills that have been <span class="text-green-600 font-bold"> achieved (green) </span>are above a
+              5th-grade level. Students who have achieved this skill likely do not require intervention on this skill to
+              access grade-level reading.
+              <br />
+              <br />
+              If a reader has achieved all of these skills, it is likely that foundational reading skills are
+              sufficient. If they are still struggling with reading comprehension, other skills such as vocabulary,
+              syntax, or comprehension strategies may be holding them back.
+            </div>
           </div>
         </PvAccordionTab>
       </PvAccordion>
