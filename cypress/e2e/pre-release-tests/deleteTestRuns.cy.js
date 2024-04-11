@@ -1,6 +1,6 @@
 import { signInAsSuperAdmin } from '../../support/helper-functions/super-admin/superAdminHelpers';
-import { deleteTestRuns } from '../../support/helper-functions/query';
-import { getDevFirebase } from '../../support/helper-functions/devFirebase';
+import { deleteTestRuns } from '../../support/query';
+import { getDevFirebase } from '../../support/devFirebase';
 
 const testUsers = Cypress.env('testUserList');
 
