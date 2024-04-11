@@ -6,6 +6,15 @@ import _without from 'lodash/without';
 import { convertValues, getAxiosInstance, mapFields, orderByDefault } from './utils';
 import { filterAdminOrgs } from '@/helpers';
 
+export function getTitle(item, isSuperAdmin) {
+  if (isSuperAdmin) {
+    return item.name;
+  } else {
+    // Check if publicName exists, otherwise fallback to name
+    return item.publicName ?? item.name;
+  }
+}
+
 const getAdministrationsRequestBody = ({
   orderBy,
   aggregationQuery,
@@ -37,6 +46,7 @@ const getAdministrationsRequestBody = ({
         fields: [
           { fieldPath: 'id' },
           { fieldPath: 'name' },
+          { fieldPath: 'publicName' },
           { fieldPath: 'assessments' },
           { fieldPath: 'dateClosed' },
           { fieldPath: 'dateCreated' },
@@ -136,12 +146,42 @@ export const administrationCounter = async (orderBy, isSuperAdmin, adminOrgs) =>
 };
 
 const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
-  const axiosInstance = getAxiosInstance();
-  const administrationData = mapFields(data);
+  // First format the administration documents
+  const administrationData = mapFields(data).map((a) => {
+    let assignedOrgs = {
+      districts: a.districts,
+      schools: a.schools,
+      classes: a.classes,
+      groups: a.groups,
+      families: a.families,
+    };
+    if (!isSuperAdmin.value) {
+      assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
+    }
+    return {
+      id: a.id,
+      name: a.name,
+      publicName: a.publicName,
+      dates: {
+        start: a.dateOpened,
+        end: a.dateClosed,
+        created: a.dateCreated,
+      },
+      assessments: a.assessments,
+      assignedOrgs,
+      ...(a.testData ?? { testData: true }),
+    };
+  });
 
+  // Create a list of all the stats document paths we need to get
   const statsPaths = data
+    // First filter out any missing administration documents
     .filter((item) => item.document !== undefined)
-    .map(({ document }) => `${document.name}/stats/completion`);
+    // Then map to the total stats document
+    .map(({ document }) => `${document.name}/stats/total`);
+
+  const axiosInstance = getAxiosInstance();
+
   const batchStatsDocs = await axiosInstance
     .post(':batchGet', {
       documents: statsPaths,
@@ -161,37 +201,15 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
       );
     });
 
-  const administrations = administrationData.map((administration) => {
-    const stats = batchStatsDocs.find((statsDoc) => statsDoc.name.includes(administration.id));
+  const administrations = administrationData?.map((administration) => {
+    const thisAdminStats = batchStatsDocs.find((statsDoc) => statsDoc.name.includes(administration.id));
     return {
       ...administration,
-      stats: stats?.data,
+      stats: { total: thisAdminStats?.data },
     };
   });
 
-  return administrations.map((a) => {
-    let assignedOrgs = {
-      districts: a.districts,
-      schools: a.schools,
-      classes: a.classes,
-      groups: a.groups,
-      families: a.families,
-    };
-    if (!isSuperAdmin.value) {
-      assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
-    }
-    return {
-      id: a.id,
-      name: a.name,
-      stats: a.stats,
-      dates: {
-        start: a.dateOpened,
-        end: a.dateClosed,
-      },
-      assessments: a.assessments,
-      assignedOrgs,
-    };
-  });
+  return administrations;
 };
 
 export const administrationPageFetcher = async (

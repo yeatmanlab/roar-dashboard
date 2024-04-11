@@ -15,11 +15,12 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
+
 const props = defineProps({
   taskId: { type: String, default: 'egma-math' },
 });
 
-let TaskLauncher;
+let levanteTaskLauncher;
 
 const taskId = props.taskId;
 const router = useRouter();
@@ -62,7 +63,8 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    TaskLauncher = (await import('core-tasks')).default;
+    let module = await import('core-tasks');
+    levanteTaskLauncher = module.TaskLauncher;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
@@ -87,7 +89,7 @@ async function startTask() {
   try {
     let checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.body.textContent.includes('loading');
+      let gameLoading = document.querySelector('.jspsych-content-wrapper');
       if (gameLoading) {
         gameStarted.value = true;
         clearInterval(checkGameStarted);
@@ -108,7 +110,7 @@ async function startTask() {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const levanteTask = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const levanteTask = new levanteTaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
 
     await levanteTask.run().then(async () => {
       // Handle any post-game actions.
@@ -128,6 +130,8 @@ async function startTask() {
 </script>
 
 <style>
+@import 'core-tasks/lib/resources/core-tasks.css';
+
 .game-target {
   position: absolute;
   top: 0;

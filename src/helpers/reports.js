@@ -24,33 +24,39 @@ export const taskDisplayNames = {
     order: 2,
   },
   pa: { name: 'Phoneme', extendedTitle: 'ROAR - Phoneme', extendedName: 'Phonological Awareness', order: 3 },
-  swr: { name: 'Word', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 4 },
-  'swr-es': { name: 'Palabra', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 5 },
-  sre: { name: 'Sentence', extendedTitle: 'ROAR - Sentence', extendedName: 'Sentence Reading Efficiency', order: 6 },
-  'sre-es': { name: 'Frase', extendedTitle: 'ROAR - Frase', extendedName: 'Sentence Reading Efficiency', order: 7 },
+  'pa-es': {
+    name: 'Fonema',
+    extendedTitle: 'ROAR - Fonema',
+    extendedName: 'Phonological Awareness',
+    order: 4,
+  },
+  swr: { name: 'Word', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 5 },
+  'swr-es': { name: 'Palabra', extendedTitle: 'ROAR - Word', extendedName: 'Single Word Recognition', order: 6 },
+  sre: { name: 'Sentence', extendedTitle: 'ROAR - Sentence', extendedName: 'Sentence Reading Efficiency', order: 7 },
+  'sre-es': { name: 'Frase', extendedTitle: 'ROAR - Frase', extendedName: 'Sentence Reading Efficiency', order: 8 },
   morphology: {
     name: 'Morphology',
     extendedTitle: 'ROAR - Morphology',
     extendedName: 'Morphological Awareness',
-    order: 8,
+    order: 9,
   },
   cva: {
     name: 'Written-Vocab',
     extendedTitle: 'ROAR - Written Vocabulary',
     extendedName: 'Written Vocabulary',
-    order: 9,
+    order: 10,
   },
   multichoice: {
     name: 'Multichoice',
     extendedTitle: 'ROAR - Multichoice',
     extendedName: 'Multiple Choice Vocabulary',
-    order: 10,
+    order: 11,
   },
   vocab: {
     name: 'Vocabulary',
     extendedTitle: 'ROAR - Vocabulary',
     extendedName: 'Vocabulary',
-    order: 11,
+    order: 12,
   },
   fluency: { name: 'Fluency', extendedTitle: 'ROAM - Fluency', extendedName: 'Math Fluency', order: 12 },
   'fluency-arf': {
@@ -131,8 +137,7 @@ export const descriptionsByTaskId = {
   // "letter": { header: "ROAR-Letter Sound Matching (ROAR-Letter)", description: " assesses knowledge of letter names and sounds." },
   pa: {
     header: 'ROAR-Phonological Awareness (ROAR-Phoneme)',
-    description:
-      ' measures the ability to hear and manipulate the individual sounds within words (sound matching and elision). This skill is crucial for building further reading skills, such as decoding.',
+    description: ' measures the ability to hear and manipulate the individual sounds within words.',
   },
   swr: {
     header: 'ROAR-Single Word Recognition (ROAR-Word)',

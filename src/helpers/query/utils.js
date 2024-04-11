@@ -134,6 +134,40 @@ export const fetchDocsById = async (documents, db = 'admin') => {
   return Promise.all(promises);
 };
 
+export const batchGetDocs = async (docPaths, select = [], db = 'admin') => {
+  const axiosInstance = getAxiosInstance(db);
+  const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
+  const documents = docPaths.map((docPath) => `${baseURL}/${docPath}`);
+  const batchDocs = await axiosInstance
+    .post(':batchGet', {
+      documents,
+      ...(select.length > 0 && {
+        mask: { fieldPaths: select },
+      }),
+    })
+    .then(({ data }) => {
+      return _without(
+        data.map(({ found }) => {
+          if (found) {
+            const nameSplit = found.name.split('/');
+            return {
+              name: found.name,
+              data: {
+                id: nameSplit.pop(),
+                collection: nameSplit.pop(),
+                ..._mapValues(found.fields, (value) => convertValues(value)),
+              },
+            };
+          }
+          return undefined;
+        }),
+        undefined,
+      );
+    });
+
+  return docPaths.map((docPath) => batchDocs.find((doc) => doc.name.includes(docPath))).map((doc) => doc?.data);
+};
+
 export const matchMode2Op = {
   equals: 'EQUAL',
   notEquals: 'NOT_EQUAL',

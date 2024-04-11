@@ -224,9 +224,6 @@ const assessments = computed(() => {
             variantURL: _get(assessment, 'params.variantURL'),
           },
         };
-        console.log('matchingAssessment', matchingAssessment);
-        console.log('optionalAssessment', optionalAssessment);
-        console.log('combinedAssessment', combinedAssessment);
         return combinedAssessment;
       }),
       undefined,

@@ -136,7 +136,7 @@ watch(isLoading, async (newValue) => {
   }
 });
 
-const { idle } = useIdle(20 * 60 * 1000); // 10 min
+const { idle } = useIdle(10 * 60 * 1000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
 const i18n = useI18n();

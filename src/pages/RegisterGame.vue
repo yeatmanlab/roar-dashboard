@@ -19,9 +19,7 @@ import RegisterTask from '@/components/tasks/RegisterTask.vue';
   border-radius: 5px;
   border-color: #e5e5e5;
   background-color: #fcfcfc;
-  width: 65%;
-  padding-right: 1.5rem;
-  padding-left: 1.5rem;
+  width: 75%;
   position: relative;
 }
 

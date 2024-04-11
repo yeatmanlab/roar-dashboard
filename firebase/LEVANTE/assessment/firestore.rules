@@ -1,14 +1,12 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function getUserClaims() {
-      return get(/databases/$(database)/documents/userClaims/$(request.auth.uid)).data.get("claims", {});
+    // Allow super_admins to do everything
+    // Admins as well (for now)
+    match /{document=**} {
+      allow read, write: if request.auth.token.super_admin == true || request.auth.token.admin == true;
     }
 
-    // Allow super_admins to do everything
-    match /{everythingInMyDatabase=**} {
-      allow read, write: if getUserClaims().get("super_admin", false) == true;
-    }
 
     function loggedIn() {
       return request.auth != null;

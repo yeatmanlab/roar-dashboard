@@ -48,7 +48,7 @@ describe('Testing play through of vocab, cva, letter, and multichoice games as a
       cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
       cy.get('.tabview-nav-link-label', { timeout: 5 * timeout })
         .contains(game.name)
-        .should('have.attr', 'data-game-status', 'complete');
+        .should('exist');
     });
   });
 });

@@ -31,6 +31,7 @@ const playTrial = (targetText) => {
             cy.log(correctAnswer);
 
             cy.log('Game in progress; selecting correct answer.');
+            // eslint-disable-next-line cypress/unsafe-to-chain-command
             cy.get(`img[src*="${correctAnswer}.webp"]`, { timeout: timeout })
               .first()
               .click()
@@ -109,26 +110,35 @@ function playThirdTutorial() {
   cy.get('.continue').click();
 }
 
-export function playPA(startText, breakText, endText) {
+export function playPA(startText, breakText, breakText2, endText) {
   playIntro(startText);
 
   playFirstTutorial();
   //  fsmBreak
   cy.log('break 1');
+  playTrial(breakText2.break1);
+  cy.get('.continue', { timeout: 2 * timeout }).click();
   playTrial(breakText);
 
+  cy.wait(3 * timeout);
+  cy.get('.continue', { timeout: 4 * timeout }).click();
+  playSecondTutorial('default');
+  playTrial(breakText2.break2);
   cy.get('.continue', { timeout: 2 * timeout }).click();
-  playSecondTutorial();
   playTrial(breakText);
   //  lsmBreak
+  cy.wait(3 * timeout);
   cy.log('break 2');
   cy.get('.continue', { timeout: 2 * timeout }).click();
   playTrial(endText.endText2);
 
-  cy.get('.continue', { timeout: 2 * timeout }).click();
-  playThirdTutorial();
+  cy.wait(3 * timeout);
+  cy.get('.continue', { timeout: 4 * timeout }).click();
+  playThirdTutorial('default');
   //  delBreak
   cy.log('break 3');
+  playTrial(breakText2.break3);
+  cy.get('.continue', { timeout: 2 * timeout }).click();
   playTrial(endText.endText3);
   // playIntro(startText);
 

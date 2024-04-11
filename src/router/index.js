@@ -53,6 +53,13 @@ const routes = [
     meta: { pageTitle: 'PA' },
   },
   {
+    path: '/game/pa-es',
+    name: 'PA-ES',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: { taskId: 'pa-es', language: 'es' },
+    meta: { pageTitle: 'PA-ES' },
+  },
+  {
     path: '/game/sre',
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
@@ -196,6 +203,7 @@ const routes = [
       const store = useAuthStore();
       if (store.isAuthenticated) {
         await store.signOut();
+        store.userData = null;
       }
       return { name: 'SignIn' };
     },
@@ -331,10 +339,13 @@ const router = createRouter({
   },
 });
 
-router.beforeEach(async (to) => {
+router.beforeEach(async (to, from, next) => {
+  const isLevante = import.meta.env.MODE === 'LEVANTE';
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
-  if (import.meta.env.MODE !== 'LEVANTE' && to.meta?.project === 'LEVANTE') {
-    return { path: '/' };
+  if (!isLevante && to.meta?.project === 'LEVANTE') {
+    next({ name: 'Home' });
+    // next function can only be called once per route
+    return;
   }
 
   const store = useAuthStore();
@@ -347,17 +358,50 @@ router.beforeEach(async (to) => {
     !store.isAuthenticated &&
     !allowedUnauthenticatedRoutes.includes(to.name)
   ) {
-    return { name: 'SignIn' };
-  }
-  // Check if user is an admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireAdmin') && !store.isUserAdmin) {
-    return { name: 'Home' };
+    next({ name: 'SignIn' });
+    return;
   }
 
-  // Check if user is a super admin. If not, prevent routing to page
-  if (_get(to, 'meta.requireSuperAdmin') && !store.isUserSuperAdmin) {
-    return { name: 'Home' };
+  // Check if the route requires admin rights and the user is an admin.
+  const requiresAdmin = _get(to, 'meta.requireAdmin', false);
+  const requiresSuperAdmin = _get(to, 'meta.requireSuperAdmin', false);
+
+  // Check user roles
+  const isUserAdmin = store.isUserAdmin;
+  const isUserSuperAdmin = store.isUserSuperAdmin;
+
+  // All current conditions:
+  // 1. Super Admin: true, Admin: true
+  // 2. Super Admin: false, Admin: true (Only exits because requiresSuperAdmin is not defined on every route)
+  // 3. Super Admin: false, Admin: false (Allowed routes for all users)
+  // (Also exists because requiresAdmin/requiresSuperAdmin is not defined on every route)
+
+  if (isUserSuperAdmin) {
+    next();
+    return;
+  } else if (isUserAdmin) {
+    // LEVANTE dashboard has opened some pages to administrators before the ROAR dashboard
+    // So if isLevante, then allow regular admins to access any route with requireAdmin = true.
+    // and if ROAR, then prohibit regular admins from accessing any route with requireSuperAdmin = true.
+    if (isLevante && requiresAdmin) {
+      next();
+      return;
+    } else if (requiresSuperAdmin) {
+      next({ name: 'Home' });
+      return;
+    }
+    next();
+    return;
   }
+
+  // If we get here, the user is a regular user
+  if (requiresSuperAdmin || requiresAdmin) {
+    next({ name: 'Home' });
+    return;
+  }
+
+  next();
+  return;
 });
 
 export default router;

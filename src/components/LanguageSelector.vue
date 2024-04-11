@@ -1,29 +1,33 @@
 <template>
-  <PvDropdown
-    v-model="$i18n.locale"
-    class="mr-2"
-    :options="languageDropdownOptions"
-    option-label="name"
-    option-value="value"
-    placeholder="Select language"
-    :highlight-on-select="true"
-  >
-    <template #value="locale">
-      <div v-if="locale.value" class="flex flex-row justify-content-center align-items-center">
-        <country-flag :country="getCountryFlag(locale.value)" class="mr-2" size="small" />
-        <span>{{ getCountryName(locale.value) }}</span>
-      </div>
-      <span v-else>
-        {{ locale.placeholder }}
-      </span>
-    </template>
-    <template #option="country">
-      <div class="flex flex-row justify-content-start align-items-center">
-        <country-flag :country="country.option.code" class="mr-2" size="small" />
-        <span>{{ country.option.name }}</span>
-      </div>
-    </template>
-  </PvDropdown>
+  <div class="flex align-items-center gap-1">
+    <PvDropdown
+      v-model="$i18n.locale"
+      class=""
+      :options="languageDropdownOptions"
+      option-label="name"
+      option-value="value"
+      placeholder="Select language"
+      :highlight-on-select="true"
+    >
+      <template #header>
+        <div class="m-2 font-bold uppercase text-sm text-gray-500">Set Locale</div>
+      </template>
+      <template #value="locale">
+        <div v-if="locale.value" class="flex flex-row justify-content-center align-items-center">
+          <country-flag :country="getCountryFlag(locale.value)" class="" size="small" />
+        </div>
+        <span v-else>
+          {{ locale.placeholder }}
+        </span>
+      </template>
+      <template #option="country">
+        <div class="flex flex-row justify-content-start align-items-center">
+          <country-flag :country="country.option.code" class="mr-2" size="small" />
+          <span>{{ country.option.name }}</span>
+        </div>
+      </template>
+    </PvDropdown>
+  </div>
 </template>
 
 <script setup>
@@ -49,10 +53,6 @@ const languageDropdownOptions = computed(() => {
     };
   });
 });
-
-const getCountryName = (locale) => {
-  return languageOptions[locale].country;
-};
 
 const getCountryFlag = (locale) => {
   return languageOptions[locale].code;
