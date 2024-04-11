@@ -18,8 +18,8 @@
               :rows="pageLimit"
               :rows-per-page-options="[3, 5, 10, 25]"
               data-key="id"
-              :sortOrder="sortOrder"
-              :sortField="sortField"
+              :sort-order="sortOrder"
+              :sort-field="sortField"
             >
               <template #header>
                 <div class="flex gap-3 align-items-center justify-content-start">
@@ -31,11 +31,11 @@
                           v-model="searchInput"
                           placeholder="Search Administrations"
                           :suggestions="searchSuggestions"
+                          data-cy="search-input"
                           @complete="autocomplete"
                           @keyup.enter="onSearch"
-                          data-cy="search-input"
                         />
-                        <PvButton icon="pi pi-search" @click="onSearch" class="text-xs" />
+                        <PvButton icon="pi pi-search" class="text-xs" @click="onSearch" />
                       </PvInputGroup>
                     </div>
                   </div>
@@ -58,7 +58,7 @@
                   <div>
                     You searched for <strong>{{ search }}</strong>
                   </div>
-                  <PvButton text @click="clearSearch" class="text-xs p-2"> Clear Search </PvButton>
+                  <PvButton text class="text-xs p-2" @click="clearSearch"> Clear Search </PvButton>
                 </div>
               </template>
               <template #list="slotProps">
@@ -72,7 +72,7 @@
                     :dates="item.dates"
                     :assignees="item.assignedOrgs"
                     :assessments="item.assessments"
-                    :publicName="item.publicName ?? item.name"
+                    :public-name="item.publicName ?? item.name"
                     :show-params="isSuperAdmin"
                     :is-super-admin="isSuperAdmin"
                     data-cy="h2-card-admin-title"
@@ -289,7 +289,7 @@ const onSortChange = (event) => {
   const value = event.value.value;
   const sortValue = event.value;
 
-  if (!isSuperAdmin && sortValue[0].field.fieldPath === 'name') {
+  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
     // catches edge case where a partner admin should sort by the public name attribute
     sortField.value = 'publicName';
   } else {
