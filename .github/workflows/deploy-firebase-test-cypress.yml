@@ -40,6 +40,8 @@ jobs:
         with:
           node-version: 'lts/*'
       - run: npm ci && npm run dev
+    outputs:
+      devServer: 'https://localhost:5173"'
 
   cypress-run:
     name: Run Cypress Tests
@@ -52,7 +54,7 @@ jobs:
         browser: [chromium, edge]
         containers: [1, 2, 3, 4]
     env:
-      #      CYPRESS_BASE_URL: ${{ needs.build-and-preview.outputs.deployUrl }}
+      CYPRESS_BASE_URL: ${{ needs.run-dev-server.outputs.devServer }}
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
