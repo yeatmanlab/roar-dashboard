@@ -136,7 +136,7 @@ const {
   isFetching: isFetchingAdmins,
   data: adminInfo,
 } = useQuery({
-  queryKey: ['administrations', administrationIds],
+  queryKey: ['administrations', authStore.uid, administrationIds],
   queryFn: () =>
     fetchDocsById(
       administrationIds.value.map((administrationId) => {
@@ -159,7 +159,7 @@ const {
   isFetching: isFetchingTasks,
   data: taskInfo,
 } = useQuery({
-  queryKey: ['tasks', taskIds],
+  queryKey: ['tasks', authStore.uid, taskIds],
   queryFn: () =>
     fetchDocsById(
       taskIds.value.map((taskId) => ({
