@@ -107,9 +107,9 @@ Cypress.Commands.add('selectAdministration', (testAdministration) => {
     .click();
 });
 
-Cypress.Commands.add('getAdministrationCard', (testAdministration, sort = 'descending') => {
-  cy.get('[data-cy="dropdown-sort-administrations"]', { timeout: Cypress.env('timeout') }).click();
-  cy.get('ul > li').contains(`Name (${sort})`).click();
+Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
+  cy.get('[data-cy=search-input]', { timeout: Cypress.env('timeout') }).type(`${testAdministration}{enter}`);
+  // cy.get('ul > li').contains(`Name (${sort})`).click();
 
   cy.get('[data-cy="h2-card-admin-title"]', { timeout: Cypress.env('timeout') })
     .filter((index, element) => {
@@ -161,7 +161,7 @@ Cypress.Commands.add(
 );
 
 Cypress.Commands.add('checkUserList', (userList) => {
-  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
+  cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
     cy.wrap(row)
       .find('td.p-frozen-column')
       .then((cell) => {

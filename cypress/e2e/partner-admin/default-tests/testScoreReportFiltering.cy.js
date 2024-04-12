@@ -59,8 +59,8 @@ describe('The partner admin can view score reports for a given administration an
     checkUrl();
     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
     clickScoreButton();
-    setFilterBySchool('zzzCypressTestSchool');
-    checkTableColumn(headers, 'zzzCypressTestSchool');
+    setFilterBySchool('Cypress Test School');
+    checkTableColumn(headers, 'Cypress Test School');
   });
 });
 
@@ -80,8 +80,8 @@ describe('The partner admin can view score reports for a given administration an
     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
     clickScoreButton();
     setFilterByGrade('5');
-    setFilterBySchool('zzzCypressTestSchool');
-    checkTableColumn(headers, 'zzzCypressTestSchool');
+    setFilterBySchool('Cypress Test School');
+    checkTableColumn(headers, 'Cypress Test School');
     checkTableColumn(['Grade'], '5');
   });
 });
