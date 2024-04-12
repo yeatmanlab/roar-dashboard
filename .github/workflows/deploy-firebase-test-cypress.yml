@@ -31,21 +31,9 @@ jobs:
     outputs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
-  run-dev-server:
-    name: Run dev server
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-      - run: npm ci && npm run dev
-    outputs:
-      devServer: 'https://localhost:5173"'
-
   cypress-run:
     name: Run Cypress Tests
-    needs: [build-and-preview, run-dev-server]
+    needs: [build-and-preview]
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -54,7 +42,8 @@ jobs:
         browser: [chromium, edge]
         containers: [1, 2, 3, 4]
     env:
-      CYPRESS_BASE_URL: ${{ needs.run-dev-server.outputs.devServer }}
+      #      CYPRESS_BASE_URL: ${{ needs.run-dev-server.outputs.devServer }}
+      CYPRESS_BASE_URL: 'https://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
@@ -73,8 +62,10 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           browser: ${{ matrix.browser }}
-          build: echo "Build step already completed"
-          start: echo "App already deployed to Firebase"
+          #          build: echo "Build step already completed"
+          build: echo "Building project" && npm ci && npm run build
+          #          start: echo "App already deployed to Firebase"
+          start: echo "Starting dev server" && npm run dev
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
