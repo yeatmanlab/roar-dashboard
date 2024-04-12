@@ -375,7 +375,7 @@ const fetchTreeOrgs = async () => {
 };
 
 const { data: orgs, isLoading: loadingDsgfOrgs } = useQuery({
-  queryKey: ['dsgfOrgs', props.id],
+  queryKey: ['dsgfOrgs', authStore.uid, props.id],
   queryFn: () => fetchTreeOrgs(),
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000, // 5 minutes

@@ -195,7 +195,7 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
-  queryKey: ['administrationInfo', props.administrationId],
+  queryKey: ['administrationInfo', authStore.uid, props.administrationId],
   queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
@@ -203,7 +203,7 @@ const { data: administrationInfo } = useQuery({
 });
 
 const { data: orgInfo } = useQuery({
-  queryKey: ['orgInfo', props.orgId],
+  queryKey: ['orgInfo', authStore.uid, props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
   enabled: initialized,
@@ -266,7 +266,7 @@ const schoolInfoQueryEnabled = computed(() => props.orgType === 'district' && in
 
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
-  queryKey: ['schools', ref(props.orgId)],
+  queryKey: ['schools', authStore.uid, ref(props.orgId)],
   queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: schoolInfoQueryEnabled,
@@ -280,7 +280,7 @@ const {
   isFetching: isFetchingScores,
   data: assignmentData,
 } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -301,7 +301,7 @@ const {
 
 // Scores count query
 const { data: assignmentCount } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId, filterBy, orderBy],
+  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, filterBy, orderBy],
   queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value, orderBy.value),
   keepPreviousData: true,
   enabled: scoreQueryEnabled,

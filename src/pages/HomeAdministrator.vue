@@ -159,7 +159,7 @@ const {
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
-  queryKey: ['administrations', orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
+  queryKey: ['administrations', authStore.uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
   queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
   keepPreviousData: true,
   enabled: canQueryAdministrations,

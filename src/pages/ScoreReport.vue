@@ -468,7 +468,7 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
-  queryKey: ['administrationInfo', props.administrationId],
+  queryKey: ['administrationInfo', authStore.uid, props.administrationId],
   queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
@@ -476,7 +476,7 @@ const { data: administrationInfo } = useQuery({
 });
 
 const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
-  queryKey: ['orgInfo', props.orgId],
+  queryKey: ['orgInfo', authStore.uid, props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
   enabled: initialized,
@@ -537,7 +537,7 @@ const gradeOptions = ref([
 
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
-  queryKey: ['schools', ref(props.orgId)],
+  queryKey: ['schools', authStore.uid, ref(props.orgId)],
   queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
   keepPreviousData: true,
   enabled: props.orgType === 'district' && initialized,
@@ -547,7 +547,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = getGrade(school.lowGrade) + ' ' + school.name;
+      acc[school.id] = getGrade(school.lowGrade ?? 0) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -563,7 +563,7 @@ const {
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -584,7 +584,7 @@ const {
 
 // Scores count query
 const { data: scoresCount } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId, filterBy, orderBy],
+  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, filterBy, orderBy],
   queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value, orderBy.value),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
@@ -1064,7 +1064,7 @@ const allTasks = computed(() => {
 
 // Runs query for all tasks under admin id
 const { isLoading: isLoadingRunResults, data: runResults } = useQuery({
-  queryKey: ['scores', ref(0), props.orgType, props.orgId, props.administrationId],
+  queryKey: ['scores', authStore.uid, ref(0), props.orgType, props.orgId, props.administrationId],
   queryFn: () =>
     runPageFetcher({
       administrationId: props.administrationId,

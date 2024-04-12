@@ -178,7 +178,7 @@ const activeOrgType = computed(() => {
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 
 const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts', orgsQueryKeyIndex],
+  queryKey: ['districts', authStore.uid, orgsQueryKeyIndex],
   queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: claimsLoaded,
@@ -190,7 +190,7 @@ const schoolQueryEnabled = computed(() => {
 });
 
 const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', selectedDistrict, orgsQueryKeyIndex],
+  queryKey: ['schools', authStore.uid, selectedDistrict, orgsQueryKeyIndex],
   queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: schoolQueryEnabled,
@@ -202,7 +202,7 @@ const {
   isFetching: isFetchingCount,
   data: totalRecords,
 } = useQuery({
-  queryKey: ['count', activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
+  queryKey: ['count', authStore.uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
   queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: claimsLoaded,
@@ -214,7 +214,17 @@ const {
   isFetching,
   data: orgData,
 } = useQuery({
-  queryKey: ['orgsPage', activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page, orgsQueryKeyIndex],
+  queryKey: [
+    'orgsPage',
+    authStore.uid,
+    activeOrgType,
+    selectedDistrict,
+    selectedSchool,
+    orderBy,
+    pageLimit,
+    page,
+    orgsQueryKeyIndex,
+  ],
   queryFn: () =>
     orgPageFetcher(activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page, isSuperAdmin, adminOrgs),
   keepPreviousData: true,

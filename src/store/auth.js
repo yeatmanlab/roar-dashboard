@@ -157,8 +157,19 @@ export const useAuthStore = () => {
         if (this.isAuthenticated && this.isFirekitInit) {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
-            this.spinner = false;
             this.authFromClever = false;
+            this.firebaseUser = {
+              adminFirebaseUser: null,
+              appFirebaseUser: null,
+            };
+            this.spinner = false;
+            this.userClaims = null;
+            this.userData = null;
+
+            this.userQueryKeyIndex += 1;
+            this.assignmentQueryKeyIndex += 1;
+            this.administrationQueryKeyIndex += 1;
+
             const gameStore = useGameStore();
             gameStore.selectedAdmin = undefined;
           });
