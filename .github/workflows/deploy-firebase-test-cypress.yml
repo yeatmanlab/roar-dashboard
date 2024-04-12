@@ -65,7 +65,7 @@ jobs:
           #          build: echo "Build step already completed"
           build: npm ci && npm run build
           #          start: echo "App already deployed to Firebase"
-          start: npm run dev
+          start: npx vite --host --port 5173
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
