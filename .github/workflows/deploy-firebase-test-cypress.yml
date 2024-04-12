@@ -43,7 +43,8 @@ jobs:
         containers: [1, 2, 3, 4]
     env:
       #      CYPRESS_BASE_URL: ${{ needs.run-dev-server.outputs.devServer }}
-      CYPRESS_BASE_URL: 'https://localhost:5173'
+      NODE_ENV: 'test'
+      CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
@@ -65,7 +66,7 @@ jobs:
           #          build: echo "Build step already completed"
           build: npm ci && npm run build
           #          start: echo "App already deployed to Firebase"
-          start: npx vite --host --port 5173
+          start: npm run dev
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
