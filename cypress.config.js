@@ -4,7 +4,7 @@ require('dotenv').config();
 module.exports = defineConfig({
   projectId: 'cobw62',
   e2e: {
-    baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173/',
+    baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
     retries: 2,
