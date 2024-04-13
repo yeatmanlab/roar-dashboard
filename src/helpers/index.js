@@ -173,3 +173,5 @@ export const singularizeFirestoreCollection = (plural) => {
 
   throw new Error(`There is no Firestore collection ${plural}`);
 };
+
+export const isLevante = import.meta.env.MODE === 'LEVANTE';
