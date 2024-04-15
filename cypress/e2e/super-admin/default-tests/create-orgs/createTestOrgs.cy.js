@@ -39,6 +39,7 @@ describe('The admin user can create a set of test orgs', () => {
       cy.wait(Cypress.env('timeout'));
       cy.navigateTo('/list-orgs');
       checkOrgCreated(org.name, org.orgType, org.parentDistrict, org.parentSchool);
+      //   Need a way to filter/searc for the randomly created org (maybe use Firestore instead of UI)
     });
   });
 });

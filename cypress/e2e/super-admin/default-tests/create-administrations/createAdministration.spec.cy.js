@@ -10,6 +10,9 @@ const randomAdministrationName = randomizeName(Cypress.env('testAdministrationNa
 
 function typeAdministrationName() {
   cy.get('[data-cy="input-administration-name"]', { timeout: Cypress.env('timeout') }).type(randomAdministrationName);
+  cy.get('[data-cy="input-administration-name-public"]', { timeout: Cypress.env('timeout') }).type(
+    `Public ${randomAdministrationName}`,
+  );
 }
 
 function selectDate() {
