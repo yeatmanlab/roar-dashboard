@@ -9,33 +9,36 @@
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
           {{ adminInfo.at(0).name }}
         </h2>
-        <div
-          v-if="adminInfo?.length > 1"
-          class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4"
-        >
-          <div class="assignment-select-container flex flex-row justify-content-between">
-            <div class="flex flex-column">
-              <PvDropdown
-                v-model="selectedAdmin"
-                :options="adminInfo ?? []"
-                option-label="name"
-                input-id="dd-assignment"
-                data-cy="dropdown-select-administration"
-                @change="toggleShowOptionalAssessments"
-              />
-              <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
-            </div>
-
-            <div
-              v-if="optionalAssessments.length !== 0"
-              class="switch-container flex flex-row align-items-center justify-content-end mr-6"
-            >
-              <PvInputSwitch
-                v-model="showOptionalAssessments"
-                input-id="switch-optional"
-                data-cy="switch-show-optional-assessments"
-              />
-              <label for="switch-optional" class="mr-7">{{ $t('homeParticipant.showOptionalAssignments') }}</label>
+        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
+          <div
+            v-if="optionalAssessments.length !== 0"
+            class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
+          >
+            <PvInputSwitch
+              v-model="showOptionalAssessments"
+              input-id="switch-optional"
+              data-cy="switch-show-optional-assessments"
+            />
+            <label for="switch-optional" class="mr-2 text-gray-500">{{
+              $t('homeParticipant.showOptionalAssignments')
+            }}</label>
+          </div>
+          <div
+            v-if="adminInfo?.length > 1"
+            class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4"
+          >
+            <div class="assignment-select-container flex flex-row justify-content-between">
+              <div class="flex flex-column">
+                <PvDropdown
+                  v-model="selectedAdmin"
+                  :options="adminInfo ?? []"
+                  option-label="name"
+                  input-id="dd-assignment"
+                  data-cy="dropdown-select-administration"
+                  @change="toggleShowOptionalAssessments"
+                />
+                <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+              </div>
             </div>
           </div>
         </div>
