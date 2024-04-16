@@ -117,9 +117,9 @@
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <RoarDataTable
             :data="tableData"
+            lazy
             :columns="columns"
             :total-records="scoresCount"
-            lazy
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
@@ -570,14 +570,14 @@ const {
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, ref(1000), page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
       props.orgType,
       props.orgId,
-      pageLimit,
-      page,
+      ref(1000),
+      ref(0),
       true,
       undefined,
       true,
@@ -919,6 +919,7 @@ const shouldBeOutlined = (taskId) => {
 
 const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
+  console.log('dqlen', scoresDataQuery.value.length);
   const tableColumns = [
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
