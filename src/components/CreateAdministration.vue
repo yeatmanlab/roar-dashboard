@@ -6,11 +6,12 @@
 
         <PvDivider />
         <div class="formgrid grid mt-5">
-          <div class="field col flex flex-row gap-5">
+          <div class="field col-12 xl:col-5 mb-5">
             <span class="p-float-label">
               <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
+                class="w-full"
                 data-cy="input-administration-name"
               />
               <label for="administration-name" class="w-full">Administration Name</label>
@@ -20,11 +21,14 @@
                 >Please name your administration</small
               >
             </span>
+          </div>
+
+          <div class="field col-12 xl:col-5 mb-5">
             <span class="p-float-label">
               <PvInputText
                 id="administration-public-name"
                 v-model="state.administrationPublicName"
-                class="field col-14 sm:col-14"
+                class="w-full"
                 data-cy="input-administration-name"
               />
               <label for="administration-public-name" class="w-full">Public Administration Name</label>
@@ -36,10 +40,11 @@
             </span>
           </div>
 
-          <div class="field col">
+          <div class="field col-6 xl:col-2">
             <span class="p-float-label">
               <PvCalendar
                 v-model="state.dates"
+                class="w-full"
                 :min-date="minStartDate"
                 input-id="dates"
                 :number-of-months="2"
