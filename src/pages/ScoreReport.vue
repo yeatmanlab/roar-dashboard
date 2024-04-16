@@ -355,7 +355,7 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const publicName = computed(() => {
+const displayName = computed(() => {
   if (administrationInfo.value) {
     return getTitle(administrationInfo.value, isSuperAdmin.value);
   }
