@@ -24,10 +24,10 @@
               <PvInputText
                 id="administration-public-name"
                 v-model="state.administrationPublicName"
-                style="width: 50vh"
+                class="field col-14 sm:col-14"
                 data-cy="input-administration-name"
               />
-              <label for="administration-public-name" style="width: 50vh">Public Administration Name</label>
+              <label for="administration-public-name" class="w-full">Public Administration Name</label>
               <small
                 v-if="v$.administrationPublicName.$invalid && submitted"
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
