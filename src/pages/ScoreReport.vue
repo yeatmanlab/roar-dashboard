@@ -19,7 +19,7 @@
                 <div>
                   <div class="uppercase font-light text-gray-500 text-sm">Administration</div>
                   <div class="administration-name mb-4">
-                    {{ _toUpper(publicName) }}
+                    {{ _toUpper(displayName) }}
                   </div>
                 </div>
                 <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
