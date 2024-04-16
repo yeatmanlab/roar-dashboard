@@ -395,7 +395,14 @@ router.beforeEach(async (to, from, next) => {
 
   const store = useAuthStore();
 
-  const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent', 'Register'];
+  const allowedUnauthenticatedRoutes = [
+    'SignIn',
+    'AuthClever',
+    'AuthClassLink',
+    'AuthEmailLink',
+    'AuthEmailSent',
+    'Register',
+  ];
 
   // Check if user is signed in. If not, go to signin
   if (

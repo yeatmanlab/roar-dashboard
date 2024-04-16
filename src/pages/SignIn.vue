@@ -128,6 +128,7 @@ const authWithClever = () => {
 };
 
 const authWithClassLink = () => {
+  console.log('---> authWithClassLink');
   if (isMobileBrowser()) {
     authStore.signInWithClassLinkRedirect();
   } else {
