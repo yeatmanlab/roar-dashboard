@@ -13,7 +13,7 @@
             <div>
               <div class="uppercase font-light text-gray-500 text-md">Administration</div>
               <div class="administration-name uppercase">
-                {{ publicName }}
+                {{ displayName }}
               </div>
             </div>
           </div>
