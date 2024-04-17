@@ -99,11 +99,11 @@ export const taskDisplayNames = {
     extendedName: 'External Task',
     order: 22,
   },
-  ran: { 
+  ran: {
     name: 'RAN',
     extendedTitle: 'ROAV - RAN',
     extendedName: 'RAN',
-    order: 23
+    order: 23,
   },
   ExternalTest: {
     name: 'External Test',
