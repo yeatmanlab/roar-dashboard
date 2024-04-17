@@ -29,7 +29,7 @@
                 id="administration-public-name"
                 v-model="state.administrationPublicName"
                 class="w-full"
-                data-cy="input-administration-name"
+                data-cy="input-administration-name-public"
               />
               <label for="administration-public-name" class="w-full">Public Administration Name</label>
               <small

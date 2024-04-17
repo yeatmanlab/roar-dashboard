@@ -117,7 +117,7 @@
               label="Add Assigned Condition"
               icon="pi pi-plus"
               class=""
-              data-cy="button-assigned-contidion"
+              data-cy="button-assigned-condition"
               @click="addAssignedCondition"
             />
           </div>

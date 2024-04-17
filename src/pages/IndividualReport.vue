@@ -84,7 +84,7 @@
       <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
-            <img v-if="!(studentData?.studentData?.grade > 6)" src="../assets/support-distribution.png" width="650" />
+            <img v-if="!(studentData?.studentData?.grade >= 6)" src="../assets/support-distribution.png" width="650" />
             <div class="text-xl font-bold mt-2">The ROAR assessments return these kinds of scores:</div>
             <ul>
               <li>
@@ -92,11 +92,11 @@
                 compares to other kids of the same age or grade. Standard Scores have a range of 0-180. The standard
                 score is comparable within a grade level, but not across grade levels or over time.
               </li>
-              <li v-if="!(studentData?.studentData?.grade > 6)">
-                <b>Percentile: </b>A <b>percentile </b>is a score that tells you what percentage of people your child
-                scored the same as or better than on a test. For example, if your child is in the 70th percentile, it
-                means they scored higher than 70% of the kids who took the same test. It's a way of comparing your
-                child's performance with others. score.
+              <li v-if="!(studentData?.studentData?.grade >= 6)">
+                <b>Percentile:</b> The <b>percentile</b> refers to a student's rank within their grade level on the
+                given skill. The percentile is the number of students out of 100 who have lower scores for that skill.
+                For example, students in the 50th percentile would score higher than 50 out of 100 students in the same
+                grade.
               </li>
               <li>
                 <b>Raw Score: </b>A <b>raw score</b> is the basic measure of a student’s performance on the test.
@@ -105,7 +105,7 @@
                 comparable across grade levels and over time.
               </li>
             </ul>
-            <div>
+            <div v-if="studentData?.studentData?.grade >= 6">
               <b>ROAR</b> assesses foundational reading skills that are ideally in place before 5th grade.
               <br />
               <br />
