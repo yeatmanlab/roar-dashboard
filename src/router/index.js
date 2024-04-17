@@ -167,6 +167,13 @@ const routes = [
     meta: { pageTitle: 'Core Tasks' },
   },
   {
+    path: '/game/ran',
+    name: 'RAN',
+    component: () => import('../components/tasks/TaskRan.vue'),
+    props: { taskId: 'ran', language: 'en' },
+    meta: { pageTitle: 'RAN' },
+  },
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),

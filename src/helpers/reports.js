@@ -99,6 +99,12 @@ export const taskDisplayNames = {
     extendedName: 'External Task',
     order: 22,
   },
+  ran: { 
+    name: 'RAN',
+    extendedTitle: 'ROAV - RAN',
+    extendedName: 'RAN',
+    order: 23
+  },
   ExternalTest: {
     name: 'External Test',
     extendedTitle: 'ROAR- External Test',
@@ -127,6 +133,7 @@ export const extendedDescriptions = {
     'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
   syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
   fluency: 'Temporary description for fluency',
+  ran: 'Temporary description for ran',
 };
 
 /*
