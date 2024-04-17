@@ -40,7 +40,7 @@
                 </div>
                 <div v-if="!isLoadingRunResults">
                   <PvButton
-                    class="flex flex-row"
+                    class="flex flex-row p-2 text-xs"
                     :icon="!exportLoading ? 'pi pi-download' : 'pi pi-spin pi-spinner'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -116,15 +116,13 @@
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <RoarDataTable
-            :data="tableData"
-            lazy
-            :columns="columns"
+            :data="scoreReportTableData"
+            :columns="scoreReportColumns"
             :total-records="scoresCount"
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
             :lazy-pre-sorting="sortDisplay"
-            @page="onPage($event)"
             @sort="onSort($event)"
             @filter="onFilter($event)"
             @export-all="exportAll"
@@ -570,13 +568,38 @@ const {
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, ref(1000), page, filterBy, orderBy],
+  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, ref(1000), filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
       props.orgType,
       props.orgId,
-      ref(1000),
+      pageLimit,
+      page,
+      true,
+      undefined,
+      true,
+      filterBy.value,
+      orderBy.value,
+    ),
+  keepPreviousData: true,
+  enabled: scoresQueryEnabled,
+  staleTime: 5 * 60 * 1000, // 5 mins
+});
+
+// Scores Query
+const {
+  isLoading: isLoadingNonPaginatedScores,
+  isFetching: isFetchingNonPaginatedScores,
+  data: nonPaginatedScoresData,
+} = useQuery({
+  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, page, filterBy, orderBy],
+  queryFn: () =>
+    assignmentPageFetcher(
+      props.administrationId,
+      props.orgType,
+      props.orgId,
+      ref(2500),
       ref(0),
       true,
       undefined,
@@ -587,6 +610,9 @@ const {
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
+  onSuccess: (data) => {
+    console.log('Nonpaginate Data', data.length);
+  },
 });
 
 // Scores count query
@@ -917,9 +943,8 @@ const shouldBeOutlined = (taskId) => {
   else return true;
 };
 
-const columns = computed(() => {
+const scoreReportColumns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
-  console.log('dqlen', scoresDataQuery.value.length);
   const tableColumns = [
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
@@ -935,7 +960,7 @@ const columns = computed(() => {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
-  if (tableData.value.length > 0) {
+  if (scoreReportTableData.value.length > 0) {
     const sortedTasks = allTasks.value.toSorted((p1, p2) => {
       if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
         return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
@@ -993,9 +1018,9 @@ function colorSelection(assessment, rawScore, support_level, tag_color) {
   return tag_color;
 }
 
-const tableData = computed(() => {
+const scoreReportTableData = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
-  return scoresDataQuery.value.map(({ user, assignment }) => {
+  return nonPaginatedScoresData.value.map(({ user, assignment }) => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of assignment?.assessments ?? []) {
