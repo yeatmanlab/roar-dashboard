@@ -13,7 +13,7 @@
             <div>
               <div class="uppercase font-light text-gray-500 text-md">Administration</div>
               <div class="administration-name uppercase">
-                {{ getTitle(administrationInfo, isSuperAdmin) }}
+                {{ displayName }}
               </div>
             </div>
           </div>
@@ -144,6 +144,13 @@ const reportViews = [
   { name: 'Progress Report', constant: true },
   { name: 'Score Report', constant: false },
 ];
+
+const displayName = computed(() => {
+  if (administrationInfo.value) {
+    return getTitle(administrationInfo.value, isSuperAdmin.value);
+  }
+  return 'Fetching administration name...';
+});
 
 const handleViewChange = () => {
   window.location.href = `/scores/${props.administrationId}/${props.orgType}/${props.orgId}`;
