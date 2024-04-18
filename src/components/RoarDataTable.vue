@@ -78,11 +78,10 @@
           paginator-position="both"
           :rows-per-page-options="[10, 25, 50, 100]"
           :total-records="props.totalRecords"
-          :lazy="props.lazy"
+          lazy
           :loading="props.loading"
           scrollable
           :select-all="selectAll"
-          :multi-sort-meta="lazyPreSorting"
           @page="onPage($event)"
           @sort="onSort($event)"
           @filter="onFilter($event)"
@@ -534,6 +533,7 @@ let returnScoreTooltip = (colHeader, colData, fieldPath) => {
 
 const computedData = computed(() => {
   const data = JSON.parse(JSON.stringify(props.data));
+  console.log('computed', data);
   _forEach(data, (entry) => {
     // Clean up date fields to use Date objects
     _forEach(dateFields, (field) => {

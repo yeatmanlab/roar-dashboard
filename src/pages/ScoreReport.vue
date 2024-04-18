@@ -124,6 +124,7 @@
             data-cy="roar-data-table"
             :lazy-pre-sorting="sortDisplay"
             @sort="onSort($event)"
+            @page="onPage($event)"
             @filter="onFilter($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
@@ -1018,9 +1019,18 @@ function colorSelection(assessment, rawScore, support_level, tag_color) {
   return tag_color;
 }
 
+const paginatedScoresData = ref([]);
+
 const scoreReportTableData = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
-  return nonPaginatedScoresData.value.map(({ user, assignment }) => {
+  // slice nonpaginated scores data and store into paginated based on page and page limit
+  if (nonPaginatedScoresData.value.length > 0) {
+    paginatedScoresData.value = nonPaginatedScoresData.value.slice(
+      page.value * pageLimit.value,
+      (page.value + 1) * pageLimit.value,
+    );
+  }
+  return paginatedScoresData.value.map(({ user, assignment }) => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of assignment?.assessments ?? []) {
