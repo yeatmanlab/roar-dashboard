@@ -19,7 +19,7 @@
                 <div>
                   <div class="uppercase font-light text-gray-500 text-sm">Administration</div>
                   <div class="administration-name mb-4">
-                    {{ _toUpper(getTitle(administrationInfo, isSuperAdmin)) }}
+                    {{ _toUpper(displayName) }}
                   </div>
                 </div>
                 <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
@@ -354,6 +354,13 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
+
+const displayName = computed(() => {
+  if (administrationInfo.value) {
+    return getTitle(administrationInfo.value, isSuperAdmin.value);
+  }
+  return 'Fetching administration name...';
+});
 
 const reportView = ref({ name: 'Score Report', constant: true });
 const reportViews = [

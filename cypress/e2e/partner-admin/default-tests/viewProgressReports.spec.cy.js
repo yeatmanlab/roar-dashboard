@@ -30,7 +30,7 @@ function checkProgressTags(headers) {
       const headerIndex = tableHeaders.indexOf(header);
 
       if (headerIndex !== -1) {
-        cy.get('[data-cy="roar-data-table"] tbody tr').each(($row) => {
+        cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: timeout }).each(($row) => {
           cy.wrap($row)
             .find('td')
             .eq(headerIndex)

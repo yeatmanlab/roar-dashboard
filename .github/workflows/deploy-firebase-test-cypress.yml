@@ -18,8 +18,6 @@ jobs:
         with:
           node-version: 'lts/*'
       - name: 'vite build'
-        #        env:
-        #          NODE_OPTIONS: '--max_old_space_size=8192'
         run: npm ci && npm run build
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
@@ -42,16 +40,17 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        containers: [1, 2, 3]
+        containers: [1, 2, 3, 4]
     env:
-      CYPRESS_BASE_URL: ${{ needs.build-and-preview.outputs.deployUrl }}
+      NODE_ENV: 'test'
+      CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
       PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
       PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
       PARTNER_ADMIN_ID: ${{ secrets.PARTNER_ADMIN_ID }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       PARTICIPANT_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
       PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
@@ -63,8 +62,8 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           browser: ${{ matrix.browser }}
-          build: echo "Build step already completed"
-          start: echo "App already deployed to Firebase"
+          build: npm ci && npm run build
+          start: npm run dev
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
