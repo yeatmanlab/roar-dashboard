@@ -116,13 +116,12 @@
         </div>
         <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
           <RoarDataTable
-            :data="scoreReportTableData"
+            :data="scoreReportTableData2"
             :columns="scoreReportColumns"
             :total-records="scoresCount"
             :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
+            :loading="isLoadingNonPaginatedScores || isFetchingNonPaginatedScores"
             data-cy="roar-data-table"
-            :lazy-pre-sorting="sortDisplay"
             @sort="onSort($event)"
             @page="onPage($event)"
             @filter="onFilter($event)"
@@ -594,7 +593,7 @@ const {
   isFetching: isFetchingNonPaginatedScores,
   data: nonPaginatedScoresData,
 } = useQuery({
-  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, page, filterBy, orderBy],
+  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -961,34 +960,33 @@ const scoreReportColumns = computed(() => {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
-  if (scoreReportTableData.value.length > 0) {
-    const sortedTasks = allTasks.value.toSorted((p1, p2) => {
-      if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
-        return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-      } else {
-        return -1;
-      }
-    });
-    for (const taskId of sortedTasks) {
-      let colField;
-      const isOptional = `scores.${taskId}.optional`;
-      // Color needs to include a field to allow sorting.
-      if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
-      if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`;
-      if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`;
-      tableColumns.push({
-        field: colField,
-        header: taskDisplayNames[taskId]?.name ?? taskId,
-        dataType: 'score',
-        sort: false,
-        tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
-        emptyTag:
-          viewMode.value === 'color' || isOptional || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
-        tagColor: `scores.${taskId}.color`,
-        tagOutlined: shouldBeOutlined(taskId),
-      });
+  // if (scoreReportTableData.value.length > 0) {
+  const sortedTasks = allTasks.value.toSorted((p1, p2) => {
+    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    } else {
+      return -1;
     }
+  });
+  for (const taskId of sortedTasks) {
+    let colField;
+    const isOptional = `scores.${taskId}.optional`;
+    // Color needs to include a field to allow sorting.
+    if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
+    if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`;
+    if (viewMode.value === 'raw') colField = `scores.${taskId}.raw`;
+    tableColumns.push({
+      field: colField,
+      header: taskDisplayNames[taskId]?.name ?? taskId,
+      dataType: 'score',
+      sort: false,
+      tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
+      emptyTag: viewMode.value === 'color' || isOptional || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
+      tagColor: `scores.${taskId}.color`,
+      tagOutlined: shouldBeOutlined(taskId),
+    });
   }
+  // }
   tableColumns.push({
     header: 'Student Report',
     link: true,
@@ -1019,48 +1017,110 @@ function colorSelection(assessment, rawScore, support_level, tag_color) {
   return tag_color;
 }
 
-const paginatedScoresData = ref([]);
+// const scoreReportTableData = computed(() => {
+//   if (scoresDataQuery.value === undefined) return [];
+//   return scoresDataQuery.value.map(({ user, assignment }) => {
+//     const scores = {};
+//     const grade = getGrade(_get(user, 'studentData.grade'));
+//     for (const assessment of assignment?.assessments ?? []) {
+//       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
+//         assessment,
+//         grade,
+//       );
+//       const { percentileString, support_level, tag_color } = getPercentileScores({
+//         grade,
+//         assessment,
+//         percentileScoreKey,
+//         percentileScoreDisplayKey,
+//         rawScoreKey,
+//         taskId: assessment.taskId,
+//         optional: assessment.optional,
+//       });
+//       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
+//       const rawScore = rawOnlyTasks.includes(assessment.taskId)
+//         ? _get(assessment, 'scores.computed.composite')
+//         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
+//       const color = colorSelection(assessment, rawScore, support_level, tag_color);
+//       scores[assessment.taskId] = {
+//         percentile: percentileString,
+//         standard: standardScore,
+//         raw: rawScore,
+//         support_level,
+//         color: color,
+//         optional: assessment.optional,
+//       };
+//     }
+//     // If this is a district score report, grab school information
+//     if (props.orgType === 'district') {
+//       // Grab user's school list
+//       const currentSchools = _get(user, 'schools.current');
+//       if (currentSchools.length) {
+//         const schoolId = currentSchools[0];
+//         const schoolName = _get(
+//           _find(schoolsInfo.value, (school) => school.id === schoolId),
+//           'name',
+//         );
+//         return {
+//           user: {
+//             ...user,
+//             schoolName,
+//           },
+//           assignment,
+//           scores,
+//           routeParams: {
+//             administrationId: props.administrationId,
+//             userId: _get(user, 'userId'),
+//           },
+//         };
+//       }
+//     }
+//     return {
+//       user,
+//       assignment,
+//       scores,
+//       routeParams: {
+//         administrationId: props.administrationId,
+//         userId: _get(user, 'userId'),
+//         orgType: props.orgType,
+//         orgId: props.orgId,
+//       },
+//     };
+//   });
+// });
 
-const scoreReportTableData = computed(() => {
-  if (scoresDataQuery.value === undefined) return [];
-  // slice nonpaginated scores data and store into paginated based on page and page limit
-  if (nonPaginatedScoresData.value.length > 0) {
-    paginatedScoresData.value = nonPaginatedScoresData.value.slice(
-      page.value * pageLimit.value,
-      (page.value + 1) * pageLimit.value,
-    );
-  }
-  return paginatedScoresData.value.map(({ user, assignment }) => {
+const scoreReportTableData2 = computed(() => {
+  if (nonPaginatedScoresData.value === undefined) return [];
+  return nonPaginatedScoresData.value.map(({ user, assignment }) => {
     const scores = {};
-    const grade = getGrade(_get(user, 'studentData.grade'));
-    for (const assessment of assignment?.assessments ?? []) {
-      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
-        assessment,
-        grade,
-      );
-      const { percentileString, support_level, tag_color } = getPercentileScores({
-        grade,
-        assessment,
-        percentileScoreKey,
-        percentileScoreDisplayKey,
-        rawScoreKey,
-        taskId: assessment.taskId,
-        optional: assessment.optional,
-      });
-      const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-      const rawScore = rawOnlyTasks.includes(assessment.taskId)
-        ? _get(assessment, 'scores.computed.composite')
-        : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-      const color = colorSelection(assessment, rawScore, support_level, tag_color);
-      scores[assessment.taskId] = {
-        percentile: percentileString,
-        standard: standardScore,
-        raw: rawScore,
-        support_level,
-        color: color,
-        optional: assessment.optional,
-      };
-    }
+    // const grade = getGrade(_get(user, 'studentData.grade'));
+    // for (const assessment of assignment?.assessments ?? []) {
+    //   const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
+    //     assessment,
+    //     grade,
+    //   );
+    //   const { percentileString, support_level, tag_color } = getPercentileScores({
+    //     grade,
+    //     assessment,
+    //     percentileScoreKey,
+    //     percentileScoreDisplayKey,
+    //     rawScoreKey,
+    //     taskId: assessment.taskId,
+    //     optional: assessment.optional,
+    //   });
+    //   const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
+    //   const rawScore = rawOnlyTasks.includes(assessment.taskId)
+    //     ? _get(assessment, 'scores.computed.composite')
+    //     : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
+    //   const color = colorSelection(assessment, rawScore, support_level, tag_color);
+    //   scores[assessment.taskId] = {
+    //     percentile: percentileString,
+    //     standard: standardScore,
+    //     raw: rawScore,
+    //     support_level,
+    //     color: color,
+    //     optional: assessment.optional,
+    //   };
+    // }
     // If this is a district score report, grab school information
     if (props.orgType === 'district') {
       // Grab user's school list

@@ -78,7 +78,6 @@
           paginator-position="both"
           :rows-per-page-options="[10, 25, 50, 100]"
           :total-records="props.totalRecords"
-          lazy
           :loading="props.loading"
           scrollable
           :select-all="selectAll"
@@ -119,11 +118,14 @@
               </div>
             </template>
             <template #body="{ data: colData }">
-              <div
+              <!-- If column is a score field, use a dedicated component to render tags and scores -->
+              <div v-if="col.field && col.field.split('.')[0] === 'scores'">
+                <TableScoreTag :data="colData" :col="col" />
+                <!-- <div
                 v-if="col.tag && (_get(colData, col.field) !== undefined || _get(colData, 'optional'))"
                 v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
-              >
-                <PvTag
+              > -->
+                <!-- <PvTag
                   v-if="!col.tagOutlined"
                   :severity="_get(colData, col.severityField)"
                   :value="_get(colData, col.field)"
@@ -138,12 +140,12 @@
                   v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
                   class="circle"
                   style="border: 1px solid black"
-                />
+                /> -->
               </div>
-              <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
+              <!-- <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
-              </div>
-              <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
+              </div> -->
+              <!-- <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
                 <div
                   v-if="!col.tagOutlined"
                   class="circle"
@@ -162,11 +164,10 @@
                     _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
                   }; outline: 1px dotted #0000CD; outline-offset: 3px`"
                 />
-              </div>
+              </div> -->
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
-                    v-tooltip.top="col.routeTooltip"
                     severity="secondary"
                     text
                     raised
@@ -261,6 +262,7 @@ import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _lowerCase from 'lodash/lowerCase';
 import { scoredTasks, rawOnlyTasks } from '@/helpers/reports';
+import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 
 /*
 Using the DataTable
@@ -366,11 +368,11 @@ const padding = '1rem 1.5rem';
 
 function increasePadding() {
   if (countForVisualize.value % 2 === 0) {
-    document.documentElement.style.setProperty('--padding-value', padding);
+    document.documentElement?.style.setProperty('--padding-value', padding);
     nameForVisualize.value = 'Compact View';
   } else {
     nameForVisualize.value = 'Expand View';
-    document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
+    document.documentElement?.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
   countForVisualize.value = countForVisualize.value + 1;
 }
@@ -532,6 +534,9 @@ let returnScoreTooltip = (colHeader, colData, fieldPath) => {
 };
 
 const computedData = computed(() => {
+  console.log(props.data);
+  console.log(props.columns);
+  if (!props.data) return [];
   const data = JSON.parse(JSON.stringify(props.data));
   console.log('computed', data);
   _forEach(data, (entry) => {
