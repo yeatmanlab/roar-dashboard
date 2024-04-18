@@ -154,14 +154,19 @@ async function routeExternalTask(game) {
     return;
   }
 
-  url += `&participant=${props.userData.assessmentPid}${
-    props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
-  }${props.userData.classes.current.length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''}`;
+  if (game.taskData.name.toLowerCase() === 'mefs') {
+    url += `participantID=${props.userData.id}&participantAgeInMonths=${props.userData?.ageInMonths}`;
+  } else {
+    url += `&participant=${props.userData.assessmentPid}${
+      props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
+    }${props.userData.classes.current.length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''}`;
+  }
 
   await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
 
   window.location.href = url;
 }
+
 const returnVideoOptions = (videoURL) => {
   return {
     autoplay: false,
@@ -177,6 +182,7 @@ const returnVideoOptions = (videoURL) => {
   };
 };
 </script>
+
 <style scoped lang="scss">
 .pointer {
   cursor: pointer;
