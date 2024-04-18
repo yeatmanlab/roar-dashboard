@@ -121,10 +121,6 @@
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
               <div v-if="col.field && col.field.split('.')[0] === 'scores'">
                 <TableScoreTag :data="colData" :col="col" />
-                <!-- <div
-                v-if="col.tag && (_get(colData, col.field) !== undefined || _get(colData, 'optional'))"
-                v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
-              > -->
                 <!-- <PvTag
                   v-if="!col.tagOutlined"
                   :severity="_get(colData, col.severityField)"

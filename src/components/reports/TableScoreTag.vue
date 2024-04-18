@@ -1,39 +1,44 @@
 <template>
-  <PvTag
-    v-if="!col.tagOutlined"
-    :severity="_get(computedScores, col.severityField)"
-    :value="_get(computedScores, col.field)"
-    :icon="_get(colData, col.iconField)"
-    :style="`background-color: ${_get(computedScores, col.tagColor)}; min-width: 2rem; ${
-      returnScoreTooltip(col.header, computedScores, col.field).length > 0 &&
-      'outline: 1px dotted #0000CD; outline-offset: 3px'
-    }`"
-    rounded
-  />
   <div
-    v-else-if="col.tagOutlined && _get(computedScores, col.tagColor)"
-    class="circle"
-    style="border: 1px solid black"
-  />
-  <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
-    <div
+    v-if="_get(computedScores, col.field) !== undefined || _get(computedScores, 'optional')"
+    v-tooltip.right="`${returnScoreTooltip(col.header, computedScores, col.field)}`"
+  >
+    <PvTag
       v-if="!col.tagOutlined"
-      class="circle"
-      :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
-        _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-      }; ${
-        returnScoreTooltip(col.header, colData, col.field).length > 0 &&
+      :severity="_get(computedScores, col.severityField)"
+      :value="_get(computedScores, col.field)"
+      :icon="_get(colData, col.iconField)"
+      :style="`background-color: ${_get(computedScores, col.tagColor)}; min-width: 2rem; ${
+        returnScoreTooltip(col.header, computedScores, col.field).length > 0 &&
         'outline: 1px dotted #0000CD; outline-offset: 3px'
       }`"
+      rounded
     />
-
     <div
-      v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+      v-else-if="col.tagOutlined && _get(computedScores, col.tagColor)"
       class="circle"
-      :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
-        _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-      }; outline: 1px dotted #0000CD; outline-offset: 3px`"
+      style="border: 1px solid black"
     />
+    <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
+      <div
+        v-if="!col.tagOutlined"
+        class="circle"
+        :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
+          _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+        }; ${
+          returnScoreTooltip(col.header, colData, col.field).length > 0 &&
+          'outline: 1px dotted #0000CD; outline-offset: 3px'
+        }`"
+      />
+
+      <div
+        v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+        class="circle"
+        :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
+          _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+        }; outline: 1px dotted #0000CD; outline-offset: 3px`"
+      />
+    </div>
   </div>
 </template>
 
