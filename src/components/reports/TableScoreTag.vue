@@ -44,6 +44,7 @@
 
 <script setup>
 import { defineProps, computed } from 'vue';
+import _lowerCase from 'lodash/lowerCase';
 import _get from 'lodash/get';
 import _round from 'lodash/round';
 import { rawOnlyTasks, getSupportLevel, getScoreKeys, scoredTasks } from '@/helpers/reports.js';

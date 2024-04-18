@@ -121,26 +121,10 @@
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
               <div v-if="col.field && col.field.split('.')[0] === 'scores'">
                 <TableScoreTag :data="colData" :col="col" />
-                <!-- <PvTag
-                  v-if="!col.tagOutlined"
-                  :severity="_get(colData, col.severityField)"
-                  :value="_get(colData, col.field)"
-                  :icon="_get(colData, col.iconField)"
-                  :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
-                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                    'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`"
-                  rounded
-                />
-                <div
-                  v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-                  class="circle"
-                  style="border: 1px solid black"
-                /> -->
               </div>
-              <!-- <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
+              <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
-              </div> -->
+              </div>
               <!-- <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
                 <div
                   v-if="!col.tagOutlined"
@@ -455,83 +439,7 @@ let toolTipByHeader = (header) => {
   return headerToTooltipMap[header] || '';
 };
 
-function getIndexTask(colData, task) {
-  for (let index = 0; index < colData.assignment.assessments.length; index++) {
-    if (colData.assignment.assessments[index].taskId === task) {
-      return index;
-    }
-  }
-}
-
-function getFlags(index, colData) {
-  const flags = colData.assignment.assessments[index].engagementFlags;
-  const flagMessages = {
-    accuracyTooLow: '- Responses were inaccurate',
-    notEnoughResponses: '- Assessment was incomplete',
-    responseTimeTooFast: '- Responses were too fast',
-  };
-
-  // If there are flags and the assessment is not reliable, return the flags
-  if (flags && !colData.assignment.assessments[index].reliable) {
-    const reliabilityFlags = Object.keys(flags).map((flag) => {
-      return flagMessages[flag] || _lowerCase(flag);
-    });
-    // Join the returned flags with a newline character, then add two newlines for spacing
-    return reliabilityFlags.join('\n') + '\n\n';
-  } else {
-    return '';
-  }
-}
-
-function handleToolTip(_taskId, _toolTip, _colData) {
-  // Get the support level and flags, if they exist
-  _toolTip += _colData.scores?.[_taskId]?.support_level + '\n' + '\n';
-  _toolTip += getFlags(getIndexTask(_colData, _taskId), _colData);
-
-  // If the task does not have a raw score, then display no scores
-  if (!_colData.scores?.[_taskId]?.raw) {
-    _toolTip += 'Awaiting scores';
-  }
-  // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
-  else if (rawOnlyTasks.includes(_taskId)) {
-    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n' + '\n';
-    _toolTip += 'These scores are under development';
-  }
-  // If the task is a scored task and has a raw score, then display all scores
-  else {
-    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
-    _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-    _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standard + '\n';
-  }
-  return _toolTip;
-}
-
-let returnScoreTooltip = (colHeader, colData, fieldPath) => {
-  const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
-  let toolTip = '';
-
-  const headerToTaskIdMap = {
-    Phoneme: 'pa',
-    Word: 'swr',
-    Sentence: 'sre',
-    Letter: 'letter',
-    Palabra: 'swr-es',
-  };
-
-  const selectedTaskId = headerToTaskIdMap[colHeader];
-  if (selectedTaskId && colData.scores?.[selectedTaskId]?.support_level) {
-    // Handle scored tasks
-    return handleToolTip(selectedTaskId, toolTip, colData);
-    // Handle raw only tasks
-  } else if (taskId && !scoredTasks.includes(taskId)) {
-    return handleToolTip(taskId, toolTip, colData);
-  }
-  return toolTip;
-};
-
 const computedData = computed(() => {
-  console.log(props.data);
-  console.log(props.columns);
   if (!props.data) return [];
   const data = JSON.parse(JSON.stringify(props.data));
   console.log('computed', data);

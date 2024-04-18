@@ -107,20 +107,20 @@
         </div>
 
         <!-- Main table -->
-        <div v-else-if="scoresCount === 0" class="no-scores-container">
+        <div v-else-if="scoresData?.length === 0" class="no-scores-container">
           <h3>No scores found.</h3>
           <span
             >The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
-        <div v-else-if="scoresDataQuery?.length ?? 0 > 0">
+        <div v-else-if="scoresData?.length ?? 0 > 0">
           <RoarDataTable
-            :data="scoreReportTableData2"
+            :data="scoreReportTableData"
             :columns="scoreReportColumns"
-            :total-records="scoresCount"
+            :total-records="scoresData?.length"
             :page-limit="pageLimit"
-            :loading="isLoadingNonPaginatedScores || isFetchingNonPaginatedScores"
+            :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
             @sort="onSort($event)"
             @page="onPage($event)"
@@ -306,7 +306,7 @@ import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
 import { fetchDocById, exportCsv } from '@/helpers/query/utils';
-import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
+import { assignmentPageFetcher, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { useConfirm } from 'primevue/useconfirm';
 import { runPageFetcher } from '@/helpers/query/runs';
@@ -566,32 +566,7 @@ const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.valu
 const {
   isLoading: isLoadingScores,
   isFetching: isFetchingScores,
-  data: scoresDataQuery,
-} = useQuery({
-  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, ref(1000), filterBy, orderBy],
-  queryFn: () =>
-    assignmentPageFetcher(
-      props.administrationId,
-      props.orgType,
-      props.orgId,
-      pageLimit,
-      page,
-      true,
-      undefined,
-      true,
-      filterBy.value,
-      orderBy.value,
-    ),
-  keepPreviousData: true,
-  enabled: scoresQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 mins
-});
-
-// Scores Query
-const {
-  isLoading: isLoadingNonPaginatedScores,
-  isFetching: isFetchingNonPaginatedScores,
-  data: nonPaginatedScoresData,
+  data: scoresData,
 } = useQuery({
   queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, filterBy, orderBy],
   queryFn: () =>
@@ -599,7 +574,7 @@ const {
       props.administrationId,
       props.orgType,
       props.orgId,
-      ref(2500),
+      ref(10000),
       ref(0),
       true,
       undefined,
@@ -615,47 +590,10 @@ const {
   },
 });
 
-// Scores count query
-const { data: scoresCount } = useQuery({
-  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, filterBy, orderBy],
-  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value, orderBy.value),
-  keepPreviousData: true,
-  enabled: scoresQueryEnabled,
-  staleTime: 5 * 60 * 1000,
-});
-
 const onPage = (event) => {
   page.value = event.page;
   pageLimit.value = event.rows;
 };
-
-const sortDisplay = computed(() => {
-  const display = [];
-  for (const sort of orderBy.value) {
-    // TODO: TEMPORARY - Make this a dynamic way of converting
-    // fields into column paths
-    let item = {};
-    if (sort.direction === 'ASCENDING') {
-      item.order = 1;
-    } else {
-      item.order = -1;
-    }
-    const sortFieldPath = sort.field.fieldPath;
-    if (sortFieldPath === 'userData.grade') {
-      item.field = 'user.studentData.grade';
-    } else if (sortFieldPath === 'userData.name.first') {
-      item.field = 'user.name.first';
-    } else if (sortFieldPath === 'userData.name.last') {
-      item.field = 'user.name.last';
-    } else if (sortFieldPath === 'userData.username') {
-      item.field = 'user.username';
-    } else if (sortFieldPath === 'readOrgs.schools') {
-      item.field = 'user.schoolName';
-    }
-    display.push(item);
-  }
-  return display;
-});
 
 const confirm = useConfirm();
 const onSort = (event) => {
@@ -722,15 +660,15 @@ watch(filterGrades, (newGrades) => {
   });
 });
 
-watch(
-  scoresCount,
-  (count) => {
-    if (initialSort.value && count === 0) {
-      resetFilters();
-    }
-  },
-  { immediate: true },
-);
+// watch(
+//   scoresCount,
+//   (count) => {
+//     if (initialSort.value && count === 0) {
+//       resetFilters();
+//     }
+//   },
+//   { immediate: true },
+// );
 
 const onFilter = (event) => {
   // Turn off sort when filtering
@@ -944,7 +882,7 @@ const shouldBeOutlined = (taskId) => {
 };
 
 const scoreReportColumns = computed(() => {
-  if (scoresDataQuery.value === undefined) return [];
+  if (scoresData.value === undefined) return [];
   const tableColumns = [
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
@@ -999,128 +937,10 @@ const scoreReportColumns = computed(() => {
   return tableColumns;
 });
 
-// this function light out color if assessment is not reliable
-function colorSelection(assessment, rawScore, support_level, tag_color) {
-  if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-    if (support_level === 'Optional') {
-      return '#a1d8e3';
-    } else if (support_level === 'Needs Extra Support') {
-      return '#d6b8c7';
-    } else if (support_level === 'Developing Skill') {
-      return '#e8dbb5';
-    } else if (support_level === 'Achieved Skill') {
-      return '#c0d9bd';
-    } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
-      return 'white';
-    }
-  }
-  return tag_color;
-}
-
-// const scoreReportTableData = computed(() => {
-//   if (scoresDataQuery.value === undefined) return [];
-//   return scoresDataQuery.value.map(({ user, assignment }) => {
-//     const scores = {};
-//     const grade = getGrade(_get(user, 'studentData.grade'));
-//     for (const assessment of assignment?.assessments ?? []) {
-//       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
-//         assessment,
-//         grade,
-//       );
-//       const { percentileString, support_level, tag_color } = getPercentileScores({
-//         grade,
-//         assessment,
-//         percentileScoreKey,
-//         percentileScoreDisplayKey,
-//         rawScoreKey,
-//         taskId: assessment.taskId,
-//         optional: assessment.optional,
-//       });
-//       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-//       const rawScore = rawOnlyTasks.includes(assessment.taskId)
-//         ? _get(assessment, 'scores.computed.composite')
-//         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-//       const color = colorSelection(assessment, rawScore, support_level, tag_color);
-//       scores[assessment.taskId] = {
-//         percentile: percentileString,
-//         standard: standardScore,
-//         raw: rawScore,
-//         support_level,
-//         color: color,
-//         optional: assessment.optional,
-//       };
-//     }
-//     // If this is a district score report, grab school information
-//     if (props.orgType === 'district') {
-//       // Grab user's school list
-//       const currentSchools = _get(user, 'schools.current');
-//       if (currentSchools.length) {
-//         const schoolId = currentSchools[0];
-//         const schoolName = _get(
-//           _find(schoolsInfo.value, (school) => school.id === schoolId),
-//           'name',
-//         );
-//         return {
-//           user: {
-//             ...user,
-//             schoolName,
-//           },
-//           assignment,
-//           scores,
-//           routeParams: {
-//             administrationId: props.administrationId,
-//             userId: _get(user, 'userId'),
-//           },
-//         };
-//       }
-//     }
-//     return {
-//       user,
-//       assignment,
-//       scores,
-//       routeParams: {
-//         administrationId: props.administrationId,
-//         userId: _get(user, 'userId'),
-//         orgType: props.orgType,
-//         orgId: props.orgId,
-//       },
-//     };
-//   });
-// });
-
-const scoreReportTableData2 = computed(() => {
-  if (nonPaginatedScoresData.value === undefined) return [];
-  return nonPaginatedScoresData.value.map(({ user, assignment }) => {
+const scoreReportTableData = computed(() => {
+  if (scoresData.value === undefined) return [];
+  return scoresData.value.map(({ user, assignment }) => {
     const scores = {};
-    // const grade = getGrade(_get(user, 'studentData.grade'));
-    // for (const assessment of assignment?.assessments ?? []) {
-    //   const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
-    //     assessment,
-    //     grade,
-    //   );
-    //   const { percentileString, support_level, tag_color } = getPercentileScores({
-    //     grade,
-    //     assessment,
-    //     percentileScoreKey,
-    //     percentileScoreDisplayKey,
-    //     rawScoreKey,
-    //     taskId: assessment.taskId,
-    //     optional: assessment.optional,
-    //   });
-    //   const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-    //   const rawScore = rawOnlyTasks.includes(assessment.taskId)
-    //     ? _get(assessment, 'scores.computed.composite')
-    //     : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-    //   const color = colorSelection(assessment, rawScore, support_level, tag_color);
-    //   scores[assessment.taskId] = {
-    //     percentile: percentileString,
-    //     standard: standardScore,
-    //     raw: rawScore,
-    //     support_level,
-    //     color: color,
-    //     optional: assessment.optional,
-    //   };
-    // }
     // If this is a district score report, grab school information
     if (props.orgType === 'district') {
       // Grab user's school list
