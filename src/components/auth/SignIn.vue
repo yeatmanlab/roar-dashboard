@@ -185,7 +185,6 @@ const validateRoarEmail = _debounce(
         } else {
           allowLink.value = true;
           allowPassword.value = true;
-          state.usePassword = false;
         }
       }
       state.useLink = allowLink.value;
