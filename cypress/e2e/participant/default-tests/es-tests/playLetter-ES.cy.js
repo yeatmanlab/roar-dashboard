@@ -6,6 +6,10 @@ const gameCompleteText = '¡Has terminado! ¡Gracias por ayudarme a encontrar es
 
 describe('ROAR - Letra Play Through', () => {
   it('Plays Letra', () => {
-    playLetter(administration, language, gameCompleteText);
+    playLetter({
+      administration: administration,
+      language: language,
+      gameCompleteText: gameCompleteText,
+    });
   });
 });

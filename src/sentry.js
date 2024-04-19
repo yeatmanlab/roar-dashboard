@@ -8,7 +8,7 @@ const regex = /https:\/\/roar-staging(--pr\d+-\w+)?\.web\.app/;
 
 export function initSentry(app) {
   // Only initialize Sentry in production
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && process.env.MODE !== 'LEVANTE') {
     Sentry.init({
       app,
       dsn: 'https://f15e3ff866394e93e00514b42113d03d@o4505913837420544.ingest.us.sentry.io/4506820782129152',
