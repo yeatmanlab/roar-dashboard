@@ -1,4 +1,4 @@
-name: Cypress Network Tests
+name: Cypress Pre-Release Tests
 on:
   workflow_run:
     workflows: ['Deploy to Firebase Hosting (production)']

@@ -1,3 +1,10 @@
 import { playSWR } from '../../../../support/helper-functions/roar-swr/swrHelpers.js';
 
-playSWR(Cypress.env('testRoarAppsAdministration'));
+const administration = Cypress.env('testRoarAppsAdministration');
+const language = 'en';
+
+describe('ROAR - Word Play Through in a simulated high latency network', () => {
+  it('Plays Word', () => {
+    playSWR(administration, language);
+  });
+});

@@ -1,3 +1,5 @@
+import { languageOptions } from './languageOptions';
+
 const timeout = Cypress.env('timeout');
 const participantId = '123456789';
 const questionInput = '42';
@@ -152,6 +154,7 @@ function checkGameComplete(endText, continueText = null) {
 export function playFluencyARF({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',
+  task = 'fluency-arf',
   optional = false,
   endText = 'You are all done.',
   continueText = null,
@@ -165,8 +168,8 @@ export function playFluencyARF({
 
   cy.selectAdministration(administration);
 
-  cy.get('.p-tabview').contains('ROAM - Single Digit');
-  cy.visit(`/game/fluency-arf`);
+  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.visit(`/game/${task}`);
 
   //   Click jspsych button to begin
   cy.get('.jspsych-btn', { timeout: 6 * timeout })
@@ -180,12 +183,13 @@ export function playFluencyARF({
   cy.visit('/');
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
-  cy.get('.tabview-nav-link-label').contains('ROAM - Single Digit').should('exist');
+  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
 
 export function playFluencyCALF({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',
+  task = 'fluency-calf',
   optional = false,
   endText = 'You are all done.',
   continueText = null,
@@ -199,8 +203,8 @@ export function playFluencyCALF({
 
   cy.selectAdministration(administration);
 
-  cy.get('.p-tabview').contains('ROAM - Multi Digit');
-  cy.visit(`/game/fluency-calf`);
+  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.visit(`/game/${task}`);
 
   //   Click jspsych button to begin
   cy.get('.jspsych-btn', { timeout: 6 * timeout })
@@ -214,5 +218,5 @@ export function playFluencyCALF({
   cy.visit('/');
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
-  cy.get('.tabview-nav-link-label').contains('ROAM - Multi Digit').should('exist');
+  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
