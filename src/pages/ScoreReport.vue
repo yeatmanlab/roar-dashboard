@@ -40,7 +40,7 @@
                 </div>
                 <div v-if="!isLoadingRunResults">
                   <PvButton
-                    class="flex flex-row p-2 text-xs"
+                    class="flex flex-row p-2 text-sm"
                     :icon="!exportLoading ? 'pi pi-download' : 'pi pi-spin pi-spinner'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -101,7 +101,7 @@
           </div>
         </div>
         <!-- Loading data spinner -->
-        <div v-if="isLoadingScores || isFetchingScores" class="loading-container">
+        <div v-if="isLoadingScores || isFetchingScores" class="loading-container my-4">
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Data</span>
         </div>
@@ -129,37 +129,39 @@
             @export-selected="exportSelected"
           >
             <template #filterbar>
-              <div v-if="schoolsInfo" class="flex flex-row gap-2">
-                <span class="p-float-label">
-                  <PvMultiSelect
-                    id="ms-school-filter"
-                    v-model="filterSchools"
-                    style="width: 20rem; max-width: 25rem"
-                    :options="schoolsInfo"
-                    option-label="name"
-                    option-value="id"
-                    :show-toggle-all="false"
-                    selected-items-label="{0} schools selected"
-                    data-cy="filter-by-school"
-                  />
-                  <label for="ms-school-filter">Filter by School</label>
-                </span>
-              </div>
-              <div class="flex flex-row gap-2">
-                <span class="p-float-label">
-                  <PvMultiSelect
-                    id="ms-grade-filter"
-                    v-model="filterGrades"
-                    style="width: 20rem; max-width: 25rem"
-                    :options="gradeOptions"
-                    option-label="label"
-                    option-value="value"
-                    :show-toggle-all="false"
-                    selected-items-label="{0} grades selected"
-                    data-cy="filter-by-grade"
-                  />
-                  <label for="ms-school-filter">Filter by Grade</label>
-                </span>
+              <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">
+                <div v-if="schoolsInfo" class="flex flex-row my-3">
+                  <span class="p-float-label">
+                    <PvMultiSelect
+                      id="ms-school-filter"
+                      v-model="filterSchools"
+                      style="width: 20rem; max-width: 25rem"
+                      :options="schoolsInfo"
+                      option-label="name"
+                      option-value="id"
+                      :show-toggle-all="false"
+                      selected-items-label="{0} schools selected"
+                      data-cy="filter-by-school"
+                    />
+                    <label for="ms-school-filter">Filter by School</label>
+                  </span>
+                </div>
+                <div class="flex flex-row gap-2 my-3">
+                  <span class="p-float-label">
+                    <PvMultiSelect
+                      id="ms-grade-filter"
+                      v-model="filterGrades"
+                      style="width: 20rem; max-width: 25rem"
+                      :options="gradeOptions"
+                      option-label="label"
+                      option-value="value"
+                      :show-toggle-all="false"
+                      selected-items-label="{0} grades selected"
+                      data-cy="filter-by-grade"
+                    />
+                    <label for="ms-school-filter">Filter by Grade</label>
+                  </span>
+                </div>
               </div>
             </template>
             <span>
@@ -630,34 +632,26 @@ const onSort = (event) => {
   }
 };
 
-watch(filterSchools, (newSchools) => {
-  // check if filter entry for schools exists
-  const filterSchools = _find(filterBy.value, { collection: 'schools' });
-  // Turn off sort when filtering
-  orderBy.value = [];
-  if (filterSchools) {
-    if (_isEmpty(newSchools)) {
-      _remove(filterBy.value, { collection: 'schools' });
-      return;
+watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
+  //set scoresTableData to filtered data if filter is added
+  if (newSchools.length > 0 || newGrades.length > 0) {
+    let filteredTableData = scoresData.value;
+    if (newSchools.length > 0) {
+      filteredTableData = filteredTableData.filter((item) => {
+        return item.user.schools.current.some((school) => newSchools.includes(school));
+      });
     }
-    filterSchools.value = _union(filterSchools.value, newSchools);
-  } else {
-    filterBy.value.push({
-      collection: 'schools',
-      field: 'assigningOrgs.schools',
-      value: newSchools,
-    });
+    if (newGrades.length > 0) {
+      filteredTableData = filteredTableData.filter((item) => {
+        return newGrades.includes(item.user.studentData?.grade);
+      });
+    }
+    scoreReportTableData.value = filteredTableData;
   }
-});
-
-watch(filterGrades, (newGrades) => {
-  // Turn off sort when filtering
-  orderBy.value = [];
-  filterBy.value.push({
-    collection: 'grade',
-    field: 'grade',
-    value: toRaw(newGrades),
-  });
+  // else, there are no filters so set scoresTableData to all data
+  else {
+    scoreReportTableData.value = scoresData.value;
+  }
 });
 
 // watch(
@@ -672,50 +666,50 @@ watch(filterGrades, (newGrades) => {
 
 const onFilter = (event) => {
   // Turn off sort when filtering
-  orderBy.value = [];
-  const filters = [];
-  for (const filterKey in _get(event, 'filters')) {
-    const filter = _get(event, 'filters')[filterKey];
-    const constraint = _head(_get(filter, 'constraints'));
-    if (_get(constraint, 'value')) {
-      const path = filterKey.split('.');
-      if (_head(path) === 'user') {
-        // Special case for school
-        if (path[1] === 'schoolName') {
-          // find ID from given name
-          const schoolName = constraint.value;
-          const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
-          if (!_isEmpty(schoolEntry)) {
-            filters.push({ value: [schoolEntry.id], collection: 'schools', field: 'assigningOrgs.schools' });
-          }
-        } else if (path[1] === 'studentData') {
-          // Due to differences in the document schemas,
-          //   fields found in studentData in the user document are in the
-          //   top level of the assignments.userData object.
-          filters.push({ ...constraint, collection: 'users', field: path.slice(2, path.length) });
-        } else {
-          filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
-        }
-      }
-      if (_head(path) === 'scores') {
-        const taskId = path[1];
-        const cutoffs = getRawScoreThreshold(taskId);
-        filters.push({
-          ...constraint,
-          collection: 'scores',
-          taskId: taskId,
-          cutoffs,
-          field: 'scores.computed.composite.categoryScore',
-        });
-      }
-    }
-  }
-  const orgFilter = _find(filterBy.value, { collection: 'schools' });
-  const gradeFilter = _find(filterBy.value, { collection: 'grade' });
-  if (orgFilter) filters.push(orgFilter);
-  if (gradeFilter) filters.push(gradeFilter);
-  filterBy.value = filters;
-  page.value = 0;
+  // orderBy.value = [];
+  // const filters = [];
+  // for (const filterKey in _get(event, 'filters')) {
+  //   const filter = _get(event, 'filters')[filterKey];
+  //   const constraint = _head(_get(filter, 'constraints'));
+  //   if (_get(constraint, 'value')) {
+  //     const path = filterKey.split('.');
+  //     if (_head(path) === 'user') {
+  //       // Special case for school
+  //       if (path[1] === 'schoolName') {
+  //         // find ID from given name
+  //         const schoolName = constraint.value;
+  //         const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
+  //         if (!_isEmpty(schoolEntry)) {
+  //           filters.push({ value: [schoolEntry.id], collection: 'schools', field: 'assigningOrgs.schools' });
+  //         }
+  //       } else if (path[1] === 'studentData') {
+  //         // Due to differences in the document schemas,
+  //         //   fields found in studentData in the user document are in the
+  //         //   top level of the assignments.userData object.
+  //         filters.push({ ...constraint, collection: 'users', field: path.slice(2, path.length) });
+  //       } else {
+  //         filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
+  //       }
+  //     }
+  //     if (_head(path) === 'scores') {
+  //       const taskId = path[1];
+  //       const cutoffs = getRawScoreThreshold(taskId);
+  //       filters.push({
+  //         ...constraint,
+  //         collection: 'scores',
+  //         taskId: taskId,
+  //         cutoffs,
+  //         field: 'scores.computed.composite.categoryScore',
+  //       });
+  //     }
+  //   }
+  // }
+  // const orgFilter = _find(filterBy.value, { collection: 'schools' });
+  // const gradeFilter = _find(filterBy.value, { collection: 'grade' });
+  // if (orgFilter) filters.push(orgFilter);
+  // if (gradeFilter) filters.push(gradeFilter);
+  // filterBy.value = filters;
+  // page.value = 0;
 };
 
 const resetFilters = () => {

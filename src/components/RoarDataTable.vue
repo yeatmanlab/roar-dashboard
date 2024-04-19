@@ -5,7 +5,7 @@
   <div v-else>
     <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
-      <span class="p-float-label">
+      <span class="p-float-label my-3">
         <PvMultiSelect
           id="ms-columns"
           v-tooltip.top="'Show and hide columns'"
@@ -19,7 +19,7 @@
         />
         <label for="ms-columns" class="view-label2">Select Columns</label>
       </span>
-      <span class="p-float-label">
+      <span class="p-float-label my-3">
         <PvMultiSelect
           id="ms-freeze"
           :model-value="frozenColumns"
