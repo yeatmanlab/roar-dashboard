@@ -61,8 +61,14 @@ export function startGame(administration, language, optional) {
   cy.get('.go-button', { timeout: timeout }).should('be.visible').click();
 }
 
-export function playLetter(administration, language, gameCompleteText, optional = false) {
+export function playLetter({
+  administration = Cypress.env('testRoarAppsAdministration'),
+  language = 'en',
+  gameCompleteText = 'Congratulations',
+  optional = false,
+} = {}) {
   startGame(administration, language, optional);
+
   makeChoiceOrContinue(gameCompleteText);
   cy.log('Game finished successfully.');
 

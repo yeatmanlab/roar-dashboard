@@ -105,6 +105,7 @@ Cypress.Commands.add('selectAdministration', (testAdministration) => {
     .contains(testAdministration)
     .should('exist')
     .click();
+  cy.log('Selectected administration:', testAdministration);
 });
 
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
