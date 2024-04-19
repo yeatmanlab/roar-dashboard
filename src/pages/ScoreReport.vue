@@ -5,7 +5,7 @@
         <div class="">
           <div v-if="isLoadingOrgInfo" class="loading-wrapper">
             <AppSpinner style="margin: 0.3rem 0rem" />
-            <div class="uppercase text-sm">Loading Org Info</div>
+            <div class="uppercase text-sm text-gray-600 font-light">Loading Org Info</div>
           </div>
           <div v-if="orgInfo && administrationInfo" id="at-a-glance-charts">
             <div class="flex justify-content-between align-items-center">
@@ -52,7 +52,7 @@
             </div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
-              <div class="uppercase text-sm">Loading Overview Charts</div>
+              <div class="uppercase text-sm text-gray-600 font-light">Loading Overview Charts</div>
             </div>
             <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
@@ -101,9 +101,9 @@
           </div>
         </div>
         <!-- Loading data spinner -->
-        <div v-if="refreshing" class="loading-container">
+        <div v-if="isLoadingScores || isFetchingScores" class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
-          <span>Loading Administration Data</span>
+          <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Data</span>
         </div>
 
         <!-- Main table -->
@@ -216,7 +216,7 @@
         <!-- Subscores tables -->
         <div v-if="isLoadingRunResults" class="loading-wrapper">
           <AppSpinner style="margin: 1rem 0rem" />
-          <div class="uppercase text-sm">Loading Task Reports</div>
+          <div class="uppercase text-sm font-light text-gray-600">Loading Task Reports</div>
         </div>
         <PvTabView :active-index="activeTabIndex">
           <PvTabPanel
@@ -568,7 +568,7 @@ const {
   isFetching: isFetchingScores,
   data: scoresData,
 } = useQuery({
-  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, filterBy, orderBy],
+  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -586,7 +586,7 @@ const {
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
   onSuccess: (data) => {
-    console.log('Nonpaginate Data', data.length);
+    scoreReportTableData.value = data;
   },
 });
 
@@ -881,6 +881,8 @@ const shouldBeOutlined = (taskId) => {
   else return true;
 };
 
+// compute and store schoolid -> school name map for schools. store adminId,
+// orgType, orgId for individual score report link
 const scoreReportColumns = computed(() => {
   if (scoresData.value === undefined) return [];
   const tableColumns = [
@@ -891,7 +893,18 @@ const scoreReportColumns = computed(() => {
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true, filter: false });
+    const schoolsMap = schoolsInfo.value.reduce((acc, school) => {
+      acc[school.id] = school.name;
+      return acc;
+    }, {});
+    tableColumns.push({
+      field: 'user.schoolName',
+      header: 'School',
+      dataType: 'text',
+      sort: true,
+      filter: false,
+      schoolsMap: schoolsMap,
+    });
   }
 
   if (authStore.isUserSuperAdmin) {
@@ -933,51 +946,14 @@ const scoreReportColumns = computed(() => {
     routeLabel: 'Report',
     routeIcon: 'pi pi-user',
     sort: false,
+    orgType: props.orgType,
+    orgId: props.orgId,
+    administrationId: props.administrationId,
   });
   return tableColumns;
 });
 
-const scoreReportTableData = computed(() => {
-  if (scoresData.value === undefined) return [];
-  return scoresData.value.map(({ user, assignment }) => {
-    const scores = {};
-    // If this is a district score report, grab school information
-    if (props.orgType === 'district') {
-      // Grab user's school list
-      const currentSchools = _get(user, 'schools.current');
-      if (currentSchools.length) {
-        const schoolId = currentSchools[0];
-        const schoolName = _get(
-          _find(schoolsInfo.value, (school) => school.id === schoolId),
-          'name',
-        );
-        return {
-          user: {
-            ...user,
-            schoolName,
-          },
-          assignment,
-          scores,
-          routeParams: {
-            administrationId: props.administrationId,
-            userId: _get(user, 'userId'),
-          },
-        };
-      }
-    }
-    return {
-      user,
-      assignment,
-      scores,
-      routeParams: {
-        administrationId: props.administrationId,
-        userId: _get(user, 'userId'),
-        orgType: props.orgType,
-        orgId: props.orgId,
-      },
-    };
-  });
-});
+const scoreReportTableData = ref(scoresData.value);
 
 const allTasks = computed(() => {
   if (administrationInfo.value?.assessments?.length > 0) {

@@ -120,43 +120,16 @@
             <template #body="{ data: colData }">
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
               <div v-if="col.field && col.field.split('.')[0] === 'scores'">
-                <TableScoreTag :data="colData" :col="col" />
+                <TableScoreTag :colData="colData" :col="col" />
+              </div>
+              <div v-else-if="col.field && col.field === 'user.schoolName'">
+                <TableSchoolName :colData="colData" :col="col" />
               </div>
               <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
               </div>
-              <!-- <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
-                <div
-                  v-if="!col.tagOutlined"
-                  class="circle"
-                  :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
-                    _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }; ${
-                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                    'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`"
-                />
-
-                <div
-                  v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-                  class="circle"
-                  :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
-                    _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }; outline: 1px dotted #0000CD; outline-offset: 3px`"
-                />
-              </div> -->
               <div v-else-if="col.link">
-                <router-link :to="{ name: col.routeName, params: colData.routeParams }">
-                  <PvButton
-                    severity="secondary"
-                    text
-                    raised
-                    :label="col.routeLabel"
-                    :aria-label="col.routeTooltip"
-                    :icon="col.routeIcon"
-                    size="small"
-                  />
-                </router-link>
+                <TableReportLink :colData="colData" :col="col" />
               </div>
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
@@ -241,8 +214,10 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _lowerCase from 'lodash/lowerCase';
-import { scoredTasks, rawOnlyTasks } from '@/helpers/reports';
+import { scoredTasks } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
+import TableSchoolName from '@/components/reports/TableSchoolName.vue';
+import TableReportLink from '@/components/reports/TableReportLink.vue';
 
 /*
 Using the DataTable
@@ -442,7 +417,6 @@ let toolTipByHeader = (header) => {
 const computedData = computed(() => {
   if (!props.data) return [];
   const data = JSON.parse(JSON.stringify(props.data));
-  console.log('computed', data);
   _forEach(data, (entry) => {
     // Clean up date fields to use Date objects
     _forEach(dateFields, (field) => {

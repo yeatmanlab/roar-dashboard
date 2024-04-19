@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="_get(computedScores, col.field) !== undefined || _get(computedScores, 'optional')"
+    v-if="(_get(computedScores, col.field) !== undefined || _get(computedScores, 'optional')) && col.emptyTag !== true"
     v-tooltip.right="`${returnScoreTooltip(col.header, computedScores, col.field)}`"
   >
     <PvTag
@@ -19,26 +19,26 @@
       class="circle"
       style="border: 1px solid black"
     />
-    <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
-      <div
-        v-if="!col.tagOutlined"
-        class="circle"
-        :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
-          _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-        }; ${
-          returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-          'outline: 1px dotted #0000CD; outline-offset: 3px'
-        }`"
-      />
+  </div>
+  <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, computedScores, col.field)}`">
+    <div
+      v-if="!col.tagOutlined"
+      class="circle"
+      :style="`background-color: ${_get(computedScores, col.tagColor)}; color: ${
+        _get(computedScores, col.tagColor) === 'white' ? 'black' : 'white'
+      }; ${
+        returnScoreTooltip(col.header, computedScores, col.field).length > 0 &&
+        'outline: 1px dotted #0000CD; outline-offset: 3px'
+      }`"
+    />
 
-      <div
-        v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-        class="circle"
-        :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
-          _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-        }; outline: 1px dotted #0000CD; outline-offset: 3px`"
-      />
-    </div>
+    <div
+      v-else-if="col.tagOutlined && _get(computedScores, col.tagColor)"
+      class="circle"
+      :style="`border: 1px solid black; background-color: ${_get(computedScores, col.tagColor)}; color: ${
+        _get(computedScores, col.tagColor) === 'white' ? 'black' : 'white'
+      }; outline: 1px dotted #0000CD; outline-offset: 3px`"
+    />
   </div>
 </template>
 
@@ -50,7 +50,7 @@ import _round from 'lodash/round';
 import { rawOnlyTasks, getSupportLevel, getScoreKeys, scoredTasks } from '@/helpers/reports.js';
 import { getGrade } from '@bdelab/roar-utils';
 const props = defineProps({
-  data: {
+  colData: {
     type: Object,
     default: {},
     required: true,
@@ -183,9 +183,9 @@ function colorSelection(assessment, rawScore, support_level, tag_color) {
 }
 
 const computedScores = computed(() => {
-  const grade = getGrade(_get(props.data.user, 'studentData.grade'));
+  const grade = getGrade(_get(props.colData.user, 'studentData.grade'));
   const scores = {};
-  for (const assessment of props.data.assignment?.assessments ?? []) {
+  for (const assessment of props.colData.assignment?.assessments ?? []) {
     const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
       assessment,
       grade,
@@ -213,7 +213,22 @@ const computedScores = computed(() => {
       optional: assessment.optional,
     };
   }
-  console.log('computedScores', scores);
-  return { ...props.data, scores: scores };
+  return { ...props.colData, scores: scores };
 });
 </script>
+
+<style>
+.circle {
+  border-color: white;
+  display: inline-block;
+  border-radius: 50%;
+  border-width: 5px;
+  height: 25px;
+  width: 25px;
+  vertical-align: middle;
+  margin-right: 10px;
+  margin-left: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+</style>
