@@ -2,7 +2,11 @@ import { languageOptions } from './languageOptions';
 
 const timeout = Cypress.env('timeout');
 
-export const playSWR = (administration, language, optional = false) => {
+export const playSWR = ({
+  administration = Cypress.env('testRoarAppsAdministration'),
+  language = 'en',
+  optional = false,
+} = {}) => {
   // Log in once at the beginning of the test case that calls playSWR
   cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
 

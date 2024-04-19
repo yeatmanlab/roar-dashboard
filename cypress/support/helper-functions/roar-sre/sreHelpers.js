@@ -2,7 +2,11 @@ import { languageOptions } from './languageOptions';
 
 const timeout = Cypress.env('timeout');
 
-export const playSRE = (administration, language, optional = false) => {
+export const playSRE = ({
+  administration = Cypress.env('testRoarAppsAdministration'),
+  language = 'en',
+  optional = false,
+} = {}) => {
   Cypress.on('uncaught:exception', () => {
     return false;
   });

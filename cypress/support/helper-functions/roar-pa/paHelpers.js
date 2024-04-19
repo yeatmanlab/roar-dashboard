@@ -110,7 +110,30 @@ function playThirdTutorial() {
   cy.get('.continue').click();
 }
 
-export function playPA(startText, breakText, breakText2, endText) {
+export function playPA({
+  administration = Cypress.env('testRoarAppsAdministration'),
+  language = 'en',
+  optional = false,
+  startText = 'In this game we are going to look for words that BEGIN with the same sound.',
+  breakText = 'Take a break if needed',
+  breakText2 = {
+    break1: 'Great job',
+    break2: 'Look at all those carrots',
+    break3: 'You are doing great',
+  },
+  endText = {
+    endText1: 'Take a break if needed',
+    endText2: 'I have been swimming so much',
+    endText3: 'You have helped me and all my friends!',
+  },
+} = {}) {
+  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+  cy.visit('/');
+
+  cy.selectAdministration(administration);
+
+  cy.visit('/game/pa');
+
   playIntro(startText);
 
   playFirstTutorial();
@@ -140,6 +163,14 @@ export function playPA(startText, breakText, breakText2, endText) {
   playTrial(breakText2.break3);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   playTrial(endText.endText3);
+
+  cy.visit('/');
+  cy.wait(0.2 * timeout);
+  cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
+  cy.get('.tabview-nav-link-label', { timeout: 3 * timeout })
+    .contains('ROAR - Phoneme')
+    .should('exist');
+
   // playIntro(startText);
 
   // playFirstTutorial();

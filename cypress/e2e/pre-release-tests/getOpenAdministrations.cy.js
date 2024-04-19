@@ -14,9 +14,6 @@ describe('Get Open Administrations', () => {
     cy.then(() => getOpenAdministrations(adminFirestore)).then((admins) => {
       cy.log(admins.length);
       cy.log(admins);
-      admins.forEach((admin) => {
-        cy.log(admin);
-      });
     });
   });
 });
