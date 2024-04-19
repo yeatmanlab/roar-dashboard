@@ -160,7 +160,7 @@ const dropdown_options = ref([
     label: 'Required',
     items: [
       { label: 'Student Username', value: 'username' },
-      // { label: 'Student Email', value: 'email' },
+      { label: 'Student Email', value: 'email' },
       { label: 'Grade', value: 'grade' },
       { label: 'Password', value: 'password' },
       { label: 'Student Date of Birth', value: 'dob' },
