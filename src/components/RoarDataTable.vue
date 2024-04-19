@@ -139,9 +139,9 @@
               </div>
             </template>
             <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
-              <i v-if="!sorted && currentSort.length === 0 && !scoreFilterApplied" class="pi pi-sort-alt ml-2" />
-              <i v-if="sorted && sortOrder === 1 && !scoreFilterApplied" class="pi pi-sort-amount-down-alt ml-2" />
-              <i v-else-if="sorted && sortOrder === -1 && !scoreFilterApplied" class="pi pi-sort-amount-up-alt ml-2" />
+              <i v-if="!sorted && currentSort.length === 0" class="pi pi-sort-alt ml-2" />
+              <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
+              <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
             </template>
             <template v-if="col.dataType" #filtericon>
               <i v-if="enableFilter(col)" class="pi pi-filter" />
@@ -214,7 +214,7 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _lowerCase from 'lodash/lowerCase';
-import { scoredTasks } from '@/helpers/reports';
+import { scoredTasks, getRawScoreThreshold } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import TableSchoolName from '@/components/reports/TableSchoolName.vue';
 import TableReportLink from '@/components/reports/TableReportLink.vue';
@@ -261,6 +261,7 @@ const props = defineProps({
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
   allowFiltering: { type: Boolean, required: false, default: true },
+  updateFilterScores: { type: Function, required: false, default: () => [] },
 });
 
 const inputColumns = ref(props.columns);
@@ -274,14 +275,14 @@ const computedColumns = computed(() => {
 const currentSort = ref([]);
 const currentFilter = ref([]);
 const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value) || !props.allowFiltering);
-const scoreFilterApplied = computed(() => {
-  const scoreFilter = _find(currentFilter.value, (filter) => {
-    if (filter.split('.')[0] === 'scores') {
-      return true;
-    } else return false;
-  });
-  return Boolean(scoreFilter);
-});
+// const scoreFilterApplied = computed(() => {
+//   const scoreFilter = _find(currentFilter.value, (filter) => {
+//     if (filter.split('.')[0] === 'scores') {
+//       return true;
+//     } else return false;
+//   });
+//   return Boolean(scoreFilter);
+// });
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -334,8 +335,8 @@ function increasePadding() {
 
 // Generate filters and options objects
 const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE', 'PROGRESS'];
-let filters = {};
 let options = {};
+let filters = {};
 _forEach(computedColumns.value, (column) => {
   // Check if header text is supplied; if not, generate.
   if (!_get(column, 'header')) {
@@ -377,18 +378,18 @@ const refFilters = ref(filters);
 
 const enableFilter = (column) => {
   // If column is specified to have filtering disabled
-  if (_get(column, 'filter') === false) return false;
+  // if (_get(column, 'filter') === false) return false;
 
-  // If the field is not defined, turn off filtering
-  const field = column.field;
-  if (!field) return false;
+  // // If the field is not defined, turn off filtering
+  // const field = column.field;
+  // if (!field) return false;
 
   // If the field is a score, and the taskId is on
   //   the filter blacklist, turn off filtering
-  const path = field.split('.');
-  if (path[0] === 'scores') {
-    if (!scoredTasks.includes(path[1])) return false;
-  }
+  // const path = field.split('.');
+  // if (path[0] === 'scores') {
+  //   if (!scoredTasks.includes(path[1])) return false;
+  // }
 
   // Otherwise, enable filtering
   return true;
@@ -471,16 +472,29 @@ const onSort = (event) => {
   emit('sort', event);
 };
 const onFilter = (event) => {
+  // Turn off sort when filtering
   const filters = [];
+
+  // add score filters to scoreFilters
   for (const filterKey in _get(event, 'filters')) {
     const filter = _get(event, 'filters')[filterKey];
     const constraint = _head(_get(filter, 'constraints'));
     if (_get(constraint, 'value')) {
-      filters.push(filterKey);
+      const path = filterKey.split('.');
+      if (_head(path) === 'scores') {
+        const taskId = path[1];
+        const cutoffs = getRawScoreThreshold(taskId);
+        filters.push({
+          ...constraint,
+          collection: 'scores',
+          taskId: taskId,
+          cutoffs,
+          field: 'scores.computed.composite.categoryScore',
+        });
+      }
     }
   }
-  currentFilter.value = filters;
-  emit('filter', event);
+  props.updateFilterScores(filters);
 };
 </script>
 <style>

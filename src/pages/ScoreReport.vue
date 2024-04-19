@@ -22,7 +22,6 @@
                     {{ _toUpper(displayName) }}
                   </div>
                 </div>
-                <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
               </div>
               <div class="flex flex-column align-items-end gap-2">
                 <div class="flex flex-row align-items-center gap-4" data-html2canvas-ignore="true">
@@ -55,6 +54,7 @@
               <div class="uppercase text-sm text-gray-600 font-light">Loading Overview Charts</div>
             </div>
             <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
+              <div class="report-subheader mb-4 uppercase text-gray-700 font-light">Scores at a glance</div>
               <div class="chart-wrapper">
                 <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                   <div class="distribution-overview-wrapper">
@@ -103,7 +103,7 @@
         <!-- Loading data spinner -->
         <div v-if="isLoadingScores || isFetchingScores" class="loading-container my-4">
           <AppSpinner style="margin-bottom: 1rem" />
-          <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Data</span>
+          <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Datatable</span>
         </div>
 
         <!-- Main table -->
@@ -116,7 +116,7 @@
         </div>
         <div v-else-if="scoresData?.length ?? 0 > 0">
           <RoarDataTable
-            :data="scoreReportTableData"
+            :data="filteredTableData"
             :columns="scoreReportColumns"
             :total-records="scoresData?.length"
             :page-limit="pageLimit"
@@ -124,7 +124,7 @@
             data-cy="roar-data-table"
             @sort="onSort($event)"
             @page="onPage($event)"
-            @filter="onFilter($event)"
+            :updateFilterScores="updateFilterScores"
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
@@ -457,7 +457,7 @@ if (props.orgType === 'district') {
     },
   });
 }
-const filterBy = ref([]);
+const filterScores = ref([]);
 const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
@@ -581,14 +581,14 @@ const {
       true,
       undefined,
       true,
-      filterBy.value,
+      [],
       orderBy.value,
     ),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
   onSuccess: (data) => {
-    scoreReportTableData.value = data;
+    filteredTableData.value = data;
   },
 });
 
@@ -632,27 +632,27 @@ const onSort = (event) => {
   }
 };
 
-watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
-  //set scoresTableData to filtered data if filter is added
-  if (newSchools.length > 0 || newGrades.length > 0) {
-    let filteredTableData = scoresData.value;
-    if (newSchools.length > 0) {
-      filteredTableData = filteredTableData.filter((item) => {
-        return item.user.schools.current.some((school) => newSchools.includes(school));
-      });
-    }
-    if (newGrades.length > 0) {
-      filteredTableData = filteredTableData.filter((item) => {
-        return newGrades.includes(item.user.studentData?.grade);
-      });
-    }
-    scoreReportTableData.value = filteredTableData;
-  }
-  // else, there are no filters so set scoresTableData to all data
-  else {
-    scoreReportTableData.value = scoresData.value;
-  }
-});
+// watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
+//   //set scoresTableData to filtered data if filter is added
+//   if (newSchools.length > 0 || newGrades.length > 0) {
+//     let filteredData = scoresData.value;
+//     if (newSchools.length > 0) {
+//       filteredData= filteredData.filter((item) => {
+//         return item.user.schools.current.some((school) => newSchools.includes(school));
+//       });
+//     }
+//     if (newGrades.length > 0) {
+//       filteredData= filteredData.filter((item) => {
+//         return newGrades.includes(item.user.studentData?.grade);
+//       });
+//     }
+//     filteredTableData.value = filteredTableData;
+//   }
+//   // else, there are no filters so set scoresTableData to all data
+//   else {
+//     filteredTableData.value = scoresData.value;
+//   }
+// });
 
 // watch(
 //   scoresCount,
@@ -663,59 +663,124 @@ watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
 //   },
 //   { immediate: true },
 // );
-
-const onFilter = (event) => {
-  // Turn off sort when filtering
-  // orderBy.value = [];
-  // const filters = [];
-  // for (const filterKey in _get(event, 'filters')) {
-  //   const filter = _get(event, 'filters')[filterKey];
-  //   const constraint = _head(_get(filter, 'constraints'));
-  //   if (_get(constraint, 'value')) {
-  //     const path = filterKey.split('.');
-  //     if (_head(path) === 'user') {
-  //       // Special case for school
-  //       if (path[1] === 'schoolName') {
-  //         // find ID from given name
-  //         const schoolName = constraint.value;
-  //         const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
-  //         if (!_isEmpty(schoolEntry)) {
-  //           filters.push({ value: [schoolEntry.id], collection: 'schools', field: 'assigningOrgs.schools' });
-  //         }
-  //       } else if (path[1] === 'studentData') {
-  //         // Due to differences in the document schemas,
-  //         //   fields found in studentData in the user document are in the
-  //         //   top level of the assignments.userData object.
-  //         filters.push({ ...constraint, collection: 'users', field: path.slice(2, path.length) });
-  //       } else {
-  //         filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
-  //       }
-  //     }
-  //     if (_head(path) === 'scores') {
-  //       const taskId = path[1];
-  //       const cutoffs = getRawScoreThreshold(taskId);
-  //       filters.push({
-  //         ...constraint,
-  //         collection: 'scores',
-  //         taskId: taskId,
-  //         cutoffs,
-  //         field: 'scores.computed.composite.categoryScore',
-  //       });
-  //     }
-  //   }
-  // }
-  // const orgFilter = _find(filterBy.value, { collection: 'schools' });
-  // const gradeFilter = _find(filterBy.value, { collection: 'grade' });
-  // if (orgFilter) filters.push(orgFilter);
-  // if (gradeFilter) filters.push(gradeFilter);
-  // filterBy.value = filters;
-  // page.value = 0;
+const filteredTableData = ref(scoresData.value);
+const updateFilterScores = (filters) => {
+  filterScores.value = filters;
 };
+// Flag to track whether the watcher is already processing an update
+const isUpdating = ref(false);
+
+watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newFilterScores]) => {
+  // If an update is already in progress, return early to prevent recursion
+  if (isUpdating.value) {
+    return;
+  }
+
+  isUpdating.value = true;
+  //set scoresTableData to filtered data if filter is added
+  if (newSchools.length > 0 || newGrades.length > 0 || newFilterScores.length > 0) {
+    let filteredData = scoresData.value;
+    if (newSchools.length > 0) {
+      filteredData = filteredData.filter((item) => {
+        return item.user.schools.current.some((school) => newSchools.includes(school));
+      });
+    }
+    if (newGrades.length > 0) {
+      filteredData = filteredData.filter((item) => {
+        return newGrades.includes(item.user.studentData?.grade);
+      });
+    }
+    if (newFilterScores.length > 0) {
+      console.log('filterby', newFilterScores);
+      console.log('tabledata', filteredTableData);
+
+      for (const scoreFilter of newFilterScores) {
+        const taskId = scoreFilter.taskId;
+        filteredData = filteredData.filter((item) => {
+          // get user's score and see if it meets the filter
+          const userGrade = item.user.studentData?.grade;
+          const userAssessment = item.assignment.assessments.find((assessment) => assessment.taskId === taskId);
+          const { percentileScoreKey } = getScoreKeysByRow(userAssessment, userGrade);
+          const userPercentile = userAssessment?.scores?.computed?.composite[percentileScoreKey];
+          return userPercentile > 50;
+
+          // filter by 6 and over criteria
+        });
+        // else {
+        //   // return item.scores.current.some((school) => newSchools.includes(school));
+        // }
+      }
+    }
+    filteredTableData.value = filteredData;
+  }
+  // else, there are no filters so set scoresTableData to all data
+  else {
+    filteredTableData.value = scoresData.value;
+  }
+  isUpdating.value = false; // Reset the flag after the update
+});
+// const updateFilteredTableData = () => {
+//   console.log('filteredtabledata caled')
+//   if (filterSchools.value.length > 0 || filterGrades.value.length > 0 || filterScores.value.length > 0) {
+//     filteredTableData.value = scoresData.value.filter((item) => {
+//       if (filterScores.value.length > 0) {
+//         console.log("filter scores called", filterScores.value)
+//         for (const scoreFilter of filterScores.value) {
+//           const taskId = scoreFilter.taskId;
+//           const userGrade = item.user.studentData?.grade;
+//           const userAssessment = item.assignment.assessments.find((assessment) => assessment.taskId === taskId);
+//           const { percentileScoreKey } = getScoreKeys(taskId, userGrade);
+//           const userPercentile = userAssessment?.scores?.computed?.composite[percentileScoreKey];
+//           if (userPercentile <= 50) {
+//             return false; // Filter out if userPercentile is not greater than 50
+//           }
+//         }
+//       }
+//       return true; // Include in filteredTableData
+//     });
+//   }
+//   // else, there are no filters so set scoresTableData to all data
+//   else {
+//    filteredTableData.value = scoresData.value;
+//   }
+// }
+
+// const onFilter = (event) => {
+//   // Turn off sort when filtering
+//   orderBy.value = [];
+//   const filters = [];
+
+//   // add score filters to scoreFilters
+//   for (const filterKey in _get(event, 'filters')) {
+//     const filter = _get(event, 'filters')[filterKey];
+//     const constraint = _head(_get(filter, 'constraints'));
+//     if (_get(constraint, 'value')) {
+//       const path = filterKey.split('.');
+//       if (_head(path) === 'scores') {
+//         const taskId = path[1];
+//         const cutoffs = getRawScoreThreshold(taskId);
+//         filters.push({
+//           ...constraint,
+//           collection: 'scores',
+//           taskId: taskId,
+//           cutoffs,
+//           field: 'scores.computed.composite.categoryScore',
+//         });
+//       }
+//     }
+//   }
+
+// if (filterScores.value !== filters) {
+//   filterScores.value = filters;
+//   console.log('onFilter caleld', filterScores.value)
+// }
+// updateFilteredTableData();
+// };
 
 const resetFilters = () => {
   filterSchools.value = [];
   filterGrades.value = [];
-  filterBy.value = [];
+  filterScores.value = [];
 };
 const viewMode = ref('color');
 
@@ -946,8 +1011,6 @@ const scoreReportColumns = computed(() => {
   });
   return tableColumns;
 });
-
-const scoreReportTableData = ref(scoresData.value);
 
 const allTasks = computed(() => {
   if (administrationInfo.value?.assessments?.length > 0) {
