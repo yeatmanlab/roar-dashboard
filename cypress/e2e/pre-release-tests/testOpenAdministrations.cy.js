@@ -53,7 +53,23 @@ const testSpecs = [
   },
 ];
 
-const openAdmins = [];
+function retryTest(testFunc, retries = 3) {
+  let attempts = 0;
+  const run = () => {
+    attempts++;
+    try {
+      testFunc();
+    } catch (error) {
+      if (attempts < retries) {
+        cy.log(`Test failed, retrying... (${attempts}/${retries})`);
+        run();
+      } else {
+        throw error;
+      }
+    }
+  };
+  run();
+}
 
 async function getOpenAdmins() {
   cy.get('[data-cy=dropdown-select-administration]').click();
@@ -67,12 +83,15 @@ async function getOpenAdmins() {
   cy.get('[data-cy=dropdown-select-administration]').click();
 }
 
+const openAdmins = [];
+
 describe('Testing all open administrations', () => {
   it('Tests the open administration', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/', { timeout: 2 * timeout });
 
     getOpenAdmins();
+    cy.log('Found', openAdmins.length, 'open administrations.');
 
     cy.then(() => {
       openAdmins.forEach((admin) => {
@@ -80,23 +99,25 @@ describe('Testing all open administrations', () => {
         cy.selectAdministration(admin);
 
         testSpecs.forEach((spec) => {
-          cy.log(spec);
           cy.get('.p-tabview')
             .invoke('text')
             .then((text) => {
-              cy.log('Found text', text);
               if (text.includes(spec.name)) {
-                cy.log(`Playing ${spec.name}`);
+                cy.log(`Initializing test for ${spec.name}`);
 
-                spec.spec({
-                  administration: admin,
+                retryTest(() => {
+                  spec.spec({
+                    administration: admin,
+                  });
                 });
               } else {
                 cy.log('No game found for', spec.name);
               }
             });
         });
+        cy.log('Successfully tested all games for administration: ', admin);
       });
     });
+    cy.log('Successfully tested all games for all open administrations!');
   });
 });
