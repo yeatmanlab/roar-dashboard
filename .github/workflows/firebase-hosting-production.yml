@@ -13,7 +13,7 @@ jobs:
     name: Run Cypress Pre-Release Tests
     needs: [build-and-preview]
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
