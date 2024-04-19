@@ -64,7 +64,10 @@ window.addEventListener(
 onMounted(async () => {
   try {
     let module = await import('core-tasks');
-    levanteTaskLauncher = module.TaskLauncher;
+    const { TaskLauncher } = module;
+    levanteTaskLauncher = TaskLauncher;
+    console.log('module: ', module);
+    console.log('task launcher in Module: ', TaskLauncher);
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
   }
