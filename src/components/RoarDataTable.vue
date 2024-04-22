@@ -262,6 +262,7 @@ const props = defineProps({
   lazyPreSorting: { type: Array, required: false, default: () => [] },
   allowFiltering: { type: Boolean, required: false, default: true },
   updateFilterScores: { type: Function, required: false, default: () => [] },
+  filterScores: { type: Array, required: false, default: [] },
 });
 
 const inputColumns = ref(props.columns);
@@ -472,29 +473,7 @@ const onSort = (event) => {
   emit('sort', event);
 };
 const onFilter = (event) => {
-  // Turn off sort when filtering
-  const filters = [];
-
-  // add score filters to scoreFilters
-  for (const filterKey in _get(event, 'filters')) {
-    const filter = _get(event, 'filters')[filterKey];
-    const constraint = _head(_get(filter, 'constraints'));
-    if (_get(constraint, 'value')) {
-      const path = filterKey.split('.');
-      if (_head(path) === 'scores') {
-        const taskId = path[1];
-        const cutoffs = getRawScoreThreshold(taskId);
-        filters.push({
-          ...constraint,
-          collection: 'scores',
-          taskId: taskId,
-          cutoffs,
-          field: 'scores.computed.composite.categoryScore',
-        });
-      }
-    }
-  }
-  props.updateFilterScores(filters);
+  emit('filter', event);
 };
 </script>
 <style>

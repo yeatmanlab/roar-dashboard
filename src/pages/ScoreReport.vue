@@ -124,7 +124,9 @@
             data-cy="roar-data-table"
             @sort="onSort($event)"
             @page="onPage($event)"
+            @filter="onFilter($event)"
             :updateFilterScores="updateFilterScores"
+            :filterScores="filterScores"
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
@@ -295,6 +297,7 @@ import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
+import _isEqual from 'lodash/isEqual';
 import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _find from 'lodash/find';
@@ -570,7 +573,7 @@ const {
   isFetching: isFetchingScores,
   data: scoresData,
 } = useQuery({
-  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, orderBy],
+  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -632,27 +635,33 @@ const onSort = (event) => {
   }
 };
 
-// watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
-//   //set scoresTableData to filtered data if filter is added
-//   if (newSchools.length > 0 || newGrades.length > 0) {
-//     let filteredData = scoresData.value;
-//     if (newSchools.length > 0) {
-//       filteredData= filteredData.filter((item) => {
-//         return item.user.schools.current.some((school) => newSchools.includes(school));
-//       });
-//     }
-//     if (newGrades.length > 0) {
-//       filteredData= filteredData.filter((item) => {
-//         return newGrades.includes(item.user.studentData?.grade);
-//       });
-//     }
-//     filteredTableData.value = filteredTableData;
-//   }
-//   // else, there are no filters so set scoresTableData to all data
-//   else {
-//     filteredTableData.value = scoresData.value;
-//   }
-// });
+const onFilter = (event) => {
+  // Turn off sort when filtering
+  const scoreFilters = [];
+
+  // add score filters to scoreFilters
+  for (const filterKey in _get(event, 'filters')) {
+    const filter = _get(event, 'filters')[filterKey];
+    const constraint = _head(_get(filter, 'constraints'));
+    if (_get(constraint, 'value')) {
+      const path = filterKey.split('.');
+      if (_head(path) === 'scores') {
+        const taskId = path[1];
+        const cutoffs = getRawScoreThreshold(taskId);
+        scoreFilters.push({
+          ...constraint,
+          collection: 'scores',
+          taskId: taskId,
+          cutoffs,
+          field: 'scores.computed.composite.categoryScore',
+        });
+      }
+    }
+  }
+  if (scoreFilters.length > 0 && !_isEqual(scoreFilters, filterScores.value)) {
+    filterScores.value = scoreFilters;
+  }
+};
 
 // watch(
 //   scoresCount,
@@ -665,6 +674,7 @@ const onSort = (event) => {
 // );
 const filteredTableData = ref(scoresData.value);
 const updateFilterScores = (filters) => {
+  console.log('updateFilterScores called', filters);
   filterScores.value = filters;
 };
 // Flag to track whether the watcher is already processing an update
@@ -682,7 +692,7 @@ watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newF
     let filteredData = scoresData.value;
     if (newSchools.length > 0) {
       filteredData = filteredData.filter((item) => {
-        return item.user.schools.current.some((school) => newSchools.includes(school));
+        return item.user.schools?.current.some((school) => newSchools.includes(school));
       });
     }
     if (newGrades.length > 0) {
@@ -691,10 +701,10 @@ watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newF
       });
     }
     if (newFilterScores.length > 0) {
-      console.log('filterby', newFilterScores);
-      console.log('tabledata', filteredTableData);
+      console.log('filteref', filterScores.value);
 
       for (const scoreFilter of newFilterScores) {
+        console.log('filterby', newFilterScores);
         const taskId = scoreFilter.taskId;
         filteredData = filteredData.filter((item) => {
           // get user's score and see if it meets the filter
@@ -719,63 +729,6 @@ watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newF
   }
   isUpdating.value = false; // Reset the flag after the update
 });
-// const updateFilteredTableData = () => {
-//   console.log('filteredtabledata caled')
-//   if (filterSchools.value.length > 0 || filterGrades.value.length > 0 || filterScores.value.length > 0) {
-//     filteredTableData.value = scoresData.value.filter((item) => {
-//       if (filterScores.value.length > 0) {
-//         console.log("filter scores called", filterScores.value)
-//         for (const scoreFilter of filterScores.value) {
-//           const taskId = scoreFilter.taskId;
-//           const userGrade = item.user.studentData?.grade;
-//           const userAssessment = item.assignment.assessments.find((assessment) => assessment.taskId === taskId);
-//           const { percentileScoreKey } = getScoreKeys(taskId, userGrade);
-//           const userPercentile = userAssessment?.scores?.computed?.composite[percentileScoreKey];
-//           if (userPercentile <= 50) {
-//             return false; // Filter out if userPercentile is not greater than 50
-//           }
-//         }
-//       }
-//       return true; // Include in filteredTableData
-//     });
-//   }
-//   // else, there are no filters so set scoresTableData to all data
-//   else {
-//    filteredTableData.value = scoresData.value;
-//   }
-// }
-
-// const onFilter = (event) => {
-//   // Turn off sort when filtering
-//   orderBy.value = [];
-//   const filters = [];
-
-//   // add score filters to scoreFilters
-//   for (const filterKey in _get(event, 'filters')) {
-//     const filter = _get(event, 'filters')[filterKey];
-//     const constraint = _head(_get(filter, 'constraints'));
-//     if (_get(constraint, 'value')) {
-//       const path = filterKey.split('.');
-//       if (_head(path) === 'scores') {
-//         const taskId = path[1];
-//         const cutoffs = getRawScoreThreshold(taskId);
-//         filters.push({
-//           ...constraint,
-//           collection: 'scores',
-//           taskId: taskId,
-//           cutoffs,
-//           field: 'scores.computed.composite.categoryScore',
-//         });
-//       }
-//     }
-//   }
-
-// if (filterScores.value !== filters) {
-//   filterScores.value = filters;
-//   console.log('onFilter caleld', filterScores.value)
-// }
-// updateFilteredTableData();
-// };
 
 const resetFilters = () => {
   filterSchools.value = [];
