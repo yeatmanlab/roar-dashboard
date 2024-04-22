@@ -85,6 +85,8 @@
           @sort="onSort($event)"
           @filter="onFilter($event)"
           @select-all-change="onSelectAll"
+          :showApplyButton="false"
+          :showClearButton="false"
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
         >
@@ -101,8 +103,6 @@
             :show-add-button="col.allowMultipleFilters === true"
             :frozen="col.pinned"
             align-frozen="left"
-            :class="{ 'filter-button-override': hideFilterButtons }"
-            :filter-menu-style="enableFilter(col) ? '' : 'display: none;'"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
             <template #header>
@@ -142,9 +142,6 @@
               <i v-if="!sorted && currentSort.length === 0" class="pi pi-sort-alt ml-2" />
               <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
               <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
-            </template>
-            <template v-if="col.dataType" #filtericon>
-              <i v-if="enableFilter(col)" class="pi pi-filter" />
             </template>
             <template v-if="col.dataType" #filter="{ filterModel }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
@@ -191,6 +188,28 @@
                 />
               </div>
             </template>
+            <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterclear="{ filterCallback }">
+              <div class="flex flex-row-reverse">
+                <PvButton type="button" text icon="pi pi-times" class="p-2" @click="filterCallback()" severity="primary"
+                  >Clear</PvButton
+                >
+              </div>
+            </template>
+            <template v-else #filterclear="{ filterCallback }">
+              <div class="flex flex-row-reverse">
+                <PvButton type="button" text icon="pi pi-times" class="p-2" @click="filterCallback()" severity="primary"
+                  >Clear</PvButton
+                >
+              </div>
+            </template>
+            <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterapply="{ filterCallback }">
+              <!-- don't show apply button for scores-->
+            </template>
+            <template v-else #filterapply="{ filterCallback }">
+              <PvButton type="button" icon="pi pi-times" class="px-2" @click="filterCallback()" severity="primary"
+                >Apply</PvButton
+              >
+            </template>
           </PvColumn>
           <template #empty> No data found. </template>
         </PvDataTable>
@@ -214,7 +233,7 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _lowerCase from 'lodash/lowerCase';
-import { scoredTasks, getRawScoreThreshold } from '@/helpers/reports';
+import { scoredTasks } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import TableSchoolName from '@/components/reports/TableSchoolName.vue';
 import TableReportLink from '@/components/reports/TableReportLink.vue';
@@ -244,7 +263,7 @@ Array of objects consisting of a field and header at minimum.
 */
 // const compressedRows = ref(false);
 const nameForVisualize = ref('Expand View');
-const countForVisualize = ref(2); //for starting compress
+const countForVisualize = ref(false); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
   increasePadding();
@@ -260,9 +279,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
-  allowFiltering: { type: Boolean, required: false, default: true },
-  updateFilterScores: { type: Function, required: false, default: () => [] },
-  filterScores: { type: Array, required: false, default: [] },
+  resetFilters: { type: Function, required: false, default: () => {} },
 });
 
 const inputColumns = ref(props.columns);
@@ -274,16 +291,6 @@ const computedColumns = computed(() => {
   });
 });
 const currentSort = ref([]);
-const currentFilter = ref([]);
-const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value) || !props.allowFiltering);
-// const scoreFilterApplied = computed(() => {
-//   const scoreFilter = _find(currentFilter.value, (filter) => {
-//     if (filter.split('.')[0] === 'scores') {
-//       return true;
-//     } else return false;
-//   });
-//   return Boolean(scoreFilter);
-// });
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -310,6 +317,11 @@ const onSelectionChange = () => {
   emit('selection', selectedRows.value);
 };
 
+const resetFilters = () => {
+  console.log('reset filters called');
+  props.resetFilters();
+};
+
 const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
@@ -324,14 +336,14 @@ const compressedRows = ref(false);
 const padding = '1rem 1.5rem';
 
 function increasePadding() {
-  if (countForVisualize.value % 2 === 0) {
+  if (!countForVisualize.value) {
     document.documentElement?.style.setProperty('--padding-value', padding);
     nameForVisualize.value = 'Compact View';
   } else {
     nameForVisualize.value = 'Expand View';
     document.documentElement?.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
-  countForVisualize.value = countForVisualize.value + 1;
+  countForVisualize.value = !countForVisualize.value;
 }
 
 // Generate filters and options objects
@@ -376,25 +388,6 @@ _forEach(computedColumns.value, (column) => {
 });
 const refOptions = ref(options);
 const refFilters = ref(filters);
-
-const enableFilter = (column) => {
-  // If column is specified to have filtering disabled
-  // if (_get(column, 'filter') === false) return false;
-
-  // // If the field is not defined, turn off filtering
-  // const field = column.field;
-  // if (!field) return false;
-
-  // If the field is a score, and the taskId is on
-  //   the filter blacklist, turn off filtering
-  // const path = field.split('.');
-  // if (path[0] === 'scores') {
-  //   if (!scoredTasks.includes(path[1])) return false;
-  // }
-
-  // Otherwise, enable filtering
-  return true;
-};
 
 // Grab list of fields defined as dates
 let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
@@ -473,6 +466,7 @@ const onSort = (event) => {
   emit('sort', event);
 };
 const onFilter = (event) => {
+  console.log('emitting filter', event);
   emit('filter', event);
 };
 </script>

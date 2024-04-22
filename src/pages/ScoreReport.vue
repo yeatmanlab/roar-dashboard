@@ -125,10 +125,9 @@
             @sort="onSort($event)"
             @page="onPage($event)"
             @filter="onFilter($event)"
-            :updateFilterScores="updateFilterScores"
-            :filterScores="filterScores"
             @export-all="exportAll"
             @export-selected="exportSelected"
+            :reset-filters="resetFilters"
           >
             <template #filterbar>
               <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">
@@ -636,7 +635,6 @@ const onSort = (event) => {
 };
 
 const onFilter = (event) => {
-  // Turn off sort when filtering
   const scoreFilters = [];
 
   // add score filters to scoreFilters
@@ -658,7 +656,14 @@ const onFilter = (event) => {
       }
     }
   }
-  if (scoreFilters.length > 0 && !_isEqual(scoreFilters, filterScores.value)) {
+  console.log('onfilter called', scoreFilters);
+  // if filters are empty, reset filterScores ref
+  if (scoreFilters.length == 0) {
+    filterScores.value = [];
+  }
+  // if new set of filters is different, set filterScores to new filters
+  else if (!_isEqual(scoreFilters, filterScores.value)) {
+    console.log('filter scores update called', scoreFilters, filterScores.value);
     filterScores.value = scoreFilters;
   }
 };
@@ -673,64 +678,71 @@ const onFilter = (event) => {
 //   { immediate: true },
 // );
 const filteredTableData = ref(scoresData.value);
-const updateFilterScores = (filters) => {
-  console.log('updateFilterScores called', filters);
-  filterScores.value = filters;
-};
+
 // Flag to track whether the watcher is already processing an update
 const isUpdating = ref(false);
 
 watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newFilterScores]) => {
-  // If an update is already in progress, return early to prevent recursion
+  // // If an update is already in progress, return early to prevent recursion
   if (isUpdating.value) {
     return;
   }
-
   isUpdating.value = true;
   //set scoresTableData to filtered data if filter is added
-  if (newSchools.length > 0 || newGrades.length > 0 || newFilterScores.length > 0) {
-    let filteredData = scoresData.value;
-    if (newSchools.length > 0) {
+  // if (newSchools.length > 0 || newGrades.length > 0 || newFilterScores.length > 0) {
+  let filteredData = scoresData.value;
+  if (newSchools.length > 0) {
+    filteredData = filteredData.filter((item) => {
+      return item.user.schools?.current.some((school) => newSchools.includes(school));
+    });
+  }
+  if (newGrades.length > 0) {
+    filteredData = filteredData.filter((item) => {
+      return newGrades.includes(item.user.studentData?.grade);
+    });
+  }
+  if (newFilterScores.length > 0) {
+    console.log('filterscores ref called', filterScores.value);
+    for (const scoreFilter of newFilterScores) {
+      const taskId = scoreFilter.taskId;
       filteredData = filteredData.filter((item) => {
-        return item.user.schools?.current.some((school) => newSchools.includes(school));
+        // get user's score and see if it meets the filter
+        const userGrade = getGrade(item.user.studentData?.grade);
+        const userAboveElementary = userGrade >= 6;
+        const userAssessment = item.assignment.assessments.find((assessment) => assessment.taskId === taskId);
+        const { percentileScoreKey, rawScoreKey } = getScoreKeysByRow(userAssessment, userGrade);
+        const userPercentile = userAssessment?.scores?.computed?.composite[percentileScoreKey];
+        const userRawScore = userAssessment?.scores?.computed?.composite[rawScoreKey];
+        if (scoreFilter.value === 'Green') {
+          if (userAboveElementary) {
+            return userRawScore > scoreFilter.cutoffs.above;
+          } else {
+            return userPercentile >= 50;
+          }
+        } else if (scoreFilter.value === 'Yellow') {
+          if (userAboveElementary) {
+            return userRawScore > scoreFilter.cutoffs.some && userRawScore < scoreFilter.cutoffs.above;
+          } else {
+            return userPercentile > 25 && userPercentile < 50;
+          }
+        } else if (scoreFilter.value === 'Pink') {
+          if (userAboveElementary) {
+            return userRawScore <= scoreFilter.cutoffs.some;
+          } else {
+            return userPercentile <= 25;
+          }
+        }
       });
     }
-    if (newGrades.length > 0) {
-      filteredData = filteredData.filter((item) => {
-        return newGrades.includes(item.user.studentData?.grade);
-      });
-    }
-    if (newFilterScores.length > 0) {
-      console.log('filteref', filterScores.value);
-
-      for (const scoreFilter of newFilterScores) {
-        console.log('filterby', newFilterScores);
-        const taskId = scoreFilter.taskId;
-        filteredData = filteredData.filter((item) => {
-          // get user's score and see if it meets the filter
-          const userGrade = item.user.studentData?.grade;
-          const userAssessment = item.assignment.assessments.find((assessment) => assessment.taskId === taskId);
-          const { percentileScoreKey } = getScoreKeysByRow(userAssessment, userGrade);
-          const userPercentile = userAssessment?.scores?.computed?.composite[percentileScoreKey];
-          return userPercentile > 50;
-
-          // filter by 6 and over criteria
-        });
-        // else {
-        //   // return item.scores.current.some((school) => newSchools.includes(school));
-        // }
-      }
-    }
-    filteredTableData.value = filteredData;
   }
-  // else, there are no filters so set scoresTableData to all data
-  else {
-    filteredTableData.value = scoresData.value;
-  }
+
+  filteredTableData.value = filteredData;
+
   isUpdating.value = false; // Reset the flag after the update
 });
 
 const resetFilters = () => {
+  console.log('filters reset');
   filterSchools.value = [];
   filterGrades.value = [];
   filterScores.value = [];
@@ -881,7 +893,7 @@ const exportAll = async () => {
 };
 
 function getScoreKeysByRow(row, grade) {
-  const taskId = row.taskId;
+  const taskId = row?.taskId;
   return getScoreKeys(taskId, grade);
 }
 
