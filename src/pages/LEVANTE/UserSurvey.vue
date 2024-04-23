@@ -1,7 +1,7 @@
 <script setup>
 import 'survey-core/defaultV2.min.css';
 import { Model } from 'survey-core';
-import { onMounted, ref, toRaw } from 'vue';
+import { onMounted, ref, toRaw, watch } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
@@ -9,6 +9,7 @@ import AppSpinner from '@/components/AppSpinner.vue';
 import { useRouter } from 'vue-router';
 import { useGameStore } from '@/store/game';
 import { Converter } from 'showdown';
+import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -17,6 +18,7 @@ const survey = ref(null);
 const isSavingResponses = ref(false);
 const gameStore = useGameStore();
 const converter = new Converter();
+const { locale } = useI18n();
 
 const router = useRouter();
 
@@ -33,7 +35,11 @@ async function getSurvey() {
     const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey`);
     fetchedSurvey.value = response.data;
     // Create the survey model with the fetched data
-    survey.value = new Model(fetchedSurvey.value);
+    const surveyInstance = new Model(fetchedSurvey.value);
+
+    surveyInstance.locale = locale.value;
+
+    survey.value = surveyInstance;
     survey.value.onTextMarkdown.add(function (survey, options) {
       // Convert Markdown to HTML
       let str = converter.makeHtml(options.text);
@@ -43,11 +49,20 @@ async function getSurvey() {
       // Set HTML markup to render
       options.html = str;
     });
+
     survey.value.onComplete.add(saveResults);
   } catch (error) {
     console.error(error);
   }
 }
+
+// Watch for changes in vue-i18n locale and update SurveyJS
+watch(
+  () => locale.value,
+  (newLocale) => {
+    survey.value.locale = newLocale;
+  },
+);
 
 async function saveResults(sender) {
   console.log('sender.data: ', sender.data);
