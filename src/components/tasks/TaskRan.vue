@@ -1,5 +1,5 @@
 <template>
-  <div id="jspsych-target" class="game-target" translate="no" />
+  <div translate="no" />
   <div v-if="!gameStarted" class="col-full text-center">
     <h1>{{ $t('tasks.preparing') }}</h1>
     <AppSpinner />
@@ -88,7 +88,7 @@ async function startTask() {
   try {
     let checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
-      let gameLoading = document.querySelector('.jspsych-content-wrapper');
+      let gameLoading = document.querySelector('.card-title');
       if (gameLoading) {
         gameStarted.value = true;
         clearInterval(checkGameStarted);
@@ -109,7 +109,7 @@ async function startTask() {
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 
-    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'jspsych-target');
+    const roarApp = new TaskLauncher(appKit, gameParams, userParams, 'card-title');
 
     await roarApp.run().then(async () => {
       // Handle any post-game actions.
