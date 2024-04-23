@@ -32,15 +32,7 @@
           </PvSelectButton>
         </div>
       </div>
-
-      <div v-if="filteredTableData?.length === 0" class="no-scores-container">
-        <h3>No scores found.</h3>
-        <span
-          >The filters applied have no matching scores.
-          <PvButton text @click="resetFilters">Reset filters</PvButton>
-        </span>
-      </div>
-      <div v-else-if="filteredTableData?.length ?? 0 > 0">
+      <div v-if="assignmentData?.length ?? 0 > 0">
         <RoarDataTable
           v-if="progressReportColumns?.length ?? 0 > 0"
           :data="filteredTableData"
@@ -52,6 +44,7 @@
           :allow-filtering="true"
           :update-extraneous-filters="updateProgressFilters"
           :extraneous-filters="filterProgress"
+          :reset-filters="resetFilters"
           @export-selected="exportSelected"
           @export-all="exportAll"
         >
@@ -515,8 +508,8 @@ watch([filterSchools, filterGrades, filterProgress], ([newSchools, newGrades, ne
       }
       if (newFilterProgress.length > 0) {
         console.log('progress', filteredData);
-        filteredData = filteredData.filter((item) => {
-          for (const progressFilter of newFilterProgress) {
+        for (const progressFilter of newFilterProgress) {
+          filteredData = filteredData.filter((item) => {
             const taskId = progressFilter.taskId;
             console;
             const userAssessment = item.assignment?.assessments?.find((a) => a.taskId == taskId);
@@ -529,8 +522,8 @@ watch([filterSchools, filterGrades, filterProgress], ([newSchools, newGrades, ne
             } else if (progressFilter.value === 'Assigned') {
               return userAssessment?.completedOn === undefined && userAssessment?.startedOn === undefined;
             }
-          }
-        });
+          });
+        }
       }
 
       isUpdating.value = false; // Reset the flag after the update

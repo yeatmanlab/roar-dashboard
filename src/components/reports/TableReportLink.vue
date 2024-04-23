@@ -19,21 +19,25 @@ const props = defineProps({
   colData: {
     type: Object,
     default: () => ({}),
-    required: true,
+    required: false,
   },
   col: {
     type: Object,
     default: () => ({}),
-    required: true,
+    required: false,
   },
 });
 
 const routeParams = computed(() => {
-  return {
-    administrationId: props.col.administrationId,
-    orgId: props.col.orgId,
-    orgType: props.col.orgType,
-    userId: props.colData.user.userId,
-  };
+  if (props.colData.routeParams) {
+    return props.colData.routeParams;
+  } else {
+    return {
+      administrationId: props?.col.administrationId,
+      orgId: props.col?.orgId,
+      orgType: props.col?.orgType,
+      userId: props.colData?.user?.userId,
+    };
+  }
 });
 </script>
