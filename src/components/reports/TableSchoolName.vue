@@ -24,7 +24,7 @@ const schoolName = computed(() => {
   const currentSchools = _get(props.colData.user, 'schools.current');
   if (currentSchools) {
     const schoolId = currentSchools[0];
-    return props.col.schoolsMap[schoolId] ?? '';
+    return props.col?.schoolsMap[schoolId] ?? '';
   }
   return '';
 });

@@ -122,6 +122,9 @@
               <div v-if="col.field && col.field.split('.')[0] === 'scores'">
                 <TableScoreTag :col-data="colData" :col="col" />
               </div>
+              <div v-else-if="col.dataType == 'progress'">
+                <TableProgressTag :col-data="colData" :col="col" />
+              </div>
               <div v-else-if="col.field && col.field === 'user.schoolName'">
                 <TableSchoolName :col-data="colData" :col="col" />
               </div>
@@ -209,8 +212,8 @@
               </div>
             </template>
             <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterclear="{}">
-              <!-- don't show clear button for scores, clear fires off a filter event and doesnt' actually clear the filter 
-                TODO: investigate why this happens
+              <!-- don't show clear button for scores, clear fires off a filter event and doesnt actually clear the filter 
+                TODO: investigate why this happens...
               -->
             </template>
             <template v-else #filterclear="{ filterCallback }">
@@ -262,6 +265,7 @@ import { scoredTasks, supportLevelColors, getRawScoreThreshold } from '@/helpers
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import TableSchoolName from '@/components/reports/TableSchoolName.vue';
 import TableReportLink from '@/components/reports/TableReportLink.vue';
+import TableProgressTag from '@/components/reports/TableProgressTag.vue';
 
 /*
 Using the DataTable

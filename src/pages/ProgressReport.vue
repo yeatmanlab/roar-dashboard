@@ -33,27 +33,23 @@
         </div>
       </div>
 
-      <div v-if="assignmentData?.length === 0" class="no-scores-container">
+      <div v-if="filteredTableData?.length === 0" class="no-scores-container">
         <h3>No scores found.</h3>
         <span
           >The filters applied have no matching scores.
           <PvButton text @click="resetFilters">Reset filters</PvButton>
         </span>
       </div>
-      <div v-else-if="assignmentData?.length ?? 0 > 0">
+      <div v-else-if="filteredTableData?.length ?? 0 > 0">
         <RoarDataTable
-          v-if="columns?.length ?? 0 > 0"
-          :data="tableData"
-          :columns="columns"
-          :total-records="assignmentCount"
+          v-if="progressReportColumns?.length ?? 0 > 0"
+          :data="filteredTableData"
+          :columns="progressReportColumns"
+          :total-records="filteredTableData?.length"
           :loading="isLoadingScores || isFetchingScores"
           :page-limit="pageLimit"
-          lazy
-          :lazy-pre-sorting="sortDisplay"
           data-cy="roar-data-table"
           :allow-filtering="true"
-          @page="onPage($event)"
-          @sort="onSort($event)"
           @filter="onFilter($event)"
           @export-selected="exportSelected"
           @export-all="exportAll"
@@ -287,13 +283,13 @@ const {
   isFetching: isFetchingScores,
   data: assignmentData,
 } = useQuery({
-  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, pageLimit, page],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
       props.orgType,
       props.orgId,
-      pageLimit,
+      ref(10000),
       page,
       false,
       undefined,
@@ -304,170 +300,12 @@ const {
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
-});
-
-// Scores count query
-const { data: assignmentCount } = useQuery({
-  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, filterBy, orderBy],
-  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value, orderBy.value),
-  keepPreviousData: true,
-  enabled: scoreQueryEnabled,
-  staleTime: 5 * 60 * 1000,
-});
-
-const onPage = (event) => {
-  page.value = event.page;
-  pageLimit.value = event.rows;
-};
-
-const sortDisplay = computed(() => {
-  const display = [];
-  for (const sort of orderBy.value) {
-    // TODO: TEMPORARY - Make this a dynamic way of converting
-    // fields into column paths
-    let item = {};
-    if (sort.direction === 'ASCENDING') {
-      item.order = 1;
-    } else {
-      item.order = -1;
-    }
-    const sortFieldPath = sort.field.fieldPath;
-    if (sortFieldPath === 'userData.grade') {
-      item.field = 'user.studentData.grade';
-    } else if (sortFieldPath === 'userData.name.first') {
-      item.field = 'user.name.first';
-    } else if (sortFieldPath === 'userData.name.last') {
-      item.field = 'user.name.last';
-    } else if (sortFieldPath === 'userData.username') {
-      item.field = 'user.username';
-    } else if (sortFieldPath === 'readOrgs.schools') {
-      item.field = 'user.schoolName';
-    }
-    display.push(item);
-  }
-  return display;
-});
-
-const confirm = useConfirm();
-const onSort = (event) => {
-  initialSort.value = false;
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => {
-    let field = item.field.replace('user', 'userData');
-    // Due to differences in the document schemas,
-    //   fields found in studentData in the user document are in the
-    //   top level of the assignments.userData object.
-    if (field.split('.')[1] === 'studentData') {
-      field = `userData.${field.split('.').slice(2, field.length)}`;
-    }
-    if (field.split('.')[1] === 'schoolName') {
-      field = `readOrgs.schools`;
-    }
-    return {
-      field: { fieldPath: field },
-      direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-    };
-  });
-  if (_orderBy.length > 1) {
-    confirm.require({
-      group: 'sort',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Continue',
-      acceptIcon: 'pi pi-check',
-      accept: () => {
-        console.log('modal closed.');
-      },
-    });
-  } else {
-    orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
-    page.value = 0;
-  }
-};
-
-watch(
-  assignmentCount,
-  (count) => {
-    if (initialSort.value && count === 0) {
-      resetFilters();
-    }
+  onSuccess: (data) => {
+    filteredTableData.value = data;
   },
-  { immediate: true },
-);
-
-watch(filterSchools, (newSchools) => {
-  // check if filter entry for schools exists
-  const filterSchools = _find(filterBy.value, { collection: 'schools' });
-  // Turn off sort when filtering
-  orderBy.value = [];
-  if (filterSchools) {
-    if (_isEmpty(newSchools)) {
-      _remove(filterBy.value, { collection: 'schools' });
-      return;
-    }
-    filterSchools.value = _union(filterSchools.value, newSchools);
-  } else {
-    filterBy.value.push({
-      collection: 'schools',
-      field: 'assigningOrgs.schools',
-      value: newSchools,
-    });
-  }
 });
 
-watch(filterGrades, (newGrades) => {
-  // Turn off sort when filtering
-  orderBy.value = [];
-  filterBy.value.push({
-    collection: 'grade',
-    field: 'grade',
-    value: toRaw(newGrades),
-  });
-});
-
-const onFilter = (event) => {
-  // Turn off sort when filtering
-  orderBy.value = [];
-  const filters = [];
-  for (const filterKey in _get(event, 'filters')) {
-    const filter = _get(event, 'filters')[filterKey];
-    const constraint = _head(_get(filter, 'constraints'));
-    if (_get(constraint, 'value')) {
-      const path = filterKey.split('.');
-      if (_head(path) === 'user') {
-        // Special case for school
-        if (path[1] === 'schoolName') {
-          // find ID from given name
-          const schoolName = constraint.value;
-          const schoolEntry = _find(schoolsInfo.value, { name: schoolName });
-          if (!_isEmpty(schoolEntry)) {
-            filters.push({ value: [schoolEntry.id], collection: 'schools', field: 'assigningOrgs.schools' });
-          }
-        } else if (path[1] === 'studentData') {
-          // Due to differences in the document schemas,
-          //   fields found in studentData in the user document are in the
-          //   top level of the assignments.userData object.
-          filters.push({ ...constraint, collection: 'users', field: path.slice(2, path.length) });
-        } else {
-          filters.push({ ...constraint, collection: 'users', field: _tail(path).join('.') });
-        }
-      }
-      if (_head(path) === 'status') {
-        const taskId = path[1];
-        filters.push({
-          ...constraint,
-          collection: 'assignments',
-          taskId: taskId,
-          field: 'progress',
-        });
-      }
-    }
-  }
-  const orgFilter = _find(filterBy.value, { collection: 'schools' });
-  const gradeFilter = _find(filterBy.value, { collection: 'grade' });
-  if (orgFilter) filters.push(orgFilter);
-  if (gradeFilter) filters.push(gradeFilter);
-  filterBy.value = filters;
-  page.value = 0;
-};
+const onFilter = (event) => {};
 
 const resetFilters = () => {
   filterSchools.value = [];
@@ -557,7 +395,7 @@ const exportAll = async () => {
   );
 };
 
-const columns = computed(() => {
+const progressReportColumns = computed(() => {
   if (assignmentData.value === undefined) return [];
 
   const tableColumns = [
@@ -568,38 +406,47 @@ const columns = computed(() => {
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true, filter: false });
+    const schoolsMap = schoolsInfo.value.reduce((acc, school) => {
+      acc[school.id] = school.name;
+      return acc;
+    }, {});
+    tableColumns.push({
+      field: 'user.schoolName',
+      header: 'School',
+      dataType: 'text',
+      sort: true,
+      filter: false,
+      schoolsMap: schoolsMap,
+    });
   }
 
   if (authStore.isUserSuperAdmin) {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
-  if (tableData.value.length > 0) {
-    const allTaskIds = administrationInfo.value.assessments.map((assessment) => assessment.taskId);
-    const sortedTasks = allTaskIds.sort((p1, p2) => {
-      if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
-        return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-      } else {
-        return -1;
-      }
-    });
-    for (const taskId of sortedTasks) {
-      tableColumns.push({
-        field: `status.${taskId}.value`,
-        header: taskDisplayNames[taskId]?.name ?? taskId,
-        dataType: 'progress',
-        tag: true,
-        severityField: `status.${taskId}.severity`,
-        iconField: `status.${taskId}.icon`,
-        sort: false,
-      });
+  const allTaskIds = administrationInfo.value.assessments.map((assessment) => assessment.taskId);
+  const sortedTasks = allTaskIds.sort((p1, p2) => {
+    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
+      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    } else {
+      return -1;
     }
+  });
+  for (const taskId of sortedTasks) {
+    tableColumns.push({
+      field: `status.${taskId}.value`,
+      header: taskDisplayNames[taskId]?.name ?? taskId,
+      dataType: 'progress',
+      tag: true,
+      severityField: `status.${taskId}.severity`,
+      iconField: `status.${taskId}.icon`,
+      sort: false,
+    });
   }
   return tableColumns;
 });
 
-const tableData = computed(() => {
+const progressTableData = computed(() => {
   if (assignmentData.value === undefined) return [];
 
   return assignmentData.value.map(({ user, assignment }) => {
@@ -631,32 +478,30 @@ const tableData = computed(() => {
         };
       }
     }
-    // If this is a district score report, grab school information
-    if (props.orgType === 'district') {
-      // Grab user's school list
-      const currentSchools = _get(user, 'schools.current');
-      if (currentSchools.length) {
-        const schoolId = currentSchools[0];
-        const schoolName = _get(
-          _find(schoolsInfo.value, (school) => school.id === schoolId),
-          'name',
-        );
-        return {
-          user: {
-            ...user,
-            schoolName,
-          },
-          assignment,
-          status,
-        };
-      }
-    }
-    return {
-      user,
-      assignment,
-      status,
-    };
   });
+});
+
+const filteredTableData = ref(assignmentData.value);
+
+watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
+  if (newSchools.length > 0 || newGrades.length > 0) {
+    //set scoresTableData to filtered data if filter is added
+    let filteredData = assignmentData.value;
+    if (newSchools.length > 0) {
+      filteredData = filteredData.filter((item) => {
+        return item.user.schools?.current.some((school) => newSchools.includes(school));
+      });
+    }
+    if (newGrades.length > 0) {
+      filteredData = filteredData.filter((item) => {
+        return newGrades.includes(item.user.studentData?.grade);
+      });
+    }
+
+    filteredTableData.value = filteredData;
+  } else {
+    filteredTableData.value = assignmentData.value;
+  }
 });
 
 let unsubscribe;
