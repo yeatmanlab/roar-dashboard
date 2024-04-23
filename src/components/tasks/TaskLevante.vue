@@ -15,6 +15,9 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
+import { useI18n } from 'vue-i18n';
+
+const { locale } = useI18n();
 
 const props = defineProps({
   taskId: { type: String, default: 'egma-math' },
@@ -104,12 +107,15 @@ async function startTask() {
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
 
+    console.log('locale: ', locale.value);
+
     const userParams = {
       grade: _get(userData.value, 'studentData.grade'),
       birthMonth: userDateObj.getMonth() + 1,
       birthYear: userDateObj.getFullYear(),
-      language: props.language,
     };
+
+    console.log('game params: ', appKit._taskInfo.variantParams);
 
     const gameParams = { ...appKit._taskInfo.variantParams };
 

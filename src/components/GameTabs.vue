@@ -109,7 +109,6 @@ const levanteTasks = [
 
 const getTaskName = (taskName) => {
   // Translate Levante task names if not in English
-  console.log('camelized:', camelize(taskName));
   return computed(() => {
     if (levanteTasks.includes(camelize(taskName)) && !locale.value.includes('en')) {
       return t(`gameTabs.${camelize(taskName)}Name`);
