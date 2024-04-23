@@ -656,41 +656,27 @@ const onFilter = (event) => {
       }
     }
   }
-  console.log('onfilter called', scoreFilters);
-  // if filters are empty, reset filterScores ref
-  if (scoreFilters.length == 0) {
-    filterScores.value = [];
-  }
   // if new set of filters is different, set filterScores to new filters
-  else if (!_isEqual(scoreFilters, filterScores.value)) {
+  if (scoreFilters.length == 0 && !_isEqual(scoreFilters, filterScores.value)) {
     console.log('filter scores update called', scoreFilters, filterScores.value);
     filterScores.value = scoreFilters;
   }
 };
 
-// watch(
-//   scoresCount,
-//   (count) => {
-//     if (initialSort.value && count === 0) {
-//       resetFilters();
-//     }
-//   },
-//   { immediate: true },
-// );
 const filteredTableData = ref(scoresData.value);
 
 // Flag to track whether the watcher is already processing an update
 const isUpdating = ref(false);
 
 watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newFilterScores]) => {
-  // // If an update is already in progress, return early to prevent recursion
+  // If an update is already in progress, return early to prevent recursion
   if (isUpdating.value) {
     return;
   }
   isUpdating.value = true;
   //set scoresTableData to filtered data if filter is added
-  // if (newSchools.length > 0 || newGrades.length > 0 || newFilterScores.length > 0) {
   let filteredData = scoresData.value;
+  console.log(newSchools, newGrades);
   if (newSchools.length > 0) {
     filteredData = filteredData.filter((item) => {
       return item.user.schools?.current.some((school) => newSchools.includes(school));
