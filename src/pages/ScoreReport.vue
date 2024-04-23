@@ -116,8 +116,8 @@
             :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
             :reset-filters="resetFilters"
-            :update-score-filters="updateScoreFilters"
-            :filter-scores="filterScores"
+            :update-extraneous-filters="updateScoreFilters"
+            :extraneous-filters="filterScores"
             @export-all="exportAll"
             @export-selected="exportSelected"
           >

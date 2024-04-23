@@ -206,12 +206,37 @@
               <div v-if="col.dataType === 'progress'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Assigned', 'Started', 'Completed']"
+                  :options="['Assigned', 'Started', 'Completed', 'Optional']"
                   style="margin-bottom: 0.5rem"
-                />
+                >
+                  <template #option="{ option }">
+                    <div v-if="progressTags[option]" class="flex align-items-center">
+                      <PvTag
+                        :severity="progressTags[option]?.severity"
+                        :value="progressTags[option]?.value"
+                        :icon="progressTags[option]?.icon"
+                        :style="`min-width: 2rem`"
+                        rounded
+                      />
+                    </div>
+                  </template>
+                  <template #value="{ value }">
+                    <PvTag
+                      v-if="progressTags[value]"
+                      :severity="progressTags[value]?.severity"
+                      :value="progressTags[value]?.value"
+                      :icon="progressTags[value]?.icon"
+                      :style="`min-width: 2rem`"
+                      rounded
+                    />
+                  </template>
+                </PvDropdown>
               </div>
             </template>
-            <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterclear="{}">
+            <template
+              v-if="(col.field && col.field.split('.')[0] === 'scores') || col.field.split('.')[0] === 'status'"
+              #filterclear="{}"
+            >
               <!-- don't show clear button for scores, clear fires off a filter event and doesnt actually clear the filter 
                 TODO: investigate why this happens...
               -->
@@ -223,7 +248,10 @@
                 >
               </div>
             </template>
-            <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterapply="{}">
+            <template
+              v-if="(col.field && col.field.split('.')[0] === 'scores') || col.field.split('.')[0] === 'status'"
+              #filterapply="{}"
+            >
               <!-- don't show apply button for scores-->
             </template>
             <template v-else #filterapply="{ filterCallback }">
@@ -261,7 +289,7 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _isEqual from 'lodash/isEqual';
 import _startCase from 'lodash/startCase';
-import { scoredTasks, supportLevelColors, getRawScoreThreshold } from '@/helpers/reports';
+import { scoredTasks, supportLevelColors, getRawScoreThreshold, progressTags } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import TableSchoolName from '@/components/reports/TableSchoolName.vue';
 import TableReportLink from '@/components/reports/TableReportLink.vue';
@@ -309,8 +337,8 @@ const props = defineProps({
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
   resetFilters: { type: Function, required: false, default: () => {} },
-  updateScoreFilters: { type: Function, required: false, default: () => {} },
-  filterScores: { type: Array, required: false, default: () => [] },
+  updateExtraneousFilters: { type: Function, required: false, default: () => {} },
+  extraneousFilters: { type: Array, required: false, default: () => [] },
 });
 
 const inputColumns = ref(props.columns);
@@ -507,8 +535,7 @@ const onSort = (event) => {
 };
 
 const onFilter = (event) => {
-  const scoreFilters = [];
-  console.log('onfilter', event);
+  const filters = [];
 
   // add score filters to scoreFilters
   for (const filterKey in _get(event, 'filters')) {
@@ -520,7 +547,7 @@ const onFilter = (event) => {
         console.log('inonfilter', path, constraint);
         const taskId = path[1];
         const cutoffs = getRawScoreThreshold(taskId);
-        scoreFilters.push({
+        filters.push({
           ...constraint,
           collection: 'scores',
           taskId: taskId,
@@ -528,10 +555,19 @@ const onFilter = (event) => {
           field: 'scores.computed.composite.categoryScore',
         });
       }
+      if (_head(path) === 'status') {
+        const taskId = path[1];
+        filters.push({
+          ...constraint,
+          taskId: taskId,
+          collection: 'progress',
+          field: `progress.${taskId}.value`,
+        });
+      }
     }
   }
-  if (scoreFilters.length > 0 && !_isEqual(scoreFilters, props.filterScores)) {
-    props.updateScoreFilters(scoreFilters);
+  if (filters.length > 0 && !_isEqual(filters, props.extraneousFilters)) {
+    props.updateExtraneousFilters(filters);
   }
 };
 </script>

@@ -202,6 +202,29 @@ export const supportLevelColors = {
   Assessed: 'white',
 };
 
+export const progressTags = {
+  Optional: {
+    value: 'optional',
+    icon: 'pi pi-question',
+    severity: 'info',
+  },
+  Completed: {
+    value: 'completed',
+    icon: 'pi pi-check',
+    severity: 'success',
+  },
+  Started: {
+    value: 'started',
+    icon: 'pi pi-exclamation-triangle',
+    severity: 'warning',
+  },
+  Assigned: {
+    value: 'assigned',
+    icon: 'pi pi-times',
+    severity: 'danger',
+  },
+};
+
 /*
  *  Get Support Level
  *  Function to take scores, taskId, and grade and return the proper support category for the run.

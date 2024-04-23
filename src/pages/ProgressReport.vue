@@ -50,7 +50,8 @@
           :page-limit="pageLimit"
           data-cy="roar-data-table"
           :allow-filtering="true"
-          @filter="onFilter($event)"
+          :update-extraneous-filters="updateProgressFilters"
+          :extraneous-filters="filterProgress"
           @export-selected="exportSelected"
           @export-all="exportAll"
         >
@@ -95,7 +96,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch, toRaw } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import _find from 'lodash/find';
 import _head from 'lodash/head';
@@ -182,6 +183,7 @@ if (props.orgType === 'district') {
 
 const filterBy = ref([]);
 const filterSchools = ref([]);
+const filterProgress = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
@@ -305,8 +307,6 @@ const {
   },
 });
 
-const onFilter = (event) => {};
-
 const resetFilters = () => {
   filterSchools.value = [];
   filterGrades.value = [];
@@ -406,7 +406,7 @@ const progressReportColumns = computed(() => {
   ];
 
   if (props.orgType === 'district') {
-    const schoolsMap = schoolsInfo.value.reduce((acc, school) => {
+    const schoolsMap = schoolsInfo.value?.reduce((acc, school) => {
       acc[school.id] = school.name;
       return acc;
     }, {});
@@ -478,29 +478,66 @@ const progressTableData = computed(() => {
         };
       }
     }
+    return {
+      user,
+      assignment,
+      status,
+    };
   });
 });
 
 const filteredTableData = ref(assignmentData.value);
 
-watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
-  if (newSchools.length > 0 || newGrades.length > 0) {
-    //set scoresTableData to filtered data if filter is added
-    let filteredData = assignmentData.value;
-    if (newSchools.length > 0) {
-      filteredData = filteredData.filter((item) => {
-        return item.user.schools?.current.some((school) => newSchools.includes(school));
-      });
-    }
-    if (newGrades.length > 0) {
-      filteredData = filteredData.filter((item) => {
-        return newGrades.includes(item.user.studentData?.grade);
-      });
-    }
+const updateProgressFilters = (progressFilters) => {
+  filterProgress.value = progressFilters;
+};
 
-    filteredTableData.value = filteredData;
+const isUpdating = ref(false);
+
+watch([filterSchools, filterGrades, filterProgress], ([newSchools, newGrades, newFilterProgress]) => {
+  if (isUpdating.value) {
+    return;
   } else {
-    filteredTableData.value = assignmentData.value;
+    isUpdating.value = true;
+    console.log('filter watcher', filterProgress);
+    if (newSchools.length > 0 || newGrades.length > 0 || newFilterProgress.length > 0) {
+      //set scoresTableData to filtered data if filter is added
+      let filteredData = assignmentData.value;
+      if (newSchools.length > 0) {
+        filteredData = filteredData.filter((item) => {
+          return item.user.schools?.current.some((school) => newSchools.includes(school));
+        });
+      }
+      if (newGrades.length > 0) {
+        filteredData = filteredData.filter((item) => {
+          return newGrades.includes(item.user.studentData?.grade);
+        });
+      }
+      if (newFilterProgress.length > 0) {
+        console.log('progress', filteredData);
+        filteredData = filteredData.filter((item) => {
+          for (const progressFilter of newFilterProgress) {
+            const taskId = progressFilter.taskId;
+            console;
+            const userAssessment = item.assignment?.assessments?.find((a) => a.taskId == taskId);
+            if (progressFilter.value === 'Optional') {
+              return userAssessment?.optional;
+            } else if (progressFilter.value === 'Started') {
+              return userAssessment?.startedOn !== undefined && userAssessment?.completedOn === undefined;
+            } else if (progressFilter.value === 'Completed') {
+              return userAssessment?.completedOn !== undefined;
+            } else if (progressFilter.value === 'Assigned') {
+              return userAssessment?.completedOn === undefined && userAssessment?.startedOn === undefined;
+            }
+          }
+        });
+      }
+
+      isUpdating.value = false; // Reset the flag after the update
+      filteredTableData.value = filteredData;
+    } else {
+      filteredTableData.value = assignmentData.value;
+    }
   }
 });
 
