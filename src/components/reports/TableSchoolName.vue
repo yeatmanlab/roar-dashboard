@@ -6,18 +6,16 @@
 
 <script setup>
 import { defineProps, computed } from 'vue';
-import _lowerCase from 'lodash/lowerCase';
 import _get from 'lodash/get';
-import _find from 'lodash/find';
 const props = defineProps({
   colData: {
     type: Object,
-    default: {},
+    default: () => ({}),
     required: true,
   },
   col: {
     type: Object,
-    default: {},
+    default: () => ({}),
     required: true,
   },
 });

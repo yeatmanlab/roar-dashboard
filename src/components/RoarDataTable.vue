@@ -81,12 +81,12 @@
           :loading="props.loading"
           scrollable
           :select-all="selectAll"
+          :show-apply-button="false"
+          :show-clear-button="false"
           @page="onPage($event)"
           @sort="onSort($event)"
           @filter="onFilter($event)"
           @select-all-change="onSelectAll"
-          :showApplyButton="false"
-          :showClearButton="false"
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
         >
@@ -120,16 +120,16 @@
             <template #body="{ data: colData }">
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
               <div v-if="col.field && col.field.split('.')[0] === 'scores'">
-                <TableScoreTag :colData="colData" :col="col" />
+                <TableScoreTag :col-data="colData" :col="col" />
               </div>
               <div v-else-if="col.field && col.field === 'user.schoolName'">
-                <TableSchoolName :colData="colData" :col="col" />
+                <TableSchoolName :col-data="colData" :col="col" />
               </div>
               <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
               </div>
               <div v-else-if="col.link">
-                <TableReportLink :colData="colData" :col="col" />
+                <TableReportLink :col-data="colData" :col="col" />
               </div>
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
@@ -192,11 +192,10 @@
                   <template #value="{ value }">
                     <div class="flex align-items-center">
                       <div
-                        v-if="supportLevelColors[option]"
-                        class="small-circle tooltip"
+                        :class="`small-circle ${supportLevelColors[value] && 'tooltip'}`"
                         :style="`background-color: ${supportLevelColors[value]};`"
                       />
-                      <div>{{ value }}</div>
+                      <div class="ml-2">{{ value }}</div>
                     </div>
                   </template>
                 </PvDropdown>
@@ -209,30 +208,36 @@
                 />
               </div>
             </template>
-            <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterclear="{ filterCallback }">
-              <div class="flex flex-row-reverse">
-                <PvButton type="button" text icon="pi pi-times" class="p-2" @click="filterCallback()" severity="primary"
-                  >Clear</PvButton
-                >
-              </div>
+            <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterclear="{}">
+              <!-- don't show clear button for scores, clear fires off a filter event and doesnt' actually clear the filter 
+                TODO: investigate why this happens
+              -->
             </template>
             <template v-else #filterclear="{ filterCallback }">
               <div class="flex flex-row-reverse">
-                <PvButton type="button" text icon="pi pi-times" class="p-2" @click="filterCallback()" severity="primary"
+                <PvButton type="button" text icon="pi pi-times" class="p-2" severity="primary" @click="filterCallback()"
                   >Clear</PvButton
                 >
               </div>
             </template>
-            <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterapply="{ filterCallback }">
+            <template v-if="col.field && col.field.split('.')[0] === 'scores'" #filterapply="{}">
               <!-- don't show apply button for scores-->
             </template>
             <template v-else #filterapply="{ filterCallback }">
-              <PvButton type="button" icon="pi pi-times" class="px-2" @click="filterCallback()" severity="primary"
-                >Apply</PvButton
-              >
+              <PvButton type="button" icon="pi pi-times" class="px-2" severity="primary" @click="filterCallback()"
+                >Apply
+              </PvButton>
             </template>
           </PvColumn>
-          <template #empty> No data found. </template>
+          <template #footer>
+            <div v-if="computedData?.length == 0" class="flex flex-column gap-2 ml-6 my-5">
+              <div class="text-lg font-bold my-2">No scores found</div>
+              <span class="font-light"
+                >The filters applied have no matching scores.
+                <PvButton text class="my-2" @click="resetFilters">Reset Filters</PvButton>
+              </span>
+            </div>
+          </template>
         </PvDataTable>
       </span>
     </div>
@@ -245,20 +250,18 @@ import { FilterMatchMode, FilterOperator } from 'primevue/api';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import _get from 'lodash/get';
 import _set from 'lodash/set';
-import _map from 'lodash/map';
 import _head from 'lodash/head';
-import _isEmpty from 'lodash/isEmpty';
+import _map from 'lodash/map';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
 import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
+import _isEqual from 'lodash/isEqual';
 import _startCase from 'lodash/startCase';
-import _lowerCase from 'lodash/lowerCase';
-import { scoredTasks, supportLevelColors } from '@/helpers/reports';
+import { scoredTasks, supportLevelColors, getRawScoreThreshold } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import TableSchoolName from '@/components/reports/TableSchoolName.vue';
 import TableReportLink from '@/components/reports/TableReportLink.vue';
-import { watch } from 'vue';
 
 /*
 Using the DataTable
@@ -302,6 +305,8 @@ const props = defineProps({
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
   resetFilters: { type: Function, required: false, default: () => {} },
+  updateScoreFilters: { type: Function, required: false, default: () => {} },
+  filterScores: { type: Array, required: false, default: () => [] },
 });
 
 const inputColumns = ref(props.columns);
@@ -314,11 +319,6 @@ const computedColumns = computed(() => {
 });
 const currentSort = ref([]);
 const selectedRows = ref([]);
-const scoreFilterModel = ref([]);
-
-watch(scoreFilterModel.value, (newScoreFilterModel) => {
-  console.log('newscorefilter', newScoreFilterModel);
-});
 
 const toast = useToast();
 const selectAll = ref(false);
@@ -343,11 +343,6 @@ const onSelectAll = () => {
 
 const onSelectionChange = () => {
   emit('selection', selectedRows.value);
-};
-
-const resetFilters = () => {
-  console.log('reset filters called');
-  props.resetFilters();
 };
 
 const dataTable = ref();
@@ -376,46 +371,59 @@ function increasePadding() {
 
 // Generate filters and options objects
 const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE', 'PROGRESS'];
-let options = {};
-let filters = {};
-_forEach(computedColumns.value, (column) => {
-  // Check if header text is supplied; if not, generate.
-  if (!_get(column, 'header')) {
-    column['header'] = _startCase(_get(column, 'field'));
-  }
-  const dataType = _toUpper(_get(column, 'dataType'));
-  let returnMatchMode = null;
-  if (valid_dataTypes.includes(dataType)) {
-    if (dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
-    } else if (dataType === 'TEXT' || dataType === 'STRING') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
-    } else if (dataType === 'DATE') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
-    } else if (dataType === 'SCORE') {
-      // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
-      //   so the filter event is being handled in an external handler.
-      if (scoredTasks.includes(column.field.split('.')[1])) {
+const computedFilters = computed(() => {
+  console.log('computed filters called', computedColumns);
+  let filters = {};
+  let options = {};
+  _forEach(computedColumns.value, (column) => {
+    // Check if header text is supplied; if not, generate.
+    if (!_get(column, 'header')) {
+      column['header'] = _startCase(_get(column, 'field'));
+    }
+    const dataType = _toUpper(_get(column, 'dataType'));
+    let returnMatchMode = null;
+    if (valid_dataTypes.includes(dataType)) {
+      if (dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN') {
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
+      } else if (dataType === 'TEXT' || dataType === 'STRING') {
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
+      } else if (dataType === 'DATE') {
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
+      } else if (dataType === 'SCORE') {
+        // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
+        //   so the filter event is being handled in an external handler.
+        if (scoredTasks.includes(column.field.split('.')[1])) {
+          returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
+        }
+      } else if (dataType === 'PROGRESS') {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
-    } else if (dataType === 'PROGRESS') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
-    }
 
-    if (_get(column, 'useMultiSelect')) {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
-      options[column.field] = getUniqueOptions(column);
+      if (_get(column, 'useMultiSelect')) {
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
+        options[column.field] = getUniqueOptions(column);
+      }
     }
-  }
-  if (returnMatchMode) {
-    filters[column.field] = {
-      operator: FilterOperator.AND,
-      constraints: [returnMatchMode],
-    };
-  }
+    if (returnMatchMode) {
+      filters[column.field] = {
+        operator: FilterOperator.AND,
+        constraints: [returnMatchMode],
+      };
+    }
+  });
+  console.log('options', options);
+  return { computedOptions: options, computedFilters: filters };
 });
-const refOptions = ref(options);
-const refFilters = ref(filters);
+
+const refOptions = ref(computedFilters.value.computedOptions);
+const refFilters = ref(computedFilters.value.computedFilters);
+
+const resetFilters = () => {
+  console.log('roardatatable resetfilters', refFilters.value);
+  refFilters.value = computedFilters.value.computedFilters;
+  // clear local filters
+  props.resetFilters();
+};
 
 // Grab list of fields defined as dates
 let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
@@ -493,13 +501,34 @@ const onSort = (event) => {
   currentSort.value = _get(event, 'multiSortMeta') ?? [];
   emit('sort', event);
 };
+
 const onFilter = (event) => {
-  console.log('emitting filter', event);
-  emit('filter', event);
-};
-const onScoreFilter = (event) => {
-  console.log('emitting score filter', event);
-  emit('scorefilter', event);
+  const scoreFilters = [];
+  console.log('onfilter', event);
+
+  // add score filters to scoreFilters
+  for (const filterKey in _get(event, 'filters')) {
+    const filter = _get(event, 'filters')[filterKey];
+    const constraint = _head(_get(filter, 'constraints'));
+    if (_get(constraint, 'value')) {
+      const path = filterKey.split('.');
+      if (_head(path) === 'scores') {
+        console.log('inonfilter', path, constraint);
+        const taskId = path[1];
+        const cutoffs = getRawScoreThreshold(taskId);
+        scoreFilters.push({
+          ...constraint,
+          collection: 'scores',
+          taskId: taskId,
+          cutoffs,
+          field: 'scores.computed.composite.categoryScore',
+        });
+      }
+    }
+  }
+  if (scoreFilters.length > 0 && !_isEqual(scoreFilters, props.filterScores)) {
+    props.updateScoreFilters(scoreFilters);
+  }
 };
 </script>
 <style>
@@ -516,6 +545,7 @@ const onScoreFilter = (event) => {
   margin-top: 3px;
   margin-bottom: 3px;
 }
+
 .circle {
   border-color: white;
   display: inline-block;

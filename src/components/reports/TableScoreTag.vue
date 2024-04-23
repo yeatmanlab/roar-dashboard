@@ -52,12 +52,12 @@ import { getGrade } from '@bdelab/roar-utils';
 const props = defineProps({
   colData: {
     type: Object,
-    default: {},
+    default: () => ({}),
     required: true,
   },
   col: {
     type: Object,
-    default: {},
+    default: () => ({}),
     required: true,
   },
 });

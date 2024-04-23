@@ -106,13 +106,6 @@
           <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Datatable</span>
         </div>
         <!-- Main table -->
-        <div v-else-if="filteredTableData?.length === 0" class="no-scores-container">
-          <h3>No scores found.</h3>
-          <span
-            >The filters applied have no matching scores.
-            <PvButton text @click="resetFilters">Reset filters</PvButton>
-          </span>
-        </div>
 
         <div v-if="scoresData?.length ?? 0 > 0">
           <RoarDataTable
@@ -122,10 +115,11 @@
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
-            @filter="onFilter($event)"
+            :reset-filters="resetFilters"
+            :update-score-filters="updateScoreFilters"
+            :filter-scores="filterScores"
             @export-all="exportAll"
             @export-selected="exportSelected"
-            :reset-filters="resetFilters"
           >
             <template #filterbar>
               <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">
@@ -287,30 +281,23 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch, toRaw } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
-import _isEqual from 'lodash/isEqual';
 import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _find from 'lodash/find';
-import _head from 'lodash/head';
-import _tail from 'lodash/tail';
-import _isEmpty from 'lodash/isEmpty';
 import _pickBy from 'lodash/pickBy';
-import _union from 'lodash/union';
-import _remove from 'lodash/remove';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
 import { fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentPageFetcher, assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
-import { useConfirm } from 'primevue/useconfirm';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { getTitle } from '../helpers/query/administrations';
@@ -321,7 +308,6 @@ import {
   supportLevelColors,
   getSupportLevel,
   tasksToDisplayGraphs,
-  getRawScoreThreshold,
   rawOnlyTasks,
   scoredTasks,
   addElementToPdf,
@@ -429,10 +415,6 @@ const handleExportToPdf = async () => {
   return;
 };
 
-// Queries for page
-// Boolean ref to keep track of whether this is the initial sort or a user-defined sort
-const initialSort = ref(true);
-
 const orderBy = ref([
   {
     direction: 'ASCENDING',
@@ -460,7 +442,7 @@ const filterScores = ref([]);
 const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
-const page = ref(0);
+
 // User Claims
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
@@ -591,38 +573,6 @@ const {
   },
 });
 
-const onFilter = (event) => {
-  const scoreFilters = [];
-
-  // add score filters to scoreFilters
-  for (const filterKey in _get(event, 'filters')) {
-    const filter = _get(event, 'filters')[filterKey];
-    const constraint = _head(_get(filter, 'constraints'));
-    if (_get(constraint, 'value')) {
-      const path = filterKey.split('.');
-      if (_head(path) === 'scores') {
-        console.log('inonfilter', path, constraint);
-        const taskId = path[1];
-        const cutoffs = getRawScoreThreshold(taskId);
-        scoreFilters.push({
-          ...constraint,
-          collection: 'scores',
-          taskId: taskId,
-          cutoffs,
-          field: 'scores.computed.composite.categoryScore',
-        });
-      }
-    }
-  }
-  // todo: reset filters on clear
-
-  // if new set of filters is different, set filterScores to new filters
-  if (scoreFilters.length > 0 && !_isEqual(scoreFilters, filterScores.value)) {
-    console.log('filter scores update called', scoreFilters, filterScores.value);
-    filterScores.value = scoreFilters;
-  }
-};
-
 const filteredTableData = ref(scoresData.value);
 
 // Flag to track whether the watcher is already processing an update
@@ -633,73 +583,86 @@ watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newF
   if (isUpdating.value) {
     return;
   }
-  isUpdating.value = true;
-  //set scoresTableData to filtered data if filter is added
-  let filteredData = scoresData.value;
-  console.log(newSchools, newGrades);
-  if (newSchools.length > 0) {
-    filteredData = filteredData.filter((item) => {
-      return item.user.schools?.current.some((school) => newSchools.includes(school));
-    });
-  }
-  if (newGrades.length > 0) {
-    filteredData = filteredData.filter((item) => {
-      return newGrades.includes(item.user.studentData?.grade);
-    });
-  }
-  if (newFilterScores.length > 0) {
-    console.log('filterscores ref called', filterScores.value);
-    for (const scoreFilter of newFilterScores) {
-      const taskId = scoreFilter.taskId;
+  if (newSchools.length > 0 || newGrades.length > 0 || newFilterScores.length > 0) {
+    isUpdating.value = true;
+    //set scoresTableData to filtered data if filter is added
+    let filteredData = scoresData.value;
+    console.log('watcher called', newSchools, newGrades, newFilterScores);
+    if (newSchools.length > 0) {
       filteredData = filteredData.filter((item) => {
-        // get user's score and see if it meets the filter
-        const userGrade = getGrade(item.user.studentData?.grade);
-        const userAboveElementary = userGrade >= 6;
-        const userAssessment = item.assignment.assessments.find((assessment) => assessment.taskId === taskId);
-        const { percentileScoreKey, rawScoreKey } = getScoreKeysByRow(userAssessment, userGrade);
-        const userPercentile = userAssessment?.scores?.computed?.composite[percentileScoreKey];
-        const userRawScore = userAssessment?.scores?.computed?.composite[rawScoreKey];
-        if (scoreFilter.value === 'Green') {
-          if (userAboveElementary) {
-            return userRawScore > scoreFilter.cutoffs.above;
-          } else {
-            return userPercentile >= 50;
-          }
-        } else if (scoreFilter.value === 'Yellow') {
-          if (userAboveElementary) {
-            return userRawScore > scoreFilter.cutoffs.some && userRawScore < scoreFilter.cutoffs.above;
-          } else {
-            return userPercentile > 25 && userPercentile < 50;
-          }
-        } else if (scoreFilter.value === 'Pink') {
-          if (userAboveElementary) {
-            return userRawScore <= scoreFilter.cutoffs.some;
-          } else {
-            return userPercentile <= 25;
-          }
-        } else if (scoreFilter.value === 'Optional') {
-          return userAssessment?.optional;
-        } else if (scoreFilter.value === 'Assessed') {
-          // todo: add filter logic to check if assessment is assessed
-          return userAssessment?.optional;
-        } else if (scoreFilter.value === 'Reliable') {
-          return userAssessment?.reliable;
-        } else if (scoreFilter.value === 'Unreliable') {
-          return !userAssessment?.reliable;
-        }
+        return item.user.schools?.current.some((school) => newSchools.includes(school));
       });
     }
+    if (newGrades.length > 0) {
+      filteredData = filteredData.filter((item) => {
+        return newGrades.includes(item.user.studentData?.grade);
+      });
+    }
+    if (newFilterScores.length > 0) {
+      console.log('filterscores ref called', filterScores.value);
+      for (const scoreFilter of newFilterScores) {
+        const taskId = scoreFilter.taskId;
+        filteredData = filteredData.filter((item) => {
+          // get user's score and see if it meets the filter
+          const userGrade = getGrade(item.user.studentData?.grade);
+          const userAboveElementary = userGrade >= 6;
+          const userAssessment = item.assignment.assessments.find((assessment) => assessment.taskId === taskId);
+          const { percentileScoreKey, rawScoreKey } = getScoreKeysByRow(userAssessment, userGrade);
+          const userPercentile = userAssessment?.scores?.computed?.composite[percentileScoreKey];
+          const userRawScore = userAssessment?.scores?.computed?.composite[rawScoreKey];
+          if (scoreFilter.value === 'Green') {
+            if (userAboveElementary) {
+              return userRawScore > scoreFilter.cutoffs.above;
+            } else {
+              return userPercentile >= 50;
+            }
+          } else if (scoreFilter.value === 'Yellow') {
+            if (userAboveElementary) {
+              return userRawScore > scoreFilter.cutoffs.some && userRawScore < scoreFilter.cutoffs.above;
+            } else {
+              return userPercentile > 25 && userPercentile < 50;
+            }
+          } else if (scoreFilter.value === 'Pink') {
+            if (userAboveElementary) {
+              return userRawScore <= scoreFilter.cutoffs.some;
+            } else {
+              return userPercentile <= 25;
+            }
+          } else if (scoreFilter.value === 'Optional') {
+            return userAssessment?.optional;
+          } else if (scoreFilter.value === 'Assessed') {
+            // todo: add filter logic to check if assessment is assessed
+            return userAssessment?.optional;
+          } else if (scoreFilter.value === 'Reliable') {
+            return userAssessment?.reliable;
+          } else if (scoreFilter.value === 'Unreliable') {
+            return !userAssessment?.reliable;
+          }
+        });
+      }
+    }
+
+    filteredTableData.value = filteredData;
+
+    isUpdating.value = false; // Reset the flag after the update
+  } else {
+    filteredTableData.value = scoresData.value;
   }
-
-  filteredTableData.value = filteredData;
-
-  isUpdating.value = false; // Reset the flag after the update
 });
 
+const updateScoreFilters = (scoreFilters) => {
+  filterScores.value = scoreFilters;
+};
+
 const resetFilters = () => {
+  isUpdating.value = true;
+
+  console.log('resetfilters called in scorereport');
   filterSchools.value = [];
   filterGrades.value = [];
   filterScores.value = [];
+  console.log('filterscores', filterScores.value);
+  isUpdating.value = false;
 };
 const viewMode = ref('color');
 
@@ -1192,7 +1155,7 @@ onMounted(async () => {
 .no-scores-container {
   display: flex;
   flex-direction: column;
-  padding: 2rem;
+  padding: 0.3rem;
 
   h3 {
     font-weight: bold;
