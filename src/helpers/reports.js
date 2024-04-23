@@ -8,8 +8,6 @@ import { getGrade } from '@bdelab/roar-utils';
  *  Value: { orderindex, displayName }
  */
 
-export const optionalAssessmentColor = '#03befc';
-
 export const taskDisplayNames = {
   letter: {
     name: 'Letter',
@@ -195,9 +193,13 @@ export const scoredTasks = ['swr', 'pa', 'sre'];
  */
 export const supportLevelColors = {
   above: 'green',
+  Green: 'green',
   some: '#edc037',
+  Yellow: '#edc037',
   below: '#c93d82',
-  optional: '#03befc',
+  Pink: '#c93d82',
+  Optional: '#03befc',
+  Assessed: 'white',
 };
 
 /*

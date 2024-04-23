@@ -176,9 +176,30 @@
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Green', 'Yellow', 'Pink']"
+                  :options="['Green', 'Yellow', 'Pink', 'Optional', 'Assessed', 'Reliable', 'Unreliable']"
                   style="margin-bottom: 0.5rem"
-                />
+                >
+                  <template #option="{ option }">
+                    <div class="flex align-items-center">
+                      <div
+                        v-if="supportLevelColors[option]"
+                        class="small-circle tooltip"
+                        :style="`background-color: ${supportLevelColors[option]};`"
+                      />
+                      <span class="ml-2">{{ option }}</span>
+                    </div>
+                  </template>
+                  <template #value="{ value }">
+                    <div class="flex align-items-center">
+                      <div
+                        v-if="supportLevelColors[option]"
+                        class="small-circle tooltip"
+                        :style="`background-color: ${supportLevelColors[value]};`"
+                      />
+                      <div>{{ value }}</div>
+                    </div>
+                  </template>
+                </PvDropdown>
               </div>
               <div v-if="col.dataType === 'progress'">
                 <PvDropdown
@@ -233,10 +254,11 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _lowerCase from 'lodash/lowerCase';
-import { scoredTasks } from '@/helpers/reports';
+import { scoredTasks, supportLevelColors } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import TableSchoolName from '@/components/reports/TableSchoolName.vue';
 import TableReportLink from '@/components/reports/TableReportLink.vue';
+import { watch } from 'vue';
 
 /*
 Using the DataTable
@@ -292,6 +314,12 @@ const computedColumns = computed(() => {
 });
 const currentSort = ref([]);
 const selectedRows = ref([]);
+const scoreFilterModel = ref([]);
+
+watch(scoreFilterModel.value, (newScoreFilterModel) => {
+  console.log('newscorefilter', newScoreFilterModel);
+});
+
 const toast = useToast();
 const selectAll = ref(false);
 const onSelectAll = () => {
@@ -457,7 +485,7 @@ const onFreezeToggle = (selected) => {
 };
 
 // Pass through data table events
-const emit = defineEmits(['page', 'sort', 'export-all', 'selection', 'filter']);
+const emit = defineEmits(['page', 'sort', 'export-all', 'selection', 'filter', 'scorefilter']);
 const onPage = (event) => {
   emit('page', event);
 };
@@ -469,8 +497,25 @@ const onFilter = (event) => {
   console.log('emitting filter', event);
   emit('filter', event);
 };
+const onScoreFilter = (event) => {
+  console.log('emitting score filter', event);
+  emit('scorefilter', event);
+};
 </script>
 <style>
+.small-circle {
+  border-color: white;
+  display: inline-block;
+  border-radius: 50%;
+  border-width: 5px;
+  height: 15px;
+  width: 15px;
+  vertical-align: middle;
+  margin-right: 5px;
+  margin-left: 5px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+}
 .circle {
   border-color: white;
   display: inline-block;

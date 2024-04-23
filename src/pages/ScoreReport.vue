@@ -105,25 +105,23 @@
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Datatable</span>
         </div>
-
         <!-- Main table -->
-        <div v-else-if="scoresData?.length === 0" class="no-scores-container">
+        <div v-else-if="filteredTableData?.length === 0" class="no-scores-container">
           <h3>No scores found.</h3>
           <span
             >The filters applied have no matching scores.
             <PvButton text @click="resetFilters">Reset filters</PvButton>
           </span>
         </div>
-        <div v-else-if="scoresData?.length ?? 0 > 0">
+
+        <div v-if="scoresData?.length ?? 0 > 0">
           <RoarDataTable
             :data="filteredTableData"
             :columns="scoreReportColumns"
-            :total-records="scoresData?.length"
+            :total-records="filteredTableData?.length"
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
-            @sort="onSort($event)"
-            @page="onPage($event)"
             @filter="onFilter($event)"
             @export-all="exportAll"
             @export-selected="exportSelected"
@@ -198,13 +196,13 @@
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${optionalAssessmentColor};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Optional};`" />
             <div>
               <div>Optional</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: white`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
             <div>
               <div>Assessed</div>
             </div>
@@ -317,7 +315,6 @@ import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { getTitle } from '../helpers/query/administrations';
 import {
-  optionalAssessmentColor,
   taskDisplayNames,
   taskInfoById,
   descriptionsByTaskId,
@@ -594,46 +591,6 @@ const {
   },
 });
 
-const onPage = (event) => {
-  page.value = event.page;
-  pageLimit.value = event.rows;
-};
-
-const confirm = useConfirm();
-const onSort = (event) => {
-  initialSort.value = false;
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => {
-    let field = item.field.replace('user', 'userData');
-    // Due to differences in the document schemas,
-    //   fields found in studentData in the user document are in the
-    //   top level of the assignments.userData object.
-    if (field.split('.')[1] === 'studentData') {
-      field = `userData.${field.split('.').slice(2, field.length)}`;
-    }
-    if (field.split('.')[1] === 'schoolName') {
-      field = `readOrgs.schools`;
-    }
-    return {
-      field: { fieldPath: field },
-      direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-    };
-  });
-  if (_orderBy.length > 1) {
-    confirm.require({
-      group: 'sort',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Continue',
-      acceptIcon: 'pi pi-check',
-      accept: () => {
-        console.log('modal closed.');
-      },
-    });
-  } else {
-    orderBy.value = !_isEmpty(_orderBy) ? _orderBy : [];
-    page.value = 0;
-  }
-};
-
 const onFilter = (event) => {
   const scoreFilters = [];
 
@@ -644,6 +601,7 @@ const onFilter = (event) => {
     if (_get(constraint, 'value')) {
       const path = filterKey.split('.');
       if (_head(path) === 'scores') {
+        console.log('inonfilter', path, constraint);
         const taskId = path[1];
         const cutoffs = getRawScoreThreshold(taskId);
         scoreFilters.push({
@@ -656,8 +614,10 @@ const onFilter = (event) => {
       }
     }
   }
+  // todo: reset filters on clear
+
   // if new set of filters is different, set filterScores to new filters
-  if (scoreFilters.length == 0 && !_isEqual(scoreFilters, filterScores.value)) {
+  if (scoreFilters.length > 0 && !_isEqual(scoreFilters, filterScores.value)) {
     console.log('filter scores update called', scoreFilters, filterScores.value);
     filterScores.value = scoreFilters;
   }
@@ -717,6 +677,15 @@ watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newF
           } else {
             return userPercentile <= 25;
           }
+        } else if (scoreFilter.value === 'Optional') {
+          return userAssessment?.optional;
+        } else if (scoreFilter.value === 'Assessed') {
+          // todo: add filter logic to check if assessment is assessed
+          return userAssessment?.optional;
+        } else if (scoreFilter.value === 'Reliable') {
+          return userAssessment?.reliable;
+        } else if (scoreFilter.value === 'Unreliable') {
+          return !userAssessment?.reliable;
         }
       });
     }
@@ -728,7 +697,6 @@ watch([filterSchools, filterGrades, filterScores], ([newSchools, newGrades, newF
 });
 
 const resetFilters = () => {
-  console.log('filters reset');
   filterSchools.value = [];
   filterGrades.value = [];
   filterScores.value = [];
