@@ -126,45 +126,12 @@
                 <TableProgressTag :col-data="colData" :col="col" />
               </div>
               <div
-                v-if="col.tag && (_get(colData, col.field) !== undefined || _get(colData, 'optional'))"
-                v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
-              >
-                <PvTag
-                  v-if="!col.tagOutlined"
-                  :severity="_get(colData, col.severityField)"
-                  :value="_get(colData, col.field)"
-                  :icon="_get(colData, col.iconField)"
-                  :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
-                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                    'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`"
-                  rounded
-                />
-                <div
-                  v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-                  class="circle"
-                  style="border: 1px solid black"
-                />
-              </div>
-              <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
-                <div
-                  v-if="!col.tagOutlined"
-                  class="circle"
-                  :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
-                    _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }; ${
-                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                    'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`"
-                />
-                <div
-                  v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-                  class="circle"
-                  :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
-                    _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }; outline: 1px dotted #0000CD; outline-offset: 3px`"
-                />
-              </div>
+                v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+                class="circle"
+                :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
+                  _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+                }; outline: 1px dotted #0000CD; outline-offset: 3px`"
+              />
               <div v-else-if="col.field && col.field === 'user.schoolName'">
                 <TableSchoolName :col-data="colData" :col="col" />
               </div>
