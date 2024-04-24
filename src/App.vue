@@ -58,6 +58,7 @@ const navbarBlacklist = ref([
   'Fluency-CALF-ES',
   'Fluency-Alpaca',
   'Fluency-Alpaca-ES',
+  'RAN',
 ]);
 
 onBeforeMount(async () => {
