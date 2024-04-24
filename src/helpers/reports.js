@@ -133,6 +133,7 @@ export const extendedDescriptions = {
   phonics:
     'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
   syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
+  trog: 'This test measures how well students understand sentences that vary from simple to complicated',
   fluency: 'Temporary description for fluency',
   ran: 'Temporary description for ran',
 };
