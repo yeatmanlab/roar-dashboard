@@ -49,6 +49,7 @@ export default defineConfig({
           swr: ['@bdelab/roar-swr'],
           utils: ['@bdelab/roar-utils'],
           vocab: ['@bdelab/roar-vocab'],
+          ran: ['@bdelab/roav-ran'],
         },
       },
     },

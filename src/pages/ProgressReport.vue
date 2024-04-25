@@ -310,6 +310,7 @@ const exportSelected = (selectedRows) => {
   const computedExportData = _map(selectedRows, ({ user, assignment }) => {
     const tableRow = {
       Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
       First: _get(user, 'name.first'),
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade'),
@@ -349,6 +350,7 @@ const exportAll = async () => {
   const computedExportData = _map(exportData, ({ user, assignment }) => {
     const tableRow = {
       Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
       First: _get(user, 'name.first'),
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade'),
@@ -393,6 +395,7 @@ const progressReportColumns = computed(() => {
 
   const tableColumns = [
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
+    { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
     { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: true },
     { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true, filter: false },

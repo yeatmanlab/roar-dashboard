@@ -271,12 +271,14 @@ const submit = async () => {
 
       const orgsValid = checkForRequiredOrgs(orgs);
       if (orgsValid) {
+        const dateClose = new Date(state.dates[1]);
+        dateClose.setHours(23, 59, 59, 999);
         const args = {
           name: toRaw(state).administrationName,
           publicName: toRaw(state).administrationPublicName,
           assessments: submittedAssessments,
           dateOpen: toRaw(state).dates[0],
-          dateClose: toRaw(state).dates[1],
+          dateClose,
           sequential: toRaw(state).sequential,
           orgs: orgs,
           isTestData: isTestData.value,

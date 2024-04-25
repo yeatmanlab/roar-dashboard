@@ -55,7 +55,7 @@ module.exports = defineConfig({
       'Vocabulary',
       'Single Digit Fluency',
       'Multi Digit Fluency',
-      'trog',
+      'Syntax',
       'Phoneme',
       'Word',
       'Sentence',

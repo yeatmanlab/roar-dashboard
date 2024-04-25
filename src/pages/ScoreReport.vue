@@ -804,6 +804,7 @@ const exportAll = async () => {
   const computedExportData = _map(computeAssignmentAndRunData.value.assignmentTableData, ({ user, scores }) => {
     let tableRow = {
       Username: _get(user, 'userName'),
+      Email: _get(user, 'email'),
       First: _get(user, 'firstName'),
       Last: _get(user, 'lastName'),
       Grade: _get(user, 'grade'),
@@ -852,6 +853,7 @@ const scoreReportColumns = computed(() => {
   if (assignmentData.value === undefined) return [];
   const tableColumns = [
     { field: 'user.userName', header: 'Username', dataType: 'text', pinned: true, sort: true },
+    { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true },
     { field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true },
     { field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true },
     { field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true },

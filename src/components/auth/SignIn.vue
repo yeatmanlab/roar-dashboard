@@ -160,7 +160,7 @@ const isValidEmail = (email) => {
 
 const evaluatingEmail = ref(false);
 const allowPassword = ref(true);
-const allowLink = ref(false);
+const allowLink = ref(true);
 
 const validateRoarEmail = _debounce(
   async (email) => {
@@ -175,7 +175,7 @@ const validateRoarEmail = _debounce(
 
       if (emailAvail) {
         console.log(`Email ${email} is available`);
-        allowPassword.value = false;
+        allowPassword.value = true;
         allowLink.value = false;
       } else {
         if (roarfirekit.value.isRoarAuthEmail(email)) {
@@ -184,8 +184,7 @@ const validateRoarEmail = _debounce(
           allowPassword.value = true;
         } else {
           allowLink.value = true;
-          allowPassword.value = false;
-          state.usePassword = false;
+          allowPassword.value = true;
         }
       }
       state.useLink = allowLink.value;
