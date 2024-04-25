@@ -120,7 +120,7 @@
             <template #body="{ data: colData }">
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
               <div v-if="col.field && col.field?.split('.')[0] === 'scores'">
-                <TableScoreTag :col-data="colData" :col="col" />
+                <TableScoreTagSimple :col-data="colData" :col="col" />
               </div>
               <div v-else-if="col.dataType == 'progress'">
                 <TableProgressTag :col-data="colData" :col="col" />
@@ -139,7 +139,16 @@
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
               </div>
               <div v-else-if="col.link">
-                <TableReportLink :col-data="colData" :col="col" />
+                <router-link :to="{ name: col.routeName, params: colData.routeParams }">
+                  <PvButton
+                    severity="secondary"
+                    text
+                    :label="col.routeLabel"
+                    :aria-label="col.routeTooltip"
+                    :icon="col.routeIcon"
+                    size="small"
+                  />
+                </router-link>
               </div>
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
@@ -297,9 +306,8 @@ import _toUpper from 'lodash/toUpper';
 import _isEqual from 'lodash/isEqual';
 import _startCase from 'lodash/startCase';
 import { scoredTasks, supportLevelColors, getRawScoreThreshold, progressTags } from '@/helpers/reports';
-import TableScoreTag from '@/components/reports/TableScoreTag.vue';
+import TableScoreTagSimple from '@/components/reports/TableScoreTagSimple.vue';
 import TableSchoolName from '@/components/reports/TableSchoolName.vue';
-import TableReportLink from '@/components/reports/TableReportLink.vue';
 import TableProgressTag from '@/components/reports/TableProgressTag.vue';
 
 /*
