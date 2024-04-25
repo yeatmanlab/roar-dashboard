@@ -116,8 +116,6 @@
             :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
             :reset-filters="resetFilters"
-            :update-extraneous-filters="updateScoreFilters"
-            :extraneous-filters="filterScores"
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
@@ -554,8 +552,20 @@ const computeAssignmentAndRunData = computed(() => {
       const currRowScores = {};
       for (const assessment of assignment.assessments) {
         // General Logic to grab support level, scores, etc
+        const scoreFilterTags = [];
         const taskId = assessment.taskId;
         const isOptional = assessment.optional;
+        if (isOptional) {
+          scoreFilterTags.push('Optional');
+        } else {
+          scoreFilterTags.push('Required');
+        }
+        if (assessment.reliable === false) {
+          scoreFilterTags.push('Unreliable');
+        } else {
+          scoreFilterTags.push('Reliable');
+        }
+
         const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } =
           getScoreKeysByRow(assessment, getGrade(_get(user, 'studentData.grade')));
         // compute and add scores data in next step as so
@@ -571,17 +581,26 @@ const computeAssignmentAndRunData = computed(() => {
             isOptional,
           });
 
+        if (tag_color === supportLevelColors.above) {
+          scoreFilterTags.push('Green');
+        } else if (tag_color === supportLevelColors.some) {
+          scoreFilterTags.push('Yellow');
+        } else if (tag_color === supportLevelColors.below) {
+          scoreFilterTags.push('Pink');
+        }
+
         // Logic to update assignmentTableDataAcc
         currRowScores[taskId] = {
           optional: isOptional,
           supportLevel: support_level,
           reliable: assessment.reliable,
-          engagementFlags: assessment.engagementFlags,
+          engagementFlags: assessment.engagementFlags ?? [],
           tagColor: tag_color,
           percentile: percentile,
           percentileString: percentileString,
           rawScore: rawScore,
           standardScore: standardScore,
+          filterTags: scoreFilterTags,
         };
 
         // Logic to update runsByTaskIdAcc
@@ -618,6 +637,7 @@ const computeAssignmentAndRunData = computed(() => {
       return Object.keys(taskInfoById).includes(taskId);
     });
     filteredTableData.value = assignmentTableDataAcc;
+    console.log('assignmentTableData', assignmentTableDataAcc);
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
 });
@@ -874,7 +894,7 @@ const scoreReportColumns = computed(() => {
     tableColumns.push({
       field: colField,
       header: taskDisplayNames[taskId]?.name ?? taskId,
-      filterField: `scores.${taskId}.tagColor`,
+      filterField: `scores.${taskId}.filterTags`,
       dataType: 'score',
       sort: false,
       tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),

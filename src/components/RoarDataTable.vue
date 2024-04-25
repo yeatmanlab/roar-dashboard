@@ -99,7 +99,7 @@
             :sortable="col.sort !== false"
             :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'"
             :show-filter-operator="col.allowMultipleFilters === true"
-            :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
+            :filter-field="col?.filterField || col.field"
             :show-add-button="col.allowMultipleFilters === true"
             :frozen="col.pinned"
             align-frozen="left"
@@ -162,7 +162,6 @@
             <template v-if="col.dataType" #filter="{ filterModel }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
                 <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
-                <small>Filter is case sensitive.</small>
               </div>
               <PvInputNumber
                 v-if="col.dataType === 'number' && !col.useMultiSelect"
@@ -246,28 +245,14 @@
                 </PvDropdown>
               </div>
             </template>
-            <template
-              v-if="(col.field && col.field?.split('.')[0] === 'scores') || col.field?.split('.')[0] === 'status'"
-              #filterclear="{}"
-            >
-              <!-- don't show clear button for scores, clear fires off a filter event and doesnt actually clear the filter 
-                TODO: investigate why this happens...
-              -->
-            </template>
-            <template v-else #filterclear="{ filterCallback }">
+            <template #filterclear="{ filterCallback }">
               <div class="flex flex-row-reverse">
                 <PvButton type="button" text icon="pi pi-times" class="p-2" severity="primary" @click="filterCallback()"
                   >Clear</PvButton
                 >
               </div>
             </template>
-            <template
-              v-if="(col.field && col.field?.split('.')[0] === 'scores') || col.field?.split('.')[0] === 'status'"
-              #filterapply="{}"
-            >
-              <!-- don't show apply button for scores-->
-            </template>
-            <template v-else #filterapply="{ filterCallback }">
+            <template #filterapply="{ filterCallback }">
               <PvButton type="button" icon="pi pi-times" class="px-2" severity="primary" @click="filterCallback()"
                 >Apply
               </PvButton>
@@ -429,15 +414,11 @@ const computedFilters = computed(() => {
       if (dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN') {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
       } else if (dataType === 'TEXT' || dataType === 'STRING') {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.CONTAINS };
       } else if (dataType === 'DATE') {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
       } else if (dataType === 'SCORE') {
-        // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
-        //   so the filter event is being handled in an external handler.
-        if (scoredTasks.includes(column.field.split('.')[1])) {
-          returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
-        }
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
       } else if (dataType === 'PROGRESS') {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
@@ -560,9 +541,10 @@ const onFilter = (event) => {
       }
     }
   }
-  if (filters.length > 0 && !_isEqual(filters, props.extraneousFilters)) {
-    props.updateExtraneousFilters(filters);
-  }
+  console.log(filters);
+  // if (filters.length > 0 && !_isEqual(filters, props.extraneousFilters)) {
+  //   props.updateExtraneousFilters(filters);
+  // }
 };
 </script>
 <style>
