@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { defineProps, computed } from 'vue';
+import { computed } from 'vue';
 import _get from 'lodash/get';
 const props = defineProps({
   colData: {
