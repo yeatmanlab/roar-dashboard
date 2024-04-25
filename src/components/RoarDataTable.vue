@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!computedData">
+  <div v-if="!props.data">
     <SkeletonTable />
   </div>
   <div v-else>
@@ -63,7 +63,7 @@
           v-model:selection="selectedRows"
           class="scrollable-container"
           :class="{ compressed: compressedRows }"
-          :value="computedData"
+          :value="props.data"
           :row-hover="true"
           :reorderable-columns="true"
           :resizable-columns="true"
@@ -120,7 +120,7 @@
             <template #body="{ data: colData }">
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
               <div v-if="col.field && col.field?.split('.')[0] === 'scores'">
-                <TableScoreTagSimple :col-data="colData" :col="col" />
+                <TableScoreTag :col-data="colData" :col="col" />
               </div>
               <div v-else-if="col.dataType == 'progress'">
                 <TableProgressTag :col-data="colData" :col="col" />
@@ -277,7 +277,7 @@
             </template>
           </PvColumn>
           <template #footer>
-            <div v-if="computedData?.length == 0 && !loading" class="flex flex-column gap-2 ml-6 my-5">
+            <div v-if="props.data?.length == 0 && !loading" class="flex flex-column gap-2 ml-6 my-5">
               <div class="text-lg font-bold my-2">No scores found</div>
               <span class="font-light"
                 >The filters applied have no matching scores.
@@ -306,7 +306,7 @@ import _toUpper from 'lodash/toUpper';
 import _isEqual from 'lodash/isEqual';
 import _startCase from 'lodash/startCase';
 import { scoredTasks, supportLevelColors, getRawScoreThreshold, progressTags } from '@/helpers/reports';
-import TableScoreTagSimple from '@/components/reports/TableScoreTagSimple.vue';
+import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import TableSchoolName from '@/components/reports/TableSchoolName.vue';
 import TableProgressTag from '@/components/reports/TableProgressTag.vue';
 
@@ -372,7 +372,7 @@ const selectAll = ref(false);
 const onSelectAll = () => {
   selectAll.value = !selectAll.value;
   if (selectAll.value) {
-    selectedRows.value = computedData.value;
+    selectedRows.value = props.data;
     toast.add({
       severity: 'info',
       summary: 'Rows selected',
@@ -490,22 +490,6 @@ let toolTipByHeader = (header) => {
 
   return headerToTooltipMap[header] || '';
 };
-
-const computedData = computed(() => {
-  if (!props.data) return [];
-  const data = JSON.parse(JSON.stringify(props.data));
-  _forEach(data, (entry) => {
-    // Clean up date fields to use Date objects
-    _forEach(dateFields, (field) => {
-      let dateEntry = _get(entry, field);
-      if (dateEntry !== null) {
-        const dateObj = new Date(dateEntry);
-        _set(entry, field, dateObj);
-      }
-    });
-  });
-  return data;
-});
 
 // Generate list of options given a column
 function getUniqueOptions(column) {

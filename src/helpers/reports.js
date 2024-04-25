@@ -377,6 +377,9 @@ export function getScoreKeys(taskId, grade) {
     }
     rawScoreKey = 'sreScore';
   }
+  if (taskId === 'letter') {
+    rawScoreKey = '';
+  }
   return {
     percentileScoreKey,
     percentileScoreDisplayKey,
