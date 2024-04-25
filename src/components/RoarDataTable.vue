@@ -132,9 +132,6 @@
                   _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
                 }; outline: 1px dotted #0000CD; outline-offset: 3px`"
               />
-              <div v-else-if="col.field && col.field === 'user.schoolName'">
-                <TableSchoolName :col-data="colData" :col="col" />
-              </div>
               <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
               </div>
@@ -307,7 +304,6 @@ import _isEqual from 'lodash/isEqual';
 import _startCase from 'lodash/startCase';
 import { scoredTasks, supportLevelColors, getRawScoreThreshold, progressTags } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
-import TableSchoolName from '@/components/reports/TableSchoolName.vue';
 import TableProgressTag from '@/components/reports/TableProgressTag.vue';
 
 /*

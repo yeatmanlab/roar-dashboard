@@ -4,7 +4,7 @@
     v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
   >
     <PvTag
-      v-if="!col.tagOutlined"
+      v-if="!col.tagOutlined && _get(colData, col.field)"
       :value="_get(colData, col.field)"
       :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
         returnScoreTooltip(col.header, colData, col.field).length > 0 &&

@@ -131,7 +131,7 @@
                       style="width: 20rem; max-width: 25rem"
                       :options="schoolsInfo"
                       option-label="name"
-                      option-value="id"
+                      option-value="name"
                       :show-toggle-all="false"
                       selected-items-label="{0} schools selected"
                       data-cy="filter-by-school"
@@ -506,10 +506,9 @@ const {
   staleTime: 5 * 60 * 1000, // 5 mins
 });
 
-// This function takes in the return from assignmentFetchAll and returns 3 objects
+// This function takes in the return from assignmentFetchAll and returns 2 objects
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
-// 3.
 const computeAssignmentAndRunData = computed(() => {
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
@@ -542,14 +541,14 @@ const computeAssignmentAndRunData = computed(() => {
       };
 
       // compute schoolName
-      if (props.orgType === 'district') {
-        const currentSchools = _get(user, 'schools.current');
-        if (currentSchools.length) {
-          user.school = _get(
-            _find(schoolsInfo.value, (school) => school.id === currentSchools[0]),
-            'name',
-          );
-        }
+      let schoolId = '';
+      const currentSchools = _get(user, 'schools.current');
+      if (currentSchools.length) {
+        schoolId = currentSchools[0];
+        currRow.user.schoolName = _get(
+          _find(schoolsInfo.value, (school) => school.id === currentSchools[0]),
+          'name',
+        );
       }
 
       const currRowScores = {};
@@ -559,9 +558,6 @@ const computeAssignmentAndRunData = computed(() => {
         const isOptional = assessment.optional;
         const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } =
           getScoreKeysByRow(assessment, getGrade(_get(user, 'studentData.grade')));
-        if (taskId === 'letter') {
-          console.log('letter', assessment, rawScoreKey);
-        }
         // compute and add scores data in next step as so
         const { support_level, tag_color, percentile, percentileString, standardScore, rawScore } =
           getScoresAndSupportFromAssessment({
@@ -591,7 +587,7 @@ const computeAssignmentAndRunData = computed(() => {
         // Logic to update runsByTaskIdAcc
         const run = {
           // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
-          grade: grade,
+          grade: getGrade(grade),
           scores: {
             support_level: support_level,
             stdPercentile: percentile,
@@ -599,8 +595,8 @@ const computeAssignmentAndRunData = computed(() => {
           },
           taskId,
           user: {
-            ...user.data,
-            schoolName: schoolsDict.value[user?.data?.schools?.current[0]],
+            grade: grade,
+            schoolName: schoolsDict.value[schoolId],
           },
           tag_color: tag_color,
         };
@@ -621,7 +617,6 @@ const computeAssignmentAndRunData = computed(() => {
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
     });
-    console.log('computedtabledataandruns', runsByTaskIdAcc, assignmentTableDataAcc);
     filteredTableData.value = assignmentTableDataAcc;
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
@@ -641,15 +636,16 @@ watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
     isUpdating.value = true;
     //set scoresTableData to filtered data if filter is added
     let filteredData = computeAssignmentAndRunData.value.assignmentTableData;
-    console.log('watcher called', newSchools, newGrades);
+
     if (newSchools.length > 0) {
       filteredData = filteredData.filter((item) => {
-        return item.user.schools?.current.some((school) => newSchools.includes(school));
+        return newSchools.includes(item.user.schoolName);
       });
     }
     if (newGrades.length > 0) {
+      console.log(newGrades);
       filteredData = filteredData.filter((item) => {
-        return newGrades.includes(item.user.studentData?.grade);
+        return newGrades.includes(item.user.grade);
       });
     }
     // if (newFilterScores.length > 0) {
@@ -772,8 +768,6 @@ const exportSelected = (selectedRows) => {
     }
     for (const taskId in scores) {
       const score = scores[taskId];
-      const isOptional = score.optional;
-      const percentileString = score.percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = score.percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = score.standardScore;
 
@@ -787,7 +781,7 @@ const exportSelected = (selectedRows) => {
 };
 
 const exportAll = async () => {
-  const computedExportData = _map(computeAssignmentAndRunData.value.assignmentTableData, ({ user, assignment }) => {
+  const computedExportData = _map(computeAssignmentAndRunData.value.assignmentTableData, ({ user, scores }) => {
     let tableRow = {
       Username: _get(user, 'userName'),
       First: _get(user, 'firstName'),
@@ -802,8 +796,6 @@ const exportAll = async () => {
     }
     for (const taskId in scores) {
       const score = scores[taskId];
-      const isOptional = score.optional;
-      const percentileString = score.percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = score.percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = score.standardScore;
 
