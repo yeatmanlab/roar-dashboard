@@ -81,9 +81,6 @@
           :loading="props.loading"
           scrollable
           :select-all="selectAll"
-          :show-apply-button="false"
-          :show-clear-button="false"
-          @filter="onFilter($event)"
           @select-all-change="onSelectAll"
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
@@ -189,7 +186,7 @@
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Green', 'Yellow', 'Pink', 'Optional', 'Assessed', 'Reliable', 'Unreliable', 27]"
+                  :options="['Green', 'Yellow', 'Pink', 'Optional', 'Assessed', 'Reliable', 'Unreliable']"
                   style="margin-bottom: 0.5rem"
                 >
                   <template #option="{ option }">
@@ -415,7 +412,7 @@ const computedFilters = computed(() => {
       } else if (dataType === 'DATE') {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
       } else if (dataType === 'SCORE') {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.CONTAINS };
       } else if (dataType === 'PROGRESS') {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
@@ -498,11 +495,6 @@ const onFreezeToggle = (selected) => {
 
 // Pass through data table events
 const emit = defineEmits(['export-all', 'selection']);
-
-const onFilter = (event) => {
-  const filters = [];
-  console.log(event);
-};
 </script>
 <style>
 .small-circle {

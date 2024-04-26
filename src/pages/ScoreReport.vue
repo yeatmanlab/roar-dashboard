@@ -583,18 +583,18 @@ const computeAssignmentAndRunData = computed(() => {
       const currRowScores = {};
       for (const assessment of assignment.assessments) {
         // General Logic to grab support level, scores, etc
-        const scoreFilterTags = [];
+        let scoreFilterTags = '';
         const taskId = assessment.taskId;
         const isOptional = assessment.optional;
         if (isOptional) {
-          scoreFilterTags.push('Optional');
+          scoreFilterTags += ' Optional ';
         } else {
-          scoreFilterTags.push('Required');
+          scoreFilterTags += ' Required ';
         }
         if (assessment.reliable === false) {
-          scoreFilterTags.push('Unreliable');
+          scoreFilterTags += ' Unreliable ';
         } else {
-          scoreFilterTags.push('Reliable');
+          scoreFilterTags += ' Reliable ';
         }
 
         const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } =
@@ -613,11 +613,11 @@ const computeAssignmentAndRunData = computed(() => {
           });
 
         if (tag_color === supportLevelColors.above) {
-          scoreFilterTags.push('Green');
+          scoreFilterTags += ' Green ';
         } else if (tag_color === supportLevelColors.some) {
-          scoreFilterTags.push('Yellow');
+          scoreFilterTags += ' Yellow ';
         } else if (tag_color === supportLevelColors.below) {
-          scoreFilterTags.push('Pink');
+          scoreFilterTags += ' Pink ';
         }
 
         // Logic to update assignmentTableDataAcc
