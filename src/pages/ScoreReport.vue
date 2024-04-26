@@ -311,6 +311,7 @@ import {
   getScoreKeys,
   gradeOptions,
 } from '@/helpers/reports.js';
+import { computedAsync } from '@vueuse/core/index.cjs';
 // import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 // import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
 // import NextSteps from '@/assets/NextSteps.pdf';
@@ -517,7 +518,6 @@ const {
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-    console.log('unreliable', assessment, support_level);
     if (support_level === 'Optional') {
       return '#a1d8e3';
     } else if (support_level === 'Needs Extra Support') {
@@ -530,7 +530,6 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       return 'white';
     }
   }
-  console.log('reliable', assessment, tag_color);
   return tag_color;
 }
 
@@ -602,8 +601,9 @@ const computeAssignmentAndRunData = computed(() => {
 
       // compute schoolName
       let schoolName = '';
-      if (user.currentSchools?.length) {
-        schoolName = schoolNameDictionary.value[user.currentSchools[0]];
+      const schoolId = user?.schools?.current[0];
+      if (schoolId) {
+        schoolName = schoolNameDictionary.value[schoolId];
       }
 
       const currRowScores = {};
@@ -674,7 +674,7 @@ const computeAssignmentAndRunData = computed(() => {
           taskId,
           user: {
             grade: grade,
-            schoolName: schoolsDictWithGrade.value[user.currentSchools[0]],
+            schoolName: schoolsDictWithGrade.value[schoolId],
           },
           tag_color: tag_color,
         };
@@ -695,16 +695,20 @@ const computeAssignmentAndRunData = computed(() => {
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
     });
-    filteredTableData.value = assignmentTableDataAcc;
 
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
 });
 
-const filteredTableData = ref(computeAssignmentAndRunData.value.assignmentTableData || []);
+const filteredTableData = ref([]);
 
 // Flag to track whether the watcher is already processing an update
 const isUpdating = ref(false);
+
+watch(computeAssignmentAndRunData, (newValue) => {
+  // Update filteredTableData when computedProgressData changes
+  filteredTableData.value = newValue.assignmentTableData;
+});
 
 watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
   // If an update is already in progress, return early to prevent recursion
@@ -722,7 +726,6 @@ watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
       });
     }
     if (newGrades.length > 0) {
-      console.log(newGrades);
       filteredData = filteredData.filter((item) => {
         return newGrades.includes(item.user.grade);
       });
@@ -839,17 +842,12 @@ const scoreReportColumns = computed(() => {
   ];
 
   if (props.orgType === 'district') {
-    const schoolsMap = schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = school.name;
-      return acc;
-    }, {});
     tableColumns.push({
       field: 'user.schoolName',
       header: 'School',
       dataType: 'text',
       sort: true,
       filter: true,
-      schoolsMap: schoolsMap,
     });
   }
 

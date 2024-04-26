@@ -270,8 +270,9 @@ const computedProgressData = computed(() => {
 
     // compute schoolName
     let schoolName = '';
-    if (user.currentSchools?.length) {
-      schoolName = schoolNameDictionary.value[user.currentSchools[0]];
+    const schoolId = user?.schools?.current[0];
+    if (schoolId) {
+      schoolName = schoolNameDictionary.value[schoolId];
     }
 
     if (user.username == '1039-a.frazier') {
@@ -321,10 +322,8 @@ const computedProgressData = computed(() => {
       assignmentTableDataAcc.push(currRow);
     }
   }
-  console.log('setting filteretable', assignmentTableDataAcc);
-  filteredTableData.value = assignmentTableDataAcc;
+
   return assignmentTableDataAcc;
-  // }
 });
 
 const resetFilters = () => {
@@ -438,7 +437,7 @@ const progressReportColumns = computed(() => {
   return tableColumns;
 });
 
-const filteredTableData = ref(computedProgressData.value);
+const filteredTableData = ref([]);
 
 watch(computedProgressData, (newValue) => {
   // Update filteredTableData when computedProgressData changes
