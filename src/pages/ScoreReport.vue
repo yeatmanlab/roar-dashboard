@@ -602,7 +602,7 @@ const computeAssignmentAndRunData = computed(() => {
 
       // compute schoolName
       let schoolName = '';
-      if (currentSchools.length) {
+      if (user.currentSchools?.length) {
         schoolName = schoolNameDictionary.value[user.currentSchools[0]];
       }
 
