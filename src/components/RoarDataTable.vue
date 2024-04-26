@@ -504,7 +504,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   else {
     _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
     _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-    _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standard + '\n';
+    _toolTip += 'Standard Score: ' + Math.round(_colData.scores?.[_taskId]?.standard) + '\n';
   }
   return _toolTip;
 }
