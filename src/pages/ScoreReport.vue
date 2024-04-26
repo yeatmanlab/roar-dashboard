@@ -436,7 +436,6 @@ if (props.orgType === 'district') {
     },
   });
 }
-const filterScores = ref([]);
 const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
@@ -504,6 +503,37 @@ const {
   staleTime: 5 * 60 * 1000, // 5 mins
 });
 
+const getScoresAndSupportFromAssessment = ({
+  grade,
+  assessment,
+  standardScoreDisplayKey,
+  percentileScoreKey,
+  percentileScoreDisplayKey,
+  rawScoreKey,
+  taskId,
+  optional,
+}) => {
+  let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
+  let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
+  let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
+  let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
+  if (taskId === 'letter') {
+    rawScore = _get(assessment, `scores.computed.composite`);
+  }
+  const { support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional);
+  if (percentile) percentile = _round(percentile);
+  if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
+
+  return {
+    support_level,
+    tag_color,
+    percentile,
+    percentileString,
+    standardScore,
+    rawScore,
+  };
+};
+
 // This function takes in the return from assignmentFetchAll and returns 2 objects
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
@@ -517,11 +547,12 @@ const computeAssignmentAndRunData = computed(() => {
     const runsByTaskIdAcc = {};
 
     for (const { assignment, user } of assignmentData.value) {
-      // for each row, compute: userName, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
+      // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = user.studentData.grade;
       const currRow = {
         user: {
-          userName: user.username,
+          username: user.username,
+          email: user.email,
           userId: user.userId,
           firstName: user.name.first,
           lastName: user.name.last,
@@ -600,7 +631,7 @@ const computeAssignmentAndRunData = computed(() => {
           percentileString: percentileString,
           rawScore: rawScore,
           standardScore: standardScore,
-          filterTags: scoreFilterTags,
+          tags: scoreFilterTags,
         };
 
         // Logic to update runsByTaskIdAcc
@@ -668,50 +699,6 @@ watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
         return newGrades.includes(item.user.grade);
       });
     }
-    // if (newFilterScores.length > 0) {
-    //   console.log('filterscores ref called', filterScores.value);
-    //   for (const scoreFilter of newFilterScores) {
-    //     const taskId = scoreFilter.taskId;
-    //     filteredData = filteredData.filter((item) => {
-    //       // get user's score and see if it meets the filter
-    //       const userGrade = getGrade(item.user.studentData?.grade);
-    //       const userAboveElementary = userGrade >= 6;
-    //       const userAssessment = item.assignment.assessments.find((assessment) => assessment.taskId === taskId);
-    //       const { percentileScoreKey, rawScoreKey } = getScoreKeysByRow(userAssessment, userGrade);
-    //       const userPercentile = userAssessment?.scores?.computed?.composite[percentileScoreKey];
-    //       const userRawScore = userAssessment?.scores?.computed?.composite[rawScoreKey];
-    //       if (scoreFilter.value === 'Green') {
-    //         if (userAboveElementary) {
-    //           return userRawScore > scoreFilter.cutoffs.above;
-    //         } else {
-    //           return userPercentile >= 50;
-    //         }
-    //       } else if (scoreFilter.value === 'Yellow') {
-    //         if (userAboveElementary) {
-    //           return userRawScore > scoreFilter.cutoffs.some && userRawScore < scoreFilter.cutoffs.above;
-    //         } else {
-    //           return userPercentile > 25 && userPercentile < 50;
-    //         }
-    //       } else if (scoreFilter.value === 'Pink') {
-    //         if (userAboveElementary) {
-    //           return userRawScore <= scoreFilter.cutoffs.some;
-    //         } else {
-    //           return userPercentile <= 25;
-    //         }
-    //       } else if (scoreFilter.value === 'Optional') {
-    //         return userAssessment?.optional;
-    //       } else if (scoreFilter.value === 'Assessed') {
-    //         // todo: add filter logic to check if assessment is assessed
-    //         return userAssessment?.optional;
-    //       } else if (scoreFilter.value === 'Reliable') {
-    //         return userAssessment?.reliable;
-    //       } else if (scoreFilter.value === 'Unreliable') {
-    //         return !userAssessment?.reliable;
-    //       }
-    //     });
-    //   }
-    // }
-
     filteredTableData.value = filteredData;
 
     isUpdating.value = false; // Reset the flag after the update
@@ -720,16 +707,11 @@ watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
   }
 });
 
-const updateScoreFilters = (scoreFilters) => {
-  filterScores.value = scoreFilters;
-};
-
 const resetFilters = () => {
   isUpdating.value = true;
 
   filterSchools.value = [];
   filterGrades.value = [];
-  filterScores.value = [];
   isUpdating.value = false;
 };
 const viewMode = ref('color');
@@ -741,41 +723,10 @@ const viewOptions = ref([
   { label: 'Raw Score', value: 'raw' },
 ]);
 
-const getScoresAndSupportFromAssessment = ({
-  grade,
-  assessment,
-  standardScoreDisplayKey,
-  percentileScoreKey,
-  percentileScoreDisplayKey,
-  rawScoreKey,
-  taskId,
-  optional,
-}) => {
-  let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
-  let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
-  let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
-  let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-  if (taskId === 'letter') {
-    rawScore = _get(assessment, `scores.computed.composite`);
-  }
-  const { support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional);
-  if (percentile) percentile = _round(percentile);
-  if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
-
-  return {
-    support_level,
-    tag_color,
-    percentile,
-    percentileString,
-    standardScore,
-    rawScore,
-  };
-};
-
 const exportSelected = (selectedRows) => {
   const computedExportData = _map(selectedRows, ({ user, scores }) => {
     let tableRow = {
-      Username: _get(user, 'userName'),
+      Username: _get(user, 'username'),
       First: _get(user, 'firstName'),
       Last: _get(user, 'lastName'),
       Grade: _get(user, 'grade'),
@@ -803,7 +754,7 @@ const exportSelected = (selectedRows) => {
 const exportAll = async () => {
   const computedExportData = _map(computeAssignmentAndRunData.value.assignmentTableData, ({ user, scores }) => {
     let tableRow = {
-      Username: _get(user, 'userName'),
+      Username: _get(user, 'username'),
       Email: _get(user, 'email'),
       First: _get(user, 'firstName'),
       Last: _get(user, 'lastName'),
@@ -852,10 +803,10 @@ const shouldBeOutlined = (taskId) => {
 const scoreReportColumns = computed(() => {
   if (assignmentData.value === undefined) return [];
   const tableColumns = [
-    { field: 'user.userName', header: 'Username', dataType: 'text', pinned: true, sort: true },
-    { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true },
-    { field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true },
-    { field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true },
+    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true, filter: true },
+    { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true, filter: true },
+    { field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true },
+    { field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true },
     { field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true },
   ];
 
@@ -869,7 +820,7 @@ const scoreReportColumns = computed(() => {
       header: 'School',
       dataType: 'text',
       sort: true,
-      filter: false,
+      filter: true,
       schoolsMap: schoolsMap,
     });
   }
@@ -878,7 +829,6 @@ const scoreReportColumns = computed(() => {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
-  // if (scoreReportTableData.value.length > 0) {
   const sortedTasks = allTasks.value.toSorted((p1, p2) => {
     if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
       return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
@@ -896,16 +846,17 @@ const scoreReportColumns = computed(() => {
     tableColumns.push({
       field: colField,
       header: taskDisplayNames[taskId]?.name ?? taskId,
-      filterField: `scores.${taskId}.filterTags`,
+      filterField: `scores.${taskId}.tags`,
       dataType: 'score',
-      sort: false,
+      sort: true,
+      filter: true,
+      sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
       emptyTag: viewMode.value === 'color' || isOptional || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
       tagColor: `scores.${taskId}.tagColor`,
       tagOutlined: shouldBeOutlined(taskId),
     });
   }
-  // }
   tableColumns.push({
     header: 'Student Report',
     link: true,

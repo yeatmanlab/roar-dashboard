@@ -83,8 +83,6 @@
           :select-all="selectAll"
           :show-apply-button="false"
           :show-clear-button="false"
-          @page="onPage($event)"
-          @sort="onSort($event)"
           @filter="onFilter($event)"
           @select-all-change="onSelectAll"
           @row-select="onSelectionChange"
@@ -99,7 +97,7 @@
             :sortable="col.sort !== false"
             :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'"
             :show-filter-operator="col.allowMultipleFilters === true"
-            :filter-field="col?.filterField || col.field"
+            :filter-field="col?.filterField ? col.filterField : col.field"
             :show-add-button="col.allowMultipleFilters === true"
             :frozen="col.pinned"
             align-frozen="left"
@@ -191,7 +189,7 @@
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Green', 'Yellow', 'Pink', 'Optional', 'Assessed', 'Reliable', 'Unreliable']"
+                  :options="['Green', 'Yellow', 'Pink', 'Optional', 'Assessed', 'Reliable', 'Unreliable', 27]"
                   style="margin-bottom: 0.5rem"
                 >
                   <template #option="{ option }">
@@ -287,7 +285,7 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _isEqual from 'lodash/isEqual';
 import _startCase from 'lodash/startCase';
-import { scoredTasks, supportLevelColors, getRawScoreThreshold, progressTags } from '@/helpers/reports';
+import { supportLevelColors, progressTags } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 import TableProgressTag from '@/components/reports/TableProgressTag.vue';
 
@@ -333,8 +331,6 @@ const props = defineProps({
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
   resetFilters: { type: Function, required: false, default: () => {} },
-  updateExtraneousFilters: { type: Function, required: false, default: () => {} },
-  extraneousFilters: { type: Array, required: false, default: () => [] },
 });
 
 const inputColumns = ref(props.columns);
@@ -408,6 +404,7 @@ const computedFilters = computed(() => {
     if (!_get(column, 'header')) {
       column['header'] = _startCase(_get(column, 'field'));
     }
+    const fieldOrFilterField = column?.filterField ? column.filterField : column.field;
     const dataType = _toUpper(_get(column, 'dataType'));
     let returnMatchMode = null;
     if (valid_dataTypes.includes(dataType)) {
@@ -429,7 +426,7 @@ const computedFilters = computed(() => {
       }
     }
     if (returnMatchMode) {
-      filters[column.field] = {
+      filters[fieldOrFilterField] = {
         operator: FilterOperator.AND,
         constraints: [returnMatchMode],
       };
@@ -500,51 +497,11 @@ const onFreezeToggle = (selected) => {
 };
 
 // Pass through data table events
-const emit = defineEmits(['page', 'sort', 'export-all', 'selection', 'filter', 'scorefilter']);
-const onPage = (event) => {
-  emit('page', event);
-};
-const onSort = (event) => {
-  currentSort.value = _get(event, 'multiSortMeta') ?? [];
-  emit('sort', event);
-};
+const emit = defineEmits(['export-all', 'selection']);
 
 const onFilter = (event) => {
   const filters = [];
-
-  // add score filters to scoreFilters
-  for (const filterKey in _get(event, 'filters')) {
-    const filter = _get(event, 'filters')[filterKey];
-    const constraint = _head(_get(filter, 'constraints'));
-    if (_get(constraint, 'value')) {
-      const path = filterKey.split('.');
-      if (_head(path) === 'scores') {
-        console.log('inonfilter', path, constraint);
-        const taskId = path[1];
-        const cutoffs = getRawScoreThreshold(taskId);
-        filters.push({
-          ...constraint,
-          collection: 'scores',
-          taskId: taskId,
-          cutoffs,
-          field: 'scores.computed.composite.categoryScore',
-        });
-      }
-      if (_head(path) === 'status') {
-        const taskId = path[1];
-        filters.push({
-          ...constraint,
-          taskId: taskId,
-          collection: 'progress',
-          field: `progress.${taskId}.value`,
-        });
-      }
-    }
-  }
-  console.log(filters);
-  // if (filters.length > 0 && !_isEqual(filters, props.extraneousFilters)) {
-  //   props.updateExtraneousFilters(filters);
-  // }
+  console.log(event);
 };
 </script>
 <style>
