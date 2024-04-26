@@ -32,6 +32,10 @@
           </PvSelectButton>
         </div>
       </div>
+      <div v-if="isLoadingScores" class="loading-wrapper">
+        <AppSpinner style="margin: 1rem 0rem" />
+        <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
+      </div>
       <div v-if="assignmentData?.length ?? 0 > 0">
         <RoarDataTable
           v-if="progressReportColumns?.length ?? 0 > 0"
@@ -42,8 +46,6 @@
           :page-limit="pageLimit"
           data-cy="roar-data-table"
           :allow-filtering="true"
-          :update-extraneous-filters="updateProgressFilters"
-          :extraneous-filters="filterProgress"
           :reset-filters="resetFilters"
           @export-selected="exportSelected"
           @export-all="exportAll"
@@ -103,11 +105,10 @@ import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, exportCsv } from '../helpers/query/utils';
-import { assignmentPageFetcher, assignmentCounter, assignmentFetchAll } from '@/helpers/query/assignments';
+import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { useConfirm } from 'primevue/useconfirm';
-import { taskDisplayNames } from '@/helpers/reports.js';
+import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
 import { getTitle } from '../helpers/query/administrations';
 
 const authStore = useAuthStore();
@@ -154,13 +155,13 @@ const orderBy = ref([
   {
     direction: 'ASCENDING',
     field: {
-      fieldPath: 'userData.grade',
+      fieldPath: 'user.grade',
     },
   },
   {
     direction: 'ASCENDING',
     field: {
-      fieldPath: 'userData.name.last',
+      fieldPath: 'user.lastName',
     },
   },
 ]);
@@ -174,12 +175,10 @@ if (props.orgType === 'district') {
   });
 }
 
-const filterBy = ref([]);
 const filterSchools = ref([]);
-const filterProgress = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
-const page = ref(0);
+
 // User Claims
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
@@ -208,58 +207,6 @@ const { data: orgInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-// Grab grade options for filter dropdown
-const gradeOptions = ref([
-  {
-    value: '1',
-    label: '1st Grade',
-  },
-  {
-    value: '2',
-    label: '2nd Grade',
-  },
-  {
-    value: '3',
-    label: '3rd Grade',
-  },
-  {
-    value: '4',
-    label: '4th Grade',
-  },
-  {
-    value: '5',
-    label: '5th Grade',
-  },
-  {
-    value: '6',
-    label: '6th Grade',
-  },
-  {
-    value: '7',
-    label: '7th Grade',
-  },
-  {
-    value: '8',
-    label: '8th Grade',
-  },
-  {
-    value: '9',
-    label: '9th Grade',
-  },
-  {
-    value: '10',
-    label: '10th Grade',
-  },
-  {
-    value: '11',
-    label: '11th Grade',
-  },
-  {
-    value: '12',
-    label: '12th Grade',
-  },
-]);
-
 const schoolInfoQueryEnabled = computed(() => props.orgType === 'district' && initialized.value);
 
 // Grab schools if this is a district score report
@@ -278,116 +225,162 @@ const {
   isFetching: isFetchingScores,
   data: assignmentData,
 } = useQuery({
-  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, pageLimit, page],
-  queryFn: () =>
-    assignmentPageFetcher(
-      props.administrationId,
-      props.orgType,
-      props.orgId,
-      ref(10000),
-      page,
-      false,
-      undefined,
-      true,
-      filterBy.value,
-      orderBy.value,
-    ),
+  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId],
+  queryFn: () => assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true),
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
-  onSuccess: (data) => {
-    filteredTableData.value = data;
-  },
+});
+
+const schoolNameDictionary = computed(() => {
+  if (schoolsInfo.value) {
+    return schoolsInfo.value.reduce((acc, school) => {
+      acc[school.id] = school.name;
+      return acc;
+    }, {});
+  } else {
+    return {};
+  }
+});
+
+const computedProgressData = computed(() => {
+  if (!assignmentData.value || assignmentData.value.length === 0) {
+    return [];
+  } else {
+    // assignmentTableData is an array of objects, each representing a row in the table
+    const assignmentTableDataAcc = [];
+
+    for (const { assignment, user } of assignmentData.value) {
+      // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
+      const grade = user.studentData?.grade;
+      const currRow = {
+        user: {
+          username: user.username,
+          email: user.email,
+          userId: user.userId,
+          firstName: user.name.first,
+          lastName: user.name.last,
+          grade: grade,
+          assessmentPid: user.assessmentPid,
+        },
+        // compute and add progress data in next step
+      };
+
+      // compute schoolName
+      let schoolName = '';
+      if (user.currentSchools?.length) {
+        schoolName = schoolNameDictionary.value[user.currentSchools[0]];
+      }
+
+      if (user.username == '1039-a.frazier') {
+        console.log('fraz', assignment, user);
+      }
+
+      const currRowProgress = {};
+      for (const assessment of assignment.assessments) {
+        // General Logic to grab support level, scores, etc
+        let progressFilterTags = '';
+        const taskId = assessment.taskId;
+
+        if (assessment?.optional) {
+          currRowProgress[taskId] = {
+            value: 'optional',
+            icon: 'pi pi-question',
+            severity: 'info',
+          };
+          progressFilterTags += ' Optional ';
+        } else if (assessment?.completedOn !== undefined) {
+          currRowProgress[taskId] = {
+            value: 'completed',
+            icon: 'pi pi-check',
+            severity: 'success',
+          };
+          progressFilterTags += ' Completed ';
+        } else if (assessment?.startedOn !== undefined) {
+          currRowProgress[taskId] = {
+            value: 'started',
+            icon: 'pi pi-exclamation-triangle',
+            severity: 'warning',
+          };
+          progressFilterTags += ' Started ';
+        } else {
+          currRowProgress[taskId] = {
+            value: 'assigned',
+            icon: 'pi pi-times',
+            severity: 'danger',
+          };
+          progressFilterTags += ' Assigned ';
+        }
+        currRowProgress[taskId].tags = progressFilterTags;
+
+        // update progress for current row with computed object
+        currRow.progress = currRowProgress;
+        // push currRow to assignmentTableDataAcc
+        assignmentTableDataAcc.push(currRow);
+      }
+    }
+    console.log('setting filteretable', assignmentTableDataAcc);
+    filteredTableData.value = assignmentTableDataAcc;
+    return assignmentTableDataAcc;
+  }
 });
 
 const resetFilters = () => {
   filterSchools.value = [];
   filterGrades.value = [];
-  filterBy.value = [];
 };
 
 const exportSelected = (selectedRows) => {
-  const computedExportData = _map(selectedRows, ({ user, assignment }) => {
-    const tableRow = {
+  const computedExportData = _map(selectedRows, ({ user, progress }) => {
+    let tableRow = {
       Username: _get(user, 'username'),
       Email: _get(user, 'email'),
-      First: _get(user, 'name.first'),
-      Last: _get(user, 'name.last'),
-      Grade: _get(user, 'studentData.grade'),
+      First: _get(user, 'firstName'),
+      Last: _get(user, 'lastName'),
+      Grade: _get(user, 'grade'),
     };
     if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
     if (props.orgType === 'district') {
-      const currentSchools = _get(user, 'schools.current');
-      if (currentSchools.length) {
-        const schoolId = currentSchools[0];
-        tableRow['School'] = _get(
-          _find(schoolsInfo.value, (school) => school.id === schoolId),
-          'name',
-        );
-      }
+      tableRow['School'] = _get(user, 'school');
     }
-    for (const assessment of assignment.assessments) {
-      const taskId = assessment.taskId;
-      if (assessment.completedOn !== undefined) {
-        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Completed';
-      } else if (assessment.optional) {
-        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Optional';
-      } else if (assessment.startedOn !== undefined) {
-        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Started';
-      } else {
-        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Assigned';
-      }
+    for (const taskId in progress) {
+      tableRow[taskDisplayNames[taskId]?.name ?? taskId] = progress[taskId].value;
     }
     return tableRow;
   });
   exportCsv(computedExportData, 'roar-progress-selected.csv');
+  return;
 };
 
 const exportAll = async () => {
-  const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId);
-  const computedExportData = _map(exportData, ({ user, assignment }) => {
-    const tableRow = {
+  const computedExportData = _map(computedProgressData.value, ({ user, progress }) => {
+    let tableRow = {
       Username: _get(user, 'username'),
       Email: _get(user, 'email'),
-      First: _get(user, 'name.first'),
-      Last: _get(user, 'name.last'),
-      Grade: _get(user, 'studentData.grade'),
+      First: _get(user, 'firstName'),
+      Last: _get(user, 'lastName'),
+      Grade: _get(user, 'grade'),
     };
     if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
     if (props.orgType === 'district') {
-      const currentSchools = _get(user, 'schools.current');
-      if (currentSchools.length) {
-        const schoolId = currentSchools[0];
-        tableRow['School'] = _get(
-          _find(schoolsInfo.value, (school) => school.id === schoolId),
-          'name',
-        );
-      }
+      tableRow['School'] = _get(user, 'school');
     }
-    for (const assessment of assignment.assessments) {
-      const taskId = assessment.taskId;
-      if (assessment.completedOn !== undefined) {
-        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Completed';
-      } else if (assessment.optional) {
-        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Optional';
-      } else if (assessment.startedOn !== undefined) {
-        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Started';
-      } else {
-        tableRow[taskDisplayNames[taskId]?.name ?? taskId] = 'Assigned';
-      }
+    for (const taskId in progress) {
+      tableRow[taskDisplayNames[taskId]?.name ?? taskId] = progress[taskId].value;
     }
     return tableRow;
   });
   exportCsv(
     computedExportData,
-    `roar-progress-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+    `roar-scores-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
       orgInfo.value.name,
     )}.csv`,
   );
+  return;
 };
 
 const progressReportColumns = computed(() => {
@@ -396,9 +389,9 @@ const progressReportColumns = computed(() => {
   const tableColumns = [
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
     { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true },
-    { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
-    { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: true },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true, filter: false },
+    { field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true },
+    { field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true },
+    { field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: false },
   ];
 
   if (props.orgType === 'district') {
@@ -430,110 +423,38 @@ const progressReportColumns = computed(() => {
   });
   for (const taskId of sortedTasks) {
     tableColumns.push({
-      field: `status.${taskId}.value`,
+      field: `progress.${taskId}.value`,
+      filterField: `progress.${taskId}.tags`,
       header: taskDisplayNames[taskId]?.name ?? taskId,
       dataType: 'progress',
       tag: true,
-      severityField: `status.${taskId}.severity`,
-      iconField: `status.${taskId}.icon`,
-      sort: false,
+      severityField: `progress.${taskId}.severity`,
+      iconField: `progress.${taskId}.icon`,
+      sort: true,
     });
   }
   return tableColumns;
 });
 
-const progressTableData = computed(() => {
-  if (assignmentData.value === undefined) return [];
+const filteredTableData = ref(computedProgressData.value);
 
-  return assignmentData.value.map(({ user, assignment }) => {
-    const status = {};
-    for (const assessment of assignment?.assessments || []) {
-      if (assessment.optional) {
-        status[assessment.taskId] = {
-          value: 'optional',
-          icon: 'pi pi-question',
-          severity: 'info',
-        };
-      } else if (assessment.completedOn !== undefined) {
-        status[assessment.taskId] = {
-          value: 'completed',
-          icon: 'pi pi-check',
-          severity: 'success',
-        };
-      } else if (assessment.startedOn !== undefined) {
-        status[assessment.taskId] = {
-          value: 'started',
-          icon: 'pi pi-exclamation-triangle',
-          severity: 'warning',
-        };
-      } else {
-        status[assessment.taskId] = {
-          value: 'assigned',
-          icon: 'pi pi-times',
-          severity: 'danger',
-        };
-      }
+watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
+  if (newSchools.length > 0 || newGrades.length > 0) {
+    //set scoresTableData to filtered data if filter is added
+    let filteredData = computedProgressData.value;
+    if (newSchools.length > 0) {
+      filteredData = filteredData.filter((item) => {
+        return item.user.schools?.current.some((school) => newSchools.includes(school));
+      });
     }
-    return {
-      user,
-      assignment,
-      status,
-    };
-  });
-});
-
-const filteredTableData = ref(assignmentData.value);
-
-const updateProgressFilters = (progressFilters) => {
-  filterProgress.value = progressFilters;
-};
-
-const isUpdating = ref(false);
-
-watch([filterSchools, filterGrades, filterProgress], ([newSchools, newGrades, newFilterProgress]) => {
-  if (isUpdating.value) {
-    return;
+    if (newGrades.length > 0) {
+      filteredData = filteredData.filter((item) => {
+        return newGrades.includes(item.user.studentData?.grade);
+      });
+    }
+    filteredTableData.value = filteredData;
   } else {
-    isUpdating.value = true;
-    console.log('filter watcher', filterProgress);
-    if (newSchools.length > 0 || newGrades.length > 0 || newFilterProgress.length > 0) {
-      //set scoresTableData to filtered data if filter is added
-      let filteredData = assignmentData.value;
-      if (newSchools.length > 0) {
-        filteredData = filteredData.filter((item) => {
-          return item.user.schools?.current.some((school) => newSchools.includes(school));
-        });
-      }
-      if (newGrades.length > 0) {
-        filteredData = filteredData.filter((item) => {
-          return newGrades.includes(item.user.studentData?.grade);
-        });
-      }
-      if (newFilterProgress.length > 0) {
-        console.log('progress', filteredData);
-        for (const progressFilter of newFilterProgress) {
-          filteredData = filteredData.filter((item) => {
-            const taskId = progressFilter.taskId;
-            console;
-            const userAssessment = item.assignment?.assessments?.find((a) => a.taskId == taskId);
-            if (progressFilter.value === 'Optional') {
-              return userAssessment?.optional;
-            } else if (progressFilter.value === 'Started') {
-              return userAssessment?.startedOn !== undefined && userAssessment?.completedOn === undefined;
-            } else if (progressFilter.value === 'Completed') {
-              return userAssessment?.completedOn !== undefined;
-            } else if (progressFilter.value === 'Assigned') {
-              return userAssessment?.completedOn === undefined && userAssessment?.startedOn === undefined;
-            }
-          });
-        }
-      }
-
-      isUpdating.value = false; // Reset the flag after the update
-      filteredTableData.value = filteredData;
-    } else {
-      filteredTableData.value = assignmentData.value;
-    }
+    filteredTableData.value = computedProgressData.value;
   }
 });
 
@@ -559,6 +480,15 @@ onMounted(async () => {
 <style>
 .loading-container {
   text-align: center;
+}
+
+.loading-wrapper {
+  margin: 1rem 0rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
 }
 
 .report-title {

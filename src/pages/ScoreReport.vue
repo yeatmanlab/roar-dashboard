@@ -477,10 +477,21 @@ const { data: schoolsInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const schoolsDict = computed(() => {
+const schoolsDictWithGrade = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
       acc[school.id] = getGrade(school.lowGrade ?? 0) + ' ' + school.name;
+      return acc;
+    }, {});
+  } else {
+    return {};
+  }
+});
+
+const schoolNameDictionary = computed(() => {
+  if (schoolsInfo.value) {
+    return schoolsInfo.value.reduce((acc, school) => {
+      acc[school.id] = school.name;
       return acc;
     }, {});
   } else {
@@ -502,6 +513,26 @@ const {
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
 });
+
+// Return a faded color if assessment is not reliable
+function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
+  if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+    console.log('unreliable', assessment, support_level);
+    if (support_level === 'Optional') {
+      return '#a1d8e3';
+    } else if (support_level === 'Needs Extra Support') {
+      return '#d6b8c7';
+    } else if (support_level === 'Developing Skill') {
+      return '#e8dbb5';
+    } else if (support_level === 'Achieved Skill') {
+      return '#c0d9bd';
+    } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
+      return 'white';
+    }
+  }
+  console.log('reliable', assessment, tag_color);
+  return tag_color;
+}
 
 const getScoresAndSupportFromAssessment = ({
   grade,
@@ -570,14 +601,9 @@ const computeAssignmentAndRunData = computed(() => {
       };
 
       // compute schoolName
-      let schoolId = '';
-      const currentSchools = _get(user, 'schools.current');
+      let schoolName = '';
       if (currentSchools.length) {
-        schoolId = currentSchools[0];
-        currRow.user.schoolName = _get(
-          _find(schoolsInfo.value, (school) => school.id === currentSchools[0]),
-          'name',
-        );
+        schoolName = schoolNameDictionary.value[user.currentSchools[0]];
       }
 
       const currRowScores = {};
@@ -620,13 +646,15 @@ const computeAssignmentAndRunData = computed(() => {
           scoreFilterTags += ' Pink ';
         }
 
+        const tagColor = returnColorByReliability(assessment, rawScore, support_level, tag_color);
+
         // Logic to update assignmentTableDataAcc
         currRowScores[taskId] = {
           optional: isOptional,
           supportLevel: support_level,
           reliable: assessment.reliable,
           engagementFlags: assessment.engagementFlags ?? [],
-          tagColor: tag_color,
+          tagColor: tagColor,
           percentile: percentile,
           percentileString: percentileString,
           rawScore: rawScore,
@@ -646,7 +674,7 @@ const computeAssignmentAndRunData = computed(() => {
           taskId,
           user: {
             grade: grade,
-            schoolName: schoolsDict.value[schoolId],
+            schoolName: schoolsDictWithGrade.value[user.currentSchools[0]],
           },
           tag_color: tag_color,
         };

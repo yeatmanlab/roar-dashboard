@@ -118,7 +118,14 @@
                 <TableScoreTag :col-data="colData" :col="col" />
               </div>
               <div v-else-if="col.dataType == 'progress'">
-                <TableProgressTag :col-data="colData" :col="col" />
+                <PvTag
+                  v-if="_get(colData, col.field)"
+                  :severity="_get(colData, col.severityField)"
+                  :value="_get(colData, col.field)"
+                  :icon="_get(colData, col.iconField)"
+                  :style="`min-width: 2rem`"
+                  rounded
+                />
               </div>
               <div
                 v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
@@ -284,7 +291,6 @@ import _isEqual from 'lodash/isEqual';
 import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
-import TableProgressTag from '@/components/reports/TableProgressTag.vue';
 
 /*
 Using the DataTable
@@ -393,7 +399,6 @@ function increasePadding() {
 // Generate filters and options objects
 const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE', 'PROGRESS'];
 const computedFilters = computed(() => {
-  console.log('computed filters called', computedColumns);
   let filters = {};
   let options = {};
   _forEach(computedColumns.value, (column) => {
@@ -414,7 +419,7 @@ const computedFilters = computed(() => {
       } else if (dataType === 'SCORE') {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.CONTAINS };
       } else if (dataType === 'PROGRESS') {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
+        returnMatchMode = { value: null, matchMode: FilterMatchMode.CONTAINS };
       }
 
       if (_get(column, 'useMultiSelect')) {

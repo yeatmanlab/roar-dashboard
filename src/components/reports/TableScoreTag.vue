@@ -71,24 +71,24 @@ let returnScoreTooltip = (colHeader, colData, fieldPath) => {
 
 function handleToolTip(_taskId, _toolTip, _colData) {
   // Get the support level and flags, if they exist
-  _toolTip += _colData.scores?.[_taskId]?.supportLevel + '\n' + '\n';
-  _toolTip += getFlags(_colData, _taskId);
+  if (_colData.scores?.[_taskId]?.supportLevel) {
+    _toolTip += _colData.scores?.[_taskId]?.supportLevel + '\n' + '\n';
+    _toolTip += getFlags(_colData, _taskId);
+  }
 
   // If the task does not have a raw score, then display no scores
-  if (!_colData.scores?.[_taskId]?.rawScore) {
-    _toolTip += 'Awaiting scores';
+  if (_colData.scores?.[_taskId]?.rawScore) {
+    if (rawOnlyTasks.includes(_taskId)) {
+      _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n' + '\n';
+      _toolTip += 'These scores are under development';
+    } else {
+      _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
+      _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
+      _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standardScore + '\n';
+    }
   }
   // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
-  else if (rawOnlyTasks.includes(_taskId)) {
-    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n' + '\n';
-    _toolTip += 'These scores are under development';
-  }
   // If the task is a scored task and has a raw score, then display all scores
-  else {
-    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
-    _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-    _toolTip += 'Standardized Score: ' + _colData.scores?.[_taskId]?.standardScore + '\n';
-  }
   return _toolTip;
 }
 
