@@ -261,7 +261,7 @@
             </template>
           </PvColumn>
           <template #footer>
-            <div v-if="props.data?.length == 0 && !loading" class="flex flex-column gap-2 ml-6 my-5">
+            <div v-if="props.data?.length == 0" class="flex flex-column gap-2 ml-6 my-5">
               <div class="text-lg font-bold my-2">No scores found</div>
               <span class="font-light"
                 >The filters applied have no matching scores.
@@ -441,7 +441,6 @@ const refOptions = ref(computedFilters.value.computedOptions);
 const refFilters = ref(computedFilters.value.computedFilters);
 
 const resetFilters = () => {
-  console.log('roardatatable resetfilters', refFilters.value);
   refFilters.value = computedFilters.value.computedFilters;
   // clear local filters
   props.resetFilters();

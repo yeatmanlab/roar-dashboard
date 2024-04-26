@@ -244,85 +244,87 @@ const schoolNameDictionary = computed(() => {
 });
 
 const computedProgressData = computed(() => {
-  if (!assignmentData.value || assignmentData.value.length === 0) {
-    return [];
-  } else {
-    // assignmentTableData is an array of objects, each representing a row in the table
-    const assignmentTableDataAcc = [];
+  // if (!assignmentData.value || assignmentData.value?.length === 0 || isLoadingScores.value) {
+  //   console.log('zero case hit"')
+  //   return [];
+  // } else {
+  if (!assignmentData.value) return [];
+  // assignmentTableData is an array of objects, each representing a row in the table
+  const assignmentTableDataAcc = [];
 
-    for (const { assignment, user } of assignmentData.value) {
-      // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
-      const grade = user.studentData?.grade;
-      const currRow = {
-        user: {
-          username: user.username,
-          email: user.email,
-          userId: user.userId,
-          firstName: user.name.first,
-          lastName: user.name.last,
-          grade: grade,
-          assessmentPid: user.assessmentPid,
-        },
-        // compute and add progress data in next step
-      };
+  for (const { assignment, user } of assignmentData.value) {
+    // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
+    const grade = user.studentData?.grade;
+    const currRow = {
+      user: {
+        username: user.username,
+        email: user.email,
+        userId: user.userId,
+        firstName: user.name.first,
+        lastName: user.name.last,
+        grade: grade,
+        assessmentPid: user.assessmentPid,
+      },
+      // compute and add progress data in next step
+    };
 
-      // compute schoolName
-      let schoolName = '';
-      if (user.currentSchools?.length) {
-        schoolName = schoolNameDictionary.value[user.currentSchools[0]];
-      }
-
-      if (user.username == '1039-a.frazier') {
-        console.log('fraz', assignment, user);
-      }
-
-      const currRowProgress = {};
-      for (const assessment of assignment.assessments) {
-        // General Logic to grab support level, scores, etc
-        let progressFilterTags = '';
-        const taskId = assessment.taskId;
-
-        if (assessment?.optional) {
-          currRowProgress[taskId] = {
-            value: 'optional',
-            icon: 'pi pi-question',
-            severity: 'info',
-          };
-          progressFilterTags += ' Optional ';
-        } else if (assessment?.completedOn !== undefined) {
-          currRowProgress[taskId] = {
-            value: 'completed',
-            icon: 'pi pi-check',
-            severity: 'success',
-          };
-          progressFilterTags += ' Completed ';
-        } else if (assessment?.startedOn !== undefined) {
-          currRowProgress[taskId] = {
-            value: 'started',
-            icon: 'pi pi-exclamation-triangle',
-            severity: 'warning',
-          };
-          progressFilterTags += ' Started ';
-        } else {
-          currRowProgress[taskId] = {
-            value: 'assigned',
-            icon: 'pi pi-times',
-            severity: 'danger',
-          };
-          progressFilterTags += ' Assigned ';
-        }
-        currRowProgress[taskId].tags = progressFilterTags;
-
-        // update progress for current row with computed object
-        currRow.progress = currRowProgress;
-        // push currRow to assignmentTableDataAcc
-        assignmentTableDataAcc.push(currRow);
-      }
+    // compute schoolName
+    let schoolName = '';
+    if (user.currentSchools?.length) {
+      schoolName = schoolNameDictionary.value[user.currentSchools[0]];
     }
-    console.log('setting filteretable', assignmentTableDataAcc);
-    filteredTableData.value = assignmentTableDataAcc;
-    return assignmentTableDataAcc;
+
+    if (user.username == '1039-a.frazier') {
+      console.log('fraz', assignment, user);
+    }
+
+    const currRowProgress = {};
+    for (const assessment of assignment.assessments) {
+      // General Logic to grab support level, scores, etc
+      let progressFilterTags = '';
+      const taskId = assessment.taskId;
+
+      if (assessment?.optional) {
+        currRowProgress[taskId] = {
+          value: 'optional',
+          icon: 'pi pi-question',
+          severity: 'info',
+        };
+        progressFilterTags += ' Optional ';
+      } else if (assessment?.completedOn !== undefined) {
+        currRowProgress[taskId] = {
+          value: 'completed',
+          icon: 'pi pi-check',
+          severity: 'success',
+        };
+        progressFilterTags += ' Completed ';
+      } else if (assessment?.startedOn !== undefined) {
+        currRowProgress[taskId] = {
+          value: 'started',
+          icon: 'pi pi-exclamation-triangle',
+          severity: 'warning',
+        };
+        progressFilterTags += ' Started ';
+      } else {
+        currRowProgress[taskId] = {
+          value: 'assigned',
+          icon: 'pi pi-times',
+          severity: 'danger',
+        };
+        progressFilterTags += ' Assigned ';
+      }
+      currRowProgress[taskId].tags = progressFilterTags;
+
+      // update progress for current row with computed object
+      currRow.progress = currRowProgress;
+      // push currRow to assignmentTableDataAcc
+      assignmentTableDataAcc.push(currRow);
+    }
   }
+  console.log('setting filteretable', assignmentTableDataAcc);
+  filteredTableData.value = assignmentTableDataAcc;
+  return assignmentTableDataAcc;
+  // }
 });
 
 const resetFilters = () => {
@@ -437,6 +439,11 @@ const progressReportColumns = computed(() => {
 });
 
 const filteredTableData = ref(computedProgressData.value);
+
+watch(computedProgressData, (newValue) => {
+  // Update filteredTableData when computedProgressData changes
+  filteredTableData.value = newValue;
+});
 
 watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
   if (newSchools.length > 0 || newGrades.length > 0) {

@@ -696,7 +696,7 @@ const computeAssignmentAndRunData = computed(() => {
       return Object.keys(taskInfoById).includes(taskId);
     });
     filteredTableData.value = assignmentTableDataAcc;
-    console.log('assignmentTableData', assignmentTableDataAcc);
+
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
 });
