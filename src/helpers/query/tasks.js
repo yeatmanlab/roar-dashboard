@@ -63,7 +63,7 @@ export const getTasksRequestBody = ({
   return requestBody;
 };
 
-export const taskFetcher = async (registered = true, select = ['name']) => {
+export const taskFetcher = async (registered = true, select = ['name', 'testData', 'demoData']) => {
   const axiosInstance = getAxiosInstance('app');
   const requestBody = getTasksRequestBody({
     registered,
@@ -171,10 +171,15 @@ export const variantsFetcher = async (registered = false) => {
         );
       });
 
+    const taskDocDict = batchTaskDocs.reduce((acc, task) => {
+      acc[task.data.id] = { ...task };
+      return acc;
+    }, {});
+
     // But the order of batchGet is not guaranteed, so we need to match the task
     // docs back with their variants.
     return variants.map((variant) => {
-      const task = batchTaskDocs.find((taskDoc) => taskDoc.name.includes(variant.parentDoc));
+      const task = taskDocDict[variant.parentDoc];
       return {
         id: variant.id,
         variant,

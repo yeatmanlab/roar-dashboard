@@ -63,6 +63,12 @@ export const orderByDefault = [
   },
 ];
 
+export const getProjectId = (project = 'admin') => {
+  const authStore = useAuthStore();
+  const { roarfirekit } = storeToRefs(authStore);
+  return roarfirekit.value.roarConfig?.[project]?.projectId;
+};
+
 export const getAxiosInstance = (db = 'admin') => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
@@ -91,13 +97,21 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
   const axiosInstance = getAxiosInstance(db);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
   const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-  return axiosInstance.get(docPath + queryString).then(({ data }) => {
-    return {
-      id: docId,
-      collection,
-      ..._mapValues(data.fields, (value) => convertValues(value)),
-    };
-  });
+  return axiosInstance
+    .get(docPath + queryString)
+    .then(({ data }) => {
+      return {
+        id: docId,
+        collection,
+        ..._mapValues(data.fields, (value) => convertValues(value)),
+      };
+    })
+    .catch((error) => {
+      console.error(error);
+      return {
+        data: `${error.code === '404' ? 'Document not found' : error.message}`,
+      };
+    });
 };
 
 export const fetchDocsById = async (documents, db = 'admin') => {
@@ -120,7 +134,69 @@ export const fetchDocsById = async (documents, db = 'admin') => {
   return Promise.all(promises);
 };
 
+export const batchGetDocs = async (docPaths, select = [], db = 'admin') => {
+  const axiosInstance = getAxiosInstance(db);
+  const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
+  const documents = docPaths.map((docPath) => `${baseURL}/${docPath}`);
+  const batchDocs = await axiosInstance
+    .post(':batchGet', {
+      documents,
+      ...(select.length > 0 && {
+        mask: { fieldPaths: select },
+      }),
+    })
+    .then(({ data }) => {
+      return _without(
+        data.map(({ found }) => {
+          if (found) {
+            const nameSplit = found.name.split('/');
+            return {
+              name: found.name,
+              data: {
+                id: nameSplit.pop(),
+                collection: nameSplit.pop(),
+                ..._mapValues(found.fields, (value) => convertValues(value)),
+              },
+            };
+          }
+          return undefined;
+        }),
+        undefined,
+      );
+    });
+
+  return docPaths.map((docPath) => batchDocs.find((doc) => doc.name.includes(docPath))).map((doc) => doc?.data);
+};
+
 export const matchMode2Op = {
   equals: 'EQUAL',
   notEquals: 'NOT_EQUAL',
+};
+
+export const fetchSubcollection = async (collectionPath, subcollectionName, select = [], db = 'admin') => {
+  const axiosInstance = getAxiosInstance(db);
+  // Construct the path to the subcollection
+  const subcollectionPath = `/${collectionPath}/${subcollectionName}`;
+  const queryParams = select.map((field) => `mask.fieldPaths=${field}`).join('&');
+  const queryString = queryParams ? `?${queryParams}` : '';
+
+  return axiosInstance
+    .get(subcollectionPath + queryString)
+    .then(({ data }) => {
+      // Assuming the API returns an array of document data in the subcollection
+      return data.documents
+        ? data.documents.map((doc) => {
+            return {
+              id: doc.name.split('/').pop(), // Extract document ID from the document name/path
+              ..._mapValues(doc.fields, (value) => convertValues(value)),
+            };
+          })
+        : [];
+    })
+    .catch((error) => {
+      console.error(error);
+      return {
+        error: `${error.response.status === 404 ? 'Subcollection not found' : error.message}`,
+      };
+    });
 };

@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :user-info="userInfo" :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <div class="register-container mx-auto md:flex-none">
         <RegisterTask />
@@ -12,20 +9,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import RegisterTask from '@/components/tasks/RegisterTask.vue';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
-import { useAuthStore } from '@/store/auth';
-
-const authStore = useAuthStore();
-
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
-
-const userInfo = ref({
-  name: 'Admin name',
-  district: 'District Name',
-});
 </script>
 
 <style scoped>
@@ -35,9 +19,7 @@ const userInfo = ref({
   border-radius: 5px;
   border-color: #e5e5e5;
   background-color: #fcfcfc;
-  width: 65%;
-  padding-right: 1.5rem;
-  padding-left: 1.5rem;
+  width: 75%;
   position: relative;
 }
 

@@ -24,5 +24,10 @@ dist-ssr
 *.sw?
 
 .firebase/
+cypress/downloads
 
 .env
+.vite/*
+
+# Sentry Config File
+.env.sentry-build-plugin

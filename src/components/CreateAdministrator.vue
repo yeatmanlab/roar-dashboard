@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <PvPanel header="Create a new administrator account">
         Use this form to create a new user and give them administrator access to selected organizations.
@@ -13,40 +10,56 @@
           <div class="grid">
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <PvInputText id="first-name" v-model="firstName" class="w-full" />
+                <PvInputText
+                  id="first-name"
+                  v-model="firstName"
+                  class="w-full"
+                  data-cy="input-administrator-first-name"
+                />
                 <label for="first-name">First Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <PvInputText id="middle-name" v-model="middleName" class="w-full" />
+                <PvInputText
+                  id="middle-name"
+                  v-model="middleName"
+                  class="w-full"
+                  data-cy="input-administrator-middle-name"
+                />
                 <label for="middle-name">Middle Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <PvInputText id="last-name" v-model="lastName" class="w-full" />
+                <PvInputText id="last-name" v-model="lastName" class="w-full" data-cy="input-administrator-last-name" />
                 <label for="last-name">Last Name</label>
               </span>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
-                <PvInputText id="email" v-model="email" class="w-full" />
+                <PvInputText id="email" v-model="email" class="w-full" data-cy="input-administrator-email" />
                 <label for="email">Email</label>
               </span>
             </div>
           </div>
 
           <OrgPicker @selection="selection($event)" />
+          <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
+              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Test Administrator</b></label>
+            </div>
+          </div>
 
           <PvDivider />
 
-          <div class="grid">
-            <div class="col-12">
-              <PvButton label="Create Administrator" @click="submit" />
+          <div class="flex w-full align-items-center justify-content-center">
+            <div class="">
+              <PvButton label="Create Administrator" data-cy="button-create-administrator" @click="submit" />
             </div>
           </div>
         </div>
@@ -61,18 +74,15 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery } from '@tanstack/vue-query';
+
 import _cloneDeep from 'lodash/cloneDeep';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
-import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const toast = useToast();
@@ -83,20 +93,10 @@ const firstName = ref();
 const middleName = ref();
 const lastName = ref();
 const email = ref();
+const isTestData = ref(false);
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-
-const { data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
 
 let unsubscribe;
 const init = () => {
@@ -158,10 +158,16 @@ const submit = async () => {
     orgs.schools = _union(orgs.schools, [_class.schoolId]);
   }
 
-  await roarfirekit.value.createAdministrator(email.value, name, orgs, adminOrgs).then(() => {
-    toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
-    router.push({ name: 'Home' });
-  });
+  await roarfirekit.value
+    .createAdministrator(email.value, name, orgs, adminOrgs, isTestData)
+    .then(() => {
+      toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
+      router.push({ name: 'Home' });
+    })
+    .catch((error) => {
+      toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 5000 });
+      console.error(error);
+    });
 };
 </script>
 

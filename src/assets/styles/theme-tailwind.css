@@ -21,8 +21,9 @@
 }
 .p-column-filter-menu-button.p-column-filter-menu-button-open,
 .p-column-filter-menu-button.p-column-filter-menu-button-open:hover {
-  background: var(--surface-c);
+  background: var(--gray-500);
   color: var(--surface-900);
+  margin-left: 10px;
 }
 .p-column-filter-menu-button.p-column-filter-menu-button-active,
 .p-column-filter-menu-button.p-column-filter-menu-button-active:hover {
@@ -534,6 +535,7 @@
   border-width: 0;
   padding: var(--inline-spacing-larger) 1.5rem;
   border-radius: var(--border-radius);
+  width: 80%;
 }
 .p-paginator .p-paginator-first,
 .p-paginator .p-paginator-prev,
@@ -1152,6 +1154,7 @@
 }
 .p-panel .p-panel-header .p-panel-title {
   font-weight: 700;
+  font-size: x-large;
 }
 .p-panel .p-panel-header .p-panel-header-icon {
   width: 2rem;
@@ -1193,14 +1196,15 @@
 }
 
 .p-scrollpanel .p-scrollpanel-bar {
-  background: var(--surface-b);
+  background: var(--surface-300);
   border: 0 none;
   transition: none;
+  margin-left: 3px;
 }
 .p-scrollpanel .p-scrollpanel-bar:focus {
   outline: 0 none;
   outline-offset: 0;
-  box-shadow: 0 0 0 1px var(--indigo-500);
+  /* box-shadow: 0 0 0 1px var(--indigo-500); */
 }
 
 .p-splitter {
@@ -1233,6 +1237,9 @@
 }
 .p-tabview .p-tabview-nav li {
   margin-right: 0;
+  box-shadow:
+    1px 0 1px 0 rgba(0, 0, 0, 0.2),
+    0 1px 1px 0 rgba(0, 0, 0, 0.19);
 }
 .p-tabview .p-tabview-nav li .p-tabview-nav-link {
   border: solid var(--surface-d);
@@ -1261,14 +1268,14 @@
   background: var(--surface-a);
   border-color: var(--primary-color);
   color: var(--primary-color);
+  box-shadow:
+    0 0 10px 2px rgba(0, 0, 0, 0.2),
+    0 10px 2px 0 rgba(0, 0, 0, 0.2);
 }
 .p-tabview .p-tabview-nav-btn.p-link {
   background: var(--surface-a);
   color: var(--primary-color);
   width: 3rem;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   border-radius: 0;
 }
 .p-tabview .p-tabview-nav-btn.p-link:focus {
@@ -1378,7 +1385,6 @@
 .p-dialog .p-dialog-header .p-dialog-header-icon:focus {
   outline: 0 none;
   outline-offset: 0;
-  box-shadow: 0 0 0 1px var(--indigo-500);
 }
 .p-dialog .p-dialog-header .p-dialog-header-icon:last-child {
   margin-right: 0;
@@ -1415,14 +1421,16 @@
 .p-overlaypanel {
   background: var(--surface-a);
   color: var(--text-color);
-  border: 0 none;
   border-radius: var(--border-radius);
   box-shadow:
     0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 .p-overlaypanel .p-overlaypanel-content {
-  padding: 1.25rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 .p-overlaypanel .p-overlaypanel-close {
   background: var(--primary-color);
@@ -2002,6 +2010,7 @@
   color: var(--text-color);
   transition: none;
   border-radius: 0;
+  min-width: max-content;
 }
 .p-menu .p-menuitem > .p-menuitem-content .p-menuitem-link {
   padding: var(--inline-spacing-larger) 1rem;
@@ -2061,6 +2070,7 @@
     0 0 #0000,
     0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  width: max-content;
 }
 .p-menu .p-submenu-header {
   margin: 0;
@@ -2228,8 +2238,8 @@
   }
   .p-menubar .p-menubar-button {
     display: flex;
-    width: 2rem;
-    height: 2rem;
+    width: 6rem;
+    height: 4rem;
     color: var(--text-color-secondary);
     border-radius: 50%;
     transition: none;
@@ -3244,6 +3254,8 @@
   font-size: var(--inline-spacing-larger);
   font-weight: 700;
   padding: 0.25rem 0.4rem;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 .p-tag.p-tag-success {
   background-color: var(--bright-green);

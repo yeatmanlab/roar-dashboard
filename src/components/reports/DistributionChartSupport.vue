@@ -1,11 +1,11 @@
 <template>
-  <!-- <PvSelectButton></PvSelectButton> -->
-  <div :id="`roar-dist-chart-support-${taskId}`"></div>
-  <div class="mode-select-wrapper mt-2">
-    <div class="flex uppercase text-xs font-light">view by</div>
+  <div :id="`roar-distribution-chart-support-${taskId}`"></div>
+  <div class="view-by-wrapper my-2" data-html2canvas-ignore="true">
+    <div class="flex uppercase text-xs font-light">view support levels by</div>
     <PvSelectButton
       v-model="xMode"
-      class="flex flex-row"
+      class="flex flex-row my-2 select-button"
+      :allow-empty="false"
       :options="xModes"
       option-label="name"
       @change="handleXModeChange"
@@ -14,48 +14,59 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
-function returnGradeCount(scores) {
-  const gradeCount = [
-    { grade: 'Pre-K', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: 'T-K', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: 'Kindergarten', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '1', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '2', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '3', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '4', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '5', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '6', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '7', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '8', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '9', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '10', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '11', support_levels: [0, 0, 0], totalStudents: 0 },
-    { grade: '12', support_levels: [0, 0, 0], totalStudents: 0 },
-  ];
-  for (const score of scores) {
-    let gradeCounter = gradeCount.find((grade) => grade.grade === score?.user?.grade?.toString());
-    if (gradeCounter) {
-      if (score?.scores?.support_level === 'Needs Extra Support' && gradeCounter) {
-        gradeCounter.support_levels[0]++;
-        gradeCounter.totalStudents++;
-      } else if (score?.scores?.support_level === 'Needs Some Support' && gradeCounter) {
-        gradeCounter.support_levels[1]++;
-        gradeCounter.totalStudents++;
-      } else if (score?.scores?.support_level === 'At or Above Average' && gradeCounter) {
-        gradeCounter.support_levels[2]++;
-        gradeCounter.totalStudents++;
-      } else {
-        // score not counted (support level null)
-      }
+const returnGradeCount = computed(() => {
+  const gradeCount = [];
+  for (const run of props.runs) {
+    let gradeCounter = gradeCount.find((grade) => grade.category === run?.user?.grade);
+    if (!gradeCounter) {
+      gradeCounter = { category: run?.user?.grade, support_levels: [0, 0, 0], totalStudents: 0 };
+      gradeCount.push(gradeCounter);
+    }
+    if (run?.scores?.support_level === 'Needs Extra Support') {
+      gradeCounter.support_levels[0]++;
+      gradeCounter.totalStudents++;
+    } else if (run?.scores?.support_level === 'Developing Skill') {
+      gradeCounter.support_levels[1]++;
+      gradeCounter.totalStudents++;
+    } else if (run?.scores?.support_level === 'Achieved Skill') {
+      gradeCounter.support_levels[2]++;
+      gradeCounter.totalStudents++;
+    } else {
+      // score not counted (support level null)
     }
   }
 
   return gradeCount;
-}
+});
+
+const returnSchoolCount = computed(() => {
+  const schoolCount = [];
+  for (const score of props.runs) {
+    let schoolCounter = schoolCount.find((school) => school.category === score?.user?.schoolName);
+    if (!schoolCounter) {
+      schoolCounter = { category: score?.user?.schoolName, support_levels: [0, 0, 0], totalStudents: 0 };
+      schoolCount.push(schoolCounter);
+    }
+    if (score?.scores?.support_level === 'Needs Extra Support') {
+      schoolCounter.support_levels[0]++;
+      schoolCounter.totalStudents++;
+    } else if (score?.scores?.support_level === 'Developing Skill') {
+      schoolCounter.support_levels[1]++;
+      schoolCounter.totalStudents++;
+    } else if (score?.scores?.support_level === 'Achieved Skill') {
+      schoolCounter.support_levels[2]++;
+      schoolCounter.totalStudents++;
+    } else {
+      // score not counted (support level null)
+    }
+  }
+
+  return schoolCount;
+});
 
 const xMode = ref({ name: 'Percent' });
 const xModes = [{ name: 'Percent' }, { name: 'Count' }];
@@ -69,21 +80,17 @@ function returnValueByIndex(index, xMode, grade) {
     // 0 => needs extra support
     // 1 => needs some support
     // 2 => at or above average
-    const valsByIndex = [
-      { group: 'Needs Extra Support' },
-      { group: 'Needs Some Support' },
-      { group: 'At or Above Average' },
-    ];
+    const valsByIndex = [{ group: 'Needs Extra Support' }, { group: 'Developing Skill' }, { group: 'Achieved Skill' }];
     if (xMode.name === 'Percent') {
       return {
-        category: grade.grade,
+        category: grade.category,
         group: valsByIndex[index].group,
         value: grade?.support_levels[index] / grade.totalStudents,
       };
     }
     if (xMode.name === 'Count') {
       return {
-        category: grade.grade,
+        category: grade.category,
         group: valsByIndex[index].group,
         value: grade?.support_levels[index],
       };
@@ -95,13 +102,15 @@ function returnValueByIndex(index, xMode, grade) {
 }
 
 const returnSupportLevelValues = computed(() => {
-  const gradeCounts = returnGradeCount(props.runs);
+  const gradeCounts = returnGradeCount.value;
+  const schoolCounts = returnSchoolCount.value;
+  const counts = props.facetMode.name === 'Grade' ? gradeCounts : schoolCounts;
   const values = [];
   // generates values for bar chart
-  for (const grade of gradeCounts) {
-    if (grade?.totalStudents > 0) {
-      for (let i = 0; i < grade?.support_levels.length; i++) {
-        let value = returnValueByIndex(i, xMode.value, grade);
+  for (const count of counts) {
+    if (count?.totalStudents > 0) {
+      for (let i = 0; i < count?.support_levels.length; i++) {
+        let value = returnValueByIndex(i, xMode.value, count);
         values.push(value);
       }
     }
@@ -109,15 +118,19 @@ const returnSupportLevelValues = computed(() => {
   return values;
 });
 
-const distBySupport = computed(() => {
+const graphHeight = computed(() => {
+  return returnSupportLevelValues.value.length * 23.5;
+});
+
+const distributionBySupport = computed(() => {
   let spec = {
     mark: 'bar',
-    height: 300,
-    width: 330,
+    height: graphHeight.value,
+    width: 350,
     background: null,
     title: {
       text: `ROAR-${taskDisplayNames[props.taskId].name}`,
-      subtitle: `Support Level Distribution By Grade`,
+      subtitle: `Support Level Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,
     },
@@ -132,35 +145,75 @@ const distBySupport = computed(() => {
         spacing: 1,
         axis: {
           format: `${xMode.value.name === 'Percent' ? '.0%' : '.0f'}`,
-          titleFontSize: 12,
-          labelFontSize: 12,
+          titleFontSize: 14,
+          labelFontSize: 14,
+          tickCount: 5,
+          tickMinStep: 1,
         },
       },
 
       y: {
         field: 'category',
         type: 'ordinal',
-        title: 'By Grade',
+        title: '',
         spacing: 1,
-        sort: ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        sort:
+          props.facetMode.name === 'Grade'
+            ? [
+                'Kindergarten',
+                1,
+                '1',
+                2,
+                '2',
+                3,
+                '3',
+                4,
+                '4',
+                5,
+                '5',
+                6,
+                '6',
+                7,
+                '7',
+                8,
+                '8',
+                9,
+                '9',
+                10,
+                '10',
+                11,
+                '11',
+                12,
+                '12',
+              ]
+            : 'ascending',
         axis: {
           labelAngle: 0,
           labelAlign: 'right',
-          titleFontSize: 12,
-          labelFontSize: 12,
+          titleFontSize: 14,
+          labelLimit: 150,
+          labelFontSize: 14,
+          labelColor: 'navy',
+          labelFontStyle: 'bold',
+          labelExpr:
+            props.facetMode.name === 'Grade'
+              ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')"
+              : 'slice(datum.value, 1, datum.value.length)',
         },
       },
       yOffset: {
         field: 'group',
-        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+        sort: ['Needs Extra Support', 'Developing Skill', 'Achieved Skill'],
       },
       color: {
         field: 'group',
         title: 'Support Level',
-        sort: ['Needs Extra Support', 'Needs Some Support', 'At or Above Average'],
+        sort: ['Needs Extra Support', 'Developing Skill', 'Achieved Skill'],
         scale: { range: ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green'] },
+        labelFontSize: 16,
         legend: {
           orient: 'bottom',
+          labelFontSize: '12',
         },
       },
       tooltip: [
@@ -203,13 +256,26 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  facetMode: {
+    type: Object,
+    required: true,
+    default() {
+      return { name: 'Grade', key: 'grade' };
+    },
+  },
 });
 
 const draw = async () => {
-  let chartSpecSupport = distBySupport.value;
-  await embed(`#roar-dist-chart-support-${props.taskId}`, chartSpecSupport);
-  // Other chart types can be added via this if/then pattern
+  let chartSpecSupport = distributionBySupport.value;
+  await embed(`#roar-distribution-chart-support-${props.taskId}`, chartSpecSupport);
 };
+
+watch(
+  () => props.facetMode,
+  () => {
+    draw();
+  },
+);
 
 onMounted(() => {
   draw(); // Call your function when the component is mounted
@@ -217,9 +283,10 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-.mode-select-wrapper {
+.view-by-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: space-around;
+  justify-content: center;
 }
 </style>

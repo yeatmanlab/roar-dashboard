@@ -9,6 +9,7 @@
     viewBox="0 0 1020 338"
     style="enable-background: new 0 0 1020 338"
     xml:space="preserve"
+    class="roar-logo"
   >
     <g id="ROARLogo-Icon">
       <path
@@ -277,5 +278,16 @@ export default {
 }
 .st1 {
   fill: #231f20;
+}
+
+@media screen and (max-width: 1068px) {
+  .roar-logo {
+    max-width: 150px;
+  }
+}
+@media screen and (max-width: 868px) {
+  .roar-logo {
+    max-width: 100px;
+  }
 }
 </style>

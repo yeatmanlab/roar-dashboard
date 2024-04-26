@@ -1,29 +1,50 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <PvPanel header="Create a new administration">
         Use this form to create a new administration and assign it to organizations.
 
         <PvDivider />
-
         <div class="formgrid grid mt-5">
-          <div class="field col">
+          <div class="field col-12 xl:col-5 mb-5">
             <span class="p-float-label">
-              <PvInputText id="administration-name" v-model="state.administrationName" />
-              <label for="administration-name">Administration Name</label>
-              <small v-if="v$.administrationName.$invalid && submitted" class="p-error"
+              <PvInputText
+                id="administration-name"
+                v-model="state.administrationName"
+                class="w-full"
+                data-cy="input-administration-name"
+              />
+              <label for="administration-name" class="w-full">Administration Name</label>
+              <small
+                v-if="v$.administrationName.$invalid && submitted"
+                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your administration</small
               >
             </span>
           </div>
 
-          <div class="field col">
+          <div class="field col-12 xl:col-5 mb-5">
+            <span class="p-float-label">
+              <PvInputText
+                id="administration-public-name"
+                v-model="state.administrationPublicName"
+                class="w-full"
+                data-cy="input-administration-name-public"
+              />
+              <label for="administration-public-name" class="w-full">Public Administration Name</label>
+              <small
+                v-if="v$.administrationPublicName.$invalid && submitted"
+                class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                >Please provide a public-facing name for this administration</small
+              >
+            </span>
+          </div>
+
+          <div class="field col-6 xl:col-2">
             <span class="p-float-label">
               <PvCalendar
                 v-model="state.dates"
+                class="w-full"
                 :min-date="minStartDate"
                 input-id="dates"
                 :number-of-months="2"
@@ -31,6 +52,7 @@
                 :manual-input="false"
                 show-icon
                 show-button-bar
+                data-cy="input-calendar"
               />
               <label for="dates">Dates</label>
               <small v-if="v$.dates.required.$invalid && submitted" class="p-error">Please select dates.</small>
@@ -43,76 +65,60 @@
 
         <OrgPicker :orgs="orgsList" @selection="selection($event)" />
 
-        <PvPanel class="mt-3" header="Select assessments for this administration">
-          <template #icons>
-            <div class="flex flex-row align-items-center justify-content-end">
-              <small v-if="v$.sequential.$invalid && submitted" class="p-error">Please select one.</small>
-              <span>Require sequential?</span>
-              <PvInputSwitch v-model="state.sequential" class="ml-2" />
-            </div>
+        <PvConfirmDialog group="errors" class="confirm">
+          <template #message>
+            <span class="flex flex-column">
+              <span>{{ pickListError }}</span>
+              <span v-if="nonUniqueTasks.length > 0" class="flex flex-column">
+                <span>Task selections must be unique.</span>
+                <span class="mt-2">The following tasks are not unique:</span>
+                <span class="mt-2 font-bold">{{ nonUniqueTasks.join(', ') }}</span>
+              </span>
+              <span v-else>
+                <span>No variants selected. You must select at least one variant to be assigned.</span>
+              </span>
+            </span>
           </template>
+        </PvConfirmDialog>
+        <TaskPicker
+          :all-variants="variantsByTaskId"
+          :set-variants="setVariants"
+          @variants-changed="handleVariantsChanged"
+        />
 
-          <div v-if="pickListError" class="p-error">{{ pickListError }}</div>
-          <PvPickList
-            v-if="assessments[0].length || assessments[1].length"
-            v-model="assessments"
-            :show-source-controls="false"
-            list-style="height: 21.375rem"
-            data-key="id"
-            :striped-rows="true"
-            :pt="{
-              moveAllToTargetButton: { root: { class: 'hide' } },
-              moveAllToSourceButton: { root: { class: 'hide' } },
-              targetMoveTopButton: { root: { class: 'hide' } },
-              targetMoveBottomButton: { root: { class: 'hide' } },
-            }"
-          >
-            <template #sourceheader>Available</template>
-            <template #targetheader>Selected</template>
-            <template #item="slotProps">
-              <div class="flex flex-wrap p-2 align-items-center gap-3">
-                <img
-                  class="w-4rem shadow-2 flex-shrink-0 border-round"
-                  :src="slotProps.item.task.image || backupImage"
-                  :alt="slotProps.item.task.name"
+        <div class="flex flex-column justify-content-center mt-5">
+          <div class="flex flex-column mt-2 align-items-center justify-content-center">
+            <div class="flex">
+              <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
+              <span class="flex gap-2">
+                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
+                <label for="Yes">Yes</label>
+                <PvRadioButton
+                  v-model="state.sequential"
+                  data-cy="radio-button-not-sequential"
+                  input-id="No"
+                  :value="false"
                 />
-                <div class="flex-1 flex flex-column gap-2">
-                  <span class="font-bold" style="margin-left: 0.625rem">{{ slotProps.item.task.name }}</span>
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-tag text-sm" style="margin-left: 0.625rem"></i>
-                    <span>Variant: {{ slotProps.item.variant.name || slotProps.item.variant.id }}</span>
-                  </div>
-                </div>
-                <PvButton
-                  v-tooltip.right="'Click to view params'"
-                  type="button"
-                  rounded
-                  size="small"
-                  icon="pi pi-info"
-                  @click="toggle($event, slotProps.item.id)"
-                />
-                <PvOverlayPanel :ref="paramPanelRefs[slotProps.item.id]">
-                  <PvDataTable
-                    striped-rows
-                    class="p-datatable-small"
-                    table-style="min-width: 30rem"
-                    :value="toEntryObjects(slotProps.item.variant.params)"
-                  >
-                    <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
-                    <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
-                  </PvDataTable>
-                </PvOverlayPanel>
-              </div>
-            </template>
-          </PvPickList>
-          <div v-else class="loading-container">
-            <AppSpinner style="margin-bottom: 1rem" />
-            <span>Loading Assessments</span>
+                <label for="No">No</label>
+              </span>
+              <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
+                >Please specify sequential behavior.</small
+              >
+            </div>
+            <div class="mt-2 mb-2">
+              <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
+              <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
+            </div>
           </div>
-        </PvPanel>
-
-        <div class="col-12 mb-3">
-          <PvButton label="Create Administration" @click="submit" />
+          <div class="divider mx-2 my-3" />
+          <div class="mb-2 w-full flex justify-content-center">
+            <PvButton
+              label="Create Administration"
+              data-cy="button-create-administration"
+              style="margin: 0"
+              @click="submit"
+            />
+          </div>
         </div>
       </PvPanel>
     </section>
@@ -120,13 +126,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
+import { onMounted, reactive, ref, toRaw, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { useQuery } from '@tanstack/vue-query';
 import _filter from 'lodash/filter';
-import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
@@ -136,15 +141,16 @@ import _isEqual from 'lodash/isEqual';
 import _without from 'lodash/without';
 // import _pull from 'lodash/pull';
 import _uniq from 'lodash/uniq';
+import _groupBy from 'lodash/groupBy';
+import _values from 'lodash/values';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
-import AppSpinner from '@/components/AppSpinner.vue';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
-import { getSidebarActions } from '@/router/sidebarActions';
 import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
 import { variantsFetcher } from '@/helpers/query/tasks';
+import TaskPicker from './TaskPicker.vue';
+import { useConfirm } from 'primevue/useconfirm';
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -153,22 +159,12 @@ const props = defineProps({
 const router = useRouter();
 const toast = useToast();
 const initialized = ref(false);
+const confirm = useConfirm();
 
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
-const { data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const sidebarActions = ref(getSidebarActions(isSuperAdmin.value, true));
-
-const { data: allVariants, isLoading: isLoadingVariants } = useQuery({
+const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
   queryFn: () => variantsFetcher(),
   keepPreviousData: true,
@@ -371,8 +367,9 @@ const { data: preFamilies } = useQuery({
 //      +---------------------------------+
 const state = reactive({
   administrationName: '',
+  administrationPublicName: '',
   dates: [],
-  sequential: true,
+  sequential: null,
   districts: [],
   schools: [],
   classes: [],
@@ -388,6 +385,7 @@ const minStartDate = ref(new Date());
 
 const rules = {
   administrationName: { required },
+  administrationPublicName: { required },
   dates: {
     required,
     minLength: minLength(2),
@@ -400,6 +398,7 @@ const v$ = useVuelidate(rules, state);
 const pickListError = ref('');
 const orgError = ref('');
 const submitted = ref(false);
+const isTestData = ref(false);
 
 //      +---------------------------------+
 // -----|          Org Selection          |-----
@@ -423,19 +422,19 @@ const orgsList = computed(() => {
 //      +---------------------------------+
 // -----|       Assessment Selection      |-----
 //      +---------------------------------+
-let paramPanelRefs = {};
+const variants = ref([]);
+const variantsByTaskId = computed(() => {
+  return _groupBy(allVariants.value, 'task.id');
+});
 
-const toEntryObjects = (inputObj) => {
-  return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
+const handleVariantsChanged = (newVariants) => {
+  variants.value = newVariants;
 };
 
-const toggle = (event, id) => {
-  paramPanelRefs[id].value.toggle(event);
+// Card event handlers
+const setVariants = (variants) => {
+  console.log(variants);
 };
-
-let assessments = ref([[], []]);
-
-const backupImage = '/src/assets/swr-icon.jpeg';
 
 const checkForUniqueTasks = (assignments) => {
   if (_isEmpty(assignments)) return false;
@@ -443,17 +442,18 @@ const checkForUniqueTasks = (assignments) => {
   return uniqueTasks.length === assignments.length;
 };
 
+const nonUniqueTasks = ref('');
+const getNonUniqueTasks = (assignments) => {
+  const grouped = _groupBy(assignments, (assignment) => assignment.taskId);
+  const taskIds = _values(grouped);
+  const filtered = _filter(taskIds, (taskIdArray) => taskIdArray.length > 1);
+  nonUniqueTasks.value = filtered.map((taskIdArray) => taskIdArray[0].taskId);
+};
+
 const checkForRequiredOrgs = (orgs) => {
   const filtered = _filter(orgs, (org) => !_isEmpty(org));
   return Boolean(filtered.length);
 };
-
-watch(isLoadingVariants, (value) => {
-  if (!value && allVariants.value.length > 0) {
-    assessments.value = [allVariants.value, []];
-    paramPanelRefs = _fromPairs(allVariants.value.map((variant) => [variant.id, ref()]));
-  }
-});
 
 //      +---------------------------------+
 // -----|         Form submission         |-----
@@ -463,9 +463,11 @@ const submit = async () => {
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
   if (isFormValid) {
-    const submittedAssessments = assessments.value[1].map((assessment) => ({
+    const submittedAssessments = variants.value.map((assessment) => ({
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
+      // Exclude conditions key if there are no conditions to be set.
+      ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
     }));
 
     const tasksUnique = checkForUniqueTasks(submittedAssessments);
@@ -480,18 +482,27 @@ const submit = async () => {
 
       const orgsValid = checkForRequiredOrgs(orgs);
       if (orgsValid) {
+        const dateClose = new Date(state.dates[1]);
+        dateClose.setHours(23, 59, 59, 999);
         const args = {
           name: toRaw(state).administrationName,
+          publicName: toRaw(state).administrationPublicName,
           assessments: submittedAssessments,
           dateOpen: toRaw(state).dates[0],
-          dateClose: toRaw(state).dates[1],
+          dateClose,
           sequential: toRaw(state).sequential,
           orgs: orgs,
+          isTestData: isTestData.value,
         };
+        if (isTestData.value) args.isTestData = true;
 
         await roarfirekit.value.createAdministration(args).then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
           administrationQueryKeyIndex.value += 1;
+
+          // TODO: Invalidate for administrations query.
+          // This does not work in prod for some reason.
+          // queryClient.invalidateQueries({ queryKey: ['administrations'] })
 
           router.push({ name: 'Home' });
         });
@@ -500,7 +511,14 @@ const submit = async () => {
         orgError.value = 'At least one organization needs to be selected.';
       }
     } else {
-      pickListError.value = 'Task selections must not be empty and must be unique.';
+      getNonUniqueTasks(submittedAssessments);
+      confirm.require({
+        group: 'errors',
+        header: 'Task Selections',
+        icon: 'pi pi-question-circle',
+        acceptLabel: 'Close',
+        acceptIcon: 'pi pi-times',
+      });
     }
   } else {
     console.log('form is invalid');
@@ -577,6 +595,20 @@ function findVariantWithParams(variants, params) {
 .org-dropdown {
   margin-right: 3rem;
   margin-top: 2rem;
+}
+
+.divider {
+  min-height: 100%;
+  max-width: 0;
+  border-left: 1px solid var(--surface-d);
+}
+
+.confirm .p-confirm-dialog-reject {
+  display: none !important;
+}
+
+.confirm .p-dialog-header-close {
+  display: none !important;
 }
 
 #rectangle {

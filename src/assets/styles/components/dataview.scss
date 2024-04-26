@@ -1,6 +1,8 @@
 .p-dataview .p-paginator-top {
   border-width: 0 0 1px 0;
   border-radius: 0;
+  display: flex;
+  justify-content: center;
 }
 .p-dataview .p-paginator-bottom {
   border-width: 0 0 1px 0;

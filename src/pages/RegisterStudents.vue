@@ -1,8 +1,5 @@
 <template>
   <main class="container main">
-    <aside class="main-sidebar">
-      <AdministratorSidebar :actions="sidebarActions" />
-    </aside>
     <section class="main-body">
       <!--Upload file section-->
       <div v-if="!isFileUploaded">
@@ -86,10 +83,15 @@
           </PvColumn>
         </PvDataTable>
         <div class="submit-container">
+          <div class="m-2">
+            <PvCheckbox v-model="isAllTestData" :binary="true" input-id="isTestData" />
+            <label for="isTestData" class="ml-2">All users are test accounts</label>
+          </div>
           <PvButton
             label="Start Registration"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
+            data-cy="button-start-registration"
             @click="submitStudents"
           />
         </div>
@@ -138,8 +140,6 @@ import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'vue-router';
-import AdministratorSidebar from '@/components/AdministratorSidebar.vue';
-import { getSidebarActions } from '../router/sidebarActions';
 import { useToast } from 'primevue/usetoast';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
@@ -149,8 +149,7 @@ const router = useRouter();
 const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
-
-const sidebarActions = ref(getSidebarActions(authStore.isUserSuperAdmin, true));
+const isAllTestData = ref(false);
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
@@ -161,7 +160,7 @@ const dropdown_options = ref([
     label: 'Required',
     items: [
       { label: 'Student Username', value: 'username' },
-      // { label: 'Student Email', value: 'email' },
+      { label: 'Student Email', value: 'email' },
       { label: 'Grade', value: 'grade' },
       { label: 'Password', value: 'password' },
       { label: 'Student Date of Birth', value: 'dob' },
@@ -171,6 +170,7 @@ const dropdown_options = ref([
     label: 'Optional',
     items: [
       { label: 'Ignore this column', value: 'ignore' },
+      { label: 'TestData', value: 'testData' },
       { label: 'First Name', value: 'firstName' },
       { label: 'Middle Name', value: 'middleName' },
       { label: 'Last Name', value: 'lastName' },
@@ -295,6 +295,7 @@ async function submitStudents() {
   // Construct list of student objects, handle special columns
   _forEach(rawStudentFile.value, (student) => {
     let studentObj = {};
+    if (isAllTestData.value) studentObj['testData'] = true;
     let dropdownMap = _cloneDeep(dropdown_model.value);
     _forEach(modelValues, (col) => {
       const columnMap = getKeyByValue(dropdownMap, col);
@@ -309,6 +310,10 @@ async function submitStudents() {
         } else if (student[columnMap]) {
           studentObj[col].push(student[columnMap]);
           dropdownMap = _omit(dropdownMap, columnMap);
+        }
+      } else if (['testData'].includes(col)) {
+        if (student[columnMap]) {
+          studentObj['testData'] = true;
         }
       } else {
         studentObj[col] = student[columnMap];
@@ -423,7 +428,7 @@ async function submitStudents() {
           }
         });
     }
-    await delay(1250);
+    await delay(2250);
   }
 }
 

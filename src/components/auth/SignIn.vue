@@ -4,56 +4,108 @@
       <div class="field mt-2">
         <div class="p-input-icon-right">
           <PvInputText
-            id="email"
+            :id="$t('authSignIn.emailId')"
             v-model="v$.email.$model"
             :class="{ 'p-invalid': invalid }"
             aria-describedby="email-error"
-            placeholder="Username or email"
+            :placeholder="$t('authSignIn.emailPlaceholder')"
+            data-cy="input-username-email"
+            @keyup="checkForCapsLock"
+            @click="checkForCapsLock"
           />
         </div>
-        <small v-if="invalid" class="p-error">Incorrect username/email or password</small>
+        <small v-if="invalid" class="p-error">{{ $t('authSignIn.incorrectEmailOrPassword') }}</small>
       </div>
       <div class="field mt-4 mb-5">
         <div>
+          <!-- Email is currently being evaluated (loading state) -->
           <span v-if="evaluatingEmail">
             <PvSkeleton height="2.75rem" />
           </span>
-          <div v-else-if="allowPassword && allowLink">Both allowed</div>
+          <!-- Email is entered, Password is desired -->
+          <div v-else-if="allowPassword && allowLink">
+            <PvPassword
+              :id="$t('authSignIn.passwordId')"
+              v-model="v$.password.$model"
+              :class="{ 'p-invalid': invalid }"
+              toggle-mask
+              show-icon="pi pi-eye-slash"
+              hide-icon="pi pi-eye"
+              :feedback="false"
+              :placeholder="$t('authSignIn.passwordPlaceholder')"
+              data-cy="input-password"
+              @keyup="checkForCapsLock"
+              @click="checkForCapsLock"
+            />
+            <small
+              class="text-link sign-in-method-link"
+              data-cy="sign-in-with-email-link"
+              @click="
+                allowPassword = false;
+                state.usePassword = false;
+              "
+              >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
+            >
+          </div>
+          <!-- Username is entered, Password is desired -->
           <PvPassword
             v-else-if="allowPassword"
-            id="password"
+            :id="$t('authSignIn.passwordId')"
             v-model="v$.password.$model"
             :class="{ 'p-invalid': invalid }"
             toggle-mask
             show-icon="pi pi-eye-slash"
             hide-icon="pi pi-eye"
             :feedback="false"
-            placeholder="Password"
+            :placeholder="$t('authSignIn.passwordPlaceholder')"
+            data-cy="input-password"
+            @keyup="checkForCapsLock"
+            @click="checkForCapsLock"
           >
             <template #header>
-              <h6>Pick a password</h6>
+              <h6>{{ $t('authSignIn.pickPassword') }}</h6>
             </template>
             <template #footer="sp">
               {{ sp.level }}
               <PvDivider />
-              <p class="mt-2">Suggestions</p>
+              <p class="mt-2">{{ $t('authSignIn.suggestions') }}</p>
               <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
-                <li>At least one lowercase</li>
-                <li>At least one uppercase</li>
-                <li>At least one numeric</li>
-                <li>Minimum 8 characters</li>
+                <li>{{ $t('authSignIn.atLeastOneLowercase') }}</li>
+                <li>{{ $t('authSignIn.atLeastOneUppercase') }}</li>
+                <li>{{ $t('authSignIn.atLeastOneNumeric') }}</li>
+                <li>{{ $t('authSignIn.minimumCharacters') }}</li>
               </ul>
             </template>
           </PvPassword>
+          <!-- Email is entered, MagicLink is desired login -->
           <div v-else-if="allowLink">
-            <PvPassword disabled placeholder="Press Go to sign-in with an email link." />
+            <PvPassword
+              :placeholder="$t('authSignIn.signInWithEmailLinkPlaceHolder')"
+              disabled
+              data-cy="password-disabled-for-email"
+            />
+            <small
+              class="text-link sign-in-method-link"
+              data-cy="sign-in-with-password"
+              @click="
+                allowPassword = true;
+                state.usePassword = true;
+              "
+              >{{ $t('authSignIn.signInWithPasswordInstead') }}</small
+            >
           </div>
+          <!-- Email is entered, however it is an invalid email (prevent login) -->
           <div v-else>
-            <PvPassword disabled class="p-invalid text-red-600" placeholder="Error: invalid email" />
+            <PvPassword
+              disabled
+              class="p-invalid text-red-600"
+              :placeholder="$t('authSignIn.invalidEmailPlaceholder')"
+            />
           </div>
+          <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
-      <PvButton type="submit" label="Go! &rarr;" class="submit-button" />
+      <PvButton type="submit" :label="$t('authSignIn.buttonLabel') + ' &rarr;'" class="submit-button" />
     </form>
   </div>
 </template>
@@ -79,6 +131,7 @@ const state = reactive({
   email: '',
   password: '',
   useLink: false,
+  usePassword: true,
 });
 
 const rules = {
@@ -89,6 +142,7 @@ const rules = {
 };
 const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
+const capsLockEnabled = ref(false);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
@@ -106,14 +160,22 @@ const isValidEmail = (email) => {
 
 const evaluatingEmail = ref(false);
 const allowPassword = ref(true);
-const allowLink = ref(false);
+const allowLink = ref(true);
 
 const validateRoarEmail = _debounce(
   async (email) => {
     await roarfirekit.value.isEmailAvailable(email).then(async (emailAvail) => {
+      if (email.includes('levante')) {
+        allowLink.value = false;
+        allowPassword.value = true;
+        state.useLink = allowLink.value;
+        evaluatingEmail.value = false;
+        return;
+      }
+
       if (emailAvail) {
         console.log(`Email ${email} is available`);
-        allowPassword.value = false;
+        allowPassword.value = true;
         allowLink.value = false;
       } else {
         if (roarfirekit.value.isRoarAuthEmail(email)) {
@@ -122,7 +184,7 @@ const validateRoarEmail = _debounce(
           allowPassword.value = true;
         } else {
           allowLink.value = true;
-          allowPassword.value = false;
+          allowPassword.value = true;
         }
       }
       state.useLink = allowLink.value;
@@ -132,6 +194,10 @@ const validateRoarEmail = _debounce(
   250,
   { maxWait: 1000 },
 );
+
+function checkForCapsLock(e) {
+  capsLockEnabled.value = e.getModifierState('CapsLock');
+}
 
 watch(
   () => state.email,
@@ -162,5 +228,21 @@ watch(
 .submit-button:hover {
   background-color: #b7b5b5;
   color: black;
+}
+.text-link {
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.text-link:hover {
+  color: var(--primary-color-text);
+}
+.sign-in-method-link {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }
 </style>

@@ -6,23 +6,27 @@
     <section id="signin">
       <header>
         <div class="signin-logo">
-          <ROARLogoShort />
+          <PvImage v-if="isLevante" src="/LEVANTE/Levante_Logo.png" alt="LEVANTE Logo" width="200" />
+          <ROARLogoShort v-else />
         </div>
       </header>
-      <h1>Welcome to ROAR!</h1>
+      <h1>{{ $t('pageSignIn.welcome') }}</h1>
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
-          <h4 class="signin-option-title">Log in to access your dashboard</h4>
+          <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>
+          <div id="languageSelect" class="m-4 flex justify-content-center">
+            <LanguageSelector />
+          </div>
           <SignIn :invalid="incorrect" @submit="authWithEmail" />
         </section>
         <section class="signin-option-container signin-option-providers">
-          <h4 class="signin-option-title">Log in with:</h4>
+          <h4 class="signin-option-title">{{ $t('pageSignIn.loginWith') }}</h4>
           <div class="flex">
             <PvButton label="Sign in with Google" class="signin-button" @click="authWithGoogle">
               <img src="../assets/provider-google-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Google</span>
             </PvButton>
-            <PvButton class="signin-button" @click="authWithClever">
+            <PvButton v-if="!isLevante" class="signin-button" @click="authWithClever">
               <img src="../assets/provider-clever-logo.svg" alt="The ROAR Logo" class="signin-button-icon" />
               <span>Clever</span>
             </PvButton>
@@ -31,7 +35,7 @@
       </section>
       <footer style="display: none">
         <!-- TODO: figure out a link for this -->
-        <a href="#trouble">Having trouble?</a>
+        <a href="#trouble">{{ $t('pageSignIn.havingTrouble') }}</a>
       </footer>
     </section>
   </div>
@@ -48,6 +52,7 @@ import { isMobileBrowser } from '@/helpers';
 import { fetchDocById } from '../helpers/query/utils';
 
 const incorrect = ref(false);
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
 
@@ -55,6 +60,16 @@ const { spinner, authFromClever } = storeToRefs(authStore);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
+    if (authStore.userData && isLevante) {
+      if (
+        toRaw(authStore.userData?.userType?.toLowerCase()) === 'parent' ||
+        toRaw(authStore.userData?.userType?.toLowerCase()) === 'teacher'
+      ) {
+        router.push({ name: 'Survey' });
+        return;
+      }
+    }
+
     if (authFromClever.value) {
       router.push({ name: 'CleverLanding' });
     } else {
@@ -102,7 +117,7 @@ const authWithEmail = (state) => {
   // turn it into our internal auth email
   incorrect.value = false;
   let creds = toRaw(state);
-  if (creds.useLink) {
+  if (creds.useLink && !creds.usePassword) {
     authStore.initiateLoginWithEmailLink({ email: creds.email }).then(() => {
       router.push({ name: 'AuthEmailSent' });
     });
@@ -120,6 +135,7 @@ const authWithEmail = (state) => {
           authStore.userData = userData;
           authStore.userClaims = userClaims;
         }
+
         spinner.value = true;
       })
       .catch((e) => {

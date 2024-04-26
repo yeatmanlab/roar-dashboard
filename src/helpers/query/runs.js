@@ -44,6 +44,7 @@ export const getRunsRequestBody = ({
   ];
 
   if (administrationId && (orgId || !allDescendants)) {
+    console.log('adding assignmentId and bestRun to structuredQuery');
     requestBody.structuredQuery.where = {
       compositeFilter: {
         op: 'AND',
@@ -67,6 +68,7 @@ export const getRunsRequestBody = ({
     };
 
     if (orgId) {
+      console.log('adding orgId to structuredQuery');
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `readOrgs.${pluralizeFirestoreCollection(orgType)}` },
@@ -188,7 +190,7 @@ export const runPageFetcher = async ({
     const batchUserDocs = await appAxiosInstance
       .post(':batchGet', {
         documents: userDocPaths,
-        mask: { fieldPaths: ['grade', 'birthMonth', 'birthYear'] },
+        mask: { fieldPaths: ['grade', 'birthMonth', 'birthYear', 'schools.current'] },
       })
       .then(({ data }) => {
         return _without(
@@ -206,12 +208,15 @@ export const runPageFetcher = async ({
         );
       });
 
-    // But the order of batchGet is not guaranteed, so we need to match the user
-    // docs back with their runs.
+    const userDocDict = batchUserDocs.reduce((acc, user) => {
+      acc[user.id] = { ...user };
+      return acc;
+    }, {});
+
     const otherKeys = _without(select, scoreKey);
 
     return runData.map((run) => {
-      const user = batchUserDocs.find((userDoc) => userDoc.name.includes(run.parentDoc));
+      const user = userDocDict[run.parentDoc];
       return {
         scores: _get(run, scoreKey),
         taskId: run.taskId,
