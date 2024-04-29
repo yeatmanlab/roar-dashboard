@@ -466,6 +466,95 @@ let toolTipByHeader = (header) => {
   return headerToTooltipMap[header] || '';
 };
 
+function getIndexTask(colData, task) {
+  for (let index = 0; index < colData.assignment.assessments.length; index++) {
+    if (colData.assignment.assessments[index].taskId === task) {
+      return index;
+    }
+  }
+}
+
+function getFlags(index, colData) {
+  const flags = colData.assignment.assessments[index].engagementFlags;
+  const flagMessages = {
+    accuracyTooLow: '- Responses were inaccurate',
+    notEnoughResponses: '- Assessment was incomplete',
+    responseTimeTooFast: '- Responses were too fast',
+  };
+
+  // If there are flags and the assessment is not reliable, return the flags
+  if (flags && !colData.assignment.assessments[index].reliable) {
+    const reliabilityFlags = Object.keys(flags).map((flag) => {
+      return flagMessages[flag] || _lowerCase(flag);
+    });
+    // Join the returned flags with a newline character, then add two newlines for spacing
+    return reliabilityFlags.join('\n') + '\n\n';
+  } else {
+    return '';
+  }
+}
+
+function handleToolTip(_taskId, _toolTip, _colData) {
+  // Get the support level and flags, if they exist
+  _toolTip += _colData.scores?.[_taskId]?.support_level + '\n' + '\n';
+  _toolTip += getFlags(getIndexTask(_colData, _taskId), _colData);
+
+  // If the task does not have a raw score, then display no scores
+  if (!_colData.scores?.[_taskId]?.raw) {
+    _toolTip += 'Awaiting scores';
+  }
+  // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
+  else if (rawOnlyTasks.includes(_taskId)) {
+    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n' + '\n';
+    _toolTip += 'These scores are under development';
+  }
+  // If the task is a scored task and has a raw score, then display all scores
+  else {
+    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
+    _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
+    _toolTip += 'Standard Score: ' + Math.round(_colData.scores?.[_taskId]?.standard) + '\n';
+  }
+  return _toolTip;
+}
+
+let returnScoreTooltip = (colHeader, colData, fieldPath) => {
+  const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
+  let toolTip = '';
+
+  const headerToTaskIdMap = {
+    Phoneme: 'pa',
+    Word: 'swr',
+    Sentence: 'sre',
+    Letter: 'letter',
+    Palabra: 'swr-es',
+  };
+
+  const selectedTaskId = headerToTaskIdMap[colHeader];
+  if (selectedTaskId && colData.scores?.[selectedTaskId]?.support_level) {
+    // Handle scored tasks
+    return handleToolTip(selectedTaskId, toolTip, colData);
+    // Handle raw only tasks
+  } else if (taskId && !scoredTasks.includes(taskId)) {
+    return handleToolTip(taskId, toolTip, colData);
+  }
+  return toolTip;
+};
+
+const computedData = computed(() => {
+  const data = JSON.parse(JSON.stringify(props.data));
+  _forEach(data, (entry) => {
+    // Clean up date fields to use Date objects
+    _forEach(dateFields, (field) => {
+      let dateEntry = _get(entry, field);
+      if (dateEntry !== null) {
+        const dateObj = new Date(dateEntry);
+        _set(entry, field, dateObj);
+      }
+    });
+  });
+  return data;
+});
+
 // Generate list of options given a column
 function getUniqueOptions(column) {
   const field = _get(column, 'field');
