@@ -144,8 +144,9 @@ const props = defineProps({
 });
 
 const studentFirstName = computed(() => {
-  if (!props.studentData.name) return props.studentData.username;
-  return props.studentData.name.first;
+  if (props.studentData?.name && props.studentData?.name?.first) return props.studentData.name.first;
+  if (props.studentData.username) return props.studentData.username;
+  else return 'The student';
 });
 
 const grade = computed(() => getGrade(props.studentData?.studentData?.grade));
@@ -158,7 +159,7 @@ const computedTaskData = computed(() => {
     const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
     const percentileScore = _get(scores.composite, percentileScoreKey);
     const standardScore = _get(scores.composite, standardScoreKey);
-    const rawScore = taskId !== 'vocab' ? _get(scores.composite, rawScoreKey) : scores.composite;
+    const rawScore = taskId !== 'vocab' && taskId !== 'letter' ? _get(scores.composite, rawScoreKey) : scores.composite;
     const rawScoreRange = getRawScoreRange(taskId);
     const supportColor = getSupportLevel(grade.value, percentileScore, rawScore, taskId).tag_color;
 
@@ -203,26 +204,24 @@ const computedTaskData = computed(() => {
         tooltip: 'This task was a required assignment.',
       });
     }
-    if ('reliable' in scores) {
-      if (reliable === false) {
-        tags.push({
-          value: 'Unreliable',
-          icon: 'pi pi-times',
-          severity: 'warning',
-          tooltip: engagementFlags
-            ? `The run was marked unreliable because of the following flags: \n \n ${Object.keys(engagementFlags)
-                .map((flag) => _lowerCase(flag))
-                .join(', ')}`
-            : 'The run was marked as unreliable.',
-        });
-      } else {
-        tags.push({
-          value: 'Reliable',
-          severity: 'success',
-          icon: 'pi pi-check',
-          tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
-        });
-      }
+    if (reliable === false) {
+      tags.push({
+        value: 'Unreliable',
+        icon: 'pi pi-times',
+        severity: 'warning',
+        tooltip: engagementFlags
+          ? `The run was marked unreliable because of the following flags: \n \n ${Object.keys(engagementFlags)
+              .map((flag) => _lowerCase(flag))
+              .join(', ')}`
+          : 'The run was marked as unreliable.',
+      });
+    } else {
+      tags.push({
+        value: 'Reliable',
+        severity: 'success',
+        icon: 'pi pi-check',
+        tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
+      });
     }
 
     // determine which score to display in the card based on grade
@@ -235,7 +234,7 @@ const computedTaskData = computed(() => {
       taskId: taskId,
       scoreToDisplay: scoreToDisplay,
       ...scoresForTask,
-      ...tags,
+      tags: tags,
     };
 
     // initialize array with precomputed raw, std, percentile scores
@@ -298,7 +297,10 @@ const computedTaskData = computed(() => {
     computedTaskAcc[taskId].scoresArray = sortedScoresArray;
   }
 
-  return computedTaskAcc;
+  // sort tasks by order of appearance in the taskDisplayNames object
+  return Object.keys(computedTaskAcc)
+    .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order)
+    .map((taskId) => computedTaskAcc[taskId]);
 });
 
 function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
