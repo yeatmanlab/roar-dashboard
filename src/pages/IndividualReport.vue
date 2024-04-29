@@ -157,7 +157,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../store/auth';
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
-import IndividualScoreReportTask from '../components/reports/IndividualScoreReportTasks.vue';
+import IndividualScoreReportTask from '../components/reports/IndividualScoreReportTask.vue';
 import AppSpinner from '../components/AppSpinner.vue';
 import { getGrade } from '@bdelab/roar-utils';
 import NextSteps from '@/assets/NextSteps.pdf';
