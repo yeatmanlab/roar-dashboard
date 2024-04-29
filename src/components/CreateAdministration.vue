@@ -83,6 +83,7 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :set-variants="setVariants"
+          :selected-variants="preSelectedVariants"
           @variants-changed="handleVariantsChanged"
         />
 
@@ -126,7 +127,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, toRaw, computed } from 'vue';
+import { onMounted, reactive, ref, toRaw, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -139,6 +140,7 @@ import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
 import _isEqual from 'lodash/isEqual';
 import _without from 'lodash/without';
+import _union from 'lodash/union';
 // import _pull from 'lodash/pull';
 import _uniq from 'lodash/uniq';
 import _groupBy from 'lodash/groupBy';
@@ -423,6 +425,7 @@ const orgsList = computed(() => {
 // -----|       Assessment Selection      |-----
 //      +---------------------------------+
 const variants = ref([]);
+const preSelectedVariants = ref([]);
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
@@ -544,22 +547,18 @@ onMounted(async () => {
 
 watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
-    console.log('grabbed info!', adminInfo);
     state.administrationName = adminInfo.name;
+    state.administrationPublicName = adminInfo.publicName;
     state.dates = [new Date(adminInfo.dateOpened), new Date(adminInfo.dateClosed)];
+    state.sequential = adminInfo.sequential;
     _forEach(adminInfo.assessments, (assessment) => {
       const assessmentParams = assessment.params;
-      console.log('passing params', assessmentParams);
-      const found = findVariantWithParams(allVariantInfo, assessmentParams);
-      // console.log('found?', found);
+      const found = findVariantWithParams(allVariants.value, assessmentParams);
       if (found) {
-        // _pull(assessments.value[0], found);
-        assessments.value[1].push(found);
-        assessments.value[1] = _uniq(assessments.value[1]);
+        preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
     });
   }
-  // console.log('func returned', found);
 });
 
 function findVariantWithParams(variants, params) {
