@@ -106,11 +106,17 @@ export const taskDisplayNames = {
     extendedName: 'RAN',
     order: 23,
   },
+  crowding: {
+    name: 'Crowding',
+    extendedTitle: 'ROAV - Crowding',
+    extendedName: 'Crowding',
+    order: 24,
+  },
   ExternalTest: {
     name: 'External Test',
     extendedTitle: 'ROAR- External Test',
     extendedName: 'External Test',
-    order: 23,
+    order: 25,
   },
 };
 
@@ -136,6 +142,7 @@ export const extendedDescriptions = {
   trog: 'This test measures how well students understand sentences that vary from simple to complicated',
   fluency: 'Temporary description for fluency',
   ran: 'Temporary description for ran',
+  crowding: 'Temporary description for crowding',
 };
 
 /*

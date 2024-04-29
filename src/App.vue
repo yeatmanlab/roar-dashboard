@@ -59,6 +59,7 @@ const navbarBlacklist = ref([
   'Fluency-Alpaca',
   'Fluency-Alpaca-ES',
   'RAN',
+  'Crowding',
 ]);
 
 onBeforeMount(async () => {

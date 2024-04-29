@@ -50,6 +50,7 @@ export default defineConfig({
           utils: ['@bdelab/roar-utils'],
           vocab: ['@bdelab/roar-vocab'],
           ran: ['@bdelab/roav-ran'],
+          crowding: ['@bdelab/roav-crowding'],
         },
       },
     },
