@@ -303,7 +303,7 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import _pickBy from 'lodash/pickBy';
 import _union from 'lodash/union';
-import _lowerCase from 'lodash/lowerCase'
+import _lowerCase from 'lodash/lowerCase';
 import _remove from 'lodash/remove';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -840,8 +840,11 @@ const exportSelected = (selectedRows) => {
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
-      if(assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined){
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Flags`] = _lowerCase(Object.keys(assessment.engagementFlags).join(' ,'));
+      if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Flags`] = _lowerCase(
+          Object.keys(assessment.engagementFlags).join(' ,'),
+        );
+        console.log('Flags: ', _lowerCase(Object.keys(assessment.engagementFlags)));
       }
     }
     return tableRow;
@@ -898,6 +901,12 @@ const exportAll = async () => {
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
+      if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Flags`] = _lowerCase(
+          Object.keys(assessment.engagementFlags).join(' ,'),
+        );
+        console.log(_lowerCase(Object.keys(assessment.engagementFlags)));
+      }
     }
     return tableRow;
   });
