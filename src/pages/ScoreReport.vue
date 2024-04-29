@@ -7,21 +7,56 @@
             <AppSpinner style="margin: 0.3rem 0rem" />
             <div class="uppercase text-sm">Loading Org Info</div>
           </div>
-          <div v-if="orgInfo && administrationInfo">
-            <div class="report-title">
-              {{ _toUpper(orgInfo.name) }}
+          <div v-if="orgInfo && administrationInfo" id="at-a-glance-charts">
+            <div class="flex justify-content-between align-items-center">
+              <div class="flex flex-column align-items-start gap-2">
+                <div>
+                  <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Score Report</div>
+                  <div class="report-title">
+                    {{ _toUpper(orgInfo?.name) }}
+                  </div>
+                </div>
+                <div>
+                  <div class="uppercase font-light text-gray-500 text-sm">Administration</div>
+                  <div class="administration-name mb-4">
+                    {{ _toUpper(displayName) }}
+                  </div>
+                </div>
+                <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
+              </div>
+              <div class="flex flex-column align-items-end gap-2">
+                <div class="flex flex-row align-items-center gap-4" data-html2canvas-ignore="true">
+                  <div class="uppercase text-sm text-gray-600">VIEW</div>
+                  <PvSelectButton
+                    v-model="reportView"
+                    :options="reportViews"
+                    option-disabled="constant"
+                    :allow-empty="false"
+                    option-label="name"
+                    class="flex my-2 select-button"
+                    @change="handleViewChange"
+                  >
+                  </PvSelectButton>
+                </div>
+                <div v-if="!isLoadingRunResults">
+                  <PvButton
+                    class="flex flex-row"
+                    :icon="!exportLoading ? 'pi pi-download' : 'pi pi-spin pi-spinner'"
+                    :disabled="exportLoading"
+                    label="Export To Pdf"
+                    data-html2canvas-ignore="true"
+                    @click="handleExportToPdf"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="administration-name mb-4">
-              {{ _toUpper(administrationInfo?.name) }}
-            </div>
-            <div class="report-subheader mb-3 uppercase text-gray-500 font-normal">Scores at a glance</div>
             <div v-if="isLoadingRunResults" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm">Loading Overview Charts</div>
             </div>
             <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
               <div class="chart-wrapper">
-                <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" class="">
+                <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                   <div class="distribution-overview-wrapper">
                     <DistributionChartOverview
                       :runs="runsByTaskId[taskId]"
@@ -107,8 +142,25 @@
                     option-value="id"
                     :show-toggle-all="false"
                     selected-items-label="{0} schools selected"
+                    data-cy="filter-by-school"
                   />
                   <label for="ms-school-filter">Filter by School</label>
+                </span>
+              </div>
+              <div class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    id="ms-grade-filter"
+                    v-model="filterGrades"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="gradeOptions"
+                    option-label="label"
+                    option-value="value"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} grades selected"
+                    data-cy="filter-by-grade"
+                  />
+                  <label for="ms-school-filter">Filter by Grade</label>
                 </span>
               </div>
             </template>
@@ -127,53 +179,69 @@
         </div>
         <div v-if="!isLoadingRunResults" class="legend-container">
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
               <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
             <div>
               <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
             <div>
               <div>Achieved Skill</div>
+            </div>
+          </div>
+          <div class="legend-entry">
+            <div class="circle tooltip" :style="`background-color: ${optionalAssessmentColor};`" />
+            <div>
+              <div>Optional</div>
+            </div>
+          </div>
+          <div class="legend-entry">
+            <div class="circle tooltip" :style="`background-color: white`" />
+            <div>
+              <div>Assessed</div>
             </div>
           </div>
         </div>
         <div class="legend-description">
           Students are classified into three support groups based on nationally-normed percentiles. Blank spaces
-          indicate that the assessment was not completed. <br> Pale colors indicate that the score may not reflect the reader’s ability because responses were made too quickly or the assessment was incomplete.
+          indicate that the assessment was not completed. <br />
+          Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
+          quickly or the assessment was incomplete.
         </div>
         <!-- Subscores tables -->
         <div v-if="isLoadingRunResults" class="loading-wrapper">
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm">Loading Task Reports</div>
         </div>
-        <PvTabView>
+        <PvTabView :active-index="activeTabIndex">
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
             :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
           >
-            <TaskReport
-              v-if="taskId"
-              :task-id="taskId"
-              :initialized="initialized"
-              :administration-id="administrationId"
-              :runs="runsByTaskId[taskId]"
-              :org-type="orgType"
-              :org-id="orgId"
-              :org-info="orgInfo"
-              :administration-info="administrationInfo"
-            />
+            <div :id="'tab-view-' + taskId">
+              <TaskReport
+                v-if="taskId"
+                :task-id="taskId"
+                :initialized="initialized"
+                :administration-id="administrationId"
+                :runs="runsByTaskId[taskId]"
+                :org-type="orgType"
+                :org-id="orgId"
+                :org-info="orgInfo"
+                :administration-info="administrationInfo"
+              />
+            </div>
           </PvTabPanel>
         </PvTabView>
-        <div class="bg-gray-200 px-4 py-2 mt-4">
+        <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -208,7 +276,7 @@
             This score report has provided a snapshot of your student's reading performance at the time of
             administration. By providing classifications for students based on national norms for scoring, you are able
             to see how your student(s) can benefit from varying levels of support. To read more about what to do to
-            support your student, <a :href="NextSteps" class="hover:text-red-700" target="_blank">read more.</a>
+            support your student, <a :href="NextSteps" class="hover:text-red-700" target="_blank">read more</a>.
           </p>
         </div>
       </div>
@@ -220,8 +288,10 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch, toRaw } from 'vue';
 import { storeToRefs } from 'pinia';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
@@ -234,6 +304,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _pickBy from 'lodash/pickBy';
 import _union from 'lodash/union';
 import _lowerCase from 'lodash/lowerCase'
+import _remove from 'lodash/remove';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
@@ -243,8 +314,11 @@ import { orgFetcher } from '@/helpers/query/orgs';
 import { useConfirm } from 'primevue/useconfirm';
 import { runPageFetcher } from '@/helpers/query/runs';
 import { pluralizeFirestoreCollection } from '@/helpers';
+import { getTitle } from '../helpers/query/administrations';
 import {
+  optionalAssessmentColor,
   taskDisplayNames,
+  taskInfoById,
   descriptionsByTaskId,
   supportLevelColors,
   getSupportLevel,
@@ -252,10 +326,14 @@ import {
   getRawScoreThreshold,
   rawOnlyTasks,
   scoredTasks,
+  addElementToPdf,
+  getScoreKeys,
 } from '@/helpers/reports.js';
-import TaskReport from '@/components/reports/tasks/TaskReport.vue';
-import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
-import NextSteps from '@/assets/NextSteps.pdf';
+// import TaskReport from '@/components/reports/tasks/TaskReport.vue';
+// import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
+// import NextSteps from '@/assets/NextSteps.pdf';
+
+let TaskReport, DistributionChartOverview, NextSteps;
 
 const authStore = useAuthStore();
 
@@ -278,7 +356,85 @@ const props = defineProps({
 
 const initialized = ref(false);
 
+const displayName = computed(() => {
+  if (administrationInfo.value) {
+    return getTitle(administrationInfo.value, isSuperAdmin.value);
+  }
+  return 'Fetching administration name...';
+});
+
+const reportView = ref({ name: 'Score Report', constant: true });
+const reportViews = [
+  { name: 'Progress Report', constant: false },
+  { name: 'Score Report', constant: true },
+];
+
+const handleViewChange = () => {
+  window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
+};
+
+const exportLoading = ref(false);
+
+const activeTabIndex = ref(0);
+
+const pageWidth = 190; // Set page width for calculations
+const returnScaleFactor = (width) => pageWidth / width; // Calculate the scale factor
+
+const handleExportToPdf = async () => {
+  exportLoading.value = true; // Set loading icon in button to prevent multiple clicks
+  const doc = new jsPDF();
+  let yCounter = 10; // yCounter tracks the y position in the PDF
+
+  // Add At a Glance Charts and report header to the PDF
+  const atAGlanceCharts = document.getElementById('at-a-glance-charts');
+  if (atAGlanceCharts !== null) {
+    yCounter = await addElementToPdf(atAGlanceCharts, doc, yCounter);
+  }
+
+  // Initialize to first tab
+  activeTabIndex.value = 0;
+
+  for (const [i, taskId] of sortedTaskIds.value.entries()) {
+    activeTabIndex.value = i;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    // Add Task Description and Task Chart to document
+    const tabViewDesc = document.getElementById('tab-view-description-' + taskId);
+    const tabViewChart = document.getElementById('tab-view-chart-' + taskId);
+    const chartHeight =
+      tabViewChart &&
+      (await html2canvas(document.getElementById('tab-view-chart-' + taskId)).then(
+        (canvas) => canvas.height * returnScaleFactor(canvas.width),
+      ));
+
+    if (tabViewDesc !== null) {
+      yCounter = await addElementToPdf(tabViewDesc, doc, yCounter, chartHeight);
+    }
+    if (tabViewChart !== null) {
+      yCounter = await addElementToPdf(tabViewChart, doc, yCounter);
+    }
+  }
+
+  // Add Report Closing
+  const closing = document.getElementById('score-report-closing');
+  if (closing !== null) {
+    yCounter = await addElementToPdf(closing, doc, yCounter);
+  }
+  doc.save(
+    `roar-scores-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+      orgInfo.value.name,
+    )}.pdf`,
+  );
+  exportLoading.value = false;
+  window.scrollTo(0, 0);
+
+  return;
+};
+
 // Queries for page
+// Boolean ref to keep track of whether this is the initial sort or a user-defined sort
+const initialSort = ref(true);
+
 const orderBy = ref([
   {
     direction: 'ASCENDING',
@@ -304,6 +460,7 @@ if (props.orgType === 'district') {
 }
 const filterBy = ref([]);
 const filterSchools = ref([]);
+const filterGrades = ref([]);
 const pageLimit = ref(10);
 const page = ref(0);
 // User Claims
@@ -319,24 +476,76 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
-  queryKey: ['administrationInfo', props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name']),
+  queryKey: ['administrationInfo', authStore.uid, props.administrationId],
+  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
-  queryKey: ['orgInfo', props.orgId],
+  queryKey: ['orgInfo', authStore.uid, props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// Grab grade options for filter dropdown
+const gradeOptions = ref([
+  {
+    value: '1',
+    label: '1st Grade',
+  },
+  {
+    value: '2',
+    label: '2nd Grade',
+  },
+  {
+    value: '3',
+    label: '3rd Grade',
+  },
+  {
+    value: '4',
+    label: '4th Grade',
+  },
+  {
+    value: '5',
+    label: '5th Grade',
+  },
+  {
+    value: '6',
+    label: '6th Grade',
+  },
+  {
+    value: '7',
+    label: '7th Grade',
+  },
+  {
+    value: '8',
+    label: '8th Grade',
+  },
+  {
+    value: '9',
+    label: '9th Grade',
+  },
+  {
+    value: '10',
+    label: '10th Grade',
+  },
+  {
+    value: '11',
+    label: '11th Grade',
+  },
+  {
+    value: '12',
+    label: '12th Grade',
+  },
+]);
+
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
-  queryKey: ['schools', ref(props.orgId)],
+  queryKey: ['schools', authStore.uid, ref(props.orgId)],
   queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
   keepPreviousData: true,
   enabled: props.orgType === 'district' && initialized,
@@ -346,7 +555,7 @@ const { data: schoolsInfo } = useQuery({
 const schoolsDict = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = parseLowGrade(school.lowGrade) + ' ' + school.name;
+      acc[school.id] = getGrade(school.lowGrade ?? 0) + ' ' + school.name;
       return acc;
     }, {});
   } else {
@@ -356,14 +565,13 @@ const schoolsDict = computed(() => {
 
 const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
 
-
 // Scores Query
 const {
   isLoading: isLoadingScores,
   isFetching: isFetchingScores,
   data: scoresDataQuery,
 } = useQuery({
-  queryKey: ['scores',props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
+  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId, pageLimit, page, filterBy, orderBy],
   queryFn: () =>
     assignmentPageFetcher(
       props.administrationId,
@@ -382,12 +590,10 @@ const {
   staleTime: 5 * 60 * 1000, // 5 mins
 });
 
-
-
 // Scores count query
 const { data: scoresCount } = useQuery({
-  queryKey: ['assignments', props.administrationId, props.orgId, filterBy],
-  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value),
+  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId, filterBy, orderBy],
+  queryFn: () => assignmentCounter(props.administrationId, props.orgType, props.orgId, filterBy.value, orderBy.value),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
   staleTime: 5 * 60 * 1000,
@@ -428,6 +634,7 @@ const sortDisplay = computed(() => {
 
 const confirm = useConfirm();
 const onSort = (event) => {
+  initialSort.value = false;
   const _orderBy = (event.multiSortMeta ?? []).map((item) => {
     let field = item.field.replace('user', 'userData');
     // Due to differences in the document schemas,
@@ -466,6 +673,10 @@ watch(filterSchools, (newSchools) => {
   // Turn off sort when filtering
   orderBy.value = [];
   if (filterSchools) {
+    if (_isEmpty(newSchools)) {
+      _remove(filterBy.value, { collection: 'schools' });
+      return;
+    }
     filterSchools.value = _union(filterSchools.value, newSchools);
   } else {
     filterBy.value.push({
@@ -475,6 +686,26 @@ watch(filterSchools, (newSchools) => {
     });
   }
 });
+
+watch(filterGrades, (newGrades) => {
+  // Turn off sort when filtering
+  orderBy.value = [];
+  filterBy.value.push({
+    collection: 'grade',
+    field: 'grade',
+    value: toRaw(newGrades),
+  });
+});
+
+watch(
+  scoresCount,
+  (count) => {
+    if (initialSort.value && count === 0) {
+      resetFilters();
+    }
+  },
+  { immediate: true },
+);
 
 const onFilter = (event) => {
   // Turn off sort when filtering
@@ -517,12 +748,16 @@ const onFilter = (event) => {
     }
   }
   const orgFilter = _find(filterBy.value, { collection: 'schools' });
+  const gradeFilter = _find(filterBy.value, { collection: 'grade' });
   if (orgFilter) filters.push(orgFilter);
+  if (gradeFilter) filters.push(gradeFilter);
   filterBy.value = filters;
   page.value = 0;
 };
 
 const resetFilters = () => {
+  filterSchools.value = [];
+  filterGrades.value = [];
   filterBy.value = [];
 };
 const viewMode = ref('color');
@@ -541,11 +776,12 @@ const getPercentileScores = ({
   percentileScoreDisplayKey,
   rawScoreKey,
   taskId,
+  optional,
 }) => {
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
   let raw = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-  const { support_level, tag_color } = getSupportLevel(grade, percentile, raw, taskId);
+  const { support_level, tag_color } = getSupportLevel(grade, percentile, raw, taskId, optional);
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
@@ -561,6 +797,7 @@ const exportSelected = (selectedRows) => {
   const computedExportData = _map(selectedRows, ({ user, assignment }) => {
     let tableRow = {
       Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
       First: _get(user, 'name.first'),
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade'),
@@ -580,7 +817,8 @@ const exportSelected = (selectedRows) => {
     }
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
-      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
+      const isOptional = assessment.optional;
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
       );
@@ -591,6 +829,7 @@ const exportSelected = (selectedRows) => {
         percentileScoreDisplayKey,
         rawScoreKey,
         taskId,
+        isOptional,
       });
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
@@ -616,6 +855,7 @@ const exportAll = async () => {
   const computedExportData = _map(exportData, ({ user, assignment }) => {
     let tableRow = {
       Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
       First: _get(user, 'name.first'),
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade'),
@@ -635,7 +875,8 @@ const exportAll = async () => {
     }
     for (const assessment of assignment.assessments) {
       const taskId = assessment.taskId;
-      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
+      const isOptional = assessment.optional;
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
         assessment,
         getGrade(_get(user, 'studentData.grade')),
       );
@@ -646,6 +887,7 @@ const exportAll = async () => {
         percentileScoreDisplayKey,
         rawScoreKey,
         taskId,
+        isOptional,
       });
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = percentileString;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = _get(
@@ -661,73 +903,17 @@ const exportAll = async () => {
   });
   exportCsv(
     computedExportData,
-    `roar-scores-${_kebabCase(administrationInfo.value.name)}-${_kebabCase(orgInfo.value.name)}.csv`,
+    `roar-scores-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+      orgInfo.value.name,
+    )}.csv`,
   );
   return;
 };
 
-function getScoreKeys(row, grade) {
+function getScoreKeysByRow(row, grade) {
   const taskId = row.taskId;
-  let percentileScoreKey = undefined;
-  let percentileScoreDisplayKey = undefined;
-  let standardScoreKey = undefined;
-  let standardScoreDisplayKey = undefined;
-  let rawScoreKey = undefined;
-  if (taskId === 'swr' || taskId === 'swr-es') {
-    if (grade < 6) {
-      percentileScoreKey = 'wjPercentile';
-      percentileScoreDisplayKey = 'wjPercentile';
-      standardScoreKey = 'standardScore';
-      standardScoreDisplayKey = 'standardScore';
-    } else {
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentile';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScore';
-    }
-    rawScoreKey = 'roarScore';
-  }
-  if (taskId === 'pa') {
-    if (grade < 6) {
-      percentileScoreKey = 'percentile';
-      percentileScoreDisplayKey = 'percentile';
-      standardScoreKey = 'standardScore';
-      standardScoreDisplayKey = 'standardScore';
-    } else {
-      // These are string values intended for display
-      //   they include '>' when the ceiling is hit
-      // Replace them with non '-String' versions for
-      //   comparison.
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentileString';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScoreString';
-    }
-    rawScoreKey = 'roarScore';
-  }
-  if (taskId === 'sre') {
-    if (grade < 6) {
-      percentileScoreKey = 'tosrecPercentile';
-      percentileScoreDisplayKey = 'tosrecPercentile';
-      standardScoreKey = 'tosrecSS';
-      standardScoreDisplayKey = 'tosrecSS';
-    } else {
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentile';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScore';
-    }
-    rawScoreKey = 'sreScore';
-  }
-  return {
-    percentileScoreKey,
-    percentileScoreDisplayKey,
-    standardScoreKey,
-    standardScoreDisplayKey,
-    rawScoreKey,
-  };
+  return getScoreKeys(taskId, grade);
 }
-
 
 const refreshing = ref(false);
 
@@ -741,13 +927,14 @@ const columns = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
   const tableColumns = [
     { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
+    { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true },
     { field: 'user.name.first', header: 'First Name', dataType: 'text', sort: true },
     { field: 'user.name.last', header: 'Last Name', dataType: 'text', sort: true },
-    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true },
+    { field: 'user.studentData.grade', header: 'Grade', dataType: 'text', sort: true, filter: false },
   ];
 
   if (props.orgType === 'district') {
-    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true });
+    tableColumns.push({ field: 'user.schoolName', header: 'School', dataType: 'text', sort: true, filter: false });
   }
 
   if (authStore.isUserSuperAdmin) {
@@ -764,6 +951,7 @@ const columns = computed(() => {
     });
     for (const taskId of sortedTasks) {
       let colField;
+      const isOptional = `scores.${taskId}.optional`;
       // Color needs to include a field to allow sorting.
       if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
       if (viewMode.value === 'standard') colField = `scores.${taskId}.standard`;
@@ -774,35 +962,42 @@ const columns = computed(() => {
         dataType: 'score',
         sort: false,
         tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
-        emptyTag: viewMode.value === 'color' || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
+        emptyTag:
+          viewMode.value === 'color' || isOptional || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
         tagColor: `scores.${taskId}.color`,
         tagOutlined: shouldBeOutlined(taskId),
       });
     }
   }
+  tableColumns.push({
+    header: 'Student Report',
+    link: true,
+    routeName: 'StudentReport',
+    routeTooltip: 'Student Score Report',
+    routeLabel: 'Report',
+    routeIcon: 'pi pi-user',
+    sort: false,
+  });
   return tableColumns;
 });
 
 // this function light out color if assessment is not reliable
-function colorSelection(assessment, rawScore, support_level, tag_color){
-  if(assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined ){
-    if(support_level == 'Needs Extra Support'){
-      return '#d6b8c7'
-    }
-    else if(support_level == 'Developing Skill'){
-      return '#e8dbb5'
-    }
-    else if(support_level == 'Achieved Skill'){
-      return '#c0d9bd'
+function colorSelection(assessment, rawScore, support_level, tag_color) {
+  if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+    if (support_level === 'Optional') {
+      return '#a1d8e3';
+    } else if (support_level === 'Needs Extra Support') {
+      return '#d6b8c7';
+    } else if (support_level === 'Developing Skill') {
+      return '#e8dbb5';
+    } else if (support_level === 'Achieved Skill') {
+      return '#c0d9bd';
+    } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
+      return 'white';
     }
   }
-  else if(rawOnlyTasks.includes(assessment.taskId) && rawScore){
-    return 'white';
-  }else{
-    return tag_color;
-  }
+  return tag_color;
 }
-
 
 const tableData = computed(() => {
   if (scoresDataQuery.value === undefined) return [];
@@ -810,7 +1005,7 @@ const tableData = computed(() => {
     const scores = {};
     const grade = getGrade(_get(user, 'studentData.grade'));
     for (const assessment of assignment?.assessments ?? []) {
-      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeys(
+      const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
         assessment,
         grade,
       );
@@ -821,17 +1016,20 @@ const tableData = computed(() => {
         percentileScoreDisplayKey,
         rawScoreKey,
         taskId: assessment.taskId,
+        optional: assessment.optional,
       });
       const standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
       const rawScore = rawOnlyTasks.includes(assessment.taskId)
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
+      const color = colorSelection(assessment, rawScore, support_level, tag_color);
       scores[assessment.taskId] = {
         percentile: percentileString,
         standard: standardScore,
         raw: rawScore,
         support_level,
-        color: colorSelection(assessment, rawScore, support_level, tag_color),
+        color: color,
+        optional: assessment.optional,
       };
     }
     // If this is a district score report, grab school information
@@ -862,19 +1060,25 @@ const tableData = computed(() => {
       user,
       assignment,
       scores,
+      routeParams: {
+        administrationId: props.administrationId,
+        userId: _get(user, 'userId'),
+        orgType: props.orgType,
+        orgId: props.orgId,
+      },
     };
   });
 });
 
 const allTasks = computed(() => {
-  if (tableData.value.length > 0) {
-    return tableData.value[0].assignment.assessments.map((assessment) => assessment.taskId);
+  if (administrationInfo.value?.assessments?.length > 0) {
+    return administrationInfo.value?.assessments?.map((assessment) => assessment.taskId);
   } else return [];
 });
 
 // Runs query for all tasks under admin id
 const { isLoading: isLoadingRunResults, data: runResults } = useQuery({
-  queryKey: ['scores', ref(0), props.orgType, props.orgId, props.administrationId],
+  queryKey: ['scores', authStore.uid, ref(0), props.orgType, props.orgId, props.administrationId],
   queryFn: () =>
     runPageFetcher({
       administrationId: props.administrationId,
@@ -923,29 +1127,22 @@ function rawScoreByTaskId(taskId) {
   return 'roarScore';
 }
 
-const parseLowGrade = (grade) => {
-  if (grade === 'PreKindergarten' || grade === 'Kindergarten') return 0;
-  else {
-    return parseInt(grade);
-  }
-};
-
 const runsByTaskId = computed(() => {
   if (runResults.value === undefined) return {};
   const computedScores = {};
   for (const { scores, taskId, user } of runResults.value) {
     let percentScore;
     const rawScore = _get(scores, rawScoreByTaskId(taskId));
-    if (user?.data?.grade >= 6) {
+    const grade = getGrade(user?.data?.grade);
+    if (grade >= 6) {
       percentScore = _get(scores, scoreFieldAboveSixth(taskId));
     } else {
       percentScore = _get(scores, scoreFieldBelowSixth(taskId));
     }
-    const grade = user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade);
-    const { support_level } = getSupportLevel(grade, percentScore, rawScore, taskId);
+    const { support_level, tag_color } = getSupportLevel(grade, percentScore, rawScore, taskId);
     const run = {
       // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
-      grade: user?.data?.grade === 'Kindergarten' ? 0 : parseInt(user?.data?.grade),
+      grade: grade,
       scores: {
         ...scores,
         support_level: support_level,
@@ -957,6 +1154,7 @@ const runsByTaskId = computed(() => {
         ...user.data,
         schoolName: schoolsDict.value[user?.data?.schools?.current[0]],
       },
+      tag_color: tag_color,
     };
     if (run.taskId in computedScores) {
       computedScores[run.taskId].push(run);
@@ -964,8 +1162,9 @@ const runsByTaskId = computed(() => {
       computedScores[run.taskId] = [run];
     }
   }
+
   return _pickBy(computedScores, (scores, taskId) => {
-    return tasksToDisplayGraphs.includes(taskId);
+    return Object.keys(taskInfoById).includes(taskId);
   });
 });
 
@@ -999,6 +1198,9 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 onMounted(async () => {
+  TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
+  DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
+  NextSteps = (await import('@/assets/NextSteps.pdf')).default;
   if (roarfirekit.value.restConfig) refresh();
 });
 </script>
@@ -1027,7 +1229,7 @@ onMounted(async () => {
 }
 
 .task-description {
-  width: 240px;
+  width: 23vh;
   font-size: 14px;
 }
 
@@ -1102,7 +1304,7 @@ onMounted(async () => {
 .legend-description {
   text-align: center;
   margin-bottom: 1rem;
-  font-size: 0.7rem;
+  font-size: 1rem;
 }
 
 .circle {
@@ -1114,6 +1316,11 @@ onMounted(async () => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+}
+
+.tooltip {
+  outline: 1px dotted #0000cd;
+  outline-offset: 3px;
 }
 
 .extra-info-title {
@@ -1135,6 +1342,7 @@ onMounted(async () => {
     align-items: center;
   }
 }
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }

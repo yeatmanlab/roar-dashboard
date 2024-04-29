@@ -2,7 +2,7 @@
   <div v-if="isLoading">
     <div class="col-full text-center">
       <AppSpinner />
-      <p class="text-center">Loading...</p>
+      <p class="text-center">{{ $t('homeSelector.loading') }}</p>
     </div>
   </div>
   <div v-else>
@@ -18,8 +18,7 @@
   />
   <PvConfirmDialog group="inactivity-logout" class="confirm">
     <template #message>
-      You will soon be logged out for security purposes. Please click "Continue" if you wish to continue your session.
-      Otherwise, you will be automatically logged out in {{ timeLeft }} seconds.
+      {{ $t('homeSelector.inactivityLogout', { timeLeft: timeLeft }) }}
     </template>
   </PvConfirmDialog>
 </template>
@@ -32,14 +31,14 @@ import { useConfirm } from 'primevue/useconfirm';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import HomeParticipant from '@/pages/HomeParticipant.vue';
-import HomeAdministrator from '@/pages/HomeAdministrator.vue';
 import _get from 'lodash/get';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
-import ConsentModal from '@/components/ConsentModal.vue';
 import { fetchDocById } from '@/helpers/query/utils';
+import { useI18n } from 'vue-i18n';
+
+let HomeParticipant, HomeAdministrator, ConsentModal;
 
 const authStore = useAuthStore();
 const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
@@ -82,7 +81,13 @@ const isAdmin = computed(() => {
   return true;
 });
 
-const consentType = computed(() => (isAdmin.value ? 'tos' : 'assent'));
+const consentType = computed(() => {
+  if (isAdmin.value) {
+    return 'tos';
+  } else {
+    return i18n.locale.value.includes('es') ? 'assent-es' : 'assent';
+  }
+});
 const showConsent = ref(false);
 const confirmText = ref('');
 const consentVersion = ref('');
@@ -110,6 +115,10 @@ async function checkConsent() {
 const router = useRouter();
 
 onMounted(async () => {
+  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+
   if (requireRefresh.value) {
     requireRefresh.value = false;
     router.go(0);
@@ -130,6 +139,8 @@ watch(isLoading, async (newValue) => {
 const { idle } = useIdle(10 * 60 * 1000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
+const i18n = useI18n();
+const t = i18n.t;
 
 watch(idle, (idleValue) => {
   if (idleValue) {
@@ -146,7 +157,7 @@ watch(idle, (idleValue) => {
     confirm.require({
       group: 'inactivity-logout',
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Continue',
+      acceptLabel: t('homeSelector.inactivityLogoutAcceptLabel'),
       acceptIcon: 'pi pi-check',
       accept: () => {
         clearInterval(timer);

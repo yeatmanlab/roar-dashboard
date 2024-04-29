@@ -1,5 +1,6 @@
 <template>
-  <div class="view-by-wrapper mx-2">
+  <div :id="`roar-distribution-chart-support-${taskId}`"></div>
+  <div class="view-by-wrapper my-2" data-html2canvas-ignore="true">
     <div class="flex uppercase text-xs font-light">view support levels by</div>
     <PvSelectButton
       v-model="xMode"
@@ -10,7 +11,6 @@
       @change="handleXModeChange"
     />
   </div>
-  <div :id="`roar-distribution-chart-support-${taskId}`"></div>
 </template>
 
 <script setup>
@@ -19,38 +19,24 @@ import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
 const returnGradeCount = computed(() => {
-  const gradeCount = [
-    { category: 'Pre-K', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: 'T-K', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: 'Kindergarten', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '1', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '2', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '3', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '4', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '5', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '6', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '7', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '8', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '9', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '10', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '11', support_levels: [0, 0, 0], totalStudents: 0 },
-    { category: '12', support_levels: [0, 0, 0], totalStudents: 0 },
-  ];
-  for (const score of props.runs) {
-    let gradeCounter = gradeCount.find((grade) => grade.category === score?.user?.grade?.toString());
-    if (gradeCounter) {
-      if (score?.scores?.support_level === 'Needs Extra Support' && gradeCounter) {
-        gradeCounter.support_levels[0]++;
-        gradeCounter.totalStudents++;
-      } else if (score?.scores?.support_level === 'Developing Skill' && gradeCounter) {
-        gradeCounter.support_levels[1]++;
-        gradeCounter.totalStudents++;
-      } else if (score?.scores?.support_level === 'Achieved Skill' && gradeCounter) {
-        gradeCounter.support_levels[2]++;
-        gradeCounter.totalStudents++;
-      } else {
-        // score not counted (support level null)
-      }
+  const gradeCount = [];
+  for (const run of props.runs) {
+    let gradeCounter = gradeCount.find((grade) => grade.category === run?.user?.grade);
+    if (!gradeCounter) {
+      gradeCounter = { category: run?.user?.grade, support_levels: [0, 0, 0], totalStudents: 0 };
+      gradeCount.push(gradeCounter);
+    }
+    if (run?.scores?.support_level === 'Needs Extra Support') {
+      gradeCounter.support_levels[0]++;
+      gradeCounter.totalStudents++;
+    } else if (run?.scores?.support_level === 'Developing Skill') {
+      gradeCounter.support_levels[1]++;
+      gradeCounter.totalStudents++;
+    } else if (run?.scores?.support_level === 'Achieved Skill') {
+      gradeCounter.support_levels[2]++;
+      gradeCounter.totalStudents++;
+    } else {
+      // score not counted (support level null)
     }
   }
 
@@ -60,7 +46,6 @@ const returnGradeCount = computed(() => {
 const returnSchoolCount = computed(() => {
   const schoolCount = [];
   for (const score of props.runs) {
-    // let schoolCounter = schoolCount.find((grade) => grade.grade === score?.user?.grade?.toString());
     let schoolCounter = schoolCount.find((school) => school.category === score?.user?.schoolName);
     if (!schoolCounter) {
       schoolCounter = { category: score?.user?.schoolName, support_levels: [0, 0, 0], totalStudents: 0 };
@@ -133,10 +118,14 @@ const returnSupportLevelValues = computed(() => {
   return values;
 });
 
+const graphHeight = computed(() => {
+  return returnSupportLevelValues.value.length * 23.5;
+});
+
 const distributionBySupport = computed(() => {
   let spec = {
     mark: 'bar',
-    height: 450,
+    height: graphHeight.value,
     width: 350,
     background: null,
     title: {
@@ -168,7 +157,36 @@ const distributionBySupport = computed(() => {
         type: 'ordinal',
         title: '',
         spacing: 1,
-        sort: props.facetMode.name === 'Grade' ? ['Kindergarten', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] : 'ascending',
+        sort:
+          props.facetMode.name === 'Grade'
+            ? [
+                'Kindergarten',
+                1,
+                '1',
+                2,
+                '2',
+                3,
+                '3',
+                4,
+                '4',
+                5,
+                '5',
+                6,
+                '6',
+                7,
+                '7',
+                8,
+                '8',
+                9,
+                '9',
+                10,
+                '10',
+                11,
+                '11',
+                12,
+                '12',
+              ]
+            : 'ascending',
         axis: {
           labelAngle: 0,
           labelAlign: 'right',

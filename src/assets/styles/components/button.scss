@@ -6,7 +6,6 @@
   background: var(--primary-color);
   border: 1px solid var(--primary-color);
   padding: var(--inline-spacing-larger) 1rem;
-  margin: 0 8px;
   transition: none;
   border-radius: var(--border-radius);
 }
@@ -76,7 +75,7 @@
 .p-button:focus {
   outline: 0 none;
   outline-offset: 0;
-  box-shadow: 0 0 0 1px var(--indigo-500);
+  // box-shadow: 0 0 0 1px var(--primary-color);
 }
 .p-button .p-button-label {
   transition-duration: 0.2s;

@@ -33,7 +33,7 @@
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
-      <span class="flex flex-row flex-wrap justify-content-end">
+      <span class="flex flex-row flex-wrap justify-content-end gap-2">
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
@@ -61,6 +61,7 @@
           ref="dataTable"
           v-model:filters="refFilters"
           v-model:selection="selectedRows"
+          class="scrollable-container"
           :class="{ compressed: compressedRows }"
           :value="computedData"
           :row-hover="true"
@@ -95,15 +96,15 @@
             :key="col.field + '_' + index"
             :field="col.field"
             :data-type="col.dataType"
-            :sortable="currentFilter.length === 0 && col.sort !== false"
-            :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score'"
+            :sortable="col.sort !== false"
+            :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'"
             :show-filter-operator="col.allowMultipleFilters === true"
             :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
             :show-add-button="col.allowMultipleFilters === true"
             :frozen="col.pinned"
             align-frozen="left"
             :class="{ 'filter-button-override': hideFilterButtons }"
-            :filter-menu-style="enableFilter(col.field) ? '' : 'display: none;'"
+            :filter-menu-style="enableFilter(col) ? '' : 'display: none;'"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
             <template #header>
@@ -113,7 +114,6 @@
                   toolTipByHeader(col.header).length > 0
                     ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
                     : null,
-                  col.header === 'Letter Names and Sounds' ? 'width: 7em; text-wrap: wrap' : '',
                 ]"
               >
                 {{ col.header }}
@@ -121,7 +121,7 @@
             </template>
             <template #body="{ data: colData }">
               <div
-                v-if="col.tag && _get(colData, col.field) !== undefined"
+                v-if="col.tag && (_get(colData, col.field) !== undefined || _get(colData, 'optional'))"
                 v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
               >
                 <PvTag
@@ -159,10 +159,9 @@
                 <div
                   v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
                   class="circle"
-                  :style="`border: 1px solid black; ${
-                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                    'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`"
+                  :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
+                    _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+                  }; outline: 1px dotted #0000CD; outline-offset: 3px`"
                 />
               </div>
               <div v-else-if="col.link">
@@ -186,8 +185,13 @@
                 {{ _get(colData, col.field) }}
               </div>
             </template>
+            <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
+              <i v-if="!sorted && currentSort.length === 0 && !scoreFilterApplied" class="pi pi-sort-alt ml-2" />
+              <i v-if="sorted && sortOrder === 1 && !scoreFilterApplied" class="pi pi-sort-amount-down-alt ml-2" />
+              <i v-else-if="sorted && sortOrder === -1 && !scoreFilterApplied" class="pi pi-sort-amount-up-alt ml-2" />
+            </template>
             <template v-if="col.dataType" #filtericon>
-              <i v-if="enableFilter(col.field)" class="pi pi-filter" />
+              <i v-if="enableFilter(col)" class="pi pi-filter" />
             </template>
             <template v-if="col.dataType" #filter="{ filterModel }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
@@ -226,6 +230,13 @@
                   style="margin-bottom: 0.5rem"
                 />
               </div>
+              <div v-if="col.dataType === 'progress'">
+                <PvDropdown
+                  v-model="filterModel.value"
+                  :options="['Assigned', 'Started', 'Completed']"
+                  style="margin-bottom: 0.5rem"
+                />
+              </div>
             </template>
           </PvColumn>
           <template #empty> No data found. </template>
@@ -250,7 +261,7 @@ import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
 import _lowerCase from 'lodash/lowerCase';
-import { scoredTasks } from '@/helpers/reports';
+import { scoredTasks, rawOnlyTasks } from '@/helpers/reports';
 
 /*
 Using the DataTable
@@ -276,7 +287,7 @@ Array of objects consisting of a field and header at minimum.
       the leftmost column.
 */
 // const compressedRows = ref(false);
-const nameForVisualize = ref('Expand view');
+const nameForVisualize = ref('Expand View');
 const countForVisualize = ref(2); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
@@ -304,8 +315,17 @@ const computedColumns = computed(() => {
     return _find(props.columns, (pcol) => pcol.header === col.header);
   });
 });
+const currentSort = ref([]);
 const currentFilter = ref([]);
 const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value) || !props.allowFiltering);
+const scoreFilterApplied = computed(() => {
+  const scoreFilter = _find(currentFilter.value, (filter) => {
+    if (filter.split('.')[0] === 'scores') {
+      return true;
+    } else return false;
+  });
+  return Boolean(scoreFilter);
+});
 const selectedRows = ref([]);
 const toast = useToast();
 const selectAll = ref(false);
@@ -348,16 +368,16 @@ const padding = '1rem 1.5rem';
 function increasePadding() {
   if (countForVisualize.value % 2 === 0) {
     document.documentElement.style.setProperty('--padding-value', padding);
-    nameForVisualize.value = 'Compact view';
+    nameForVisualize.value = 'Compact View';
   } else {
-    nameForVisualize.value = 'Expand view';
+    nameForVisualize.value = 'Expand View';
     document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
   countForVisualize.value = countForVisualize.value + 1;
 }
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE'];
+const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE', 'PROGRESS'];
 let filters = {};
 let options = {};
 _forEach(computedColumns.value, (column) => {
@@ -380,6 +400,8 @@ _forEach(computedColumns.value, (column) => {
       if (scoredTasks.includes(column.field.split('.')[1])) {
         returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
       }
+    } else if (dataType === 'PROGRESS') {
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
     }
 
     if (_get(column, 'useMultiSelect')) {
@@ -397,12 +419,22 @@ _forEach(computedColumns.value, (column) => {
 const refOptions = ref(options);
 const refFilters = ref(filters);
 
-const enableFilter = (field) => {
+const enableFilter = (column) => {
+  // If column is specified to have filtering disabled
+  if (_get(column, 'filter') === false) return false;
+
+  // If the field is not defined, turn off filtering
+  const field = column.field;
   if (!field) return false;
+
+  // If the field is a score, and the taskId is on
+  //   the filter blacklist, turn off filtering
   const path = field.split('.');
   if (path[0] === 'scores') {
     if (!scoredTasks.includes(path[1])) return false;
   }
+
+  // Otherwise, enable filtering
   return true;
 };
 
@@ -411,82 +443,91 @@ let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DAT
 dateFields = _map(dateFields, (col) => col.field);
 
 let toolTipByHeader = (header) => {
-  if (header === 'Word') {
-    return 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900';
-  } else if (header === 'Letter Names and Sounds') {
-    return 'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90';
-  } else if (header === 'Phoneme') {
-    return 'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57';
-  } else if (header === 'Sentence') {
-    return 'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ';
-  } else if (header === 'Palabra') {
-    return 'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900';
-  }
-  return '';
+  const headerToTooltipMap = {
+    Word: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+    Letter:
+      'Assesses decoding skills at the word level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-90',
+    Phoneme:
+      'Assesses phonological awareness: sound matching and elision. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-57',
+    Sentence:
+      'Assesses reading fluency at the sentence level. \n\n Percentile ranges from 0-99 \n Raw Score ranges from 0-130 ',
+    Palabra:
+      'Assesses decoding skills at the word level in Spanish. This test is still in the research phase. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
+  };
+
+  return headerToTooltipMap[header] || '';
 };
 
-
-function getIndexTask(colData, task){
+function getIndexTask(colData, task) {
   for (let index = 0; index < colData.assignment.assessments.length; index++) {
-    if(colData.assignment.assessments[index].taskId === task){
+    if (colData.assignment.assessments[index].taskId === task) {
       return index;
     }
   }
-};
+}
 
-function getFlags(index, ColData){
-  const flags = ColData.assignment.assessments[index].engagementFlags;
-  if(flags !== undefined && flags !== '' && !ColData.assignment.assessments[index].reliable){
-    const reliabilityFlags = Object.keys(flags).map(flag => {
-      switch (flag) {
-        case 'notEnoughResponses':
-          return 'Assessment was incomplete';
-        case 'responseTimeTooFast':
-          return 'Responses were too fast';
-        default:
-          return _lowerCase(flag);
-      }
+function getFlags(index, colData) {
+  const flags = colData.assignment.assessments[index].engagementFlags;
+  const flagMessages = {
+    accuracyTooLow: '- Responses were inaccurate',
+    notEnoughResponses: '- Assessment was incomplete',
+    responseTimeTooFast: '- Responses were too fast',
+  };
+
+  // If there are flags and the assessment is not reliable, return the flags
+  if (flags && !colData.assignment.assessments[index].reliable) {
+    const reliabilityFlags = Object.keys(flags).map((flag) => {
+      return flagMessages[flag] || _lowerCase(flag);
     });
-    return reliabilityFlags + '\n\n';
-  }
-  else{
-    return ''
+    // Join the returned flags with a newline character, then add two newlines for spacing
+    return reliabilityFlags.join('\n') + '\n\n';
+  } else {
+    return '';
   }
 }
 
+function handleToolTip(_taskId, _toolTip, _colData) {
+  // Get the support level and flags, if they exist
+  _toolTip += _colData.scores?.[_taskId]?.support_level + '\n' + '\n';
+  _toolTip += getFlags(getIndexTask(_colData, _taskId), _colData);
+
+  // If the task does not have a raw score, then display no scores
+  if (!_colData.scores?.[_taskId]?.raw) {
+    _toolTip += 'Awaiting scores';
+  }
+  // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
+  else if (rawOnlyTasks.includes(_taskId)) {
+    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n' + '\n';
+    _toolTip += 'These scores are under development';
+  }
+  // If the task is a scored task and has a raw score, then display all scores
+  else {
+    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
+    _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
+    _toolTip += 'Standard Score: ' + Math.round(_colData.scores?.[_taskId]?.standard) + '\n';
+  }
+  return _toolTip;
+}
 
 let returnScoreTooltip = (colHeader, colData, fieldPath) => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
   let toolTip = '';
-  if (colHeader === 'Phoneme' && colData.scores?.pa?.standard) {
-    toolTip += getFlags(getIndexTask(colData, 'pa'), colData);
-    toolTip += colData.scores.pa?.support_level + '\n' + '\n';
-    toolTip += 'Percentile: ' + colData.scores?.pa?.percentile + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.pa?.raw + '\n';
-    toolTip += 'Standardized Score: ' + colData.scores?.pa?.standard + '\n';
-  } else if (colHeader === 'Word' && colData.scores?.swr?.standard) {
-    toolTip += getFlags(getIndexTask(colData, 'swr'), colData);
-    toolTip += colData.scores?.swr?.support_level + '\n' + '\n';
-    toolTip += 'Percentile: ' + colData.scores?.swr?.percentile + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.swr?.raw + '\n';
-    toolTip += 'Standardized Score: ' + colData.scores?.swr?.standard + '\n';
-  } else if (colHeader === 'Sentence' && colData.scores?.sre?.standard) {
-    toolTip += getFlags(getIndexTask(colData, 'sre'), colData);
-    toolTip += colData.scores?.sre?.support_level + '\n' + '\n';
-    toolTip += 'Percentile: ' + colData.scores?.sre?.percentile + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.sre?.raw + '\n';
-    toolTip += 'Standardized Score: ' + colData.scores?.sre?.standard + '\n';
-  } else if (colHeader === 'Letter Names and Sounds' && colData.scores?.letter) {
-    toolTip += getFlags(getIndexTask(colData, 'letter'), colData);
-    toolTip += 'Raw Score: ' + colData.scores?.letter?.raw + '\n';
-  } else if (colHeader === 'Palabra' && colData.scores?.['swr-es']?.standard) {
-    toolTip += getFlags(getIndexTask(colData, 'swr-es'), colData);
-    toolTip += colData.scores?.['swr-es'].support_level + '\n' + '\n';
-    toolTip += 'Percentile: ' + colData.scores?.['swr-es']?.percentile + '\n';
-    toolTip += 'Raw Score: ' + colData.scores?.['swr-es']?.raw + '\n';
-    toolTip += 'Standardized Score: ' + colData.scores?.['swr-es']?.standard + '\n';
+
+  const headerToTaskIdMap = {
+    Phoneme: 'pa',
+    Word: 'swr',
+    Sentence: 'sre',
+    Letter: 'letter',
+    Palabra: 'swr-es',
+  };
+
+  const selectedTaskId = headerToTaskIdMap[colHeader];
+  if (selectedTaskId && colData.scores?.[selectedTaskId]?.support_level) {
+    // Handle scored tasks
+    return handleToolTip(selectedTaskId, toolTip, colData);
+    // Handle raw only tasks
   } else if (taskId && !scoredTasks.includes(taskId)) {
-    toolTip += 'These scores are under development.';
+    return handleToolTip(taskId, toolTip, colData);
   }
   return toolTip;
 };
@@ -543,6 +584,7 @@ const onPage = (event) => {
   emit('page', event);
 };
 const onSort = (event) => {
+  currentSort.value = _get(event, 'multiSortMeta') ?? [];
   emit('sort', event);
 };
 const onFilter = (event) => {
@@ -572,10 +614,12 @@ const onFilter = (event) => {
   margin-top: 5px;
   margin-bottom: 5px;
 }
+
 button.p-button.p-component.softer {
   background: #f3adad;
   color: black;
 }
+
 button.p-column-filter-menu-button.p-link,
 g {
   color: white;
@@ -596,6 +640,7 @@ g {
   font-size: smaller;
   color: var(--surface-500);
 }
+
 .view-label2 {
   position: absolute;
   top: -15px;
@@ -617,16 +662,32 @@ button.p-column-filter-menu-button.p-link:hover {
   border-width: 0 0 3px 0;
   padding: 1px 1.5rem 2px 1.5rem;
 }
+
 .filter-content {
   width: 12rem;
 }
+
 .filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
   display: none;
 }
+
 .p-column-filter-matchmode-dropdown {
   /* Our current filtering queries do not support options other than equals
      for strings. To reduce confusion for end users, remove the dropdown
      offering different matchmodes */
   display: none;
+}
+
+.scrollable-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb,
+.scrollable-container::-webkit-scrollbar-track {
+  background-color: var(--primary-color);
+}
+
+.scrollable-container {
+  scrollbar-color: var(--primary-color) white;
 }
 </style>

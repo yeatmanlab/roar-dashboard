@@ -49,7 +49,7 @@ export const useAuthStore = () => {
         return state.roarfirekit?.initialized;
       },
       isUserAdmin: (state) => {
-        if (state.userClaims?.claims?.super_admin) return true;
+        if (state.userClaims?.claims?.super_admin || state.userClaims?.claims?.admin) return true;
         if (_isEmpty(_union(...Object.values(state.userClaims?.claims?.minimalAdminOrgs ?? {})))) return false;
         return true;
       },
@@ -94,7 +94,13 @@ export const useAuthStore = () => {
       },
       async logInWithEmailAndPassword({ email, password }) {
         if (this.isFirekitInit) {
-          return this.roarfirekit.logInWithEmailAndPassword({ email, password }).then(() => {});
+          return this.roarfirekit
+            .logInWithEmailAndPassword({ email, password })
+            .then(() => {})
+            .catch((error) => {
+              console.error('Error signing in:', error);
+              throw error;
+            });
         }
       },
       async initiateLoginWithEmailLink({ email }) {
@@ -151,8 +157,19 @@ export const useAuthStore = () => {
         if (this.isAuthenticated && this.isFirekitInit) {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
-            this.spinner = false;
             this.authFromClever = false;
+            this.firebaseUser = {
+              adminFirebaseUser: null,
+              appFirebaseUser: null,
+            };
+            this.spinner = false;
+            this.userClaims = null;
+            this.userData = null;
+
+            this.userQueryKeyIndex += 1;
+            this.assignmentQueryKeyIndex += 1;
+            this.administrationQueryKeyIndex += 1;
+
             const gameStore = useGameStore();
             gameStore.selectedAdmin = undefined;
           });
@@ -183,6 +200,11 @@ export const useAuthStore = () => {
       //   await roarfirekit.addUserToAdminRequests();
       //   await this.setRoles();
       // },
+
+      // ------------------ LEVANTE ------------------
+      async createLevanteUsers(userData) {
+        return this.roarfirekit.createLevanteUsersWithEmailPassword(userData);
+      },
     },
     // persist: true
     persist: {

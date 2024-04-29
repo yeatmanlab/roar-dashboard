@@ -63,7 +63,7 @@ export const getTasksRequestBody = ({
   return requestBody;
 };
 
-export const taskFetcher = async (registered = true, select = ['name']) => {
+export const taskFetcher = async (registered = true, select = ['name', 'testData', 'demoData']) => {
   const axiosInstance = getAxiosInstance('app');
   const requestBody = getTasksRequestBody({
     registered,

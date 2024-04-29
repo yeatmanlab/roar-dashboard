@@ -2,13 +2,12 @@ import _find from 'lodash/find';
 import _flatten from 'lodash/flatten';
 import _get from 'lodash/get';
 import _groupBy from 'lodash/groupBy';
-import _head from 'lodash/head';
 import _mapValues from 'lodash/mapValues';
 import _replace from 'lodash/replace';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
-import { convertValues, getAxiosInstance, mapFields } from './utils';
+import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { toRaw } from 'vue';
 
@@ -38,6 +37,7 @@ export const getAssignmentsRequestBody = ({
   select = assignmentSelectFields,
   filter = {},
   orderBy = [],
+  grades = [],
   isCollectionGroupQuery = true,
 }) => {
   const requestBody = {
@@ -106,11 +106,33 @@ export const getAssignmentsRequestBody = ({
       });
     }
 
-    if (!_isEmpty(orderBy)) {
-      requestBody.structuredQuery.orderBy = orderBy;
+    if (!_isEmpty(grades)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.grade` },
+          op: 'IN',
+          value: {
+            arrayValue: {
+              values: [
+                ...grades.map((grade) => {
+                  return { stringValue: grade };
+                }),
+              ],
+            },
+          },
+        },
+      });
     }
 
-    if (!_isEmpty(filter)) {
+    if (['Completed', 'Started', 'Assigned'].includes(filter?.value)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `progress.${filter.taskId.replace(/-/g, '_')}` },
+          op: 'EQUAL',
+          value: { stringValue: filter.value.toLowerCase() },
+        },
+      });
+    } else if (!_isEmpty(filter)) {
       requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: `userData.${filter.field}` },
@@ -128,6 +150,10 @@ export const getAssignmentsRequestBody = ({
         value: { timestampValue: currentDate },
       },
     };
+  }
+
+  if (!_isEmpty(orderBy)) {
+    requestBody.structuredQuery.orderBy = orderBy;
   }
 
   if (aggregationQuery) {
@@ -239,6 +265,7 @@ export const getFilteredScoresRequestBody = ({
   filter,
   select = ['scores', 'reliable', 'engagementFlags'],
   aggregationQuery,
+  grades,
   paginate = true,
   page,
   pageLimit,
@@ -470,6 +497,23 @@ export const getFilteredScoresRequestBody = ({
         },
       );
     }
+    if (!_isEmpty(grades)) {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
+        fieldFilter: {
+          field: { fieldPath: `userData.grade` },
+          op: 'IN',
+          value: {
+            arrayValue: {
+              values: [
+                ...grades.map((grade) => {
+                  return { stringValue: grade };
+                }),
+              ],
+            },
+          },
+        },
+      });
+    }
   }
   if (aggregationQuery) {
     return {
@@ -566,16 +610,19 @@ export const getScoresRequestBody = ({
   return requestBody;
 };
 
-export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
+export const assignmentCounter = (adminId, orgType, orgId, filters = [], orderBy = []) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
 
   // Only allow one non-org filter
   let nonOrgFilter = null;
   let orgFilters = null;
+  let gradeFilters = null;
   filters.forEach((filter) => {
     if (filter.collection === 'schools') {
       orgFilters = filter;
+    } else if (filter.collection === 'grade') {
+      gradeFilters = filter;
     } else if (filter.collection !== 'schools') {
       if (nonOrgFilter) {
         throw new Error('You may specify at most one filter');
@@ -586,11 +633,21 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   });
   let requestBody;
   if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
+    let orgFilter = null;
+    let gradeFilter = null;
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
+      orgFilter = orgFilters.value;
+    }
+    if (gradeFilters && gradeFilters.collection === 'grade') {
+      gradeFilter = gradeFilters.value;
+    }
     requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
-      orgType: orgType,
-      orgId: orgId,
-      filter: _head(filters),
+      orgType: orgFilter ? 'school' : orgType,
+      orgId: orgFilter ? null : orgId,
+      orgArray: orgFilter,
+      grades: gradeFilter,
+      filter: nonOrgFilter,
       aggregationQuery: true,
     });
     return appAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
@@ -599,11 +656,15 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
   } else {
     let userFilter = null;
     let orgFilter = null;
-    if (nonOrgFilter && nonOrgFilter.collection === 'users') {
-      userFilter = filters[0];
+    let gradeFilter = null;
+    if (nonOrgFilter && nonOrgFilter.collection === 'users' && nonOrgFilter.collection === 'assignments') {
+      userFilter = nonOrgFilter;
     }
-    if (orgFilters && orgFilters.collection === 'schools') {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
+    }
+    if (gradeFilters && gradeFilters.collection === 'grade') {
+      gradeFilter = gradeFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
@@ -611,7 +672,9 @@ export const assignmentCounter = (adminId, orgType, orgId, filters = []) => {
       orgId: orgFilter ? null : orgId,
       orgArray: orgFilter,
       aggregationQuery: true,
-      filter: userFilter,
+      filter: userFilter || nonOrgFilter,
+      grades: gradeFilter,
+      orderBy: toRaw(orderBy),
     });
     return adminAxiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {
       return Number(convertValues(data[0].result?.aggregateFields?.count));
@@ -633,13 +696,18 @@ export const assignmentPageFetcher = async (
 ) => {
   const adminAxiosInstance = getAxiosInstance();
   const appAxiosInstance = getAxiosInstance('app');
+  const adminProjectId = getProjectId('admin');
+  const appProjectId = getProjectId('app');
 
   // Only allow one non-org filter
   let nonOrgFilter = null;
   let orgFilters = null;
+  let gradeFilters = null;
   filters.forEach((filter) => {
     if (filter.collection === 'schools') {
       orgFilters = filter;
+    } else if (filter.collection === 'grade') {
+      gradeFilters = filter;
     } else if (filter.collection !== 'schools') {
       if (nonOrgFilter) {
         throw new Error('You may specify at most one filter');
@@ -652,8 +720,12 @@ export const assignmentPageFetcher = async (
   // Handle filtering based on scores
   if (nonOrgFilter && nonOrgFilter.collection === 'scores') {
     let orgFilter = null;
-    if (orgFilters && orgFilters.collection === 'schools') {
+    let gradeFilter = null;
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
+    }
+    if (gradeFilters && gradeFilters.collection === 'grade') {
+      gradeFilter = gradeFilters.value;
     }
     const requestBody = getFilteredScoresRequestBody({
       adminId: adminId,
@@ -662,6 +734,7 @@ export const assignmentPageFetcher = async (
       orgArray: orgFilter,
       filter: nonOrgFilter,
       aggregationQuery: false,
+      grades: gradeFilter,
       paginate: true,
       page: page.value,
       pageLimit: pageLimit.value,
@@ -677,7 +750,7 @@ export const assignmentPageFetcher = async (
         _without(
           data.map((scoreDoc) => {
             if (scoreDoc.document?.name) {
-              return _replace(scoreDoc.document.name.split('/runs/')[0], 'gse-roar-assessment', 'gse-roar-admin');
+              return _replace(scoreDoc.document.name.split('/runs/')[0], appProjectId, adminProjectId);
             } else {
               return undefined;
             }
@@ -743,9 +816,9 @@ export const assignmentPageFetcher = async (
             const runId = assessment.runId;
             const scoresObject = _get(_find(scoresData, { id: runId }), 'scores');
             const reliable = _get(_find(scoresData, { id: runId }), 'reliable');
-            const engagementFlags = _get(_find(scoresData, {id: runId}), 'engagementFlags');
+            const engagementFlags = _get(_find(scoresData, { id: runId }), 'engagementFlags');
             if (!scoresObject && runId) {
-              const runPath = `projects/gse-roar-assessment/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
+              const runPath = `projects/${appProjectId}/databases/(default)/documents/users/${assignment.userId}/runs/${runId}`;
               unretrievedScores.push(runPath);
             }
             return {
@@ -793,7 +866,7 @@ export const assignmentPageFetcher = async (
           const runId = assessment.runId;
           const runScores = _get(_find(otherScores, { id: runId }), 'scores');
           const reliable = _get(_find(otherScores, { id: runId }), 'reliable');
-          const engagementFlags = _get(_find(otherScores, {id: runId}), 'engagementFlags');
+          const engagementFlags = _get(_find(otherScores, { id: runId }), 'engagementFlags');
           if (runScores) {
             return {
               ...assessment,
@@ -822,7 +895,10 @@ export const assignmentPageFetcher = async (
             const assignmentDoc = _find(scoredAssignments, { userId: userId });
             const userDoc = _find(batchUserDocs, { userId: userId });
             return {
-              user: userDoc.data,
+              user: {
+                ...userDoc.data,
+                userId: userDoc.userId,
+              },
               assignment: assignmentDoc.data,
             };
           } else {
@@ -835,11 +911,19 @@ export const assignmentPageFetcher = async (
   } else {
     let userFilter = null;
     let orgFilter = null;
+    let gradeFilter = null;
     if (nonOrgFilter && nonOrgFilter.collection === 'users') {
-      userFilter = nonOrgFilter;
+      if (nonOrgFilter.field === 'grade') {
+        gradeFilter = nonOrgFilter.value;
+      } else {
+        userFilter = nonOrgFilter;
+      }
     }
-    if (orgFilters && orgFilters.collection === 'schools') {
+    if (orgFilters && orgFilters.collection === 'schools' && !_isEmpty(orgFilters.value)) {
       orgFilter = orgFilters.value;
+    }
+    if (gradeFilters && gradeFilters.collection === 'grade') {
+      gradeFilter = gradeFilters.value;
     }
     const requestBody = getAssignmentsRequestBody({
       adminId: adminId,
@@ -851,7 +935,8 @@ export const assignmentPageFetcher = async (
       page: page.value,
       paginate: paginate,
       select: select,
-      filter: userFilter,
+      filter: userFilter || nonOrgFilter,
+      grades: gradeFilter,
       orderBy: toRaw(orderBy),
     });
     console.log(`Fetching page ${page.value} for ${adminId}`);
@@ -882,9 +967,13 @@ export const assignmentPageFetcher = async (
           return _without(
             data.map(({ found }) => {
               if (found) {
+                const userId = found.name.split('/users/')[1];
                 return {
                   name: found.name,
-                  data: _mapValues(found.fields, (value) => convertValues(value)),
+                  data: {
+                    ..._mapValues(found.fields, (value) => convertValues(value)),
+                    userId,
+                  },
                 };
               }
               return undefined;
@@ -954,11 +1043,11 @@ export const assignmentPageFetcher = async (
             );
             task['reliable'] = _get(
               _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
-              'data.reliable'
+              'data.reliable',
             );
             task['engagementFlags'] = _get(
               _find(userRuns, (runDoc) => runDoc.name.includes(runId)),
-              'data.engagementFlags'
+              'data.engagementFlags',
             );
           }
         }

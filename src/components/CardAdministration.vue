@@ -71,8 +71,8 @@
           <template #body="{ node }">
             <PvChart
               type="bar"
-              :data="setBarChartData(node.data.id)"
-              :options="setBarChartOptions(node.data.id)"
+              :data="setBarChartData(node.data.stats)"
+              :options="setBarChartOptions(node.data.stats)"
               class="h-3rem"
             />
           </template>
@@ -132,7 +132,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
+import { batchGetDocs } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
 import { useAuthStore } from '@/store/auth';
 import { removeEmptyOrgs } from '@/helpers';
@@ -142,6 +142,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
+import _zip from 'lodash/zip';
 
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
@@ -149,6 +150,7 @@ const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 const props = defineProps({
   id: { type: String, required: true },
   title: { type: String, required: true },
+  publicName: { type: String, required: true },
   stats: { type: Object, required: false, default: () => ({}) },
   dates: { type: Object, required: true },
   assignees: { type: Object, required: true },
@@ -257,44 +259,44 @@ const singularOrgTypes = {
 
 // dsgf: districts, schools, groups, families
 const fetchTreeOrgs = async () => {
-  const promises = [];
-  for (const orgType of ['districts', 'schools', 'groups', 'families']) {
-    for (const org of props.assignees[orgType] ?? []) {
-      promises.push(fetchDocById(orgType, org, ['name', 'schools', 'classes', 'districtId']));
-    }
-  }
+  const orgTypes = ['districts', 'schools', 'groups', 'families'];
+  const orgPaths = _flattenDeep(
+    orgTypes.map((orgType) => (props.assignees[orgType] ?? []).map((orgId) => `${orgType}/${orgId}`) ?? []),
+  );
 
-  const dsgfOrgs = await Promise.allSettled(promises).then((promiseResults) => {
-    return _without(
-      promiseResults.map((promiseResult, index) => {
-        const { status, value: org } = promiseResult;
-        if (status === 'fulfilled') {
-          const { classes, schools, collection, ...nodeData } = org;
-          const node = {
-            key: String(index),
-            data: {
-              orgType: singularOrgTypes[collection],
-              schools,
-              classes,
-              ...nodeData,
-            },
-          };
-          if (classes)
-            node.children = classes.map((classId) => {
-              return {
-                key: `${node.key}-${classId}`,
-                data: {
-                  orgType: 'class',
-                  id: classId,
-                },
-              };
-            });
-          return node;
-        }
-        return undefined;
-      }),
-      undefined,
-    );
+  const statsPaths = _flattenDeep(
+    orgTypes.map(
+      (orgType) => (props.assignees[orgType] ?? []).map((orgId) => `administrations/${props.id}/stats/${orgId}`) ?? [],
+    ),
+  );
+
+  const promises = [batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'districtId']), batchGetDocs(statsPaths)];
+
+  const [orgDocs, statsDocs] = await Promise.all(promises);
+
+  const dsgfOrgs = _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
+    const { classes, schools, collection, ...nodeData } = orgDoc;
+    const node = {
+      key: String(index),
+      data: {
+        orgType: singularOrgTypes[collection],
+        schools,
+        classes,
+        stats,
+        ...nodeData,
+      },
+    };
+    if (classes)
+      node.children = classes.map((classId) => {
+        return {
+          key: `${node.key}-${classId}`,
+          data: {
+            orgType: 'class',
+            id: classId,
+          },
+        };
+      });
+    return node;
   });
 
   const dependentSchoolIds = _flattenDeep(dsgfOrgs.map((node) => node.data.schools ?? []));
@@ -312,27 +314,36 @@ const fetchTreeOrgs = async () => {
     return node.data.orgType === 'school' && !independentSchoolIds.includes(node.data.id);
   });
 
-  const classPromises = independentClassIds.map((classId) => fetchDocById('classes', classId, ['name', 'schoolId']));
-  const independentClasses = await Promise.allSettled(classPromises).then((promiseResults) => {
-    return _without(
-      promiseResults.map((promiseResult, index) => {
-        const { status, value: org } = promiseResult;
-        if (status === 'fulfilled') {
-          const { collection, ...nodeData } = org;
-          const node = {
-            key: String(dsgfOrgs.length + index),
-            data: {
-              orgType: singularOrgTypes[collection],
-              ...nodeData,
-            },
-          };
-          return node;
-        }
-        return undefined;
-      }),
-      undefined,
-    );
-  });
+  const independentClassPaths = independentClassIds.map((classId) => `classes/${classId}`);
+  const independentClassStatPaths = independentClassIds.map(
+    (classId) => `administrations/${props.id}/stats/${classId}`,
+  );
+
+  const classPromises = [
+    batchGetDocs(independentClassPaths, ['name', 'schoolId']),
+    batchGetDocs(independentClassStatPaths),
+  ];
+
+  const [classDocs, classStats] = await Promise.all(classPromises);
+
+  const independentClasses = _without(
+    _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
+      const { collection = 'classes', ...nodeData } = orgDoc ?? {};
+
+      if (_isEmpty(nodeData)) return undefined;
+
+      const node = {
+        key: String(dsgfOrgs.length + index),
+        data: {
+          orgType: singularOrgTypes[collection],
+          ...(stats && { stats }),
+          ...nodeData,
+        },
+      };
+      return node;
+    }),
+    undefined,
+  );
 
   const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === 'district');
   treeTableOrgs.push(...independentSchools);
@@ -364,7 +375,7 @@ const fetchTreeOrgs = async () => {
 };
 
 const { data: orgs, isLoading: loadingDsgfOrgs } = useQuery({
-  queryKey: ['dsgfOrgs', props.id],
+  queryKey: ['dsgfOrgs', authStore.uid, props.id],
   queryFn: () => fetchTreeOrgs(),
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -389,10 +400,15 @@ const onExpand = async (node) => {
   if (node.data.orgType === 'school' && node.children?.length > 0 && !node.data.expanded) {
     expanding.value = true;
 
-    const promises = node.children.map(({ data }) => {
-      return fetchDocById('classes', data.id, ['name', 'schoolId']);
-    });
+    const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
+    const statPaths = node.children.map(({ data }) => `administrations/${props.id}/stats/${data.id}`);
 
+    const classPromises = [batchGetDocs(classPaths, ['name', 'schoolId']), batchGetDocs(statPaths)];
+
+    const [classDocs, classStats] = await Promise.all(classPromises);
+
+    // Lazy node is a copy of the expanding node. We will insert more detailed
+    // children nodes later.
     const lazyNode = {
       key: node.key,
       data: {
@@ -401,23 +417,35 @@ const onExpand = async (node) => {
       },
     };
 
-    const childNodes = (await Promise.all(promises)).map((classData, index) => {
-      const { collection, ...nodeData } = classData;
-      return {
-        key: `${node.key}-${index}`,
-        data: {
-          orgType: singularOrgTypes[collection],
-          ...nodeData,
-        },
-      };
-    });
+    const childNodes = _without(
+      _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
+        const { collection = 'classes', ...nodeData } = orgDoc ?? {};
+
+        if (_isEmpty(nodeData)) return undefined;
+
+        return {
+          key: `${node.key}-${index}`,
+          data: {
+            orgType: singularOrgTypes[collection],
+            ...(stats && { stats }),
+            ...nodeData,
+          },
+        };
+      }),
+      undefined,
+    );
 
     lazyNode.children = childNodes;
 
+    // Replace the existing nodes with a map that inserts the child nodes at the
+    // appropriate position
     const newNodes = treeTableOrgs.value.map((n) => {
+      // First, match on the districtId if the expanded school is part of a district
       if (n.data.id === node.data.districtId) {
         const newNode = {
           ...n,
+          // Replace the existing school child nodes with a map that inserts the
+          // classes at the appropriate position
           children: n.children.map((child) => {
             if (child.data.id === node.data.id) {
               return lazyNode;
@@ -426,6 +454,9 @@ const onExpand = async (node) => {
           }),
         };
         return newNode;
+        // Next check to see if the expanded node was the school node itself
+      } else if (n.data.id === node.data.id) {
+        return lazyNode;
       }
 
       return n;
@@ -503,8 +534,8 @@ const getBorderRadii = (left, middle, right) => {
   return borderRadii;
 };
 
-const setBarChartData = (orgId) => {
-  let { assigned = 0, started = 0, completed = 0 } = props.stats[orgId]?.assignment || {};
+const setBarChartData = (orgStats) => {
+  let { assigned = 0, started = 0, completed = 0 } = orgStats?.assignment || {};
   const documentStyle = getComputedStyle(document.documentElement);
 
   started -= completed;
@@ -549,8 +580,8 @@ const setBarChartData = (orgId) => {
   return chartData;
 };
 
-const setBarChartOptions = (orgId) => {
-  let { assigned = 0 } = props.stats[orgId]?.assignment || {};
+const setBarChartOptions = (orgStats) => {
+  let { assigned = 0 } = orgStats?.assignment || {};
 
   const min = 0;
   const max = assigned;

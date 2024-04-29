@@ -9,6 +9,7 @@ concurrency:
 
 jobs:
   build-and-preview:
+    name: Deploy preview
     if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
     runs-on: ubuntu-latest
     steps:
@@ -16,7 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-      - run: npm ci && npm run build
+      - name: 'vite build'
+        run: npm ci && npm run build
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -30,24 +32,28 @@ jobs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
   cypress-run:
+    name: Run Cypress Tests
     needs: [build-and-preview]
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        containers: [1, 2]
+        containers: [1, 2, 3, 4]
     env:
-      CYPRESS_BASE_URL: ${{ needs.build-and-preview.outputs.deployUrl }}
+      NODE_ENV: 'test'
+      CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
       PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
       PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
       PARTNER_ADMIN_ID: ${{ secrets.PARTNER_ADMIN_ID }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+      PARTICIPANT_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
+      PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
@@ -56,11 +62,11 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           browser: ${{ matrix.browser }}
-          build: echo "Build step already completed"
-          start: echo "App already deployed to Firebase"
+          build: npm ci && npm run build
+          start: npm run dev
           wait-on: ${{ env.CYPRESS_BASE_URL }}
-          wait-on-timeout: 60
+          wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/participant/**/*,cypress/e2e/partner-admin/**/*'
+          spec: 'cypress/e2e/participant/default-tests/**/*,cypress/e2e/partner-admin/default-tests/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}

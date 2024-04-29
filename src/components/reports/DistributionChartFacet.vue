@@ -1,21 +1,22 @@
 <template>
-  <div class="view-by-wrapper mx-2">
-    <div class="flex uppercase text-xs font-light">view scores by</div>
-    <PvSelectButton
-      v-model="scoreMode"
-      :allow-empty="false"
-      class="flex flex-row my-2 select-button"
-      :options="scoreModes"
-      option-label="name"
-      @change="handleModeChange"
-    />
+  <div class="distribution-wrapper">
+    <div :id="`roar-distribution-chart-${taskId}`"></div>
+    <div v-if="minGradeByRuns < 6" class="view-by-wrapper my-2" data-html2canvas-ignore="true">
+      <div class="flex uppercase text-xs font-light">view scores by</div>
+      <PvSelectButton
+        v-model="scoreMode"
+        :allow-empty="false"
+        class="flex flex-row my-2 select-button"
+        :options="scoreModes"
+        option-label="name"
+        @change="handleModeChange"
+      />
+    </div>
   </div>
-  <!-- </div> -->
-  <div :id="`roar-distribution-chart-${taskId}`"></div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
 import { taskDisplayNames } from '@/helpers/reports';
 
@@ -51,6 +52,10 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  minGradeByRuns: {
+    type: Number,
+    required: true,
+  },
 });
 
 const scoreMode = ref({ name: 'Raw Score', key: 'rawScore' });
@@ -58,6 +63,17 @@ const scoreModes = [
   { name: 'Raw Score', key: 'rawScore' },
   { name: 'Percentile', key: 'stdPercentile' },
 ];
+
+const getBinSize = (scoreMode, taskId) => {
+  if (scoreMode === 'Percentile') {
+    return 10;
+  } else if (scoreMode === 'Raw Score') {
+    if (taskId === 'pa') return 5;
+    else if (taskId === 'sre') return 10;
+    else if (taskId === 'swr') return 50;
+  }
+  return 10;
+};
 
 const getRangeLow = (scoreMode, taskId) => {
   if (scoreMode === 'Percentile') {
@@ -81,7 +97,15 @@ const getRangeHigh = (scoreMode, taskId) => {
   return 100;
 };
 
-const distributionChartFacet = (taskId, runs) => {
+// With Percentile View, only display runs under grade 6
+const computedRuns = computed(() => {
+  if (scoreMode.value.name === 'Percentile') {
+    return props.runs.filter((run) => run.grade < 6);
+  }
+  return props.runs;
+});
+
+const distributionChartFacet = (taskId) => {
   return {
     background: null,
     title: {
@@ -91,7 +115,7 @@ const distributionChartFacet = (taskId, runs) => {
       fontSize: 18,
     },
     data: {
-      values: runs,
+      values: computedRuns.value,
     },
     mark: 'bar',
     height: 50,
@@ -125,23 +149,19 @@ const distributionChartFacet = (taskId, runs) => {
       },
 
       color: {
-        field: `scores.${scoreMode.value.key}`,
-        scheme: 'blues',
-        type: 'quantitative',
+        field: `tag_color`,
+        type: 'nominal',
         legend: null,
-        scale: {
-          range:
-            scoreMode.value.name === 'Percentile'
-              ? ['rgb(201, 61, 130)', 'rgb(237, 192, 55)', 'green']
-              : ['#ADD8E6', '#000080'],
-          domain: scoreMode.value.name === 'Percentile' ? [0, 45, 70, 100] : '',
-        },
+        scale: null,
       },
 
       x: {
         field: `scores.${scoreMode.value.key}`,
         title: scoreMode.value.name === 'Percentile' ? `${scoreMode.value.name} Score` : `${scoreMode.value.name}`,
-        bin: { extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)] },
+        bin: {
+          step: getBinSize(scoreMode.value.name, taskId),
+          extent: [getRangeLow(scoreMode.value.name, taskId), getRangeHigh(scoreMode.value.name, taskId)],
+        },
         sort: 'ascending',
         axis: {
           labelAngle: 0,
@@ -185,6 +205,7 @@ const draw = async () => {
   await embed(`#roar-distribution-chart-${props.taskId}`, chartSpecDist);
 };
 
+// Update Distribution Graph on external facetMode change
 watch(
   () => props.facetMode,
   () => {
@@ -192,6 +213,15 @@ watch(
   },
 );
 
+// Update Distribution Graph on computedRuns recalculation
+watch(
+  () => computedRuns,
+  () => {
+    draw();
+  },
+);
+
+// Update Distribution Graph on internal scoreMode change
 const handleModeChange = () => {
   draw();
 };
@@ -212,7 +242,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  align-items: flex-end;
+  align-items: center;
   height: 100%;
 }
 </style>

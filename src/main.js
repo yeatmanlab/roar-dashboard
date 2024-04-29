@@ -1,8 +1,10 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { createHead } from '@vueuse/head';
+import { initSentry } from '@/sentry';
 import router from '@/router/index.js';
 import App from '@/App.vue';
+import { surveyPlugin } from 'survey-vue3-ui';
 
 import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 import TextClamp from 'vue3-text-clamp';
@@ -26,16 +28,20 @@ import PvConfirmPopup from 'primevue/confirmpopup';
 import PvConfirmDialog from 'primevue/confirmdialog';
 import PvDataTable from 'primevue/datatable';
 import PvDataView from 'primevue/dataview';
+import PvDialog from 'primevue/dialog';
 import PvDivider from 'primevue/divider';
 import PvDropdown from 'primevue/dropdown';
 import PvFileUpload from 'primevue/fileupload';
+import PvInputGroup from 'primevue/inputgroup';
 import PvInputNumber from 'primevue/inputnumber';
 import PvInputSwitch from 'primevue/inputswitch';
 import PvInputText from 'primevue/inputtext';
 import PvInlineMessage from 'primevue/inlinemessage';
+import PvKnob from 'primevue/knob';
 import PvListbox from 'primevue/listbox';
 import PvMessage from 'primevue/message';
 import PvMenu from 'primevue/menu';
+import PvMenubar from 'primevue/menubar';
 import PvMultiSelect from 'primevue/multiselect';
 import PvOverlayPanel from 'primevue/overlaypanel';
 import PvPanel from 'primevue/panel';
@@ -56,6 +62,7 @@ import PvTag from 'primevue/tag';
 import PvToast from 'primevue/toast';
 import PvTreeTable from 'primevue/treetable';
 import PvTriStateCheckbox from 'primevue/tristatecheckbox';
+import PvImage from 'primevue/image';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -69,6 +76,7 @@ import VueGoogleMaps from 'vue-google-maps-community-fork';
 
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue';
+import LanguageSelector from '@/components/LanguageSelector.vue';
 
 // Style assets
 import 'primevue/resources/primevue.css'; // primevue css
@@ -78,10 +86,17 @@ import 'primeflex/primeflex.scss'; // primeflex
 import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import './assets/styles/theme.scss'; // ROAR theme
 
+// translations
+import { i18n } from '@/translations/i18n.js';
+// https://www.npmjs.com/package/vue-country-flag-next
+import CountryFlag from 'vue-country-flag-next';
+
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedState);
+
+initSentry(app);
 
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
@@ -97,6 +112,9 @@ app.use(VueGoogleMaps, {
 app.use(createHead());
 app.use(TextClamp);
 app.use(VueQueryPlugin);
+app.use(i18n);
+app.use(CountryFlag);
+app.use(surveyPlugin);
 
 app.component('PvAccordion', PvAccordion);
 app.component('PvAccordionTab', PvAccordionTab);
@@ -113,15 +131,19 @@ app.component('PvConfirmPopup', PvConfirmPopup);
 app.component('PvConfirmDialog', PvConfirmDialog);
 app.component('PvDataView', PvDataView);
 app.component('PvDivider', PvDivider);
+app.component('PvDialog', PvDialog);
 app.component('PvDropdown', PvDropdown);
 app.component('PvFileUpload', PvFileUpload);
 app.component('PvInlineMessage', PvInlineMessage);
+app.component('PvInputGroup', PvInputGroup);
 app.component('PvInputNumber', PvInputNumber);
 app.component('PvInputSwitch', PvInputSwitch);
 app.component('PvInputText', PvInputText);
 app.component('PvListbox', PvListbox);
+app.component('PvKnob', PvKnob);
 app.component('PvMessage', PvMessage);
 app.component('PvMenu', PvMenu);
+app.component('PvMenubar', PvMenubar);
 app.component('PvMultiSelect', PvMultiSelect);
 app.component('PvOverlayPanel', PvOverlayPanel);
 app.component('PvPanel', PvPanel);
@@ -144,8 +166,9 @@ app.component('PvTreeTable', PvTreeTable);
 app.component('PvTriStateCheckbox', PvTriStateCheckbox);
 app.component('PvDataTable', PvDataTable);
 app.component('PvColumn', PvColumn);
-
+app.component('PvImage', PvImage);
 app.component('RoarDataTable', RoarDataTable);
+app.component('LanguageSelector', LanguageSelector);
 
 app.directive('tooltip', PvTooltip);
 

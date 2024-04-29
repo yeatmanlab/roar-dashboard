@@ -2,9 +2,9 @@ Cypress.Commands.add('login', (username, password) => {
   cy.session(
     [username, password],
     () => {
-      cy.visit('/');
-      cy.get('[data-cy="input-username-email"]').type(username, { log: false });
-      cy.get('[data-cy="input-password"]').type(password, { log: false });
+      cy.visit('/', { timeout: Cypress.env('timeout') });
+      cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
+      cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
       cy.get('button')
         .contains('Go!', { timeout: Cypress.env('timeout') })
         .click();
@@ -18,6 +18,29 @@ Cypress.Commands.add('login', (username, password) => {
       //     }
     },
   );
+});
+
+Cypress.Commands.add('loginWithEmail', (username, password) => {
+  cy.session([username, password], () => {
+    cy.visit('/', { timeout: Cypress.env('timeout') });
+    // Set username to email, check for existence of 'sign in using password' button)
+    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
+    cy.contains('Sign-in using password');
+
+    // Click button to switch to email / password sign in
+    cy.get('[data-cy="sign-in-with-password"]').click();
+
+    // Click button to switch to email magic link sign in
+    cy.get('[data-cy="sign-in-with-email-link"]').click();
+
+    // Click button to switch to email / password sign in and log in
+    cy.get('[data-cy="sign-in-with-password"]').click();
+    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
+    cy.get('button')
+      .contains('Go!', { timeout: Cypress.env('timeout') })
+      .click();
+    cy.log('Login successful.').wait(3000);
+  });
 });
 
 Cypress.Commands.add('logout', () => {
@@ -67,7 +90,6 @@ Cypress.Commands.add(
 
     cy.get('span').contains('Groups').click();
     cy.get('ul > li').contains(testGroupName).click({ animationDistanceThreshold: 20 });
-    cy.get('ul > li').contains('Kyle Test Group').click({ animationDistanceThreshold: 20 });
   },
 );
 
@@ -75,13 +97,23 @@ Cypress.Commands.add('activateAdminSidebar', () => {
   cy.get('[data-cy="button-admin-sidebar"]').click().wait(1000);
 });
 
-Cypress.Commands.add('getAdministrationCard', () => {
-  cy.get('[data-cy="dropdown-sort-administrations"]', { timeout: Cypress.env('timeout') }).click();
-  cy.get('ul > li').contains('Name (descending)').click();
+Cypress.Commands.add('selectAdministration', (testAdministration) => {
+  cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') })
+    .should('exist')
+    .click();
+  cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
+    .contains(testAdministration)
+    .should('exist')
+    .click();
+});
+
+Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
+  cy.get('[data-cy=search-input]', { timeout: Cypress.env('timeout') }).type(`${testAdministration}{enter}`);
+  // cy.get('ul > li').contains(`Name (${sort})`).click();
 
   cy.get('[data-cy="h2-card-admin-title"]', { timeout: Cypress.env('timeout') })
     .filter((index, element) => {
-      return Cypress.$(element).text().includes(Cypress.env('testPartnerAdministrationName'));
+      return Cypress.$(element).text().includes(testAdministration);
     })
     .should('have.length', 2)
     .find('button', { timeout: Cypress.env('timeout') })
@@ -89,46 +121,59 @@ Cypress.Commands.add('getAdministrationCard', () => {
     .click();
 });
 
-Cypress.Commands.add('inputOrgDetails', (orgName, orgInitials, orgNcesId, orgAddress, orgGrade, orgTag) => {
-  // Require orgName and orgInitials
-  cy.get('[data-cy="input-org-name"]').type(orgName);
-  cy.get('[data-cy="input-org-initials"]').type(orgInitials);
-
-  if (orgNcesId) {
-    cy.get('[data-cy="input-nces-id"]').type(orgNcesId);
-  }
-
-  if (orgGrade) {
-    cy.get('[data-cy="dropdown-grade"').click().get('li').contains(orgGrade).click();
-  }
-
-  if (orgAddress) {
-    // cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
-    cy.get('input[placeholder="Enter a location"]')
-      .type(`${orgAddress}`)
-      .wait(1000)
-      .type('{downarrow}{enter}')
-      .wait(1000);
-    expect(cy.get('[data-cy="chip-address"]').should('contain.text', orgAddress));
-  }
-
-  if (orgTag) {
-    cy.get('[data-cy="input-autocomplete"]').type(orgTag).wait(1000).type('{downarrow}{enter}');
-  }
-
-  // Always input test tag
-  cy.get('[data-pc-section="dropdownbutton"]').click();
-  cy.get('li').contains('test').click();
+Cypress.Commands.add('switchToOptionalAssessments', () => {
+  cy.get("[data-cy='switch-show-optional-assessments']").click();
 });
 
+Cypress.Commands.add(
+  'inputOrgDetails',
+  (orgName, orgInitials, orgNcesId = null, orgAddress = null, orgGrade = null, orgTag = null) => {
+    // Require orgName and orgInitials
+    cy.get('[data-cy="input-org-name"]').type(orgName);
+    cy.get('[data-cy="input-org-initials"]').type(orgInitials);
+
+    if (orgNcesId) {
+      cy.get('[data-cy="input-nces-id"]').type(orgNcesId);
+    }
+
+    if (orgGrade) {
+      cy.get('[data-cy="dropdown-grade"]').click().get('ul > li').contains(orgGrade).click();
+    }
+
+    if (orgAddress) {
+      // cy.get('[data-cy="input-address"]').type(`${orgAddress}`).wait(1000).type('{downarrow}{enter}').wait(1000)
+      cy.get('input[placeholder="Enter a location"]')
+        .type(`${orgAddress}`)
+        .wait(1000)
+        .type('{downarrow}{enter}')
+        .wait(1000);
+      expect(cy.get('[data-cy="chip-address"]').should('contain.text', orgAddress));
+    }
+
+    if (orgTag) {
+      cy.get('[data-cy="input-autocomplete"]').type(orgTag).wait(1000).type('{downarrow}{enter}');
+    }
+
+    // Always input test tag
+    cy.get('[data-pc-section="dropdownbutton"]').click();
+    cy.get('li').contains('test').click();
+  },
+);
+
 Cypress.Commands.add('checkUserList', (userList) => {
-  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
+  cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
     cy.wrap(row)
       .find('td.p-frozen-column')
       .then((cell) => {
         const cellText = cell.text();
         expect(userList).to.include(cellText);
       });
+  });
+});
+
+Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
+  return cy.wrap(null).then(() => {
+    return game?.testSpec(administration, optional);
   });
 });
 

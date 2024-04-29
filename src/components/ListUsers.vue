@@ -62,7 +62,7 @@ const {
   isFetching: isFetchingCount,
   data: totalRecords,
 } = useQuery({
-  queryKey: ['countUsers', props.orgType, props.orgId, orderBy],
+  queryKey: ['countUsers', authStore.uid, props.orgType, props.orgId, orderBy],
   queryFn: () => countUsersByOrg(props.orgType, props.orgId, orderBy),
   keepPreviousData: true,
   enabled: initialized,
@@ -74,7 +74,7 @@ const {
   isFetching,
   data: users,
 } = useQuery({
-  queryKey: ['usersByOrgPage', props.orgType, props.orgId, pageLimit, page, orderBy],
+  queryKey: ['usersByOrgPage', authStore.uid, props.orgType, props.orgId, pageLimit, page, orderBy],
   queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, pageLimit, page, orderBy),
   keepPreviousData: true,
   enabled: initialized,
@@ -85,6 +85,12 @@ const columns = ref([
   {
     field: 'username',
     header: 'Username',
+    dataType: 'string',
+    sort: false,
+  },
+  {
+    field: 'email',
+    header: 'Email',
     dataType: 'string',
     sort: false,
   },
