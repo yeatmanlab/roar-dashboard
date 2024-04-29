@@ -1,5 +1,5 @@
 <template>
-  <div v-for="task in computedTaskData2" :key="task" class="align-self-start">
+  <div v-for="task in computedTaskData" :key="task" class="align-self-start">
     <div
       v-if="rawOnlyTasks.includes(task.taskId) && !task.rawScore"
       class="error flex flex-column md:flex-row align-items-center m-auto p-4 w-5"
@@ -151,13 +151,11 @@ const studentFirstName = computed(() => {
 const grade = computed(() => getGrade(props.studentData?.studentData?.grade));
 
 // compute standard score, raw score, and percentile score for each of the tasks
-const computedTaskData2 = computed(() => {
+const computedTaskData = computed(() => {
   const computedTaskAcc = {};
 
   for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
     const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
-
-    console.log(percentileScoreKey, standardScoreKey, rawScoreKey);
     const percentileScore = _get(scores.composite, percentileScoreKey);
     const standardScore = _get(scores.composite, standardScoreKey);
     const rawScore = taskId !== 'vocab' ? _get(scores.composite, rawScoreKey) : scores.composite;
@@ -299,68 +297,8 @@ const computedTaskData2 = computed(() => {
 
     computedTaskAcc[taskId].scoresArray = sortedScoresArray;
   }
-  console.log('computedscores', computedTaskAcc);
 
   return computedTaskAcc;
-});
-
-// Filters for non-null scores and sorts
-const computedTaskData = computed(() => {
-  return props.taskData
-    ?.filter((task) => task.scores != undefined)
-    .sort((a, b) => {
-      if (Object.keys(taskDisplayNames).includes(a.taskId) && Object.keys(taskDisplayNames).includes(b.taskId)) {
-        return taskDisplayNames[a.taskId].order - taskDisplayNames[b.taskId].order;
-      } else {
-        return -1;
-      }
-    })
-    .map((task) => {
-      // check if reliable key exists on task -- if it does, push a tag representing the tag
-      const tags = [];
-      if (task.optional === true) {
-        tags.push({
-          icon: '',
-          value: 'Optional',
-          severity: 'secondary',
-          tooltip: 'This task was a optional assignment.',
-        });
-      } else {
-        tags.push({
-          icon: '',
-          value: 'Required',
-          severity: 'secondary',
-          tooltip: 'This task was a required assignment.',
-        });
-      }
-      if ('reliable' in task) {
-        if (task.reliable === false) {
-          tags.push({
-            value: 'Unreliable',
-            icon: 'pi pi-times',
-            severity: 'warning',
-            tooltip: task.engagementFlags
-              ? `The run was marked unreliable because of the following flags: \n \n ${Object.keys(task.engagementFlags)
-                  .map((flag) => _lowerCase(flag))
-                  .join(', ')}`
-              : 'The run was marked as unreliable.',
-          });
-        } else {
-          tags.push({
-            value: 'Reliable',
-            severity: 'success',
-            icon: 'pi pi-check',
-            tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
-          });
-        }
-      }
-      // update task with tags
-      task = {
-        ...task,
-        tags: tags,
-      };
-      return task;
-    });
 });
 
 function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
