@@ -1,19 +1,11 @@
 <template>
   <div v-for="task in computedTaskData" :key="task" class="align-self-start">
     <div
-      v-if="rawOnlyTasks.includes(task.taskId) && !task.rawScore?.value"
-      class="error flex flex-column md:flex-row align-items-center m-auto p-4 w-5"
-    >
-      ERROR: Unable to load score for <strong>{{ taskDisplayNames[task.taskId]?.extendedTitle }}</strong
-      >; score may not exist due to incomplete assessment.
-    </div>
-
-    <div
-      v-else-if="!rawOnlyTasks.includes(task.taskId) && !task[task.scoreToDisplay]"
+      v-if="!rawOnlyTasks.includes(task.taskId) && (!task[task.scoreToDisplay].value || !task.rawScore)"
       class="error flex justify-content-center md:flex-row align-items-center m-auto p-4 w-5"
     >
       ERROR: Unable to load score for {{ taskDisplayNames[task.taskId]?.extendedTitle }}; score may not exist due to
-      incomplete assessment.
+      incomplete assessment or score development in progress.
     </div>
 
     <div v-else class="flex flex-column align-items-center mb-1 p-1 score-card">
@@ -55,7 +47,7 @@
       <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
         {{ studentFirstName }} achieved a composite score of
         <strong>{{ task.rawScore.value }}</strong>
-        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
+        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
       <div v-else-if="grade >= 6" class="px-4 py-2 score-description">
         {{ studentFirstName }} scored a standard score of <strong>{{ Math.round(task.standardScore.value) }}</strong
@@ -63,7 +55,7 @@
         <strong>{{
           getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
         }}</strong>
-        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
+        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
 
       <div v-else class="px-4 py-2 score-description">
@@ -157,9 +149,14 @@ const computedTaskData = computed(() => {
 
   for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
     const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
-    const percentileScore = _get(scores.composite, percentileScoreKey);
-    const standardScore = _get(scores.composite, standardScoreKey);
-    const rawScore = taskId !== 'vocab' && taskId !== 'letter' ? _get(scores.composite, rawScoreKey) : scores.composite;
+    const compositeScores = scores?.composite;
+    const percentileScore = _get(compositeScores, percentileScoreKey);
+    const standardScore = _get(compositeScores, standardScoreKey);
+    const rawScore =
+      !taskId.includes('vocab') && !taskId.includes('letter') && !taskId.includes('es')
+        ? _get(compositeScores, rawScoreKey)
+        : compositeScores;
+    console.log(rawScore, taskId);
     const rawScoreRange = getRawScoreRange(taskId);
     const supportColor = getSupportLevel(grade.value, percentileScore, rawScore, taskId).tag_color;
 
