@@ -17,6 +17,7 @@
             show-icon="pi pi-cog"
             hide-icon="pi pi-times"
             button-class="p-button-outlined p-button-sm w-3rem h-3rem"
+            :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
           />
           <PvConfirmPopup />
@@ -166,20 +167,6 @@ const confirm = useConfirm();
 const toast = useToast();
 
 const speedDialItems = ref([
-  // {
-  //   label: 'Edit',
-  //   icon: 'pi pi-pencil',
-  //   command: () => {
-  //     console.log('Edit administration');
-  //   },
-  // },
-  {
-    label: 'Edit',
-    icon: 'pi pi-pencil',
-    command: () => {
-      router.push({ name: 'EditAdministration', params: { adminId: props.id } });
-    },
-  },
   {
     label: 'Delete',
     icon: 'pi pi-trash',
@@ -203,6 +190,13 @@ const speedDialItems = ref([
           toast.add({ severity: 'error', summary: 'Rejected', detail: 'Deletion aborted', life: 3000 });
         },
       });
+    },
+  },
+  {
+    label: 'Edit',
+    icon: 'pi pi-pencil',
+    command: () => {
+      router.push({ name: 'EditAdministration', params: { adminId: props.id } });
     },
   },
 ]);

@@ -497,17 +497,20 @@ const submit = async () => {
           isTestData: isTestData.value,
         };
         if (isTestData.value) args.isTestData = true;
+        if (props.adminId) args.administrationId = props.adminId;
 
-        await roarfirekit.value.createAdministration(args).then(() => {
-          toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
-          administrationQueryKeyIndex.value += 1;
+        console.log('args', args);
 
-          // TODO: Invalidate for administrations query.
-          // This does not work in prod for some reason.
-          // queryClient.invalidateQueries({ queryKey: ['administrations'] })
+        // await roarfirekit.value.createAdministration(args).then(() => {
+        //   toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+        //   administrationQueryKeyIndex.value += 1;
 
-          router.push({ name: 'Home' });
-        });
+        //   // TODO: Invalidate for administrations query.
+        //   // This does not work in prod for some reason.
+        //   // queryClient.invalidateQueries({ queryKey: ['administrations'] })
+
+        //   router.push({ name: 'Home' });
+        // });
       } else {
         console.log('need at least one org');
         orgError.value = 'At least one organization needs to be selected.';
