@@ -274,19 +274,20 @@ const { data: allDistrictSchools } = useQuery({
 
 const classesToGrab = computed(() => {
   // If the data we need is not present, break
-  if (!preExistingAdminInfo.value || !allDistrictSchools.value) return [];
+  if (!preExistingAdminInfo.value) return [];
 
-  //TODO: this list needs to include all classes for given districts as well
-  // Make a list of all schools associated with given districts and schools
-  const allClasses = [];
-  allDistrictSchools.value.forEach((school) => {
-    const classes = toRaw(school).classes;
-    if (classes) {
-      allClasses.push(...classes);
-    }
-  });
-  console.log('allClasses', allClasses);
-
+  let allClasses = [];
+  if (allDistrictSchools.value) {
+    //TODO: this list needs to include all classes for given districts as well
+    // Make a list of all schools associated with given districts and schools
+    allDistrictSchools.value.forEach((school) => {
+      const classes = toRaw(school).classes;
+      if (classes) {
+        allClasses.push(...classes);
+      }
+    });
+    console.log('allClasses', allClasses);
+  }
   // Make a list of all classes not included in the above classes
   const classIds = _without(
     preExistingAdminInfo.value.classes.map((classId) => {
@@ -313,7 +314,7 @@ const { data: preClasses } = useQuery({
   queryKey: ['classes', 'minimal', props.adminId],
   queryFn: () => fetchDocsById(classesToGrab.value),
   keepPreviousData: true,
-  endabled: shouldGrabClasses,
+  enabled: shouldGrabClasses,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
