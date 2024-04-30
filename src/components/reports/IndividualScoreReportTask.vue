@@ -1,7 +1,7 @@
 <template>
   <div v-for="task in computedTaskData" :key="task" class="align-self-start">
     <div
-      v-if="rawOnlyTasks.includes(task.taskId) && !task.rawScore"
+      v-if="rawOnlyTasks.includes(task.taskId) && !task.rawScore?.value"
       class="error flex flex-column md:flex-row align-items-center m-auto p-4 w-5"
     >
       ERROR: Unable to load score for <strong>{{ taskDisplayNames[task.taskId]?.extendedTitle }}</strong
