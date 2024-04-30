@@ -471,7 +471,7 @@ function getFlags(index, colData) {
 
   // Check if assessment and engagementFlags are defined
   if (!assessment || !assessment.engagementFlags) {
-    return ''; // Return an empty string if assessment or engagementFlags are undefined
+    return '';
   }
 
   const flags = assessment.engagementFlags;
@@ -484,9 +484,9 @@ function getFlags(index, colData) {
   // If there are flags and the assessment is not reliable, return the flags
   if (!assessment.reliable) {
     const reliabilityFlags = Object.keys(flags).map((flag) => {
-      return flagMessages[flag] || flag.toLowerCase(); // Use toLowerCase() instead of _lowerCase(flag)
+      return flagMessages[flag] || flag.toLowerCase();
     });
-    // Join the returned flags with a newline character, then add two newlines for spacing
+
     return reliabilityFlags.join('\n') + '\n\n';
   } else {
     return '';
