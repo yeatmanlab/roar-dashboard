@@ -115,7 +115,7 @@
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
-            :reset-filters="resetFilters"
+            @reset-filters="resetFilters"
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
@@ -671,9 +671,6 @@ const computeAssignmentAndRunData = computed(() => {
           standardScore: standardScore,
           tags: scoreFilterTags,
         };
-        if (user.username === '1039-d.corona') {
-          console.log('user', currRowScores);
-        }
 
         // Logic to update runsByTaskIdAcc
         const run = {

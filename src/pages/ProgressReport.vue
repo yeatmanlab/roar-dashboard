@@ -234,10 +234,6 @@ const schoolNameDictionary = computed(() => {
 });
 
 const computedProgressData = computed(() => {
-  // if (!assignmentData.value || assignmentData.value?.length === 0 || isLoadingScores.value) {
-  //   console.log('zero case hit"')
-  //   return [];
-  // } else {
   if (!assignmentData.value) return [];
   // assignmentTableData is an array of objects, each representing a row in the table
   const assignmentTableDataAcc = [];
@@ -264,10 +260,6 @@ const computedProgressData = computed(() => {
       },
       // compute and add progress data in next step
     };
-
-    if (user.username == '1039-a.frazier') {
-      console.log('fraz', assignment, user);
-    }
 
     const currRowProgress = {};
     for (const assessment of assignment.assessments) {

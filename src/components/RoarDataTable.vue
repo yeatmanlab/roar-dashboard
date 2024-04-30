@@ -280,8 +280,8 @@
               </PvButton>
             </template>
           </PvColumn>
-          <template #footer>
-            <div v-if="props.data?.length == 0" class="flex flex-column gap-2 ml-6 my-5">
+          <template #empty>
+            <div class="flex flex-column">
               <div class="text-lg font-bold my-2">No scores found</div>
               <span class="font-light"
                 >The filters applied have no matching scores.
@@ -477,7 +477,7 @@ const refFilters = ref(computedFilters.value.computedFilters);
 const resetFilters = () => {
   refFilters.value = computedFilters.value.computedFilters;
   // clear local filters
-  props.resetFilters();
+  emit('reset-filters');
 };
 
 let toolTipByHeader = (header) => {
@@ -528,7 +528,7 @@ const onFreezeToggle = (selected) => {
 };
 
 // Pass through data table events
-const emit = defineEmits(['export-all', 'selection']);
+const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected']);
 </script>
 <style>
 .small-circle {
@@ -620,6 +620,11 @@ button.p-column-filter-menu-button.p-link:hover {
      for strings. To reduce confusion for end users, remove the dropdown
      offering different matchmodes */
   display: none;
+}
+
+.p-datatable-emptyMessage {
+  width: auto; /* or set it to a specific width */
+  margin: 0 auto; /* Center the message horizontally */
 }
 
 .scrollable-container::-webkit-scrollbar {
