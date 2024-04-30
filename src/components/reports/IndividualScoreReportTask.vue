@@ -1,9 +1,6 @@
 <template>
   <div v-for="task in computedTaskData" :key="task" class="flex flex-column align-items-center justify-content-center">
-    <div
-      v-if="!isNaN(task[task.scoreToDisplay].value)"
-      class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card"
-    >
+    <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
       <div class="flex flex-column md:flex-row align-items-center justify-content-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
@@ -97,7 +94,6 @@
         </PvAccordion>
       </div>
     </div>
-    <div v-else class="w-0"></div>
   </div>
 </template>
 
