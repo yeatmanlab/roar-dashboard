@@ -170,27 +170,4 @@ export function playPA({
   cy.get('.tabview-nav-link-label', { timeout: 3 * timeout })
     .contains('ROAR - Phoneme')
     .should('exist');
-
-  // playIntro(startText);
-
-  // playFirstTutorial();
-  // playTrial(breakText.breakText1);
-  // //  fsmBreak
-  // cy.log('break 1');
-  // cy.get('.continue', { timeout: 2 * timeout }).click();
-  // playTrial(endText.endText1);
-
-  // playSecondTutorial();
-  // playTrial(breakText.breakText2);
-  // //  lsmBreak
-  // cy.log('break 2');
-  // cy.get('.continue', { timeout: 2 * timeout }).click();
-  // playTrial(endText.endText2);
-
-  // playThirdTutorial();
-  // playTrial(breakText.breakText3);
-  // //  delBreak
-  // cy.log('break 3');
-  // cy.get('.continue', { timeout: 2 * timeout }).click();
-  // playTrial(endText.endText3);
 }
