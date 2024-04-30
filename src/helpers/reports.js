@@ -53,9 +53,9 @@ export const taskDisplayNames = {
     order: 11,
   },
   vocab: {
-    name: 'Vocabulary',
-    extendedTitle: 'ROAR - Vocabulary',
-    extendedName: 'Vocabulary',
+    name: 'Picture-Vocab',
+    extendedTitle: 'ROAR - Picture Vocabulary',
+    extendedName: 'Picture Vocabulary',
     order: 12,
   },
   fluency: { name: 'Fluency', extendedTitle: 'ROAM - Fluency', extendedName: 'Math Fluency', order: 12 },
