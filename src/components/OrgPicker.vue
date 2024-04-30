@@ -73,11 +73,11 @@
     <div class="col-12 md:col-6">
       <PvPanel class="h-full" header="Selected organizations">
         <PvScrollPanel style="width: 100%; height: 26rem">
-          <div v-for="orgKey in Object.keys(allSelectedOrgs)" :key="orgKey">
-            <div v-if="allSelectedOrgs[orgKey].length > 0">
+          <div v-for="orgKey in Object.keys(selectedOrgs)" :key="orgKey">
+            <div v-if="selectedOrgs[orgKey].length > 0">
               <b>{{ _capitalize(orgKey) }}:</b>
               <PvChip
-                v-for="org in allSelectedOrgs[orgKey]"
+                v-for="org in selectedOrgs[orgKey]"
                 :key="org.id"
                 class="m-1"
                 removable
@@ -134,15 +134,16 @@ const selectedOrgs = reactive({
   families: [],
 });
 
-const allSelectedOrgs = computed(() => {
-  return {
-    districts: _union(selectedOrgs.districts, props.orgs.districts),
-    schools: _union(selectedOrgs.schools, props.orgs.schools),
-    classes: _union(selectedOrgs.classes, props.orgs.classes),
-    groups: _union(selectedOrgs.groups, props.orgs.groups),
-    families: _union(selectedOrgs.families, props.orgs.families),
-  };
-});
+watch(
+  () => props.orgs,
+  (orgs) => {
+    selectedOrgs.districts = _union(selectedOrgs.districts, orgs.districts);
+    selectedOrgs.schools = _union(selectedOrgs.schools, orgs.schools);
+    selectedOrgs.classes = _union(selectedOrgs.classes, orgs.classes);
+    selectedOrgs.groups = _union(selectedOrgs.groups, orgs.groups);
+    selectedOrgs.families = _union(selectedOrgs.families, orgs.families);
+  },
+);
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid],
@@ -242,12 +243,12 @@ const { data: orgData } = useQuery({
 });
 
 const isSelected = (orgType, orgId) => {
-  return allSelectedOrgs.value[orgType].map((org) => org.id).includes(orgId);
+  return selectedOrgs[orgType].map((org) => org.id).includes(orgId);
 };
 
 const remove = (org, orgKey) => {
   console.log('remove called. trying to remove', org, 'from key', orgKey);
-  selectedOrgs[orgKey] = allSelectedOrgs.value[orgKey].filter((_org) => _org.id !== org.id);
+  selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
 };
 
 let unsubscribe;
@@ -276,7 +277,7 @@ watch(allSchools, (newValue) => {
 
 const emit = defineEmits(['selection']);
 
-watch(allSelectedOrgs, (newValue) => {
+watch(selectedOrgs, (newValue) => {
   emit('selection', newValue);
 });
 </script>

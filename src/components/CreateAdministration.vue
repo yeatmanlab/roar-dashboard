@@ -264,35 +264,39 @@ const allSchoolsToGrab = computed(() => {
   });
 });
 
+const shouldGrabAllSchools = computed(() => {
+  return initialized.value && allSchoolsToGrab.value.length > 0;
+});
+
 const { data: allDistrictSchools } = useQuery({
   queryKey: ['schools', 'all', props.adminId], //TODO: this queryKey needs to be changed
   queryFn: () => fetchDocsById(allSchoolsToGrab.value),
   keepPreviousData: true,
-  enabled: shouldGrabSchools,
+  enabled: shouldGrabAllSchools,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const classesToGrab = computed(() => {
   // If the data we need is not present, break
-  if (!preExistingAdminInfo.value) return [];
+  if (!preExistingAdminInfo.value && !allDistrictSchools.value) return [];
 
   let allClasses = [];
   if (allDistrictSchools.value) {
     //TODO: this list needs to include all classes for given districts as well
     // Make a list of all schools associated with given districts and schools
-    allDistrictSchools.value.forEach((school) => {
+    for (const school of allDistrictSchools.value) {
       const classes = toRaw(school).classes;
       if (classes) {
         allClasses.push(...classes);
       }
-    });
-    console.log('allClasses', allClasses);
+    }
   }
   // Make a list of all classes not included in the above classes
   const classIds = _without(
     preExistingAdminInfo.value.classes.map((classId) => {
-      if (!allClasses.includes(classId)) return classId;
-      else return undefined;
+      if (!allClasses.includes(classId)) {
+        return classId;
+      } else return undefined;
     }),
     undefined,
   );
@@ -307,7 +311,15 @@ const classesToGrab = computed(() => {
   });
 });
 const shouldGrabClasses = computed(() => {
-  return initialized.value && classesToGrab.value.length > 0;
+  // Do not grab classes unless (1) firekit is initialized, (2) there are classes that need grabbing,
+  // or (3) in the event that there are districts listed in the preExistingAdminInfo and
+  // the schools are not already populated. This is important to prevent grabbing more
+  // classes than necessary.
+  return (
+    initialized.value &&
+    (!_isEmpty(preExistingAdminInfo.districts) ? allDistrictSchools.value : true) &&
+    classesToGrab.value.length > 0
+  );
 });
 
 const { data: preClasses } = useQuery({
