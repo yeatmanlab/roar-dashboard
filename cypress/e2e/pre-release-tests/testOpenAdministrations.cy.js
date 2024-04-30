@@ -8,10 +8,8 @@ import {
   playWrittenVocabulary,
 } from '../../support/helper-functions/roar-multichoice/multichoiceHelpers';
 import { playVocabulary } from '../../support/helper-functions/roar-vocab/vocabHelpers';
-
-// Create helper functions for every game which can be called here to play the game
-// These helper functions must take an object for its parameters, with explicit default values
-// Each helper function must be a complete test that logs in, plays the game, and checks for game completion
+import { getOpenAdministrations } from '../../support/query';
+import { getDevFirebase } from '../../support/devFirebase';
 
 const timeout = Cypress.env('timeout');
 const testSpecs = [
@@ -72,48 +70,82 @@ function retryTest(testFunc, retries = 3) {
 }
 
 async function getOpenAdmins() {
-  cy.get('[data-cy=dropdown-select-administration]').click();
-  cy.get('.p-dropdown-panel').within(() => {
-    cy.get('li').each((el) => {
-      if (el.text().includes('Synced Administration')) {
-        openAdmins.push(el.text());
-      }
-    });
-  });
-  cy.get('[data-cy=dropdown-select-administration]').click();
+  const adminFirestore = getDevFirebase('admin').db;
+  const openAdmins = await getOpenAdministrations(adminFirestore);
+
+  return openAdmins.filter((admin) => admin.includes('Synced Administration'));
 }
 
-const openAdmins = [];
+function checkOptionalGame(spec, admin, text) {
+  cy.get('body').then(($body) => {
+    if ($body.find('[data-cy="switch-show-optional-assessments"]').length > 0) {
+      cy.switchToOptionalAssessments();
+      if (text.includes(spec.name)) {
+        cy.log(`Initializing test for optional game: ${spec.name}`);
+        retryTest(() => {
+          spec.spec({
+            administration: admin,
+          });
+        });
+      } else {
+        cy.log('No optional game found for game:', spec.name);
+      }
+    } else {
+      cy.log('No game found for game:', spec.name);
+    }
+  });
+}
+
+function testGame(spec, admin) {
+  cy.get('.p-tabview')
+    .invoke('text')
+    .then((text) => {
+      if (text.includes(spec.name)) {
+        cy.log(`Initializing test for game: ${spec.name}`);
+        retryTest(() => {
+          spec.spec({
+            administration: admin,
+          });
+        });
+      } else {
+        checkOptionalGame(spec, admin, text);
+      }
+    });
+}
 
 describe('Testing all open administrations', () => {
-  it('Tests the open administration', () => {
+  let openAdmins;
+
+  beforeEach(() => {
+    // Log in as a super admin and fetch all open administrations from Firestore
+    cy.then(async () => {
+      openAdmins = await getOpenAdmins();
+      cy.wrap(openAdmins).as('openAdmins');
+      cy.log('Found', openAdmins.length, 'open administrations.');
+    });
+  });
+
+  it('Logs the open administrations', () => {
+    cy.get('@openAdmins').then((openAdmins) => {
+      cy.log('Found', openAdmins.length, 'open administrations.');
+      openAdmins.forEach((admin) => {
+        cy.log(`Found administration: ${admin}`);
+      });
+    });
+  });
+
+  it('Tests the open administrations', () => {
+    // Clear all saved sessions and log in as a participant
+    Cypress.session.clearAllSavedSessions();
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/', { timeout: 2 * timeout });
 
-    getOpenAdmins();
-    cy.log('Found', openAdmins.length, 'open administrations.');
-
-    cy.then(() => {
+    cy.get('@openAdmins').then((openAdmins) => {
       openAdmins.forEach((admin) => {
         cy.log(`Testing ${admin}`);
         cy.selectAdministration(admin);
-
         testSpecs.forEach((spec) => {
-          cy.get('.p-tabview')
-            .invoke('text')
-            .then((text) => {
-              if (text.includes(spec.name)) {
-                cy.log(`Initializing test for ${spec.name}`);
-
-                retryTest(() => {
-                  spec.spec({
-                    administration: admin,
-                  });
-                });
-              } else {
-                cy.log('No game found for', spec.name);
-              }
-            });
+          testGame(spec, admin);
         });
         cy.log('Successfully tested all games for administration: ', admin);
       });

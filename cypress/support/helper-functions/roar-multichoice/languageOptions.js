@@ -9,8 +9,4 @@ export const languageOptions = {
       url: '/game/cva',
     },
   },
-  // es: {
-  //   gameTab: 'ROAR - Letra',
-  //   url: '/game/letter-es',
-  // },
 };

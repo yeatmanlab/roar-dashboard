@@ -1,4 +1,6 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, query, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { getDevFirebase } from './devFirebase';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 async function getUserId(user, adminFirestore) {
   console.log('Grabbing userId for user', user);
@@ -47,7 +49,14 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
   });
 }
 
+export async function signInAsSuperAdmin(firebaseAuth) {
+  const auth = getAuth(firebaseAuth);
+  await signInWithEmailAndPassword(auth, 'testsuperadmin1@roar-auth.com', '!roartestsuperadmin1');
+}
+
 export const getOpenAdministrations = async (db) => {
+  const auth = getDevFirebase('admin').auth;
+  await signInAsSuperAdmin(auth);
   const currentTime = Timestamp.now();
   const admins = [];
   const administrationsRef = collection(db, 'administrations');
@@ -56,7 +65,8 @@ export const getOpenAdministrations = async (db) => {
   const querySnapshot = await getDocs(q);
 
   for (const snapShot of querySnapshot.docs) {
-    admins.push(snapShot.id);
+    admins.push(snapShot.data().name);
   }
+
   return admins;
 };

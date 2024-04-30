@@ -13,7 +13,7 @@ jobs:
     name: Run Cypress Pre-Release Tests
     needs: [build-and-preview]
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
@@ -73,7 +73,7 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
           environment: production
-          sourcemap: ./dist/assets/*.js.map
+          sourcemaps: ./dist/assets/*.js.map
           version: ${{ github.ref }}
 
       - name: Notify on failure
