@@ -37,12 +37,11 @@
 </template>
 
 <script setup>
-import { defineProps } from 'vue';
 import _get from 'lodash/get';
 import _lowerCase from 'lodash/lowerCase';
 import { rawOnlyTasks, scoredTasks } from '@/helpers/reports.js';
 
-const props = defineProps({
+defineProps({
   colData: {
     type: Object,
     default: () => ({}),

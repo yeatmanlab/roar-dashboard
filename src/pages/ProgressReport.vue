@@ -93,13 +93,7 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import _find from 'lodash/find';
-import _head from 'lodash/head';
-import _tail from 'lodash/tail';
 import _get from 'lodash/get';
-import _remove from 'lodash/remove';
-import _union from 'lodash/union';
-import _isEmpty from 'lodash/isEmpty';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
@@ -146,10 +140,6 @@ const displayName = computed(() => {
 const handleViewChange = () => {
   window.location.href = `/scores/${props.administrationId}/${props.orgType}/${props.orgId}`;
 };
-
-// Queries for page
-// Boolean ref to keep track of whether this is the initial sort or a user-defined sort
-const initialSort = ref(true);
 
 const orderBy = ref([
   {
@@ -255,6 +245,12 @@ const computedProgressData = computed(() => {
   for (const { assignment, user } of assignmentData.value) {
     // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
     const grade = user.studentData?.grade;
+    // compute schoolName
+    let schoolName = '';
+    const schoolId = user?.schools?.current[0];
+    if (schoolId) {
+      schoolName = schoolNameDictionary.value[schoolId];
+    }
     const currRow = {
       user: {
         username: user.username,
@@ -264,16 +260,10 @@ const computedProgressData = computed(() => {
         lastName: user.name.last,
         grade: grade,
         assessmentPid: user.assessmentPid,
+        schoolName: schoolName,
       },
       // compute and add progress data in next step
     };
-
-    // compute schoolName
-    let schoolName = '';
-    const schoolId = user?.schools?.current[0];
-    if (schoolId) {
-      schoolName = schoolNameDictionary.value[schoolId];
-    }
 
     if (user.username == '1039-a.frazier') {
       console.log('fraz', assignment, user);

@@ -193,26 +193,46 @@
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Green', 'Yellow', 'Pink', 'Optional', 'Assessed', 'Reliable', 'Unreliable']"
+                  option-label="label"
+                  option-group-label="label"
+                  option-group-children="items"
+                  :options="taskFilterOptions"
                   style="margin-bottom: 0.5rem"
                 >
                   <template #option="{ option }">
                     <div class="flex align-items-center">
-                      <div
-                        v-if="supportLevelColors[option]"
-                        class="small-circle tooltip"
-                        :style="`background-color: ${supportLevelColors[option]};`"
-                      />
-                      <span class="ml-2">{{ option }}</span>
+                      <div v-if="supportLevelColors[option]" class="flex gap-2">
+                        <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[option]};`" />
+                        <span class="tooltiptext">{{ option }}</span>
+                      </div>
+                      <div v-else-if="progressTags[option]">
+                        <PvTag
+                          :severity="progressTags[option]?.severity"
+                          :value="progressTags[option]?.value"
+                          :icon="progressTags[option]?.icon"
+                          class="p-0.5 m-0"
+                        />
+                      </div>
+                      <div v-else>
+                        <span class="tooltiptext">{{ option }}</span>
+                      </div>
                     </div>
                   </template>
                   <template #value="{ value }">
-                    <div class="flex align-items-center">
-                      <div
-                        :class="`small-circle ${supportLevelColors[value] && 'tooltip'}`"
-                        :style="`background-color: ${supportLevelColors[value]};`"
+                    <div v-if="supportLevelColors[value]" class="flex gap-2">
+                      <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[value]};`" />
+                      <span class="tooltiptext">{{ value }}</span>
+                    </div>
+                    <div v-else-if="progressTags[value]">
+                      <PvTag
+                        :severity="progressTags[value]?.severity"
+                        :value="progressTags[value]?.value"
+                        :icon="progressTags[value]?.icon"
+                        class="p-0.5 m-0"
                       />
-                      <div class="ml-2">{{ value }}</div>
+                    </div>
+                    <div v-else>
+                      <span class="tooltiptext">{{ value }}</span>
                     </div>
                   </template>
                 </PvDropdown>
@@ -280,14 +300,10 @@ import { useToast } from 'primevue/usetoast';
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import _get from 'lodash/get';
-import _set from 'lodash/set';
-import _head from 'lodash/head';
 import _map from 'lodash/map';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
-import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
-import _isEqual from 'lodash/isEqual';
 import _startCase from 'lodash/startCase';
 import { supportLevelColors, progressTags } from '@/helpers/reports';
 import TableScoreTag from '@/components/reports/TableScoreTag.vue';
@@ -346,6 +362,24 @@ const computedColumns = computed(() => {
 });
 const currentSort = ref([]);
 const selectedRows = ref([]);
+
+const taskFilterOptions = ref([
+  {
+    label: 'Support Categories',
+    code: 'SupportCategories',
+    items: ['Green', 'Yellow', 'Pink'],
+  },
+  {
+    label: 'Progress Status',
+    code: 'ProgressStatus',
+    items: ['Completed', 'Started', 'Assigned'],
+  },
+  {
+    label: 'Other Filters',
+    code: 'Other',
+    items: ['Optional', 'Assessed', 'Unreliable'],
+  },
+]);
 
 const toast = useToast();
 const selectAll = ref(false);
@@ -446,10 +480,6 @@ const resetFilters = () => {
   props.resetFilters();
 };
 
-// Grab list of fields defined as dates
-let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
-dateFields = _map(dateFields, (col) => col.field);
-
 let toolTipByHeader = (header) => {
   const headerToTooltipMap = {
     Word: 'Assesses decoding skills at the word level. \n\n  Percentile ranges from 0-99 \n Raw Score ranges from 100-900',
@@ -465,95 +495,6 @@ let toolTipByHeader = (header) => {
 
   return headerToTooltipMap[header] || '';
 };
-
-function getIndexTask(colData, task) {
-  for (let index = 0; index < colData.assignment.assessments.length; index++) {
-    if (colData.assignment.assessments[index].taskId === task) {
-      return index;
-    }
-  }
-}
-
-function getFlags(index, colData) {
-  const flags = colData.assignment.assessments[index].engagementFlags;
-  const flagMessages = {
-    accuracyTooLow: '- Responses were inaccurate',
-    notEnoughResponses: '- Assessment was incomplete',
-    responseTimeTooFast: '- Responses were too fast',
-  };
-
-  // If there are flags and the assessment is not reliable, return the flags
-  if (flags && !colData.assignment.assessments[index].reliable) {
-    const reliabilityFlags = Object.keys(flags).map((flag) => {
-      return flagMessages[flag] || _lowerCase(flag);
-    });
-    // Join the returned flags with a newline character, then add two newlines for spacing
-    return reliabilityFlags.join('\n') + '\n\n';
-  } else {
-    return '';
-  }
-}
-
-function handleToolTip(_taskId, _toolTip, _colData) {
-  // Get the support level and flags, if they exist
-  _toolTip += _colData.scores?.[_taskId]?.support_level + '\n' + '\n';
-  _toolTip += getFlags(getIndexTask(_colData, _taskId), _colData);
-
-  // If the task does not have a raw score, then display no scores
-  if (!_colData.scores?.[_taskId]?.raw) {
-    _toolTip += 'Awaiting scores';
-  }
-  // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
-  else if (rawOnlyTasks.includes(_taskId)) {
-    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n' + '\n';
-    _toolTip += 'These scores are under development';
-  }
-  // If the task is a scored task and has a raw score, then display all scores
-  else {
-    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
-    _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-    _toolTip += 'Standard Score: ' + Math.round(_colData.scores?.[_taskId]?.standard) + '\n';
-  }
-  return _toolTip;
-}
-
-let returnScoreTooltip = (colHeader, colData, fieldPath) => {
-  const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
-  let toolTip = '';
-
-  const headerToTaskIdMap = {
-    Phoneme: 'pa',
-    Word: 'swr',
-    Sentence: 'sre',
-    Letter: 'letter',
-    Palabra: 'swr-es',
-  };
-
-  const selectedTaskId = headerToTaskIdMap[colHeader];
-  if (selectedTaskId && colData.scores?.[selectedTaskId]?.support_level) {
-    // Handle scored tasks
-    return handleToolTip(selectedTaskId, toolTip, colData);
-    // Handle raw only tasks
-  } else if (taskId && !scoredTasks.includes(taskId)) {
-    return handleToolTip(taskId, toolTip, colData);
-  }
-  return toolTip;
-};
-
-const computedData = computed(() => {
-  const data = JSON.parse(JSON.stringify(props.data));
-  _forEach(data, (entry) => {
-    // Clean up date fields to use Date objects
-    _forEach(dateFields, (field) => {
-      let dateEntry = _get(entry, field);
-      if (dateEntry !== null) {
-        const dateObj = new Date(dateEntry);
-        _set(entry, field, dateObj);
-      }
-    });
-  });
-  return data;
-});
 
 // Generate list of options given a column
 function getUniqueOptions(column) {

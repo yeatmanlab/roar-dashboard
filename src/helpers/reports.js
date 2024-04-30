@@ -209,6 +209,7 @@ export const supportLevelColors = {
   Pink: '#c93d82',
   Optional: '#03befc',
   Assessed: 'white',
+  Unreliable: '#d6b8c7',
 };
 
 export const progressTags = {

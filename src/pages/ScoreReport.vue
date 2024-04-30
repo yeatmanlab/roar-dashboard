@@ -288,7 +288,6 @@ import _round from 'lodash/round';
 import _get from 'lodash/get';
 import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
-import _find from 'lodash/find';
 import _pickBy from 'lodash/pickBy';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -311,7 +310,6 @@ import {
   getScoreKeys,
   gradeOptions,
 } from '@/helpers/reports.js';
-import { computedAsync } from '@vueuse/core/index.cjs';
 // import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 // import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
 // import NextSteps from '@/assets/NextSteps.pdf';
@@ -579,6 +577,12 @@ const computeAssignmentAndRunData = computed(() => {
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = user.studentData.grade;
+      // compute schoolName
+      let schoolName = '';
+      const schoolId = user?.schools?.current[0];
+      if (schoolId) {
+        schoolName = schoolNameDictionary.value[schoolId];
+      }
       const currRow = {
         user: {
           username: user.username,
@@ -588,6 +592,7 @@ const computeAssignmentAndRunData = computed(() => {
           lastName: user.name.last,
           grade: grade,
           assessmentPid: user.assessmentPid,
+          schoolName: schoolName,
         },
         routeParams: {
           administrationId: props.administrationId,
@@ -598,13 +603,6 @@ const computeAssignmentAndRunData = computed(() => {
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
-
-      // compute schoolName
-      let schoolName = '';
-      const schoolId = user?.schools?.current[0];
-      if (schoolId) {
-        schoolName = schoolNameDictionary.value[schoolId];
-      }
 
       const currRowScores = {};
       for (const assessment of assignment.assessments) {
@@ -617,10 +615,22 @@ const computeAssignmentAndRunData = computed(() => {
         } else {
           scoreFilterTags += ' Required ';
         }
-        if (assessment.reliable === false) {
-          scoreFilterTags += ' Unreliable ';
-        } else {
+        if (assessment.reliable == true) {
           scoreFilterTags += ' Reliable ';
+        } else {
+          scoreFilterTags += ' Unreliable ';
+        }
+        // Add filter tags for completed/incomplete
+        if (assessment.completedOn != undefined) {
+          scoreFilterTags += ' Completed ';
+        } else if (assessment.startedOn != undefined) {
+          scoreFilterTags += ' Started ';
+        } else {
+          scoreFilterTags += ' Assigned ';
+        }
+        // Add filter tags for assessed (what is this?)
+        if (typeof assessment?.scores?.computed?.composite == 'number') {
+          scoreFilterTags += ' Assessed ';
         }
 
         const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } =
@@ -661,6 +671,9 @@ const computeAssignmentAndRunData = computed(() => {
           standardScore: standardScore,
           tags: scoreFilterTags,
         };
+        if (user.username === '1039-d.corona') {
+          console.log('user', currRowScores);
+        }
 
         // Logic to update runsByTaskIdAcc
         const run = {
