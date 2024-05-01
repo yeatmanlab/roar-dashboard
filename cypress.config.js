@@ -52,7 +52,7 @@ module.exports = defineConfig({
     testGroupInitials: 'SATG',
     testAssignmentsList: [
       'Letter',
-      'Vocabulary',
+      'Picture-Vocab',
       'Single Digit Fluency',
       'Multi Digit Fluency',
       'Syntax',
