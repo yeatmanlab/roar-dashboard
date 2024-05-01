@@ -135,7 +135,7 @@ const studentFirstName = computed(() => {
 
 const grade = computed(() => getGrade(props.studentData?.studentData?.grade));
 
-const tasksToNotShow = ['vocab'];
+const tasksBlacklist = ['vocab', 'cva'];
 // compute standard score, raw score, and percentile score for each of the tasks
 const computedTaskData = computed(() => {
   const computedTaskAcc = {};
@@ -147,7 +147,7 @@ const computedTaskData = computed(() => {
       !taskId.includes('vocab') && !taskId.includes('letter') && !taskId.includes('es')
         ? _get(compositeScores, rawScoreKey)
         : compositeScores;
-    if (!isNaN(rawScore) && !tasksToNotShow.includes(taskId)) {
+    if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
       const percentileScore = _get(compositeScores, percentileScoreKey);
       const standardScore = _get(compositeScores, standardScoreKey);
       const rawScoreRange = getRawScoreRange(taskId);
