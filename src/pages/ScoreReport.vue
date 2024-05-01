@@ -113,7 +113,7 @@
             :columns="scoreReportColumns"
             :total-records="filteredTableData?.length"
             :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
+            :loading="isLoadingScores || isFetchingScores || isComputingScores"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
             @export-all="exportAll"
@@ -336,6 +336,7 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
+const isComputingScores = ref(true);
 
 const displayName = computed(() => {
   if (administrationInfo.value) {
@@ -569,6 +570,7 @@ const computeAssignmentAndRunData = computed(() => {
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   } else {
+    isComputingScores.value = true;
     // assignmentTableData is an array of objects, each representing a row in the table
     const assignmentTableDataAcc = [];
     // runsByTaskId is an object with keys as taskIds and values as arrays of scores
@@ -706,17 +708,19 @@ const computeAssignmentAndRunData = computed(() => {
       return Object.keys(taskInfoById).includes(taskId);
     });
 
+    isComputingScores.value = false;
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
 });
 
-const filteredTableData = ref([]);
+const filteredTableData = ref(computeAssignmentAndRunData.value.assignmentTableData);
 
 // Flag to track whether the watcher is already processing an update
 const isUpdating = ref(false);
 
 watch(computeAssignmentAndRunData, (newValue) => {
   // Update filteredTableData when computedProgressData changes
+  console.log('compute assn changed');
   filteredTableData.value = newValue.assignmentTableData;
 });
 
@@ -776,7 +780,7 @@ const exportSelected = (selectedRows) => {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
     if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'school');
+      tableRow['School'] = _get(user, 'schoolName');
     }
     for (const taskId in scores) {
       const score = scores[taskId];
@@ -805,7 +809,7 @@ const exportAll = async () => {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
     if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'school');
+      tableRow['School'] = _get(user, 'schoolName');
     }
     for (const taskId in scores) {
       const score = scores[taskId];

@@ -326,7 +326,7 @@ const exportSelected = (selectedRows) => {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
     if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'school');
+      tableRow['School'] = _get(user, 'schoolName');
     }
     for (const taskId in progress) {
       tableRow[taskDisplayNames[taskId]?.name ?? taskId] = progress[taskId].value;
@@ -350,7 +350,7 @@ const exportAll = async () => {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
     if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'school');
+      tableRow['School'] = _get(user, 'schoolName');
     }
     for (const taskId in progress) {
       tableRow[taskDisplayNames[taskId]?.name ?? taskId] = progress[taskId].value;
@@ -359,7 +359,7 @@ const exportAll = async () => {
   });
   exportCsv(
     computedExportData,
-    `roar-scores-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+    `roar-progress-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
       orgInfo.value.name,
     )}.csv`,
   );
@@ -419,7 +419,7 @@ const progressReportColumns = computed(() => {
   return tableColumns;
 });
 
-const filteredTableData = ref([]);
+const filteredTableData = ref(computedProgressData.value);
 
 watch(computedProgressData, (newValue) => {
   // Update filteredTableData when computedProgressData changes
