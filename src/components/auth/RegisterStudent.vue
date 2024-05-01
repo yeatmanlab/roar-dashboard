@@ -2,7 +2,8 @@
   <div class="card">
     <form class="p-fluid">
       <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
-        <!-- <section class="form-section">
+        <!-- orgCode -->
+        <section class="form-section">
           <div class="p-input-icon-right">
             <div class="flex justify-content-between">
               <label for="activationCode">Activation code <span class="required">*</span></label>
@@ -41,7 +42,7 @@
               <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
             </span>
           </span>
-        </section> -->
+        </section>
         <section class="form-section">
           <div class="p-input-icon-right">
             <label for="studentUsername">Student Username <span class="required">*</span></label>
@@ -317,14 +318,14 @@ const closeErrorDialog = () => {
   isDialogVisible.value = false;
 };
 
-// const noActivationCodeRef = ref(false);
+const noActivationCodeRef = ref(false);
 const yearOnlyCheckRef = ref(false);
 
 const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      // activationCode: '',
+      activationCode: '',
       studentUsername: '',
       password: '',
       confirmPassword: '',
@@ -340,7 +341,7 @@ const state = reactive({
       race: [],
       hispanicEthnicity: '',
       homeLanguage: [],
-      // noActivationCode: noActivationCodeRef.value,
+      noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
     },
   ],
@@ -349,7 +350,7 @@ const state = reactive({
 const rules = {
   students: {
     $each: helpers.forEach({
-      // activationCode: { required },
+      activationCode: { required },
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
@@ -365,7 +366,7 @@ const rules = {
       race: {},
       hispanicEthnicity: {},
       homeLanguage: {},
-      // noActivationCode: {},
+      noActivationCode: {},
       yearOnlyCheck: {},
     }),
   },
@@ -373,7 +374,7 @@ const rules = {
 
 function addStudent() {
   state.students.push({
-    // activationCode: '',
+    activationCode: '',
     studentUsername: '',
     password: '',
     confirmPassword: '',
@@ -389,20 +390,20 @@ function addStudent() {
     race: [],
     hispanicEthnicity: '',
     homeLanguage: [],
-    // noActivationCode: noActivationCodeRef.value,
+    noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
   });
 }
 
-// function updateActivationCode() {
-//   state.students.forEach((student) => {
-//     if (student.noActivationCode) {
-//       student.activationCode = 'noActivationCode';
-//     } else {
-//       student.activationCode = '';
-//     }
-//   });
-// }
+function updateActivationCode() {
+  state.students.forEach((student) => {
+    if (student.noActivationCode) {
+      student.activationCode = 'noActivationCode';
+    } else {
+      student.activationCode = '';
+    }
+  });
+}
 
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
