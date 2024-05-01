@@ -57,7 +57,7 @@
         <strong>{{
           getSupportLevelLanguage(grade, task.percentileScore.value, task.rawScore.value, task.taskId)
         }}</strong>
-        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
+        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
@@ -111,7 +111,6 @@ import {
   getRawScoreRange,
   getScoreKeys,
 } from '@/helpers/reports';
-import { descriptionsByTaskId } from '../../helpers/reports';
 
 const props = defineProps({
   studentData: {
@@ -136,6 +135,7 @@ const studentFirstName = computed(() => {
 
 const grade = computed(() => getGrade(props.studentData?.studentData?.grade));
 
+const tasksToNotShow = ['vocab'];
 // compute standard score, raw score, and percentile score for each of the tasks
 const computedTaskData = computed(() => {
   const computedTaskAcc = {};
@@ -147,8 +147,7 @@ const computedTaskData = computed(() => {
       !taskId.includes('vocab') && !taskId.includes('letter') && !taskId.includes('es')
         ? _get(compositeScores, rawScoreKey)
         : compositeScores;
-    console.log('rawScore', rawScore, taskId);
-    if (!isNaN(rawScore)) {
+    if (!isNaN(rawScore) && !tasksToNotShow.includes(taskId)) {
       const percentileScore = _get(compositeScores, percentileScoreKey);
       const standardScore = _get(compositeScores, standardScoreKey);
       const rawScoreRange = getRawScoreRange(taskId);
