@@ -121,9 +121,6 @@
               @click="addAssignedCondition"
             />
           </div>
-          <div class="w-8 mt-2 flex">
-            <ConsentPicker />
-          </div>
         </div>
       </div>
       <div class="mt-2 flex flex-column gap-2">
@@ -202,9 +199,6 @@
               </template>
             </PvColumn>
           </PvDataTable>
-          <div class="w-8 mt-2 flex">
-            <ConsentPicker />
-          </div>
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
               <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>

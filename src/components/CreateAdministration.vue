@@ -85,7 +85,9 @@
           :set-variants="setVariants"
           @variants-changed="handleVariantsChanged"
         />
-
+        <div class="mt-2 flex w-full">
+          <ConsentPicker />
+        </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
             <div class="flex">
@@ -144,6 +146,7 @@ import OrgPicker from '@/components/OrgPicker.vue';
 import { variantsFetcher } from '@/helpers/query/tasks';
 import TaskPicker from './TaskPicker.vue';
 import { useConfirm } from 'primevue/useconfirm';
+import ConsentPicker from './ConsentPicker.vue';
 
 const router = useRouter();
 const toast = useToast();
