@@ -467,7 +467,14 @@ function getIndexTask(colData, task) {
 }
 
 function getFlags(index, colData) {
-  const flags = colData.assignment.assessments[index].engagementFlags;
+  const assessment = colData.assignment.assessments[index];
+
+  // Check if assessment and engagementFlags are defined
+  if (!assessment || !assessment.engagementFlags) {
+    return '';
+  }
+
+  const flags = assessment.engagementFlags;
   const flagMessages = {
     accuracyTooLow: '- Responses were inaccurate',
     notEnoughResponses: '- Assessment was incomplete',
@@ -475,11 +482,11 @@ function getFlags(index, colData) {
   };
 
   // If there are flags and the assessment is not reliable, return the flags
-  if (flags && !colData.assignment.assessments[index].reliable) {
+  if (!assessment.reliable) {
     const reliabilityFlags = Object.keys(flags).map((flag) => {
-      return flagMessages[flag] || _lowerCase(flag);
+      return flagMessages[flag] || flag.toLowerCase();
     });
-    // Join the returned flags with a newline character, then add two newlines for spacing
+
     return reliabilityFlags.join('\n') + '\n\n';
   } else {
     return '';

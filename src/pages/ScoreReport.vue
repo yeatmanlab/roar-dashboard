@@ -303,6 +303,7 @@ import _tail from 'lodash/tail';
 import _isEmpty from 'lodash/isEmpty';
 import _pickBy from 'lodash/pickBy';
 import _union from 'lodash/union';
+import _lowerCase from 'lodash/lowerCase';
 import _remove from 'lodash/remove';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
@@ -793,7 +794,7 @@ const getPercentileScores = ({
 };
 
 const exportSelected = (selectedRows) => {
-  const computedExportData = _map(selectedRows, ({ user, assignment }) => {
+  const computedExportData = selectedRows.map(({ user, assignment }) => {
     let tableRow = {
       Username: _get(user, 'username'),
       Email: _get(user, 'email'),
@@ -839,6 +840,17 @@ const exportSelected = (selectedRows) => {
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
+      if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+        const reliabilityKeys = Object.keys(assessment.engagementFlags);
+        if (reliabilityKeys.length > 0) {
+          const reliabilityString = reliabilityKeys.map((key) => _lowerCase(key)).join(', ');
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = reliabilityString;
+        } else {
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'No reliability flags';
+        }
+      } else {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
+      }
     }
     return tableRow;
   });
@@ -848,7 +860,7 @@ const exportSelected = (selectedRows) => {
 
 const exportAll = async () => {
   const exportData = await assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true);
-  const computedExportData = _map(exportData, ({ user, assignment }) => {
+  const computedExportData = exportData.map(({ user, assignment }) => {
     let tableRow = {
       Username: _get(user, 'username'),
       Email: _get(user, 'email'),
@@ -894,6 +906,17 @@ const exportAll = async () => {
         ? _get(assessment, 'scores.computed.composite')
         : _get(assessment, `scores.computed.composite.${rawScoreKey}`);
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = support_level;
+      if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+        const reliabilityKeys = Object.keys(assessment.engagementFlags);
+        if (reliabilityKeys.length > 0) {
+          const reliabilityString = reliabilityKeys.map((key) => _lowerCase(key)).join(', ');
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = reliabilityString;
+        } else {
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'No reliability flags';
+        }
+      } else {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
+      }
     }
     return tableRow;
   });
