@@ -16,58 +16,79 @@ const testSpecs = [
   {
     name: 'ROAR - Picture Vocabulary',
     spec: playVocabulary,
+    language: 'en',
   },
   {
     name: 'ROAR - Written Vocabulary',
     spec: playWrittenVocabulary,
+    language: 'en',
   },
   {
     name: 'ROAR - Letter',
     spec: playLetter,
+    language: 'en',
+  },
+  {
+    name: 'ROAR - Letra',
+    spec: playLetter,
+    language: 'es',
   },
   {
     name: 'ROAR - Morphology',
     spec: playMorphology,
+    language: 'en',
   },
   {
     name: 'ROAR - Phoneme',
     spec: playPA,
+    language: 'en',
+  },
+  {
+    name: 'ROAR - Fonema',
+    spec: playPA,
+    language: 'es',
   },
   {
     name: 'ROAR - Sentence',
     spec: playSRE,
+    language: 'en',
+  },
+  {
+    name: 'ROAR - Frase',
+    spec: playSRE,
+    language: 'es',
   },
   {
     name: 'ROAR - Word',
     spec: playSWR,
+    language: 'en',
+  },
+  {
+    name: 'ROAR - Palabra',
+    spec: playSWR,
+    language: 'es',
   },
   {
     name: 'ROAM - Single Digit',
     spec: playFluencyARF,
+    language: 'en',
+  },
+  {
+    name: 'ROAM - Un Dígito',
+    spec: playFluencyARF,
+    language: 'es',
   },
   {
     name: 'ROAM - Multi Digit',
     spec: playFluencyCALF,
+    language: 'en',
+  },
+  {
+    name: 'ROAM - Varios Dígitos',
+    spec: playFluencyCALF,
+    language: 'es',
   },
 ];
-
-function retryTest(testFunc, retries = 3) {
-  let attempts = 0;
-  const run = () => {
-    attempts++;
-    try {
-      testFunc();
-    } catch (error) {
-      if (attempts < retries) {
-        cy.log(`Test failed, retrying... (${attempts}/${retries})`);
-        run();
-      } else {
-        throw error;
-      }
-    }
-  };
-  run();
-}
 
 async function getOpenAdmins() {
   const adminFirestore = getDevFirebase('admin').db;
@@ -82,10 +103,9 @@ function checkOptionalGame(spec, admin, text) {
       cy.switchToOptionalAssessments();
       if (text.includes(spec.name)) {
         cy.log(`Initializing test for optional game: ${spec.name}`);
-        retryTest(() => {
-          spec.spec({
-            administration: admin,
-          });
+        spec.spec({
+          administration: admin,
+          language: spec.language,
         });
       } else {
         cy.log('No optional game found for game:', spec.name);
@@ -100,11 +120,13 @@ function testGame(spec, admin) {
   cy.get('.p-tabview')
     .invoke('text')
     .then((text) => {
+      cy.wait(0.1 * timeout);
       if (text.includes(spec.name)) {
-        cy.log(`Initializing test for game: ${spec.name}`);
-        retryTest(() => {
+        it(`Tests ${spec.name}`, () => {
+          cy.log(`Initializing test for game: ${spec.name}`);
           spec.spec({
             administration: admin,
+            language: spec.language,
           });
         });
       } else {
