@@ -103,6 +103,7 @@ function checkOptionalGame(spec, admin, text) {
       cy.switchToOptionalAssessments();
       if (text.includes(spec.name)) {
         cy.log(`Initializing test for optional game: ${spec.name}`);
+
         spec.spec({
           administration: admin,
           language: spec.language,
@@ -117,17 +118,16 @@ function checkOptionalGame(spec, admin, text) {
 }
 
 function testGame(spec, admin) {
+  cy.wait(0.1 * timeout);
   cy.get('.p-tabview')
     .invoke('text')
     .then((text) => {
-      cy.wait(0.1 * timeout);
       if (text.includes(spec.name)) {
-        it(`Tests ${spec.name}`, () => {
-          cy.log(`Initializing test for game: ${spec.name}`);
-          spec.spec({
-            administration: admin,
-            language: spec.language,
-          });
+        cy.log(`Initializing test for game: ${spec.name}`);
+
+        spec.spec({
+          administration: admin,
+          language: spec.language,
         });
       } else {
         checkOptionalGame(spec, admin, text);
