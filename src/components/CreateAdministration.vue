@@ -138,6 +138,7 @@ import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
+import _get from 'lodash/get';
 import _isEqual from 'lodash/isEqual';
 import _without from 'lodash/without';
 import _union from 'lodash/union';
@@ -186,18 +187,20 @@ const { data: preExistingAdminInfo } = useQuery({
   enabled: shouldGrabAdminInfo,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+// Grab districts from preExistingAdminInfo.minimalOrgs.districts
 const districtsToGrab = computed(() => {
-  if (!preExistingAdminInfo.value) return null;
-  return preExistingAdminInfo.value.districts.map((id) => {
+  const districtIds = _get(preExistingAdminInfo.value, 'minimalOrgs.districts', []);
+  return districtIds.map((districtId) => {
     return {
       collection: 'districts',
-      docId: id,
-      select: ['name', 'schools'],
+      docId: districtId,
+      select: ['name'],
     };
   });
 });
 const shouldGrabDistricts = computed(() => {
-  return initialized.value && !_isEmpty(preExistingAdminInfo.value);
+  return initialized.value && districtsToGrab.value.length > 0;
 });
 const { data: preDistricts } = useQuery({
   queryKey: ['districts', props.adminId],
@@ -207,31 +210,14 @@ const { data: preDistricts } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// grab schools from preExistingAdminInfo.minimalOrgs.schools
 const schoolsToGrab = computed(() => {
-  // If the data we need is not present, break
-  if (!preExistingAdminInfo.value || !preDistricts.value) return [];
-
-  // Make a list of all schools associated with given districts
-  const allSchools = [];
-  preDistricts.value.forEach((district) => {
-    allSchools.push(...toRaw(district.schools));
-  });
-
-  // Make a list of all schools not included in the above schools
-  const schoolIds = _without(
-    preExistingAdminInfo.value.schools.map((schoolId) => {
-      if (!allSchools.includes(schoolId)) return schoolId;
-      else return undefined;
-    }),
-    undefined,
-  );
-
-  // Create format ready for fetchDocsById()
-  return schoolIds.map((id) => {
+  const schoolIds = _get(preExistingAdminInfo.value, 'minimalOrgs.schools', []);
+  return schoolIds.map((schoolId) => {
     return {
       collection: 'schools',
-      docId: id,
-      select: ['name', 'classes'],
+      docId: schoolId,
+      select: ['name'],
     };
   });
 });
@@ -247,79 +233,19 @@ const { data: preSchools } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const allSchoolsToGrab = computed(() => {
-  if (!preExistingAdminInfo.value || !preDistricts.value) return [];
-
-  const allSchools = [];
-  preDistricts.value.forEach((district) => {
-    allSchools.push(...toRaw(district).schools);
-  });
-
-  return allSchools.map((schoolId) => {
-    return {
-      collection: 'schools',
-      docId: schoolId,
-      select: ['classes'],
-    };
-  });
-});
-
-const shouldGrabAllSchools = computed(() => {
-  return initialized.value && allSchoolsToGrab.value.length > 0;
-});
-
-const { data: allDistrictSchools } = useQuery({
-  queryKey: ['schools', 'all', props.adminId], //TODO: this queryKey needs to be changed
-  queryFn: () => fetchDocsById(allSchoolsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabAllSchools,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
+// Grab classes from preExistingAdminInfo.minimalOrgs.classes
 const classesToGrab = computed(() => {
-  // If the data we need is not present, break
-  if (!preExistingAdminInfo.value && !allDistrictSchools.value) return [];
-
-  let allClasses = [];
-  if (allDistrictSchools.value) {
-    //TODO: this list needs to include all classes for given districts as well
-    // Make a list of all schools associated with given districts and schools
-    for (const school of allDistrictSchools.value) {
-      const classes = toRaw(school).classes;
-      if (classes) {
-        allClasses.push(...classes);
-      }
-    }
-  }
-  // Make a list of all classes not included in the above classes
-  const classIds = _without(
-    preExistingAdminInfo.value.classes.map((classId) => {
-      if (!allClasses.includes(classId)) {
-        return classId;
-      } else return undefined;
-    }),
-    undefined,
-  );
-
-  // Create format ready for fetchDocsById()
-  return classIds.map((id) => {
+  const classIds = _get(preExistingAdminInfo.value, 'minimalOrgs.classes', []);
+  return classIds.map((classId) => {
     return {
       collection: 'classes',
-      docId: id,
+      docId: classId,
       select: ['name'],
     };
   });
 });
 const shouldGrabClasses = computed(() => {
-  // Do not grab classes unless (1) firekit is initialized, (2) there are classes that need grabbing,
-  // or (3) in the event that there are districts listed in the preExistingAdminInfo and
-  // the schools are not already populated. This is important to prevent grabbing more
-  // classes than necessary.
-  return (
-    initialized.value &&
-    (!_isEmpty(preExistingAdminInfo.districts) ? allDistrictSchools.value : true) &&
-    classesToGrab.value.length > 0
-  );
+  return initialized.value && classesToGrab.value.length > 0;
 });
 
 const { data: preClasses } = useQuery({
@@ -330,9 +256,10 @@ const { data: preClasses } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// Grab groups from preExistingAdminInfo.minimalOrgs.groups
 const groupsToGrab = computed(() => {
-  if (!preExistingAdminInfo.value) return [];
-  return preExistingAdminInfo.value.groups.map((id) => {
+  const groupIds = _get(preExistingAdminInfo.value, 'minimalOrgs.groups', []);
+  return groupIds.map((id) => {
     return {
       collection: 'groups',
       docId: id,
@@ -353,9 +280,10 @@ const { data: preGroups } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// Grab families from preExistingAdminInfo.families
 const familiesToGrab = computed(() => {
-  if (!preExistingAdminInfo.value) return [];
-  return preExistingAdminInfo.value.families.map((id) => {
+  const familyIds = _get(preExistingAdminInfo.value, 'minimalOrgs.families', []);
+  return familyIds.map((id) => {
     return {
       collection: 'families',
       docId: id,
