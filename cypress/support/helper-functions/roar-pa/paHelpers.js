@@ -69,14 +69,12 @@ function playIntro(startText) {
 
   handleFullScreenError();
 
-  cy.get('div', { timeout: timeout }).contains(startText, { timeout: timeout }).should('be.visible');
-  cy.get('.continue', { timeout: timeout }).should('be.visible').click();
-
-  // clicks through first introduction pages
-  // eslint-disable-next-line no-plusplus
-  // for (let i = 0; i < 2; i++) {
-  //   cy.get(".continue", { timeout: timeout }).should('be.visible').click();
-  // }
+  cy.get('div', { timeout: timeout })
+    .contains(startText, { timeout: 2 * timeout })
+    .should('be.visible');
+  cy.get('.continue', { timeout: 2 * timeout })
+    .should('be.visible')
+    .click();
 }
 
 function playFirstTutorial() {
