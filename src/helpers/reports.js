@@ -8,8 +8,6 @@ import { getGrade } from '@bdelab/roar-utils';
  *  Value: { orderindex, displayName }
  */
 
-export const optionalAssessmentColor = '#03befc';
-
 export const taskDisplayNames = {
   letter: {
     name: 'Letter',
@@ -206,10 +204,90 @@ export const scoredTasks = ['swr', 'pa', 'sre'];
  */
 export const supportLevelColors = {
   above: 'green',
+  Green: 'green',
   some: '#edc037',
+  Yellow: '#edc037',
   below: '#c93d82',
-  optional: '#03befc',
+  Pink: '#c93d82',
+  Optional: '#03befc',
+  Assessed: 'white',
+  Unreliable: '#d6b8c7',
 };
+
+export const progressTags = {
+  Optional: {
+    value: 'optional',
+    icon: 'pi pi-question',
+    severity: 'info',
+  },
+  Completed: {
+    value: 'completed',
+    icon: 'pi pi-check',
+    severity: 'success',
+  },
+  Started: {
+    value: 'started',
+    icon: 'pi pi-exclamation-triangle',
+    severity: 'warning',
+  },
+  Assigned: {
+    value: 'assigned',
+    icon: 'pi pi-times',
+    severity: 'danger',
+  },
+};
+
+// Grab grade options for filter dropdown
+export const gradeOptions = [
+  {
+    value: '1',
+    label: '1st Grade',
+  },
+  {
+    value: '2',
+    label: '2nd Grade',
+  },
+  {
+    value: '3',
+    label: '3rd Grade',
+  },
+  {
+    value: '4',
+    label: '4th Grade',
+  },
+  {
+    value: '5',
+    label: '5th Grade',
+  },
+  {
+    value: '6',
+    label: '6th Grade',
+  },
+  {
+    value: '7',
+    label: '7th Grade',
+  },
+  {
+    value: '8',
+    label: '8th Grade',
+  },
+  {
+    value: '9',
+    label: '9th Grade',
+  },
+  {
+    value: '10',
+    label: '10th Grade',
+  },
+  {
+    value: '11',
+    label: '11th Grade',
+  },
+  {
+    value: '12',
+    label: '12th Grade',
+  },
+];
 
 /*
  *  Get Support Level
@@ -310,6 +388,9 @@ export function getScoreKeys(taskId, grade) {
       standardScoreDisplayKey = 'sprStandardScore';
     }
     rawScoreKey = 'sreScore';
+  }
+  if (taskId === 'letter') {
+    rawScoreKey = '';
   }
   return {
     percentileScoreKey,
