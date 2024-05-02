@@ -11,8 +11,8 @@
               <div class="flex flex-column md:flex-row justify-content-between md:align-items-center flex-1 gap-4">
                 <div class="flex flex-row md:flex-column justify-content-between align-items-start gap-2">
                   <div>
-                    <span class="font-medium text-secondary text-sm">{{ consent.type }}</span>
-                    <div class="text-lg font-medium text-900 mt-2">{{ consent.name }}</div>
+                    <span class="font-medium text-secondary text-sm">{{ consent.gitHubOrg }}</span>
+                    <div class="text-lg font-medium text-900 mt-2">{{ consent.fileName }}</div>
                     <span class="font-medium text-secondary text-sm">{{ consent.lastUpdated }}</span>
                   </div>
                   <div class="surface-100 p-1" style="border-radius: 30px">
@@ -45,24 +45,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { fetchLegalDocs } from '@/helpers/query/legal'; // Import the fetchLegalDocs function
+import { useQuery } from '@tanstack/vue-query';
 
 let isSelected = ref(null);
+const initialized = ref(false);
 
-const consents = [
-  {
-    image: 'src/assets/roar-icon.png',
-    name: 'district2Consent',
-    lastUpdated: 'last updated 1',
-    currentCommit: 435345243,
-    type: 'Consent',
-  },
-  {
-    image: 'src/assets/roar-icon.png',
-    name: 'consolidatedAssent',
-    lastUpdated: 'last updated 2',
-    currentCommit: 909709792,
-    type: 'Assent',
-  },
-];
+onMounted(() => {
+  initialized.value = true; // Set initialized to true after component is mounted
+});
+
+const { data: consents } = useQuery({
+  queryKey: ['consent', 'assent', 'tos'],
+  queryFn: () =>
+    fetchLegalDocs({
+      orderBy: 'asc',
+      pageLimit: 10,
+      page: 1,
+    }),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+console.log('consents: ', consents.value);
 </script>
