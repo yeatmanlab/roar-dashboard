@@ -281,12 +281,10 @@
             </template>
           </PvColumn>
           <template #empty>
-            <div class="flex flex-column empty-message my-8">
+            <div class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No scores found</div>
-              <span class="font-light"
-                >The filters applied have no matching scores.
-                <PvButton text class="my-2" @click="resetFilters">Reset Filters</PvButton>
-              </span>
+              <div class="font-light">The filters applied have no matching scores.</div>
+              <PvButton text class="my-2" @click="resetFilters">Reset Filters</PvButton>
             </div>
           </template>
         </PvDataTable>
@@ -430,7 +428,17 @@ function increasePadding() {
 }
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE', 'PROGRESS'];
+const dataTypesToFilterMatchMode = {
+  NUMERIC: FilterMatchMode.EQUALS,
+  NUMBER: FilterMatchMode.EQUALS,
+  TEXT: FilterMatchMode.CONTAINS,
+  STRING: FilterMatchMode.CONTAINS,
+  DATE: FilterMatchMode.DATE_IS,
+  BOOLEAN: FilterMatchMode.EQUALS,
+  SCORE: FilterMatchMode.CONTAINS,
+  PROGRESS: FilterMatchMode.CONTAINS,
+};
+
 const computedFilters = computed(() => {
   let filters = {};
   let options = {};
@@ -439,27 +447,22 @@ const computedFilters = computed(() => {
     if (!_get(column, 'header')) {
       column['header'] = _startCase(_get(column, 'field'));
     }
+    // Choose whether to default to field or a custom filterField (e.g. tag based filters)
     const fieldOrFilterField = column?.filterField ? column.filterField : column.field;
     const dataType = _toUpper(_get(column, 'dataType'));
     let returnMatchMode = null;
-    if (valid_dataTypes.includes(dataType)) {
-      if (dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN') {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
-      } else if (dataType === 'TEXT' || dataType === 'STRING') {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.CONTAINS };
-      } else if (dataType === 'DATE') {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
-      } else if (dataType === 'SCORE') {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.CONTAINS };
-      } else if (dataType === 'PROGRESS') {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.CONTAINS };
-      }
 
-      if (_get(column, 'useMultiSelect')) {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
-        options[column.field] = getUniqueOptions(column);
-      }
+    // generate return matchmode
+    if (dataTypesToFilterMatchMode[dataType]) {
+      returnMatchMode = { value: null, matchMode: dataTypesToFilterMatchMode[dataType] };
     }
+
+    // case for where multiselect ( can affect any type of data type)
+    if (_get(column, 'useMultiSelect')) {
+      returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
+      options[column.field] = getUniqueOptions(column);
+    }
+
     if (returnMatchMode) {
       filters[fieldOrFilterField] = {
         operator: FilterOperator.AND,
@@ -475,7 +478,6 @@ const refFilters = ref(computedFilters.value.computedFilters);
 
 const resetFilters = () => {
   refFilters.value = computedFilters.value.computedFilters;
-  // clear local filters
   emit('reset-filters');
 };
 
@@ -624,10 +626,6 @@ button.p-column-filter-menu-button.p-link:hover {
 .p-datatable-emptyMessage {
   width: auto; /* or set it to a specific width */
   margin: 0 auto; /* Center the message horizontally */
-}
-
-.empty-message {
-  margin-left: 37rem;
 }
 
 .scrollable-container::-webkit-scrollbar {
