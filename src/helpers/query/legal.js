@@ -1,34 +1,22 @@
-import { getAxiosInstance, mapFields, orderByDefault } from './utils';
+import _capitalize from 'lodash/capitalize';
+import { getAxiosInstance } from './utils';
+import _mapValues from 'lodash/mapValues';
 
-export const fetchLegalDocs = async ({ orderBy, pageLimit, page }) => {
-  const axiosInstance = getAxiosInstance();
-
-  const requestBody = {
-    structuredQuery: {
-      orderBy: orderBy ?? orderByDefault,
-      limit: pageLimit,
-      offset: page * pageLimit,
-      select: {
-        fields: [
-          { fieldPath: 'currentCommit' },
-          { fieldPath: 'fileName' },
-          { fieldPath: 'gitHubOrg' },
-          { fieldPath: 'gitHubRepository' },
-        ],
-      },
-      from: [{ collectionId: 'legal' }],
-    },
-  };
-
-  try {
-    const response = await axiosInstance.post(':runQuery', requestBody);
-    const data = response.data;
-    console.log('response data: ', data);
-    const mappedData = mapFields(data);
-    console.log('Data from runQuery:', mappedData);
-    return mappedData;
-  } catch (error) {
-    console.error('Error fetching legal documents:', error);
-    throw error;
-  }
+export const fetchLegalDocs = () => {
+  const axiosInstance = getAxiosInstance('admin');
+  return axiosInstance.get('/legal').then(({ data }) => {
+    const docs = data.documents.map((doc) => {
+      const type = _capitalize(doc.name.split('/').pop());
+      const lastUpdated = new Date(doc.createTime);
+      return {
+        type: type,
+        fileName: doc.fields.fileName,
+        gitHubOrg: doc.fields.gitHubOrg,
+        currentCommit: doc.fields.currentCommit,
+        lastUpdated: lastUpdated.toLocaleString(),
+      };
+    });
+    console.log(' docs ', docs);
+    return docs;
+  });
 };
