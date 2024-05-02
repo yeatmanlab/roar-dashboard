@@ -281,7 +281,7 @@
             </template>
           </PvColumn>
           <template #empty>
-            <div class="flex flex-column">
+            <div class="flex flex-column empty-message my-8">
               <div class="text-lg font-bold my-2">No scores found</div>
               <span class="font-light"
                 >The filters applied have no matching scores.
@@ -624,6 +624,10 @@ button.p-column-filter-menu-button.p-link:hover {
 .p-datatable-emptyMessage {
   width: auto; /* or set it to a specific width */
   margin: 0 auto; /* Center the message horizontally */
+}
+
+.empty-message {
+  margin-left: 37rem;
 }
 
 .scrollable-container::-webkit-scrollbar {
