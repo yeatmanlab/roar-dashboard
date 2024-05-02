@@ -92,7 +92,7 @@
     "husky": "^8.0.3",
     "prettier": "3.0.3",
     "sass": "^1.50.1",
-    "vite": "^4.1.4",
+    "vite": "^4.5.3",
     "vite-plugin-favicons-inject": "^2.2.0"
   }
 }
