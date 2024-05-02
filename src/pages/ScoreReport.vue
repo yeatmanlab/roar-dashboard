@@ -286,9 +286,11 @@ import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
-import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
+import _union from 'lodash/union';
+import _lowerCase from 'lodash/lowerCase';
+import _remove from 'lodash/remove';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
@@ -789,6 +791,17 @@ const exportSelected = (selectedRows) => {
 
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
+      if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+        const reliabilityKeys = Object.keys(assessment.engagementFlags);
+        if (reliabilityKeys.length > 0) {
+          const reliabilityString = reliabilityKeys.map((key) => _lowerCase(key)).join(', ');
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = reliabilityString;
+        } else {
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'No reliability flags';
+        }
+      } else {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
+      }
     }
     return tableRow;
   });
@@ -818,6 +831,17 @@ const exportAll = async () => {
 
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
+      if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+        const reliabilityKeys = Object.keys(assessment.engagementFlags);
+        if (reliabilityKeys.length > 0) {
+          const reliabilityString = reliabilityKeys.map((key) => _lowerCase(key)).join(', ');
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = reliabilityString;
+        } else {
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'No reliability flags';
+        }
+      } else {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
+      }
     }
     return tableRow;
   });
