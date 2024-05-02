@@ -113,7 +113,7 @@
             :columns="scoreReportColumns"
             :total-records="filteredTableData?.length"
             :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores || isComputingScores"
+            :loading="isLoadingScores || isFetchingScores"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
             @export-all="exportAll"
@@ -286,11 +286,10 @@ import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
+import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
-import _union from 'lodash/union';
 import _lowerCase from 'lodash/lowerCase';
-import _remove from 'lodash/remove';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
@@ -338,7 +337,6 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
-const isComputingScores = ref(true);
 
 const displayName = computed(() => {
   if (administrationInfo.value) {
@@ -572,7 +570,6 @@ const computeAssignmentAndRunData = computed(() => {
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   } else {
-    isComputingScores.value = true;
     // assignmentTableData is an array of objects, each representing a row in the table
     const assignmentTableDataAcc = [];
     // runsByTaskId is an object with keys as taskIds and values as arrays of scores
@@ -710,7 +707,6 @@ const computeAssignmentAndRunData = computed(() => {
       return Object.keys(taskInfoById).includes(taskId);
     });
 
-    isComputingScores.value = false;
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
 });
@@ -791,13 +787,14 @@ const exportSelected = (selectedRows) => {
 
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
-      if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-        const reliabilityKeys = Object.keys(assessment.engagementFlags);
-        if (reliabilityKeys.length > 0) {
-          const reliabilityString = reliabilityKeys.map((key) => _lowerCase(key)).join(', ');
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = reliabilityString;
+      if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
+        const engagementFlags = Object.keys(score.engagementFlags);
+        if (engagementFlags.length > 0) {
+          const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
         } else {
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'No reliability flags';
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] =
+            'Unreliable: No reliability flags available';
         }
       } else {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
@@ -831,13 +828,14 @@ const exportAll = async () => {
 
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
-      if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-        const reliabilityKeys = Object.keys(assessment.engagementFlags);
-        if (reliabilityKeys.length > 0) {
-          const reliabilityString = reliabilityKeys.map((key) => _lowerCase(key)).join(', ');
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = reliabilityString;
+      if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
+        const engagementFlags = Object.keys(score.engagementFlags);
+        if (engagementFlags.length > 0) {
+          const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
         } else {
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'No reliability flags';
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] =
+            'Unreliable: No reliability flags available';
         }
       } else {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
