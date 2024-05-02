@@ -295,7 +295,6 @@ import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
-import _map from 'lodash/map';
 import _kebabCase from 'lodash/kebabCase';
 import _find from 'lodash/find';
 import _head from 'lodash/head';
