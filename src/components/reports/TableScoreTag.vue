@@ -68,8 +68,8 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   // if score exists
   if (_colData.scores?.[_taskId]?.rawScore || _colData.scores?.[_taskId]?.percentCorrect) {
     if (rawOnlyTasks.includes(_taskId)) {
-      _toolTip += 'Number Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
-      _toolTip += 'Number Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
+      _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
     } else {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
