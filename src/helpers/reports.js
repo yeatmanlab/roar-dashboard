@@ -193,6 +193,12 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
 export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es'];
 
 /*
+ *  Raw Tasks to Display Percent Correct
+ *  A list of tasks to only display raw scores when included in a RoarDataTable.
+ */
+export const rawOnlyTasksToDisplayPercentCorrect = ['letter', 'cva', 'morphology', 'vocab', 'fluency'];
+
+/*
  *  Scored Tasks
  *  A list of tasks to be included in the generation of support levels
  */

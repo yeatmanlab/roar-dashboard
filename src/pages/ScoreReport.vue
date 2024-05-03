@@ -306,7 +306,7 @@ import {
   getSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
-  scoredTasks,
+  rawOnlyTasksToDisplayPercentCorrect,
   addElementToPdf,
   getScoreKeys,
   gradeOptions,
@@ -793,7 +793,7 @@ const exportSelected = (selectedRows) => {
     }
     for (const taskId in scores) {
       const score = scores[taskId];
-      if (rawOnlyTasks.includes(taskId)) {
+      if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
@@ -915,7 +915,7 @@ const scoreReportColumns = computed(() => {
     if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
     if (viewMode.value === 'standard') colField = `scores.${taskId}.standardScore`;
     if (viewMode.value === 'raw') colField = `scores.${taskId}.rawScore`;
-    if (rawOnlyTasks.includes(taskId)) {
+    if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
       colField = `scores.${taskId}.percentCorrect`;
     }
     tableColumns.push({

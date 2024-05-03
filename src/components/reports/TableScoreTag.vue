@@ -28,7 +28,7 @@
 <script setup>
 import _get from 'lodash/get';
 import _lowerCase from 'lodash/lowerCase';
-import { rawOnlyTasks, scoredTasks } from '@/helpers/reports.js';
+import { rawOnlyTasksToDisplayPercentCorrect, scoredTasks } from '@/helpers/reports.js';
 
 defineProps({
   colData: {
@@ -67,7 +67,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   // If the task does not have a raw score, then display no scores
   // if score exists
   if (_colData.scores?.[_taskId]?.rawScore || _colData.scores?.[_taskId]?.percentCorrect) {
-    if (rawOnlyTasks.includes(_taskId)) {
+    if (rawOnlyTasksToDisplayPercentCorrect.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
