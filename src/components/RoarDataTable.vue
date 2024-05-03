@@ -348,8 +348,6 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
-  sortField: { type: String, required: false, default: '' },
-  sortMode: { type: String, required: false, default: '' },
 });
 
 const inputColumns = ref(props.columns);
