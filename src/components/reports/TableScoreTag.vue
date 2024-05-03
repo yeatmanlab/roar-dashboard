@@ -1,37 +1,26 @@
 <template>
   <div
-    v-if="(_get(colData, col.field) !== undefined || _get(colData, 'optional')) && col.emptyTag !== true"
+    v-if="(_get(colData, col.field) != undefined || _get(colData, 'optional')) && col.emptyTag !== true"
     v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
   >
     <PvTag
-      v-if="!col.tagOutlined && _get(colData, col.field)"
       :value="_get(colData, col.field)"
       :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
-        returnScoreTooltip(col.header, colData, col.field).length > 0 &&
+        returnScoreTooltip(col.header, colData, col.field)?.length > 0 &&
         'outline: 1px dotted #0000CD; outline-offset: 3px'
       }`"
       rounded
     />
-    <div v-else-if="col.tagOutlined && _get(colData, col.tagColor)" class="circle" style="border: 1px solid black" />
   </div>
   <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
     <div
-      v-if="!col.tagOutlined"
       class="circle"
       :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
         _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
       }; ${
-        returnScoreTooltip(col.header, colData, col.field).length > 0 &&
+        returnScoreTooltip(col.header, colData, col.field)?.length > 0 &&
         'outline: 1px dotted #0000CD; outline-offset: 3px'
       }`"
-    />
-
-    <div
-      v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-      class="circle"
-      :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
-        _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-      }; outline: 1px dotted #0000CD; outline-offset: 3px`"
     />
   </div>
 </template>
@@ -76,10 +65,12 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   }
 
   // If the task does not have a raw score, then display no scores
-  if (_colData.scores?.[_taskId]?.rawScore) {
+  // if score exists
+  if (_colData.scores?.[_taskId]?.rawScore || _colData.scores?.[_taskId]?.percentCorrect) {
     if (rawOnlyTasks.includes(_taskId)) {
-      _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n' + '\n';
-      _toolTip += 'These scores are under development';
+      _toolTip += 'Number Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
+      _toolTip += 'Number Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
     } else {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
       _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';

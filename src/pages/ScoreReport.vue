@@ -673,6 +673,18 @@ const computeAssignmentAndRunData = computed(() => {
           tags: scoreFilterTags,
         };
 
+        // if task is a raw score only task, add percentage correct, num attempted, and num correct to the scores object
+        if (rawOnlyTasks.includes(taskId)) {
+          const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
+          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
+          const percentCorrect =
+            numAttempted > 0 ? Math.round((numCorrect * 100) / numAttempted).toString() + '%' : null;
+          currRowScores[taskId].percentCorrect = percentCorrect;
+          currRowScores[taskId].numAttempted = numAttempted;
+          currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].tagColor = '#6b7280';
+        }
+
         // Logic to update runsByTaskIdAcc
         const run = {
           // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
@@ -718,7 +730,6 @@ const isUpdating = ref(false);
 
 watch(computeAssignmentAndRunData, (newValue) => {
   // Update filteredTableData when computedProgressData changes
-  console.log('compute assn changed');
   filteredTableData.value = newValue.assignmentTableData;
 });
 
@@ -859,12 +870,6 @@ function getScoreKeysByRow(row, grade) {
 
 const refreshing = ref(false);
 
-const shouldBeOutlined = (taskId) => {
-  if (scoredTasks.includes(taskId)) return false;
-  else if (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw') return true;
-  else return true;
-};
-
 // compute and store schoolid -> school name map for schools. store adminId,
 // orgType, orgId for individual score report link
 const scoreReportColumns = computed(() => {
@@ -905,6 +910,9 @@ const scoreReportColumns = computed(() => {
     if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
     if (viewMode.value === 'standard') colField = `scores.${taskId}.standardScore`;
     if (viewMode.value === 'raw') colField = `scores.${taskId}.rawScore`;
+    if (rawOnlyTasks.includes(taskId)) {
+      colField = `scores.${taskId}.percentCorrect`;
+    }
     tableColumns.push({
       field: colField,
       header: taskDisplayNames[taskId]?.name ?? taskId,
@@ -913,10 +921,9 @@ const scoreReportColumns = computed(() => {
       sort: true,
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
-      tag: viewMode.value !== 'color' && !rawOnlyTasks.includes(taskId),
-      emptyTag: viewMode.value === 'color' || isOptional || (rawOnlyTasks.includes(taskId) && viewMode.value !== 'raw'),
+      tag: viewMode.value !== 'color',
+      emptyTag: !rawOnlyTasks.includes(taskId) && (viewMode.value === 'color' || isOptional),
       tagColor: `scores.${taskId}.tagColor`,
-      tagOutlined: shouldBeOutlined(taskId),
     });
   }
   tableColumns.push({
