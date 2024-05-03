@@ -546,7 +546,7 @@ const getScoresAndSupportFromAssessment = ({
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
   let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
   let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-  if (taskId === 'letter') {
+  if (taskId === 'letter' || taskId === 'letter-es') {
     rawScore = _get(assessment, `scores.computed.composite`);
   }
   const { support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional);
@@ -797,6 +797,8 @@ const exportSelected = (selectedRows) => {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (rawOnlyTasks.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       } else {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = score.percentileString;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = score.standardScore;
@@ -839,19 +841,26 @@ const exportAll = async () => {
     }
     for (const taskId in scores) {
       const score = scores[taskId];
-      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = score.percentileString;
-      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = score.standardScore;
+      if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (rawOnlyTasks.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
+      } else {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = score.percentileString;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = score.standardScore;
 
-      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
-      tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
+      }
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
         const engagementFlags = Object.keys(score.engagementFlags);
         if (engagementFlags.length > 0) {
           const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
           tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
         } else {
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] =
-            'Unreliable: No reliability flags available';
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
         }
       } else {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
@@ -917,6 +926,8 @@ const scoreReportColumns = computed(() => {
     if (viewMode.value === 'raw') colField = `scores.${taskId}.rawScore`;
     if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
       colField = `scores.${taskId}.percentCorrect`;
+    } else if (rawOnlyTasks.includes(taskId)) {
+      colField = `scores.${taskId}.rawScore`;
     }
     tableColumns.push({
       field: colField,
