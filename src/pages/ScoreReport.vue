@@ -605,6 +605,7 @@ const computeAssignmentAndRunData = computed(() => {
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
 
+      let numAssignmentsCompleted = 0;
       const currRowScores = {};
       for (const assessment of assignment.assessments) {
         // General Logic to grab support level, scores, etc
@@ -623,6 +624,7 @@ const computeAssignmentAndRunData = computed(() => {
         }
         // Add filter tags for completed/incomplete
         if (assessment.completedOn != undefined) {
+          numAssignmentsCompleted += 1;
           scoreFilterTags += ' Completed ';
         } else if (assessment.startedOn != undefined) {
           scoreFilterTags += ' Started ';
@@ -699,9 +701,13 @@ const computeAssignmentAndRunData = computed(() => {
 
       // update scores for current row with computed object
       currRow.scores = currRowScores;
+      currRow.numAssignmentsCompleted = numAssignmentsCompleted;
       // push currRow to assignmentTableDataAcc
       assignmentTableDataAcc.push(currRow);
     }
+
+    // sort by numAssignmentsCompleted
+    assignmentTableDataAcc.sort((a, b) => b.numAssignmentsCompleted - a.numAssignmentsCompleted);
 
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);

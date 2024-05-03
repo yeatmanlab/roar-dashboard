@@ -40,14 +40,16 @@
           label="Export Selected"
           :disabled="selectedRows.length === 0"
           @click="exportCSV(true, $event)"
+          class="m-2"
         />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
           @click="exportCSV(false, $event)"
+          class="m-2"
         />
-        <PvButton :label="nameForVisualize" @click="toggleView" />
+        <PvButton :label="rowViewMode" @click="toggleView" class="my-2" />
       </span>
     </div>
     <div class="flex flex-column">
@@ -329,8 +331,7 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
 */
-// const compressedRows = ref(false);
-const nameForVisualize = ref('Expand View');
+const rowViewMode = ref('Expand View');
 const countForVisualize = ref(false); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
@@ -419,9 +420,9 @@ const padding = '1rem 1.5rem';
 function increasePadding() {
   if (!countForVisualize.value) {
     document.documentElement?.style.setProperty('--padding-value', padding);
-    nameForVisualize.value = 'Compact View';
+    rowViewMode.value = 'Compact View';
   } else {
-    nameForVisualize.value = 'Expand View';
+    rowViewMode.value = 'Expand View';
     document.documentElement?.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
   countForVisualize.value = !countForVisualize.value;
