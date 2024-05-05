@@ -14,10 +14,9 @@
               >
                 <div class="flex flex-row md:flex-column justify-content-between align-items-start gap-2">
                   <div>
-                    <span class="text-lg font-medium text-900 mt-2 text-primary"
-                      >{{ consent.type }} : <span class="text-color">{{ consent.fileName.stringValue }}</span></span
-                    >
-                    <!-- <span class="font-medium text-secondary text-sm">{{ consent.lastUpdated}}</span> -->
+                    <span class="text-lg font-medium text-900 mt-2 text-primary">
+                      {{ consent.type }} : <span class="text-color">{{ consent.fileName.stringValue }}</span>
+                    </span>
                   </div>
                   <div class="flex flex-row gap-3">
                     <div class="surface-100 p-1" style="border-radius: 30px">
@@ -36,12 +35,13 @@
                     <div class="mt-1" style="border-radius: 50%">
                       <PvButton
                         class="p-0 surface-hover w-full border-none border-circle hover:text-100 hover:bg-primary"
-                        @click="toggle($event)"
-                        ><i
+                        @click="seeConsent(consent, index)"
+                      >
+                        <i
                           v-tooltip.top="'View Document'"
                           class="pi pi-info-circle text-primary p-1 border-circle hover:text-100"
-                        ></i
-                      ></PvButton>
+                        ></i>
+                      </PvButton>
                     </div>
                   </div>
                 </div>
@@ -58,15 +58,36 @@
       </template>
     </PvDataView>
   </PvPanel>
+  <PvDialog
+    v-if="showConsent && selectedConsentIndex !== null"
+    v-model:visible="showConsent"
+    :draggable="false"
+    modal
+    :header="consents[selectedConsentIndex].type"
+    :close-on-escape="false"
+    :style="{ width: '65vw' }"
+    :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
+  >
+    <div v-html="confirmText"></div>
+  </PvDialog>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { fetchLegalDocs } from '@/helpers/query/legal';
 import { useQuery } from '@tanstack/vue-query';
+import { useAuthStore } from '@/store/auth';
+import { marked } from 'marked';
+import _lowerCase from 'lodash/lowerCase';
 
+let selectedConsentIndex = ref(null);
 let isSelected = ref(null);
 const initialized = ref(false);
+const showConsent = ref(false);
+const consentVersion = ref('');
+const confirmText = ref('');
+
+const authStore = useAuthStore();
 
 onMounted(() => {
   initialized.value = true;
@@ -80,5 +101,16 @@ const { data: consents } = useQuery({
   staleTime: 5 * 60 * 1000,
 });
 
-console.log('consents ', consents);
+async function seeConsent(consent, index) {
+  let consentDoc;
+  if (consent.type === 'Assent-es') {
+    consentDoc = await authStore.getLegalDoc('assent-es');
+  } else {
+    consentDoc = await authStore.getLegalDoc(_lowerCase(consent.type));
+  }
+  consentVersion.value = consentDoc.version;
+  confirmText.value = marked(consentDoc.text);
+  selectedConsentIndex.value = index;
+  showConsent.value = true;
+}
 </script>
