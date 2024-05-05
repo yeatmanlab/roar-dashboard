@@ -33,7 +33,7 @@ module.exports = defineConfig({
     participantPassword: process.env.PARTICIPANT_PASSWORD,
     participantEmail: process.env.PARTICIPANT_EMAIL,
     participantEmailPassword: process.env.PARTICIPANT_EMAIL_PASSWORD,
-    testAdministrationName: 'Cypress Test Administration',
+    testAdministrationName: 'Cypress Test Roar Apps Administration',
     testAdministrationId: 'kKUSypkMc36mPEzleDE6',
     testAdministratorFirstName: 'Cypress Test Administrator First Name',
     testAdministratorMiddleName: 'Cypress Test Administrator Middle Name',
