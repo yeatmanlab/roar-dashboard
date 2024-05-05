@@ -86,7 +86,10 @@
           @variants-changed="handleVariantsChanged"
         />
         <div class="mt-2 flex w-full">
-          <ConsentPicker />
+          <ConsentPicker @consent-selected="handleConsentSelected" />
+          <small v-if="v$.consent.$invalid && submitted" class="p-error mt-2"
+            >Please select a consent/assent form.</small
+          >
         </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
@@ -139,6 +142,7 @@ import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
+import _lowerCase from 'lodash/lowerCase';
 import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -154,7 +158,7 @@ const initialized = ref(false);
 const confirm = useConfirm();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex, userQueryKeyIndex } = storeToRefs(authStore);
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
@@ -172,6 +176,7 @@ const state = reactive({
   administrationPublicName: '',
   dates: [],
   sequential: null,
+  consent: null,
   districts: [],
   schools: [],
   classes: [],
@@ -195,12 +200,14 @@ const rules = {
     datesNotNull,
   },
   sequential: { required },
+  consent: { required },
 };
 const v$ = useVuelidate(rules, state);
 const pickListError = ref('');
 const orgError = ref('');
 const submitted = ref(false);
 const isTestData = ref(false);
+const consentVersion = ref('');
 
 //      +---------------------------------+
 // -----|          Org Selection          |-----
@@ -221,6 +228,23 @@ const variantsByTaskId = computed(() => {
 
 const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
+};
+
+async function updateConsent() {
+  let consentDoc;
+  if (state.consent.type === 'Assent-es') {
+    consentDoc = await authStore.getLegalDoc('assent-es');
+  } else {
+    consentDoc = await authStore.getLegalDoc(_lowerCase(toRaw(state.consent.type)));
+  }
+  consentVersion.value = consentDoc.version;
+  await authStore.updateConsentStatus(consentDoc.type, consentVersion.value);
+  userQueryKeyIndex.value += 1;
+}
+
+const handleConsentSelected = (newConsent) => {
+  state.consent = newConsent;
+  updateConsent();
 };
 
 // Card event handlers

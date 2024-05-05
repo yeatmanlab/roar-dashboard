@@ -242,7 +242,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
-import ConsentPicker from './ConsentPicker.vue';
 
 const visible = ref(false);
 const props = defineProps({

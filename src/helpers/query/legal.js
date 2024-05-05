@@ -16,7 +16,6 @@ export const fetchLegalDocs = () => {
         lastUpdated: lastUpdated.toLocaleString(),
       };
     });
-    console.log(' docs ', docs);
     return docs;
   });
 };

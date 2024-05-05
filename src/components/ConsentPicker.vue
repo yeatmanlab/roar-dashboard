@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { fetchLegalDocs } from '@/helpers/query/legal';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
@@ -88,6 +88,7 @@ const consentVersion = ref('');
 const confirmText = ref('');
 
 const authStore = useAuthStore();
+const emit = defineEmits(['consent-selected']);
 
 onMounted(() => {
   initialized.value = true;
@@ -113,4 +114,13 @@ async function seeConsent(consent, index) {
   selectedConsentIndex.value = index;
   showConsent.value = true;
 }
+
+watch(isSelected, (newValue, oldValue) => {
+  if (newValue !== null && newValue !== oldValue) {
+    const selectedConsent = consents.value[newValue];
+    if (selectedConsent) {
+      emit('consent-selected', selectedConsent);
+    }
+  }
+});
 </script>
