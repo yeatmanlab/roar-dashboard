@@ -7,9 +7,9 @@
       </div>
       <div v-else>
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
-          {{ adminInfo.at(0).name }}
+          {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
         </h2>
-        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
+        <div class="flex align-items-end gap-2 justify-content-between">
           <div
             v-if="optionalAssessments.length !== 0"
             class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
@@ -25,14 +25,14 @@
           </div>
           <div
             v-if="adminInfo?.length > 1"
-            class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4"
+            class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
           >
-            <div class="assignment-select-container flex flex-row justify-content-between">
-              <div class="flex flex-column">
+            <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
+              <div class="flex flex-column align-content-start justify-content-start w-3">
                 <PvDropdown
                   v-model="selectedAdmin"
                   :options="adminInfo ?? []"
-                  option-label="name"
+                  option-label="publicName"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
                   @change="toggleShowOptionalAssessments"
@@ -146,7 +146,7 @@ const {
         return {
           collection: 'administrations',
           docId: administrationId,
-          select: ['name', 'sequential', 'assessments'],
+          select: ['name', 'publicName', 'sequential', 'assessments'],
         };
       }),
     ),
