@@ -1,11 +1,11 @@
 <template>
-  <div v-if="!computedData">
+  <div v-if="!props.data">
     <SkeletonTable />
   </div>
   <div v-else>
     <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
-      <span class="p-float-label">
+      <span class="p-float-label my-3">
         <PvMultiSelect
           id="ms-columns"
           v-tooltip.top="'Show and hide columns'"
@@ -19,7 +19,7 @@
         />
         <label for="ms-columns" class="view-label2">Select Columns</label>
       </span>
-      <span class="p-float-label">
+      <span class="p-float-label my-3">
         <PvMultiSelect
           id="ms-freeze"
           :model-value="frozenColumns"
@@ -40,14 +40,16 @@
           label="Export Selected"
           :disabled="selectedRows.length === 0"
           @click="exportCSV(true, $event)"
+          class="m-2"
         />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
           @click="exportCSV(false, $event)"
+          class="m-2"
         />
-        <PvButton :label="nameForVisualize" @click="toggleView" />
+        <PvButton :label="rowViewMode" @click="toggleView" class="my-2" />
       </span>
     </div>
     <div class="flex flex-column">
@@ -63,7 +65,7 @@
           v-model:selection="selectedRows"
           class="scrollable-container"
           :class="{ compressed: compressedRows }"
-          :value="computedData"
+          :value="props.data"
           :row-hover="true"
           :reorderable-columns="true"
           :resizable-columns="true"
@@ -78,14 +80,9 @@
           paginator-position="both"
           :rows-per-page-options="[10, 25, 50, 100]"
           :total-records="props.totalRecords"
-          :lazy="props.lazy"
           :loading="props.loading"
           scrollable
           :select-all="selectAll"
-          :multi-sort-meta="lazyPreSorting"
-          @page="onPage($event)"
-          @sort="onSort($event)"
-          @filter="onFilter($event)"
           @select-all-change="onSelectAll"
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
@@ -99,12 +96,10 @@
             :sortable="col.sort !== false"
             :show-filter-match-modes="!col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'"
             :show-filter-operator="col.allowMultipleFilters === true"
-            :filter-field="col.dataType === 'score' ? `scores.${col.field?.split('.')[1]}.percentile` : col.field"
+            :filter-field="col?.filterField ? col.filterField : col.field"
             :show-add-button="col.allowMultipleFilters === true"
             :frozen="col.pinned"
             align-frozen="left"
-            :class="{ 'filter-button-override': hideFilterButtons }"
-            :filter-menu-style="enableFilter(col) ? '' : 'display: none;'"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
             <template #header>
@@ -120,57 +115,35 @@
               </div>
             </template>
             <template #body="{ data: colData }">
-              <div
-                v-if="col.tag && (_get(colData, col.field) !== undefined || _get(colData, 'optional'))"
-                v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
-              >
+              <!-- If column is a score field, use a dedicated component to render tags and scores -->
+              <div v-if="col.field && col.field?.split('.')[0] === 'scores'">
+                <TableScoreTag :col-data="colData" :col="col" />
+              </div>
+              <div v-else-if="col.dataType == 'progress'">
                 <PvTag
-                  v-if="!col.tagOutlined"
+                  v-if="_get(colData, col.field)"
                   :severity="_get(colData, col.severityField)"
                   :value="_get(colData, col.field)"
                   :icon="_get(colData, col.iconField)"
-                  :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
-                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                    'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`"
+                  :style="`min-width: 2rem`"
                   rounded
                 />
-                <div
-                  v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-                  class="circle"
-                  style="border: 1px solid black"
-                />
               </div>
+              <div
+                v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
+                class="circle"
+                :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
+                  _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+                }; outline: 1px dotted #0000CD; outline-offset: 3px`"
+              />
               <div v-else-if="col.chip && col.dataType === 'array' && _get(colData, col.field) !== undefined">
                 <PvChip v-for="chip in _get(colData, col.field)" :key="chip" :label="chip" />
-              </div>
-              <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
-                <div
-                  v-if="!col.tagOutlined"
-                  class="circle"
-                  :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
-                    _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }; ${
-                    returnScoreTooltip(col.header, colData, col.field).length > 0 &&
-                    'outline: 1px dotted #0000CD; outline-offset: 3px'
-                  }`"
-                />
-
-                <div
-                  v-else-if="col.tagOutlined && _get(colData, col.tagColor)"
-                  class="circle"
-                  :style="`border: 1px solid black; background-color: ${_get(colData, col.tagColor)}; color: ${
-                    _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-                  }; outline: 1px dotted #0000CD; outline-offset: 3px`"
-                />
               </div>
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
-                    v-tooltip.top="col.routeTooltip"
                     severity="secondary"
                     text
-                    raised
                     :label="col.routeLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
@@ -186,17 +159,13 @@
               </div>
             </template>
             <template v-if="col.dataType" #sorticon="{ sorted, sortOrder }">
-              <i v-if="!sorted && currentSort.length === 0 && !scoreFilterApplied" class="pi pi-sort-alt ml-2" />
-              <i v-if="sorted && sortOrder === 1 && !scoreFilterApplied" class="pi pi-sort-amount-down-alt ml-2" />
-              <i v-else-if="sorted && sortOrder === -1 && !scoreFilterApplied" class="pi pi-sort-amount-up-alt ml-2" />
-            </template>
-            <template v-if="col.dataType" #filtericon>
-              <i v-if="enableFilter(col)" class="pi pi-filter" />
+              <i v-if="!sorted && currentSort.length === 0" class="pi pi-sort-alt ml-2" />
+              <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
+              <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
             </template>
             <template v-if="col.dataType" #filter="{ filterModel }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
                 <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
-                <small>Filter is case sensitive.</small>
               </div>
               <PvInputNumber
                 v-if="col.dataType === 'number' && !col.useMultiSelect"
@@ -226,20 +195,100 @@
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Green', 'Yellow', 'Pink']"
+                  option-label="label"
+                  option-group-label="label"
+                  option-group-children="items"
+                  :options="taskFilterOptions"
                   style="margin-bottom: 0.5rem"
-                />
+                >
+                  <template #option="{ option }">
+                    <div class="flex align-items-center">
+                      <div v-if="supportLevelColors[option]" class="flex gap-2">
+                        <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[option]};`" />
+                        <span class="tooltiptext">{{ option }}</span>
+                      </div>
+                      <div v-else-if="progressTags[option]">
+                        <PvTag
+                          :severity="progressTags[option]?.severity"
+                          :value="progressTags[option]?.value"
+                          :icon="progressTags[option]?.icon"
+                          class="p-0.5 m-0"
+                        />
+                      </div>
+                      <div v-else>
+                        <span class="tooltiptext">{{ option }}</span>
+                      </div>
+                    </div>
+                  </template>
+                  <template #value="{ value }">
+                    <div v-if="supportLevelColors[value]" class="flex gap-2">
+                      <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[value]};`" />
+                      <span class="tooltiptext">{{ value }}</span>
+                    </div>
+                    <div v-else-if="progressTags[value]">
+                      <PvTag
+                        :severity="progressTags[value]?.severity"
+                        :value="progressTags[value]?.value"
+                        :icon="progressTags[value]?.icon"
+                        class="p-0.5 m-0"
+                      />
+                    </div>
+                    <div v-else>
+                      <span class="tooltiptext">{{ value }}</span>
+                    </div>
+                  </template>
+                </PvDropdown>
               </div>
               <div v-if="col.dataType === 'progress'">
                 <PvDropdown
                   v-model="filterModel.value"
-                  :options="['Assigned', 'Started', 'Completed']"
+                  :options="['Assigned', 'Started', 'Completed', 'Optional']"
                   style="margin-bottom: 0.5rem"
-                />
+                >
+                  <template #option="{ option }">
+                    <div v-if="progressTags[option]" class="flex align-items-center">
+                      <PvTag
+                        :severity="progressTags[option]?.severity"
+                        :value="progressTags[option]?.value"
+                        :icon="progressTags[option]?.icon"
+                        :style="`min-width: 2rem`"
+                        rounded
+                      />
+                    </div>
+                  </template>
+                  <template #value="{ value }">
+                    <PvTag
+                      v-if="progressTags[value]"
+                      :severity="progressTags[value]?.severity"
+                      :value="progressTags[value]?.value"
+                      :icon="progressTags[value]?.icon"
+                      :style="`min-width: 2rem`"
+                      rounded
+                    />
+                  </template>
+                </PvDropdown>
               </div>
             </template>
+            <template #filterclear="{ filterCallback }">
+              <div class="flex flex-row-reverse">
+                <PvButton type="button" text icon="pi pi-times" class="p-2" severity="primary" @click="filterCallback()"
+                  >Clear</PvButton
+                >
+              </div>
+            </template>
+            <template #filterapply="{ filterCallback }">
+              <PvButton type="button" icon="pi pi-times" class="px-2" severity="primary" @click="filterCallback()"
+                >Apply
+              </PvButton>
+            </template>
           </PvColumn>
-          <template #empty> No data found. </template>
+          <template #empty>
+            <div class="flex flex-column align-items-center align-text-left my-8">
+              <div class="text-lg font-bold my-2">No scores found</div>
+              <div class="font-light">The filters applied have no matching scores.</div>
+              <PvButton text class="my-2" @click="resetFilters">Reset Filters</PvButton>
+            </div>
+          </template>
         </PvDataTable>
       </span>
     </div>
@@ -251,17 +300,13 @@ import { useToast } from 'primevue/usetoast';
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import _get from 'lodash/get';
-import _set from 'lodash/set';
 import _map from 'lodash/map';
-import _head from 'lodash/head';
-import _isEmpty from 'lodash/isEmpty';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
-import _filter from 'lodash/filter';
 import _toUpper from 'lodash/toUpper';
 import _startCase from 'lodash/startCase';
-import _lowerCase from 'lodash/lowerCase';
-import { scoredTasks, rawOnlyTasks } from '@/helpers/reports';
+import { supportLevelColors, progressTags } from '@/helpers/reports';
+import TableScoreTag from '@/components/reports/TableScoreTag.vue';
 
 /*
 Using the DataTable
@@ -286,9 +331,8 @@ Array of objects consisting of a field and header at minimum.
       scrolled left-to-right. It is suggested that this only be used on
       the leftmost column.
 */
-// const compressedRows = ref(false);
-const nameForVisualize = ref('Expand View');
-const countForVisualize = ref(2); //for starting compress
+const rowViewMode = ref('Expand View');
+const countForVisualize = ref(false); //for starting compress
 const toggleView = () => {
   compressedRows.value = !compressedRows.value;
   increasePadding();
@@ -304,7 +348,6 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
-  allowFiltering: { type: Boolean, required: false, default: true },
 });
 
 const inputColumns = ref(props.columns);
@@ -316,23 +359,32 @@ const computedColumns = computed(() => {
   });
 });
 const currentSort = ref([]);
-const currentFilter = ref([]);
-const hideFilterButtons = computed(() => !_isEmpty(currentFilter.value) || !props.allowFiltering);
-const scoreFilterApplied = computed(() => {
-  const scoreFilter = _find(currentFilter.value, (filter) => {
-    if (filter.split('.')[0] === 'scores') {
-      return true;
-    } else return false;
-  });
-  return Boolean(scoreFilter);
-});
 const selectedRows = ref([]);
+
+const taskFilterOptions = ref([
+  {
+    label: 'Support Categories',
+    code: 'SupportCategories',
+    items: ['Green', 'Yellow', 'Pink'],
+  },
+  {
+    label: 'Progress Status',
+    code: 'ProgressStatus',
+    items: ['Completed', 'Started', 'Assigned'],
+  },
+  {
+    label: 'Other Filters',
+    code: 'Other',
+    items: ['Optional', 'Assessed', 'Unreliable'],
+  },
+]);
+
 const toast = useToast();
 const selectAll = ref(false);
 const onSelectAll = () => {
   selectAll.value = !selectAll.value;
   if (selectAll.value) {
-    selectedRows.value = computedData.value;
+    selectedRows.value = props.data;
     toast.add({
       severity: 'info',
       summary: 'Rows selected',
@@ -366,81 +418,69 @@ const compressedRows = ref(false);
 const padding = '1rem 1.5rem';
 
 function increasePadding() {
-  if (countForVisualize.value % 2 === 0) {
-    document.documentElement.style.setProperty('--padding-value', padding);
-    nameForVisualize.value = 'Compact View';
+  if (!countForVisualize.value) {
+    document.documentElement?.style.setProperty('--padding-value', padding);
+    rowViewMode.value = 'Compact View';
   } else {
-    nameForVisualize.value = 'Expand View';
-    document.documentElement.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
+    rowViewMode.value = 'Expand View';
+    document.documentElement?.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
   }
-  countForVisualize.value = countForVisualize.value + 1;
+  countForVisualize.value = !countForVisualize.value;
 }
 
 // Generate filters and options objects
-const valid_dataTypes = ['NUMERIC', 'NUMBER', 'TEXT', 'STRING', 'DATE', 'BOOLEAN', 'SCORE', 'PROGRESS'];
-let filters = {};
-let options = {};
-_forEach(computedColumns.value, (column) => {
-  // Check if header text is supplied; if not, generate.
-  if (!_get(column, 'header')) {
-    column['header'] = _startCase(_get(column, 'field'));
-  }
-  const dataType = _toUpper(_get(column, 'dataType'));
-  let returnMatchMode = null;
-  if (valid_dataTypes.includes(dataType)) {
-    if (dataType === 'NUMERIC' || dataType === 'NUMBER' || dataType === 'BOOLEAN') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
-    } else if (dataType === 'TEXT' || dataType === 'STRING') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.EQUALS };
-    } else if (dataType === 'DATE') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.DATE_IS };
-    } else if (dataType === 'SCORE') {
-      // The FilterMatchMode does not matter as we are using this in conjunction with 'lazy',
-      //   so the filter event is being handled in an external handler.
-      if (scoredTasks.includes(column.field.split('.')[1])) {
-        returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
-      }
-    } else if (dataType === 'PROGRESS') {
-      returnMatchMode = { value: null, matchMode: FilterMatchMode.STARTS_WITH };
+const dataTypesToFilterMatchMode = {
+  NUMERIC: FilterMatchMode.EQUALS,
+  NUMBER: FilterMatchMode.EQUALS,
+  TEXT: FilterMatchMode.CONTAINS,
+  STRING: FilterMatchMode.CONTAINS,
+  DATE: FilterMatchMode.DATE_IS,
+  BOOLEAN: FilterMatchMode.EQUALS,
+  SCORE: FilterMatchMode.CONTAINS,
+  PROGRESS: FilterMatchMode.CONTAINS,
+};
+
+const computedFilters = computed(() => {
+  let filters = {};
+  let options = {};
+  _forEach(computedColumns.value, (column) => {
+    // Check if header text is supplied; if not, generate.
+    if (!_get(column, 'header')) {
+      column['header'] = _startCase(_get(column, 'field'));
+    }
+    // Choose whether to default to field or a custom filterField (e.g. tag based filters)
+    const fieldOrFilterField = column?.filterField ? column.filterField : column.field;
+    const dataType = _toUpper(_get(column, 'dataType'));
+    let returnMatchMode = null;
+
+    // generate return matchmode
+    if (dataTypesToFilterMatchMode[dataType]) {
+      returnMatchMode = { value: null, matchMode: dataTypesToFilterMatchMode[dataType] };
     }
 
+    // case for where multiselect ( can affect any type of data type)
     if (_get(column, 'useMultiSelect')) {
       returnMatchMode = { value: null, matchMode: FilterMatchMode.IN };
       options[column.field] = getUniqueOptions(column);
     }
-  }
-  if (returnMatchMode) {
-    filters[column.field] = {
-      operator: FilterOperator.AND,
-      constraints: [returnMatchMode],
-    };
-  }
+
+    if (returnMatchMode) {
+      filters[fieldOrFilterField] = {
+        operator: FilterOperator.AND,
+        constraints: [returnMatchMode],
+      };
+    }
+  });
+  return { computedOptions: options, computedFilters: filters };
 });
-const refOptions = ref(options);
-const refFilters = ref(filters);
 
-const enableFilter = (column) => {
-  // If column is specified to have filtering disabled
-  if (_get(column, 'filter') === false) return false;
+const refOptions = ref(computedFilters.value.computedOptions);
+const refFilters = ref(computedFilters.value.computedFilters);
 
-  // If the field is not defined, turn off filtering
-  const field = column.field;
-  if (!field) return false;
-
-  // If the field is a score, and the taskId is on
-  //   the filter blacklist, turn off filtering
-  const path = field.split('.');
-  if (path[0] === 'scores') {
-    if (!scoredTasks.includes(path[1])) return false;
-  }
-
-  // Otherwise, enable filtering
-  return true;
+const resetFilters = () => {
+  refFilters.value = computedFilters.value.computedFilters;
+  emit('reset-filters');
 };
-
-// Grab list of fields defined as dates
-let dateFields = _filter(props.columns, (col) => _toUpper(col.dataType) === 'DATE');
-dateFields = _map(dateFields, (col) => col.field);
 
 let toolTipByHeader = (header) => {
   const headerToTooltipMap = {
@@ -457,95 +497,6 @@ let toolTipByHeader = (header) => {
 
   return headerToTooltipMap[header] || '';
 };
-
-function getIndexTask(colData, task) {
-  for (let index = 0; index < colData.assignment.assessments.length; index++) {
-    if (colData.assignment.assessments[index].taskId === task) {
-      return index;
-    }
-  }
-}
-
-function getFlags(index, colData) {
-  const flags = colData.assignment.assessments[index].engagementFlags;
-  const flagMessages = {
-    accuracyTooLow: '- Responses were inaccurate',
-    notEnoughResponses: '- Assessment was incomplete',
-    responseTimeTooFast: '- Responses were too fast',
-  };
-
-  // If there are flags and the assessment is not reliable, return the flags
-  if (flags && !colData.assignment.assessments[index].reliable) {
-    const reliabilityFlags = Object.keys(flags).map((flag) => {
-      return flagMessages[flag] || _lowerCase(flag);
-    });
-    // Join the returned flags with a newline character, then add two newlines for spacing
-    return reliabilityFlags.join('\n') + '\n\n';
-  } else {
-    return '';
-  }
-}
-
-function handleToolTip(_taskId, _toolTip, _colData) {
-  // Get the support level and flags, if they exist
-  _toolTip += _colData.scores?.[_taskId]?.support_level + '\n' + '\n';
-  _toolTip += getFlags(getIndexTask(_colData, _taskId), _colData);
-
-  // If the task does not have a raw score, then display no scores
-  if (!_colData.scores?.[_taskId]?.raw) {
-    _toolTip += 'Awaiting scores';
-  }
-  // If the task is in the rawOnlyTasks list, display only the raw score and that the scores are under development
-  else if (rawOnlyTasks.includes(_taskId)) {
-    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n' + '\n';
-    _toolTip += 'These scores are under development';
-  }
-  // If the task is a scored task and has a raw score, then display all scores
-  else {
-    _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.raw + '\n';
-    _toolTip += 'Percentile: ' + _colData.scores?.[_taskId]?.percentile + '\n';
-    _toolTip += 'Standard Score: ' + Math.round(_colData.scores?.[_taskId]?.standard) + '\n';
-  }
-  return _toolTip;
-}
-
-let returnScoreTooltip = (colHeader, colData, fieldPath) => {
-  const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
-  let toolTip = '';
-
-  const headerToTaskIdMap = {
-    Phoneme: 'pa',
-    Word: 'swr',
-    Sentence: 'sre',
-    Letter: 'letter',
-    Palabra: 'swr-es',
-  };
-
-  const selectedTaskId = headerToTaskIdMap[colHeader];
-  if (selectedTaskId && colData.scores?.[selectedTaskId]?.support_level) {
-    // Handle scored tasks
-    return handleToolTip(selectedTaskId, toolTip, colData);
-    // Handle raw only tasks
-  } else if (taskId && !scoredTasks.includes(taskId)) {
-    return handleToolTip(taskId, toolTip, colData);
-  }
-  return toolTip;
-};
-
-const computedData = computed(() => {
-  const data = JSON.parse(JSON.stringify(props.data));
-  _forEach(data, (entry) => {
-    // Clean up date fields to use Date objects
-    _forEach(dateFields, (field) => {
-      let dateEntry = _get(entry, field);
-      if (dateEntry !== null) {
-        const dateObj = new Date(dateEntry);
-        _set(entry, field, dateObj);
-      }
-    });
-  });
-  return data;
-});
 
 // Generate list of options given a column
 function getUniqueOptions(column) {
@@ -579,28 +530,23 @@ const onFreezeToggle = (selected) => {
 };
 
 // Pass through data table events
-const emit = defineEmits(['page', 'sort', 'export-all', 'selection', 'filter']);
-const onPage = (event) => {
-  emit('page', event);
-};
-const onSort = (event) => {
-  currentSort.value = _get(event, 'multiSortMeta') ?? [];
-  emit('sort', event);
-};
-const onFilter = (event) => {
-  const filters = [];
-  for (const filterKey in _get(event, 'filters')) {
-    const filter = _get(event, 'filters')[filterKey];
-    const constraint = _head(_get(filter, 'constraints'));
-    if (_get(constraint, 'value')) {
-      filters.push(filterKey);
-    }
-  }
-  currentFilter.value = filters;
-  emit('filter', event);
-};
+const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected']);
 </script>
 <style>
+.small-circle {
+  border-color: white;
+  display: inline-block;
+  border-radius: 50%;
+  border-width: 5px;
+  height: 15px;
+  width: 15px;
+  vertical-align: middle;
+  margin-right: 5px;
+  margin-left: 5px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+}
+
 .circle {
   border-color: white;
   display: inline-block;
@@ -676,6 +622,11 @@ button.p-column-filter-menu-button.p-link:hover {
      for strings. To reduce confusion for end users, remove the dropdown
      offering different matchmodes */
   display: none;
+}
+
+.p-datatable-emptyMessage {
+  width: auto; /* or set it to a specific width */
+  margin: 0 auto; /* Center the message horizontally */
 }
 
 .scrollable-container::-webkit-scrollbar {

@@ -1,33 +1,11 @@
 <template>
-  <div v-for="task in computedTaskData" :key="task" class="align-self-start">
-    <div
-      v-if="rawOnlyTasks.includes(task.taskId) && isNaN(getRawScore(task.taskId))"
-      class="error flex flex-column md:flex-row align-items-center m-auto p-4 w-5"
-    >
-      ERROR: Unable to load score for <strong>{{ taskDisplayNames[task.taskId]?.extendedTitle }}</strong
-      >; score may not exist due to incomplete assessment.
-    </div>
-
-    <div
-      v-else-if="
-        !rawOnlyTasks.includes(task.taskId) &&
-        isNaN(Math.round(task.scores?.composite[getPercentileScoreKey(task.taskId, grade)]))
-      "
-      class="error flex justify-content-center md:flex-row align-items-center m-auto p-4 w-5"
-    >
-      ERROR: Unable to load score for {{ taskDisplayNames[task.taskId]?.extendedTitle }}; score may not exist due to
-      incomplete assessment.
-    </div>
-
-    <div v-else class="flex flex-column align-items-center mb-1 p-1 score-card">
-      <div class="flex flex-column md:flex-row align-items-center">
+  <div v-for="task in computedTaskData" :key="task" class="flex flex-column align-items-center justify-content-center">
+    <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
+      <div class="flex flex-column md:flex-row align-items-center justify-content-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
           <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
           <div class="text-xs uppercase font-thin text-gray-400">
-            <div v-if="!rawOnlyTasks.includes(task.taskId)" class="scoring-type">
-              {{ grade >= 6 ? 'Standard Score' : 'Percentile Score' }}
-            </div>
-            <div v-else class="scoring-type">Raw Score</div>
+            {{ task[task.scoreToDisplay].name }}
           </div>
           <div class="flex gap-2 mb-2">
             <div
@@ -45,88 +23,46 @@
             </div>
           </div>
           <PvKnob
-            v-if="rawOnlyTasks.includes(task.taskId)"
-            :model-value="getRawScore(task.taskId)"
-            :size="160"
-            value-color="gray"
-            range-color="gray"
-          />
-          <PvKnob
-            v-else-if="grade >= 6"
-            :model-value="Math.round(task.scores?.composite.sprStandardScore)"
-            :size="180"
-            :value-color="
-              getSupportLevel(
-                grade,
-                task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
-                returnRawScore(task.taskId, grade),
-                task.taskId,
-              ).tag_color
-            "
-            :min="0"
-            :max="153"
-          />
-          <PvKnob
-            v-else
             :value-template="
-              getPercentileSuffix(Math.round(task.scores?.composite[getPercentileScoreKey(task.taskId, grade)]))
+              task.scoreToDisplay == 'percentileScore' ? getPercentileSuffix(task.percentileScore.value) : undefined
             "
-            :model-value="Math.round(task.scores?.composite[getPercentileScoreKey(task.taskId, grade)])"
-            :size="160"
-            :value-color="
-              getSupportLevel(
-                grade,
-                task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
-                returnRawScore(task.taskId, grade),
-                task.taskId,
-              ).tag_color
-            "
+            :model-value="task[task.scoreToDisplay].value"
+            :size="180"
+            :range-color="gray"
+            :value-color="task[task.scoreToDisplay].supportColor"
+            :min="task[task.scoreToDisplay].min"
+            :max="task[task.scoreToDisplay].max"
           />
         </div>
       </div>
 
       <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
         {{ studentFirstName }} achieved a composite score of
-        <strong>{{ getRawScore(task.taskId) }}</strong>
-        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
+        <strong>{{ task.rawScore.value }}</strong>
+        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
       <div v-else-if="grade >= 6" class="px-4 py-2 score-description">
-        {{ studentFirstName }} scored a standard score of
-        <strong>{{ Math.round(task.scores?.composite.sprStandardScore) }}</strong
+        {{ studentFirstName }} scored a standard score of <strong>{{ Math.round(task.standardScore.value) }}</strong
         >, which indicates they
         <strong>{{
-          getSupportLevelLanguage(
-            grade,
-            task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
-            returnRawScore(task.taskId, grade),
-            task.taskId,
-          )
+          getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
         }}</strong>
-        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
+        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
 
       <div v-else class="px-4 py-2 score-description">
         {{ studentFirstName }} scored in the
-        <strong
-          >{{
-            getPercentileWithSuffix(Math.round(task.scores?.composite[getPercentileScoreKey(task.taskId, grade)]))
-          }}
-          percentile</strong
-        >, which indicates they
+        <strong>{{ getPercentileWithSuffix(Math.round(task?.percentileScore.value)) }} percentile</strong>, which
+        indicates they
         <strong>{{
-          getSupportLevelLanguage(
-            grade,
-            task.scores?.composite[getPercentileScoreKey(task.taskId, grade)],
-            returnRawScore(task.taskId, grade),
-            task.taskId,
-          )
+          getSupportLevelLanguage(grade, task.percentileScore.value, task.rawScore.value, task.taskId)
         }}</strong>
-        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}.
+        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
-            <div v-for="[key, rawScore, rangeMin, rangeMax] in extractScoreNames(task.scores, task.taskId)" :key="key">
+            <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
               <div class="flex justify-content-between score-table">
                 <div class="mr-2">
                   <b>{{ key }}</b
@@ -143,7 +79,7 @@
       <div v-if="task.taskId === 'letter'">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
-            <div v-for="[key, rawScore, rangeMin, rangeMax] in extractScoreNames(task.scores, task.taskId)" :key="key">
+            <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
               <div class="flex justify-content-between score-table">
                 <div class="mr-2">
                   <b>{{ key }}</b
@@ -165,6 +101,7 @@
 import { computed } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
 import _toUpper from 'lodash/toUpper';
+import _get from 'lodash/get';
 import { getGrade } from '@bdelab/roar-utils';
 import {
   rawOnlyTasks,
@@ -191,27 +128,58 @@ const props = defineProps({
 });
 
 const studentFirstName = computed(() => {
-  if (!props.studentData.name) return props.studentData.username;
-  return props.studentData.name.first;
+  if (props.studentData?.name && props.studentData?.name?.first) return props.studentData.name.first;
+  if (props.studentData.username) return props.studentData.username;
+  else return 'The student';
 });
 
 const grade = computed(() => getGrade(props.studentData?.studentData?.grade));
 
-// Filters for non-null scores and sorts
+const tasksBlacklist = ['vocab', 'cva'];
+// compute standard score, raw score, and percentile score for each of the tasks
 const computedTaskData = computed(() => {
-  return props.taskData
-    ?.filter((task) => task.scores != undefined)
-    .sort((a, b) => {
-      if (Object.keys(taskDisplayNames).includes(a.taskId) && Object.keys(taskDisplayNames).includes(b.taskId)) {
-        return taskDisplayNames[a.taskId].order - taskDisplayNames[b.taskId].order;
-      } else {
-        return -1;
-      }
-    })
-    .map((task) => {
-      // check if reliable key exists on task -- if it does, push a tag representing the tag
+  const computedTaskAcc = {};
+
+  for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
+    const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
+    const compositeScores = scores?.composite;
+    const rawScore =
+      !taskId.includes('vocab') && !taskId.includes('letter') && !taskId.includes('es')
+        ? _get(compositeScores, rawScoreKey)
+        : compositeScores;
+    if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
+      const percentileScore = _get(compositeScores, percentileScoreKey);
+      const standardScore = _get(compositeScores, standardScoreKey);
+      const rawScoreRange = getRawScoreRange(taskId);
+      const supportColor = getSupportLevel(grade.value, percentileScore, rawScore, taskId).tag_color;
+
+      const scoresForTask = {
+        standardScore: {
+          name: 'Standard Score',
+          value: Math.round(standardScore),
+          min: 0,
+          max: 180,
+          supportColor: supportColor,
+        },
+        rawScore: {
+          name: 'Raw Score',
+          value: Math.round(rawScore),
+          min: rawScoreRange?.min,
+          max: rawScoreRange?.max,
+          supportColor: 'gray',
+        },
+        percentileScore: {
+          name: 'Percentile Score',
+          value: Math.round(percentileScore),
+          min: 0,
+          max: 99,
+          supportColor: supportColor,
+        },
+      };
+
+      // compute tags for reliable, optional, and add engagement flags if unreliable
       const tags = [];
-      if (task.optional === true) {
+      if (optional === true) {
         tags.push({
           icon: '',
           value: 'Optional',
@@ -226,159 +194,105 @@ const computedTaskData = computed(() => {
           tooltip: 'This task was a required assignment.',
         });
       }
-      if ('reliable' in task) {
-        if (task.reliable === false) {
-          tags.push({
-            value: 'Unreliable',
-            icon: 'pi pi-times',
-            severity: 'warning',
-            tooltip: task.engagementFlags
-              ? `The run was marked unreliable because of the following flags: \n \n ${Object.keys(task.engagementFlags)
-                  .map((flag) => _lowerCase(flag))
-                  .join(', ')}`
-              : 'The run was marked as unreliable.',
-          });
-        } else {
-          tags.push({
-            value: 'Reliable',
-            severity: 'success',
-            icon: 'pi pi-check',
-            tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
-          });
-        }
+      if (reliable === false) {
+        tags.push({
+          value: 'Unreliable',
+          icon: 'pi pi-times',
+          severity: 'warning',
+          tooltip: engagementFlags
+            ? `The run was marked unreliable because of the following flags: \n \n ${Object.keys(engagementFlags)
+                .map((flag) => _lowerCase(flag))
+                .join(', ')}`
+            : 'The run was marked as unreliable.',
+        });
+      } else {
+        tags.push({
+          value: 'Reliable',
+          severity: 'success',
+          icon: 'pi pi-check',
+          tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
+        });
       }
-      // update task with tags
-      task = {
-        ...task,
+
+      // determine which score to display in the card based on grade
+      let scoreToDisplay = grade.value >= 6 ? 'standardScore' : 'percentileScore';
+      if (rawOnlyTasks.includes(taskId)) {
+        scoreToDisplay = 'rawScore';
+      }
+
+      computedTaskAcc[taskId] = {
+        taskId: taskId,
+        scoreToDisplay: scoreToDisplay,
+        ...scoresForTask,
         tags: tags,
       };
-      return task;
-    });
-});
 
-const formattedScoreAttributeMap = {
-  wjPercentile: 'Percentile Score',
-  sprPercentile: 'Percentile Score',
-  percentile: 'Percentile Score',
-  tosrecPercentile: 'Percentile Score',
-  sprStandardScore: 'Standard Score',
-  standardScore: 'Standard Score',
-  tosrecSS: 'Standard Score',
-  roarScore: 'Raw Score',
-  sreScore: 'Raw Score',
-};
+      // initialize array with precomputed raw, std, percentile scores
+      let formattedScoresArray = Object.keys(scoresForTask).map((key) => {
+        const score = computedTaskAcc[taskId][key];
+        if (score.name != undefined) {
+          return [score.name, score.value, score.min, score.max];
+        }
+        return;
+      });
 
-// Converts scores dictionary to array of human readable score names
-const extractScoreNames = (scores, taskId) => {
-  let formattedScores = {};
-  for (const key in scores.composite) {
-    if (scores.composite[key] != undefined && !isNaN(scores.composite[key])) {
-      if (formattedScoreAttributeMap[key] !== undefined) {
-        const formattedScoreAttribute = formattedScoreAttributeMap[key];
-        formattedScores[formattedScoreAttribute] = scores.composite[key];
+      if (taskId === 'pa') {
+        const first = scores?.FSM?.roarScore;
+        const last = scores?.LSM?.roarScore;
+        const deletion = scores?.DEL?.roarScore;
+        let skills = [];
+        if (first < 15) skills.push('FSM');
+        if (last < 15) skills.push('LSM');
+        if (deletion < 15) skills.push('DEL');
+
+        const skillsString = skills.length >= 0 ? skills.join(', ') : 'None';
+
+        formattedScoresArray.push(['First Sound Matching (FSM)', first]);
+        formattedScoresArray.push(['Last Sound Matching (LSM)', last]);
+        formattedScoresArray.push(['Deletion (DEL)', deletion]);
+        formattedScoresArray.push(['Skills to work on', skillsString]);
+      } else if (taskId === 'letter') {
+        formattedScoresArray;
+        const incorrectLetters = [
+          scores?.UppercaseNames?.upperIncorrect ?? ''.split(','),
+          scores?.LowercaseNames?.lowerIncorrect ?? ''.split(','),
+        ]
+          .sort((a, b) => _toUpper(a) - _toUpper(b))
+          .filter(Boolean)
+          .join(', ');
+
+        const incorrectPhonemes = scores?.Phonemes?.phonemeIncorrect ?? ''.split(',').join(', ');
+
+        const lowerCaseScore = scores?.LowercaseNames?.subScore;
+        const upperCaseScore = scores?.UppercaseNames?.subScore;
+        const letterSoundsScore = scores?.Phonemes?.subScore;
+        formattedScoresArray.push(['Lower Case Letters', lowerCaseScore, 0, 26]);
+        formattedScoresArray.push(['Upper Case Letters', upperCaseScore, 0, 26]);
+        formattedScoresArray.push(['Letter Sounds', letterSoundsScore, 0, 38]);
+        formattedScoresArray.push(['Letters to work on', incorrectLetters]);
+        formattedScoresArray.push(['Sounds to work on', incorrectPhonemes]);
       }
+
+      // Ensure scores are in consistent order
+      const order = { 'Raw Score': 2, 'Percentile Score': 1, 'Standard Score': 0 };
+      // remove percentile score from datatable for grades at and over sixth
+      if (grade.value >= 6) {
+        formattedScoresArray = formattedScoresArray.filter(([key]) => key !== 'Percentile Score');
+      }
+
+      const sortedScoresArray = formattedScoresArray.sort((first, second) => {
+        return order[first[0]] - order[second[0]];
+      });
+
+      computedTaskAcc[taskId].scoresArray = sortedScoresArray;
     }
   }
 
-  let formattedScoresArray = Object.keys(formattedScores).map((key) => {
-    let minScore, maxScore;
-    if (key === 'Percentile Score') {
-      minScore = 0;
-      maxScore = 99;
-    } else if (key === 'Standard Score') {
-      minScore = 0;
-      maxScore = 180;
-    } else if (key === 'Raw Score') {
-      const scoreRange = getRawScoreRange(taskId);
-      minScore = scoreRange.min;
-      maxScore = scoreRange.max;
-    }
-    return [key, formattedScores[key], minScore, maxScore];
-  });
-
-  // Remove percentile key if user is in grade 6 or higher
-  if (grade.value >= 6) {
-    formattedScoresArray = formattedScoresArray.filter(([key]) => key !== 'Percentile Score');
-  }
-
-  if (taskId === 'pa') {
-    const first = scores?.FSM?.roarScore;
-    const last = scores?.LSM?.roarScore;
-    const deletion = scores?.DEL?.roarScore;
-    let skills = [];
-    if (first < 15) skills.push('FSM');
-    if (last < 15) skills.push('LSM');
-    if (deletion < 15) skills.push('DEL');
-
-    const skillsString = skills.length >= 0 ? skills.join(', ') : 'None';
-
-    formattedScoresArray.push(['First Sound Matching (FSM)', first]);
-    formattedScoresArray.push(['Last Sound Matching (LSM)', last]);
-    formattedScoresArray.push(['Deletion (DEL)', deletion]);
-    formattedScoresArray.push(['Skills to work on', skillsString]);
-  } else if (taskId === 'letter') {
-    formattedScoresArray;
-    const incorrectLetters = [
-      scores?.UppercaseNames?.upperIncorrect ?? ''.split(','),
-      scores?.LowercaseNames?.lowerIncorrect ?? ''.split(','),
-    ]
-      .sort((a, b) => _toUpper(a) - _toUpper(b))
-      .filter(Boolean)
-      .join(', ');
-
-    const incorrectPhonemes = scores?.Phonemes?.phonemeIncorrect ?? ''.split(',').join(', ');
-
-    const lowerCaseScore = scores?.LowercaseNames?.subScore;
-    const upperCaseScore = scores?.UppercaseNames?.subScore;
-    const letterSoundsScore = scores?.Phonemes?.subScore;
-    formattedScoresArray.push(['Lower Case Letters', lowerCaseScore, 0, 26]);
-    formattedScoresArray.push(['Upper Case Letters', upperCaseScore, 0, 26]);
-    formattedScoresArray.push(['Letter Sounds', letterSoundsScore, 0, 38]);
-    formattedScoresArray.push(['Letters to work on', incorrectLetters]);
-    formattedScoresArray.push(['Sounds to work on', incorrectPhonemes]);
-  }
-
-  // Ensure scores are in consistent order
-  const order = { 'Raw Score': 2, 'Percentile Score': 1, 'Standard Score': 0 };
-  return formattedScoresArray.sort((first, second) => {
-    return order[first[0]] - order[second[0]];
-  });
-};
-
-const getPercentileScoreKey = (taskId, grade) => {
-  if (taskId === 'swr' || taskId === 'swr-es') {
-    if (getGrade(grade) < 6) {
-      return 'wjPercentile';
-    } else {
-      return 'sprPercentile';
-    }
-  }
-  if (taskId === 'pa') {
-    if (getGrade(grade) < 6) {
-      return 'percentile';
-    } else {
-      return 'sprPercentile';
-    }
-  }
-  if (taskId === 'sre') {
-    if (getGrade(grade) < 6) {
-      return 'tosrecPercentile';
-    } else {
-      return 'sprPercentile';
-    }
-  }
-};
-
-const getRawScore = (taskId) => {
-  const task = props.taskData.find((task) => task.taskId === taskId);
-  return task.scores.composite;
-};
-
-const returnRawScore = (taskId, grade) => {
-  const task = props.taskData.find((task) => task.taskId === taskId);
-  const { rawScoreKey } = getScoreKeys(taskId, grade);
-  return task.scores.composite[rawScoreKey];
-};
+  // sort tasks by order of appearance in the taskDisplayNames object
+  return Object.keys(computedTaskAcc)
+    .sort((a, b) => taskDisplayNames[a].order - taskDisplayNames[b].order)
+    .map((taskId) => computedTaskAcc[taskId]);
+});
 
 function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
   const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);

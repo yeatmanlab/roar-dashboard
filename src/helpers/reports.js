@@ -8,8 +8,6 @@ import { getGrade } from '@bdelab/roar-utils';
  *  Value: { orderindex, displayName }
  */
 
-export const optionalAssessmentColor = '#03befc';
-
 export const taskDisplayNames = {
   letter: {
     name: 'Letter',
@@ -53,9 +51,9 @@ export const taskDisplayNames = {
     order: 11,
   },
   vocab: {
-    name: 'Vocabulary',
-    extendedTitle: 'ROAR - Vocabulary',
-    extendedName: 'Vocabulary',
+    name: 'Picture-Vocab',
+    extendedTitle: 'ROAR - Picture Vocabulary',
+    extendedName: 'Picture Vocabulary',
     order: 12,
   },
   fluency: { name: 'Fluency', extendedTitle: 'ROAM - Fluency', extendedName: 'Math Fluency', order: 12 },
@@ -115,27 +113,29 @@ export const taskDisplayNames = {
 };
 
 export const extendedDescriptions = {
-  swr: 'This test measures your student’s skill in reading single words quickly and correctly',
+  swr: 'This test measures your student’s skill in reading single words quickly and correctly.',
   'swr-es':
     'This test measures how well a student can identify real words and made-up words. ' +
     'The goal is for students to recognize words quickly and accurately, a skill called decoding. ' +
-    'High scores on this assessment indicate a readiness to be a skilled and fluent reader',
-  pa: 'This test measures how well your student can break down a spoken word into its individual sounds and choose or create a word with the same sounds',
-  sre: 'This test measures how quickly your student can silently read and understand sentences',
-  vocab: 'This test measures how well your student knows words by having them match a picture to a spoken word',
+    'High scores on this assessment indicate a readiness to be a skilled and fluent reader.',
+  pa: 'This test measures how well your student can break down a spoken word into its individual sounds and choose or create a word with the same sounds.',
+  sre: 'This test measures how quickly your student can silently read and understand sentences.',
+  vocab: 'This test measures how well your student knows words by having them match a picture to a spoken word.',
   multichoice: 'Temporary description for multichoice',
   morph:
     'This test measures how well your student understands how parts of words, including prefixes and suffixes, can change the meaning of a word in a sentence',
   cva: 'This test measures your students’ knowledge of words that are often used in the books they read at school',
   letter:
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound',
+  'letter-es.':
+    'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
   comp: 'Temporary description for comp',
   phonics:
-    'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
-  syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
-  trog: 'This test measures how well students understand sentences that vary from simple to complicated',
-  fluency: 'Temporary description for fluency',
-  ran: 'Temporary description for ran',
+    'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling.',
+  syntax: 'This test measures how well students understand sentences that vary from simple to complicated.',
+  trog: 'This test measures how well students understand sentences that vary from simple to complicated.',
+  fluency: 'Temporary description for fluency.',
+  ran: 'Temporary description for ran.',
 };
 
 /*
@@ -190,7 +190,7 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
  *  Raw Only Tasks
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency'];
+export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es'];
 
 /*
  *  Scored Tasks
@@ -204,10 +204,90 @@ export const scoredTasks = ['swr', 'pa', 'sre'];
  */
 export const supportLevelColors = {
   above: 'green',
+  Green: 'green',
   some: '#edc037',
+  Yellow: '#edc037',
   below: '#c93d82',
-  optional: '#03befc',
+  Pink: '#c93d82',
+  Optional: '#03befc',
+  Assessed: 'white',
+  Unreliable: '#d6b8c7',
 };
+
+export const progressTags = {
+  Optional: {
+    value: 'optional',
+    icon: 'pi pi-question',
+    severity: 'info',
+  },
+  Completed: {
+    value: 'completed',
+    icon: 'pi pi-check',
+    severity: 'success',
+  },
+  Started: {
+    value: 'started',
+    icon: 'pi pi-exclamation-triangle',
+    severity: 'warning',
+  },
+  Assigned: {
+    value: 'assigned',
+    icon: 'pi pi-times',
+    severity: 'danger',
+  },
+};
+
+// Grab grade options for filter dropdown
+export const gradeOptions = [
+  {
+    value: '1',
+    label: '1st Grade',
+  },
+  {
+    value: '2',
+    label: '2nd Grade',
+  },
+  {
+    value: '3',
+    label: '3rd Grade',
+  },
+  {
+    value: '4',
+    label: '4th Grade',
+  },
+  {
+    value: '5',
+    label: '5th Grade',
+  },
+  {
+    value: '6',
+    label: '6th Grade',
+  },
+  {
+    value: '7',
+    label: '7th Grade',
+  },
+  {
+    value: '8',
+    label: '8th Grade',
+  },
+  {
+    value: '9',
+    label: '9th Grade',
+  },
+  {
+    value: '10',
+    label: '10th Grade',
+  },
+  {
+    value: '11',
+    label: '11th Grade',
+  },
+  {
+    value: '12',
+    label: '12th Grade',
+  },
+];
 
 /*
  *  Get Support Level
@@ -308,6 +388,9 @@ export function getScoreKeys(taskId, grade) {
       standardScoreDisplayKey = 'sprStandardScore';
     }
     rawScoreKey = 'sreScore';
+  }
+  if (taskId === 'letter') {
+    rawScoreKey = '';
   }
   return {
     percentileScoreKey,
