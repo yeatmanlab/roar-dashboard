@@ -27,10 +27,10 @@
     "version": "npm run format && git add -A"
   },
   "dependencies": {
-    "@bdelab/roam-fluency": "^1.11.13",
+    "@bdelab/roam-fluency": "^1.11.18",
     "@bdelab/roar-firekit": "^4.9.1",
     "@bdelab/roar-letter": "^1.11.3",
-    "@bdelab/roar-multichoice": "^1.11.2",
+    "@bdelab/roar-multichoice": "^1.11.3",
     "@bdelab/roar-pa": "^2.1.7",
     "@bdelab/roar-sre": "^1.15.0",
     "@bdelab/roar-swr": "^1.10.1",
