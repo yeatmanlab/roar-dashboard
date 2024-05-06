@@ -95,7 +95,7 @@
         </div>
         <div v-else class="loading-container">
           <AppSpinner style="margin-bottom: 1rem" />
-          <span>Loading Administrations</span>
+          <span class="uppercase font-light text-sm text-gray-600">Loading Administrations</span>
         </div>
       </div>
     </section>

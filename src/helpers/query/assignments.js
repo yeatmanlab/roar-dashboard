@@ -703,7 +703,7 @@ export const assignmentPageFetcher = async (
   let nonOrgFilter = null;
   let orgFilters = null;
   let gradeFilters = null;
-  filters.forEach((filter) => {
+  filters?.forEach((filter) => {
     if (filter.collection === 'schools') {
       orgFilters = filter;
     } else if (filter.collection === 'grade') {
