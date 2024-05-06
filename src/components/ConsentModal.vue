@@ -1,6 +1,6 @@
 <template>
   <PvToast />
-  <PvConfirmDialog group="templating" class="confirm">
+  <PvConfirmDialog group="templating" class="confirm" :close-on-escape="false">
     <template #message>
       <div class="scrolling-box">
         <!-- eslint-disable-next-line vue/no-v-html -->

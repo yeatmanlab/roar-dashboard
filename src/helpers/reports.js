@@ -8,8 +8,6 @@ import { getGrade } from '@bdelab/roar-utils';
  *  Value: { orderindex, displayName }
  */
 
-export const optionalAssessmentColor = '#03befc';
-
 export const taskDisplayNames = {
   letter: {
     name: 'Letter',
@@ -202,6 +200,12 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
 export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es'];
 
 /*
+ *  Raw Tasks to Display Percent Correct
+ *  A list of tasks to only display raw scores when included in a RoarDataTable.
+ */
+export const rawOnlyTasksToDisplayPercentCorrect = ['letter', 'cva', 'morphology', 'vocab', 'fluency'];
+
+/*
  *  Scored Tasks
  *  A list of tasks to be included in the generation of support levels
  */
@@ -213,10 +217,90 @@ export const scoredTasks = ['swr', 'pa', 'sre'];
  */
 export const supportLevelColors = {
   above: 'green',
+  Green: 'green',
   some: '#edc037',
+  Yellow: '#edc037',
   below: '#c93d82',
-  optional: '#03befc',
+  Pink: '#c93d82',
+  Optional: '#03befc',
+  Assessed: 'white',
+  Unreliable: '#d6b8c7',
 };
+
+export const progressTags = {
+  Optional: {
+    value: 'optional',
+    icon: 'pi pi-question',
+    severity: 'info',
+  },
+  Completed: {
+    value: 'completed',
+    icon: 'pi pi-check',
+    severity: 'success',
+  },
+  Started: {
+    value: 'started',
+    icon: 'pi pi-exclamation-triangle',
+    severity: 'warning',
+  },
+  Assigned: {
+    value: 'assigned',
+    icon: 'pi pi-times',
+    severity: 'danger',
+  },
+};
+
+// Grab grade options for filter dropdown
+export const gradeOptions = [
+  {
+    value: '1',
+    label: '1st Grade',
+  },
+  {
+    value: '2',
+    label: '2nd Grade',
+  },
+  {
+    value: '3',
+    label: '3rd Grade',
+  },
+  {
+    value: '4',
+    label: '4th Grade',
+  },
+  {
+    value: '5',
+    label: '5th Grade',
+  },
+  {
+    value: '6',
+    label: '6th Grade',
+  },
+  {
+    value: '7',
+    label: '7th Grade',
+  },
+  {
+    value: '8',
+    label: '8th Grade',
+  },
+  {
+    value: '9',
+    label: '9th Grade',
+  },
+  {
+    value: '10',
+    label: '10th Grade',
+  },
+  {
+    value: '11',
+    label: '11th Grade',
+  },
+  {
+    value: '12',
+    label: '12th Grade',
+  },
+];
 
 /*
  *  Get Support Level
@@ -230,9 +314,9 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level: 'Optional',
       tag_color: supportLevelColors.optional,
     };
-  } else if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {
+  } else if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
     return {
-      support_level: 'Scores Under Development',
+      support_level: 'Raw Score',
       tag_color: 'white',
     };
   }
@@ -317,6 +401,9 @@ export function getScoreKeys(taskId, grade) {
       standardScoreDisplayKey = 'sprStandardScore';
     }
     rawScoreKey = 'sreScore';
+  }
+  if (taskId === 'letter') {
+    rawScoreKey = '';
   }
   return {
     percentileScoreKey,
@@ -461,40 +548,6 @@ export const taskInfoById = {
         desc: 'ROAR-Sentence Reading Efficiency builds upon fundamental decoding and phonological awareness skills that are present in the ROAR-Word and ROAR-Phonological Awareness assessments. Therefore, if a student needs support with phonological awareness and single word recognition, then it is likely that they will struggle with the reading fluency skills measured by ROAR-Sentence Reading Efficiency.',
       },
     ],
-  },
-  morph: {
-    header: 'ROAR-MORPHOLOGY (WIP)',
-    subheader: 'Single Word Recognition',
-    desc:
-      'ROAR - Sentence examines silent reading fluency and comprehension for ' +
-      'individual sentences. To become fluent readers, students need to decode ' +
-      'words accurately and read sentences smoothly. Poor fluency can make it ' +
-      "harder for students to understand what they're reading. Students who don't " +
-      'receive support for their basic reading skills may find it challenging to ' +
-      'improve their overall reading ability. This assessment is helpful for ' +
-      'identifying students who may struggle with reading comprehension due to ' +
-      'difficulties with decoding words accurately or reading slowly and with ' +
-      `effort. The student's score will range between ${getRawScoreRange('morphology').min}-${
-        getRawScoreRange('morphology').max
-      } and can be viewed by ` +
-      "selecting 'Raw Score' on the table above.",
-  },
-  cva: {
-    header: 'ROAR-CVA (WIP)',
-    subheader: 'Single Word Recognition',
-    desc:
-      'ROAR - Sentence examines silent reading fluency and comprehension for ' +
-      'individual sentences. To become fluent readers, students need to decode ' +
-      'words accurately and read sentences smoothly. Poor fluency can make it ' +
-      "harder for students to understand what they're reading. Students who don't " +
-      'receive support for their basic reading skills may find it challenging to ' +
-      'improve their overall reading ability. This assessment is helpful for ' +
-      'identifying students who may struggle with reading comprehension due to ' +
-      'difficulties with decoding words accurately or reading slowly and with ' +
-      `effort. The student's score will range between ${getRawScoreRange('cva').min}-${
-        getRawScoreRange('cva').max
-      } and can be viewed by ` +
-      "selecting 'Raw Score' on the table above.",
   },
   letter: {
     color: '#E19834',
