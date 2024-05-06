@@ -5,10 +5,14 @@
   >
     <PvTag
       :value="_get(colData, col.field)"
-      :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; ${
+      :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; 
+      ${
         returnScoreTooltip(col.header, colData, col.field)?.length > 0 &&
         'outline: 1px dotted #0000CD; outline-offset: 3px'
-      }`"
+      };
+      font-weight: bold;
+      color: ${_get(colData, col.tagColor) === 'white' ? '#303030' : 'white'}
+      `"
       rounded
     />
   </div>

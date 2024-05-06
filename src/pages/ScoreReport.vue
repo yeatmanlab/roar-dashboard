@@ -676,7 +676,7 @@ const computeAssignmentAndRunData = computed(() => {
         };
 
         // if task is a raw score only task, add percentage correct, num attempted, and num correct to the scores object
-        if (rawOnlyTasks.includes(taskId)) {
+        if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const percentCorrect =
@@ -684,7 +684,8 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].tagColor = '#6b7280';
+          currRowScores[taskId].tagColor = supportLevelColors.Assessed;
+          scoreFilterTags += ' Assessed ';
         }
 
         // Logic to update runsByTaskIdAcc
