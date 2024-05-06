@@ -584,6 +584,9 @@ const computeAssignmentAndRunData = computed(() => {
       if (schoolId) {
         schoolName = schoolNameDictionary.value[schoolId];
       }
+      if (user.assessmentPid === 'brs-red-e3915666') {
+        console.log(assignment);
+      }
       const currRow = {
         user: {
           username: user.username,
