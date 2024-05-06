@@ -30,9 +30,19 @@
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
                 <PvDropdown
+                  v-if="adminInfo.every((admin) => admin.publicName)"
                   v-model="selectedAdmin"
                   :options="adminInfo ?? []"
                   option-label="publicName"
+                  input-id="dd-assignment"
+                  data-cy="dropdown-select-administration"
+                  @change="toggleShowOptionalAssessments"
+                />
+                <PvDropdown
+                  v-else
+                  v-model="selectedAdmin"
+                  :options="adminInfo ?? []"
+                  option-label="name"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
                   @change="toggleShowOptionalAssessments"
@@ -263,6 +273,10 @@ const requiredAssessments = computed(() => {
 const optionalAssessments = computed(() => {
   return _filter(assessments.value, (assessment) => assessment.optional);
 });
+
+function getLabelOption() {
+  return adminInfo.value.map((info) => info.publicName || info.name);
+}
 
 // Grab the sequential key from the current admin's data object
 const isSequential = computed(() => {
