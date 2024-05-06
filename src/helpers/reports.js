@@ -307,9 +307,9 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level: 'Optional',
       tag_color: supportLevelColors.optional,
     };
-  } else if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {
+  } else if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
     return {
-      support_level: 'Raw Score Or Percentile',
+      support_level: 'Raw Score',
       tag_color: 'white',
     };
   }
