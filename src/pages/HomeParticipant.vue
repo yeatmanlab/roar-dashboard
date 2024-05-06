@@ -274,10 +274,6 @@ const optionalAssessments = computed(() => {
   return _filter(assessments.value, (assessment) => assessment.optional);
 });
 
-function getLabelOption() {
-  return adminInfo.value.map((info) => info.publicName || info.name);
-}
-
 // Grab the sequential key from the current admin's data object
 const isSequential = computed(() => {
   return (
