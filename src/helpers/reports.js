@@ -193,6 +193,12 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
 export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es'];
 
 /*
+ *  Raw Tasks to Display Percent Correct
+ *  A list of tasks to only display raw scores when included in a RoarDataTable.
+ */
+export const rawOnlyTasksToDisplayPercentCorrect = ['letter', 'cva', 'morphology', 'vocab', 'fluency'];
+
+/*
  *  Scored Tasks
  *  A list of tasks to be included in the generation of support levels
  */
@@ -301,9 +307,9 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level: 'Optional',
       tag_color: supportLevelColors.optional,
     };
-  } else if (!scoredTasks.includes(taskId) && (rawScore || percentile)) {
+  } else if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
     return {
-      support_level: 'Scores Under Development',
+      support_level: 'Raw Score',
       tag_color: 'white',
     };
   }
@@ -535,40 +541,6 @@ export const taskInfoById = {
         desc: 'ROAR-Sentence Reading Efficiency builds upon fundamental decoding and phonological awareness skills that are present in the ROAR-Word and ROAR-Phonological Awareness assessments. Therefore, if a student needs support with phonological awareness and single word recognition, then it is likely that they will struggle with the reading fluency skills measured by ROAR-Sentence Reading Efficiency.',
       },
     ],
-  },
-  morph: {
-    header: 'ROAR-MORPHOLOGY (WIP)',
-    subheader: 'Single Word Recognition',
-    desc:
-      'ROAR - Sentence examines silent reading fluency and comprehension for ' +
-      'individual sentences. To become fluent readers, students need to decode ' +
-      'words accurately and read sentences smoothly. Poor fluency can make it ' +
-      "harder for students to understand what they're reading. Students who don't " +
-      'receive support for their basic reading skills may find it challenging to ' +
-      'improve their overall reading ability. This assessment is helpful for ' +
-      'identifying students who may struggle with reading comprehension due to ' +
-      'difficulties with decoding words accurately or reading slowly and with ' +
-      `effort. The student's score will range between ${getRawScoreRange('morphology').min}-${
-        getRawScoreRange('morphology').max
-      } and can be viewed by ` +
-      "selecting 'Raw Score' on the table above.",
-  },
-  cva: {
-    header: 'ROAR-CVA (WIP)',
-    subheader: 'Single Word Recognition',
-    desc:
-      'ROAR - Sentence examines silent reading fluency and comprehension for ' +
-      'individual sentences. To become fluent readers, students need to decode ' +
-      'words accurately and read sentences smoothly. Poor fluency can make it ' +
-      "harder for students to understand what they're reading. Students who don't " +
-      'receive support for their basic reading skills may find it challenging to ' +
-      'improve their overall reading ability. This assessment is helpful for ' +
-      'identifying students who may struggle with reading comprehension due to ' +
-      'difficulties with decoding words accurately or reading slowly and with ' +
-      `effort. The student's score will range between ${getRawScoreRange('cva').min}-${
-        getRawScoreRange('cva').max
-      } and can be viewed by ` +
-      "selecting 'Raw Score' on the table above.",
   },
   letter: {
     color: '#E19834',
