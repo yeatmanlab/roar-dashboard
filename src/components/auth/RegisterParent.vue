@@ -281,6 +281,7 @@ async function getConsent() {
   border: none;
   width: 11.75rem;
   justify-content: end;
+  margin-left: 2rem;
 }
 .submit-button:hover {
   background-color: #b7b5b5;
@@ -300,7 +301,7 @@ label {
   margin-top: 2rem;
   justify-content: end;
   display: flex;
-  margin-right: -2rem;
+  margin-right: 2rem;
 }
 
 @media screen and (max-width: 580px) {

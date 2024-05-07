@@ -598,6 +598,7 @@ const validateRoarUsername = async () => {
   border: none;
   width: 11.75rem;
   justify-content: end;
+  margin-right: 2rem;
 }
 .submit-button:hover {
   background-color: #b7b5b5;
