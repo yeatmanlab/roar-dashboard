@@ -441,7 +441,12 @@ const submit = async () => {
         if (props.adminId) args.administrationId = props.adminId;
 
         await roarfirekit.value.createAdministration(args).then(() => {
-          toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+          toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: props.adminId ? 'Administration updated' : 'Administration created',
+            life: 3000,
+          });
           administrationQueryKeyIndex.value += 1;
 
           // TODO: Invalidate for administrations query.
