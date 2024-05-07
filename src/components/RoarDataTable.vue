@@ -39,17 +39,17 @@
           v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
           label="Export Selected"
           :disabled="selectedRows.length === 0"
-          @click="exportCSV(true, $event)"
           class="m-2"
+          @click="exportCSV(true, $event)"
         />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
-          @click="exportCSV(false, $event)"
           class="m-2"
+          @click="exportCSV(false, $event)"
         />
-        <PvButton :label="rowViewMode" @click="toggleView" class="my-2" />
+        <PvButton :label="rowViewMode" class="my-2" @click="toggleView" />
       </span>
     </div>
     <div class="flex flex-column">
