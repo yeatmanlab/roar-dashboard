@@ -4,7 +4,7 @@ import _mapValues from 'lodash/mapValues';
 
 export const fetchLegalDocs = () => {
   const axiosInstance = getAxiosInstance('admin');
-  return axiosInstance.get('/legal').then(({ data }) => {
+  return axiosInstance.get('/test-legal').then(({ data }) => {
     const docs = data.documents.map((doc) => {
       const type = _capitalize(doc.name.split('/').pop());
       const lastUpdated = new Date(doc.createTime);
@@ -14,6 +14,7 @@ export const fetchLegalDocs = () => {
         gitHubOrg: doc.fields.gitHubOrg,
         currentCommit: doc.fields.currentCommit,
         lastUpdated: lastUpdated.toLocaleString(),
+        params: doc.fields.params,
       };
     });
     return docs;
