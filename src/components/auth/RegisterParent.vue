@@ -258,7 +258,7 @@ async function handleConsentAccept() {
 }
 
 async function getConsent() {
-  const consentDoc = await authStore.getLegalDoc('consent');
+  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
   consentText.value = consentDoc.text;
   // consentVersion = consentDoc.version;
   showConsent.value = true;
