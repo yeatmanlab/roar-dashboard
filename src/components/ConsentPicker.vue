@@ -46,6 +46,20 @@
             </div>
           </div>
         </div>
+        <div style="width: 70%">
+          <h3 class="mb-4 mt-4">Consent Amount</h3>
+          <div class="mr-7">
+            <span class="p-float-label">
+              <PvInputText
+                id="consent-amount"
+                v-model="firstName"
+                class="w-full mr-2"
+                data-cy="input-administraton-consent-amount"
+              />
+              <label for="consent-amount">Input the Consent Payment Amount</label>
+            </span>
+          </div>
+        </div>
       </div>
       <div class="flex-column" style="width: 50%">
         <h3 class="font-bold text-center text-xl">Suggested Forms</h3>
@@ -54,19 +68,19 @@
             <div class="flex flex-row w-full">
               <div style="width: 80%">
                 <p class="m-0">
-                  <span class="font-bold">Name: </span>{{ consents[0]?.fileName.stringValue }} <br />
-                  <span class="font-bold">Current Commit: </span>{{ consents[0]?.currentCommit.stringValue }} <br />
-                  <span class="font-bold">GitHub Org: </span>{{ consents[0]?.gitHubOrg.stringValue }} <br />
-                  <span class="font-bold">GitHub Repository: </span>{{ consents[0]?.gitHubRepository.stringValue }}
+                  <span class="font-bold">Name: </span>{{ consents[2]?.fileName.stringValue }} <br />
+                  <span class="font-bold">Current Commit: </span>{{ consents[2]?.currentCommit.stringValue }} <br />
+                  <span class="font-bold">GitHub Org: </span>{{ consents[2]?.gitHubOrg.stringValue }} <br />
+                  <span class="font-bold">GitHub Repository: </span>{{ consents[2]?.gitHubRepository.stringValue }}
                   <br />
-                  <span class="font-bold">Last Updated: </span>{{ consents[0]?.lastUpdated }} <br />
+                  <span class="font-bold">Last Updated: </span>{{ consents[2]?.lastUpdated }} <br />
                 </p>
               </div>
               <div class="flex align-items-center justify-content-center">
                 <PvButton
                   class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
                   label="Show Consent"
-                  @click="seeConsent(consents[0])"
+                  @click="seeConsent(consents[2], (index = 2))"
                 />
               </div>
             </div>
@@ -80,19 +94,19 @@
             <div class="flex flex-row w-full">
               <div style="width: 80%">
                 <p class="m-0">
-                  <span class="font-bold">Name: </span>{{ consents[0]?.fileName.stringValue }} <br />
-                  <span class="font-bold">Current Commit: </span>{{ consents[0]?.currentCommit.stringValue }} <br />
-                  <span class="font-bold">GitHub Org: </span>{{ consents[0]?.gitHubOrg.stringValue }} <br />
-                  <span class="font-bold">GitHub Repository: </span>{{ consents[0]?.gitHubRepository.stringValue }}
+                  <span class="font-bold">Name: </span>{{ consents[1]?.fileName.stringValue }} <br />
+                  <span class="font-bold">Current Commit: </span>{{ consents[1]?.currentCommit.stringValue }} <br />
+                  <span class="font-bold">GitHub Org: </span>{{ consents[1]?.gitHubOrg.stringValue }} <br />
+                  <span class="font-bold">GitHub Repository: </span>{{ consents[1]?.gitHubRepository.stringValue }}
                   <br />
-                  <span class="font-bold">Last Updated: </span>{{ consents[0]?.lastUpdated }} <br />
+                  <span class="font-bold">Last Updated: </span>{{ consents[1]?.lastUpdated }} <br />
                 </p>
               </div>
               <div class="flex align-items-center justify-content-center">
                 <PvButton
                   class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
                   label="Show Assent"
-                  @click="seeConsent(consents[0])"
+                  @click="seeConsent(consents[0], (index = 0))"
                 />
               </div>
             </div>
@@ -109,7 +123,7 @@
     v-model:visible="showConsent"
     :draggable="false"
     modal
-    :header="consents[0].type"
+    :header="consents[index].type"
     :close-on-escape="false"
     :style="{ width: '65vw' }"
     :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
@@ -129,7 +143,7 @@ import _lowerCase from 'lodash/lowerCase';
 const defaultParams = [
   {
     name: 'Mouse and click',
-    icon: 'pi pi-video',
+    icon: 'pi pi-check',
   },
   {
     name: 'Questionnaire responses',
@@ -152,6 +166,9 @@ const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
 const paramCheckboxData = ref();
+const index = ref(null);
+let currentConsent = ref({});
+let currentAssent = ref({});
 
 const authStore = useAuthStore();
 const emit = defineEmits(['consent-selected']);
@@ -168,7 +185,7 @@ const { data: consents } = useQuery({
   staleTime: 5 * 60 * 1000,
 });
 
-async function seeConsent(consent) {
+async function seeConsent(consent, index) {
   let consentDoc;
   if (consent.type === 'Assent-es') {
     consentDoc = await authStore.getLegalDoc('assent-es');
@@ -177,7 +194,7 @@ async function seeConsent(consent) {
   }
   consentVersion.value = consentDoc.version;
   confirmText.value = marked(consentDoc.text);
-  selectedConsentIndex.value = 0;
+  selectedConsentIndex.value = index;
   showConsent.value = true;
 }
 
