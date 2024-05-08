@@ -23,13 +23,21 @@ function clickScoreButton(adminId) {
 function setFilterBySchool(school) {
   cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
   cy.get('ul > li', { timeout: timeout }).contains(school).click();
-  cy.wait(0.2 * timeout);
+  cy.wait(0.05 * timeout);
 }
 
 function setFilterByGrade(grade) {
   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
-  cy.wait(0.2 * timeout);
+  cy.wait(0.05 * timeout);
+}
+
+function setFilterByProgressCategory(header, category) {
+  cy.contains('div.p-column-header-content', header).find('button').click();
+  cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
+  cy.get('ul>li').find('.p-tag-value', { timeout: timeout }).contains(category).click();
+  cy.get('button').contains('Apply').click();
+  cy.wait(0.05 * timeout);
 }
 
 function setFilterByScoreCategory(header, category) {
@@ -99,6 +107,18 @@ describe('The partner admin can view score reports for a given administration an
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickScoreButton(roarTestAdministrationId);
     setFilterByScoreCategory('Word', 'Pink');
+    checkTableColumn(['Username'], 'CypressTestStudent0');
+  });
+});
+
+describe('The partner admin can view score reports for a given administration filter by school, grade, and progress status: completed', () => {
+  it('Selects an administration, views its score report, then accesses the column filter to filter by school, grade, and completed', () => {
+    checkUrl();
+    cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+    clickScoreButton(roarTestAdministrationId);
+    setFilterByGrade('1');
+    setFilterBySchool('Cypress Test School');
+    setFilterByProgressCategory('Morphology', 'completed');
     checkTableColumn(['Username'], 'CypressTestStudent0');
   });
 });

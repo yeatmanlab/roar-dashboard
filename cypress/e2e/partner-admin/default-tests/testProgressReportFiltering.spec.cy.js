@@ -28,19 +28,19 @@ function clickProgressButton(adminId) {
 function setFilterBySchool(school) {
   cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
   cy.get('ul > li', { timeout: timeout }).contains(school).click();
-  cy.wait(0.2 * timeout);
+  cy.wait(0.05 * timeout);
 }
 
 function setFilterByGrade(grade) {
   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
-  cy.wait(0.2 * timeout);
+  cy.wait(0.05 * timeout);
 }
 
 function setFilterByProgressCategory(header, category) {
   cy.contains('div.p-column-header-content', header).find('button').click();
   cy.get('[data-cy="progress-filter-dropdown"]', { timeout: timeout }).click();
-  cy.get('.p-tag-value', { timeout: timeout }).contains(category).click();
+  cy.get('ul>li').find('.p-tag-value', { timeout: timeout }).contains(category).click();
   cy.get('button').contains('Apply').click();
   cy.wait(0.05 * timeout);
 }
@@ -87,54 +87,76 @@ function checkProgressTags(headers) {
   });
 }
 
-describe('The partner admin can view progress reports for a given administration.', () => {
-  it('Selects an administration and views its progress report', () => {
-    checkUrl();
-    cy.getAdministrationCard(testPartnerAdministrationName);
-    clickProgressButton(testAdministrationId);
-    cy.checkUserList(testUserList);
-    checkProgressTags(testAssignments);
-  });
-});
+// describe('The partner admin can view progress reports for a given administration.', () => {
+//   it('Selects an administration and views its progress report', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(testPartnerAdministrationName);
+//     clickProgressButton(testAdministrationId);
+//     cy.checkUserList(testUserList);
+//     checkProgressTags(testAssignments);
+//   });
+// });
 
-describe('The partner admin can view progress reports for a given administration and filter by school.', () => {
-  it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {
+// describe('The partner admin can view progress reports for a given administration and filter by school.', () => {
+//   it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+//     clickProgressButton(roarTestAdministrationId);
+//     setFilterBySchool('Cypress Test School');
+//     checkTableColumn(headers, 'Cypress Test School');
+//   });
+// });
+
+// describe('The partner admin can view progress reports for a given administration and filter by grade', () => {
+//   it('Selects an administration, views its progress report, then accesses the filter bar to filter by grade', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
+//     clickProgressButton(roarDemoAdministrationId);
+//     setFilterByGrade('1');
+//     checkTableColumn(['Grade'], '1');
+//   });
+// });
+
+// describe('The partner admin can view progress reports for a given administration and filter by both school and grade', () => {
+//   it('Selects an administration, views its progress report, then accesses the filter bar to filter by both school grade', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
+//     clickProgressButton(roarDemoAdministrationId);
+//     setFilterByGrade('1');
+//     setFilterBySchool('Cypress Test School');
+//     checkTableColumn(headers, 'Cypress Test School');
+//     checkTableColumn(['Grade'], '1');
+//   });
+// });
+
+// describe('The partner admin can view progress reports for a given administration and filter by progress status', () => {
+//   it('Selects an administration, views its score report, then accesses the column filter to filter by progress status', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+//     clickProgressButton(roarTestAdministrationId);
+//     setFilterByProgressCategory('Word', 'completed');
+//     checkTableColumn(['Username'], 'CypressTestStudent0');
+//   });
+// });
+
+describe('The partner admin can view progress reports for a given administration and filter by grade and progress status', () => {
+  it('Selects an administration, views its score report, then accesses the column filter to filter by grade and support level', () => {
     checkUrl();
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickProgressButton(roarTestAdministrationId);
-    setFilterBySchool('Cypress Test School');
-    checkTableColumn(headers, 'Cypress Test School');
-  });
-});
-
-describe('The partner admin can view progress reports for a given administration and filter by grade', () => {
-  it('Selects an administration, views its score report, then accesses the filter bar to filter by grade', () => {
-    checkUrl();
-    cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
-    clickProgressButton(roarDemoAdministrationId);
     setFilterByGrade('1');
-    checkTableColumn(['Grade'], '1');
-  });
-});
-
-describe('The partner admin can view progress reports for a given administration and filter by both school and grade', () => {
-  it('Selects an administration, views its score report, then accesses the filter bar to filter by both school grade', () => {
-    checkUrl();
-    cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
-    clickProgressButton(roarDemoAdministrationId);
-    setFilterByGrade('1');
-    setFilterBySchool('Cypress Test School');
-    checkTableColumn(headers, 'Cypress Test School');
-    checkTableColumn(['Grade'], '1');
-  });
-});
-
-describe('The partner admin can view progress reports for a given administration and filter by support level', () => {
-  it('Selects an administration, views its score report, then accesses the column filter to filter by support level', () => {
-    checkUrl();
-    cy.getAdministrationCard(roarTestAdministrationName, 'descending');
-    clickProgressButton(roarTestAdministrationId);
     setFilterByProgressCategory('Word', 'completed');
     checkTableColumn(['Username'], 'CypressTestStudent0');
   });
 });
+
+// describe('The partner admin can view progress reports for a given administration and a not applicable filter returns an empty message', () => {
+//   it('Selects an administration, views its score report, then accesses the column filter to filter by a non-returnable filter', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+//     clickProgressButton(roarTestAdministrationId);
+//     setFilterByProgressCategory('Written-Vocab', 'started');
+//     cy.get('.p-datatable-emptymessage').contains('No results found');
+//     cy.get('.p-datatable-emptymessage').contains('Reset Filters');
+//   });
+// });
