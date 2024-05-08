@@ -32,7 +32,7 @@ async function getSurvey() {
   if (userType === 'student') userType = 'child';
 
   try {
-    const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey`);
+    const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey.json`);
     fetchedSurvey.value = response.data;
     // Create the survey model with the fetched data
     const surveyInstance = new Model(fetchedSurvey.value);
