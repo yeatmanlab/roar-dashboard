@@ -12,6 +12,7 @@ export const fetchLegalDocs = () => {
         type: type,
         fileName: doc.fields.fileName,
         gitHubOrg: doc.fields.gitHubOrg,
+        gitHubRepository: doc.fields.gitHubRepository,
         currentCommit: doc.fields.currentCommit,
         lastUpdated: lastUpdated.toLocaleString(),
         params: doc.fields.params,

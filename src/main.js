@@ -63,6 +63,7 @@ import PvToast from 'primevue/toast';
 import PvTreeTable from 'primevue/treetable';
 import PvTriStateCheckbox from 'primevue/tristatecheckbox';
 import PvImage from 'primevue/image';
+import PvFieldset from 'primevue/fieldset';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -169,6 +170,7 @@ app.component('PvColumn', PvColumn);
 app.component('PvImage', PvImage);
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
+app.component('PvFieldset', PvFieldset);
 
 app.directive('tooltip', PvTooltip);
 
