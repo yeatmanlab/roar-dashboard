@@ -213,7 +213,7 @@
                           :severity="progressTags[option]?.severity"
                           :value="progressTags[option]?.value"
                           :icon="progressTags[option]?.icon"
-                          class="p-0.5 m-0"
+                          class="p-0.5 m-0 font-bold"
                         />
                       </div>
                       <div v-else>
@@ -231,7 +231,7 @@
                         :severity="progressTags[value]?.severity"
                         :value="progressTags[value]?.value"
                         :icon="progressTags[value]?.icon"
-                        class="p-0.5 m-0"
+                        class="p-0.5 m-0 font-bold"
                       />
                     </div>
                     <div v-else>
@@ -245,6 +245,7 @@
                   v-model="filterModel.value"
                   :options="['Assigned', 'Started', 'Completed', 'Optional']"
                   style="margin-bottom: 0.5rem"
+                  data-cy="progress-filter-dropdown"
                 >
                   <template #option="{ option }">
                     <div v-if="progressTags[option]" class="flex align-items-center">
@@ -252,7 +253,7 @@
                         :severity="progressTags[option]?.severity"
                         :value="progressTags[option]?.value"
                         :icon="progressTags[option]?.icon"
-                        :style="`min-width: 2rem`"
+                        :style="`min-width: 2rem; font-weight: bold`"
                         rounded
                       />
                     </div>
@@ -263,7 +264,7 @@
                       :severity="progressTags[value]?.severity"
                       :value="progressTags[value]?.value"
                       :icon="progressTags[value]?.icon"
-                      :style="`min-width: 2rem`"
+                      :style="`min-width: 2rem; font-weight: bold`"
                       rounded
                     />
                   </template>
