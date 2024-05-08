@@ -1,5 +1,7 @@
 const roarDemoDistrictId = Cypress.env('testDistrictId');
 const roarDemoAdministrationName = Cypress.env('testPartnerAdministrationName');
+const roarTestAdministrationName = Cypress.env('testRoarAppsAdministration');
+const roarTestAdministrationId = Cypress.env('testRoarAppsAdministrationId');
 const roarDemoAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
 const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
@@ -13,12 +15,9 @@ function checkUrl() {
   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
 }
 
-function clickScoreButton() {
+function clickScoreButton(adminId) {
   cy.get('button', { timeout: timeout }).contains('Scores').first().click();
-  cy.url({ timeout: timeout }).should(
-    'eq',
-    `${baseUrl}/scores/${roarDemoAdministrationId}/district/${roarDemoDistrictId}`,
-  );
+  cy.url({ timeout: timeout }).should('eq', `${baseUrl}/scores/${adminId}/district/${roarDemoDistrictId}`);
 }
 
 function setFilterBySchool(school) {
@@ -31,6 +30,14 @@ function setFilterByGrade(grade) {
   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
   cy.wait(0.2 * timeout);
+}
+
+function setFilterByScoreCategory(header, category) {
+  cy.contains('div.p-column-header-content', header).find('button').click();
+  cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
+  cy.get('ul > li', { timeout: timeout }).contains(category).click();
+  cy.get('button').contains('Apply').click();
+  cy.wait(0.05 * timeout);
 }
 
 function checkTableColumn(headers, value) {
@@ -58,30 +65,61 @@ describe('The partner admin can view score reports for a given administration an
   it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {
     checkUrl();
     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
-    clickScoreButton();
+    clickScoreButton(roarDemoAdministrationId);
     setFilterBySchool('Cypress Test School');
     checkTableColumn(headers, 'Cypress Test School');
   });
 });
 
 describe('The partner admin can view score reports for a given administration and filter by grade', () => {
-  it('Selects an administration, views its score report, then accessed the filter bar to filter by grade', () => {
+  it('Selects an administration, views its score report, then accesses the filter bar to filter by grade', () => {
     checkUrl();
     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
-    clickScoreButton();
+    clickScoreButton(roarDemoAdministrationId);
     setFilterByGrade('3');
     checkTableColumn(['Grade'], '3');
   });
 });
 
 describe('The partner admin can view score reports for a given administration and filter by both school and grade', () => {
-  it('Selects an administration, views its score report, then accessed the filter bar to filter by both school grade', () => {
+  it('Selects an administration, views its score report, then accesses the filter bar to filter by both school grade', () => {
     checkUrl();
     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
-    clickScoreButton();
+    clickScoreButton(roarDemoAdministrationId);
     setFilterByGrade('5');
     setFilterBySchool('Cypress Test School');
     checkTableColumn(headers, 'Cypress Test School');
     checkTableColumn(['Grade'], '5');
+  });
+});
+
+describe('The partner admin can view score reports for a given administration and filter by support level', () => {
+  it('Selects an administration, views its score report, then accesses the column filter to filter by support level', () => {
+    checkUrl();
+    cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+    clickScoreButton(roarTestAdministrationId);
+    setFilterByScoreCategory('Word', 'Pink');
+    checkTableColumn(['Username'], 'CypressTestStudent0');
+  });
+});
+
+describe('The partner admin can view score reports for a given administration and filter by Assessed', () => {
+  it('Selects an administration, views its score report, then accesses the column filter to filter by assessed', () => {
+    checkUrl();
+    cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+    clickScoreButton(roarTestAdministrationId);
+    setFilterByScoreCategory('Morphology', 'Assessed');
+    checkTableColumn(['Username'], 'CypressTestStudent0');
+  });
+});
+
+describe('The partner admin can view score reports for a given administration and a not applicable filter returns an empty message', () => {
+  it('Selects an administration, views its score report, then accesses the column filter to filter by a non-returnable filter', () => {
+    checkUrl();
+    cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+    clickScoreButton(roarTestAdministrationId);
+    setFilterByScoreCategory('Written-Vocab', 'Optional');
+    cy.get('.p-datatable-emptymessage').contains('No scores found');
+    cy.get('.p-datatable-emptymessage').contains('Reset Filters');
   });
 });

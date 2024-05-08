@@ -78,7 +78,7 @@ module.exports = defineConfig({
     testTag: 'stanford university',
     cypressDownloads: 'cypress/downloads',
     testRoarAppsAdministration: 'Cypress Test Roar Apps Administration',
-    testRoarAppsAdministrationId: '',
+    testRoarAppsAdministrationId: 'K8UaI8p79Dntj5Z2CJk8',
     testOptionalRoarAppsAdministration: 'Cypress Test Optional Roar Apps Administration',
     testOptionalRoarAppsAdministrationId: '',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',

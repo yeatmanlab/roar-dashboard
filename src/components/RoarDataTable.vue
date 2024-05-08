@@ -199,6 +199,7 @@
                   option-group-label="label"
                   option-group-children="items"
                   :options="taskFilterOptions"
+                  data-cy="score-filter-dropdown"
                   style="margin-bottom: 0.5rem"
                 >
                   <template #option="{ option }">
