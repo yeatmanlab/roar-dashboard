@@ -286,8 +286,8 @@
           </PvColumn>
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
-              <div class="text-lg font-bold my-2">No scores found</div>
-              <div class="font-light">The filters applied have no matching scores.</div>
+              <div class="text-lg font-bold my-2">No results found</div>
+              <div class="font-light">The filters applied have no matching results .</div>
               <PvButton text class="my-2" @click="resetFilters">Reset Filters</PvButton>
             </div>
           </template>

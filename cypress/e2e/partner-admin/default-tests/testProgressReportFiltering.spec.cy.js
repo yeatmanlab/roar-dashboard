@@ -97,7 +97,7 @@ describe('The partner admin can view progress reports for a given administration
   });
 });
 
-describe('The partner admin can view score reports for a given administration and filter by school.', () => {
+describe('The partner admin can view progress reports for a given administration and filter by school.', () => {
   it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {
     checkUrl();
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
@@ -107,7 +107,7 @@ describe('The partner admin can view score reports for a given administration an
   });
 });
 
-describe('The partner admin can view score reports for a given administration and filter by grade', () => {
+describe('The partner admin can view progress reports for a given administration and filter by grade', () => {
   it('Selects an administration, views its score report, then accesses the filter bar to filter by grade', () => {
     checkUrl();
     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
@@ -117,7 +117,7 @@ describe('The partner admin can view score reports for a given administration an
   });
 });
 
-describe('The partner admin can view score reports for a given administration and filter by both school and grade', () => {
+describe('The partner admin can view progress reports for a given administration and filter by both school and grade', () => {
   it('Selects an administration, views its score report, then accesses the filter bar to filter by both school grade', () => {
     checkUrl();
     cy.getAdministrationCard(roarDemoAdministrationName, 'descending');
@@ -129,7 +129,7 @@ describe('The partner admin can view score reports for a given administration an
   });
 });
 
-describe('The partner admin can view score reports for a given administration and filter by support level', () => {
+describe('The partner admin can view progress reports for a given administration and filter by support level', () => {
   it('Selects an administration, views its score report, then accesses the column filter to filter by support level', () => {
     checkUrl();
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
