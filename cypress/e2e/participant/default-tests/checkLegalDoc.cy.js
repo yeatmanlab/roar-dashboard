@@ -2,7 +2,7 @@ const chokidar = require('chokidar');
 const fs = require('fs');
 
 // Specify the path to package.json
-const packageJsonPath = 'package.json';
+const packageJsonPath = '../../../../package.json';
 
 // Initialize chokidar watcher
 const watcher = chokidar.watch(packageJsonPath);

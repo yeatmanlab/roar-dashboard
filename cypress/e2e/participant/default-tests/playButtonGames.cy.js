@@ -5,7 +5,7 @@ const timeout = Cypress.env('timeout');
 const chokidar = require('chokidar');
 
 // Specify the path to package.json
-const packageJsonPath = 'package.json';
+const packageJsonPath = '../../../../package.json';
 
 // Initialize chokidar watcher
 const packageJsonWatcher = chokidar.watch(packageJsonPath);
