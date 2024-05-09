@@ -306,10 +306,11 @@ import {
   getSupportLevel,
   tasksToDisplayGraphs,
   rawOnlyTasks,
-  rawOnlyTasksToDisplayPercentCorrect,
+  tasksToDisplayPercentCorrect,
   addElementToPdf,
   getScoreKeys,
   gradeOptions,
+  tasksToDisplayCorrectIncorrectDifference,
 } from '@/helpers/reports.js';
 // import TaskReport from '@/components/reports/tasks/TaskReport.vue';
 // import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
@@ -546,9 +547,7 @@ const getScoresAndSupportFromAssessment = ({
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
   let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
   let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-  if (taskId === 'letter' || taskId === 'letter-es') {
-    rawScore = _get(assessment, `scores.computed.composite`);
-  }
+
   const { support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional);
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
@@ -675,8 +674,15 @@ const computeAssignmentAndRunData = computed(() => {
           tags: scoreFilterTags,
         };
 
-        // if task is a raw score only task, add percentage correct, num attempted, and num correct to the scores object
-        if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
+        if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+          const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
+          const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
+          currRowScores[taskId].correctIncorrectDifference = numCorrect - numIncorrect;
+          currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].numIncorrect = numIncorrect;
+          currRowScores[taskId].tagColor = supportLevelColors.Assessed;
+          scoreFilterTags += ' Assessed ';
+        } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const percentCorrect =
@@ -800,7 +806,7 @@ const exportSelected = (selectedRows) => {
     }
     for (const taskId in scores) {
       const score = scores[taskId];
-      if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
+      if (tasksToDisplayPercentCorrect.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
@@ -848,7 +854,7 @@ const exportAll = async () => {
     }
     for (const taskId in scores) {
       const score = scores[taskId];
-      if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
+      if (tasksToDisplayPercentCorrect.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
@@ -931,7 +937,9 @@ const scoreReportColumns = computed(() => {
     if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
     if (viewMode.value === 'standard') colField = `scores.${taskId}.standardScore`;
     if (viewMode.value === 'raw') colField = `scores.${taskId}.rawScore`;
-    if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
+    if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+      colField = `scores.${taskId}.correctIncorrectDifference`;
+    } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
       colField = `scores.${taskId}.percentCorrect`;
     } else if (rawOnlyTasks.includes(taskId)) {
       colField = `scores.${taskId}.rawScore`;
@@ -945,7 +953,11 @@ const scoreReportColumns = computed(() => {
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag: !rawOnlyTasks.includes(taskId) && (viewMode.value === 'color' || isOptional),
+      emptyTag:
+        !rawOnlyTasks.includes(taskId) &&
+        !tasksToDisplayPercentCorrect.includes(taskId) &&
+        !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+        (viewMode.value === 'color' || isOptional),
       tagColor: `scores.${taskId}.tagColor`,
     });
   }
