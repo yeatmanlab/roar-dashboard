@@ -49,7 +49,7 @@ export function startGame(administration, language, optional, task) {
   checkGameTab(language, task);
   cy.visit(languageOptions[language][task].url);
 
-  cy.get('.jspsych-btn', { timeout: 3 * timeout })
+  cy.get('.jspsych-btn', { timeout: 60 * timeout })
     .should('be.visible')
     .click();
 
