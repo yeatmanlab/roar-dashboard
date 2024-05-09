@@ -301,8 +301,8 @@ const computedProgressData = computed(() => {
       // update progress for current row with computed object
       currRow.progress = currRowProgress;
       // push currRow to assignmentTableDataAcc
-      assignmentTableDataAcc.push(currRow);
     }
+    assignmentTableDataAcc.push(currRow);
   }
 
   return assignmentTableDataAcc;

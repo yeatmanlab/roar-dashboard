@@ -63,7 +63,7 @@
           </div>
         </div>
 
-        <OrgPicker @selection="selection($event)" />
+        <OrgPicker :orgs="orgsList" @selection="selection($event)" />
 
         <PvConfirmDialog group="errors" class="confirm">
           <template #message>
@@ -83,6 +83,7 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :set-variants="setVariants"
+          :selected-variants="preSelectedVariants"
           @variants-changed="handleVariantsChanged"
         />
         <div class="mt-2 flex w-full">
@@ -131,7 +132,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, toRaw, computed } from 'vue';
+import { onMounted, reactive, ref, toRaw, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -140,6 +141,13 @@ import _filter from 'lodash/filter';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
+import _forEach from 'lodash/forEach';
+import _find from 'lodash/find';
+import _get from 'lodash/get';
+import _isEqual from 'lodash/isEqual';
+import _without from 'lodash/without';
+import _union from 'lodash/union';
+import _uniq from 'lodash/uniq';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
 import _lowerCase from 'lodash/lowerCase';
@@ -147,10 +155,15 @@ import { useVuelidate } from '@vuelidate/core';
 import { maxLength, minLength, required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import OrgPicker from '@/components/OrgPicker.vue';
+import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
 import { variantsFetcher } from '@/helpers/query/tasks';
 import TaskPicker from './TaskPicker.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import ConsentPicker from './ConsentPicker.vue';
+
+const props = defineProps({
+  adminId: { type: String, required: false, default: null },
+});
 
 const router = useRouter();
 const toast = useToast();
@@ -165,6 +178,136 @@ const { data: allVariants } = useQuery({
   queryFn: () => variantsFetcher(),
   keepPreviousData: true,
   enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+//      +------------------------------------------+
+// -----| Queries for grabbing pre-existing admins |-----
+//      +------------------------------------------+
+const shouldGrabAdminInfo = computed(() => {
+  return initialized.value && Boolean(props.adminId);
+});
+const { data: preExistingAdminInfo } = useQuery({
+  queryKey: ['administration', props.adminId],
+  queryFn: () => fetchDocById('administrations', props.adminId),
+  keepPreviousData: true,
+  enabled: shouldGrabAdminInfo,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// Grab districts from preExistingAdminInfo.minimalOrgs.districts
+const districtsToGrab = computed(() => {
+  const districtIds = _get(preExistingAdminInfo.value, 'minimalOrgs.districts', []);
+  return districtIds.map((districtId) => {
+    return {
+      collection: 'districts',
+      docId: districtId,
+      select: ['name'],
+    };
+  });
+});
+const shouldGrabDistricts = computed(() => {
+  return initialized.value && districtsToGrab.value.length > 0;
+});
+const { data: preDistricts } = useQuery({
+  queryKey: ['districts', props.adminId],
+  queryFn: () => fetchDocsById(districtsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabDistricts,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// grab schools from preExistingAdminInfo.minimalOrgs.schools
+const schoolsToGrab = computed(() => {
+  const schoolIds = _get(preExistingAdminInfo.value, 'minimalOrgs.schools', []);
+  return schoolIds.map((schoolId) => {
+    return {
+      collection: 'schools',
+      docId: schoolId,
+      select: ['name'],
+    };
+  });
+});
+const shouldGrabSchools = computed(() => {
+  return initialized.value && schoolsToGrab.value.length > 0;
+});
+
+const { data: preSchools } = useQuery({
+  queryKey: ['schools', 'minimalOrgs', props.adminId],
+  queryFn: () => fetchDocsById(schoolsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabSchools,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// Grab classes from preExistingAdminInfo.minimalOrgs.classes
+const classesToGrab = computed(() => {
+  const classIds = _get(preExistingAdminInfo.value, 'minimalOrgs.classes', []);
+  return classIds.map((classId) => {
+    return {
+      collection: 'classes',
+      docId: classId,
+      select: ['name'],
+    };
+  });
+});
+const shouldGrabClasses = computed(() => {
+  return initialized.value && classesToGrab.value.length > 0;
+});
+
+const { data: preClasses } = useQuery({
+  queryKey: ['classes', 'minimal', props.adminId],
+  queryFn: () => fetchDocsById(classesToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabClasses,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// Grab groups from preExistingAdminInfo.minimalOrgs.groups
+const groupsToGrab = computed(() => {
+  const groupIds = _get(preExistingAdminInfo.value, 'minimalOrgs.groups', []);
+  return groupIds.map((id) => {
+    return {
+      collection: 'groups',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabGroups = computed(() => {
+  return initialized.value && groupsToGrab.value.length > 0;
+});
+
+const { data: preGroups } = useQuery({
+  queryKey: ['groups', props.adminId],
+  queryFn: () => fetchDocsById(groupsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabGroups,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// Grab families from preExistingAdminInfo.families
+const familiesToGrab = computed(() => {
+  const familyIds = _get(preExistingAdminInfo.value, 'minimalOrgs.families', []);
+  return familyIds.map((id) => {
+    return {
+      collection: 'families',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabFamilies = computed(() => {
+  return initialized.value && familiesToGrab.value.length > 0;
+});
+
+const { data: preFamilies } = useQuery({
+  queryKey: ['families', props.adminId],
+  queryFn: () => fetchDocsById(familiesToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabFamilies,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
@@ -220,10 +363,21 @@ const selection = (selected) => {
   }
 };
 
+const orgsList = computed(() => {
+  return {
+    districts: preDistricts.value,
+    schools: preSchools.value,
+    classes: preClasses.value,
+    groups: preGroups.value,
+    families: preFamilies.value,
+  };
+});
+
 //      +---------------------------------+
 // -----|       Assessment Selection      |-----
 //      +---------------------------------+
 const variants = ref([]);
+const preSelectedVariants = ref([]);
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
@@ -314,9 +468,15 @@ const submit = async () => {
           isTestData: isTestData.value,
         };
         if (isTestData.value) args.isTestData = true;
+        if (props.adminId) args.administrationId = props.adminId;
 
         await roarfirekit.value.createAdministration(args).then(() => {
-          toast.add({ severity: 'success', summary: 'Success', detail: 'Administration created', life: 3000 });
+          toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: props.adminId ? 'Administration updated' : 'Administration created',
+            life: 3000,
+          });
           administrationQueryKeyIndex.value += 1;
 
           // TODO: Invalidate for administrations query.
@@ -360,6 +520,32 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
 });
+
+watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
+  if (adminInfo && !_isEmpty(allVariantInfo)) {
+    state.administrationName = adminInfo.name;
+    state.administrationPublicName = adminInfo.publicName;
+    state.dates = [new Date(adminInfo.dateOpened), new Date(adminInfo.dateClosed)];
+    state.sequential = adminInfo.sequential;
+    _forEach(adminInfo.assessments, (assessment) => {
+      const assessmentParams = assessment.params;
+      const found = findVariantWithParams(allVariants.value, assessmentParams);
+      if (found) {
+        preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
+      }
+    });
+  }
+});
+
+function findVariantWithParams(variants, params) {
+  const found = _find(variants, (variant) => {
+    const cleanParams = { ...variant.variant.params };
+    Object.keys(cleanParams).forEach((key) => cleanParams[key] === null && delete cleanParams[key]);
+    return _isEqual(params, cleanParams);
+  });
+  // TODO: implement tie breakers if found.length > 1
+  return found;
+}
 </script>
 
 <style lang="scss">

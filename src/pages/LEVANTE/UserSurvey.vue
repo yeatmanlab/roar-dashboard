@@ -71,7 +71,9 @@ async function saveResults(sender) {
   if (Object.keys(sender.data).length === 0) {
     console.log('No data to save');
     // update game store to let game tabs know
+    gameStore.requireHomeRefresh();
     gameStore.setSurveyCompleted();
+    router.push({ name: 'Home' });
     return;
   }
 
@@ -87,6 +89,7 @@ async function saveResults(sender) {
     gameStore.setSurveyCompleted();
 
     // route back to game tabs (HomeParticipant)
+    gameStore.requireHomeRefresh();
     router.push({ name: 'Home' });
   } catch (error) {
     isSavingResponses.value = false;
