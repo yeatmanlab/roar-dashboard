@@ -164,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { fetchLegalDocs } from '@/helpers/query/legal';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
@@ -203,23 +203,24 @@ const specialParams = [
 ];
 
 let selectedConsentIndex = ref(null);
-let isSelected = ref(null);
 const initialized = ref(false);
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
 const paramCheckboxData = ref(false);
 const specialParam = ref(false);
+const amount = ref(null);
+const expectedTime = ref(null);
 const index = ref(null);
 let result = {
   consent: [],
   assent: [],
+  amount: amount.value,
+  expectedTime: expectedTime.value,
 };
 
 const authStore = useAuthStore();
 const emit = defineEmits(['consent-selected']);
-const amount = ref(null);
-const expectedTime = ref(null);
 
 onMounted(() => {
   initialized.value = true;
@@ -229,6 +230,8 @@ function checkBoxStatus() {
   result = {
     consent: [],
     assent: [],
+    amount: amount.value,
+    expectedTime: expectedTime.value,
   };
   if (paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
     specialParam.value = false;
@@ -327,4 +330,14 @@ function processConsentAssent(consent, targetArray) {
     }
   }
 }
+
+watch(amount, (newValue) => {
+  result.amount = newValue;
+  emit('consent-selected', result);
+});
+
+watch(expectedTime, (newValue) => {
+  result.expectedTime = newValue;
+  emit('consent-selected', result);
+});
 </script>
