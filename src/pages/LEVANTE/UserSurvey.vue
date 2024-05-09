@@ -10,54 +10,7 @@ import { useRouter } from 'vue-router';
 import { useGameStore } from '@/store/game';
 import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
-
-function BufferLoader(context, urlListMap, callback) {
-  this.context = context;
-  this.urlListMap = urlListMap;
-  this.onload = callback;
-  this.bufferList = new Array();
-  this.loadCount = 0;
-}
-
-BufferLoader.prototype.loadBuffer = function(url, index) {
-  // Load buffer asynchronously
-  var request = new XMLHttpRequest();
-  request.open("GET", url, true);
-  request.responseType = "arraybuffer";
-
-  var loader = this;
-
-  request.onload = function() {
-    // Asynchronously decode the audio file data in request.response
-    loader.context.decodeAudioData(
-      request.response,
-      function(buffer) {
-        if (!buffer) {
-          alert('error decoding file data: ' + url);
-          return;
-        }
-        loader.bufferList[index] = buffer;
-        if (++loader.loadCount === Object.keys(loader.urlListMap).length)
-          loader.onload(loader.bufferList);
-      },
-      function(error) {
-        console.error('decodeAudioData error', error);
-      }
-    );
-  }
-
-  request.onerror = function() {
-    // alert('BufferLoader: XHR error');
-  }
-
-  request.send();
-}
-
-BufferLoader.prototype.load = function() {
-  Object.keys(this.urlListMap).forEach((key, index) => {
-    this.loadBuffer(this.urlListMap[key], key);
-  });  
-}
+import { BufferLoader, AudioContext } from '@/helpers/audio';
 
 const generateAudioLinks = () => {
   const fileNames = [
@@ -114,7 +67,6 @@ const { locale } = useI18n();
 const audioPlayerBuffers = ref([]);
 
 const router = useRouter();
-let AudioContext = window.AudioContext || window.webkitAudioContext;
 const context = new AudioContext();
 let currentAudioSource = null;
 
@@ -132,16 +84,13 @@ bufferLoader.load();
 
 // Fetch the survey on component mount
 onMounted(async () => {
-  console.log('mark://', 'on getStore');
   await getSurvey();
 });
 
 const showAndPlaceAudioButton = (playAudioButton, el) => {
   if (playAudioButton) {
-    playAudioButton.style.display = 'inline-block';
-    playAudioButton.style.position = 'absolute';
-    playAudioButton.style.right = 0;
-    playAudioButton.style.top = 0;
+    playAudioButton.classList.add('play-button-visible');
+    playAudioButton.style.display = 'flex';
     el.appendChild(playAudioButton);
   }
 };
@@ -173,8 +122,9 @@ async function getSurvey() {
     survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
       const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
       if (questionElements[0].dataset.name !== 'ChildSurveyIntro') {
-        // const introButton = document.getElementById('audio-button-ChildSurveyIntro');
-        // introButton.style.display = 'none';
+        if (currentAudioSource) {
+          currentAudioSource.stop();
+        }
         questionElements.forEach((el) => {
           const playAudioButton = document.getElementById('audio-button-'+ el.dataset.name);
           showAndPlaceAudioButton(playAudioButton, el);
@@ -196,7 +146,6 @@ watch(
   () => locale.value,
   (newLocale) => {
     survey.value.locale = newLocale;
-    console.log(document.getElementById('sq_102'));
   },
 );
 
@@ -248,9 +197,10 @@ async function saveResults(sender) {
 <template>
   <div v-if="survey && !isSavingResponses">
     <SurveyComponent :model="survey" />
+
     <div v-for="page in fetchedSurvey.pages">
       <div v-for="(item, index) in page.elements[0].elements || page.elements">
-        <button :id="'audio-button-'+item.name" @click="playAudio(item.name)" style="display:none;">Play Audio {{item.name}}</button>
+        <PvButton :id="'audio-button-'+item.name" icon="pi pi-volume-up" @click="playAudio(item.name)" style="display:none;"/>
       </div>
     </div>
 
@@ -258,4 +208,15 @@ async function saveResults(sender) {
   <AppSpinner v-if="!survey || isSavingResponses" />
 </template>
 
-<style></style>
+<style>
+  .play-button-visible {
+    display: flex;
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: -36px;
+    margin-right: -36px;
+    width: 40px;
+    height: 40px;
+  }
+</style>
