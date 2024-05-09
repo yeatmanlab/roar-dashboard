@@ -9,8 +9,8 @@ export class BufferLoader {
 
   loadBuffer(url, index) {
     const request = new XMLHttpRequest();
-    request.open("GET", url, true);
-    request.responseType = "arraybuffer";
+    request.open('GET', url, true);
+    request.responseType = 'arraybuffer';
     request.onload = () => {
       // Asynchronously decode the audio file data in request.response
       this.context.decodeAudioData(
@@ -21,18 +21,17 @@ export class BufferLoader {
             return;
           }
           this.bufferList[index] = buffer;
-          if (++this.loadCount === Object.keys(this.urlListMap).length)
-            this.onload(this.bufferList);
+          if (++this.loadCount === Object.keys(this.urlListMap).length) this.onload(this.bufferList);
         },
         (error) => {
           console.error('decodeAudioData error', error);
-        }
+        },
       );
-    }
+    };
 
     request.onerror = (error) => {
       console.error('Request error', error);
-    }
+    };
 
     request.send();
   }
@@ -40,7 +39,7 @@ export class BufferLoader {
   load() {
     Object.keys(this.urlListMap).forEach((key) => {
       this.loadBuffer(this.urlListMap[key], key);
-    });  
+    });
   }
 }
 

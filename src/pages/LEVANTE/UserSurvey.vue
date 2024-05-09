@@ -39,12 +39,12 @@ const generateAudioLinks = (parsedLocale) => {
     'TeacherListen',
     'TeacherNice',
   ];
-  
+
   const baseURL = `https://storage.googleapis.com/road-dashboard/child-survey/${parsedLocale}/shared/`;
   return fileNames.reduce((acc, curr) => {
     acc[curr] = `${baseURL}${curr}.mp3`;
     return acc;
-  }, {}); 
+  }, {});
 };
 
 const authStore = useAuthStore();
@@ -78,16 +78,12 @@ const fetchBuffer = (parsedLocale) => {
     return;
   }
   audioLoading.value = true;
-  const bufferLoader = new BufferLoader(
-    context,
-    generateAudioLinks(parsedLocale),
-    (bufferList) => finishedLoading(bufferList, parsedLocale)
+  const bufferLoader = new BufferLoader(context, generateAudioLinks(parsedLocale), (bufferList) =>
+    finishedLoading(bufferList, parsedLocale),
   );
 
   bufferLoader.load();
 };
-
-
 
 // Fetch the survey on component mount
 onMounted(async () => {
@@ -134,14 +130,13 @@ async function getSurvey() {
           currentAudioSource.stop();
         }
         questionElements.forEach((el) => {
-          const playAudioButton = document.getElementById('audio-button-'+ el.dataset.name);
+          const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
           showAndPlaceAudioButton(playAudioButton, el);
         });
       } else {
         const introButton = document.getElementById('audio-button-ChildSurveyIntro');
         showAndPlaceAudioButton(introButton, questionElements[0]);
       }
-
     });
   } catch (error) {
     console.error(error);
@@ -213,23 +208,27 @@ async function saveResults(sender) {
 
     <div v-for="page in fetchedSurvey.pages" :key="page.name">
       <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
-        <PvButton :id="'audio-button-'+item.name" icon="pi pi-volume-up" style="display:none;" @click="playAudio(item.name)"/>
+        <PvButton
+          :id="'audio-button-' + item.name"
+          icon="pi pi-volume-up"
+          style="display: none"
+          @click="playAudio(item.name)"
+        />
       </div>
     </div>
-
   </div>
   <AppSpinner v-if="!survey || isSavingResponses || audioLoading" />
 </template>
 
 <style>
-  .play-button-visible {
-    display: flex;
-    position: absolute;
-    right: 0;
-    top: 0;
-    margin-top: -36px;
-    margin-right: -36px;
-    width: 40px;
-    height: 40px;
-  }
+.play-button-visible {
+  display: flex;
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin-top: -36px;
+  margin-right: -36px;
+  width: 40px;
+  height: 40px;
+}
 </style>
