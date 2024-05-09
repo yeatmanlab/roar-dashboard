@@ -82,8 +82,7 @@
         </PvConfirmDialog>
         <TaskPicker
           :all-variants="variantsByTaskId"
-          :set-variants="setVariants"
-          :selected-variants="preSelectedVariants"
+          :input-variants="preSelectedVariants"
           @variants-changed="handleVariantsChanged"
         />
         <div class="mt-2 flex w-full">
@@ -145,9 +144,7 @@ import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
 import _get from 'lodash/get';
 import _isEqual from 'lodash/isEqual';
-import _without from 'lodash/without';
 import _union from 'lodash/union';
-import _uniq from 'lodash/uniq';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
 import _lowerCase from 'lodash/lowerCase';

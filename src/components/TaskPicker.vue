@@ -156,13 +156,9 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  selectedVariants: {
+  inputVariants: {
     type: Array,
-    default: [],
-  },
-  setVariants: {
-    type: Function,
-    required: true,
+    default: () => [],
   },
 });
 
@@ -180,7 +176,7 @@ const taskOptions = computed(() => {
 });
 
 watch(
-  () => props.selectedVariants,
+  () => props.inputVariants,
   (newVariants) => {
     selectedVariants.value = _union(selectedVariants.value, newVariants);
   },

@@ -22,14 +22,14 @@
           <!--Locked Game-->
           <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
           <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{
-            game.taskData.name
+            getTaskName(game.taskData.name)
           }}</span>
         </template>
         <article class="roar-tabview-game pointer">
           <div class="roar-game-content" @click="routeExternalTask(game)">
-            <h2 class="roar-game-title">{{ game.taskData.name }}</h2>
+            <h2 class="roar-game-title">{{ getTaskName(game.taskData.name) }}</h2>
             <div class="roar-game-description">
-              <p>{{ game.taskData.description }}</p>
+              <p>{{ getTaskDescription(game.taskData.name, game.taskData.description) }}</p>
             </div>
             <div class="roar-game-meta">
               <PvTag
@@ -85,6 +85,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
+import { camelize } from '@bdelab/roar-utils';
 
 let VideoPlayer;
 
@@ -92,7 +93,33 @@ onMounted(async () => {
   VideoPlayer = (await import('@/components/VideoPlayer.vue')).default;
 });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+
+const levanteTasks = [
+  'heartsAndFlowers',
+  'math',
+  'matrixReasoning',
+  'memoryGame',
+  'mentalRotation',
+  'sameDifferentSelection',
+  'theoryOfMind',
+  'tROG',
+  'survey',
+];
+const getTaskName = (taskName) => {
+  // Translate Levante task names if not in English
+  if (levanteTasks.includes(camelize(taskName)) && !locale.value.includes('en')) {
+    return t(`gameTabs.${camelize(taskName)}Name`);
+  }
+  return taskName;
+};
+const getTaskDescription = (taskName, taskDescription) => {
+  // Translate Levante task descriptions if not in English
+  if (levanteTasks.includes(camelize(taskName)) && !locale.value.includes('en')) {
+    return t(`gameTabs.${camelize(taskName)}Description`);
+  }
+  return taskDescription;
+};
 
 const taskCompletedMessage = computed(() => {
   return t('gameTabs.taskCompleted');
