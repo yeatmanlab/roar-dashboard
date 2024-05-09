@@ -17,6 +17,7 @@
             show-icon="pi pi-cog"
             hide-icon="pi pi-times"
             button-class="p-button-outlined p-button-sm w-3rem h-3rem"
+            :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
           />
           <PvConfirmPopup />
@@ -136,6 +137,7 @@ import { batchGetDocs } from '@/helpers/query/utils';
 import { taskDisplayNames } from '@/helpers/reports';
 import { useAuthStore } from '@/store/auth';
 import { removeEmptyOrgs } from '@/helpers';
+import { useRouter } from 'vue-router';
 import _flattenDeep from 'lodash/flattenDeep';
 import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
@@ -143,6 +145,8 @@ import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
+
+const router = useRouter();
 
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
@@ -163,13 +167,6 @@ const confirm = useConfirm();
 const toast = useToast();
 
 const speedDialItems = ref([
-  // {
-  //   label: 'Edit',
-  //   icon: 'pi pi-pencil',
-  //   command: () => {
-  //     console.log('Edit administration');
-  //   },
-  // },
   {
     label: 'Delete',
     icon: 'pi pi-trash',
@@ -193,6 +190,13 @@ const speedDialItems = ref([
           toast.add({ severity: 'error', summary: 'Rejected', detail: 'Deletion aborted', life: 3000 });
         },
       });
+    },
+  },
+  {
+    label: 'Edit',
+    icon: 'pi pi-pencil',
+    command: () => {
+      router.push({ name: 'EditAdministration', params: { adminId: props.id } });
     },
   },
 ]);
