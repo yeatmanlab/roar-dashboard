@@ -196,7 +196,7 @@ export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 
  *  Raw Tasks to Display Percent Correct
  *  A list of tasks to only display raw scores when included in a RoarDataTable.
  */
-export const rawOnlyTasksToDisplayPercentCorrect = ['letter', 'cva', 'morphology', 'vocab', 'fluency'];
+export const rawOnlyTasksToDisplayPercentCorrect = ['letter', 'letter-es', 'cva', 'morphology', 'vocab', 'fluency'];
 
 /*
  *  Scored Tasks
@@ -388,8 +388,8 @@ export function getScoreKeys(taskId, grade) {
     }
     rawScoreKey = 'sreScore';
   }
-  if (taskId === 'letter') {
-    rawScoreKey = '';
+  if (taskId === 'letter' || taskId === 'letter-es') {
+    rawScoreKey = 'totalPercentCorrect';
   }
   return {
     percentileScoreKey,
@@ -417,7 +417,7 @@ export const getRawScoreThreshold = (taskId) => {
       some: 45,
     };
   }
-  return null;
+  return { above: null, some: null };
 };
 
 export const getRawScoreRange = (taskId) => {

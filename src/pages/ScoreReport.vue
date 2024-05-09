@@ -546,9 +546,7 @@ const getScoresAndSupportFromAssessment = ({
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
   let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
   let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
-  if (taskId === 'letter' || taskId === 'letter-es') {
-    rawScore = _get(assessment, `scores.computed.composite`);
-  }
+
   const { support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional);
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
