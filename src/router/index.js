@@ -270,6 +270,13 @@ const routes = [
     meta: { pageTitle: 'Create an administration', requireAdmin: true, requireSuperAdmin: true },
   },
   {
+    path: '/edit-administration/:adminId',
+    name: 'EditAdministration',
+    props: true,
+    component: () => import('../components/CreateAdministration.vue'),
+    meta: { pageTitle: 'Edit an Administration', requireAdmin: true, requireSuperAdmin: true },
+  },
+  {
     path: '/create-administrator',
     name: 'CreateAdministrator',
     component: () => import('../components/CreateAdministrator.vue'),

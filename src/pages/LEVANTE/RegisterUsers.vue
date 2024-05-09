@@ -4,24 +4,35 @@
       <!--Upload file section-->
       <div v-if="!isFileUploaded">
         <PvPanel header="Register users">
-          <PvMessage severity="error" :closable="false"
-            >Administrations (group) must be created before users. You cannot create users otherwise.</PvMessage
-          >
-          The following fields are required for registering users:
+          <div class="info-message-container">
+            <i class="pi pi-exclamation-circle"></i>
+            <p>A Group (Organization) must be created before registering users. You cannot register users otherwise.</p>
+          </div>
+          These fields are <b>REQUIRED</b> for registering users:
 
           <ul>
-            <li>id</li>
-            <li>userType</li>
-            <li>childId</li>
-            <li>parentId</li>
-            <li>teacherId</li>
-            <li>month</li>
-            <li>year</li>
-            <li>group</li>
+            <li><b>id</b> - The unique identifier for the user. Start from 1.</li>
+            <li><b>userType</b> - The type of user. Must be one of the following: child, parent, teacher.</li>
+            <li><b>month</b> - The month of the year the user was born.</li>
+            <li><b>year</b> - The year the user was born.</li>
+            <li><b>group</b> - The name of the group.</li>
           </ul>
 
-          Here is an example of what your csv/spreadsheet should look like:
-          <PvImage
+          These fields are optional, <b>HOWEVER</b>, you <i>must</i> use them if you want to link children with thier
+          parents and teachers:
+
+          <ul class="optional-fields">
+            <li><b>childId</b> - The unique identifier for the child. Start from 1.</li>
+            <li><b>parentId</b> - The unique identifier for the parent. Start from 1.</li>
+            <li><b>teacherId</b> - The unique identifier for the teacher. Start from 1.</li>
+          </ul>
+
+          Below is an example of what your CSV/spreadsheet could look like. Note that you may upload a CSV with any
+          columns you need, but those not required for registration can be ignored during processing by selecting the
+          "Ignore this column" option.
+
+          <img
+            id="example-image"
             src="https://storage.googleapis.com/road-dashboard/example_researcher_csv.png"
             alt="CSV upload example"
           />
@@ -47,21 +58,18 @@
       <!-- && !returnedData.length -->
       <div v-if="isFileUploaded">
         <!-- <RoarDataTable :columns="tableColumns" :data="rawUserFile" :allowExport="false" /> -->
-        <PvPanel header="Assigning participant data" class="mb-4">
+        <PvPanel header="Assigning user data" class="mb-4">
           <p>Use the dropdowns below to properly assign each column.</p>
           <p>
             Columns that are not assigned will not be imported. But please note that a column has to be assigned for
             each of the required fields:
           </p>
           <ul>
-            <li>id</li>
-            <li>userType</li>
-            <li>childId</li>
-            <li>parentId</li>
-            <li>teacherId</li>
-            <li>month</li>
-            <li>year</li>
-            <li>group</li>
+            <li><b>id</b> - The unique identifier for the user. Start from 1.</li>
+            <li><b>teacherId</b> - The unique identifier for the teacher. Start from 1.</li>
+            <li><b>month</b> - The month of the year the user was born.</li>
+            <li><b>year</b> - The year the user was born.</li>
+            <li><b>group</b> - The name of the group.</li>
           </ul>
 
           <PvMessage severity="info" :closable="false">You can scroll left-to-right to see more columns</PvMessage>
@@ -86,8 +94,8 @@
             <template #header>
               <div class="col-header">
                 <PvDropdown
-                  v-model="dropdown_model[col.field]"
-                  :options="dropdown_options"
+                  v-model="dropdownSelections[col.field]"
+                  :options="dropdownOptions"
                   option-label="label"
                   option-value="value"
                   option-group-label="label"
@@ -100,7 +108,13 @@
         </PvDataTable>
         <div class="submit-container">
           <PvButton
-            label="Start Registration"
+            v-if="returnedData.length"
+            label="Download Registered Users"
+            @click="addAccountToCSV(returnedData)"
+          />
+          <PvButton
+            v-else
+            :label="activeSubmit ? 'Registering Users' : 'Start Registration'"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             @click="submitUsers"
@@ -133,10 +147,6 @@
           </PvDataTable>
         </div>
       </div>
-
-      <div v-if="returnedData.length">
-        <PvButton label="Download Registered Users" @click="addAccountToCSV(returnedData)" />
-      </div>
     </section>
   </main>
 </template>
@@ -148,7 +158,8 @@ import _compact from 'lodash/compact';
 import _forEach from 'lodash/forEach';
 import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
-import _isEqual from 'lodash/isEqual';
+import _every from 'lodash/every';
+import _includes from 'lodash/includes';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
 import { pluralizeFirestoreCollection } from '@/helpers';
@@ -163,24 +174,29 @@ const returnedData = ref([]);
 // Primary Table & Dropdown refs
 const dataTable = ref();
 const tableColumns = ref([]);
-const dropdown_model = ref({});
-const dropdown_options = ref([
+const dropdownSelections = ref({});
+const dropdownOptions = ref([
   {
     label: 'Required',
     items: [
       { label: 'ID', value: 'id' },
       { label: 'User Type', value: 'userType' },
-      { label: 'Name', value: 'name' },
-      { label: 'Child ID', value: 'childId' },
-      { label: 'Parent ID', value: 'parentId' },
-      { label: 'Teacher ID', value: 'teacherId' },
       { label: 'Month', value: 'month' },
       { label: 'Year', value: 'year' },
       { label: 'Group', value: 'group' },
     ],
   },
+  {
+    label: 'Optional',
+    items: [
+      { label: 'Child ID', value: 'childId' },
+      { label: 'Parent ID', value: 'parentId' },
+      { label: 'Teacher ID', value: 'teacherId' },
+      { label: 'Ignore this column', value: 'ignore' },
+    ],
+  },
 ]);
-const requiredFields = ['id', 'userType', 'name', 'childId', 'parentId', 'teacherId', 'month', 'year', 'group'];
+const requiredFields = ['id', 'userType', 'month', 'year', 'group'];
 
 // Error Users Table refs
 const errorTable = ref();
@@ -202,7 +218,7 @@ const onFileUpload = async (event) => {
 
 function populateDropdown(columns) {
   _forEach(columns, (col) => {
-    dropdown_model.value[col.field] = '';
+    dropdownSelections.value[col.field] = '';
   });
 }
 
@@ -227,6 +243,10 @@ function getKeyByValue(object, value) {
   return Object.keys(object).find((key) => object[key] === value);
 }
 
+function containsRequiredFields(subset, superset) {
+  return _every(subset, (element) => _includes(superset, element));
+}
+
 async function submitUsers() {
   // Reset error users
   activeSubmit.value = true;
@@ -235,9 +255,11 @@ async function submitUsers() {
   showErrorTable.value = false;
   errorMessage.value = '';
   // activeSubmit.value = true;
-  const modelValues = _compact(Object.values(dropdown_model.value));
+  const selections = _compact(Object.values(dropdownSelections.value));
   // Check that all required dropdowns are selected.
-  if (!_isEqual(modelValues, requiredFields)) {
+  const _selections = selections.sort();
+  const _requiredFields = requiredFields.sort();
+  if (!containsRequiredFields(_requiredFields, _selections)) {
     errorMessage.value = 'Please assign a single column to each of the required fields.';
     activeSubmit.value = false;
     return;
@@ -249,8 +271,8 @@ async function submitUsers() {
   // Construct list of user objects, handle special columns
   _forEach(rawUserFile.value, (user) => {
     let individualUser = {};
-    let dropdownMap = _cloneDeep(dropdown_model.value);
-    _forEach(modelValues, (col) => {
+    let dropdownMap = _cloneDeep(dropdownSelections.value);
+    _forEach(selections, (col) => {
       const columnMap = getKeyByValue(dropdownMap, col);
       if (['ignore'].includes(col)) {
         return;
@@ -286,6 +308,9 @@ async function submitUsers() {
   }
 
   try {
+    // showErrorTable.value = true;
+    // throw new Error('test');
+
     const res = await authStore.createLevanteUsers(submitUsersList);
     toast.add({
       severity: 'success',
@@ -409,14 +434,42 @@ function downloadErrorTable() {
   min-height: 33vh;
 }
 
-.info-box {
+.info-message-container {
+  display: flex;
+  background-color: rgb(252, 252, 218);
+  border: 2px solid rgb(228, 206, 7);
+  border-radius: 0.5rem;
+  color: rgb(199, 180, 7);
+  margin-bottom: 1rem;
+
+  p {
+    font-weight: bold;
+    margin: 1rem 1rem 1rem 0;
+  }
+
+  i {
+    margin: 1rem;
+  }
+}
+
+.optional-fields {
+  margin-bottom: 2rem;
+}
+
+#example-image {
+  width: 100%;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* .info-box {
   padding: 0.5rem;
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   background-color: var(--surface-b);
   border-radius: 5px;
   border: 1px solid var(--surface-d);
-}
+} */
 
 .error-box {
   padding: 0.5rem;

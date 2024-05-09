@@ -144,6 +144,7 @@ import _findIndex from 'lodash/findIndex';
 import _debounce from 'lodash/debounce';
 import _toLower from 'lodash/toLower';
 import _isEmpty from 'lodash/isEmpty';
+import _union from 'lodash/union';
 import { VueDraggableNext } from 'vue-draggable-next';
 import VariantCard from './VariantCard.vue';
 import { useToast } from 'primevue/usetoast';
@@ -155,9 +156,9 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  setVariants: {
-    type: Function,
-    required: true,
+  inputVariants: {
+    type: Array,
+    default: () => [],
   },
 });
 
@@ -173,6 +174,13 @@ const taskOptions = computed(() => {
     };
   });
 });
+
+watch(
+  () => props.inputVariants,
+  (newVariants) => {
+    selectedVariants.value = _union(selectedVariants.value, newVariants);
+  },
+);
 
 const updateVariant = (variantId, conditions) => {
   const updatedVariants = selectedVariants.value.map((variant) => {

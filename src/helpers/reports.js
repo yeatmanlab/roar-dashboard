@@ -350,17 +350,10 @@ export function getScoreKeys(taskId, grade) {
   let standardScoreDisplayKey = undefined;
   let rawScoreKey = undefined;
   if (taskId === 'swr' || taskId === 'swr-es') {
-    if (grade < 6) {
-      percentileScoreKey = 'wjPercentile';
-      percentileScoreDisplayKey = 'wjPercentile';
-      standardScoreKey = 'standardScore';
-      standardScoreDisplayKey = 'standardScore';
-    } else {
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentile';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScore';
-    }
+    percentileScoreKey = 'wjPercentile';
+    percentileScoreDisplayKey = 'wjPercentile';
+    standardScoreKey = 'standardScore';
+    standardScoreDisplayKey = 'standardScore';
     rawScoreKey = 'roarScore';
   }
   if (taskId === 'pa') {
