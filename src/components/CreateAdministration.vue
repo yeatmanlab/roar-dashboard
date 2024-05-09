@@ -177,6 +177,7 @@ const state = reactive({
   dates: [],
   sequential: null,
   consent: null,
+  assent: null,
   districts: [],
   schools: [],
   classes: [],
@@ -201,6 +202,7 @@ const rules = {
   },
   sequential: { required },
   consent: { required },
+  assent: { required },
 };
 const v$ = useVuelidate(rules, state);
 const pickListError = ref('');
@@ -230,21 +232,22 @@ const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
 };
 
-async function updateConsent() {
-  let consentDoc;
-  if (state.consent.type === 'Assent-es') {
-    consentDoc = await authStore.getLegalDoc('assent-es');
-  } else {
-    consentDoc = await authStore.getLegalDoc(_lowerCase(toRaw(state.consent.type)));
-  }
-  consentVersion.value = consentDoc.version;
-  await authStore.updateConsentStatus(consentDoc.type, consentVersion.value);
-  userQueryKeyIndex.value += 1;
-}
+// async function updateConsent() {
+//   let consentDoc;
+//   if (state.consent.type === 'Assent-es') {
+//     consentDoc = await authStore.getLegalDoc('assent-es');
+//   } else {
+//     consentDoc = await authStore.getLegalDoc(_lowerCase(toRaw(state.consent.type)));
+//   }
+//   consentVersion.value = consentDoc.version;
+//   await authStore.updateConsentStatus(consentDoc.type, consentVersion.value);
+//   userQueryKeyIndex.value += 1;
+// }
 
-const handleConsentSelected = (newConsent) => {
-  state.consent = newConsent;
-  updateConsent();
+const handleConsentSelected = (newConsentAssent) => {
+  console.log(newConsentAssent);
+  state.consent = newConsentAssent.consent;
+  state.assent = newConsentAssent.assent;
 };
 
 // Card event handlers

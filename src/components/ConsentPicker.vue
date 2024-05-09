@@ -16,7 +16,7 @@
                 v-model="paramCheckboxData"
                 input-id="default-params"
                 value="hasDefault"
-                @change="getDefaults"
+                @change="checkBoxStatus"
               />
               <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="default-params"
                 >Only Default Parameters</label
@@ -29,13 +29,7 @@
         <div class="border-solid border-round" style="width: 70%; cursor: pointer">
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
-              <PvCheckbox
-                v-model="paramCheckboxData"
-                input-id="video-recording"
-                value="hasVideo"
-                :disabled="isOnlyDefault"
-                @change="getConsentAssent"
-              />
+              <PvCheckbox v-model="specialParam" input-id="video-recording" value="hasVideo" @change="checkBoxStatus" />
               <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="video-recording"
                 >Video Recording</label
               >
@@ -46,13 +40,7 @@
         <div class="border-solid mt-2 border-round" style="width: 70%; cursor: pointer">
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
-              <PvCheckbox
-                v-model="paramCheckboxData"
-                input-id="audio-recording"
-                value="hasAudio"
-                :disabled="isOnlyDefault"
-                @change="getConsentAssent"
-              />
+              <PvCheckbox v-model="specialParam" input-id="audio-recording" value="hasAudio" @change="checkBoxStatus" />
               <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="audio-recording"
                 >Audio Recording</label
               >
@@ -64,11 +52,10 @@
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
               <PvCheckbox
-                v-model="paramCheckboxData"
+                v-model="specialParam"
                 input-id="eye-tracking"
                 value="hasEyeTracking"
-                :disabled="isOnlyDefault"
-                @change="getConsentAssent"
+                @change="checkBoxStatus"
               />
               <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="eye-tracking">Eye Tracking</label>
               <i class="pi pi-eye" style="font-size: 1rem; width: 20%"></i>
@@ -86,7 +73,7 @@
                   class="w-full"
                   data-cy="input-administraton-consent-amount"
                 />
-                <label for="consent-amount" class="text-xs w-full">Payment Amount $$</label>
+                <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
               </span>
             </div>
             <div class="ml-3">
@@ -97,7 +84,7 @@
                   class="w-full"
                   data-cy="input-administraton-consent-amount"
                 />
-                <label for="consent-time" class="text-xs w-full">Expected Time Amount</label>
+                <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
               </span>
             </div>
           </div>
@@ -177,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { fetchLegalDocs } from '@/helpers/query/legal';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
@@ -221,7 +208,8 @@ const initialized = ref(false);
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
-const paramCheckboxData = ref();
+const paramCheckboxData = ref(false);
+const specialParam = ref(false);
 const index = ref(null);
 let result = {
   consent: [],
@@ -230,7 +218,6 @@ let result = {
 
 const authStore = useAuthStore();
 const emit = defineEmits(['consent-selected']);
-const isOnlyDefault = ref(false);
 const amount = ref(null);
 const expectedTime = ref(null);
 
@@ -239,10 +226,17 @@ onMounted(() => {
 });
 
 function checkBoxStatus() {
-  if (paramCheckboxData.value.includes('hasDefault')) {
-    isOnlyDefault.value = true;
+  result = {
+    consent: [],
+    assent: [],
+  };
+  if (paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
+    specialParam.value = false;
+    getDefaults();
   } else {
-    isOnlyDefault.value = false;
+    if (specialParam.value?.find((item) => item === 'hasVideo' || item === 'hasAudio' || item === 'hasEyeTracking')) {
+      getConsentAssent();
+    }
   }
 }
 
@@ -268,13 +262,6 @@ async function seeConsent(consent) {
 }
 
 function getDefaults() {
-  result = {
-    consent: [],
-    assent: [],
-  };
-
-  checkBoxStatus();
-
   if (consents.value !== undefined) {
     for (let i = 0; i < 4; i++) {
       const consent = consents?.value[i];
@@ -285,7 +272,7 @@ function getDefaults() {
       }
     }
   }
-  console.log(result);
+  emit('consent-selected', result);
   return result;
 }
 
@@ -314,13 +301,6 @@ function processConsentAssentDefault(consent, targetArray) {
 }
 
 function getConsentAssent() {
-  result = {
-    consent: [],
-    assent: [],
-  };
-
-  checkBoxStatus();
-
   if (consents) {
     for (let i = 0; i < 4; i++) {
       const consent = consents.value[i];
@@ -331,7 +311,7 @@ function getConsentAssent() {
       }
     }
   }
-  console.log(result);
+  emit('consent-selected', result);
   return result;
 }
 
@@ -347,13 +327,4 @@ function processConsentAssent(consent, targetArray) {
     }
   }
 }
-
-watch(isSelected, (newValue, oldValue) => {
-  if (newValue !== null && newValue !== oldValue) {
-    const selectedConsent = consents.value[newValue];
-    if (selectedConsent) {
-      emit('consent-selected', selectedConsent);
-    }
-  }
-});
 </script>
