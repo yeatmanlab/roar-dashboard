@@ -326,6 +326,8 @@ const state = reactive({
   classes: [],
   groups: [],
   families: [],
+  amount: '',
+  expectedTime: '',
 });
 
 const datesNotNull = (value) => {
@@ -346,13 +348,14 @@ const rules = {
   sequential: { required },
   consent: { required },
   assent: { required },
+  amount: { required },
+  expectedTime: { required },
 };
 const v$ = useVuelidate(rules, state);
 const pickListError = ref('');
 const orgError = ref('');
 const submitted = ref(false);
 const isTestData = ref(false);
-const consentVersion = ref('');
 
 //      +---------------------------------+
 // -----|          Org Selection          |-----
@@ -402,6 +405,8 @@ const handleConsentSelected = (newConsentAssent) => {
   console.log(newConsentAssent);
   state.consent = newConsentAssent.consent;
   state.assent = newConsentAssent.assent;
+  state.amount = newConsentAssent.amount;
+  state.expectedTime = newConsentAssent.expectedTime;
 };
 
 // Card event handlers
