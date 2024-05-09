@@ -12,7 +12,7 @@ import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
 
-const generateAudioLinks = () => {
+const generateAudioLinks = (parsedLocale) => {
   const fileNames = [
     'ChildSurveyIntro',
     'ClassFriends',
@@ -39,19 +39,10 @@ const generateAudioLinks = () => {
     'TeacherListen',
     'TeacherNice',
   ];
-  // TODO: Make this sensitive to the language
-  // For now, it is hardcoded to spanish
-  const baseURL = 'https://storage.googleapis.com/child-questionnaire/es/shared/';
+  
+  const baseURL = `https://storage.googleapis.com/road-dashboard/child-survey/${parsedLocale}/shared/`;
   return fileNames.reduce((acc, curr) => {
-    // acc[curr] = `${baseURL}${curr}.mp3`;
-    const rand = Math.random();
-    if (rand < 0.2) {
-      acc[curr] = 'https://storage.googleapis.com/theory-of-mind/en/shared/ToM-scene2-q3-false_belief.mp3';
-    } else if (rand >= 0.2 && rand < 0.5) {
-      acc[curr] = 'https://storage.googleapis.com/theory-of-mind/en/shared/ToM-scene2-instruct2.mp3';
-    } else {
-      acc[curr] = 'https://storage.googleapis.com/theory-of-mind/en/shared/ToM-scene3-instruct1.mp3';
-    }
+    acc[curr] = `${baseURL}${curr}.mp3`;
     return acc;
   }, {}); 
 };
@@ -64,23 +55,39 @@ const isSavingResponses = ref(false);
 const gameStore = useGameStore();
 const converter = new Converter();
 const { locale } = useI18n();
-const audioPlayerBuffers = ref([]);
-
+const audioPlayerBuffers = ref({});
+const audioLoading = ref(false);
 const router = useRouter();
 const context = new AudioContext();
+
 let currentAudioSource = null;
 
-function finishedLoading(bufferList) {
-  audioPlayerBuffers.value = bufferList;
+function getParsedLocale() {
+  return (locale.value || '').split('-')?.[0] || 'en';
 }
 
-const bufferLoader = new BufferLoader(
-  context,
-  generateAudioLinks(),
-  finishedLoading
-);
+function finishedLoading(bufferList, parsedLocale) {
+  audioPlayerBuffers.value[parsedLocale] = bufferList;
+  audioLoading.value = false;
+}
 
-bufferLoader.load();
+// Function to fetch buffer or return from the cache
+const fetchBuffer = (parsedLocale) => {
+  // buffer already exists for the given local
+  if (audioPlayerBuffers.value[parsedLocale]) {
+    return;
+  }
+  audioLoading.value = true;
+  const bufferLoader = new BufferLoader(
+    context,
+    generateAudioLinks(parsedLocale),
+    (bufferList) => finishedLoading(bufferList, parsedLocale)
+  );
+
+  bufferLoader.load();
+};
+
+
 
 // Fetch the survey on component mount
 onMounted(async () => {
@@ -96,9 +103,9 @@ const showAndPlaceAudioButton = (playAudioButton, el) => {
 };
 
 async function getSurvey() {
-  // let userType = toRaw(authStore.userData.userType.toLowerCase());
-  // if (userType === 'student') userType = 'child';
-  const userType = 'child';
+  let userType = toRaw(authStore.userData.userType.toLowerCase());
+  if (userType === 'student') userType = 'child';
+
   try {
     const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey.json`);
     fetchedSurvey.value = response.data;
@@ -106,6 +113,7 @@ async function getSurvey() {
     const surveyInstance = new Model(fetchedSurvey.value);
 
     surveyInstance.locale = locale.value;
+    fetchBuffer(getParsedLocale(locale.value));
 
     survey.value = surveyInstance;
     survey.value.onTextMarkdown.add(function (survey, options) {
@@ -132,7 +140,6 @@ async function getSurvey() {
       } else {
         const introButton = document.getElementById('audio-button-ChildSurveyIntro');
         showAndPlaceAudioButton(introButton, questionElements[0]);
-        // console.log('mark://in intro', 'introButton', introButton);
       }
 
     });
@@ -146,16 +153,22 @@ watch(
   () => locale.value,
   (newLocale) => {
     survey.value.locale = newLocale;
+    // stop any current audio playing
+    if (currentAudioSource) {
+      currentAudioSource.stop();
+    }
+    fetchBuffer(getParsedLocale(newLocale));
   },
 );
 
 async function playAudio(name) {
+  const currentLocale = getParsedLocale(locale.value);
   if (currentAudioSource) {
     await currentAudioSource.stop();
   }
   const source = context.createBufferSource();
   currentAudioSource = source;
-  source.buffer = audioPlayerBuffers.value[name];
+  source.buffer = audioPlayerBuffers.value[currentLocale][name];
   source.connect(context.destination);
   source.start(0);
 }
@@ -195,17 +208,17 @@ async function saveResults(sender) {
 </script>
 
 <template>
-  <div v-if="survey && !isSavingResponses">
+  <div v-if="survey && !isSavingResponses && !audioLoading">
     <SurveyComponent :model="survey" />
 
-    <div v-for="page in fetchedSurvey.pages">
-      <div v-for="(item, index) in page.elements[0].elements || page.elements">
-        <PvButton :id="'audio-button-'+item.name" icon="pi pi-volume-up" @click="playAudio(item.name)" style="display:none;"/>
+    <div v-for="page in fetchedSurvey.pages" :key="page.name">
+      <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
+        <PvButton :id="'audio-button-'+item.name" icon="pi pi-volume-up" style="display:none;" @click="playAudio(item.name)"/>
       </div>
     </div>
 
   </div>
-  <AppSpinner v-if="!survey || isSavingResponses" />
+  <AppSpinner v-if="!survey || isSavingResponses || audioLoading" />
 </template>
 
 <style>
