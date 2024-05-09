@@ -107,25 +107,25 @@
       <!--Accept Checkbox-->
       <section class="form-section flex lg:flex-row">
         <!-- Recaptcha + consent -->
-        <!-- <ChallengeV3 v-model="response" action="submit"> -->
-        <div class="field-checkbox terms-checkbox">
-          <PvCheckbox
-            :id="`accept-${isRegistering ? 'register' : 'login'}`"
-            v-model="v$.accept.$model"
-            name="accept"
-            binary
-            :disabled="showConsent"
-            :class="{ 'p-invalid': v$.accept.$invalid && submitted }"
-            @change="getConsent"
-          />
-          <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
-            >I agree to the terms and conditions<span class="required">*</span></label
-          >
-        </div>
-        <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
-          You must agree to the terms and conditions
-        </small>
-        <!-- </ChallengeV3> -->
+        <ChallengeV3 v-model="response" action="submit">
+          <div class="field-checkbox terms-checkbox">
+            <PvCheckbox
+              :id="`accept-${isRegistering ? 'register' : 'login'}`"
+              v-model="v$.accept.$model"
+              name="accept"
+              binary
+              :disabled="showConsent"
+              :class="{ 'p-invalid': v$.accept.$invalid && submitted }"
+              @change="getConsent"
+            />
+            <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
+              >I agree to the terms and conditions<span class="required">*</span></label
+            >
+          </div>
+          <small v-if="(v$.accept.$invalid && submitted) || v$.accept.$pending.$response" class="p-error">
+            You must agree to the terms and conditions
+          </small>
+        </ChallengeV3>
       </section>
       <ConsentModal
         v-if="showConsent"
@@ -158,12 +158,12 @@ import { required, sameAs, minLength } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import ConsentModal from '../ConsentModal.vue';
-// import { ChallengeV3 } from 'vue-recaptcha';
+import { ChallengeV3 } from 'vue-recaptcha';
 // import _debounce from 'lodash/debounce';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
-// const isCaptchaverified = ref(null);
+const isCaptchaverified = ref(null);
 const dialogMessage = ref('');
 
 const isDialogVisible = ref(false);
@@ -208,17 +208,17 @@ const rules = {
   accept: { sameAs: sameAs(true) },
 };
 
-// const response = ref(null);
+const response = ref(null);
 
-// async function handleCheckCaptcha() {
-//   await new Promise((resolve) => {
-//     // Simulate a delay to ensure the reCAPTCHA value is updated
-//     setTimeout(() => {
-//       resolve();
-//       handleCaptcha();
-//     }, 500); // You might adjust the delay time if needed
-//   });
-// }
+async function handleCheckCaptcha() {
+  await new Promise((resolve) => {
+    // Simulate a delay to ensure the reCAPTCHA value is updated
+    setTimeout(() => {
+      resolve();
+      handleCaptcha();
+    }, 500); // You might adjust the delay time if needed
+  });
+}
 
 const submitted = ref(false);
 
@@ -246,9 +246,9 @@ const validateRoarEmail = async () => {
   }
 };
 
-// function handleCaptcha() {
-//   isCaptchaverified.value = response.value;
-// }
+function handleCaptcha() {
+  isCaptchaverified.value = response.value;
+}
 
 const showConsent = ref(false);
 const consentText = ref('');
@@ -262,13 +262,13 @@ async function getConsent() {
   consentText.value = consentDoc.text;
   // consentVersion = consentDoc.version;
   showConsent.value = true;
-  // handleCheckCaptcha();
+  handleCheckCaptcha();
 }
 
-// const isNextButtonDisabled = computed(() => {
-//   // Return true (button disabled) if isCaptchaverified is null or undefined
-//   return isCaptchaverified.value === null || isCaptchaverified.value === undefined;
-// });
+const isNextButtonDisabled = computed(() => {
+  // Return true (button disabled) if isCaptchaverified is null or undefined
+  return isCaptchaverified.value === null || isCaptchaverified.value === undefined;
+});
 </script>
 
 <style scoped>
