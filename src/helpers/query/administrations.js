@@ -112,12 +112,6 @@ const processBatchStats = async (axiosInstance, statsPaths) => {
     const processedBatch = _without(
       data.map(({ found }) => {
         if (found) {
-          console.log(
-            'found ',
-            found,
-            'values ',
-            _mapValues(found.fields, (value) => convertValues(value)),
-          );
           return {
             name: found.name,
             data: _mapValues(found.fields, (value) => convertValues(value)),
@@ -270,10 +264,6 @@ export const administrationPageFetcher = async (
         promises.push(
           requestBodies.map((requestBody) =>
             axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-              console.log(
-                'mapped Admins: ',
-                mapAdministrations({ isSuperAdmin, data, adminOrgs: exhaustiveAdminOrgs }),
-              );
               return mapAdministrations({ isSuperAdmin, data, adminOrgs: exhaustiveAdminOrgs });
             }),
           ),
