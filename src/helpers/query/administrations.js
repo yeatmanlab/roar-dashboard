@@ -160,7 +160,7 @@ export const administrationCounter = async (orderBy, isSuperAdmin, adminOrgs) =>
         promises.push(
           requestBodies.map((requestBody) =>
             axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-              return mapFields(data).slice(0, 19);
+              return mapFields(data);
             }),
           ),
         );
