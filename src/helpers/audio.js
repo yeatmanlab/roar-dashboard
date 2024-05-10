@@ -21,7 +21,8 @@ export class BufferLoader {
             return;
           }
           this.bufferList[index] = buffer;
-          if (++this.loadCount === Object.keys(this.urlListMap).length) this.onload(this.bufferList);
+          this.loadCount += 1;
+          if (this.loadCount === Object.keys(this.urlListMap).length) this.onload(this.bufferList);
         },
         (error) => {
           console.error('decodeAudioData error', error);
