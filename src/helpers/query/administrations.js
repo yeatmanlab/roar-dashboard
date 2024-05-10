@@ -99,6 +99,42 @@ const getAdministrationsRequestBody = ({
   return requestBody;
 };
 
+const processBatchStats = async (axiosInstance, statsPaths) => {
+  const batchStatsDocs = [];
+
+  const batchSize = 5; // Set the batch size according to your server's limitations
+
+  for (let i = 0; i < statsPaths.length; i += batchSize) {
+    const batch = statsPaths.slice(i, i + batchSize);
+    const { data } = await axiosInstance.post(':batchGet', {
+      documents: batch,
+    });
+
+    const processedBatch = _without(
+      data.map(({ found }) => {
+        if (found) {
+          console.log(
+            'found ',
+            found,
+            'values ',
+            _mapValues(found.fields, (value) => convertValues(value)),
+          );
+          return {
+            name: found.name,
+            data: _mapValues(found.fields, (value) => convertValues(value)),
+          };
+        }
+        return undefined;
+      }),
+      undefined,
+    );
+
+    batchStatsDocs.push(...processedBatch);
+  }
+
+  return batchStatsDocs;
+};
+
 export const administrationCounter = async (orderBy, isSuperAdmin, adminOrgs) => {
   const axiosInstance = getAxiosInstance();
   if (isSuperAdmin.value) {
@@ -131,7 +167,7 @@ export const administrationCounter = async (orderBy, isSuperAdmin, adminOrgs) =>
         promises.push(
           requestBodies.map((requestBody) =>
             axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
-              return mapFields(data);
+              return mapFields(data).slice(0, 19);
             }),
           ),
         );
@@ -181,25 +217,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
     .map(({ document }) => `${document.name}/stats/total`);
 
   const axiosInstance = getAxiosInstance();
-
-  const batchStatsDocs = await axiosInstance
-    .post(':batchGet', {
-      documents: statsPaths,
-    })
-    .then(({ data }) => {
-      return _without(
-        data.map(({ found }) => {
-          if (found) {
-            return {
-              name: found.name,
-              data: _mapValues(found.fields, (value) => convertValues(value)),
-            };
-          }
-          return undefined;
-        }),
-        undefined,
-      );
-    });
+  const batchStatsDocs = await processBatchStats(axiosInstance, statsPaths);
 
   const administrations = administrationData?.map((administration) => {
     const thisAdminStats = batchStatsDocs.find((statsDoc) => statsDoc.name.includes(administration.id));
@@ -253,6 +271,10 @@ export const administrationPageFetcher = async (
         promises.push(
           requestBodies.map((requestBody) =>
             axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
+              console.log(
+                'mapped Admins: ',
+                mapAdministrations({ isSuperAdmin, data, adminOrgs: exhaustiveAdminOrgs }),
+              );
               return mapAdministrations({ isSuperAdmin, data, adminOrgs: exhaustiveAdminOrgs });
             }),
           ),
