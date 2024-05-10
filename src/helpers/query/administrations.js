@@ -99,7 +99,7 @@ const getAdministrationsRequestBody = ({
   return requestBody;
 };
 
-const processBatchStats = async (axiosInstance, statsPaths, batchSize=5) => {
+const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
   const batchStatsDocs = [];
   const statsPathChunks = _chunk(statsPaths, batchSize);
   for (const batch of statsPathChunks) {
