@@ -30,6 +30,11 @@ export default defineConfig({
       vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
+  server: {
+    fs: {
+      allow: ['..'],
+    },
+  },
   build: {
     cssCodeSplit: true,
     sourcemap: true,
