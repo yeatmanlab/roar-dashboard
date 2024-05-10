@@ -12,39 +12,22 @@ import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
 
-const generateAudioLinks = (parsedLocale) => {
-  const fileNames = [
-    'ChildSurveyIntro',
-    'ClassFriends',
-    'ClassHelp',
-    'ClassNice',
-    'ClassPlay',
-    'Example1Comic',
-    'Example2Neat',
-    'GrowthMindMath',
-    'GrowthMindRead',
-    'GrowthMindSmart',
-    'LearningGood',
-    'LonelySchool',
-    'MathEnjoy',
-    'MathGood',
-    'ReadingEnjoy',
-    'ReadingGood',
-    'SchoolEnjoy',
-    'SchoolFun',
-    'SchoolGiveUp',
-    'SchoolHappy',
-    'SchoolSafe',
-    'TeacherLike',
-    'TeacherListen',
-    'TeacherNice',
-  ];
-
-  const baseURL = `https://storage.googleapis.com/road-dashboard/child-survey/${parsedLocale}/shared/`;
-  return fileNames.reduce((acc, curr) => {
-    acc[curr] = `${baseURL}${curr}.mp3`;
-    return acc;
-  }, {});
+const fetchAudioLinks = async (surveyType) => {
+  const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
+  const files = response.data || { items: [] };
+  const audioLinkMap = {};
+  files.items.forEach((item) => {
+    if (item.contentType === 'audio/mpeg' && item.name.startsWith(surveyType)) {
+      const splitParts = item.name.split('/');
+      const fileLocale = splitParts[1];
+      const fileName = splitParts.at(-1).split('.')[0];
+      if (!audioLinkMap[fileLocale]) {
+        audioLinkMap[fileLocale] = {};
+      }
+      audioLinkMap[fileLocale][fileName] = `https://storage.googleapis.com/road-dashboard/${item.name}`;
+    }
+  });
+  return audioLinkMap;
 };
 
 const authStore = useAuthStore();
@@ -59,6 +42,7 @@ const audioPlayerBuffers = ref({});
 const audioLoading = ref(false);
 const router = useRouter();
 const context = new AudioContext();
+const audioLinks = ref({});
 
 let currentAudioSource = null;
 
@@ -78,7 +62,7 @@ const fetchBuffer = (parsedLocale) => {
     return;
   }
   audioLoading.value = true;
-  const bufferLoader = new BufferLoader(context, generateAudioLinks(parsedLocale), (bufferList) =>
+  const bufferLoader = new BufferLoader(context, audioLinks.value[parsedLocale], (bufferList) =>
     finishedLoading(bufferList, parsedLocale),
   );
 
@@ -104,11 +88,14 @@ async function getSurvey() {
 
   try {
     const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey.json`);
+    const audioLinkMap = await fetchAudioLinks('child-survey');
+    audioLinks.value = audioLinkMap;
     fetchedSurvey.value = response.data;
     // Create the survey model with the fetched data
     const surveyInstance = new Model(fetchedSurvey.value);
 
     surveyInstance.locale = locale.value;
+
     fetchBuffer(getParsedLocale(locale.value));
 
     survey.value = surveyInstance;
@@ -125,18 +112,13 @@ async function getSurvey() {
     survey.value.onComplete.add(saveResults);
     survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
       const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
-      if (questionElements[0].dataset.name !== 'ChildSurveyIntro') {
-        if (currentAudioSource) {
-          currentAudioSource.stop();
-        }
-        questionElements.forEach((el) => {
-          const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
-          showAndPlaceAudioButton(playAudioButton, el);
-        });
-      } else {
-        const introButton = document.getElementById('audio-button-ChildSurveyIntro');
-        showAndPlaceAudioButton(introButton, questionElements[0]);
+      if (currentAudioSource) {
+        currentAudioSource.stop();
       }
+      questionElements.forEach((el) => {
+        const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
+        showAndPlaceAudioButton(playAudioButton, el);
+      });
     });
   } catch (error) {
     console.error(error);
