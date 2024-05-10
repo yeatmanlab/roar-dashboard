@@ -101,8 +101,8 @@ const getAdministrationsRequestBody = ({
 
 const processBatchStats = async (axiosInstance, statsPaths, batchSize=5) => {
   const batchStatsDocs = [];
-  for (let i = 0; i < statsPaths.length; i += batchSize) {
-    const batch = statsPaths.slice(i, i + batchSize);
+  const statsPathChunks = _chunk(statsPaths, batchSize);
+  for (const batch of statsPathChunks) {
     const { data } = await axiosInstance.post(':batchGet', {
       documents: batch,
     });
