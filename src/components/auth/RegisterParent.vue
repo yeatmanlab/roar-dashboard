@@ -134,7 +134,7 @@
         @accepted="handleConsentAccept"
       />
       <div class="form-submit2">
-        <PvButton type="submit" label="Next" class="submit-button z-5" />
+        <PvButton type="submit" label="Next" :disabled="isNextButtonDisabled" class="submit-button z-5" />
         <PvDialog
           v-model:visible="isDialogVisible"
           header="Error!"
