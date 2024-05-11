@@ -182,7 +182,20 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('../pages/RegisterUser.vue'),
+    component: () => import('../pages/RegisterFamilyUsers.vue'),
+    children: [
+      {
+        name: 'Register',
+        path: '',
+        component: () => import('../components/auth/RegisterParent.vue'),
+      },
+      {
+        name: 'registerStudent',
+        path: 'student',
+        component: () => import('../components/auth/RegisterStudent.vue'),
+      },
+    ],
+    meta: { requiresGuest: true },
   },
   {
     path: '/register-students',
@@ -364,7 +377,7 @@ router.beforeEach(async (to, from, next) => {
 
   const store = useAuthStore();
 
-  const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent'];
+  const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent', 'Register'];
 
   // Check if user is signed in. If not, go to signin
   if (

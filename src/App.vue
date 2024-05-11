@@ -28,6 +28,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 import AppHead from '@/components/AppHead.vue';
 import { i18n } from '@/translations/i18n';
 import { useRoute } from 'vue-router';
+import { useRecaptchaProvider } from 'vue-recaptcha';
 
 const route = useRoute();
 const pageTitle = computed(() => {
@@ -37,8 +38,11 @@ const pageTitle = computed(() => {
 });
 const isAuthStoreReady = ref(false);
 
+useRecaptchaProvider();
+
 const navbarBlacklist = ref([
   'SignIn',
+  'Register',
   'PlayApp',
   'SWR',
   'SWR-ES',
