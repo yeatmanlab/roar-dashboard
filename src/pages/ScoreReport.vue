@@ -220,6 +220,7 @@
             <div :id="'tab-view-' + taskId">
               <TaskReport
                 v-if="taskId"
+                :computedTableData="computeAssignmentAndRunData.assignmentTableData"
                 :task-id="taskId"
                 :initialized="initialized"
                 :administration-id="administrationId"
@@ -677,7 +678,8 @@ const computeAssignmentAndRunData = computed(() => {
         if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
-          currRowScores[taskId].correctIncorrectDifference = numCorrect - numIncorrect;
+          currRowScores[taskId].correctIncorrectDifference =
+            numCorrect != null && numIncorrect != null ? numCorrect - numIncorrect : null;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].tagColor = supportLevelColors.Assessed;
@@ -692,6 +694,40 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].tagColor = supportLevelColors.Assessed;
           scoreFilterTags += ' Assessed ';
+        }
+
+        if (taskId === 'letter' && assessment.scores) {
+          currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
+          currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
+          currRowScores[taskId].phonemeScore = assessment.scores.computed.Phonemes?.subScore;
+          currRowScores[taskId].totalScore = assessment.scores.computed.composite?.totalCorrect;
+          const incorrectLettersArray = [
+            ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
+            ...(_get(assessment, 'scores.computed.LowercaseNames.lowerIncorrect') ?? '').split(','),
+          ]
+            .sort((a, b) => _toUpper(a) - _toUpper(b))
+            .filter(Boolean)
+            .join(', ');
+          currRowScores[taskId].incorrectLetters = incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
+
+          const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
+            .split(',')
+            .join(', ');
+          currRowScores[taskId].incorrectPhonemes = incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
+        }
+        if (taskId === 'pa' && assessment.scores) {
+          const first = _get(assessment, 'scores.computed.FSM.roarScore');
+          const last = _get(assessment, 'scores.computed.LSM.roarScore');
+          const deletion = _get(assessment, 'scores.computed.DEL.roarScore');
+          let skills = [];
+          if (first < 15) skills.push('First Sound Matching');
+          if (last < 15) skills.push('Last sound matching');
+          if (deletion < 15) skills.push('Deletion');
+          currRowScores[taskId].firstSound = first;
+          currRowScores[taskId].lastSound = last;
+          currRowScores[taskId].deletion = deletion;
+          currRowScores[taskId].total = _get(assessment, 'scores.computed.composite.roarScore');
+          currRowScores[taskId].skills = skills.length > 0 ? skills.join(', ') : 'None';
         }
 
         // Logic to update runsByTaskIdAcc
