@@ -1,8 +1,8 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel header="Create a new administration">
-        Use this form to create a new administration and assign it to organizations.
+      <PvPanel :header="header">
+        {{ description }}
 
         <PvDivider />
         <div class="formgrid grid mt-5">
@@ -130,12 +130,7 @@
           </div>
           <div class="divider mx-2 my-3" />
           <div class="mb-2 w-full flex justify-content-center">
-            <PvButton
-              label="Create Administration"
-              data-cy="button-create-administration"
-              style="margin: 0"
-              @click="submit"
-            />
+            <PvButton :label="submitLabel" data-cy="button-create-administration" style="margin: 0" @click="submit" />
           </div>
         </div>
       </PvPanel>
@@ -171,6 +166,29 @@ import { useConfirm } from 'primevue/useconfirm';
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
+});
+
+const header = computed(() => {
+  if (props.adminId) {
+    return 'Edit an administration';
+  }
+
+  return 'Create a new administration';
+});
+
+const description = computed(() => {
+  if (props.adminId) {
+    return 'Use this form to edit an existing administration.';
+  }
+  return 'Use this form to create a new administration and assign it to organizations.';
+});
+
+const submitLabel = computed(() => {
+  if (props.adminId) {
+    return 'Update Administration';
+  }
+
+  return 'Create Administration';
 });
 
 const router = useRouter();
