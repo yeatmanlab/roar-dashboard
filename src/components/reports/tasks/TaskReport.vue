@@ -59,6 +59,7 @@
       :org-id="orgId"
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
     />
     <SubscoreTable
       v-if="taskId === 'pa'"
@@ -69,6 +70,7 @@
       :org-id="orgId"
       :administration-name="administrationInfo.name ?? undefined"
       :org-name="orgInfo.name ?? undefined"
+      :computed-table-data="computedTableData"
     />
   </div>
 </template>
@@ -93,6 +95,10 @@ const props = defineProps({
   },
   administrationInfo: {
     type: Object,
+    required: true,
+  },
+  computedTableData: {
+    type: Array,
     required: true,
   },
   orgType: {

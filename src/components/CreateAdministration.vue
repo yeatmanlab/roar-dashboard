@@ -6,7 +6,7 @@
 
         <PvDivider />
         <div class="formgrid grid mt-5">
-          <div class="field col-12 xl:col-5 mb-5">
+          <div class="field col-12 xl:col-6 mb-5">
             <span class="p-float-label">
               <PvInputText
                 id="administration-name"
@@ -23,7 +23,7 @@
             </span>
           </div>
 
-          <div class="field col-12 xl:col-5 mb-5">
+          <div class="field col-12 xl:col-6 mb-5">
             <span class="p-float-label">
               <PvInputText
                 id="administration-public-name"
@@ -39,25 +39,43 @@
               >
             </span>
           </div>
-
-          <div class="field col-6 xl:col-2">
+        </div>
+        <div class="formgrid grid">
+          <div class="field col-12 md:col-6 mb-5">
             <span class="p-float-label">
               <PvCalendar
-                v-model="state.dates"
+                v-model="state.dateStarted"
                 class="w-full"
                 :min-date="minStartDate"
-                input-id="dates"
-                :number-of-months="2"
-                selection-mode="range"
+                input-id="start-date"
+                :number-of-months="1"
                 :manual-input="false"
                 show-icon
                 show-button-bar
-                data-cy="input-calendar"
+                data-cy="input-start-date"
               />
-              <label for="dates">Dates</label>
-              <small v-if="v$.dates.required.$invalid && submitted" class="p-error">Please select dates.</small>
-              <small v-else-if="v$.dates.datesNotNull.$invalid && submitted" class="p-error"
-                >Please select both a start and end date.</small
+              <label for="start-date">Start Date</label>
+              <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
+                >Please select a start date.</small
+              >
+            </span>
+          </div>
+          <div class="field col-12 md:col-6">
+            <span class="p-float-label">
+              <PvCalendar
+                v-model="state.dateClosed"
+                class="w-full"
+                :min-date="minEndDate"
+                input-id="end-date"
+                :number-of-months="1"
+                :manual-input="false"
+                show-icon
+                show-button-bar
+                data-cy="input-end-date"
+              />
+              <label for="end-date">End Date</label>
+              <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
+                >Please select an end date.</small
               >
             </span>
           </div>
@@ -149,7 +167,7 @@ import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
 import _lowerCase from 'lodash/lowerCase';
 import { useVuelidate } from '@vuelidate/core';
-import { maxLength, minLength, required } from '@vuelidate/validators';
+import { required } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
@@ -314,7 +332,8 @@ const { data: preFamilies } = useQuery({
 const state = reactive({
   administrationName: '',
   administrationPublicName: '',
-  dates: [],
+  dateStarted: null,
+  dateClosed: null,
   sequential: null,
   consent: null,
   assent: null,
@@ -327,21 +346,25 @@ const state = reactive({
   expectedTime: '',
 });
 
-const datesNotNull = (value) => {
-  return value[0] && value[1];
-};
+const minStartDate = computed(() => {
+  if (props.adminId && preExistingAdminInfo.value?.dateOpened) {
+    return new Date(preExistingAdminInfo.value.dateOpened);
+  }
+  return new Date();
+});
 
-const minStartDate = ref(new Date());
+const minEndDate = computed(() => {
+  if (state.dateStarted) {
+    return new Date(state.dateStarted);
+  }
+  return new Date();
+});
 
 const rules = {
   administrationName: { required },
   administrationPublicName: { required },
-  dates: {
-    required,
-    minLength: minLength(2),
-    maxLength: maxLength(2),
-    datesNotNull,
-  },
+  dateStarted: { required },
+  dateClosed: { required },
   sequential: { required },
   consent: { required },
   assent: { required },
@@ -457,13 +480,13 @@ const submit = async () => {
 
       const orgsValid = checkForRequiredOrgs(orgs);
       if (orgsValid) {
-        const dateClose = new Date(state.dates[1]);
+        const dateClose = new Date(state.dateClosed);
         dateClose.setHours(23, 59, 59, 999);
         const args = {
           name: toRaw(state).administrationName,
           publicName: toRaw(state).administrationPublicName,
           assessments: submittedAssessments,
-          dateOpen: toRaw(state).dates[0],
+          dateOpen: toRaw(state).dateStarted,
           dateClose,
           sequential: toRaw(state).sequential,
           orgs: orgs,
@@ -527,7 +550,8 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
     state.administrationName = adminInfo.name;
     state.administrationPublicName = adminInfo.publicName;
-    state.dates = [new Date(adminInfo.dateOpened), new Date(adminInfo.dateClosed)];
+    state.dateStarted = new Date(adminInfo.dateOpened);
+    state.dateClosed = new Date(adminInfo.dateClosed);
     state.sequential = adminInfo.sequential;
     _forEach(adminInfo.assessments, (assessment) => {
       const assessmentParams = assessment.params;

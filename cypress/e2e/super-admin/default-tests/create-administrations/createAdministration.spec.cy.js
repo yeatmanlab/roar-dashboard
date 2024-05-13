@@ -15,13 +15,17 @@ function typeAdministrationName() {
   );
 }
 
-function selectDate() {
+function selectStartDate() {
   // eslint-disable-next-line cypress/unsafe-to-chain-command
-  cy.get('[data-cy="input-calendar"]')
+  cy.get('[data-cy="input-start-date"]').click().get('.p-datepicker-today > span').contains(today).click();
+}
+
+function selectEndDate() {
+  // eslint-disable-next-line cypress/unsafe-to-chain-command
+  cy.get('[data-cy="input-end-date"]')
     .click()
     .get('.p-datepicker-today > span')
     .contains(today)
-    .click()
     .type('{rightarrow}{enter}{esc}');
 }
 
@@ -99,7 +103,8 @@ describe('The admin user can create an administration and assign it to a distric
       cy.wait(0.3 * timeout);
       cy.navigateTo('/create-administration');
       typeAdministrationName();
-      selectDate();
+      selectStartDate();
+      selectEndDate();
       cy.selectTestOrgs();
       selectAndAssignAdministration(variant);
       checkAdministrationCreated();
