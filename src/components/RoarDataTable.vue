@@ -75,7 +75,7 @@
           show-gridlines
           filter-display="menu"
           paginator
-          :rows="props.pageLimit"
+          :rows="pageLimit"
           :always-show-paginator="true"
           paginator-position="both"
           :rows-per-page-options="[10, 25, 50, 100]"
