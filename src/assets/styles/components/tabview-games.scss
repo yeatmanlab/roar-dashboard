@@ -23,9 +23,9 @@
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
     position: relative;
+    justify-content: space-around;
 
     .roar-game-content {
-      width: min-content;
       padding-top: 1rem;
       display: flex;
       flex-direction: column;

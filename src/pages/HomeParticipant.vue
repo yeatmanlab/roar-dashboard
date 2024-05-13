@@ -317,6 +317,7 @@ watch(
 .tabs-container {
   display: flex;
   flex-direction: row;
+  max-width: 100vw;
   padding: 2rem;
   gap: 2rem;
 }

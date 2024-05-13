@@ -1,6 +1,6 @@
 <template>
-  <div id="games" class="flex w-full">
-    <PvTabView v-model:activeIndex="displayGameIndex" scrollable>
+  <div id="games" class="game-tab-container">
+    <PvTabView v-model:activeIndex="displayGameIndex" :scrollable="true" class="flex flex-column">
       <PvTabPanel
         v-for="(game, index) in games"
         :key="game.taskId"
@@ -25,7 +25,7 @@
             getTaskName(game.taskData.name)
           }}</span>
         </template>
-        <article class="roar-tabview-game pointer">
+        <div class="roar-tabview-game pointer flex">
           <div class="roar-game-content" @click="routeExternalTask(game)">
             <h2 class="roar-game-title">{{ getTaskName(game.taskData.name) }}</h2>
             <div class="roar-game-description">
@@ -71,7 +71,7 @@
               <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
             </div>
           </div>
-        </article>
+        </div>
       </PvTabPanel>
     </PvTabView>
   </div>
@@ -211,6 +211,10 @@ const returnVideoOptions = (videoURL) => {
 </script>
 
 <style scoped lang="scss">
+.game-tab-container {
+  max-width: 75vw;
+}
+
 .pointer {
   cursor: pointer;
 }
@@ -225,7 +229,7 @@ const returnVideoOptions = (videoURL) => {
 }
 @media screen and (max-width: 1100px) {
   .video-player-wrapper {
-    max-width: 350px;
+    // max-width: 350px;
   }
 }
 </style>
