@@ -26,6 +26,10 @@ body {
   --cancel-background-hover: var(--red-100);
 }
 
+.widget__actor {
+  position: relative;
+}
+
 // Placeholder
 ::-webkit-input-placeholder {
   color: var(--text-color-secondary);
