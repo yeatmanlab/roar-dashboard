@@ -125,7 +125,7 @@
                   :severity="_get(colData, col.severityField)"
                   :value="_get(colData, col.field)"
                   :icon="_get(colData, col.iconField)"
-                  :style="`min-width: 2rem`"
+                  :style="`min-width: 2rem; font-weight: bold`"
                   rounded
                 />
               </div>
@@ -199,6 +199,7 @@
                   option-group-label="label"
                   option-group-children="items"
                   :options="taskFilterOptions"
+                  data-cy="score-filter-dropdown"
                   style="margin-bottom: 0.5rem"
                 >
                   <template #option="{ option }">
@@ -212,7 +213,7 @@
                           :severity="progressTags[option]?.severity"
                           :value="progressTags[option]?.value"
                           :icon="progressTags[option]?.icon"
-                          class="p-0.5 m-0"
+                          class="p-0.5 m-0 font-bold"
                         />
                       </div>
                       <div v-else>
@@ -230,7 +231,7 @@
                         :severity="progressTags[value]?.severity"
                         :value="progressTags[value]?.value"
                         :icon="progressTags[value]?.icon"
-                        class="p-0.5 m-0"
+                        class="p-0.5 m-0 font-bold"
                       />
                     </div>
                     <div v-else>
@@ -244,6 +245,7 @@
                   v-model="filterModel.value"
                   :options="['Assigned', 'Started', 'Completed', 'Optional']"
                   style="margin-bottom: 0.5rem"
+                  data-cy="progress-filter-dropdown"
                 >
                   <template #option="{ option }">
                     <div v-if="progressTags[option]" class="flex align-items-center">
@@ -251,7 +253,7 @@
                         :severity="progressTags[option]?.severity"
                         :value="progressTags[option]?.value"
                         :icon="progressTags[option]?.icon"
-                        :style="`min-width: 2rem`"
+                        :style="`min-width: 2rem; font-weight: bold`"
                         rounded
                       />
                     </div>
@@ -262,7 +264,7 @@
                       :severity="progressTags[value]?.severity"
                       :value="progressTags[value]?.value"
                       :icon="progressTags[value]?.icon"
-                      :style="`min-width: 2rem`"
+                      :style="`min-width: 2rem; font-weight: bold`"
                       rounded
                     />
                   </template>
@@ -284,8 +286,8 @@
           </PvColumn>
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
-              <div class="text-lg font-bold my-2">No scores found</div>
-              <div class="font-light">The filters applied have no matching scores.</div>
+              <div class="text-lg font-bold my-2">No results found</div>
+              <div class="font-light">The filters applied have no matching results .</div>
               <PvButton text class="my-2" @click="resetFilters">Reset Filters</PvButton>
             </div>
           </template>
