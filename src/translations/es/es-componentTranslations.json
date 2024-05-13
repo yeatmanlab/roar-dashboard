@@ -41,7 +41,26 @@
   },
   "gameTabs": {
     "clickToStart": "Haz clic para empezar",
-    "taskCompleted": "¡Tarea completada!"
+    "taskCompleted": "¡Tarea completada!",
+    "LEVANTE TRANSLATIONS--------------------------": "",
+    "heartsAndFlowersDescription": "¡Esta es la tarea de corazones y flores.!",
+    "heartsAndFlowersName": "Corazones y Flores",
+    "mathDescription": "¡Esta es la tarea de matemáticas!",
+    "mathName": "Matemáticas",
+    "matrixReasoningDescription": "¡Esta es la tarea de Razonamiento Matricial!",
+    "matrixReasoningName": "Razonamiento Matricial",
+    "memoryGameDescription": "¡Esta es la tarea de memoria!",
+    "memoryGameName": "Memoria",
+    "mentalRotationDescription": "¡Esta es la tarea de Rotación Mental!",
+    "mentalRotationName": "Rotación Mental",
+    "sameDifferentSelectionDescription": "¡Esta es la tarea de Selección de Igual/Diferente!",
+    "sameDifferentSelectionName": "Igual/Diferente",
+    "theoryOfMindDescription": "¡Esta es la tarea de Teoría de la Mente!",
+    "theoryOfMindName": "Teoría de la Mente",
+    "tROGDescription": "¡Esta es la tarea de TROG!",
+    "tROGName": "TROG",
+    "surveyName": "Encuesta",
+    "surveyDescription": "¡Esta es la tarea de encuesta!"
   },
   "navBar": {
     "signOut": "Salir"

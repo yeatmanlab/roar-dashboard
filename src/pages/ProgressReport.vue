@@ -59,7 +59,7 @@
                   style="width: 20rem; max-width: 25rem"
                   :options="schoolsInfo"
                   option-label="name"
-                  option-value="id"
+                  option-value="name"
                   :show-toggle-all="false"
                   selected-items-label="{0} schools selected"
                   data-cy="filter-by-school"
@@ -197,14 +197,12 @@ const { data: orgInfo } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const schoolInfoQueryEnabled = computed(() => props.orgType === 'district' && initialized.value);
-
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
   queryKey: ['schools', authStore.uid, ref(props.orgId)],
-  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs),
+  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
   keepPreviousData: true,
-  enabled: schoolInfoQueryEnabled,
+  enabled: props.orgType === 'district' && initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
@@ -432,12 +430,12 @@ watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
     let filteredData = computedProgressData.value;
     if (newSchools.length > 0) {
       filteredData = filteredData.filter((item) => {
-        return item.user.schools?.current.some((school) => newSchools.includes(school));
+        return newSchools.includes(item.user.schoolName);
       });
     }
     if (newGrades.length > 0) {
       filteredData = filteredData.filter((item) => {
-        return newGrades.includes(item.user.studentData?.grade);
+        return newGrades.includes(item.user.grade);
       });
     }
     filteredTableData.value = filteredData;

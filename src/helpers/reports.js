@@ -189,7 +189,7 @@ export const addElementToPdf = async (element, document, yCounter, offset = 0) =
 
 /*
  *  Tasks to Display Graphs
- *  A list of tasks who, when included in a score report, will generate breaskdown graphs.
+ *  A list of tasks who, when included in a score report, will generate breakdown graphs.
  */
 export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
 
@@ -200,10 +200,25 @@ export const tasksToDisplayGraphs = ['swr', 'sre', 'pa'];
 export const rawOnlyTasks = ['letter', 'cva', 'morphology', 'vocab', 'fluency', 'letter-es'];
 
 /*
- *  Raw Tasks to Display Percent Correct
- *  A list of tasks to only display raw scores when included in a RoarDataTable.
+ *  Tasks to Display Percent Correct
  */
-export const rawOnlyTasksToDisplayPercentCorrect = ['letter', 'cva', 'morphology', 'vocab', 'fluency'];
+export const tasksToDisplayPercentCorrect = [
+  'letter',
+  'letter-es',
+  'cva',
+  'swr-es',
+  'fluency-arf-es',
+  'fluency-calf-es',
+  'pa-es',
+  'morphology',
+  'vocab',
+  'fluency',
+];
+
+/*
+ *  Tasks to Display numCorrect - numIncorrect
+ */
+export const tasksToDisplayCorrectIncorrectDifference = ['sre-es'];
 
 /*
  *  Scored Tasks
@@ -314,7 +329,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level: 'Optional',
       tag_color: supportLevelColors.optional,
     };
-  } else if (rawOnlyTasksToDisplayPercentCorrect.includes(taskId)) {
+  } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
     return {
       support_level: 'Raw Score',
       tag_color: 'white',
@@ -357,17 +372,10 @@ export function getScoreKeys(taskId, grade) {
   let standardScoreDisplayKey = undefined;
   let rawScoreKey = undefined;
   if (taskId === 'swr' || taskId === 'swr-es') {
-    if (grade < 6) {
-      percentileScoreKey = 'wjPercentile';
-      percentileScoreDisplayKey = 'wjPercentile';
-      standardScoreKey = 'standardScore';
-      standardScoreDisplayKey = 'standardScore';
-    } else {
-      percentileScoreKey = 'sprPercentile';
-      percentileScoreDisplayKey = 'sprPercentile';
-      standardScoreKey = 'sprStandardScore';
-      standardScoreDisplayKey = 'sprStandardScore';
-    }
+    percentileScoreKey = 'wjPercentile';
+    percentileScoreDisplayKey = 'wjPercentile';
+    standardScoreKey = 'standardScore';
+    standardScoreDisplayKey = 'standardScore';
     rawScoreKey = 'roarScore';
   }
   if (taskId === 'pa') {
@@ -402,8 +410,8 @@ export function getScoreKeys(taskId, grade) {
     }
     rawScoreKey = 'sreScore';
   }
-  if (taskId === 'letter') {
-    rawScoreKey = '';
+  if (taskId === 'letter' || taskId === 'letter-es') {
+    rawScoreKey = 'totalPercentCorrect';
   }
   return {
     percentileScoreKey,
@@ -431,7 +439,7 @@ export const getRawScoreThreshold = (taskId) => {
       some: 45,
     };
   }
-  return null;
+  return { above: null, some: null };
 };
 
 export const getRawScoreRange = (taskId) => {

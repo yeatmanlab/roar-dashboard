@@ -189,7 +189,20 @@ const routes = [
   {
     path: '/register',
     name: 'Register',
-    component: () => import('../pages/RegisterUser.vue'),
+    component: () => import('../pages/RegisterFamilyUsers.vue'),
+    children: [
+      {
+        name: 'Register',
+        path: '',
+        component: () => import('../components/auth/RegisterParent.vue'),
+      },
+      {
+        name: 'registerStudent',
+        path: 'student',
+        component: () => import('../components/auth/RegisterStudent.vue'),
+      },
+    ],
+    meta: { requiresGuest: true },
   },
   {
     path: '/register-students',
@@ -262,6 +275,13 @@ const routes = [
     name: 'CreateAdministration',
     component: () => import('../components/CreateAdministration.vue'),
     meta: { pageTitle: 'Create an administration', requireAdmin: true, requireSuperAdmin: true },
+  },
+  {
+    path: '/edit-administration/:adminId',
+    name: 'EditAdministration',
+    props: true,
+    component: () => import('../components/CreateAdministration.vue'),
+    meta: { pageTitle: 'Edit an Administration', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/create-administrator',
@@ -364,7 +384,7 @@ router.beforeEach(async (to, from, next) => {
 
   const store = useAuthStore();
 
-  const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent'];
+  const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent', 'Register'];
 
   // Check if user is signed in. If not, go to signin
   if (

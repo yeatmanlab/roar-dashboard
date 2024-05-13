@@ -99,6 +99,7 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
 import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
@@ -109,6 +110,22 @@ const authStore = useAuthStore();
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 
+const props = defineProps({
+  orgs: {
+    type: Object,
+    required: false,
+    default: () => {
+      return {
+        districts: [],
+        schools: [],
+        classes: [],
+        groups: [],
+        families: [],
+      };
+    },
+  },
+});
+
 const selectedOrgs = reactive({
   districts: [],
   schools: [],
@@ -116,6 +133,17 @@ const selectedOrgs = reactive({
   groups: [],
   families: [],
 });
+
+watch(
+  () => props.orgs,
+  (orgs) => {
+    selectedOrgs.districts = _union(selectedOrgs.districts, orgs.districts);
+    selectedOrgs.schools = _union(selectedOrgs.schools, orgs.schools);
+    selectedOrgs.classes = _union(selectedOrgs.classes, orgs.classes);
+    selectedOrgs.groups = _union(selectedOrgs.groups, orgs.groups);
+    selectedOrgs.families = _union(selectedOrgs.families, orgs.families);
+  },
+);
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid],
@@ -219,6 +247,7 @@ const isSelected = (orgType, orgId) => {
 };
 
 const remove = (org, orgKey) => {
+  console.log('remove called. trying to remove', org, 'from key', orgKey);
   selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
 };
 
