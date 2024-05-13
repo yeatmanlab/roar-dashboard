@@ -678,7 +678,8 @@ const computeAssignmentAndRunData = computed(() => {
         if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
-          currRowScores[taskId].correctIncorrectDifference = numCorrect - numIncorrect;
+          currRowScores[taskId].correctIncorrectDifference =
+            numCorrect != null && numIncorrect != null ? numCorrect - numIncorrect : null;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].tagColor = supportLevelColors.Assessed;
