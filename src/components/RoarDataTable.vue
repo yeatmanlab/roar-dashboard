@@ -65,7 +65,7 @@
           v-model:selection="selectedRows"
           class="scrollable-container"
           :class="{ compressed: compressedRows }"
-          :value="props.data"
+          :value="data"
           :row-hover="true"
           :reorderable-columns="true"
           :resizable-columns="true"
@@ -75,12 +75,12 @@
           show-gridlines
           filter-display="menu"
           paginator
-          :rows="props.pageLimit"
+          :rows="pageLimit"
           :always-show-paginator="true"
           paginator-position="both"
           :rows-per-page-options="[10, 25, 50, 100]"
-          :total-records="props.totalRecords"
-          :loading="props.loading"
+          :total-records="totalRecords"
+          :loading="loading"
           scrollable
           :select-all="selectAll"
           @select-all-change="onSelectAll"
