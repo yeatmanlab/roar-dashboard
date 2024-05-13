@@ -14,6 +14,21 @@ module.exports = defineConfig({
           console.log(message);
           return null;
         },
+        isCurrentVersion() {
+          const { execSync } = require('child_process');
+          const fs = require('fs');
+
+          // Get the version number from the package.json in the main branch
+          const mainPackageJson = execSync('git show origin/main:package.json', { encoding: 'utf-8' });
+          const mainVersion = JSON.parse(mainPackageJson).version;
+
+          // Get the version number from the current package.json
+          const currentPackageJson = fs.readFileSync('./package.json', 'utf-8');
+          const currentVersion = JSON.parse(currentPackageJson).version;
+
+          // Compare the version numbers
+          return currentVersion === mainVersion;
+        },
       });
     },
   },
