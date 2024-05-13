@@ -26,6 +26,7 @@
     justify-content: space-around;
 
     .roar-game-content {
+      max-width: 350px;
       padding-top: 1rem;
       display: flex;
       flex-direction: column;
@@ -36,7 +37,7 @@
     }
 
     .roar-game-title {
-      font-size: clamp(2rem, 2.6vw, 3.25rem);
+      font-size: clamp(1.5rem, 2vw, 3.25rem);
       padding-bottom: 1rem;
       margin-bottom: 0.5rem;
       border-bottom: 1px dotted var(--surface-d);
@@ -138,6 +139,21 @@
       flex-direction: row;
       .roar-game-content {
         width: 350px;
+      }
+
+      .roar-game-image {
+        width: 350px;
+      }
+    }
+  }
+  @media screen and (max-width: 768px) {
+    .roar-tabview-game {
+      flex-direction: row;
+      .roar-game-content {
+        width: 250px;
+      }
+      .roar-game-description {
+        font-size: 1rem;
       }
 
       .roar-game-image {

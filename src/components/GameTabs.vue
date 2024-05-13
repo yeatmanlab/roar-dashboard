@@ -27,7 +27,7 @@
         </template>
         <div class="roar-tabview-game pointer flex">
           <div class="roar-game-content" @click="routeExternalTask(game)">
-            <h2 class="roar-game-title">{{ getTaskName(game.taskData.name) }}</h2>
+            <div class="roar-game-title">{{ getTaskName(game.taskData.name) }}</div>
             <div class="roar-game-description">
               <p>{{ getTaskDescription(game.taskData.name, game.taskData.description) }}</p>
             </div>
@@ -220,16 +220,7 @@ const returnVideoOptions = (videoURL) => {
 }
 
 .video-player-wrapper {
-  // display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  min-width: 30rem;
   min-height: 100%;
-}
-@media screen and (max-width: 1100px) {
-  .video-player-wrapper {
-    // max-width: 350px;
-  }
 }
 </style>
