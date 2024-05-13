@@ -491,6 +491,12 @@ const submit = async () => {
           sequential: toRaw(state).sequential,
           orgs: orgs,
           isTestData: isTestData.value,
+          legal: {
+            consent: toRaw(state).consent,
+            assent: toRaw(state).assent,
+            amount: toRaw(state).amount,
+            expectedTime: toRaw(state).expectedTime,
+          },
         };
         if (isTestData.value) args.isTestData = true;
         if (props.adminId) args.administrationId = props.adminId;
