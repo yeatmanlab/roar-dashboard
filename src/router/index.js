@@ -323,12 +323,6 @@ const routes = [
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
   },
   {
-    path: '/survey',
-    name: 'Survey',
-    component: () => import('../pages/LEVANTE/UserSurvey.vue'),
-    meta: { pageTitle: 'Survey' },
-  },
-  {
     path: '/enable-cookies',
     name: 'EnableCookies',
     component: () => import('../pages/EnableCookies.vue'),

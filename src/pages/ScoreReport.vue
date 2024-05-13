@@ -220,7 +220,7 @@
             <div :id="'tab-view-' + taskId">
               <TaskReport
                 v-if="taskId"
-                :computedTableData="computeAssignmentAndRunData.assignmentTableData"
+                :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
                 :task-id="taskId"
                 :initialized="initialized"
                 :administration-id="administrationId"
