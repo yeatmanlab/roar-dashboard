@@ -216,6 +216,7 @@ const routes = [
       },
     },
   },
+  // TODO: Make this logic happen on click of sign out button
   {
     path: '/signout',
     name: 'SignOut',
@@ -223,8 +224,10 @@ const routes = [
       const store = useAuthStore();
       if (store.isAuthenticated) {
         await store.signOut();
-        store.userData = null;
       }
+      // Clear auth and game store so kids playing on the same device don't run into issues
+      sessionStorage.removeItem('gameStore');
+      sessionStorage.removeItem('authStore');
       return { name: 'SignIn' };
     },
     meta: {
