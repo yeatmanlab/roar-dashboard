@@ -346,7 +346,7 @@ watch(
 
 @media screen and (max-width: 1100px) {
   .tabs-container {
-    flex-direction: column;
+    flex-direction: row;
   }
 }
 

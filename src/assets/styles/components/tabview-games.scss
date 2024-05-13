@@ -25,7 +25,7 @@
     position: relative;
 
     .roar-game-content {
-      width: var(--contentWidth);
+      width: min-content;
       padding-top: 1rem;
       display: flex;
       flex-direction: column;
@@ -135,11 +135,13 @@
   // Mobile
   @media screen and (max-width: 1100px) {
     .roar-tabview-game {
-      flex-direction: column;
+      flex-direction: row;
+      .roar-game-content {
+        width: 350px;
+      }
 
-      .roar-game-content,
       .roar-game-image {
-        width: 100%;
+        width: 350px;
       }
     }
   }

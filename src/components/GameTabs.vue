@@ -1,6 +1,6 @@
 <template>
-  <div id="games">
-    <PvTabView v-model:activeIndex="displayGameIndex">
+  <div id="games" class="flex w-full">
+    <PvTabView v-model:activeIndex="displayGameIndex" scrollable>
       <PvTabPanel
         v-for="(game, index) in games"
         :key="game.taskId"
@@ -222,5 +222,10 @@ const returnVideoOptions = (videoURL) => {
   align-items: center;
   min-width: 30rem;
   min-height: 100%;
+}
+@media screen and (max-width: 1100px) {
+  .video-player-wrapper {
+    max-width: 350px;
+  }
 }
 </style>
