@@ -32,6 +32,12 @@
             </PvButton>
           </div>
         </section>
+        <!-- <section class="signin-option-container signin-option-providers">
+          <div class="flex flex-row justify-content-center w-full">
+            <p class="signin-option-title text-sm">Don't have an account yet?</p>
+            <PvButton label="Register" class="signin-button w-3" @click="router.push({ name: 'Register' })" />
+          </div>
+        </section> -->
       </section>
       <footer style="display: none">
         <!-- TODO: figure out a link for this -->
