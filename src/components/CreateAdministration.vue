@@ -82,6 +82,7 @@
         </PvConfirmDialog>
         <TaskPicker
           :all-variants="variantsByTaskId"
+          :task-packages="taskPackages"
           :input-variants="preSelectedVariants"
           @variants-changed="handleVariantsChanged"
         />
@@ -154,6 +155,7 @@ import { useConfirm } from 'primevue/useconfirm';
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
 });
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const router = useRouter();
 const toast = useToast();
@@ -168,6 +170,20 @@ const { data: allVariants } = useQuery({
   queryFn: () => variantsFetcher(),
   keepPreviousData: true,
   enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+async function getTaskPackages() {
+  const res = await authStore.getTaskPackages();
+  console.log('res in getTaskPackages:', res);
+  return res;
+}
+
+const { data: taskPackages } = useQuery({
+  queryKey: ['taskPackages'],
+  queryFn: getTaskPackages,
+  keepPreviousData: true,
+  enabled: initialized.value && isLevante,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 

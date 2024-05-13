@@ -50,15 +50,17 @@
         </div>
         <div v-if="searchTerm.length < 3">
           <PvDropdown
-            v-model="currentTask"
-            :options="taskOptions"
+            v-model="currentSelection"
+            :options="taskPickerOptions"
             option-label="label"
             option-value="value"
+            option-group-label="label"
+            option-group-children="items"
             class="w-full mb-2"
             placeholder="Select TaskID"
           />
           <PvScrollPanel style="height: 27.75rem; width: 100%; overflow-y: auto">
-            <div v-if="!currentTask">Select a TaskID to display a list of variants.</div>
+            <div v-if="!currentSelection">Select a TaskID to display a list of variants.</div>
             <div v-else-if="!currentVariants.length">
               No variants to show. Make sure 'Show only named variants' is unchecked to view all.
               <span class="text-link" @click="namedOnly = false">View all</span>
@@ -138,7 +140,7 @@
   </PvPanel>
 </template>
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, toRaw } from 'vue';
 import _filter from 'lodash/filter';
 import _findIndex from 'lodash/findIndex';
 import _debounce from 'lodash/debounce';
@@ -150,6 +152,7 @@ import VariantCard from './VariantCard.vue';
 import { useToast } from 'primevue/usetoast';
 
 const toast = useToast();
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const props = defineProps({
   allVariants: {
@@ -159,6 +162,9 @@ const props = defineProps({
   inputVariants: {
     type: Array,
     default: () => [],
+  },
+  taskPackages: {
+    type: [Object],
   },
 });
 
@@ -173,6 +179,49 @@ const taskOptions = computed(() => {
       value: key,
     };
   });
+});
+
+const taskPickerOptions = computed(() => {
+  // console.log('variants defined in taskPicker:', props.allVariants)
+  const labeledTasks = Object.entries(props.allVariants).map((entry) => {
+    const key = entry[0];
+    const value = entry[1];
+    return {
+      label: value[0].task.name ?? key,
+      value: key,
+    };
+  });
+
+  const allTasks = [{ label: 'All Tasks', value: 'all tasks' }, ...labeledTasks];
+
+  // console.log('Type of taskPackages:', typeof props.taskPackages);
+  // console.log('taskPackages content:', props.taskPackages);
+
+  // Hacky way but have to do this since were rendering a component before the data is loaded
+  // Not sure what the decision was behind this.
+  let usePackages = props.taskPackages === undefined ? [] : props.taskPackages.data;
+
+  const labeledPackages = usePackages.map((pack) => {
+    return {
+      label: pack.name,
+      value: pack.name,
+    };
+  });
+
+  const allPackages = [{ label: 'All Packages', value: 'all packages' }, ...labeledPackages];
+
+  const allOptions = [
+    {
+      label: 'Packages',
+      items: allPackages,
+    },
+    {
+      label: 'Tasks',
+      items: allTasks,
+    },
+  ];
+
+  return allOptions;
 });
 
 watch(
@@ -198,13 +247,26 @@ const updateVariant = (variantId, conditions) => {
 const selectedVariants = ref([]);
 const namedOnly = ref(true);
 
-const currentTask = ref(Object.keys(props.allVariants)[0]);
+console.log('taskPackages in taskPicker:', toRaw(props.taskPackages));
+
+//isLevante ? ref(props.taskPackages)[0].name :
+const currentSelection = ref(Object.keys(props.allVariants)[0]);
+
+watch(currentSelection, (newValue) => {
+  console.log('currentSelection:', newValue);
+});
 
 const currentVariants = computed(() => {
+  // Show packages as well
   if (namedOnly.value) {
-    return _filter(props.allVariants[currentTask.value], (variant) => variant.variant.name);
+    // TODO: Add checks for all packages
+    if (currentSelection.value === 'all packages') {
+      return props.taskPackages.data;
+    }
+
+    return _filter(props.allVariants[currentSelection.value], (variant) => variant.variant.name);
   }
-  return props.allVariants[currentTask.value];
+  return props.allVariants[currentSelection.value];
 });
 
 // Pane handlers
