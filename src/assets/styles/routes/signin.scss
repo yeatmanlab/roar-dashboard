@@ -143,6 +143,10 @@ body.page-signin {
   }
 }
 
+.grecaptcha-badge {
+  display: none;
+}
+
 .signin-button {
   background: var(--surface-a);
   border: 1px solid var(--surface-d);
