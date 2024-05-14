@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
+import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
   taskId: { type: String, default: 'egma-math' },
@@ -23,6 +24,7 @@ const props = defineProps({
 let levanteTaskLauncher;
 
 const taskId = props.taskId;
+const { version } = packageLockJson.packages['node_modules/core-tasks'];
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -96,7 +98,7 @@ async function startTask() {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
