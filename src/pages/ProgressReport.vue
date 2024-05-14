@@ -2,7 +2,7 @@
   <main class="container main">
     <section class="main-body">
       <div class="flex justify-content-between align-items-center">
-        <div>
+        <div v-if="!isLoadingScores">
           <div class="flex flex-column align-items-start mb-4 gap-2">
             <div>
               <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
@@ -134,7 +134,7 @@ const displayName = computed(() => {
   if (administrationInfo.value) {
     return getTitle(administrationInfo.value, isSuperAdmin.value);
   }
-  return 'Fetching administration name...';
+  return '';
 });
 
 const handleViewChange = () => {

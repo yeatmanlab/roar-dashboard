@@ -282,12 +282,12 @@ export default {
 
 @media screen and (max-width: 1068px) {
   .roar-logo {
-    max-width: 150px;
+    max-width: 120px;
   }
 }
 @media screen and (max-width: 868px) {
   .roar-logo {
-    max-width: 100px;
+    max-width: 80px;
   }
 }
 </style>

@@ -11,19 +11,19 @@
             <div class="flex justify-content-between align-items-center">
               <div class="flex flex-column align-items-start gap-2">
                 <div>
-                  <div class="uppercase font-light text-gray-500 text-sm">{{ props.orgType }} Score Report</div>
+                  <div class="uppercase font-light text-gray-500 text-xs">{{ props.orgType }} Score Report</div>
                   <div class="report-title">
                     {{ _toUpper(orgInfo?.name) }}
                   </div>
                 </div>
                 <div>
-                  <div class="uppercase font-light text-gray-500 text-sm">Administration</div>
+                  <div class="uppercase font-light text-gray-500 text-xs">Administration</div>
                   <div class="administration-name mb-4">
                     {{ _toUpper(displayName) }}
                   </div>
                 </div>
               </div>
-              <div class="flex flex-column align-items-end gap-2">
+              <div class="flex flex-column align-items-end gap-1">
                 <div class="flex flex-row align-items-center gap-4" data-html2canvas-ignore="true">
                   <div class="uppercase text-sm text-gray-600">VIEW</div>
                   <PvSelectButton
@@ -53,26 +53,30 @@
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm text-gray-600 font-light">Loading Overview Charts</div>
             </div>
-            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="overview-wrapper bg-gray-100 py-3 mb-2">
-              <div class="report-subheader mb-4 uppercase text-gray-700 font-light">Scores at a glance</div>
-              <div class="chart-wrapper">
-                <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
-                  <div class="distribution-overview-wrapper">
-                    <DistributionChartOverview
-                      :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
-                      :initialized="initialized"
-                      :task-id="taskId"
-                      :org-type="props.orgType"
-                      :org-id="props.orgId"
-                      :administration-id="props.administrationId"
-                    />
-                    <div className="task-description mt-3">
-                      <span class="font-bold">
-                        {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
-                      </span>
-                      <span class="font-light">
-                        {{ descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : '' }}
-                      </span>
+            <div v-if="sortedAndFilteredTaskIds?.length > 0" class="text-left bg-gray-100 py-3 mb-2">
+              <div class="overview-wrapper">
+                <div class="report-subheader my-2 uppercase text-gray-600 font-light">Scores at a glance</div>
+                <div class="chart-wrapper">
+                  <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
+                    <div class="distribution-overview-wrapper">
+                      <DistributionChartOverview
+                        :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                        :initialized="initialized"
+                        :task-id="taskId"
+                        :org-type="props.orgType"
+                        :org-id="props.orgId"
+                        :administration-id="props.administrationId"
+                      />
+                      <div className="task-description mt-3">
+                        <span class="font-bold">
+                          {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
+                        </span>
+                        <span class="font-light">
+                          {{
+                            descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : ''
+                          }}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1135,18 +1139,18 @@ onMounted(async () => {
 }
 
 .report-title {
-  font-size: 2.5rem;
+  font-size: clamp(1.5rem, 2rem, 2.5rem);
   font-weight: bold;
   margin-top: 0;
 }
 
 .administration-name {
-  font-size: 1.8rem;
+  font-size: clamp(1.1rem, 1.3rem, 1.7rem);
   font-weight: light;
 }
 
 .report-subheader {
-  font-size: 1.3rem;
+  font-size: clamp(0.9rem, 1.1rem, 1.3rem);
   font-weight: light;
   margin-top: 0;
 }
