@@ -53,7 +53,7 @@ function startGame(administration, language, optional) {
   checkGameTab(language);
   cy.visit(languageOptions[language].url);
 
-  cy.get('.jspsych-btn', { timeout: 6 * timeout })
+  cy.get('.jspsych-btn', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 

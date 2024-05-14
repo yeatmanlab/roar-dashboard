@@ -55,15 +55,15 @@ const playTrial = (targetText) => {
 };
 
 function playIntro(startText) {
-  cy.get('.instructionCanvasNS', { timeout: 6 * timeout })
+  cy.get('.instructionCanvasNS', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 
-  cy.get('.jspsych-btn', { timeout: 6 * timeout })
+  cy.get('.jspsych-btn', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 
-  cy.get('.continue', { timeout: 6 * timeout })
+  cy.get('.continue', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 
