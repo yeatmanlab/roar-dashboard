@@ -30,6 +30,11 @@ export default defineConfig({
       vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
+  server: {
+    fs: {
+      allow: ['..'],
+    },
+  },
   build: {
     cssCodeSplit: true,
     sourcemap: true,
@@ -50,6 +55,7 @@ export default defineConfig({
           utils: ['@bdelab/roar-utils'],
           vocab: ['@bdelab/roar-vocab'],
           ran: ['@bdelab/roav-ran'],
+          crowding: ['@bdelab/roav-crowding'],
         },
       },
     },
