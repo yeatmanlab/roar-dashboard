@@ -24,7 +24,7 @@ export const playSRE = ({
     .should('exist');
   cy.visit(languageOptions[language].url);
 
-  cy.get('.jspsych-btn', { timeout: 60 * timeout })
+  cy.get('.jspsych-btn', { timeout: 6 * timeout })
     .should('be.visible')
     .click();
 

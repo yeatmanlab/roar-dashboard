@@ -22,9 +22,8 @@ export const isCurrentVersion = async (app) => {
     const mainPackageJson = JSON.parse(window.atob(response.data.content), 'utf-8');
     const mainDependencies = mainPackageJson.dependencies;
 
-    // Slice the version number to remove the caret (^) symbol
-    const mainAppVersion = mainDependencies[app].slice(1);
-    const currentAppVersion = featureDependencies[app].slice(1);
+    const mainAppVersion = mainDependencies[app];
+    const currentAppVersion = featureDependencies[app];
 
     return mainAppVersion === currentAppVersion;
   } catch (error) {
