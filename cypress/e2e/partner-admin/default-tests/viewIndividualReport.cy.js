@@ -45,7 +45,7 @@ function checkIndividualScoreReport() {
 }
 
 describe('The partner admin can view individual score reports for a given administration.', () => {
-  it('Selects an administration and views a student\'s individual score report', () => {
+  it("Selects an administration and views a student's individual score report", () => {
     checkUrl();
     cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();

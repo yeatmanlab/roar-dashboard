@@ -37,7 +37,11 @@
         <PvButton text :label="rowViewMode" class="my-1" @click="toggleView" />
         <PvButton
           v-if="allowExport"
-          v-tooltip.bottom="`Export scores for ${selectedRows.length} student${selectedRows.length > 1 ? 's' : ''} to CSV file for spreadsheet import`"
+          v-tooltip.bottom="
+            `Export scores for ${selectedRows.length} student${
+              selectedRows.length > 1 ? 's' : ''
+            } to CSV file for spreadsheet import`
+          "
           label="Export Selected"
           :badge="selectedRows.length"
           :disabled="selectedRows.length === 0"
@@ -409,7 +413,6 @@ const onSelectAll = () => {
 const onSelectionChange = () => {
   emit('selection', selectedRows.value);
 };
-
 
 const dataTable = ref();
 
