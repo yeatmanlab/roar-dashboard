@@ -10,23 +10,25 @@ export const isCurrentVersion = async (app) => {
   const featurePackageJson = require('../../package.json');
   const featureDependencies = featurePackageJson.dependencies;
 
-  const owner = 'yeatmanlab'; // Your GitHub username
-  const repository = 'roar-dashboard'; // Your repository name
-  const filePath = 'package.json'; // Path to the file in the repository
-  const branch = 'main'; // Branch to fetch from
+  const owner = 'yeatmanlab';
+  const repository = 'roar-dashboard';
+  const filePath = 'package.json';
+  const branch = 'main';
 
   const url = `https://api.github.com/repos/${owner}/${repository}/contents/${filePath}?ref=${branch}`;
 
-  const response = await axios.get(url);
+  try {
+    const response = await axios.get(url);
+    const mainPackageJson = JSON.parse(atob(response.data.content), 'utf-8');
+    const mainDependencies = mainPackageJson.dependencies;
 
-  const mainPackageJson = JSON.parse(atob(response.data.content), 'utf-8');
-  const mainDependencies = mainPackageJson.dependencies;
+    // Slice the version number to remove the caret (^) symbol
+    const mainAppVersion = mainDependencies[app].slice(1);
+    const currentAppVersion = featureDependencies[app].slice(1);
 
-  // Slice the carat ^ from the version number
-  const mainAppVersion = mainDependencies[app].slice(1);
-  const currentAppVersion = featureDependencies[app].slice(1);
-  console.log('main', mainAppVersion);
-  console.log('feature', currentAppVersion);
-
-  return mainAppVersion === currentAppVersion;
+    return mainAppVersion === currentAppVersion;
+  } catch (error) {
+    console.error(`Failed to check if ${app} is the current version: ${error}`);
+    return false;
+  }
 };
