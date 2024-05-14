@@ -533,7 +533,9 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
     state.sequential = adminInfo.sequential;
     _forEach(adminInfo.assessments, (assessment) => {
       const assessmentParams = assessment.params;
-      const found = findVariantWithParams(allVariants.value, assessmentParams);
+      const taskId = assessment.taskId;
+      const allVariantsForThisTask = _filter(allVariantInfo, (variant) => variant.task.id === taskId);
+      const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
       if (found) {
         preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
@@ -541,12 +543,22 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
   }
 });
 
+const removeNull = (obj) => {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
+};
+
 function findVariantWithParams(variants, params) {
+  console.log(`attempting to find variant of ${variants[0].task.id}`);
+
   const found = _find(variants, (variant) => {
-    const cleanParams = { ...variant.variant.params };
-    Object.keys(cleanParams).forEach((key) => cleanParams[key] === null && delete cleanParams[key]);
-    return _isEqual(params, cleanParams);
+    const cleanVariantParams = removeNull(variant.variant.params);
+    const cleanInputParams = removeNull(params);
+    return _isEqual(cleanInputParams, cleanVariantParams);
   });
+
+  if (found) {
+    console.log('found', found);
+  }
   // TODO: implement tie breakers if found.length > 1
   return found;
 }
