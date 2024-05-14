@@ -1,6 +1,6 @@
 <template>
   <AppHead>
-    <title>ROAR: {{ pageTitle }}</title>
+    <title>{{ isLevante ? '' : 'ROAR:' }} {{ pageTitle }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!" />
 
     <!-- Social -->
@@ -16,8 +16,6 @@
     <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
   </div>
-
-  <!-- <AppSpinner v-show="!showPage" /> -->
 </template>
 
 <script setup>
@@ -30,6 +28,7 @@ import { i18n } from '@/translations/i18n';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 const route = useRoute();
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
