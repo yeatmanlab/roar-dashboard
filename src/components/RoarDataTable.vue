@@ -3,7 +3,7 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div class="w-full gap-1 pt-1 flex justify-content-center flex-wrap mt-3">
+    <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
       <span class="p-float-label my-3">
         <PvMultiSelect
@@ -33,7 +33,7 @@
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
-      <span class="flex flex-row flex-wrap justify-content-end gap-2">
+      <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
         <PvButton text :label="rowViewMode" class="my-1" @click="toggleView" />
         <PvButton
           v-if="allowExport"
@@ -590,6 +590,10 @@ g {
   padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+.export-wrapper {
+  max-height: 4rem;
 }
 
 .view-label {
