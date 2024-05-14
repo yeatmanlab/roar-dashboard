@@ -1,6 +1,6 @@
 <template>
-  <div id="games">
-    <PvTabView v-model:activeIndex="displayGameIndex">
+  <div id="games" class="game-tab-container">
+    <PvTabView v-model:activeIndex="displayGameIndex" :scrollable="true" class="flex flex-column">
       <PvTabPanel
         v-for="(game, index) in games"
         :key="game.taskId"
@@ -25,9 +25,9 @@
             getTaskName(game.taskData.name)
           }}</span>
         </template>
-        <article class="roar-tabview-game pointer">
+        <div class="roar-tabview-game pointer flex">
           <div class="roar-game-content" @click="routeExternalTask(game)">
-            <h2 class="roar-game-title">{{ getTaskName(game.taskData.name) }}</h2>
+            <div class="roar-game-title">{{ getTaskName(game.taskData.name) }}</div>
             <div class="roar-game-description">
               <p>{{ getTaskDescription(game.taskData.name, game.taskData.description) }}</p>
             </div>
@@ -71,7 +71,7 @@
               <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
             </div>
           </div>
-        </article>
+        </div>
       </PvTabPanel>
     </PvTabView>
   </div>
@@ -211,16 +211,16 @@ const returnVideoOptions = (videoURL) => {
 </script>
 
 <style scoped lang="scss">
+.game-tab-container {
+  max-width: 75vw;
+}
+
 .pointer {
   cursor: pointer;
 }
 
 .video-player-wrapper {
-  // display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  min-width: 30rem;
   min-height: 100%;
 }
 </style>

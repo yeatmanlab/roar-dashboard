@@ -66,11 +66,20 @@ const setChartData = (completed, incomplete) => {
   border: 1px solid var(--surface-d);
   border-radius: 5px;
   height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media screen and (max-width: 1100px) {
+  .sidebar-container {
+    width: 150px;
+  }
 }
 
 .sidebar-progress {
   // text-align: center;
   padding-bottom: 0.5rem;
+  width: 120px;
 
   p {
     margin-block: 0;
@@ -99,6 +108,7 @@ const setChartData = (completed, incomplete) => {
   list-style: none;
   margin-bottom: 0;
   line-height: 1.5;
+  width: 100%;
 
   .sidebar-title {
     border-bottom: 1px solid var(--surface-d);
