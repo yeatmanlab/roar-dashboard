@@ -174,6 +174,13 @@ const routes = [
     meta: { pageTitle: 'RAN' },
   },
   {
+    path: '/game/crowding',
+    name: 'Crowding',
+    component: () => import('../components/tasks/TaskCrowding.vue'),
+    props: { taskId: 'crowding', language: 'en' },
+    meta: { pageTitle: 'Crowding' },
+  },
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),
