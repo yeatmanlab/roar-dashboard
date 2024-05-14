@@ -589,6 +589,8 @@ const computeAssignmentAndRunData = computed(() => {
         schoolName = schoolNameDictionary.value[schoolId];
       }
 
+      const firstNameOrUsername = user.name.first ?? user.username;
+
       const currRow = {
         user: {
           username: user.username,
@@ -605,7 +607,7 @@ const computeAssignmentAndRunData = computed(() => {
           orgId: props.orgId,
           orgType: props.orgType,
           userId: user.userId,
-          buttonLabel: '',
+          tooltip: `View ${firstNameOrUsername}'s Score Report`,
         },
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},

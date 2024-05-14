@@ -150,6 +150,7 @@
                     severity="secondary"
                     text
                     :label="colData.routeParams.buttonLabel"
+                    v-tooltip.right="colData.routeParams.tooltip"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
                     size="small"
