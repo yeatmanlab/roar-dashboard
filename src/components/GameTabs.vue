@@ -77,7 +77,7 @@
   </div>
 </template>
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _findIndex from 'lodash/findIndex';
@@ -86,12 +86,7 @@ import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { camelize } from '@bdelab/roar-utils';
-
-let VideoPlayer;
-
-onMounted(async () => {
-  VideoPlayer = (await import('@/components/VideoPlayer.vue')).default;
-});
+import VideoPlayer from '@/components/Videoplayer.vue';
 
 const { t, locale } = useI18n();
 

@@ -99,10 +99,7 @@ const setChartData = (completed, incomplete) => {
 }
 
 .sidebar-info {
-  border-bottom-right-radius: 5px;
-  border-bottom-left-radius: 5px;
   border-top: solid 1px var(--surface-d);
-  background-color: var(--surface-b);
   padding: 1rem;
   margin-top: 1rem;
   list-style: none;
