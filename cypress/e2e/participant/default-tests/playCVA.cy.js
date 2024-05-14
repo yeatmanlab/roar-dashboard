@@ -1,12 +1,17 @@
 import { playWrittenVocabulary } from '../../../support/helper-functions/roar-multichoice/multichoiceHelpers';
+import { isCurrentVersion } from '../../../support/utils';
 
-describe('ROAR - Written Vocabulary Play Through', () => {
-  it('Plays Written Vocabulary', () => {
-    if (cy.task('isCurrentVersion')) {
-      cy.log('Detected most recent version of the app; skipping test.');
-    } else {
-      cy.log('Detected new version of the app; running test.');
-      playWrittenVocabulary();
-    }
+const app = '@bdelab/roar-multichoice';
+
+describe('ROAR - Written Vocabulary Playthrough', () => {
+  it('Plays CVA', () => {
+    isCurrentVersion(app).then((isCurrentVersion) => {
+      if (isCurrentVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+      } else {
+        cy.log(`Detected a new version of ${app}, running test.`);
+        playWrittenVocabulary();
+      }
+    });
   });
 });
