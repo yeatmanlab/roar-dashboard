@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        containers: [1, 2, 3, 4]
+        containers: [1, 2]
     env:
       NODE_OPTIONS: '--max_old_space_size=8192'
       NODE_ENV: 'test'
