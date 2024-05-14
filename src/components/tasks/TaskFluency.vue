@@ -14,6 +14,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { fetchDocById } from '@/helpers/query/utils';
+import packageJson from '../../../package.json';
 
 const props = defineProps({
   taskId: { type: String, default: 'fluency-arf' },
@@ -23,11 +24,14 @@ const props = defineProps({
 let TaskLauncher;
 
 const taskId = props.taskId;
+const taskVersion = packageJson.dependencies['@bdelab/roam-fluency'];
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
+
+console.log(taskVersion);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -95,7 +99,7 @@ async function startTask() {
       }
     }, 100);
 
-    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId);
+    const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, taskVersion);
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
