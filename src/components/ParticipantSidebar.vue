@@ -108,6 +108,7 @@ const setChartData = (completed, incomplete) => {
   list-style: none;
   margin-bottom: 0;
   line-height: 1.5;
+  width: 100%;
 
   .sidebar-title {
     border-bottom: 1px solid var(--surface-d);

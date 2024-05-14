@@ -9,7 +9,7 @@
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
           {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
         </h2>
-        <div class="flex align-items-end gap-2 justify-content-between">
+        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
           <div
             v-if="optionalAssessments.length !== 0"
             class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
