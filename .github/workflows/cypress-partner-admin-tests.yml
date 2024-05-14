@@ -1,9 +1,11 @@
 name: Run Cypress Partner Admin Tests
 on:
-  workflow_run:
-    workflows: ['firebase-hosting-preview.yml']
-    types:
-      - completed
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ci-preview-tests-${{ github.ref }}-1
+  cancel-in-progress: true
 
 jobs:
   cypress-run:
