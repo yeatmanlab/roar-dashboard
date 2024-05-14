@@ -144,7 +144,7 @@
                   <PvButton
                     severity="secondary"
                     text
-                    :label="col.routeLabel"
+                    :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
                     size="small"
@@ -153,6 +153,9 @@
               </div>
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
+              </div>
+              <div v-else-if="col.field === 'user.lastName'">
+                {{ _get(colData, col.field) }}
               </div>
               <div v-else>
                 {{ _get(colData, col.field) }}

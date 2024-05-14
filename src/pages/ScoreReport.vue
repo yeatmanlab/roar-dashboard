@@ -584,6 +584,14 @@ const computeAssignmentAndRunData = computed(() => {
       if (schoolId) {
         schoolName = schoolNameDictionary.value[schoolId];
       }
+      let reportButtonLabel = 'Report';
+      if (user.name.first) {
+        if (user.name.first[user.name.first.length - 1] == 's') {
+          reportButtonLabel = user.name.first + "' Report";
+        } else {
+          reportButtonLabel = user.name.first + "'s Report";
+        }
+      }
       const currRow = {
         user: {
           username: user.username,
@@ -600,6 +608,7 @@ const computeAssignmentAndRunData = computed(() => {
           orgId: props.orgId,
           orgType: props.orgType,
           userId: user.userId,
+          buttonLabel: reportButtonLabel,
         },
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
@@ -937,13 +946,48 @@ const refreshing = ref(false);
 // orgType, orgId for individual score report link
 const scoreReportColumns = computed(() => {
   if (assignmentData.value === undefined) return [];
-  const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true, filter: true },
-    { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true, filter: true },
-    { field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true },
-    { field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true },
-    { field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true },
-  ];
+  const tableColumns = [];
+  tableColumns.push({
+    header: 'Student Report',
+    link: true,
+    routeName: 'StudentReport',
+    routeTooltip: 'Student Score Report',
+    routeLabel: 'Report',
+    routeIcon: 'pi pi-user',
+    sort: false,
+    pinned: true,
+    orgType: props.orgType,
+    orgId: props.orgId,
+    administrationId: props.administrationId,
+  });
+  if (assignmentData.value.find((assignment) => assignment.user?.username)) {
+    tableColumns.push({
+      field: 'user.username',
+      header: 'Username',
+      dataType: 'text',
+      pinned: true,
+      sort: true,
+      filter: true,
+    });
+  }
+  if (assignmentData.value.find((assignment) => assignment.user?.email)) {
+    tableColumns.push({
+      field: 'user.email',
+      header: 'Email',
+      dataType: 'text',
+      pinned: true,
+      sort: true,
+      filter: true,
+    });
+  }
+  if (assignmentData.value.find((assignment) => assignment.user?.name?.first)) {
+    tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
+  }
+  if (assignmentData.value.find((assignment) => assignment.user?.name?.last)) {
+    tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true });
+  }
+
+  tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
 
   if (props.orgType === 'district') {
     tableColumns.push({
@@ -997,18 +1041,6 @@ const scoreReportColumns = computed(() => {
       tagColor: `scores.${taskId}.tagColor`,
     });
   }
-  tableColumns.push({
-    header: 'Student Report',
-    link: true,
-    routeName: 'StudentReport',
-    routeTooltip: 'Student Score Report',
-    routeLabel: 'Report',
-    routeIcon: 'pi pi-user',
-    sort: false,
-    orgType: props.orgType,
-    orgId: props.orgId,
-    administrationId: props.administrationId,
-  });
   return tableColumns;
 });
 
