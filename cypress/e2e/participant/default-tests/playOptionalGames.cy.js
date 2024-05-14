@@ -1,4 +1,5 @@
 import { optionalGames } from '../../../fixtures/optionalGamesList';
+import { isCurrentVersion } from '../../../support/utils';
 
 const administration = Cypress.env('testOptionalRoarAppsAdministration');
 const language = 'en';

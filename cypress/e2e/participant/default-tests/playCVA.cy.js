@@ -2,6 +2,11 @@ import { playWrittenVocabulary } from '../../../support/helper-functions/roar-mu
 
 describe('ROAR - Written Vocabulary Play Through', () => {
   it('Plays Written Vocabulary', () => {
-    playWrittenVocabulary();
+    if (cy.task('isCurrentVersion')) {
+      cy.log('Detected most recent version of the app; skipping test.');
+    } else {
+      cy.log('Detected new version of the app; running test.');
+      playWrittenVocabulary();
+    }
   });
 });

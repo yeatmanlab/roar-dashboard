@@ -1,15 +1,17 @@
 import { playSRE } from '../../../support/helper-functions/roar-sre/sreHelpers';
+import { isCurrentVersion } from '../../../support/utils';
 
-const administration = Cypress.env('testRoarAppsAdministration');
-const language = 'en';
+const app = '@bdelab/roar-sre';
 
 describe('ROAR - Sentence Play Through', () => {
   it('Plays SRE', () => {
-    if (cy.task('isCurrentVersion')) {
-      cy.log('Detected most recent version of the app; skipping test.');
-    } else {
-      cy.log('Detected new version of the app; running test.');
-      playSRE(administration, language);
-    }
+    isCurrentVersion(app).then((isCurrentVersion) => {
+      if (isCurrentVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+      } else {
+        cy.log(`Detected a new version of ${app}, running test.`);
+        playSRE();
+      }
+    });
   });
 });
