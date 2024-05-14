@@ -153,6 +153,7 @@
                     v-tooltip.right="colData.routeParams.tooltip"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
+                    data-cy="route-button"
                     size="small"
                   />
                 </router-link>

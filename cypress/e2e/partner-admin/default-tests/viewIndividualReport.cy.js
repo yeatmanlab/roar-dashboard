@@ -33,8 +33,8 @@ function checkAssignmentColumns(assignments) {
 }
 
 function checkIndividualScoreReport() {
-  cy.get('button', { timeout: 3 * timeout })
-    .contains('Report')
+  cy.get('[data-cy="route-button"]', { timeout: 3 * timeout })
+    .first()
     .click();
   cy.get('div', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
   cy.get('button', { timeout: 3 * timeout })
