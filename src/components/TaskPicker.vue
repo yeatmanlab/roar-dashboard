@@ -42,7 +42,7 @@
                   :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
-                  <VariantCard :variant="element" data-cy="card-variant" @select="selectCard" />
+                  <VariantCard :variant="element" @select="selectCard" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -79,12 +79,7 @@
                   :data-task-id="element.task.id"
                   style="cursor: grab"
                 >
-                  <VariantCard
-                    :variant="element"
-                    :update-variant="updateVariant"
-                    data-cy="card-variant"
-                    @select="selectCard"
-                  />
+                  <VariantCard :variant="element" :update-variant="updateVariant" @select="selectCard" />
                 </div>
               </transition-group>
             </VueDraggableNext>
@@ -124,7 +119,6 @@
                   :variant="element"
                   has-controls
                   :update-variant="updateVariant"
-                  data-cy="card-variant"
                   @remove="removeCard"
                   @move-up="moveCardUp"
                   @move-down="moveCardDown"
