@@ -14,20 +14,17 @@ body {
 
 // Sentry feedback widget
 #sentry-feedback {
-  max-width: fit-content;
-  opacity: 0.85;
-  --bottom: 1rem;
+  --bottom: 1rem; /* Adjust this value to change the distance from the bottom */
+  --right: 85%;
   --left: 1rem;
+  display: flex;
+  justify-content: flex-start;
   --border: 1px solid var(--primary-color);
   --background-hover: var(--red-100);
   --submit-border: var(--primary-color);
   --submit-background: var(--primary-color);
   --submit-background-hover: var(--primary-color-hover);
   --cancel-background-hover: var(--red-100);
-}
-
-.widget__actor {
-  position: relative;
 }
 
 // Placeholder
