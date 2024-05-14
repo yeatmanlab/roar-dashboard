@@ -86,7 +86,7 @@ import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { camelize } from '@bdelab/roar-utils';
-import VideoPlayer from '@/components/Videoplayer.vue';
+import VideoPlayer from '@/components/VideoPlayer.vue';
 
 const { t, locale } = useI18n();
 
@@ -215,7 +215,13 @@ const returnVideoOptions = (videoURL) => {
 }
 
 .video-player-wrapper {
+  min-width: 350px;
   align-items: center;
   min-height: 100%;
+}
+@media screen and (max-width: 768px) {
+  .video-player-wrapper {
+    min-width: 250px;
+  }
 }
 </style>
