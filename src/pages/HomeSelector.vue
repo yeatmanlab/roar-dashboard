@@ -39,7 +39,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
 
 let HomeParticipant, HomeAdministrator, ConsentModal;
-
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
 
@@ -102,6 +102,10 @@ function refreshDocs() {
 }
 
 async function checkConsent() {
+  if (isLevante) {
+    // skip the consent for levante
+    return;
+  }
   // Check for consent
   const consentStatus = _get(userData.value, `legal.${consentType.value}`);
   const consentDoc = await authStore.getLegalDoc(consentType.value);
