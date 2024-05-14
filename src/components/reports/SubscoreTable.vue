@@ -42,13 +42,35 @@ const initialized = ref(false);
 const pageLimit = ref(10);
 
 const columns = computed(() => {
-  const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true, filter: true },
-    { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true, filter: true },
-    { field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true },
-    { field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true },
-    { field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true },
-  ];
+  const tableColumns = [];
+  if (props.computedTableData.find((assignment) => assignment.user?.username)) {
+    tableColumns.push({
+      field: 'user.username',
+      header: 'Username',
+      dataType: 'text',
+      pinned: true,
+      sort: true,
+      filter: true,
+    });
+  }
+  if (props.computedTableData.find((assignment) => assignment.user?.email)) {
+    tableColumns.push({
+      field: 'user.email',
+      header: 'Email',
+      dataType: 'text',
+      pinned: true,
+      sort: true,
+      filter: true,
+    });
+  }
+  if (props.computedTableData.find((assignment) => assignment.user?.firstName)) {
+    tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
+  }
+  if (props.computedTableData.find((assignment) => assignment.user?.lastName)) {
+    tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true });
+  }
+  tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
+
   if (props.orgType === 'district') {
     tableColumns.push({
       field: 'user.schoolName',

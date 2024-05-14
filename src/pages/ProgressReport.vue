@@ -367,13 +367,35 @@ const exportAll = async () => {
 const progressReportColumns = computed(() => {
   if (assignmentData.value === undefined) return [];
 
-  const tableColumns = [
-    { field: 'user.username', header: 'Username', dataType: 'text', pinned: true, sort: true },
-    { field: 'user.email', header: 'Email', dataType: 'text', pinned: false, sort: true },
-    { field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true },
-    { field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true },
-    { field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: false },
-  ];
+  const tableColumns = [];
+  if (assignmentData.value.find((assignment) => assignment.user?.username)) {
+    tableColumns.push({
+      field: 'user.username',
+      header: 'Username',
+      dataType: 'text',
+      pinned: true,
+      sort: true,
+      filter: true,
+    });
+  }
+  if (assignmentData.value.find((assignment) => assignment.user?.email)) {
+    tableColumns.push({
+      field: 'user.email',
+      header: 'Email',
+      dataType: 'text',
+      pinned: true,
+      sort: true,
+      filter: true,
+    });
+  }
+  if (assignmentData.value.find((assignment) => assignment.user?.name?.first)) {
+    tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
+  }
+  if (assignmentData.value.find((assignment) => assignment.user?.name?.last)) {
+    tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true });
+  }
+
+  tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
 
   if (props.orgType === 'district') {
     const schoolsMap = schoolsInfo.value?.reduce((acc, school) => {
