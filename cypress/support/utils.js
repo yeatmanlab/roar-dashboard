@@ -19,7 +19,7 @@ export const isCurrentVersion = async (app) => {
 
   try {
     const response = await axios.get(url);
-    const mainPackageJson = JSON.parse(atob(response.data.content), 'utf-8');
+    const mainPackageJson = JSON.parse(window.atob(response.data.content), 'utf-8');
     const mainDependencies = mainPackageJson.dependencies;
 
     // Slice the version number to remove the caret (^) symbol
