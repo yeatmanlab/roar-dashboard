@@ -126,7 +126,7 @@
                     <PvMultiSelect
                       id="ms-school-filter"
                       v-model="filterSchools"
-                      style="width: 20rem; max-width: 25rem"
+                      style="width: 10rem; max-width: 15rem"
                       :options="schoolsInfo"
                       option-label="name"
                       option-value="name"
@@ -142,7 +142,7 @@
                     <PvMultiSelect
                       id="ms-grade-filter"
                       v-model="filterGrades"
-                      style="width: 20rem; max-width: 25rem"
+                      style="width: 10rem; max-width: 15rem"
                       :options="gradeOptions"
                       option-label="label"
                       option-value="value"
@@ -584,14 +584,7 @@ const computeAssignmentAndRunData = computed(() => {
       if (schoolId) {
         schoolName = schoolNameDictionary.value[schoolId];
       }
-      let reportButtonLabel = 'Report';
-      if (user.name.first) {
-        if (user.name.first[user.name.first.length - 1] == 's') {
-          reportButtonLabel = user.name.first + "' Report";
-        } else {
-          reportButtonLabel = user.name.first + "'s Report";
-        }
-      }
+
       const currRow = {
         user: {
           username: user.username,
@@ -608,7 +601,7 @@ const computeAssignmentAndRunData = computed(() => {
           orgId: props.orgId,
           orgType: props.orgType,
           userId: user.userId,
-          buttonLabel: reportButtonLabel,
+          buttonLabel: '',
         },
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
@@ -948,18 +941,18 @@ const scoreReportColumns = computed(() => {
   if (assignmentData.value === undefined) return [];
   const tableColumns = [];
   tableColumns.push({
-    header: 'Student Report',
+    header: 'Report',
     link: true,
     routeName: 'StudentReport',
     routeTooltip: 'Student Score Report',
-    routeLabel: 'Report',
-    routeIcon: 'pi pi-user',
+    routeIcon: 'pi pi-chart-bar',
     sort: false,
     pinned: true,
     orgType: props.orgType,
     orgId: props.orgId,
     administrationId: props.administrationId,
   });
+  let hasUsername = false;
   if (assignmentData.value.find((assignment) => assignment.user?.username)) {
     tableColumns.push({
       field: 'user.username',
@@ -969,6 +962,7 @@ const scoreReportColumns = computed(() => {
       sort: true,
       filter: true,
     });
+    hasUsername = true;
   }
   if (assignmentData.value.find((assignment) => assignment.user?.email)) {
     tableColumns.push({
@@ -981,7 +975,18 @@ const scoreReportColumns = computed(() => {
     });
   }
   if (assignmentData.value.find((assignment) => assignment.user?.name?.first)) {
-    tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
+    if (!hasUsername) {
+      tableColumns.push({
+        field: 'user.firstName',
+        header: 'First Name',
+        dataType: 'text',
+        sort: true,
+        filter: true,
+        pinned: true,
+      });
+    } else {
+      tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
+    }
   }
   if (assignmentData.value.find((assignment) => assignment.user?.name?.last)) {
     tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true });

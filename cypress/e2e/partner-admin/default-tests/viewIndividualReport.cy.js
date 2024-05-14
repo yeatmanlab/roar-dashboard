@@ -44,8 +44,8 @@ function checkIndividualScoreReport() {
   cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessments return these kinds of scores');
 }
 
-describe('The partner admin can view score reports for a given administration.', () => {
-  it('Selects an administration and views its score report.', () => {
+describe('The partner admin can view individual score reports for a given administration.', () => {
+  it('Selects an administration and views a student\'s individual score report', () => {
     checkUrl();
     cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();

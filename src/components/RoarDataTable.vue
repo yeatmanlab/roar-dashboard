@@ -3,7 +3,7 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap mt-3">
+    <div class="w-full gap-1 pt-1 flex justify-content-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
       <span class="p-float-label my-3">
         <PvMultiSelect
@@ -13,7 +13,7 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-2 md:w-20rem"
+          class="w-2 md:w-10rem"
           selected-items-label="{0} columns selected"
           @update:model-value="onColumnToggle"
         />
@@ -26,7 +26,7 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-2 md:w-20rem"
+          class="w-2 md:w-10rem"
           selected-items-label="{0} columns frozen"
           :show-toggle-all="false"
           @update:model-value="onFreezeToggle"
@@ -34,22 +34,23 @@
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
       <span class="flex flex-row flex-wrap justify-content-end gap-2">
+        <PvButton text :label="rowViewMode" class="my-1" @click="toggleView" />
         <PvButton
           v-if="allowExport"
-          v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
+          v-tooltip.bottom="`Export scores for ${selectedRows.length} student${selectedRows.length > 1 ? 's' : ''} to CSV file for spreadsheet import`"
           label="Export Selected"
+          :badge="selectedRows.length"
           :disabled="selectedRows.length === 0"
-          class="m-2"
+          class="m-1"
           @click="exportCSV(true, $event)"
         />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
-          class="m-2"
+          class="m-1"
           @click="exportCSV(false, $event)"
         />
-        <PvButton :label="rowViewMode" class="my-2" @click="toggleView" />
       </span>
     </div>
     <div class="flex flex-column">
@@ -408,6 +409,7 @@ const onSelectAll = () => {
 const onSelectionChange = () => {
   emit('selection', selectedRows.value);
 };
+
 
 const dataTable = ref();
 
