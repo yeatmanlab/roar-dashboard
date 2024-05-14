@@ -1,7 +1,7 @@
 name: Run Cypress Partner Admin Tests
 on:
   workflow_run:
-    workflows: ['Deploy Preview']
+    workflows: ['firebase-hosting-preview.yml']
     types:
       - completed
 
