@@ -11,6 +11,9 @@ describe('ROAR - Sentence Play Through', () => {
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
         playSRE();
+        cy.then(() => {
+          cy.log('SRE test completed.');
+        });
       }
     });
   });
