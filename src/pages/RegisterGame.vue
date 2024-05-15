@@ -4,7 +4,7 @@
       <div class="flex flex-column mb-5">
         <div class="flex align-items-center flex-wrap gap-3 mb-2">
           <i class="pi pi-pencil text-gray-400 rounded" style="font-size: 1.6rem" />
-          <div class="text-3xl font-bold text-gray-600">Register Task</div>
+          <div class="admin-page-header">Register Task</div>
         </div>
         <div class="text-md text-gray-500 ml-6">Register a new task or variant.</div>
       </div>

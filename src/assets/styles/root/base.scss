@@ -43,3 +43,9 @@ body {
 :-ms-input-placeholder {
   color: var(--text-color-secondary);
 }
+
+.admin-page-header {
+  font-size: clamp(1.3rem, 1.65rem, 1.75rem);
+  color: #52525b;
+  font-weight: bold;
+}

@@ -6,7 +6,7 @@
           <div class="flex justify-content-between mb-2">
             <div class="flex align-items-center gap-3">
               <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem"></i>
-              <div class="text-3xl font-bold text-gray-600">List Users</div>
+              <div class="admin-page-header">List Users</div>
             </div>
             <div class="bg-gray-100 p-2 rounded">
               <div class="uppercase font-light font-sm text-gray-400 mb-1">

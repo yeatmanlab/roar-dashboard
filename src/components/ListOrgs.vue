@@ -5,7 +5,7 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <i class="pi pi-folder-open text-gray-400 rounded" style="font-size: 1.6rem" />
-            <div class="text-3xl font-bold text-gray-600">List Organizations</div>
+            <div class="admin-page-header">List Organizations</div>
           </div>
           <button
             v-if="isSuperAdmin"

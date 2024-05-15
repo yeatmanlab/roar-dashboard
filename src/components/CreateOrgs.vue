@@ -5,7 +5,7 @@
         <div class="flex justify-content-between mb-2">
           <div class="flex align-items-center gap-3">
             <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
-            <div class="text-3xl font-bold text-gray-600">Create a new organization</div>
+            <div class="admin-page-header">Create a new organization</div>
           </div>
         </div>
         <div class="text-md text-gray-500 ml-6">Use this form to create a new organization.</div>
