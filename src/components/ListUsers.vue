@@ -2,19 +2,22 @@
   <main class="container main">
     <section class="main-body">
       <div v-if="!(isLoading || isLoadingCount)">
-        <div class="flex justify-content-between rounded">
-          <div class="flex align-items-center gap-3">
-            <i class="pi pi-user text-gray-400 rounded" style="font-size: 1.6rem"></i>
-            <div class="text-3xl font-bold text-gray-600 my-2">User List</div>
-          </div>
-          <div class="bg-gray-100 p-3 rounded">
-            <div class="uppercase font-light font-sm text-gray-400 mb-1">
-              {{ singularizeFirestoreCollection(orgType) }}
+        <div class="flex flex-column mb-6">
+          <div class="flex justify-content-between">
+            <div class="flex align-items-center gap-3">
+              <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem"></i>
+              <div class="text-3xl font-bold text-gray-600 my-2">List Users</div>
             </div>
-            <div class="text-xl text-gray-600">
-              <b> {{ orgName }} </b>
+            <div class="bg-gray-100 p-2 rounded">
+              <div class="uppercase font-light font-sm text-gray-400 mb-1">
+                {{ singularizeFirestoreCollection(orgType) }}
+              </div>
+              <div class="text-xl text-gray-600">
+                <b> {{ orgName }} </b>
+              </div>
             </div>
           </div>
+          <div class="text-md text-gray-500 ml-6">View users for the selected organization.</div>
         </div>
 
         <RoarDataTable

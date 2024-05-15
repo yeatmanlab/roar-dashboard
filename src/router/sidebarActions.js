@@ -10,7 +10,7 @@ const sidebarActionOptions = [
   },
   {
     title: 'List organizations',
-    icon: 'pi pi-list',
+    icon: 'pi pi-folder-open',
     buttonLink: { name: 'ListOrgs' },
     requiresSuperAdmin: false,
     requiresAdmin: true,
@@ -19,7 +19,7 @@ const sidebarActionOptions = [
   },
   {
     title: 'Create organization',
-    icon: 'pi pi-database',
+    icon: 'pi pi-sliders-h',
     buttonLink: { name: 'CreateOrgs' },
     requiresSuperAdmin: true,
     requiresAdmin: true,

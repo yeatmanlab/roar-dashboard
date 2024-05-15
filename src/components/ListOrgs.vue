@@ -1,16 +1,22 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <div class="flex justify-content-between mb-5">
-        <div class="text-3xl font-bold text-gray-600">Your Organizations</div>
-        <button
-          v-if="isSuperAdmin"
-          v-tooltip.top="'Sync Clever orgs'"
-          class="p-panel-header-icon mr-2"
-          @click="syncClever"
-        >
-          <span :class="cleverSyncIcon"></span>
-        </button>
+      <div class="flex flex-column mb-5">
+        <div class="flex justify-content-between mb-3">
+          <div class="flex align-items-center gap-3">
+            <i class="pi pi-folder-open text-gray-400 rounded" style="font-size: 1.6rem" />
+            <div class="text-3xl font-bold text-gray-600">List Organizations</div>
+          </div>
+          <button
+            v-if="isSuperAdmin"
+            v-tooltip.top="'Sync Clever orgs'"
+            class="p-panel-header-icon mr-2"
+            @click="syncClever"
+          >
+            <span :class="cleverSyncIcon"></span>
+          </button>
+        </div>
+        <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
       <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy>
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
