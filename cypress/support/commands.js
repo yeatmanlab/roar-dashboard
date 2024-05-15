@@ -165,7 +165,11 @@ Cypress.Commands.add('checkUserList', (userList) => {
     cy.wrap(row)
       .find('td.p-frozen-column')
       .then((cell) => {
-        const cellText = cell.text();
+        // The following cleans the non-breaking space character and any whitespace from the cell text
+        const cellText = cell
+          .text()
+          .replace(/&nbsp;/g, '')
+          .trim();
         expect(userList).to.include(cellText);
       });
   });

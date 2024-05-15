@@ -1,5 +1,5 @@
 <template>
-  <div v-for="task in computedTaskData" :key="task" class="flex flex-column align-items-center justify-content-center">
+  <div v-for="task in computedTaskData" :key="task" class="flex flex-column align-items-end justify-content-start">
     <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
       <div class="flex flex-column md:flex-row align-items-center justify-content-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">

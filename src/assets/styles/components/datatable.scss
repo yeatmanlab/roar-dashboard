@@ -26,7 +26,7 @@
 }
 .p-datatable .p-datatable-thead > tr > th {
   text-align: left;
-  padding: var(--inline-spacing-larger) 1.5rem;
+  padding: var(--inline-spacing-larger) 0.5rem;
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
   font-weight: 500;
@@ -193,7 +193,7 @@
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tbody > tr + tr > td,
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tbody > tr:first-child > td {
   border-top-width: 0;
-  padding-left: 23px;
+  padding-left: 0.5rem;
   padding-top: 2px;
 }
 .p-datatable.p-datatable-gridlines.p-datatable-scrollable .p-datatable-tfoot > tr > td + td {
@@ -213,7 +213,7 @@
   color: var(--indigo-800);
 }
 .p-datatable.p-datatable-sm .p-datatable-header {
-  padding: 0.625rem 0.625rem;
+  padding: 0.225rem 0.225rem;
 }
 .p-datatable.p-datatable-sm .p-datatable-thead > tr > th {
   padding: var(--border-radius) var(--inline-spacing-larger);

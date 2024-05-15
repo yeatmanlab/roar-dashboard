@@ -2087,7 +2087,6 @@
 }
 
 .p-menubar {
-  padding: 1rem;
   background: var(--surface-b);
   color: var(--text-color);
   border: 1px solid var(--surface-d);
