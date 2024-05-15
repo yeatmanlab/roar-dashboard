@@ -11,12 +11,14 @@ function playOptionalGame(game, administration, language, optional) {
 describe('Play Optional Games', () => {
   optionalGames.forEach((game) => {
     it(`Plays ${game.name}`, () => {
-      if (isCurrentVersion(game.app) === true) {
-        cy.log(`Did not detect a new version of ${game.app}, skipping test.`);
-      } else {
-        cy.log(`Detected a new version of ${game.app}, running test.`);
-        playOptionalGame(game, administration, language, true);
-      }
+      cy.wrap(isCurrentVersion(game.app)).then((isCurrentVersion) => {
+        if (isCurrentVersion) {
+          cy.log(`Did not detect a new version of ${game.app}, skipping test.`);
+        } else {
+          cy.log(`Detected a new version of ${game.app}, running test.`);
+          playOptionalGame(game, administration, language, game.optional);
+        }
+      });
     });
   });
 });
