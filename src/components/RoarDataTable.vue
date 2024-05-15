@@ -435,7 +435,7 @@ function increasePadding() {
     rowViewMode.value = 'Compact View';
   } else {
     rowViewMode.value = 'Expand View';
-    document.documentElement?.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
+    document.documentElement?.style.setProperty('--padding-value', '0 1.5rem 0 1.5rem');
   }
   countForVisualize.value = !countForVisualize.value;
 }
@@ -631,6 +631,10 @@ button.p-column-filter-menu-button.p-link:hover {
 
 .filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
   display: none;
+}
+
+.p-datatable .p-datatable-tbody td {
+  vertical-align: middle;
 }
 
 .p-column-filter-matchmode-dropdown {

@@ -1,80 +1,74 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel header="Your organizations">
-        <template #icons>
-          <button
-            v-if="isSuperAdmin"
-            v-tooltip.top="'Sync Clever orgs'"
-            class="p-panel-header-icon mr-2"
-            @click="syncClever"
-          >
-            <span :class="cleverSyncIcon"></span>
-          </button>
-        </template>
-        <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy>
-          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
-            <div class="grid column-gap-3 mt-2">
-              <div
-                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
-                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
-              >
-                <span class="p-float-label">
-                  <PvDropdown
-                    v-model="selectedDistrict"
-                    input-id="district"
-                    :options="allDistricts"
-                    option-label="name"
-                    option-value="id"
-                    :placeholder="districtPlaceholder"
-                    :loading="isLoadingDistricts"
-                    class="w-full"
-                    data-cy="dropdown-parent-district"
-                  />
-                  <label for="district">District</label>
-                </span>
-              </div>
-              <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-                <span class="p-float-label">
-                  <PvDropdown
-                    v-model="selectedSchool"
-                    input-id="school"
-                    :options="allSchools"
-                    option-label="name"
-                    option-value="id"
-                    :placeholder="schoolPlaceholder"
-                    :loading="isLoadingSchools"
-                    class="w-full"
-                    data-cy="dropdown-parent-school"
-                  />
-                  <label for="school">School</label>
-                </span>
-              </div>
+      <div class="flex justify-content-between mb-5">
+        <div class="text-3xl font-bold text-gray-600">Your Organizations</div>
+        <button
+          v-if="isSuperAdmin"
+          v-tooltip.top="'Sync Clever orgs'"
+          class="p-panel-header-icon mr-2"
+          @click="syncClever"
+        >
+          <span :class="cleverSyncIcon"></span>
+        </button>
+      </div>
+      <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy>
+        <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+          <div class="grid column-gap-3 mt-2">
+            <div
+              v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+              class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
+            >
+              <span class="p-float-label">
+                <PvDropdown
+                  v-model="selectedDistrict"
+                  input-id="district"
+                  :options="allDistricts"
+                  option-label="name"
+                  option-value="id"
+                  :placeholder="districtPlaceholder"
+                  :loading="isLoadingDistricts"
+                  class="w-full"
+                  data-cy="dropdown-parent-district"
+                />
+                <label for="district">District</label>
+              </span>
             </div>
-            <RoarDataTable
-              v-if="tableData"
-              :key="tableKey"
-              lazy
-              :columns="tableColumns"
-              :data="tableData"
-              :page-limit="pageLimit"
-              :total-records="totalRecords"
-              :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
-              :allow-filtering="false"
-              @page="onPage($event)"
-              @sort="onSort($event)"
-              @export-all="exportAll"
-            />
-            <AppSpinner v-else />
-          </PvTabPanel>
-        </PvTabView>
-        <AppSpinner v-else />
-      </PvPanel>
+            <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+              <span class="p-float-label">
+                <PvDropdown
+                  v-model="selectedSchool"
+                  input-id="school"
+                  :options="allSchools"
+                  option-label="name"
+                  option-value="id"
+                  :placeholder="schoolPlaceholder"
+                  :loading="isLoadingSchools"
+                  class="w-full"
+                  data-cy="dropdown-parent-school"
+                />
+                <label for="school">School</label>
+              </span>
+            </div>
+          </div>
+          <RoarDataTable
+            v-if="tableData"
+            :key="tableKey"
+            :columns="tableColumns"
+            :data="tableData"
+            :loading="isLoading || isFetching"
+            :allow-filtering="false"
+            @export-all="exportAll"
+          />
+          <AppSpinner v-else />
+        </PvTabPanel>
+      </PvTabView>
+      <AppSpinner v-else />
     </section>
   </main>
 </template>
 <script setup>
-import { orgFetcher, orgCounter, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
+import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
@@ -87,8 +81,6 @@ import _isEmpty from 'lodash/isEmpty';
 
 const toast = useToast();
 const initialized = ref(false);
-const page = ref(0);
-const pageLimit = ref(10);
 const orgsQueryKeyIndex = ref(0);
 
 const selectedDistrict = ref(undefined);
@@ -198,35 +190,22 @@ const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
 });
 
 const {
-  isLoading: isLoadingCount,
-  isFetching: isFetchingCount,
-  data: totalRecords,
-} = useQuery({
-  queryKey: ['count', authStore.uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
-  queryFn: () => orgCounter(activeOrgType, selectedDistrict, selectedSchool, orderBy, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const {
   isLoading,
   isFetching,
   data: orgData,
 } = useQuery({
-  queryKey: [
-    'orgsPage',
-    authStore.uid,
-    activeOrgType,
-    selectedDistrict,
-    selectedSchool,
-    orderBy,
-    pageLimit,
-    page,
-    orgsQueryKeyIndex,
-  ],
+  queryKey: ['orgsPage', authStore.uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
   queryFn: () =>
-    orgPageFetcher(activeOrgType, selectedDistrict, selectedSchool, orderBy, pageLimit, page, isSuperAdmin, adminOrgs),
+    orgPageFetcher(
+      activeOrgType,
+      selectedDistrict,
+      selectedSchool,
+      orderBy,
+      ref(100000),
+      ref(0),
+      isSuperAdmin,
+      adminOrgs,
+    ),
   keepPreviousData: true,
   enabled: claimsLoaded,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -285,15 +264,11 @@ const tableData = computed(() => {
         orgType: activeOrgType.value,
         orgId: org.id,
         orgName: org.name,
+        tooltip: 'View Users in ' + org.name,
       },
     };
   });
 });
-
-const onPage = (event) => {
-  page.value = event.page;
-  pageLimit.value = event.rows;
-};
 
 const onSort = (event) => {
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
@@ -327,13 +302,8 @@ watch(allSchools, (newValue) => {
   selectedSchool.value = _get(_head(newValue), 'id');
 });
 
-watch(activeIndex, () => {
-  page.value = 0;
-});
-
 const tableKey = ref(0);
 watch([selectedDistrict, selectedSchool], () => {
-  page.value = 0;
   tableKey.value += 1;
 });
 </script>

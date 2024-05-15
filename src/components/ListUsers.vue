@@ -1,25 +1,34 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel header="View Users">
-        <div v-if="!(isLoading || isLoadingCount)">
-          <h2>Users in {{ singularizeFirestoreCollection(orgType) }} {{ orgName }}</h2>
-          <RoarDataTable
-            v-if="users"
-            lazy
-            :columns="columns"
-            :data="users"
-            :page-limit="pageLimit"
-            :total-records="totalRecords"
-            :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
-            :allow-export="false"
-            :allow-filtering="false"
-            @page="onPage($event)"
-            @sort="onSort($event)"
-          />
+      <div v-if="!(isLoading || isLoadingCount)">
+        <div class="flex justify-content-between rounded">
+          <div class="flex align-items-center gap-3">
+            <i class="pi pi-user text-gray-400 rounded" style="font-size: 1.6rem"></i>
+            <div class="text-3xl font-bold text-gray-600 my-2">User List</div>
+          </div>
+          <div class="bg-gray-100 p-3 rounded">
+            <div class="uppercase font-light font-sm text-gray-400 mb-1">
+              {{ singularizeFirestoreCollection(orgType) }}
+            </div>
+            <div class="text-xl text-gray-600">
+              <b> {{ orgName }} </b>
+            </div>
+          </div>
         </div>
-        <AppSpinner v-else />
-      </PvPanel>
+
+        <RoarDataTable
+          v-if="users"
+          :columns="columns"
+          :data="users"
+          :total-records="totalRecords"
+          :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
+          :allow-export="false"
+          :allow-filtering="false"
+          @sort="onSort($event)"
+        />
+      </div>
+      <AppSpinner v-else />
     </section>
   </main>
 </template>
@@ -38,7 +47,6 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
-const pageLimit = ref(10);
 const page = ref(0);
 const orderBy = ref(null);
 
@@ -74,8 +82,8 @@ const {
   isFetching,
   data: users,
 } = useQuery({
-  queryKey: ['usersByOrgPage', authStore.uid, props.orgType, props.orgId, pageLimit, page, orderBy],
-  queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, pageLimit, page, orderBy),
+  queryKey: ['usersByOrgPage', authStore.uid, props.orgType, props.orgId, page, orderBy],
+  queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, ref(10000), page, orderBy),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -131,11 +139,6 @@ const columns = ref([
     sort: false,
   },
 ]);
-
-const onPage = (event) => {
-  page.value = event.page;
-  pageLimit.value = event.rows;
-};
 
 const onSort = (event) => {
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
