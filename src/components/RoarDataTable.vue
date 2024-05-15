@@ -633,10 +633,6 @@ button.p-column-filter-menu-button.p-link:hover {
   display: none;
 }
 
-.p-datatable .p-datatable-tbody td {
-  vertical-align: middle;
-}
-
 .p-column-filter-matchmode-dropdown {
   /* Our current filtering queries do not support options other than equals
      for strings. To reduce confusion for end users, remove the dropdown
