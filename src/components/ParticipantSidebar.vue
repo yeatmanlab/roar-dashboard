@@ -7,7 +7,7 @@
         <p>{{ $t('participantSidebar.tasksCompleted') }}</p>
       </div>
     </div>
-    <ul class="sidebar-info">
+    <ul v-if="!!studentInfo" class="sidebar-info">
       <li class="sidebar-title">
         <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
       </li>

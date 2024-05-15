@@ -93,7 +93,7 @@ import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/quer
 import { getUserAssignments } from '../helpers/query/assignments';
 
 let GameTabs, ParticipantSidebar;
-
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
@@ -297,7 +297,14 @@ let completeGames = computed(() => {
 });
 
 // Set up studentInfo for sidebar
-const studentInfo = computed(() => ({ grade: _get(userData.value, 'studentData.grade') }));
+const studentInfo = computed(() => {
+  if (isLevante) {
+    return null;
+  }
+  return {
+    grade: _get(userData.value, 'studentData.grade'),
+  };
+});
 
 watch(
   adminInfo,
