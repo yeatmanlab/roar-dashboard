@@ -1,7 +1,7 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <div v-if="!(isLoading || isLoadingCount)">
+      <div v-if="!isLoading">
         <div class="flex flex-column mb-5">
           <div class="flex justify-content-between">
             <div class="flex align-items-center gap-3">
@@ -24,8 +24,7 @@
           v-if="users"
           :columns="columns"
           :data="users"
-          :total-records="totalRecords"
-          :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
+          :loading="isLoading || isFetching"
           :allow-export="false"
           :allow-filtering="false"
           @sort="onSort($event)"
@@ -42,7 +41,7 @@ import _isEmpty from 'lodash/isEmpty';
 import { useQuery } from '@tanstack/vue-query';
 import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
-import { countUsersByOrg, fetchUsersByOrg } from '@/helpers/query/users';
+import { fetchUsersByOrg } from '@/helpers/query/users';
 import { singularizeFirestoreCollection } from '@/helpers';
 
 const authStore = useAuthStore();
@@ -69,24 +68,12 @@ const props = defineProps({
 });
 
 const {
-  isLoading: isLoadingCount,
-  isFetching: isFetchingCount,
-  data: totalRecords,
-} = useQuery({
-  queryKey: ['countUsers', authStore.uid, props.orgType, props.orgId, orderBy],
-  queryFn: () => countUsersByOrg(props.orgType, props.orgId, orderBy),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const {
   isLoading,
   isFetching,
   data: users,
 } = useQuery({
   queryKey: ['usersByOrgPage', authStore.uid, props.orgType, props.orgId, page, orderBy],
-  queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, ref(10000), page, orderBy),
+  queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, ref(1000000), page, orderBy),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
