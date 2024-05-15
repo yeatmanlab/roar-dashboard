@@ -147,10 +147,10 @@
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
+                    v-tooltip.right="colData.routeParams.tooltip"
                     severity="secondary"
                     text
                     :label="colData.routeParams.buttonLabel"
-                    v-tooltip.right="colData.routeParams.tooltip"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
                     data-cy="route-button"

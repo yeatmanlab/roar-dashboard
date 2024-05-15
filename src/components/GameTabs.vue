@@ -22,14 +22,14 @@
           <!--Locked Game-->
           <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
           <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{
-            getTaskName(game.taskData.name)
+            getTaskName(game.taskId, game.taskData.name)
           }}</span>
         </template>
         <div class="roar-tabview-game pointer flex">
           <div class="roar-game-content" @click="routeExternalTask(game)">
-            <div class="roar-game-title">{{ getTaskName(game.taskData.name) }}</div>
+            <div class="roar-game-title">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
             <div class="roar-game-description">
-              <p>{{ getTaskDescription(game.taskData.name, game.taskData.description) }}</p>
+              <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
             </div>
             <div class="roar-game-meta">
               <PvTag
@@ -52,7 +52,7 @@
               <span v-else>{{ taskCompletedMessage }}</span>
               <router-link
                 v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
-                :to="{ path: `${game.taskId === 'Survey' ? '/survey' : 'game/' + game.taskId}` }"
+                :to="{ path: `${game.taskId === 'survey' ? '/survey' : 'game/' + game.taskId}` }"
               ></router-link>
             </div>
           </div>
@@ -88,30 +88,41 @@ import { useI18n } from 'vue-i18n';
 import { camelize } from '@bdelab/roar-utils';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 
+const props = defineProps({
+  games: { type: Array, required: true },
+  sequential: { type: Boolean, required: false, default: true },
+  userData: { type: Object, required: true },
+});
+
 const { t, locale } = useI18n();
 
 const levanteTasks = [
   'heartsAndFlowers',
-  'math',
+  'egmaMath',
   'matrixReasoning',
   'memoryGame',
   'mentalRotation',
   'sameDifferentSelection',
   'theoryOfMind',
-  'tROG',
+  'trog',
   'survey',
+  'mefs',
 ];
-const getTaskName = (taskName) => {
-  // Translate Levante task names if not in English
-  if (levanteTasks.includes(camelize(taskName)) && !locale.value.includes('en')) {
-    return t(`gameTabs.${camelize(taskName)}Name`);
+const getTaskName = (taskId, taskName) => {
+  // Translate Levante task names. The task name is not the same as the taskId.
+  const taskIdLowercased = taskId.toLowerCase();
+
+  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+    return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
   }
   return taskName;
 };
-const getTaskDescription = (taskName, taskDescription) => {
+const getTaskDescription = (taskId, taskDescription) => {
   // Translate Levante task descriptions if not in English
-  if (levanteTasks.includes(camelize(taskName)) && !locale.value.includes('en')) {
-    return t(`gameTabs.${camelize(taskName)}Description`);
+  const taskIdLowercased = taskId.toLowerCase();
+
+  if (levanteTasks.includes(camelize(taskIdLowercased))) {
+    return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
   return taskDescription;
 };
@@ -135,12 +146,6 @@ const updateVideoCompleted = async (taskId) => {
     console.error('Error while updating video completion', e);
   }
 };
-
-const props = defineProps({
-  games: { type: Array, required: true },
-  sequential: { type: Boolean, required: false, default: true },
-  userData: { type: Object, required: true },
-});
 
 const currentGameId = computed(() => {
   return _get(
