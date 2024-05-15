@@ -1,19 +1,28 @@
 <template>
   <main class="container main">
     <section class="main-body">
+      <div class="flex flex-column gap-2">
+        <div class="flex align-items-center flex-wrap gap-3 mb-2">
+          <i class="pi pi-list text-gray-400 rounded" style="font-size: 1.6rem" />
+          <div class="text-3xl font-bold text-gray-600">Add Participants</div>
+        </div>
+        <div class="flex flex-column text-md text-gray-500 ml-6 gap-2">
+          <div>Add participants by uploading a CSV.</div>
+          <div>
+            The following fields are required for registering a student:
+            <ul>
+              <li>username</li>
+              <li>date of birth</li>
+              <li>grade</li>
+              <li>password</li>
+              <li>Either a group OR a district and school</li>
+            </ul>
+            Upload or drag-and-drop a student list below to begin!
+          </div>
+        </div>
+      </div>
       <!--Upload file section-->
-      <div v-if="!isFileUploaded">
-        <PvPanel header="Add Participants">
-          The following fields are required for registering a student:
-          <ul>
-            <li>username</li>
-            <li>date of birth</li>
-            <li>grade</li>
-            <li>password</li>
-            <li>Either a group OR a district and school</li>
-          </ul>
-          Upload or drag-and-drop a student list below to begin!
-        </PvPanel>
+      <div v-if="!isFileUploaded" class="text-gray-500">
         <PvDivider />
         <PvFileUpload
           name="massUploader[]"
@@ -25,7 +34,7 @@
           @uploader="onFileUpload($event)"
         >
           <template #empty>
-            <div class="extra-height">
+            <div class="extra-height ml-6 text-gray-500">
               <p>Drag and drop files to here to upload.</p>
             </div>
           </template>

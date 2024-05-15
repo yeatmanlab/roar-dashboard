@@ -1,10 +1,26 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel :header="header">
-        {{ description }}
+      <div class="flex flex-column mb-5">
+        <div class="flex justify-content-between mb-2">
+          <div class="flex align-items-center gap-3">
+            <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
+            <div class="text-3xl font-bold text-gray-600">{{ header }}</div>
+          </div>
+          <button
+            v-if="isSuperAdmin"
+            v-tooltip.top="'Sync Clever orgs'"
+            class="p-panel-header-icon mr-2"
+            @click="syncClever"
+          >
+            <span :class="cleverSyncIcon"></span>
+          </button>
+        </div>
+        <div class="text-md text-gray-500 ml-6">{{ description }}</div>
+      </div>
 
-        <PvDivider />
+      <PvDivider />
+      <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
           <div class="field col-12 xl:col-6 mb-5">
             <span class="p-float-label">
@@ -133,7 +149,7 @@
             <PvButton :label="submitLabel" data-cy="button-create-administration" style="margin: 0" @click="submit" />
           </div>
         </div>
-      </PvPanel>
+      </div>
     </section>
   </main>
 </template>
