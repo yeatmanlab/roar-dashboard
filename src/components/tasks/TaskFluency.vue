@@ -31,8 +31,6 @@ const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
 
-console.log(version);
-
 const initialized = ref(false);
 let unsubscribe;
 const init = () => {
