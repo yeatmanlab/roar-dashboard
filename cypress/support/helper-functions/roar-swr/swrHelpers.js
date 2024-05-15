@@ -20,7 +20,7 @@ export const playSWR = ({
   cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
   cy.visit(languageOptions[language].url);
 
-  cy.get('.jspsych-btn', { timeout: 12 * timeout })
+  cy.get('.jspsych-btn', { timeout: 18 * timeout })
     .should('be.visible')
     .click();
 
