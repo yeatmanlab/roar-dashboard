@@ -2,12 +2,56 @@
   <main class="container main">
     <section class="main-body">
       <div>
-        <div class="flex flex-column mb-5 gap-2">
-          <div class="flex align-items-center flex-wrap gap-3 mb-2">
-            <i class="pi pi-list text-gray-400 rounded" style="font-size: 1.6rem" />
-            <div class="admin-page-header">View Administrations</div>
+        <div class="flex flex-column">
+          <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3">
+            <div class="flex flex-column gap-2">
+              <div class="flex align-items-center flex-wrap gap-3 mb-2">
+                <i class="pi pi-list text-gray-400 rounded" style="font-size: 1.6rem" />
+                <div class="admin-page-header">View Administrations</div>
+              </div>
+              <div class="text-md text-gray-500 ml-6">Lists administrations assigned to your account</div>
+            </div>
+            <div class="flex align-items-center gap-2">
+              <div class="flex gap-3 align-items-center justify-content-start">
+                <div class="flex flex-column gap-1">
+                  <small id="search-help" class="text-gray-400">Search by administration name</small>
+                  <div class="flex align-items-center">
+                    <PvInputGroup>
+                      <PvAutoComplete
+                        v-model="searchInput"
+                        placeholder="Search Administrations"
+                        :suggestions="searchSuggestions"
+                        data-cy="search-input"
+                        @complete="autocomplete"
+                        @keyup.enter="onSearch"
+                      />
+                      <PvButton icon="pi pi-search" class="text-xs" @click="onSearch" />
+                    </PvInputGroup>
+                  </div>
+                </div>
+              </div>
+              <div class="flex flex-column gap-1">
+                <small for="dd-sort" class="text-gray-400">Sort by</small>
+                <PvDropdown
+                  v-model="sortKey"
+                  input-id="dd-sort"
+                  :options="sortOptions"
+                  option-label="label"
+                  data-cy="dropdown-sort-administrations"
+                  @change="onSortChange($event)"
+                />
+              </div>
+            </div>
           </div>
-          <div class="text-md text-gray-500 ml-6">Lists administrations assigned to your account</div>
+          <div
+            v-if="search.length > 0"
+            class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 bg-gray-100 rounded"
+          >
+            <div>
+              You searched for <strong>{{ search }}</strong>
+            </div>
+            <PvButton text class="text-xs p-2" @click="clearSearch"> Clear Search </PvButton>
+          </div>
         </div>
         <div v-if="initialized && !isLoadingAdministrations">
           <PvBlockUI :blocked="isFetchingAdministrations">
@@ -23,46 +67,6 @@
               :sort-order="sortOrder"
               :sort-field="sortField"
             >
-              <template #header>
-                <div class="flex gap-3 align-items-center justify-content-start">
-                  <div class="flex flex-column gap-1">
-                    <small id="search-help" class="text-gray-400">Search by administration name</small>
-                    <div class="flex align-items-center">
-                      <PvInputGroup>
-                        <PvAutoComplete
-                          v-model="searchInput"
-                          placeholder="Search Administrations"
-                          :suggestions="searchSuggestions"
-                          data-cy="search-input"
-                          @complete="autocomplete"
-                          @keyup.enter="onSearch"
-                        />
-                        <PvButton icon="pi pi-search" class="text-xs" @click="onSearch" />
-                      </PvInputGroup>
-                    </div>
-                  </div>
-                  <div class="flex flex-column gap-1">
-                    <small for="dd-sort" class="text-gray-400">Sort by</small>
-                    <PvDropdown
-                      v-model="sortKey"
-                      input-id="dd-sort"
-                      :options="sortOptions"
-                      option-label="label"
-                      data-cy="dropdown-sort-administrations"
-                      @change="onSortChange($event)"
-                    />
-                  </div>
-                </div>
-                <div
-                  v-if="search.length > 0"
-                  class="flex align-items-center gap-3 text-gray-700 px-4 py-3 my-1 search-wrapper"
-                >
-                  <div>
-                    You searched for <strong>{{ search }}</strong>
-                  </div>
-                  <PvButton text class="text-xs p-2" @click="clearSearch"> Clear Search </PvButton>
-                </div>
-              </template>
               <template #list="slotProps">
                 <div class="mb-2 w-full">
                   <CardAdministration
@@ -335,9 +339,5 @@ const onSortChange = (event) => {
 .loading-container {
   width: 100%;
   text-align: center;
-}
-
-.search-wrapper {
-  border-radius: 0.3rem;
 }
 </style>
