@@ -43,7 +43,7 @@
             } to CSV file for spreadsheet import`
           "
           label="Export Selected"
-          :badge="selectedRows.length"
+          :badge="selectedRows?.length?.toString()"
           :disabled="selectedRows.length === 0"
           class="m-1"
           @click="exportCSV(true, $event)"
@@ -147,10 +147,10 @@
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
+                    v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
                     :label="colData.routeParams.buttonLabel"
-                    v-tooltip.right="colData.routeParams.tooltip"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
                     data-cy="route-button"
