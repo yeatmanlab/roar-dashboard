@@ -581,7 +581,7 @@ const computeAssignmentAndRunData = computed(() => {
 
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
-      const grade = user.studentData.grade;
+      const grade = user.studentData?.grade;
       // compute schoolName
       let schoolName = '';
       const schoolId = user?.schools?.current[0];
@@ -602,12 +602,12 @@ const computeAssignmentAndRunData = computed(() => {
           assessmentPid: user.assessmentPid,
           schoolName: schoolName,
         },
+        tooltip: `View ${firstNameOrUsername}'s Score Report`,
         routeParams: {
           administrationId: props.administrationId,
           orgId: props.orgId,
           orgType: props.orgType,
           userId: user.userId,
-          tooltip: `View ${firstNameOrUsername}'s Score Report`,
         },
         // compute and add scores data in next step as so
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
