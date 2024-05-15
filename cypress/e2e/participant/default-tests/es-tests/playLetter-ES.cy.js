@@ -9,7 +9,7 @@ const app = '@bdelab/roar-letter';
 
 describe('ROAR - Letra Play Through', () => {
   it('Plays Letra', () => {
-    isCurrentVersion(app).then((isCurrentVersion) => {
+    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {

@@ -4,7 +4,7 @@ import { isCurrentVersion } from '../../../../support/utils';
 const app = '@bdelab/roam-fluency';
 describe('Test playthrough of Fluency as a participant in a simulated high latency networkt', () => {
   it('Fluency Playthrough Test', () => {
-    isCurrentVersion(app).then((isCurrentVersion) => {
+    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {

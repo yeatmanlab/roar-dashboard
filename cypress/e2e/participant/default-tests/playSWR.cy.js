@@ -5,7 +5,7 @@ const app = '@bdelab/roar-swr';
 
 describe('ROAR - Word Play Through', () => {
   it('Plays Word', () => {
-    isCurrentVersion(app).then((isCurrentVersion) => {
+    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
