@@ -8,7 +8,7 @@ describe('Test to maintain that assent form shows in when signing in with an un-
     cy.login(test_login, test_pw);
     cy.visit('/');
     cy.wait(1000);
-    cy.get('.p-dialog-title').contains('Assent Form').should('be.visible');
+    cy.get('.p-dialog-title').contains('Consent Form').should('be.visible');
     cy.get('.p-confirm-dialog-accept').contains('Continue').should('be.visible');
   });
 });
