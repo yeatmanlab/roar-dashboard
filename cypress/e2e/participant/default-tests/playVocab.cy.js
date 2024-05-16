@@ -1,16 +1,15 @@
-import { playPA } from '../../../support/helper-functions/roar-pa/paHelpers';
+import { playVocabulary } from '../../../support/helper-functions/roar-vocab/vocabHelpers';
 import { isCurrentVersion } from '../../../support/utils';
 
-const app = '@bdelab/roar-pa';
-
-describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
-  it(`ROAR-Phoneme Playthrough Test`, () => {
+const app = '@bdelab/roar-vocab';
+describe('ROAR - Written Vocabulary Play Through', () => {
+  it('Plays Written Vocabulary', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playPA();
+        playVocabulary();
       }
     });
   });

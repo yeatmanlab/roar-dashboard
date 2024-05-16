@@ -36,7 +36,7 @@
     "@bdelab/roar-swr": "^1.12.1",
     "@bdelab/roar-utils": "^1.2.1",
     "@bdelab/roar-vocab": "^1.7.2",
-    "@bdelab/roav-crowding": "^1.0.36",
+    "@bdelab/roav-crowding": "^1.1.0",
     "@bdelab/roav-ran": "^1.0.14",
     "@sentry/browser": "^8.0.0",
     "@sentry/integrations": "^7.114.0",

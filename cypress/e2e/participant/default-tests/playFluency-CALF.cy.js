@@ -1,16 +1,16 @@
-import { playPA } from '../../../support/helper-functions/roar-pa/paHelpers';
+import { playFluencyCALF } from '../../../support/helper-functions/roam-fluency/fluencyHelpers';
 import { isCurrentVersion } from '../../../support/utils';
 
-const app = '@bdelab/roar-pa';
+const app = '@bdelab/roam-fluency';
 
-describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
-  it(`ROAR-Phoneme Playthrough Test`, () => {
+describe('Test playthrough of Fluency as a participant', () => {
+  it('Fluency Playthrough Test', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playPA();
+        playFluencyCALF();
       }
     });
   });
