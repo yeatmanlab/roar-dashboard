@@ -10,8 +10,8 @@ function clickButton(selector) {
   });
 }
 
-function checkGameTab(language) {
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
+function checkGameTab(language, task) {
+  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
 
 function makeChoiceOrContinue(gameCompleteText) {
@@ -35,7 +35,7 @@ function makeChoiceOrContinue(gameCompleteText) {
   });
 }
 
-export function startGame(administration, language, optional) {
+export function startGame(administration, language, optional, task) {
   Cypress.on('uncaught:exception', () => false);
   cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
 
@@ -46,10 +46,10 @@ export function startGame(administration, language, optional) {
     cy.switchToOptionalAssessments();
   }
 
-  checkGameTab(language);
-  cy.visit(languageOptions[language].url);
+  checkGameTab(language, task);
+  cy.visit(languageOptions[language][task].url);
 
-  cy.get('.jspsych-btn', { timeout: 18 * timeout })
+  cy.get('.jspsych-btn', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 
@@ -61,13 +61,14 @@ export function startGame(administration, language, optional) {
   cy.get('.go-button', { timeout: timeout }).should('be.visible').click();
 }
 
-export function playLetter({
+export function playMorphology({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',
-  gameCompleteText = 'Congratulations',
   optional = false,
+  task = 'morphology',
+  gameCompleteText = "You're all done",
 } = {}) {
-  startGame(administration, language, optional);
+  startGame(administration, language, optional, task);
 
   makeChoiceOrContinue(gameCompleteText);
   cy.log('Game finished successfully.');
@@ -80,6 +81,30 @@ export function playLetter({
     cy.switchToOptionalAssessments();
   }
 
-  checkGameTab(language);
+  checkGameTab(language, task);
+  cy.log('Test completed successfully.');
+}
+
+export function playWrittenVocabulary({
+  administration = Cypress.env('testRoarAppsAdministration'),
+  language = 'en',
+  optional = false,
+  task = 'cva',
+  gameCompleteText = "You're all done",
+} = {}) {
+  startGame(administration, language, optional, task);
+
+  makeChoiceOrContinue(gameCompleteText);
+  cy.log('Game finished successfully.');
+
+  cy.visit('/');
+  cy.wait(0.2 * timeout);
+  cy.selectAdministration(administration);
+
+  if (optional) {
+    cy.switchToOptionalAssessments();
+  }
+
+  checkGameTab(language, task);
   cy.log('Test completed successfully.');
 }

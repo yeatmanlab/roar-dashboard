@@ -1,12 +1,19 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel header="Create a new organization">
-        Use this form to create a new organization.
+      <div class="flex flex-column mb-5">
+        <div class="flex justify-content-between mb-2">
+          <div class="flex align-items-center gap-3">
+            <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
+            <div class="admin-page-header">Create a new organization</div>
+          </div>
+        </div>
+        <div class="text-md text-gray-500 ml-6">Use this form to create a new organization.</div>
+      </div>
 
-        <PvDivider />
-
-        <div class="grid column-gap-3 mt-5">
+      <PvDivider />
+      <div class="bg-gray-100 rounded p-4">
+        <div class="grid column-gap-3 mt-5 rounded">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
             <span class="p-float-label">
               <PvDropdown
@@ -185,7 +192,7 @@
             />
           </div>
         </div>
-      </PvPanel>
+      </div>
     </section>
   </main>
 </template>

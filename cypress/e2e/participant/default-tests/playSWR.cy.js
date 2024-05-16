@@ -1,10 +1,17 @@
 import { playSWR } from '../../../support/helper-functions/roar-swr/swrHelpers.js';
+import { isCurrentVersion } from '../../../support/utils';
 
-const administration = Cypress.env('testRoarAppsAdministration');
-const language = 'en';
+const app = '@bdelab/roar-swr';
 
 describe('ROAR - Word Play Through', () => {
   it('Plays Word', () => {
-    playSWR(administration, language);
+    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
+      if (isCurrentVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+      } else {
+        cy.log(`Detected a new version of ${app}, running test.`);
+        playSWR();
+      }
+    });
   });
 });

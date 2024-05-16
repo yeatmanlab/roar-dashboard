@@ -85,7 +85,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { camelize } from '@bdelab/roar-utils';
+import { camelize, getAgeData } from '@bdelab/roar-utils';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 
 const props = defineProps({
@@ -182,7 +182,8 @@ async function routeExternalTask(game) {
   }
 
   if (game.taskData.name.toLowerCase() === 'mefs') {
-    url += `participantID=${props.userData.id}&participantAgeInMonths=${props.userData?.ageInMonths}`;
+    const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
+    url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
   } else {
     url += `&participant=${props.userData.assessmentPid}${
       props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
