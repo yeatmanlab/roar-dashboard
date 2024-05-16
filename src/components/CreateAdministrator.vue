@@ -1,12 +1,18 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel header="Create a new administrator account">
-        Use this form to create a new user and give them administrator access to selected organizations.
+      <div class="flex flex-column">
+        <div class="flex flex-column mb-5 gap-2">
+          <div class="flex align-items-center flex-wrap gap-3 mb-2">
+            <i class="pi pi-list text-gray-400 rounded" style="font-size: 1.6rem" />
+            <div class="admin-page-header">Create a new administrator account</div>
+          </div>
+          <div class="text-md text-gray-500 ml-6">
+            Use this form to create a new user and give them administrator access to selected organizations.
+          </div>
+        </div>
 
-        <PvDivider />
-
-        <div v-if="initialized && !registering">
+        <div v-if="initialized && !registering" class="w-full">
           <div class="grid">
             <div class="col-12 md:col-6 lg:col-3 my-3">
               <span class="p-float-label">
@@ -68,7 +74,7 @@
           <span v-if="initialized">Registering new administrator...</span>
           <span v-else>Initializing...</span>
         </div>
-      </PvPanel>
+      </div>
     </section>
   </main>
 </template>
@@ -230,24 +236,10 @@ const submit = async () => {
     margin: 0.625rem 0rem;
   }
 
-  // .p-dropdown-label {
-  //   font-family: 'Source Sans Pro', sans-serif;
-  //   color: #C4C4C4;
-  // }
-
   ::placeholder {
     font-family: 'Source Sans Pro', sans-serif;
     color: #c4c4c4;
   }
-
-  // .p-button {
-  //   width: 11.5625rem;
-  //   height: 2.25rem;
-  //   border-radius: 3.9375rem;
-  //   margin: 1.5rem 0rem;
-  //   margin-right: 1.375rem;
-  //   float: right;
-  // }
 
   .hide {
     display: none;
