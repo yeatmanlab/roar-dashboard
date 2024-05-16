@@ -3,7 +3,7 @@
     <section class="main-body">
       <div>
         <div class="flex flex-column">
-          <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3">
+          <div class="flex flex-row flex-wrap align-items-center justify-content-between mb-3 gap-3">
             <div class="flex flex-column gap-2">
               <div class="flex align-items-center flex-wrap gap-3 mb-2">
                 <i class="pi pi-list text-gray-400 rounded" style="font-size: 1.6rem" />
