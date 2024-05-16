@@ -8,12 +8,20 @@
               <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem"></i>
               <div class="admin-page-header">List Users</div>
             </div>
-            <div class="bg-gray-100 px-5 py-2 rounded">
-              <div class="uppercase font-light font-sm text-gray-400 mb-1">
-                {{ singularizeFirestoreCollection(orgType) }}
+            <div class="bg-gray-100 px-5 py-2 rounded flex flex-column gap-3">
+              <div class="flex flex-wrap align-items-center gap-2 justify-content-between">
+                <div class="uppercase font-light font-sm text-gray-400 mb-1">
+                  {{ singularizeFirestoreCollection(orgType) }}
+                </div>
+                <div class="text-xl text-gray-600">
+                  <b> {{ orgName }} </b>
+                </div>
               </div>
-              <div class="text-xl text-gray-600">
-                <b> {{ orgName }} </b>
+              <div class="flex flex-wrap gap-2 justify-content-between">
+                <div class="uppercase font-light font-sm text-gray-400 mb-1">Student Count</div>
+                <div class="text-xl text-gray-600">
+                  <b> {{ users.length }} </b>
+                </div>
               </div>
             </div>
           </div>
