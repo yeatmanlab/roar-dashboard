@@ -33,8 +33,8 @@ function checkAssignmentColumns(assignments) {
 }
 
 function checkIndividualScoreReport() {
-  cy.get('button', { timeout: 3 * timeout })
-    .contains('Report')
+  cy.get('[data-cy="route-button"]', { timeout: 3 * timeout })
+    .first()
     .click();
   cy.get('div', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
   cy.get('button', { timeout: 3 * timeout })
@@ -44,8 +44,8 @@ function checkIndividualScoreReport() {
   cy.get('div', { timeout: 3 * timeout }).contains('The ROAR assessments return these kinds of scores');
 }
 
-describe('The partner admin can view score reports for a given administration.', () => {
-  it('Selects an administration and views its score report.', () => {
+describe('The partner admin can view individual score reports for a given administration.', () => {
+  it("Selects an administration and views a student's individual score report", () => {
     checkUrl();
     cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();

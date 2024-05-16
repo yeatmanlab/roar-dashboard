@@ -174,6 +174,13 @@ const routes = [
     meta: { pageTitle: 'RAN' },
   },
   {
+    path: '/game/crowding',
+    name: 'Crowding',
+    component: () => import('../components/tasks/TaskCrowding.vue'),
+    props: { taskId: 'crowding', language: 'en' },
+    meta: { pageTitle: 'Crowding' },
+  },
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),
@@ -216,6 +223,7 @@ const routes = [
       },
     },
   },
+  // TODO: Make this logic happen on click of sign out button
   {
     path: '/signout',
     name: 'SignOut',
@@ -223,8 +231,10 @@ const routes = [
       const store = useAuthStore();
       if (store.isAuthenticated) {
         await store.signOut();
-        store.userData = null;
       }
+      // Clear auth and game store so kids playing on the same device don't run into issues
+      sessionStorage.removeItem('gameStore');
+      sessionStorage.removeItem('authStore');
       return { name: 'SignIn' };
     },
     meta: {
@@ -321,12 +331,6 @@ const routes = [
     props: true,
     component: () => import('../pages/IndividualReport.vue'),
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
-  },
-  {
-    path: '/survey',
-    name: 'Survey',
-    component: () => import('../pages/LEVANTE/UserSurvey.vue'),
-    meta: { pageTitle: 'Survey' },
   },
   {
     path: '/enable-cookies',

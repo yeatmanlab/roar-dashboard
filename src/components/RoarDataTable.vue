@@ -3,7 +3,7 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div class="w-full gap-2 pt-4 flex justify-content-center flex-wrap mt-3">
+    <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
       <span class="p-float-label my-3">
         <PvMultiSelect
@@ -13,7 +13,7 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-2 md:w-20rem"
+          class="w-2 md:w-10rem"
           selected-items-label="{0} columns selected"
           @update:model-value="onColumnToggle"
         />
@@ -26,30 +26,35 @@
           :options="inputColumns"
           option-label="header"
           :max-selected-labels="3"
-          class="w-2 md:w-20rem"
+          class="w-2 md:w-10rem"
           selected-items-label="{0} columns frozen"
           :show-toggle-all="false"
           @update:model-value="onFreezeToggle"
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
-      <span class="flex flex-row flex-wrap justify-content-end gap-2">
+      <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
+        <PvButton text :label="rowViewMode" class="my-1" @click="toggleView" />
         <PvButton
           v-if="allowExport"
-          v-tooltip.bottom="'Export all scores for selected students to CSV file for spreadsheet import'"
+          v-tooltip.bottom="
+            `Export scores for ${selectedRows.length} student${
+              selectedRows.length > 1 ? 's' : ''
+            } to CSV file for spreadsheet import`
+          "
           label="Export Selected"
+          :badge="selectedRows?.length?.toString()"
           :disabled="selectedRows.length === 0"
-          class="m-2"
+          class="m-1"
           @click="exportCSV(true, $event)"
         />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
-          class="m-2"
+          class="m-1"
           @click="exportCSV(false, $event)"
         />
-        <PvButton :label="rowViewMode" class="my-2" @click="toggleView" />
       </span>
     </div>
     <div class="flex flex-column">
@@ -65,7 +70,7 @@
           v-model:selection="selectedRows"
           class="scrollable-container"
           :class="{ compressed: compressedRows }"
-          :value="props.data"
+          :value="data"
           :row-hover="true"
           :reorderable-columns="true"
           :resizable-columns="true"
@@ -75,12 +80,12 @@
           show-gridlines
           filter-display="menu"
           paginator
-          :rows="props.pageLimit"
+          :rows="pageLimit"
           :always-show-paginator="true"
           paginator-position="both"
           :rows-per-page-options="[10, 25, 50, 100]"
-          :total-records="props.totalRecords"
-          :loading="props.loading"
+          :total-records="totalRecords"
+          :loading="loading"
           scrollable
           :select-all="selectAll"
           @select-all-change="onSelectAll"
@@ -142,17 +147,22 @@
               <div v-else-if="col.link">
                 <router-link :to="{ name: col.routeName, params: colData.routeParams }">
                   <PvButton
+                    v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
-                    :label="col.routeLabel"
+                    :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
+                    data-cy="route-button"
                     size="small"
                   />
                 </router-link>
               </div>
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
+              </div>
+              <div v-else-if="col.field === 'user.lastName'">
+                {{ _get(colData, col.field) }}
               </div>
               <div v-else>
                 {{ _get(colData, col.field) }}
@@ -425,7 +435,7 @@ function increasePadding() {
     rowViewMode.value = 'Compact View';
   } else {
     rowViewMode.value = 'Expand View';
-    document.documentElement?.style.setProperty('--padding-value', '1px 1.5rem 2px 1.5rem');
+    document.documentElement?.style.setProperty('--padding-value', '0 1.5rem 0 1.5rem');
   }
   countForVisualize.value = !countForVisualize.value;
 }
@@ -581,6 +591,10 @@ g {
   padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
   margin-top: 5px;
   margin-bottom: 5px;
+}
+
+.export-wrapper {
+  max-height: 4rem;
 }
 
 .view-label {

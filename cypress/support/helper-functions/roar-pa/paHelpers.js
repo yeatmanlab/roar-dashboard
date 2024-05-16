@@ -55,28 +55,26 @@ const playTrial = (targetText) => {
 };
 
 function playIntro(startText) {
-  cy.get('.instructionCanvasNS', { timeout: 6 * timeout })
+  cy.get('.instructionCanvasNS', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 
-  cy.get('.jspsych-btn', { timeout: 6 * timeout })
+  cy.get('.jspsych-btn', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 
-  cy.get('.continue', { timeout: 6 * timeout })
+  cy.get('.continue', { timeout: 12 * timeout })
     .should('be.visible')
     .click();
 
   handleFullScreenError();
 
-  cy.get('div', { timeout: timeout }).contains(startText, { timeout: timeout }).should('be.visible');
-  cy.get('.continue', { timeout: timeout }).should('be.visible').click();
-
-  // clicks through first introduction pages
-  // eslint-disable-next-line no-plusplus
-  // for (let i = 0; i < 2; i++) {
-  //   cy.get(".continue", { timeout: timeout }).should('be.visible').click();
-  // }
+  cy.get('div', { timeout: timeout })
+    .contains(startText, { timeout: 2 * timeout })
+    .should('be.visible');
+  cy.get('.continue', { timeout: 2 * timeout })
+    .should('be.visible')
+    .click();
 }
 
 function playFirstTutorial() {
@@ -110,7 +108,30 @@ function playThirdTutorial() {
   cy.get('.continue').click();
 }
 
-export function playPA(startText, breakText, breakText2, endText) {
+export function playPA({
+  administration = Cypress.env('testRoarAppsAdministration'),
+  language = 'en',
+  optional = false,
+  startText = 'In this game we are going to look for words that BEGIN with the same sound.',
+  breakText = 'Take a break if needed',
+  breakText2 = {
+    break1: 'Great job',
+    break2: 'Look at all those carrots',
+    break3: 'You are doing great',
+  },
+  endText = {
+    endText1: 'Take a break if needed',
+    endText2: 'I have been swimming so much',
+    endText3: 'You have helped me and all my friends!',
+  },
+} = {}) {
+  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+  cy.visit('/');
+
+  cy.selectAdministration(administration);
+
+  cy.visit('/game/pa');
+
   playIntro(startText);
 
   playFirstTutorial();
@@ -140,26 +161,11 @@ export function playPA(startText, breakText, breakText2, endText) {
   playTrial(breakText2.break3);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   playTrial(endText.endText3);
-  // playIntro(startText);
 
-  // playFirstTutorial();
-  // playTrial(breakText.breakText1);
-  // //  fsmBreak
-  // cy.log('break 1');
-  // cy.get('.continue', { timeout: 2 * timeout }).click();
-  // playTrial(endText.endText1);
-
-  // playSecondTutorial();
-  // playTrial(breakText.breakText2);
-  // //  lsmBreak
-  // cy.log('break 2');
-  // cy.get('.continue', { timeout: 2 * timeout }).click();
-  // playTrial(endText.endText2);
-
-  // playThirdTutorial();
-  // playTrial(breakText.breakText3);
-  // //  delBreak
-  // cy.log('break 3');
-  // cy.get('.continue', { timeout: 2 * timeout }).click();
-  // playTrial(endText.endText3);
+  cy.visit('/');
+  cy.wait(0.2 * timeout);
+  cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
+  cy.get('.tabview-nav-link-label', { timeout: 3 * timeout })
+    .contains('ROAR - Phoneme')
+    .should('exist');
 }

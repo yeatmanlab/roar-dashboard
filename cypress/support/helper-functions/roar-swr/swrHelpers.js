@@ -2,7 +2,11 @@ import { languageOptions } from './languageOptions';
 
 const timeout = Cypress.env('timeout');
 
-export const playSWR = (administration, language, optional = false) => {
+export const playSWR = ({
+  administration = Cypress.env('testRoarAppsAdministration'),
+  language = 'en',
+  optional = false,
+} = {}) => {
   // Log in once at the beginning of the test case that calls playSWR
   cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
 
@@ -16,7 +20,7 @@ export const playSWR = (administration, language, optional = false) => {
   cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
   cy.visit(languageOptions[language].url);
 
-  cy.get('.jspsych-btn', { timeout: 6 * timeout })
+  cy.get('.jspsych-btn', { timeout: 18 * timeout })
     .should('be.visible')
     .click();
 

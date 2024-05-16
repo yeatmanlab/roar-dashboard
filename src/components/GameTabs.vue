@@ -1,6 +1,6 @@
 <template>
-  <div id="games">
-    <PvTabView v-model:activeIndex="displayGameIndex">
+  <div id="games" class="game-tab-container">
+    <PvTabView v-model:activeIndex="displayGameIndex" :scrollable="true" class="flex flex-column">
       <PvTabPanel
         v-for="(game, index) in games"
         :key="game.taskId"
@@ -25,9 +25,9 @@
             getTaskName(game.taskData.name)
           }}</span>
         </template>
-        <article class="roar-tabview-game pointer">
+        <div class="roar-tabview-game pointer flex">
           <div class="roar-game-content" @click="routeExternalTask(game)">
-            <h2 class="roar-game-title">{{ getTaskName(game.taskData.name) }}</h2>
+            <div class="roar-game-title">{{ getTaskName(game.taskData.name) }}</div>
             <div class="roar-game-description">
               <p>{{ getTaskDescription(game.taskData.name, game.taskData.description) }}</p>
             </div>
@@ -71,13 +71,13 @@
               <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
             </div>
           </div>
-        </article>
+        </div>
       </PvTabPanel>
     </PvTabView>
   </div>
 </template>
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _findIndex from 'lodash/findIndex';
@@ -85,13 +85,8 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { camelize } from '@bdelab/roar-utils';
-
-let VideoPlayer;
-
-onMounted(async () => {
-  VideoPlayer = (await import('@/components/VideoPlayer.vue')).default;
-});
+import { camelize, getAgeData } from '@bdelab/roar-utils';
+import VideoPlayer from '@/components/VideoPlayer.vue';
 
 const { t, locale } = useI18n();
 
@@ -182,7 +177,8 @@ async function routeExternalTask(game) {
   }
 
   if (game.taskData.name.toLowerCase() === 'mefs') {
-    url += `participantID=${props.userData.id}&participantAgeInMonths=${props.userData?.ageInMonths}`;
+    const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
+    url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
   } else {
     url += `&participant=${props.userData.assessmentPid}${
       props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
@@ -211,16 +207,22 @@ const returnVideoOptions = (videoURL) => {
 </script>
 
 <style scoped lang="scss">
+.game-tab-container {
+  max-width: 75vw;
+}
+
 .pointer {
   cursor: pointer;
 }
 
 .video-player-wrapper {
-  // display: flex;
-  flex-direction: column;
-  justify-content: center;
+  min-width: 350px;
   align-items: center;
-  min-width: 30rem;
   min-height: 100%;
+}
+@media screen and (max-width: 768px) {
+  .video-player-wrapper {
+    min-width: 250px;
+  }
 }
 </style>

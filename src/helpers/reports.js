@@ -104,11 +104,17 @@ export const taskDisplayNames = {
     extendedName: 'RAN',
     order: 23,
   },
+  crowding: {
+    name: 'Crowding',
+    extendedTitle: 'ROAV - Crowding',
+    extendedName: 'Crowding',
+    order: 24,
+  },
   ExternalTest: {
     name: 'External Test',
     extendedTitle: 'ROAR- External Test',
     extendedName: 'External Test',
-    order: 23,
+    order: 25,
   },
 };
 
@@ -131,11 +137,12 @@ export const extendedDescriptions = {
     'This test measures how well your student knows the names of letters and which letters are used to spell each sound.',
   comp: 'Temporary description for comp',
   phonics:
-    'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling.',
-  syntax: 'This test measures how well students understand sentences that vary from simple to complicated.',
-  trog: 'This test measures how well students understand sentences that vary from simple to complicated.',
-  fluency: 'Temporary description for fluency.',
-  ran: 'Temporary description for ran.',
+    'This test measures phonics knowledge by testing how well your student can match the sounds of a word to the spelling',
+  syntax: 'This test measures how well students understand sentences that vary from simple to complicated',
+  trog: 'This test measures how well students understand sentences that vary from simple to complicated',
+  fluency: 'Temporary description for fluency',
+  ran: 'Temporary description for ran',
+  crowding: 'Temporary description for crowding',
 };
 
 /*

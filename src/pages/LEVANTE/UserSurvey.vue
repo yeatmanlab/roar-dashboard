@@ -10,6 +10,25 @@ import { useRouter } from 'vue-router';
 import { useGameStore } from '@/store/game';
 import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
+import { BufferLoader, AudioContext } from '@/helpers/audio';
+
+const fetchAudioLinks = async (surveyType) => {
+  const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
+  const files = response.data || { items: [] };
+  const audioLinkMap = {};
+  files.items.forEach((item) => {
+    if (item.contentType === 'audio/mpeg' && item.name.startsWith(surveyType)) {
+      const splitParts = item.name.split('/');
+      const fileLocale = splitParts[1];
+      const fileName = splitParts.at(-1).split('.')[0];
+      if (!audioLinkMap[fileLocale]) {
+        audioLinkMap[fileLocale] = {};
+      }
+      audioLinkMap[fileLocale][fileName] = `https://storage.googleapis.com/road-dashboard/${item.name}`;
+    }
+  });
+  return audioLinkMap;
+};
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -19,13 +38,49 @@ const isSavingResponses = ref(false);
 const gameStore = useGameStore();
 const converter = new Converter();
 const { locale } = useI18n();
-
+const audioPlayerBuffers = ref({});
+const audioLoading = ref(false);
 const router = useRouter();
+const context = new AudioContext();
+const audioLinks = ref({});
+
+let currentAudioSource = null;
+
+function getParsedLocale() {
+  return (locale.value || '').split('-')?.[0] || 'en';
+}
+
+function finishedLoading(bufferList, parsedLocale) {
+  audioPlayerBuffers.value[parsedLocale] = bufferList;
+  audioLoading.value = false;
+}
+
+// Function to fetch buffer or return from the cache
+const fetchBuffer = (parsedLocale) => {
+  // buffer already exists for the given local
+  if (audioPlayerBuffers.value[parsedLocale]) {
+    return;
+  }
+  audioLoading.value = true;
+  const bufferLoader = new BufferLoader(context, audioLinks.value[parsedLocale], (bufferList) =>
+    finishedLoading(bufferList, parsedLocale),
+  );
+
+  bufferLoader.load();
+};
 
 // Fetch the survey on component mount
 onMounted(async () => {
   await getSurvey();
 });
+
+const showAndPlaceAudioButton = (playAudioButton, el) => {
+  if (playAudioButton) {
+    playAudioButton.classList.add('play-button-visible');
+    playAudioButton.style.display = 'flex';
+    el.appendChild(playAudioButton);
+  }
+};
 
 async function getSurvey() {
   let userType = toRaw(authStore.userData.userType.toLowerCase());
@@ -33,11 +88,15 @@ async function getSurvey() {
 
   try {
     const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey.json`);
+    const audioLinkMap = await fetchAudioLinks('child-survey');
+    audioLinks.value = audioLinkMap;
     fetchedSurvey.value = response.data;
     // Create the survey model with the fetched data
     const surveyInstance = new Model(fetchedSurvey.value);
 
     surveyInstance.locale = locale.value;
+
+    fetchBuffer(getParsedLocale(locale.value));
 
     survey.value = surveyInstance;
     survey.value.onTextMarkdown.add(function (survey, options) {
@@ -51,6 +110,16 @@ async function getSurvey() {
     });
 
     survey.value.onComplete.add(saveResults);
+    survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
+      const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
+      if (currentAudioSource) {
+        currentAudioSource.stop();
+      }
+      questionElements.forEach((el) => {
+        const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
+        showAndPlaceAudioButton(playAudioButton, el);
+      });
+    });
   } catch (error) {
     console.error(error);
   }
@@ -61,8 +130,25 @@ watch(
   () => locale.value,
   (newLocale) => {
     survey.value.locale = newLocale;
+    // stop any current audio playing
+    if (currentAudioSource) {
+      currentAudioSource.stop();
+    }
+    fetchBuffer(getParsedLocale(newLocale));
   },
 );
+
+async function playAudio(name) {
+  const currentLocale = getParsedLocale(locale.value);
+  if (currentAudioSource) {
+    await currentAudioSource.stop();
+  }
+  const source = context.createBufferSource();
+  currentAudioSource = source;
+  source.buffer = audioPlayerBuffers.value[currentLocale][name];
+  source.connect(context.destination);
+  source.start(0);
+}
 
 async function saveResults(sender) {
   console.log('sender.data: ', sender.data);
@@ -99,10 +185,32 @@ async function saveResults(sender) {
 </script>
 
 <template>
-  <div v-if="survey && !isSavingResponses">
+  <div v-if="survey && !isSavingResponses && !audioLoading">
     <SurveyComponent :model="survey" />
+
+    <div v-for="page in fetchedSurvey.pages" :key="page.name">
+      <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
+        <PvButton
+          :id="'audio-button-' + item.name"
+          icon="pi pi-volume-up"
+          style="display: none"
+          @click="playAudio(item.name)"
+        />
+      </div>
+    </div>
   </div>
-  <AppSpinner v-if="!survey || isSavingResponses" />
+  <AppSpinner v-if="!survey || isSavingResponses || audioLoading" />
 </template>
 
-<style></style>
+<style>
+.play-button-visible {
+  display: flex;
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin-top: -36px;
+  margin-right: -36px;
+  width: 40px;
+  height: 40px;
+}
+</style>

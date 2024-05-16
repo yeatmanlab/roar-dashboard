@@ -141,7 +141,6 @@ app.component('PvConfirmPopup', PvConfirmPopup);
 app.component('PvDataTable', PvDataTable);
 app.component('PvDataView', PvDataView);
 app.component('PvDialog', PvDialog);
-app.component('PvDialog', PvDialog);
 app.component('PvDivider', PvDivider);
 app.component('PvDropdown', PvDropdown);
 app.component('PvFileUpload', PvFileUpload);

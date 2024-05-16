@@ -11,9 +11,11 @@ export const optionalGames = [
   {
     name: 'ROAR - Sentence',
     testSpec: playSRE,
+    app: '@bdelab/roar-sre',
   },
   {
     name: 'ROAR - Word',
     testSpec: playSWR,
+    app: '@bdelab/roar-swr',
   },
 ];

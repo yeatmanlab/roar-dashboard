@@ -1,46 +1,22 @@
-name: Firebase Deploy to Staging and Cypress e2e Tests
+name: Run Cypress Participant Tests
 on:
   pull_request:
     types: [opened, reopened, synchronize]
 
 concurrency:
-  group: ci-preview-tests-${{ github.ref }}-1
+  group: ci-preview-tests-${{ github.ref }}-3
   cancel-in-progress: true
 
 jobs:
-  build-and-preview:
-    name: Deploy preview
-    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-      - name: 'vite build'
-        run: npm ci && npm run build
-      - name: Deploy to Firebase Hosting Channel
-        id: firebase-deploy
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
-          projectId: gse-roar-admin
-          target: staging
-      - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
-    outputs:
-      deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
-
   cypress-run:
-    name: Run Cypress Tests
-    needs: [build-and-preview]
+    name: Run Cypress Participant Tests
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        containers: [1, 2, 3, 4]
+        containers: [1, 2]
     env:
       NODE_OPTIONS: '--max_old_space_size=8192'
       NODE_ENV: 'test'
@@ -69,5 +45,5 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/participant/default-tests/**/*,cypress/e2e/partner-admin/default-tests/**/*'
+          spec: 'cypress/e2e/participant/default-tests/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}

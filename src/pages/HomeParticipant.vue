@@ -9,7 +9,7 @@
         <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
           {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
         </h2>
-        <div class="flex align-items-end gap-2 justify-content-between">
+        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
           <div
             v-if="optionalAssessments.length !== 0"
             class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
@@ -108,6 +108,7 @@ const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
 
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
@@ -355,7 +356,14 @@ let completeGames = computed(() => {
 });
 
 // Set up studentInfo for sidebar
-const studentInfo = computed(() => ({ grade: _get(userData.value, 'studentData.grade') }));
+const studentInfo = computed(() => {
+  if (isLevante) {
+    return null;
+  }
+  return {
+    grade: _get(userData.value, 'studentData.grade'),
+  };
+});
 
 watch(consentParams, (newValue) => {
   consentParams.value = newValue;
@@ -389,6 +397,7 @@ watch(
 .tabs-container {
   display: flex;
   flex-direction: row;
+  max-width: 100vw;
   padding: 2rem;
   gap: 2rem;
 }
@@ -418,7 +427,7 @@ watch(
 
 @media screen and (max-width: 1100px) {
   .tabs-container {
-    flex-direction: column;
+    flex-direction: row;
   }
 }
 

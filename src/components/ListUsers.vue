@@ -1,25 +1,36 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel header="View Users">
-        <div v-if="!(isLoading || isLoadingCount)">
-          <h2>Users in {{ singularizeFirestoreCollection(orgType) }} {{ orgName }}</h2>
-          <RoarDataTable
-            v-if="users"
-            lazy
-            :columns="columns"
-            :data="users"
-            :page-limit="pageLimit"
-            :total-records="totalRecords"
-            :loading="isLoading || isLoadingCount || isFetching || isFetchingCount"
-            :allow-export="false"
-            :allow-filtering="false"
-            @page="onPage($event)"
-            @sort="onSort($event)"
-          />
+      <div v-if="!isLoading">
+        <div class="flex flex-column mb-5">
+          <div class="flex justify-content-between">
+            <div class="flex align-items-center gap-3">
+              <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem"></i>
+              <div class="admin-page-header">List Users</div>
+            </div>
+            <div class="bg-gray-100 px-5 py-2 rounded">
+              <div class="uppercase font-light font-sm text-gray-400 mb-1">
+                {{ singularizeFirestoreCollection(orgType) }}
+              </div>
+              <div class="text-xl text-gray-600">
+                <b> {{ orgName }} </b>
+              </div>
+            </div>
+          </div>
+          <div class="text-md text-gray-500 ml-6">View users for the selected organization.</div>
         </div>
-        <AppSpinner v-else />
-      </PvPanel>
+
+        <RoarDataTable
+          v-if="users"
+          :columns="columns"
+          :data="users"
+          :loading="isLoading || isFetching"
+          :allow-export="false"
+          :allow-filtering="false"
+          @sort="onSort($event)"
+        />
+      </div>
+      <AppSpinner v-else />
     </section>
   </main>
 </template>
@@ -30,7 +41,7 @@ import _isEmpty from 'lodash/isEmpty';
 import { useQuery } from '@tanstack/vue-query';
 import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
-import { countUsersByOrg, fetchUsersByOrg } from '@/helpers/query/users';
+import { fetchUsersByOrg } from '@/helpers/query/users';
 import { singularizeFirestoreCollection } from '@/helpers';
 
 const authStore = useAuthStore();
@@ -38,7 +49,6 @@ const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
-const pageLimit = ref(10);
 const page = ref(0);
 const orderBy = ref(null);
 
@@ -58,24 +68,12 @@ const props = defineProps({
 });
 
 const {
-  isLoading: isLoadingCount,
-  isFetching: isFetchingCount,
-  data: totalRecords,
-} = useQuery({
-  queryKey: ['countUsers', authStore.uid, props.orgType, props.orgId, orderBy],
-  queryFn: () => countUsersByOrg(props.orgType, props.orgId, orderBy),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const {
   isLoading,
   isFetching,
   data: users,
 } = useQuery({
-  queryKey: ['usersByOrgPage', authStore.uid, props.orgType, props.orgId, pageLimit, page, orderBy],
-  queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, pageLimit, page, orderBy),
+  queryKey: ['usersByOrgPage', authStore.uid, props.orgType, props.orgId, page, orderBy],
+  queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, ref(1000000), page, orderBy),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -131,11 +129,6 @@ const columns = ref([
     sort: false,
   },
 ]);
-
-const onPage = (event) => {
-  page.value = event.page;
-  pageLimit.value = event.rows;
-};
 
 const onSort = (event) => {
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({

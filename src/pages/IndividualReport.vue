@@ -380,7 +380,7 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  align-items: center;
+  align-items: start;
   justify-content: space-around;
 }
 

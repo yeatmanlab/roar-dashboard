@@ -23,7 +23,7 @@
         option-label="name"
       />
     </div>
-    <div class="chart-wrapper align-items-center">
+    <div class="chart-wrapper align-items-start">
       <div class="h-full flex flex-column align-items-center">
         <DistributionChartSupport
           :initialized="initialized"

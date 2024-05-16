@@ -10,7 +10,7 @@
           <ROARLogoShort v-else />
         </div>
       </header>
-      <h1>{{ $t('pageSignIn.welcome') }}</h1>
+      <h1 v-if="!isLevante">{{ $t('pageSignIn.welcome') }}</h1>
       <section class="signin-options">
         <section class="signin-option-container signin-option-userpass">
           <h4 class="signin-option-title">{{ $t('pageSignIn.login') }}</h4>

@@ -7,7 +7,7 @@
         <p>{{ $t('participantSidebar.tasksCompleted') }}</p>
       </div>
     </div>
-    <ul class="sidebar-info">
+    <ul v-if="!!studentInfo" class="sidebar-info">
       <li class="sidebar-title">
         <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
       </li>
@@ -66,11 +66,20 @@ const setChartData = (completed, incomplete) => {
   border: 1px solid var(--surface-d);
   border-radius: 5px;
   height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media screen and (max-width: 1100px) {
+  .sidebar-container {
+    width: 150px;
+  }
 }
 
 .sidebar-progress {
   // text-align: center;
   padding-bottom: 0.5rem;
+  width: 120px;
 
   p {
     margin-block: 0;
@@ -90,15 +99,13 @@ const setChartData = (completed, incomplete) => {
 }
 
 .sidebar-info {
-  border-bottom-right-radius: 5px;
-  border-bottom-left-radius: 5px;
   border-top: solid 1px var(--surface-d);
-  background-color: var(--surface-b);
   padding: 1rem;
   margin-top: 1rem;
   list-style: none;
   margin-bottom: 0;
   line-height: 1.5;
+  width: 100%;
 
   .sidebar-title {
     border-bottom: 1px solid var(--surface-d);

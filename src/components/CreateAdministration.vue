@@ -1,10 +1,26 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <PvPanel header="Create a new administration">
-        Use this form to create a new administration and assign it to organizations.
+      <div class="flex flex-column mb-5">
+        <div class="flex justify-content-between mb-2">
+          <div class="flex align-items-center gap-3">
+            <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
+            <div class="admin-page-header">{{ header }}</div>
+          </div>
+          <button
+            v-if="isSuperAdmin"
+            v-tooltip.top="'Sync Clever orgs'"
+            class="p-panel-header-icon mr-2"
+            @click="syncClever"
+          >
+            <span :class="cleverSyncIcon"></span>
+          </button>
+        </div>
+        <div class="text-md text-gray-500 ml-6">{{ description }}</div>
+      </div>
 
-        <PvDivider />
+      <PvDivider />
+      <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
           <div class="field col-12 xl:col-6 mb-5">
             <span class="p-float-label">
@@ -135,15 +151,10 @@
           </div>
           <div class="divider mx-2 my-3" />
           <div class="mb-2 w-full flex justify-content-center">
-            <PvButton
-              label="Create Administration"
-              data-cy="button-create-administration"
-              style="margin: 0"
-              @click="submit"
-            />
+            <PvButton :label="submitLabel" data-cy="button-create-administration" style="margin: 0" @click="submit" />
           </div>
         </div>
-      </PvPanel>
+      </div>
     </section>
   </main>
 </template>
@@ -178,6 +189,29 @@ import ConsentPicker from './ConsentPicker.vue';
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
+});
+
+const header = computed(() => {
+  if (props.adminId) {
+    return 'Edit an administration';
+  }
+
+  return 'Create a new administration';
+});
+
+const description = computed(() => {
+  if (props.adminId) {
+    return 'Use this form to edit an existing administration.';
+  }
+  return 'Use this form to create a new administration and assign it to organizations.';
+});
+
+const submitLabel = computed(() => {
+  if (props.adminId) {
+    return 'Update Administration';
+  }
+
+  return 'Create Administration';
 });
 
 const router = useRouter();
@@ -559,7 +593,9 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
     state.sequential = adminInfo.sequential;
     _forEach(adminInfo.assessments, (assessment) => {
       const assessmentParams = assessment.params;
-      const found = findVariantWithParams(allVariants.value, assessmentParams);
+      const taskId = assessment.taskId;
+      const allVariantsForThisTask = _filter(allVariantInfo, (variant) => variant.task.id === taskId);
+      const found = findVariantWithParams(allVariantsForThisTask, assessmentParams);
       if (found) {
         preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
@@ -567,12 +603,23 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
   }
 });
 
+const removeNull = (obj) => {
+  // eslint-disable-next-line no-unused-vars
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
+};
+
 function findVariantWithParams(variants, params) {
+  console.log(`attempting to find variant of ${variants[0].task.id}`);
+
   const found = _find(variants, (variant) => {
-    const cleanParams = { ...variant.variant.params };
-    Object.keys(cleanParams).forEach((key) => cleanParams[key] === null && delete cleanParams[key]);
-    return _isEqual(params, cleanParams);
+    const cleanVariantParams = removeNull(variant.variant.params);
+    const cleanInputParams = removeNull(params);
+    return _isEqual(cleanInputParams, cleanVariantParams);
   });
+
+  if (found) {
+    console.log('found', found);
+  }
   // TODO: implement tie breakers if found.length > 1
   return found;
 }

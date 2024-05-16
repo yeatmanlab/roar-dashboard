@@ -1,5 +1,4 @@
 <template>
-  <!-- <PvButton @click="visible = true"> -->
   <PvButton
     class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
     data-cy="button-edit-variant"
