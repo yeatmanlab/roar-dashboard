@@ -1,7 +1,19 @@
 <template>
   <PvPanel class="m-0 p-0 w-full" header="Select params for the Consent and Assent forms">
+    <div class="card flex justify-content-center">
+      <div class="flex flex-wrap gap-3">
+        <div class="flex align-items-center">
+          <PvRadioButton v-model="decision" inputId="helpChoose" name="help" value="help" @change="whatDecision" />
+          <label for="helpChoose" class="ml-2">Help me choose</label>
+        </div>
+        <div class="flex align-items-center">
+          <PvRadioButton v-model="decision" inputId="iKnow" name="know" value="know" @change="whatDecision" />
+          <label for="iKnow" class="ml-2">I know what to select</label>
+        </div>
+      </div>
+    </div>
     <div class="flex flex-row">
-      <div class="align-content-center" style="width: 50%">
+      <div class="align-content-center" style="width: 50%" v-if="helpMeSelect">
         <h3>Default Params</h3>
         <div class="border-solid border-round" style="width: 70%">
           <div v-for="param in defaultParams" :key="param" class="mt-1 mb-1 ml-2 text-center flex">
@@ -29,7 +41,13 @@
         <div class="border-solid border-round" style="width: 70%; cursor: pointer">
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
-              <PvCheckbox v-model="specialParam" input-id="video-recording" value="hasVideo" @change="checkBoxStatus" />
+              <PvCheckbox
+                v-model="specialParam"
+                style="width: 30vh"
+                input-id="video-recording"
+                value="hasVideo"
+                @change="checkBoxStatus"
+              />
               <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="video-recording"
                 >Video Recording</label
               >
@@ -67,42 +85,66 @@
           <div class="flex flex-row">
             <div class="mr-1">
               <span class="p-float-label">
-                <PvInputText
-                  id="consent-amount"
-                  v-model="amount"
-                  class="w-full"
-                  data-cy="input-administraton-consent-amount"
-                />
+                <PvInputText id="consent-amount" v-model="amount" class="w-full" />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
               </span>
             </div>
             <div class="ml-3">
               <span class="p-float-label">
-                <PvInputText
-                  id="consent-time"
-                  v-model="expectedTime"
-                  class="w-full"
-                  data-cy="input-administraton-consent-amount"
-                />
+                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
               </span>
             </div>
           </div>
         </div>
       </div>
-      <div class="flex-column" style="width: 50%">
+      <div v-if="knowWhatIWant" class="flex flex-column pl-3" style="width: 50%">
+        <h3>Select a Consent Form</h3>
+        <PvDropdown
+          v-model="selectedConsent"
+          :options="listOfDocs.consent"
+          optionLabel="fileName"
+          class="w-full md:w-14rem"
+          @change="updateConsent"
+        />
+        <h3 class="pt-3">Select an Assent Form</h3>
+        <PvDropdown
+          v-model="selectedAssent"
+          :options="listOfDocs.assent"
+          optionLabel="fileName"
+          class="w-full md:w-14rem"
+          @change="updateAssent"
+        />
+        <div>
+          <h3 class="mb-4 mt-5">Consent Amount and Expected Time</h3>
+          <div class="flex flex-row">
+            <div class="mr-1">
+              <span class="p-float-label">
+                <PvInputText id="consent-amount" v-model="amount" class="w-full" />
+                <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
+              </span>
+            </div>
+            <div class="ml-3">
+              <span class="p-float-label">
+                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" />
+                <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-if="knowWhatIWant || helpMeSelect" class="flex-column" style="width: 50%">
         <h3 class="font-bold text-center text-xl">Suggested Forms</h3>
         <div class="w-full">
           <PvFieldset legend="Consent" v-if="consents && consents.length > 0">
             <div class="flex flex-row w-full">
               <div style="width: 80%">
                 <p class="m-0">
-                  <span class="font-bold">Name: </span>{{ result.consent[0]?.fileName.stringValue }} <br />
-                  <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit.stringValue }}
+                  <span class="font-bold">Name: </span>{{ result.consent[0]?.fileName }} <br />
+                  <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
                   <br />
-                  <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg.stringValue }} <br />
-                  <span class="font-bold">GitHub Repository: </span
-                  >{{ result.consent[0]?.gitHubRepository.stringValue }}
+                  <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
+                  <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}
                   <br />
                   <span class="font-bold">Last Updated: </span>{{ result.consent[0]?.lastUpdated }} <br />
                 </p>
@@ -125,11 +167,11 @@
             <div class="flex flex-row w-full">
               <div style="width: 80%">
                 <p class="m-0">
-                  <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName.stringValue }} <br />
-                  <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit.stringValue }}
+                  <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName }} <br />
+                  <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit }}
                   <br />
-                  <span class="font-bold">GitHub Org: </span>{{ result.assent[0]?.gitHubOrg.stringValue }} <br />
-                  <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository.stringValue }}
+                  <span class="font-bold">GitHub Org: </span>{{ result.assent?.gitHubOrg }} <br />
+                  <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository }}
                   <br />
                   <span class="font-bold">Last Updated: </span>{{ result.assent[0]?.lastUpdated }} <br />
                 </p>
@@ -164,12 +206,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { fetchLegalDocs } from '@/helpers/query/legal';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { marked } from 'marked';
 import _lowerCase from 'lodash/lowerCase';
+import _mapValues from 'lodash/mapValues';
+import _forEach from 'lodash/forEach';
 
 const defaultParams = [
   {
@@ -202,22 +246,47 @@ const specialParams = [
   },
 ];
 
-let selectedConsentIndex = ref(null);
 const initialized = ref(false);
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
 const paramCheckboxData = ref(false);
 const specialParam = ref(false);
-const amount = ref(null);
-const expectedTime = ref(null);
-const index = ref(null);
+const amount = ref('');
+const expectedTime = ref('');
+const helpMeSelect = ref(null);
+const selectedConsent = ref(null);
+const selectedAssent = ref(null);
+const knowWhatIWant = ref(false);
+const decision = ref('');
+
 let result = {
   consent: [],
   assent: [],
   amount: amount.value,
   expectedTime: expectedTime.value,
 };
+
+function whatDecision() {
+  if (decision.value === 'know') {
+    knowWhatIWant.value = true;
+    helpMeSelect.value = false;
+  }
+  if (decision.value === 'help') {
+    knowWhatIWant.value = false;
+    helpMeSelect.value = true;
+  }
+  specialParam.value = false;
+  paramCheckboxData.value = false;
+  selectedConsent.value = null;
+  selectedAssent.value = null;
+  result = {
+    consent: [],
+    assent: [],
+    amount: amount.value,
+    expectedTime: expectedTime.value,
+  };
+}
 
 const authStore = useAuthStore();
 const emit = defineEmits(['consent-selected']);
@@ -233,10 +302,12 @@ function checkBoxStatus() {
     amount: amount.value,
     expectedTime: expectedTime.value,
   };
-  if (paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
-    specialParam.value = false;
-    getDefaults();
-  } else {
+  if (paramCheckboxData.value) {
+    if (paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
+      specialParam.value = false;
+      getDefaults();
+    }
+  } else if (specialParam.value) {
     if (specialParam.value?.find((item) => item === 'hasVideo' || item === 'hasAudio' || item === 'hasEyeTracking')) {
       getConsentAssent();
     }
@@ -251,83 +322,109 @@ const { data: consents } = useQuery({
   staleTime: 5 * 60 * 1000,
 });
 
+const listOfDocs = computed(() => {
+  let consent = [];
+  let assent = [];
+
+  _forEach(consents.value, (doc) => {
+    if (doc.type.toLowerCase().includes('consent')) {
+      consent.push(doc);
+    } else if (!doc.type.toLowerCase().includes('tos')) {
+      assent.push(doc);
+    }
+  });
+  return { consent, assent };
+});
+
 async function seeConsent(consent) {
   let consentDoc;
   if (consent?.type === 'Assent-es') {
     consentDoc = await authStore.getLegalDoc('assent-es');
   } else {
-    consentDoc = await authStore.getLegalDoc(_lowerCase(consent?.type));
+    consentDoc = await authStore.getLegalDoc((consent?.type).toLowerCase());
   }
   consentVersion.value = consentDoc.version;
   confirmText.value = marked(consentDoc.text);
-  selectedConsentIndex.value = index;
   showConsent.value = true;
+}
+
+function updateConsent() {
+  result.consent[0] = selectedConsent.value;
+  if (selectedAssent.value && selectedConsent.value) {
+    emit('consent-selected', result);
+  }
+}
+
+function updateAssent() {
+  result.assent[0] = selectedAssent.value;
+  if (selectedAssent.value && selectedConsent.value) {
+    emit('consent-selected', result);
+  }
 }
 
 function getDefaults() {
   if (consents.value !== undefined) {
-    for (let i = 0; i < 4; i++) {
-      const consent = consents?.value[i];
-      if (consent.type.includes('consent') || consent.type.includes('Consent')) {
+    _forEach(consents.value, (consent) => {
+      if (consent.type.toLowerCase().includes('consent')) {
         processConsentAssentDefault(consent, result.consent);
-      } else if (consent.type.includes('assent') || consent.type.includes('Assent')) {
+      } else if (consent.type.toLowerCase().includes('assent')) {
         processConsentAssentDefault(consent, result.assent);
       }
-    }
+    });
+    emit('consent-selected', result);
+    return result;
   }
-  emit('consent-selected', result);
-  return result;
 }
 
 function processConsentAssentDefault(consent, targetArray) {
   if (consent.params) {
-    const params = consent.params.arrayValue.values;
-    let hasSpecialParams = false; // Flag to track if specialParams exist for this consent/assent
-    for (let j = 0; j < params.length; j++) {
-      const paramName = params[j].stringValue;
+    const params = consent.params;
+    let hasSpecialParams = false;
+    _forEach(params, (param) => {
+      const paramName = param;
       if (specialParams.some((param) => param.name === paramName)) {
         hasSpecialParams = true;
-        break;
+        return false;
       }
-    }
+    });
+
     if (!hasSpecialParams) {
-      // If there are no specialParams, proceed to check for defaultParams
-      for (let j = 0; j < params.length; j++) {
-        const paramName = params[j].stringValue;
+      _forEach(params, (param) => {
+        const paramName = param;
         if (defaultParams.some((param) => param.name === paramName) || paramName === 'default') {
           targetArray.push(consent);
-          break;
+          return false;
         }
-      }
+      });
     }
   }
 }
 
 function getConsentAssent() {
-  if (consents) {
-    for (let i = 0; i < 4; i++) {
-      const consent = consents.value[i];
-      if (consent.type.includes('consent') || consent.type.includes('Consent')) {
+  if (consents.value !== undefined) {
+    _forEach(consents.value, (consent) => {
+      if (consent.type.toLowerCase().includes('consent')) {
         processConsentAssent(consent, result.consent);
-      } else if (consent.type.includes('assent') || consent.type.includes('Assent')) {
-        processConsentAssent(consent, result.assent);
+      } else if (consent.type.toLowerCase().includes('assent')) {
+        processConsentAssentDefault(consent, result.assent);
       }
-    }
+    });
+    emit('consent-selected', result);
+    return result;
   }
-  emit('consent-selected', result);
-  return result;
 }
 
 function processConsentAssent(consent, targetArray) {
   if (consent.params) {
-    const params = consent.params.arrayValue.values;
-    for (let j = 0; j < params.length; j++) {
-      const paramName = params[j].stringValue;
+    const params = consent.params;
+
+    _forEach(params, (param) => {
+      const paramName = param;
       if (specialParams.some((param) => param.name === paramName)) {
         targetArray.push(consent);
-        break;
+        return false;
       }
-    }
+    });
   }
 }
 

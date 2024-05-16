@@ -10,7 +10,7 @@
     <HomeAdministrator v-else-if="isAdmin" />
   </div>
   <ConsentModal
-    v-if="showConsent"
+    v-if="showConsent && isAdmin"
     :consent-text="confirmText"
     :consent-type="consentType"
     @accepted="updateConsent"
@@ -93,8 +93,10 @@ const confirmText = ref('');
 const consentVersion = ref('');
 
 async function updateConsent() {
-  await authStore.updateConsentStatus(consentType.value, consentVersion.value);
-  userQueryKeyIndex.value += 1;
+  if (isAdmin.value) {
+    await authStore.updateConsentStatus(consentType.value, consentVersion.value);
+    userQueryKeyIndex.value += 1;
+  }
 }
 
 function refreshDocs() {
@@ -103,12 +105,14 @@ function refreshDocs() {
 
 async function checkConsent() {
   // Check for consent
-  const consentStatus = _get(userData.value, `legal.${consentType.value}`);
-  const consentDoc = await authStore.getLegalDoc(consentType.value);
-  consentVersion.value = consentDoc.version;
-  if (!_get(toRaw(consentStatus), consentDoc.version)) {
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
+  if (isAdmin.value) {
+    const consentStatus = _get(userData.value, `legal.${consentType.value}`);
+    const consentDoc = await authStore.getLegalDoc(consentType.value);
+    consentVersion.value = consentDoc.version;
+    if (!_get(toRaw(consentStatus), consentDoc.version)) {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
+    }
   }
 }
 
@@ -126,12 +130,14 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
   if (!isLoading.value) {
     refreshDocs();
-    await checkConsent();
+    if (isAdmin.value) {
+      await checkConsent();
+    }
   }
 });
 
 watch(isLoading, async (newValue) => {
-  if (!newValue) {
+  if (!newValue && isAdmin.value) {
     await checkConsent();
   }
 });

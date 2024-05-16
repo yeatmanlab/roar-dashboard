@@ -368,8 +368,6 @@ const rules = {
   sequential: { required },
   consent: { required },
   assent: { required },
-  amount: { required },
-  expectedTime: { required },
 };
 const v$ = useVuelidate(rules, state);
 const pickListError = ref('');

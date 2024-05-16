@@ -1,21 +1,20 @@
 import _capitalize from 'lodash/capitalize';
-import { getAxiosInstance } from './utils';
-import _mapValues from 'lodash/mapValues';
+import { convertValues, getAxiosInstance } from './utils';
 
 export const fetchLegalDocs = () => {
   const axiosInstance = getAxiosInstance('admin');
-  return axiosInstance.get('/test-legal').then(({ data }) => {
+  return axiosInstance.get('/legal').then(({ data }) => {
     const docs = data.documents.map((doc) => {
       const type = _capitalize(doc.name.split('/').pop());
       const lastUpdated = new Date(doc.createTime);
       return {
         type: type,
-        fileName: doc.fields.fileName,
-        gitHubOrg: doc.fields.gitHubOrg,
-        gitHubRepository: doc.fields.gitHubRepository,
-        currentCommit: doc.fields.currentCommit,
+        fileName: convertValues(doc.fields.fileName),
+        gitHubOrg: convertValues(doc.fields.gitHubOrg),
+        gitHubRepository: convertValues(doc.fields.gitHubRepository),
+        currentCommit: convertValues(doc.fields.currentCommit),
         lastUpdated: lastUpdated.toLocaleString(),
-        params: doc.fields.params,
+        params: convertValues(doc.fields.params),
       };
     });
     return docs;

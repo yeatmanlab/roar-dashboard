@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="!noGamesAvailable || consentSpinner">
-      <div v-if="isFetching || consentSpinner" class="loading-container">
+      <div v-if="isFetching" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
@@ -76,23 +76,37 @@
       </div>
     </div>
   </div>
+  <ConsentModal
+    v-if="showConsent"
+    :consent-text="confirmText"
+    :consent-type="consentType"
+    @accepted="updateConsent"
+    @delayed="refreshDocs"
+  />
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, ref, watch, computed, toRaw } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
+import _lowerCase from 'lodash/lowerCase';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
+import ConsentModal from '../components/ConsentModal.vue';
 
 let GameTabs, ParticipantSidebar;
+const showConsent = ref(false);
+const consentVersion = ref('');
+const confirmText = ref('');
+const consentType = ref('');
+const consentParams = ref({});
 
 let unsubscribe;
 const initialized = ref(false);
@@ -102,7 +116,7 @@ const init = () => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit, consentSpinner } = storeToRefs(authStore);
+const { roarfirekit, consentSpinner, userQueryKeyIndex } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -156,7 +170,7 @@ const {
         return {
           collection: 'administrations',
           docId: administrationId,
-          select: ['name', 'publicName', 'sequential', 'assessments'],
+          select: ['name', 'publicName', 'sequential', 'assessments', 'legal'],
         };
       }),
     ),
@@ -164,6 +178,50 @@ const {
   enabled: administrationQueryEnabled,
   staleTime: 5 * 60 * 1000,
 });
+
+async function checkConsent() {
+  let doc;
+  const dob = new Date(userData.value?.studentData.dob);
+  const grade = userData.value?.studentData.grade;
+  const currentDate = new Date();
+  const age = currentDate.getFullYear() - dob.getFullYear();
+  if (dob && selectedAdmin.value) {
+    if (age >= 18) {
+      doc = _lowerCase(selectedAdmin.value?.legal.consent[0].type);
+    } else {
+      doc = _lowerCase(selectedAdmin.value?.legal.assent[0].type);
+    }
+  } else if (selectedAdmin.value) {
+    if (grade >= 12) {
+      doc = _lowerCase(selectedAdmin.value?.legal.consent[0].type);
+    } else {
+      doc = _lowerCase(selectedAdmin.value?.legal.assent[0].type);
+    }
+  }
+  consentType.value = doc;
+  const consentStatus = _get(userData.value, `legal.${consentType.value}`);
+  const consentDoc = await authStore.getLegalDoc(doc);
+  consentVersion.value = consentDoc.version;
+
+  if (!_get(toRaw(consentStatus), consentDoc.version) && (age > 7 || grade > 1)) {
+    confirmText.value = consentDoc.text;
+    showConsent.value = true;
+  }
+}
+
+async function updateConsent() {
+  consentParams.value = {
+    amount: selectedAdmin.value?.legal.amount,
+    expectedTime: selectedAdmin.value?.legal.expectedTime,
+    dateSigned: new Date(),
+  };
+  try {
+    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value);
+    userQueryKeyIndex.value += 1;
+  } catch {
+    console.log("Couldn't update consent value");
+  }
+}
 
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
 
@@ -242,7 +300,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+    if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
       // Add survey card before the last task (external MEFS)
       fetchedAssessments.splice(fetchedAssessments.length - 1, 0, {
         taskId: 'Survey',
@@ -298,6 +356,20 @@ let completeGames = computed(() => {
 
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => ({ grade: _get(userData.value, 'studentData.grade') }));
+
+watch(consentParams, (newValue) => {
+  consentParams.value = newValue;
+});
+
+watch(
+  selectedAdmin,
+  async (newValue) => {
+    if (newValue) {
+      await checkConsent();
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   adminInfo,
