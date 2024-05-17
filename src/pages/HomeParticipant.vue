@@ -315,16 +315,8 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
-      // Add survey card before the last task (external MEFS)
-      fetchedAssessments.splice(fetchedAssessments.length - 1, 0, {
-        taskId: 'Survey',
-        taskData: {
-          name: 'Survey',
-          description: 'Take a break and answer some questions for us!',
-        },
-      });
-
+    if (authStore.userData.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+      // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
           if (assessment.taskId === 'Survey') {
