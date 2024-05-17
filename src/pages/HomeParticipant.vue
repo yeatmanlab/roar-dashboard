@@ -205,7 +205,7 @@ async function checkConsent() {
   const consentDoc = await authStore.getLegalDoc(docType);
   consentVersion.value = consentDoc.version;
 
-  if (_get(toRaw(consentStatus), consentDoc.version) && (age > 7 || grade > 1)) {
+  if (_get(toRaw(consentStatus), consentDoc.version)) {
     const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
     let found = false;
     _forEach(legalDocs, (document) => {
@@ -218,7 +218,7 @@ async function checkConsent() {
       confirmText.value = consentDoc.text;
       showConsent.value = true;
     }
-  } else {
+  } else if (age > 7 || grade > 1) {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
   }
