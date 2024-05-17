@@ -287,9 +287,11 @@ async function submitUsers() {
 
   // Check if the org (group) actually exists
   for (const user of submitUsersList) {
-    if (user.userType.toLowerCase() === 'child') {
-      const groupNames = user.group.split(',');
+    const validUserTypes = ['child', 'teacher', 'parent'];
 
+    // Changed to adding group info to all three types. if (user.userType.toLowerCase() === 'child') {
+    if (validUserTypes.includes(user.userType.toLowerCase())) {
+      const groupNames = user.group.split(',');
       for (const groupName of groupNames) {
         const groupInfo = await getOrgId(
           pluralizeFirestoreCollection('group'),
