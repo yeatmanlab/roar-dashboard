@@ -22,7 +22,7 @@
         </div>
       </div>
       <!--Upload file section-->
-      <div v-if="!isFileUploaded" class="text-gray-500">
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-7">
         <PvDivider />
         <PvFileUpload
           name="massUploader[]"
@@ -100,6 +100,7 @@
             label="Start Registration"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
+            style="margin-bottom: 4rem"
             data-cy="button-start-registration"
             @click="submitStudents"
           />
