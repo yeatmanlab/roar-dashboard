@@ -41,13 +41,7 @@
         <div class="border-solid border-round" style="width: 70%; cursor: pointer">
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
-              <PvCheckbox
-                v-model="specialParam"
-                style="width: 30vh"
-                input-id="video-recording"
-                value="hasVideo"
-                @change="checkBoxStatus"
-              />
+              <PvCheckbox v-model="specialParam" input-id="video-recording" value="hasVideo" @change="checkBoxStatus" />
               <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="video-recording"
                 >Video Recording</label
               >
@@ -280,6 +274,8 @@ function whatDecision() {
   paramCheckboxData.value = false;
   selectedConsent.value = null;
   selectedAssent.value = null;
+  amount.value = '';
+  expectedTime.value = '';
   result = {
     consent: [],
     assent: [],
