@@ -22,7 +22,7 @@
         </div>
       </div>
       <!--Upload file section-->
-      <div v-if="!isFileUploaded" class="text-gray-500">
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-7">
         <PvDivider />
         <PvFileUpload
           name="massUploader[]"
