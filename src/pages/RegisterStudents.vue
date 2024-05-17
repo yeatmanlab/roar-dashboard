@@ -100,6 +100,7 @@
             label="Start Registration"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
+            style="margin-bottom: 4rem"
             data-cy="button-start-registration"
             @click="submitStudents"
           />
