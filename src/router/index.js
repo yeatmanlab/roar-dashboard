@@ -228,6 +228,9 @@ const routes = [
     path: '/signout',
     name: 'SignOut',
     async beforeEnter() {
+      console.log('Hit signout route');
+      sessionStorage.setItem('Hit signout route', 'true');
+
       const store = useAuthStore();
       if (store.isAuthenticated) {
         await store.signOut();

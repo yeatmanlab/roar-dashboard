@@ -63,6 +63,7 @@ export const useAuthStore = () => {
       },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
+          console.log('User (Admin) in setUser:', user);
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
@@ -71,6 +72,7 @@ export const useAuthStore = () => {
           }
         });
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
+          console.log('User (Assessment) in setUser:', user);
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
           } else {

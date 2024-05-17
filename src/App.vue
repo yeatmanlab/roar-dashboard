@@ -69,6 +69,7 @@ onBeforeMount(async () => {
   const authStore = useAuthStore();
   await authStore.initFirekit();
   authStore.setUser();
+  console.log('Set user in App.vue');
   await authStore.initStateFromRedirect().then(async () => {
     if (authStore.uid) {
       const userData = await fetchDocById('users', authStore.uid);
