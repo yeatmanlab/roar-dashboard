@@ -92,7 +92,6 @@ import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
-import _lowerCase from 'lodash/lowerCase';
 import _forEach from 'lodash/forEach';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -192,12 +191,12 @@ async function checkConsent() {
 
   const isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
-  const isAdultOrSenior = isAdult || isSeniorGrade;
+  const isOlder = isAdult || isSeniorGrade;
 
-  let docTypeKey = isAdultOrSenior ? 'consent' : 'assent';
-  let docType = _lowerCase(legal[docTypeKey][0]?.type);
-  let docAmount = legal[docTypeKey][0]?.amount ?? '';
-  let docExpectedTime = legal[docTypeKey][0]?.expectedTime ?? '';
+  let docTypeKey = isOlder ? 'consent' : 'assent';
+  let docType = (legal[docTypeKey][0]?.type).toLowerCase();
+  let docAmount = legal?.amount;
+  let docExpectedTime = legal?.expectedTime;
 
   consentType.value = docType;
 
@@ -214,9 +213,11 @@ async function checkConsent() {
       }
     });
 
-    if (found) {
-      confirmText.value = consentDoc.text;
-      showConsent.value = true;
+    if (!found) {
+      if (docAmount !== '' || docExpectedTime !== '') {
+        confirmText.value = consentDoc.text;
+        showConsent.value = true;
+      }
     }
   } else if (age > 7 || grade > 1) {
     confirmText.value = consentDoc.text;
@@ -281,7 +282,8 @@ const noGamesAvailable = computed(() => {
 });
 
 const showOptionalAssessments = ref(null);
-const toggleShowOptionalAssessments = () => {
+const toggleShowOptionalAssessments = async () => {
+  await checkConsent();
   showOptionalAssessments.value = null;
 };
 
