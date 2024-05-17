@@ -41,19 +41,22 @@
             @click="toggleParams($event, assessmentId)"
           />
         </span>
-        <div v-if="showParams">
-          <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
-            <PvDataTable
-              striped-rows
-              class="p-datatable-small"
-              table-style="min-width: 30rem"
-              :value="toEntryObjects(params[assessmentId])"
-            >
-              <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
-              <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
-            </PvDataTable>
-          </PvOverlayPanel>
-        </div>
+        <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+          <div v-if="props.assessments && (assessment = getAssessment(assessmentId))">
+            <div v-if="assessment.variantId">Variant ID: {{ assessment.variantId }}</div>
+            <div v-if="assessment.variantName">Variant Name: {{ assessment.variantName }}</div>
+          </div>
+          <PvDataTable
+            v-if="props.assessments && (assessment = getAssessment(assessmentId))"
+            striped-rows
+            class="p-datatable-small"
+            table-style="min-width: 30rem"
+            :value="toEntryObjects(params[assessmentId])"
+          >
+            <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
+            <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
+          </PvDataTable>
+        </PvOverlayPanel>
       </div>
       <div v-if="isAssigned">
         <PvButton class="mt-2 ml-0" :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
@@ -223,6 +226,10 @@ const toEntryObjects = (inputObj) => {
 const toggleParams = (event, id) => {
   paramPanelRefs[id].value[0].toggle(event);
 };
+
+function getAssessment(assessmentId) {
+  return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
+}
 
 const displayOrgs = removeEmptyOrgs(props.assignees);
 const isAssigned = !_isEmpty(Object.values(displayOrgs));
