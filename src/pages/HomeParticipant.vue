@@ -93,6 +93,7 @@ import _head from 'lodash/head';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
 import _lowerCase from 'lodash/lowerCase';
+import _forEach from 'lodash/forEach';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
@@ -181,30 +182,43 @@ const {
 });
 
 async function checkConsent() {
-  let doc;
   const dob = new Date(userData.value?.studentData.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
-  if (dob && selectedAdmin.value) {
-    if (age >= 18) {
-      doc = _lowerCase(selectedAdmin.value?.legal.consent[0].type);
-    } else {
-      doc = _lowerCase(selectedAdmin.value?.legal.assent[0].type);
-    }
-  } else if (selectedAdmin.value) {
-    if (grade >= 12) {
-      doc = _lowerCase(selectedAdmin.value?.legal.consent[0].type);
-    } else {
-      doc = _lowerCase(selectedAdmin.value?.legal.assent[0].type);
-    }
-  }
-  consentType.value = doc;
+  const legal = selectedAdmin.value?.legal;
+
+  if (!legal) return;
+
+  const isAdult = age >= 18;
+  const isSeniorGrade = grade >= 12;
+  const isAdultOrSenior = isAdult || isSeniorGrade;
+
+  let docTypeKey = isAdultOrSenior ? 'consent' : 'assent';
+  let docType = _lowerCase(legal[docTypeKey][0]?.type);
+  let docAmount = legal[docTypeKey][0]?.amount ?? '';
+  let docExpectedTime = legal[docTypeKey][0]?.expectedTime ?? '';
+
+  consentType.value = docType;
+
   const consentStatus = _get(userData.value, `legal.${consentType.value}`);
-  const consentDoc = await authStore.getLegalDoc(doc);
+  const consentDoc = await authStore.getLegalDoc(docType);
   consentVersion.value = consentDoc.version;
 
-  if (!_get(toRaw(consentStatus), consentDoc.version) && (age > 7 || grade > 1)) {
+  if (_get(toRaw(consentStatus), consentDoc.version) && (age > 7 || grade > 1)) {
+    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+    let found = false;
+    _forEach(legalDocs, (document) => {
+      if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
+        found = true;
+      }
+    });
+
+    if (found) {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
+    }
+  } else {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
   }
