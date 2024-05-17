@@ -47,6 +47,20 @@
                 {{ t$.taskId.required.$message.replace('Value', 'Task ID') }}
               </small>
             </section>
+            <!-- Cover Image -->
+            <section class="form-section">
+              <div>
+                <label for="coverImage">Cover Image (URL)</label>
+                <PvInputText v-model="taskFields.coverImage" name="coverImage" />
+              </div>
+            </section>
+            <!--Description-->
+            <section class="form-section">
+              <div class="p-input-icon-right">
+                <label for="description">Description </label>
+                <PvInputText v-model="taskFields.description" name="description" />
+              </div>
+            </section>
             <!--Task URL-->
             <section class="form-section">
               <div v-if="isExternalTask">
@@ -67,37 +81,47 @@
                 </small>
               </div>
             </section>
-            <!-- Cover Image -->
-            <section class="form-section">
-              <div>
-                <label for="coverImage">Cover Image (URL)</label>
-                <PvInputText v-model="taskFields.coverImage" name="coverImage" />
-              </div>
-            </section>
-            <!--Description-->
-            <section class="form-section">
-              <div class="p-input-icon-right">
-                <label for="description">Description </label>
-                <PvInputText v-model="taskFields.description" name="description" />
-              </div>
-            </section>
           </div>
 
-          <h3 class="text-center">Parameters / Configuration</h3>
+          <div v-if="!isExternalTask">
+            <h3 class="text-center">Configure Task Parameters</h3>
+            <h4 class="text-center">Create the configurable parameters for variants of this task.</h4>
+            <div v-for="(param, index) in taskParams" :key="index">
+              <div class="flex gap-2 align-content-start flex-grow-0 params-container">
+                <PvInputText v-model="param.name" placeholder="Name" />
 
-          <div v-for="(param, index) in taskParams" :key="index">
-            <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-              <PvInputText v-model="param.name" placeholder="Name" />
+                <PvDropdown v-model="param.type" :options="typeOptions" />
 
-              <PvDropdown v-model="param.type" :options="typeOptions" />
+                <PvInputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
 
-              <PvInputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
+                <PvDropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
 
-              <PvDropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
+                <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
+                <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(taskParams, index)" />
+              </div>
+            </div>
+          </div>
 
-              <PvButton icon="pi pi-trash" text class="delete-btn" @click="removeField(taskParams, index)" />
+          <div v-else>
+            <h3 class="text-center">Configure URL Parameters</h3>
+            <h4 class="text-center">
+              These parameters will be appended to the task URL to generate the variant URL for this task.
+            </h4>
+            <div v-for="(param, index) in taskParams" :key="index">
+              <div class="flex gap-2 align-content-start flex-grow-0 params-container">
+                <PvInputText v-model="param.name" placeholder="Name" />
+
+                <PvDropdown v-model="param.type" :options="typeOptions" />
+
+                <PvInputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
+
+                <PvDropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
+
+                <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
+
+                <PvButton icon="pi pi-trash" text class="delete-btn" @click="removeField(taskParams, index)" />
+              </div>
             </div>
           </div>
 
@@ -305,6 +329,7 @@ const taskFields = reactive({
   taskId: '',
   coverImage: '',
   description: '',
+  configuration: {},
   // Based on type of account?
   external: true,
 });
@@ -313,7 +338,14 @@ const taskRules = {
   taskName: { required },
   taskURL: { required: requiredIf(isExternalTask.value), url },
   taskId: { required },
+  configuration: { required },
 };
+
+const taskConfig = ref({
+  name: '',
+  value: '',
+  type: 'String',
+});
 
 const taskParams = ref([
   {
@@ -380,6 +412,7 @@ const handleNewTaskSubmit = async (isFormValid) => {
     taskName: taskFields.taskName,
     taskDescription: taskFields.description,
     taskImage: taskFields.coverImage,
+    taskConfig: taskFields.configuration,
     variantParams: convertedParams,
     demoData: { task: isDemoData, variant: isDemoData },
     testData: { task: isTestData, variant: isTestData },
