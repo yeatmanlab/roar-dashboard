@@ -41,22 +41,25 @@
             @click="toggleParams($event, assessmentId)"
           />
         </span>
-        <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
-          <div v-if="props.assessments && (assessment = getAssessment(assessmentId))">
-            <div v-if="assessment.variantId">Variant ID: {{ assessment.variantId }}</div>
-            <div v-if="assessment.variantName">Variant Name: {{ assessment.variantName }}</div>
-          </div>
-          <PvDataTable
-            v-if="props.assessments && (assessment = getAssessment(assessmentId))"
-            striped-rows
-            class="p-datatable-small"
-            table-style="min-width: 30rem"
-            :value="toEntryObjects(params[assessmentId])"
-          >
-            <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
-            <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
-          </PvDataTable>
-        </PvOverlayPanel>
+        <div v-if="showParams">
+          <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+            <div v-if="getAssessment(assessmentId).variantId">
+              Variant ID: {{ getAssessment(assessmentId).variantId }}
+            </div>
+            <div v-if="getAssessment(assessmentId).variantName">
+              Variant Name: {{ getAssessment(assessmentId).variantName }}
+            </div>
+            <PvDataTable
+              striped-rows
+              class="p-datatable-small"
+              table-style="min-width: 30rem"
+              :value="toEntryObjects(params[assessmentId])"
+            >
+              <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
+              <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
+            </PvDataTable>
+          </PvOverlayPanel>
+        </div>
       </div>
       <div v-if="isAssigned">
         <PvButton class="mt-2 ml-0" :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
