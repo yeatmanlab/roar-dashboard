@@ -84,9 +84,9 @@
           </div>
 
           <div v-if="!isExternalTask">
-            <h3 class="text-center">Configure Task Parameters</h3>
-            <h4 class="text-center">Create the configurable parameters for variants of this task.</h4>
-            <div v-for="(param, index) in taskParams" :key="index">
+            <h3 class="text-center">Configure Game Parameters</h3>
+            <h4 class="text-center">Create the configurable game parameters for variants of this task.</h4>
+            <div v-for="(param, index) in gameConfig" :key="index">
               <div class="flex gap-2 align-content-start flex-grow-0 params-container">
                 <PvInputText v-model="param.name" placeholder="Name" />
 
@@ -142,6 +142,10 @@
             <div class="flex flex-row align-items-center">
               <PvCheckbox v-model="taskCheckboxData" input-id="chbx-externalTask" value="isExternalTask" />
               <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Task</b> </label>
+            </div>
+            <div class="flex flex-row align-items-center">
+              <PvCheckbox v-model="taskCheckboxData" input-id="chbx-registeredTask" value="isRegisteredTask" />
+              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Registered Task</b> </label>
             </div>
           </div>
           <div class="form-submit">
@@ -271,6 +275,15 @@
                 value="isExternalVariant"
               />
               <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>External Variant</b></label>
+              <div class="flex flex-row align-items-center">
+                <PvCheckbox
+                  v-model="variantCheckboxData"
+                  input-id="chbx-registeredVariant"
+                  name="variantCheckboxData"
+                  value="isRegisteredVariant"
+                />
+                <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>Registered Variant</b></label>
+              </div>
             </div>
           </div>
           <div class="form-submit">
@@ -329,7 +342,7 @@ const taskFields = reactive({
   taskId: '',
   coverImage: '',
   description: '',
-  configuration: {},
+  gameConfig: {},
   // Based on type of account?
   external: true,
 });
@@ -341,7 +354,7 @@ const taskRules = {
   configuration: { required },
 };
 
-const taskConfig = ref({
+const gameConfig = ref({
   name: '',
   value: '',
   type: 'String',
@@ -400,22 +413,25 @@ const handleNewTaskSubmit = async (isFormValid) => {
   submitted.value = true;
   const isDemoData = !!taskCheckboxData.value?.find((item) => item === 'isDemoTask');
   const isTestData = !!taskCheckboxData.value?.find((item) => item === 'isTestTask');
+  const isRegisteredTask = !!taskCheckboxData.value?.find((item) => item === 'isRegisteredTask');
 
   if (!isFormValid) {
     return;
   }
 
-  const convertedParams = convertParamsToObj(taskParams);
+  const convertedTaskParams = convertParamsToObj(taskParams);
+  const convertedGameConfig = convertParamsToObj(gameConfig);
 
   let newTaskObject = reactive({
     taskId: taskFields.taskId,
     taskName: taskFields.taskName,
     taskDescription: taskFields.description,
     taskImage: taskFields.coverImage,
-    taskConfig: taskFields.configuration,
-    variantParams: convertedParams,
+    gameConfig: convertedGameConfig,
+    variantParams: convertedTaskParams,
     demoData: { task: isDemoData, variant: isDemoData },
     testData: { task: isTestData, variant: isTestData },
+    isRegisteredTask: isRegisteredTask,
   });
 
   if (isExternalTask.value) {
@@ -436,27 +452,29 @@ const handleVariantSubmit = async (isFormValid) => {
   const isDemoData = !!variantCheckboxData.value?.find((item) => item === 'isDemoVariant');
   const isTestData = !!variantCheckboxData.value?.find((item) => item === 'isTestVariant');
   const isExternalVariant = !!variantCheckboxData.value?.find((item) => item === 'isExternalVariant');
+  const isRegisteredVariant = !!variantCheckboxData.value?.find((item) => item === 'isRegisteredVariant');
 
   if (!isFormValid) {
     return;
   }
 
-  const convertedParams = convertParamsToObj(variantParams);
+  const convertedVariantParams = convertParamsToObj(variantParams);
 
   const newVariantObject = reactive({
     taskId: variantFields.selectedGame.id,
     taskDescription: variantFields.selectedGame.description,
     taskImage: variantFields.selectedGame.image,
     variantName: variantFields.variantName,
-    variantParams: convertedParams,
+    variantParams: convertedVariantParams,
     // TODO: Check if this is the valid way to see demo/test data values
     demoData: { task: !!variantFields.selectedGame?.demoData, variant: isDemoData },
     testData: { task: !!variantFields.selectedGame?.testData, variant: isTestData },
+    isRegisteredVariant: isRegisteredVariant,
   });
 
   if (isExternalVariant) {
     newVariantObject.variantParams = {
-      ...convertedParams,
+      ...convertedVariantParams,
       variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams),
     };
   }
