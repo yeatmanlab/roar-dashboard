@@ -18,7 +18,7 @@
         </div>
         <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
-      <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy>
+      <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy class="mb-7">
         <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
           <div class="grid column-gap-3 mt-2">
             <div
