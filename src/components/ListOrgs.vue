@@ -83,7 +83,6 @@ import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
-import _isEmpty from 'lodash/isEmpty';
 
 const toast = useToast();
 const initialized = ref(false);
