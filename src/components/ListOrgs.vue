@@ -62,6 +62,7 @@
             :key="tableKey"
             :columns="tableColumns"
             :data="tableData"
+            sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
             @export-all="exportAll"
@@ -231,9 +232,9 @@ const exportAll = async () => {
 
 const tableColumns = computed(() => {
   const columns = [
-    { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: false },
-    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: false },
-    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: false },
+    { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
+    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: true },
+    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: true },
     { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
   ];
 
