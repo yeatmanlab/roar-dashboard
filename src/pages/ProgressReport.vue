@@ -37,6 +37,18 @@
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
       <div v-if="assignmentData?.length ?? 0 > 0">
+        <div>
+          <div class="">
+            Progress
+            {{ adminStats.total }}
+            <PvChart
+              type="bar"
+              :data="setBarChartData(adminTotalStats)"
+              :options="setBarChartOptions(adminTotalStats)"
+              class="h-3rem"
+            />
+          </div>
+        </div>
         <RoarDataTable
           v-if="progressReportColumns?.length ?? 0 > 0"
           :data="filteredTableData"
@@ -98,12 +110,13 @@ import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, exportCsv } from '../helpers/query/utils';
+import { fetchDocById, exportCsv, fetchSubcollection } from '../helpers/query/utils';
 import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
 import { getTitle } from '../helpers/query/administrations';
+import { setBarChartData, setBarChartOptions } from '/helpers/charts';
 
 const authStore = useAuthStore();
 
@@ -183,10 +196,25 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', authStore.uid, props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
+  queryFn: () =>
+    fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments'], 'admin', ['stats']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
+  onSuccess: (data) => {
+    console.log('admin info', data);
+  },
+});
+
+const { data: adminStats } = useQuery({
+  queryKey: ['administrationStats', authStore.uid, props.administrationId],
+  queryFn: () => fetchSubcollection(`administrations/${props.administrationId}`, 'stats'),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000,
+  onSuccess: (data) => {
+    console.log('admin stats', data);
+  },
 });
 
 const { data: orgInfo } = useQuery({
@@ -218,6 +246,10 @@ const {
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
+});
+
+const adminTotalStats = computed(() => {
+  return adminStats.value.filter((stat) => stat.id === 'total');
 });
 
 const schoolNameDictionary = computed(() => {
@@ -416,8 +448,8 @@ const progressReportColumns = computed(() => {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
-  const allTaskIds = administrationInfo.value.assessments.map((assessment) => assessment.taskId);
-  const sortedTasks = allTaskIds.sort((p1, p2) => {
+  const allTaskIds = administrationInfo.value.assessments?.map((assessment) => assessment.taskId);
+  const sortedTasks = allTaskIds?.sort((p1, p2) => {
     if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
       return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
     } else {
