@@ -276,14 +276,6 @@ const tableData = computed(() => {
   });
 });
 
-const onSort = (event) => {
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
-    field: { fieldPath: item.field },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-  }));
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
-};
-
 let unsubscribe;
 const initTable = () => {
   if (unsubscribe) unsubscribe();
