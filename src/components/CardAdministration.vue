@@ -43,6 +43,12 @@
         </span>
         <div v-if="showParams">
           <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+            <div v-if="getAssessment(assessmentId).variantId">
+              Variant ID: {{ getAssessment(assessmentId).variantId }}
+            </div>
+            <div v-if="getAssessment(assessmentId).variantName">
+              Variant Name: {{ getAssessment(assessmentId).variantName }}
+            </div>
             <PvDataTable
               striped-rows
               class="p-datatable-small"
@@ -223,6 +229,10 @@ const toEntryObjects = (inputObj) => {
 const toggleParams = (event, id) => {
   paramPanelRefs[id].value[0].toggle(event);
 };
+
+function getAssessment(assessmentId) {
+  return props.assessments.find((assessment) => assessment.taskId.toLowerCase() === assessmentId);
+}
 
 const displayOrgs = removeEmptyOrgs(props.assignees);
 const isAssigned = !_isEmpty(Object.values(displayOrgs));

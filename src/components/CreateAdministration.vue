@@ -456,6 +456,8 @@ const submit = async () => {
   const isFormValid = await v$.value.$validate();
   if (isFormValid) {
     const submittedAssessments = variants.value.map((assessment) => ({
+      variantId: assessment.variant.id,
+      variantName: assessment.variant.name,
       taskId: assessment.task.id,
       params: toRaw(assessment.variant.params),
       // Exclude conditions key if there are no conditions to be set.
