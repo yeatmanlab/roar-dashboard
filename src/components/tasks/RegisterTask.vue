@@ -98,7 +98,7 @@
 
                 <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-                <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(taskParams, index)" />
+                <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(gameConfig, index)" />
               </div>
             </div>
           </div>
@@ -126,7 +126,10 @@
           </div>
 
           <div class="w-full flex justify-content-end">
-            <div class="w-2">
+            <div v-if="!isExternalTask" class="w-2">
+              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(gameConfig)" />
+            </div>
+            <div v-else class="w-2">
               <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(taskParams)" />
             </div>
           </div>
@@ -312,6 +315,7 @@ const taskCheckboxData = ref();
 const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+
 const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
 
 let unsubscribe;
@@ -344,21 +348,22 @@ const taskFields = reactive({
   description: '',
   gameConfig: {},
   // Based on type of account?
-  external: true,
+  external: isExternalTask,
 });
 
 const taskRules = {
   taskName: { required },
   taskURL: { required: requiredIf(isExternalTask.value), url },
   taskId: { required },
-  configuration: { required },
 };
 
-const gameConfig = ref({
-  name: '',
-  value: '',
-  type: 'String',
-});
+const gameConfig = ref([
+  {
+    name: '',
+    value: '',
+    type: 'String',
+  },
+]);
 
 const taskParams = ref([
   {
@@ -413,14 +418,15 @@ const handleNewTaskSubmit = async (isFormValid) => {
   submitted.value = true;
   const isDemoData = !!taskCheckboxData.value?.find((item) => item === 'isDemoTask');
   const isTestData = !!taskCheckboxData.value?.find((item) => item === 'isTestTask');
+  const isExternalTask = !!taskCheckboxData.value?.find((item) => item === 'isExternalTask');
   const isRegisteredTask = !!taskCheckboxData.value?.find((item) => item === 'isRegisteredTask');
 
   if (!isFormValid) {
     return;
   }
 
-  const convertedTaskParams = convertParamsToObj(taskParams);
   const convertedGameConfig = convertParamsToObj(gameConfig);
+  const convertedTaskParams = isExternalTask ? convertParamsToObj(taskParams) : null;
 
   let newTaskObject = reactive({
     taskId: taskFields.taskId,
@@ -428,10 +434,10 @@ const handleNewTaskSubmit = async (isFormValid) => {
     taskDescription: taskFields.description,
     taskImage: taskFields.coverImage,
     gameConfig: convertedGameConfig,
-    variantParams: convertedTaskParams,
-    demoData: { task: isDemoData, variant: isDemoData },
-    testData: { task: isTestData, variant: isTestData },
-    isRegisteredTask: isRegisteredTask,
+    taskParams: convertedTaskParams,
+    demoData: isDemoData,
+    testData: isTestData,
+    registered: isRegisteredTask,
   });
 
   if (isExternalTask.value) {
@@ -469,7 +475,7 @@ const handleVariantSubmit = async (isFormValid) => {
     // TODO: Check if this is the valid way to see demo/test data values
     demoData: { task: !!variantFields.selectedGame?.demoData, variant: isDemoData },
     testData: { task: !!variantFields.selectedGame?.testData, variant: isTestData },
-    isRegisteredVariant: isRegisteredVariant,
+    registered: isRegisteredVariant,
   });
 
   if (isExternalVariant) {
