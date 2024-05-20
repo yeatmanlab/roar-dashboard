@@ -72,8 +72,8 @@
           <template #body="{ node }">
             <PvChart
               type="bar"
-              :data="setBarChartData(node.data.stats)"
-              :options="setBarChartOptions(node.data.stats)"
+              :data="setBarChartData(node.data.stats?.assignment)"
+              :options="setBarChartOptions(node.data.stats?.assignment)"
               class="h-3rem"
             />
           </template>

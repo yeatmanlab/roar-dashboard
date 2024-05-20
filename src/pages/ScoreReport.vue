@@ -81,7 +81,10 @@
                   </div>
                 </div>
               </div>
-              <div v-if="!isLoadingScores && sortedAndFilteredTaskIds?.length > 0" class="legend-container">
+              <div
+                v-if="!isLoadingScores && sortedAndFilteredTaskIds?.length > 0"
+                class="legend-container rounded dashed"
+              >
                 <div class="legend-entry">
                   <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
                   <div>

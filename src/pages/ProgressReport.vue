@@ -37,16 +37,56 @@
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
       <div v-if="assignmentData?.length ?? 0 > 0">
-        <div>
-          <div class="">
-            Progress
-            {{ adminStats.total }}
-            <PvChart
-              type="bar"
-              :data="setBarChartData(adminTotalStats)"
-              :options="setBarChartOptions(adminTotalStats)"
-              class="h-3rem"
-            />
+        <div class="flex flex-column flex-wrap gap-3 rounded bg-gray-100 p-5">
+          <div class="flex flex-column gap-1 mx-5 mb-5">
+            <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
+            <div
+              v-for="{ taskId } of administrationInfo.assessments"
+              class="flex justify-content-between align-items-center"
+            >
+              <div class="text-lg uppercase font-bold text-gray-600">
+                {{ taskId }}
+              </div>
+              <PvChart
+                type="bar"
+                :data="setBarChartData(adminTotalStats[taskId])"
+                :options="setBarChartOptions(adminTotalStats[taskId])"
+                class="h-2rem"
+              />
+            </div>
+          </div>
+          <div class="flex flex-column mx-5">
+            <div class="text-sm uppercase text-gray-500">Total Assessment Progress</div>
+            <div class="flex justify-content-between align-items-center">
+              <div class="text-xl uppercase font-bold text-gray-600">Total</div>
+              <PvChart
+                type="bar"
+                :data="setBarChartData(adminTotalStats.assignment)"
+                :options="setBarChartOptions(adminTotalStats.assignment)"
+                class="h-3rem"
+              />
+            </div>
+          </div>
+          <div class="flex flex-wrap justify-content-around align-items-center p-3 rounded dashed">
+            <div class="font-light uppercase text-md text-gray-500">Legend</div>
+            <div class="legend-entry">
+              <div class="circle" style="background-color: var(--bright-green)" />
+              <div>
+                <div>Completed</div>
+              </div>
+            </div>
+            <div class="legend-entry">
+              <div class="circle" style="background-color: var(--yellow-100)" />
+              <div>
+                <div>Started</div>
+              </div>
+            </div>
+            <div class="legend-entry">
+              <div class="circle" style="background-color: var(--surface-d)" />
+              <div>
+                <div>Assigned</div>
+              </div>
+            </div>
           </div>
         </div>
         <RoarDataTable
@@ -115,8 +155,8 @@ import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
-import { getTitle } from '../helpers/query/administrations';
-import { setBarChartData, setBarChartOptions } from '/helpers/charts';
+import { getTitle } from '@/helpers/query/administrations';
+import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 
 const authStore = useAuthStore();
 
@@ -249,7 +289,10 @@ const {
 });
 
 const adminTotalStats = computed(() => {
-  return adminStats.value.filter((stat) => stat.id === 'total');
+  const totalStats = adminStats.value.find((stat) => stat.id === 'total');
+  console.log(totalStats.assignment, 'totalstats');
+
+  return totalStats;
 });
 
 const schoolNameDictionary = computed(() => {
@@ -561,5 +604,24 @@ onMounted(async () => {
   font-size: 1.3rem;
   font-weight: light;
   margin-top: 0;
+}
+
+.legend-entry {
+  font-size: 0.9rem;
+  font-weight: light;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.circle {
+  border-color: white;
+  display: inline-block;
+  border-radius: 50%;
+  border-width: 5px;
+  height: 25px;
+  width: 25px;
+  vertical-align: middle;
+  margin-right: 10px;
 }
 </style>

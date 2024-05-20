@@ -29,7 +29,8 @@ const getBorderRadii = (left, middle, right) => {
 };
 
 export const setBarChartData = (orgStats) => {
-  let { assigned = 0, started = 0, completed = 0 } = orgStats?.assignment || {};
+  let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
+  console.log('barchartdata', orgStats);
   const documentStyle = getComputedStyle(document.documentElement);
 
   started -= completed;
@@ -75,7 +76,7 @@ export const setBarChartData = (orgStats) => {
 };
 
 export const setBarChartOptions = (orgStats) => {
-  let { assigned = 0 } = orgStats?.assignment || {};
+  let { assigned = 0 } = orgStats || {};
 
   const min = 0;
   const max = assigned;

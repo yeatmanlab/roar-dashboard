@@ -3293,3 +3293,7 @@
 .rounded {
   border-radius: 0.35rem;
 }
+
+.dashed {
+  border: 3px dashed var(--surface-d);
+}
