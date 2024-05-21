@@ -179,10 +179,12 @@ export const fetchSubcollection = async (collectionPath, subcollectionName, sele
   const subcollectionPath = `/${collectionPath}/${subcollectionName}`;
   const queryParams = select.map((field) => `mask.fieldPaths=${field}`).join('&');
   const queryString = queryParams ? `?${queryParams}` : '';
+  console.log('select', select, queryString);
 
   return axiosInstance
     .get(subcollectionPath + queryString)
     .then(({ data }) => {
+      console.log('subcollection return', data);
       // Assuming the API returns an array of document data in the subcollection
       return data.documents
         ? data.documents.map((doc) => {

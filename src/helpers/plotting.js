@@ -30,7 +30,6 @@ const getBorderRadii = (left, middle, right) => {
 
 export const setBarChartData = (orgStats) => {
   let { assigned = 0, started = 0, completed = 0 } = orgStats || {};
-  console.log('barchartdata', orgStats);
   const documentStyle = getComputedStyle(document.documentElement);
 
   started -= completed;

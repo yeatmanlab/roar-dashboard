@@ -37,7 +37,7 @@
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
       <div v-if="assignmentData?.length ?? 0 > 0">
-        <div class="flex flex-column flex-wrap gap-3 rounded bg-gray-100 p-5">
+        <div v-if="adminStats != null" class="flex flex-column flex-wrap gap-3 rounded bg-gray-100 p-5">
           <div class="flex flex-column gap-1 mx-5 mb-5">
             <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
             <div
@@ -49,8 +49,8 @@
               </div>
               <PvChart
                 type="bar"
-                :data="setBarChartData(adminTotalStats[taskId])"
-                :options="setBarChartOptions(adminTotalStats[taskId])"
+                :data="setBarChartData(adminStats[taskId])"
+                :options="setBarChartOptions(adminStats[taskId])"
                 class="h-2rem"
               />
             </div>
@@ -61,13 +61,13 @@
               <div class="text-xl uppercase font-bold text-gray-600">Total</div>
               <PvChart
                 type="bar"
-                :data="setBarChartData(adminTotalStats.assignment)"
-                :options="setBarChartOptions(adminTotalStats.assignment)"
+                :data="setBarChartData(adminStats.assignment)"
+                :options="setBarChartOptions(adminStats.assignment)"
                 class="h-3rem"
               />
             </div>
           </div>
-          <div class="flex flex-wrap justify-content-around align-items-center p-3 rounded dashed">
+          <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded dashed">
             <div class="font-light uppercase text-md text-gray-500">Legend</div>
             <div class="legend-entry">
               <div class="circle" style="background-color: var(--bright-green)" />
@@ -237,23 +237,20 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', authStore.uid, props.administrationId],
   queryFn: () =>
-    fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments'], 'admin', ['stats']),
+    fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments'], 'admin'),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
-  onSuccess: (data) => {
-    console.log('admin info', data);
-  },
 });
 
 const { data: adminStats } = useQuery({
   queryKey: ['administrationStats', authStore.uid, props.administrationId],
-  queryFn: () => fetchSubcollection(`administrations/${props.administrationId}`, 'stats'),
+  queryFn: () => fetchDocById('administrations', `${props.administrationId}/stats/total`),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000,
   onSuccess: (data) => {
-    console.log('admin stats', data);
+    console.log(data);
   },
 });
 
@@ -286,13 +283,6 @@ const {
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
   staleTime: 5 * 60 * 1000, // 5 mins
-});
-
-const adminTotalStats = computed(() => {
-  const totalStats = adminStats.value.find((stat) => stat.id === 'total');
-  console.log(totalStats.assignment, 'totalstats');
-
-  return totalStats;
 });
 
 const schoolNameDictionary = computed(() => {
