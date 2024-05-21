@@ -49,6 +49,7 @@
     "@vueuse/core": "^10.7.1",
     "@vueuse/head": "^1.0.13",
     "axios": "^1.5.1",
+    "axios-oauth-1.0a": "^0.3.6",
     "buffer": "^6.0.3",
     "chart.js": "^4.3.3",
     "core-tasks": "^1.0.0-beta.3",
