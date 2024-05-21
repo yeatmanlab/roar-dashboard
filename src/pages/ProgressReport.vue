@@ -44,30 +44,33 @@
               v-for="{ taskId } of administrationInfo.assessments"
               class="flex justify-content-between align-items-center"
             >
-              <div class="text-lg uppercase font-bold text-gray-600">
-                {{ taskId }}
+              <div class="text-lg font-bold text-gray-600 w-full">
+                {{ taskDisplayNames[taskId].extendedName }}
+                <span class="font-light uppercase text-sm"> ({{ taskId }}) </span>
               </div>
               <PvChart
                 type="bar"
                 :data="setBarChartData(adminStats[taskId])"
                 :options="setBarChartOptions(adminStats[taskId])"
-                class="h-2rem"
+                class="h-2rem lg:w-full"
               />
             </div>
           </div>
           <div class="flex flex-column mx-5">
             <div class="text-sm uppercase text-gray-500">Total Assessment Progress</div>
             <div class="flex justify-content-between align-items-center">
-              <div class="text-xl uppercase font-bold text-gray-600">Total</div>
+              <div class="text-xl font-bold text-gray-600 w-full">
+                Total <span class="font-light text-sm"> ({{ adminStats.assignment.assigned }} total assignments) </span>
+              </div>
               <PvChart
                 type="bar"
                 :data="setBarChartData(adminStats.assignment)"
                 :options="setBarChartOptions(adminStats.assignment)"
-                class="h-3rem"
+                class="h-3rem lg:w-full"
               />
             </div>
           </div>
-          <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded dashed">
+          <div class="flex flex-wrap justify-content-around align-items-center m-5 px-2 py-1 rounded">
             <div class="font-light uppercase text-md text-gray-500">Legend</div>
             <div class="legend-entry">
               <div class="circle" style="background-color: var(--bright-green)" />

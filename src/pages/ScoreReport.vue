@@ -55,7 +55,6 @@
             </div>
             <div v-if="sortedAndFilteredTaskIds?.length > 0" class="text-left bg-gray-100 py-3 mb-2">
               <div class="overview-wrapper">
-                <div class="report-subheader my-2 uppercase text-gray-600 font-light">Scores at a glance</div>
                 <div class="chart-wrapper">
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
@@ -81,10 +80,7 @@
                   </div>
                 </div>
               </div>
-              <div
-                v-if="!isLoadingScores && sortedAndFilteredTaskIds?.length > 0"
-                class="legend-container rounded dashed"
-              >
+              <div v-if="!isLoadingScores && sortedAndFilteredTaskIds?.length > 0" class="legend-container rounded">
                 <div class="legend-entry">
                   <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
                   <div>
