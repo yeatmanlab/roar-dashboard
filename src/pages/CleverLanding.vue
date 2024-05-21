@@ -15,9 +15,9 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 let userDataCheckInterval;
-
 async function checkForUserType() {
   try {
+    await authStore.forceIdTokenRefresh();
     const userData = await fetchDocById('users', authStore.uid);
     const userType = _get(userData, 'userType');
     if (userType && userType !== 'guest') {
@@ -31,7 +31,7 @@ async function checkForUserType() {
   }
 }
 
-userDataCheckInterval = setInterval(checkForUserType, 500);
+userDataCheckInterval = setInterval(checkForUserType, 1000);
 </script>
 <style>
 .loading-container {
