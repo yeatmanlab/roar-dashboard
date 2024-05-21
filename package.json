@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "2.5.6",
+  "version": "2.6.0",
   "scripts": {
     "build": "export VITE_FIREBASE_DATA_SOURCE=live && vite build",
     "build:sandbox": "export VITE_FIREBASE_DATA_SOURCE=sandbox && vite build",
@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@bdelab/roam-fluency": "^1.11.19",
-    "@bdelab/roar-firekit": "^4.10.0",
+    "@bdelab/roar-firekit": "^4.11.0",
     "@bdelab/roar-letter": "^1.11.4",
     "@bdelab/roar-multichoice": "^1.11.3",
     "@bdelab/roar-pa": "^2.2.0",
@@ -52,7 +52,7 @@
     "axios-oauth-1.0a": "^0.3.6",
     "buffer": "^6.0.3",
     "chart.js": "^4.3.3",
-    "core-tasks": "^1.0.0-beta.3",
+    "core-tasks": "^1.0.0-beta.9",
     "dotenv": "^16.3.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",

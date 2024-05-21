@@ -213,6 +213,7 @@ export const tasksToDisplayPercentCorrect = [
   'morphology',
   'vocab',
   'fluency',
+  'trog',
 ];
 
 /*

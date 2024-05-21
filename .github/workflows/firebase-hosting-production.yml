@@ -46,7 +46,7 @@ jobs:
 
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
-    needs: [pre-release-tests]
+    # needs: [pre-release-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

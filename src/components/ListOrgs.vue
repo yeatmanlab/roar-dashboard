@@ -62,6 +62,7 @@
             :key="tableKey"
             :columns="tableColumns"
             :data="tableData"
+            sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
             @export-all="exportAll"
@@ -83,7 +84,6 @@ import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
-import _isEmpty from 'lodash/isEmpty';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -232,9 +232,9 @@ const exportAll = async () => {
 
 const tableColumns = computed(() => {
   const columns = [
-    { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: false },
-    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: false },
-    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: false },
+    { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
+    { field: 'abbreviation', header: 'Abbreviation', dataType: 'string', sort: true },
+    { field: 'address.formattedAddress', header: 'Address', dataType: 'string', sort: true },
     { field: 'tags', header: 'Tags', dataType: 'array', chip: true, sort: false },
   ];
 
@@ -275,14 +275,6 @@ const tableData = computed(() => {
     };
   });
 });
-
-const onSort = (event) => {
-  const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
-    field: { fieldPath: item.field },
-    direction: item.order === 1 ? 'ASCENDING' : 'DESCENDING',
-  }));
-  orderBy.value = !_isEmpty(_orderBy) ? _orderBy : orderByDefault;
-};
 
 let unsubscribe;
 const initTable = () => {
