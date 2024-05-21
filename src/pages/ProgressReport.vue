@@ -37,6 +37,66 @@
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
       <div v-if="assignmentData?.length ?? 0 > 0">
+        <div
+          v-if="adminStats != null"
+          class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5"
+        >
+          <div class="flex flex-column gap-1 mx-5 mb-5">
+            <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
+            <div
+              v-for="{ taskId } of administrationInfo.assessments"
+              class="flex justify-content-between align-items-center"
+            >
+              <div class="text-lg font-bold text-gray-600 w-full">
+                {{ taskDisplayNames[taskId].extendedName }}
+                <span class="font-light uppercase text-sm"> ({{ taskId }}) </span>
+              </div>
+              <PvChart
+                type="bar"
+                :data="setBarChartData(adminStats[taskId])"
+                :options="setBarChartOptions(adminStats[taskId])"
+                class="h-2rem lg:w-full"
+              />
+            </div>
+          </div>
+          <div class="flex flex-column mx-5">
+            <div class="text-sm uppercase text-gray-500">Total Assessment Progress</div>
+            <div class="flex justify-content-between align-items-center">
+              <div class="text-xl font-bold text-gray-600 w-full">
+                Total <span class="font-light text-sm"> ({{ adminStats.assignment.assigned }} total assignments) </span>
+              </div>
+              <PvChart
+                type="bar"
+                :data="setBarChartData(adminStats.assignment)"
+                :options="setBarChartOptions(adminStats.assignment)"
+                class="h-3rem lg:w-full"
+              />
+            </div>
+          </div>
+          <div class="flex flex-column align-items-center mx-5">
+            <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded">
+              <div class="legend-entry">
+                <div class="circle" style="background-color: var(--bright-green)" />
+                <div>
+                  <div>Completed</div>
+                </div>
+              </div>
+              <div class="legend-entry">
+                <div class="circle" style="background-color: var(--yellow-100)" />
+                <div>
+                  <div>Started</div>
+                </div>
+              </div>
+              <div class="legend-entry">
+                <div class="circle" style="background-color: var(--surface-d)" />
+                <div>
+                  <div>Assigned</div>
+                </div>
+              </div>
+            </div>
+            <div class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
+          </div>
+        </div>
         <RoarDataTable
           v-if="progressReportColumns?.length ?? 0 > 0"
           :data="filteredTableData"
@@ -98,12 +158,13 @@ import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, exportCsv } from '../helpers/query/utils';
+import { fetchDocById, exportCsv, fetchSubcollection } from '../helpers/query/utils';
 import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
-import { getTitle } from '../helpers/query/administrations';
+import { getTitle } from '@/helpers/query/administrations';
+import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 
 const authStore = useAuthStore();
 
@@ -183,10 +244,22 @@ const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
   queryKey: ['administrationInfo', authStore.uid, props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
+  queryFn: () =>
+    fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments'], 'admin'),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const { data: adminStats } = useQuery({
+  queryKey: ['administrationStats', authStore.uid, props.administrationId],
+  queryFn: () => fetchDocById('administrations', `${props.administrationId}/stats/total`),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000,
+  onSuccess: (data) => {
+    console.log(data);
+  },
 });
 
 const { data: orgInfo } = useQuery({
@@ -416,8 +489,8 @@ const progressReportColumns = computed(() => {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
-  const allTaskIds = administrationInfo.value.assessments.map((assessment) => assessment.taskId);
-  const sortedTasks = allTaskIds.sort((p1, p2) => {
+  const allTaskIds = administrationInfo.value.assessments?.map((assessment) => assessment.taskId);
+  const sortedTasks = allTaskIds?.sort((p1, p2) => {
     if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
       return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
     } else {
@@ -529,5 +602,24 @@ onMounted(async () => {
   font-size: 1.3rem;
   font-weight: light;
   margin-top: 0;
+}
+
+.legend-entry {
+  font-size: 0.9rem;
+  font-weight: light;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.circle {
+  border-color: white;
+  display: inline-block;
+  border-radius: 50%;
+  border-width: 5px;
+  height: 25px;
+  width: 25px;
+  vertical-align: middle;
+  margin-right: 10px;
 }
 </style>
