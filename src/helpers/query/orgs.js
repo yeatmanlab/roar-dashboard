@@ -12,7 +12,18 @@ export const getOrgsRequestBody = ({
   pageLimit,
   page,
   paginate = true,
-  select = ['abbreviation', 'address', 'clever', 'districtContact', 'id', 'mdrNumber', 'name', 'ncesId', 'tags'],
+  select = [
+    'abbreviation',
+    'address',
+    'clever',
+    'classlink',
+    'districtContact',
+    'id',
+    'mdrNumber',
+    'name',
+    'ncesId',
+    'tags',
+  ],
 }) => {
   const requestBody = {
     structuredQuery: {

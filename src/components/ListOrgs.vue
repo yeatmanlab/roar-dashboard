@@ -7,14 +7,6 @@
             <i class="pi pi-folder-open text-gray-400 rounded" style="font-size: 1.6rem" />
             <div class="admin-page-header">List Organizations</div>
           </div>
-          <button
-            v-if="isSuperAdmin"
-            v-tooltip.top="'Sync Clever orgs'"
-            class="p-panel-header-icon mr-2"
-            @click="syncClever"
-          >
-            <span :class="cleverSyncIcon"></span>
-          </button>
         </div>
         <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
@@ -79,13 +71,11 @@ import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useToast } from 'primevue/usetoast';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 
-const toast = useToast();
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
 
@@ -109,24 +99,6 @@ const schoolPlaceholder = computed(() => {
 
 // Authstore and Sidebar
 const authStore = useAuthStore();
-
-const syncingClever = ref(false);
-const cleverSyncIcon = computed(() => {
-  if (syncingClever.value) {
-    return 'pi pi-sync pi-spin';
-  } else {
-    return 'pi pi-cloud-download';
-  }
-});
-
-const syncClever = async () => {
-  toast.add({ severity: 'info', summary: 'Syncing', detail: 'Clever sync initiated', life: 3000 });
-  syncingClever.value = true;
-  await authStore.syncCleverOrgs();
-  syncingClever.value = false;
-  orgsQueryKeyIndex.value += 0;
-  toast.add({ severity: 'success', summary: 'Success', detail: 'Clever sync successful', life: 5000 });
-};
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
@@ -247,6 +219,7 @@ const tableColumns = computed(() => {
 
   if (['districts', 'schools', 'classes'].includes(activeOrgType.value)) {
     columns.push({ field: 'clever', header: 'Clever', dataType: 'boolean', sort: false });
+    columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
   }
 
   columns.push({
