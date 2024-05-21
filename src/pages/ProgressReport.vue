@@ -37,7 +37,10 @@
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
       <div v-if="assignmentData?.length ?? 0 > 0">
-        <div v-if="adminStats != null" class="flex flex-column flex-wrap gap-3 rounded bg-gray-100 p-5">
+        <div
+          v-if="adminStats != null"
+          class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5"
+        >
           <div class="flex flex-column gap-1 mx-5 mb-5">
             <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
             <div
@@ -70,26 +73,28 @@
               />
             </div>
           </div>
-          <div class="flex flex-wrap justify-content-around align-items-center m-5 px-2 py-1 rounded">
-            <div class="font-light uppercase text-md text-gray-500">Legend</div>
-            <div class="legend-entry">
-              <div class="circle" style="background-color: var(--bright-green)" />
-              <div>
-                <div>Completed</div>
+          <div class="flex flex-column align-items-center mx-5">
+            <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded">
+              <div class="legend-entry">
+                <div class="circle" style="background-color: var(--bright-green)" />
+                <div>
+                  <div>Completed</div>
+                </div>
+              </div>
+              <div class="legend-entry">
+                <div class="circle" style="background-color: var(--yellow-100)" />
+                <div>
+                  <div>Started</div>
+                </div>
+              </div>
+              <div class="legend-entry">
+                <div class="circle" style="background-color: var(--surface-d)" />
+                <div>
+                  <div>Assigned</div>
+                </div>
               </div>
             </div>
-            <div class="legend-entry">
-              <div class="circle" style="background-color: var(--yellow-100)" />
-              <div>
-                <div>Started</div>
-              </div>
-            </div>
-            <div class="legend-entry">
-              <div class="circle" style="background-color: var(--surface-d)" />
-              <div>
-                <div>Assigned</div>
-              </div>
-            </div>
+            <div class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
           </div>
         </div>
         <RoarDataTable

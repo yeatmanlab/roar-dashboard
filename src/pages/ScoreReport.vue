@@ -80,25 +80,31 @@
                   </div>
                 </div>
               </div>
-              <div v-if="!isLoadingScores && sortedAndFilteredTaskIds?.length > 0" class="legend-container rounded">
-                <div class="legend-entry">
-                  <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
-                  <div>
-                    <div>Needs Extra Support</div>
+              <div
+                v-if="!isLoadingScores && sortedAndFilteredTaskIds?.length > 0"
+                class="legend-container flex flex-column align-items-center rounded"
+              >
+                <div class="flex align-items-center">
+                  <div class="legend-entry">
+                    <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
+                    <div>
+                      <div>Needs Extra Support</div>
+                    </div>
+                  </div>
+                  <div class="legend-entry">
+                    <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
+                    <div>
+                      <div>Developing Skill</div>
+                    </div>
+                  </div>
+                  <div class="legend-entry">
+                    <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
+                    <div>
+                      <div>Achieved Skill</div>
+                    </div>
                   </div>
                 </div>
-                <div class="legend-entry">
-                  <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
-                  <div>
-                    <div>Developing Skill</div>
-                  </div>
-                </div>
-                <div class="legend-entry">
-                  <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
-                  <div>
-                    <div>Achieved Skill</div>
-                  </div>
-                </div>
+                <div class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
               </div>
             </div>
           </div>
@@ -1180,7 +1186,6 @@ onMounted(async () => {
 
 .legend-container {
   display: flex;
-  gap: 1vw;
   justify-content: center;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
