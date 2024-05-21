@@ -1,9 +1,9 @@
 <template>
   <PvToast />
   <PvTabView>
-    <PvTabPanel header="Register Task">
+    <PvTabPanel header="Create Task">
       <div v-if="!created" class="card px-3">
-        <h1 class="text-center font-bold">Register a New Task</h1>
+        <h1 class="text-center font-bold">Create a New Task</h1>
         <!-- <p class="login-title" align="left">Register for ROAR</p> -->
         <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!t$.$invalid)">
           <!-- Task name -->
@@ -92,11 +92,11 @@
 
                 <PvDropdown v-model="param.type" :options="typeOptions" />
 
-                <PvInputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
+                <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
 
-                <PvDropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
+                <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
 
-                <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
+                <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" show-buttons />
 
                 <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(gameConfig, index)" />
               </div>
@@ -114,11 +114,11 @@
 
                 <PvDropdown v-model="param.type" :options="typeOptions" />
 
-                <PvInputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
+                <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
 
-                <PvDropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
+                <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
 
-                <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
+                <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" show-buttons />
 
                 <PvButton icon="pi pi-trash" text class="delete-btn" @click="removeField(taskParams, index)" />
               </div>
@@ -166,10 +166,12 @@
       </div>
     </PvTabPanel>
 
-    <PvTabPanel header="Register Variant">
+    <PvTabPanel header="Edit Task"> Coming soon </PvTabPanel>
+
+    <PvTabPanel header="Create Variant">
       <div class="card px-3">
         <form class="p-fluid" @submit.prevent="handleVariantSubmit(!v$.$invalid)">
-          <h1 class="text-center font-bold">Register a New Variant</h1>
+          <h1 class="text-center font-bold">Create a New Variant</h1>
 
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
@@ -228,27 +230,70 @@
             </section>
           </div>
 
-          <h3 class="text-center">Parameters / Configuration</h3>
+          <div class="flex flex-column align-items-center">
+            <h3 class="text-center">Configure Game Parameters</h3>
+            <h4 class="text-center">
+              Set the game parameters for a new variant of task <strong>{{ variantFields.selectedGame.id }}</strong>
+            </h4>
+            <div class="flex flex-column gap-4 mb-2">
+              <!--
+            Each param looks like this:
+            {"name": "someParam", "type": "string, boolean, or number", "value": "valueOfParam"}
 
-          <div v-for="(param, index) in variantParams" :key="index">
-            <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-              <PvInputText v-model="param.name" placeholder="Name" />
+            We want to assign the value of param.name to the value of the equivalent key in variantParams
 
-              <PvDropdown v-model="param.type" :options="typeOptions" />
+            So if param.name is "someParam", then
+            variantParams[param.name] returns the value of variantParams.someParam,which is the value that we want to change for a new variant
+-->
+              <div
+                v-for="(param, index) in filteredMappedGameConfig"
+                :key="index"
+                class="flex align-items-center justify-content-center dynamic-param-container gap-4"
+              >
+                <div class="flex align-items-center">
+                  <label for="inputParamName">Parameter:</label>
+                  <div class="inputTextDisabledWrapper">
+                    <PvInputText id="inputParamName" v-model="variantParams[param.name]" :value="param.name" disabled />
+                  </div>
+                </div>
 
-              <PvInputText v-if="param.type === 'String'" v-model="param.value" placeholder="Value" />
+                <div class="flex align-items-center">
+                  <label for="inputParamType">Type:</label>
+                  <PvInputText id="inputParamType" v-model="param.type" :value="param.type" disabled />
+                </div>
 
-              <PvDropdown v-else-if="param.type === 'Boolean'" v-model="param.value" :options="[true, false]" />
+                <div class="flex align-items-center gap-2 flex-grow-1">
+                  <label for="inputParamValue">Value:</label>
+                  <PvInputText
+                    v-if="param.type === 'string'"
+                    id="inputParamValue"
+                    v-model="variantParams[param.name]"
+                    placeholder="Set game parameter to desired value"
+                  />
+                  <PvDropdown
+                    v-else-if="param.type === 'boolean'"
+                    id="inputParamValue"
+                    v-model="variantParams[param.name]"
+                    :options="booleanDropDownOptions"
+                    option-label="label"
+                    option-value="value"
+                    placeholder="Set game parameter to desired value"
+                  />
+                  <PvInputNumber
+                    v-else-if="param.type === 'number'"
+                    id="inputParamValue"
+                    v-model="variantParams[param.name]"
+                    placeholder="Set game parameter to desired value"
+                    button-layout="vertical"
+                    show-buttons
+                    style="width: 3em"
+                  />
+                </div>
 
-              <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
-
-              <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(variantParams, index)" />
-            </div>
-          </div>
-
-          <div class="w-full flex justify-content-end">
-            <div class="w-2">
-              <PvButton icon="pi pi-plus" label="Add Field" text @click="addField(variantParams)" />
+                <div>
+                  <button type="button" @click="deleteParam(param.name)">Delete</button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
@@ -271,13 +316,14 @@
               <label class="ml-1 mr-3" for="chbx-testVariant">Mark as <b>Test Variant</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox
-                v-model="variantCheckboxData"
-                input-id="chbx-externalVariant"
-                name="variantCheckboxData"
-                value="isExternalVariant"
-              />
-              <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>External Variant</b></label>
+              <!--              Not sure that we still have any need to mark a variant as external -->
+              <!--              <PvCheckbox-->
+              <!--                v-model="variantCheckboxData"-->
+              <!--                input-id="chbx-externalVariant"-->
+              <!--                name="variantCheckboxData"-->
+              <!--                value="isExternalVariant"-->
+              <!--              />-->
+              <!--              <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>External Variant</b></label>-->
               <div class="flex flex-row align-items-center">
                 <PvCheckbox
                   v-model="variantCheckboxData"
@@ -295,11 +341,13 @@
         </form>
       </div>
     </PvTabPanel>
+
+    <PvTabPanel header="Edit Variant"> Coming Soon </PvTabPanel>
   </PvTabView>
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, computed } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
@@ -387,13 +435,54 @@ const variantRules = {
   },
 };
 
-const variantParams = ref([
-  {
-    name: '',
-    value: '',
-    type: 'String',
-  },
-]);
+// Turn mappedGameConfig into an object {key: value, key: value...} which models gameConfig, filtered for deleted params
+// This builds the object of parameters that will be sent to the DB
+const variantParams = computed(() => {
+  const params = reactive({});
+
+  if (!mappedGameConfig.value) {
+    return params;
+  }
+
+  filteredMappedGameConfig.value.forEach((param) => {
+    params[param.name] = param.value;
+  });
+
+  return params;
+});
+
+// Turn the gameConfig object into an array of key/value pairs [{name: 'key', value: 'value', type: 'type'}...]
+// This allows simplified editing of the gameConfig object
+const mappedGameConfig = computed(() => {
+  // Prevent any errors if selectedGame is not set
+  if (!variantFields.selectedGame?.gameConfig) {
+    return [];
+  }
+
+  return Object.entries(variantFields.selectedGame.gameConfig).map(([key, value]) => ({
+    name: key,
+    type: typeof value,
+    value: value,
+  }));
+});
+
+// Filter out any deleted params
+const filteredMappedGameConfig = computed(() => {
+  if (!mappedGameConfig.value) {
+    return [];
+  }
+
+  return mappedGameConfig.value.filter((param) => !deletedParams.value.includes(param.name));
+});
+
+// Keep track of params that are not needed for the particular variant
+const deletedParams = ref([]);
+
+// Push the name of the param to the deletedParams array,
+// Triggering a computation of the filteredMappedGameConfig and variantParams
+const deleteParam = (param) => {
+  deletedParams.value.push(param);
+};
 
 function addField(type) {
   type.push({
@@ -407,7 +496,12 @@ function removeField(type, index) {
   type.splice(index, 1);
 }
 
-const typeOptions = ['String', 'Number', 'Boolean'];
+const typeOptions = ['string', 'number', 'boolean'];
+
+const booleanDropDownOptions = [
+  { label: 'true', value: true },
+  { label: 'false', value: false },
+];
 
 const t$ = useVuelidate(taskRules, taskFields);
 const v$ = useVuelidate(variantRules, variantFields);
@@ -457,33 +551,34 @@ const handleVariantSubmit = async (isFormValid) => {
   submitted.value = true;
   const isDemoData = !!variantCheckboxData.value?.find((item) => item === 'isDemoVariant');
   const isTestData = !!variantCheckboxData.value?.find((item) => item === 'isTestVariant');
-  const isExternalVariant = !!variantCheckboxData.value?.find((item) => item === 'isExternalVariant');
+  // const isExternalVariant = !!variantCheckboxData.value?.find((item) => item === 'isExternalVariant');
   const isRegisteredVariant = !!variantCheckboxData.value?.find((item) => item === 'isRegisteredVariant');
 
   if (!isFormValid) {
     return;
   }
 
-  const convertedVariantParams = convertParamsToObj(variantParams);
-
   const newVariantObject = reactive({
     taskId: variantFields.selectedGame.id,
     taskDescription: variantFields.selectedGame.description,
     taskImage: variantFields.selectedGame.image,
     variantName: variantFields.variantName,
-    variantParams: convertedVariantParams,
+    variantParams: variantParams,
     // TODO: Check if this is the valid way to see demo/test data values
     demoData: { task: !!variantFields.selectedGame?.demoData, variant: isDemoData },
     testData: { task: !!variantFields.selectedGame?.testData, variant: isTestData },
     registered: isRegisteredVariant,
   });
 
-  if (isExternalVariant) {
-    newVariantObject.variantParams = {
-      ...convertedVariantParams,
-      variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', variantParams),
-    };
-  }
+  // I don't think that this is necessary for variants anymore, commenting out for now
+  // if (isExternalVariant) {
+  //   const mappedVariantParams = Object.entries(variantParams.value).map(([key, value]) => ({ key, value }));
+  //   console.log(mappedVariantParams.value)
+  //   newVariantObject.variantParams = {
+  //     ...variantParams,
+  //     variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', mappedVariantParams),
+  //   };
+  // }
 
   // Write variant to Db
   try {
@@ -565,8 +660,16 @@ function resetVariantForm() {
   padding: 0.8rem;
 }
 
-.params-container {
-  display: flex;
-  margin-bottom: 1rem;
+.dynamic-param-container {
+}
+
+#inputParamName {
+  color: black;
+  font-weight: bold;
+}
+
+#inputParamType {
+  color: black;
+  font-weight: bold;
 }
 </style>

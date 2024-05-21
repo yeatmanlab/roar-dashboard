@@ -187,10 +187,10 @@ const routes = [
     meta: { pageTitle: 'Crowding' },
   },
   {
-    path: '/register-game',
-    name: 'RegisterGame',
-    component: () => import('../pages/RegisterGame.vue'),
-    meta: { pageTitle: 'Register Game', requireAdmin: true, requireSuperAdmin: true },
+    path: '/manage-tasks',
+    name: 'ManageTasks',
+    component: () => import('../pages/ManageTasks.vue'),
+    meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/register',
