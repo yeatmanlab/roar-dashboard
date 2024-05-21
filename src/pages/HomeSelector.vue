@@ -54,7 +54,7 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+  if (state.roarfirekit.restConfig()) init();
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
@@ -127,7 +127,7 @@ onMounted(async () => {
     requireRefresh.value = false;
     router.go(0);
   }
-  if (roarfirekit.value.restConfig) init();
+  if (roarfirekit.value.restConfig()) init();
   if (!isLoading.value) {
     refreshDocs();
     await checkConsent();

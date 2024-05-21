@@ -255,11 +255,11 @@ const init = () => {
 const { roarfirekit } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+  if (state.roarfirekit.restConfig()) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
+  if (roarfirekit.value.restConfig()) init();
 });
 
 watch(allDistricts, (newValue) => {

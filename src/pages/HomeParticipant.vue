@@ -105,13 +105,13 @@ const authStore = useAuthStore();
 const { roarfirekit, consentSpinner } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+  if (state.roarfirekit.restConfig()) init();
 });
 
 onMounted(async () => {
   GameTabs = (await import('../components/GameTabs.vue')).default;
   ParticipantSidebar = (await import('../components/ParticipantSidebar.vue')).default;
-  if (roarfirekit.value.restConfig) init();
+  if (roarfirekit.value.restConfig()) init();
 });
 
 const gameStore = useGameStore();
