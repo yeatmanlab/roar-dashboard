@@ -450,19 +450,32 @@ const checkForRequiredOrgs = (orgs) => {
 //      +---------------------------------+
 // -----|         Form submission         |-----
 //      +---------------------------------+
+
+const removeNull = (obj) => {
+  // eslint-disable-next-line no-unused-vars
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
+};
+
+const removeUndefined = (obj) => {
+  // eslint-disable-next-line no-unused-vars
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+};
+
 const submit = async () => {
   pickListError.value = '';
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
   if (isFormValid) {
-    const submittedAssessments = variants.value.map((assessment) => ({
-      variantId: assessment.variant.id,
-      variantName: assessment.variant.name,
-      taskId: assessment.task.id,
-      params: toRaw(assessment.variant.params),
-      // Exclude conditions key if there are no conditions to be set.
-      ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
-    }));
+    const submittedAssessments = variants.value.map((assessment) =>
+      removeUndefined({
+        variantId: assessment.variant.id,
+        variantName: assessment.variant.name,
+        taskId: assessment.task.id,
+        params: toRaw(assessment.variant.params),
+        // Exclude conditions key if there are no conditions to be set.
+        ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
+      }),
+    );
 
     const tasksUnique = checkForUniqueTasks(submittedAssessments);
     if (tasksUnique && !_isEmpty(submittedAssessments)) {
@@ -560,11 +573,6 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
     });
   }
 });
-
-const removeNull = (obj) => {
-  // eslint-disable-next-line no-unused-vars
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
-};
 
 function findVariantWithParams(variants, params) {
   console.log(`attempting to find variant of ${variants[0].task.id}`);
