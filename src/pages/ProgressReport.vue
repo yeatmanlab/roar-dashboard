@@ -45,6 +45,7 @@
             <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
             <div
               v-for="{ taskId } of administrationInfo.assessments"
+              :key="taskId"
               class="flex justify-content-between align-items-center"
             >
               <div class="text-lg font-bold text-gray-600 w-full">
@@ -158,7 +159,7 @@ import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, exportCsv, fetchSubcollection } from '../helpers/query/utils';
+import { fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
