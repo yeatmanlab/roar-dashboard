@@ -155,7 +155,7 @@ export const useAuthStore = () => {
           router.replace({ name: 'EnableCookies' });
         };
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+          return await this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
             // If the result is null, then no redirect operation was called.
             if (result !== null) {
               this.spinner = true;
@@ -164,6 +164,9 @@ export const useAuthStore = () => {
             }
           });
         }
+      },
+      async forceIdTokenRefresh() {
+        await this.roarfirekit.forceIdTokenRefresh();
       },
       async signOut() {
         if (this.isAuthenticated && this.isFirekitInit) {
