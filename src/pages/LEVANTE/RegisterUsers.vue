@@ -193,6 +193,7 @@ const onFileUpload = async (event) => {
   rawUserFile.value = await csvFileToJson(event.files[0]);
 
   // Check uploaded CSV has required columns
+  // eslint-disable-next-line no-prototype-builtins
   const missingColumns = requiredFields.filter((col) => !rawUserFile.value[0].hasOwnProperty(col));
   if (missingColumns.length > 0) {
     toast.add({
