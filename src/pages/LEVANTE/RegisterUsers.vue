@@ -2,43 +2,13 @@
   <main class="container main">
     <section class="main-body">
       <!--Upload file section-->
+      <RegisterUsersInfo />
+
+      <PvDivider />
+
       <div v-if="!isFileUploaded">
-        <PvPanel header="Register users">
-          <div class="info-message-container">
-            <i class="pi pi-exclamation-circle"></i>
-            <p>A Group (Organization) must be created before registering users. You cannot register users otherwise.</p>
-          </div>
-          These fields are <b>REQUIRED</b> for registering users:
-
-          <ul>
-            <li><b>id</b> - The unique identifier for the user. Start from 1.</li>
-            <li><b>userType</b> - The type of user. Must be one of the following: child, parent, teacher.</li>
-            <li><b>month</b> - The month of the year the user was born.</li>
-            <li><b>year</b> - The year the user was born.</li>
-            <li><b>group</b> - The name of the group.</li>
-          </ul>
-
-          These fields are optional, <b>HOWEVER</b>, you <i>must</i> use them if you want to link children with thier
-          parents and teachers:
-
-          <ul class="optional-fields">
-            <li><b>childId</b> - The unique identifier for the child. Start from 1.</li>
-            <li><b>parentId</b> - The unique identifier for the parent. Start from 1.</li>
-            <li><b>teacherId</b> - The unique identifier for the teacher. Start from 1.</li>
-          </ul>
-
-          Below is an example of what your CSV/spreadsheet could look like. Note that you may upload a CSV with any
-          columns you need, but those not required for registration can be ignored during processing by selecting the
-          "Ignore this column" option.
-
-          <img
-            id="example-image"
-            src="https://storage.googleapis.com/road-dashboard/example_researcher_csv.png"
-            alt="CSV upload example"
-          />
-        </PvPanel>
-        <PvDivider />
         <PvFileUpload
+          v-if="!isFileUploaded"
           name="massUploader[]"
           custom-upload
           accept=".csv"
@@ -54,31 +24,8 @@
           </template>
         </PvFileUpload>
       </div>
-      <!--DataTable with raw Student-->
-      <!-- && !returnedData.length -->
-      <div v-if="isFileUploaded">
-        <!-- <RoarDataTable :columns="tableColumns" :data="rawUserFile" :allowExport="false" /> -->
-        <PvPanel header="Assigning user data" class="mb-4">
-          <p>Use the dropdowns below to properly assign each column.</p>
-          <p>
-            Columns that are not assigned will not be imported. But please note that a column has to be assigned for
-            each of the required fields:
-          </p>
-          <ul>
-            <li><b>id</b> - The unique identifier for the user. Start from 1.</li>
-            <li><b>teacherId</b> - The unique identifier for the teacher. Start from 1.</li>
-            <li><b>month</b> - The month of the year the user was born.</li>
-            <li><b>year</b> - The year the user was born.</li>
-            <li><b>group</b> - The name of the group.</li>
-          </ul>
 
-          <PvMessage severity="info" :closable="false">You can scroll left-to-right to see more columns</PvMessage>
-        </PvPanel>
-
-        <div v-if="errorMessage" class="error-box">
-          {{ errorMessage }}
-        </div>
-        <!-- Can't use RoarDataTable to accomodate header dropdowns -->
+      <div v-if="isFileUploaded && !errorMissingColumns && !errorUsers.length">
         <PvDataTable
           ref="dataTable"
           :value="rawUserFile"
@@ -90,27 +37,20 @@
           :rows="10"
           class="datatable"
         >
-          <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
+          <PvColumn v-for="col of allFields" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <PvDropdown
-                  v-model="dropdownSelections[col.field]"
-                  :options="dropdownOptions"
-                  option-label="label"
-                  option-value="value"
-                  option-group-label="label"
-                  option-group-children="items"
-                  placeholder="What does this column describe?"
-                />
+                <b>{{ col.header }}</b>
               </div>
             </template>
           </PvColumn>
         </PvDataTable>
+
         <div class="submit-container">
           <PvButton
-            v-if="returnedData.length"
+            v-if="registeredUsers.length"
             label="Download Registered Users"
-            @click="addAccountToCSV(returnedData)"
+            @click="addAccountToCSV(registeredUsers)"
           />
           <PvButton
             v-else
@@ -120,48 +60,46 @@
             @click="submitUsers"
           />
         </div>
-        <!-- Datatable of error students -->
-        <div v-if="showErrorTable" class="error-container">
-          <div class="error-header">
-            <h3>Error Users</h3>
-            <PvButton @click="downloadErrorTable($event)"> Download Table </PvButton>
-          </div>
-          <!-- Temporary until I move RoarDataTable's data preprocessing to computed hooks -->
-          <PvDataTable
-            ref="errorTable"
-            :value="errorUsers"
-            show-gridlines
-            export-filename="error-datatable-export"
-            :row-hover="true"
-            :resizable-columns="true"
-            paginator
-            :always-show-paginator="false"
-            :rows="10"
-            class="datatable"
-          >
-            <PvColumn v-for="col of errorUserColumns" :key="col.field" :field="col.field">
-              <template #header>
-                {{ col.header }}
-              </template>
-            </PvColumn>
-          </PvDataTable>
+      </div>
+
+      <!-- Datatable of error students -->
+      <div v-if="showErrorTable" class="error-container">
+        <div class="error-header">
+          <h3>Rows with Errors</h3>
         </div>
+        <PvDataTable
+          ref="errorTable"
+          :value="errorUsers"
+          show-gridlines
+          export-filename="error-datatable-export"
+          :row-hover="true"
+          :resizable-columns="true"
+          paginator
+          :always-show-paginator="false"
+          :rows="10"
+          class="datatable"
+        >
+          <PvColumn v-for="col of errorUserColumns" :key="col.field" :field="col.field">
+            <template #header>
+              {{ col.header }}
+            </template>
+          </PvColumn>
+        </PvDataTable>
       </div>
     </section>
   </main>
 </template>
+
 <script setup>
-import { ref, toRaw } from 'vue';
+import { ref, toRaw, watch, nextTick } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
-import _compact from 'lodash/compact';
 import _forEach from 'lodash/forEach';
 import _isEmpty from 'lodash/isEmpty';
 import _startCase from 'lodash/startCase';
-import _every from 'lodash/every';
-import _includes from 'lodash/includes';
-import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
+import RegisterUsersInfo from '@/components/LEVANTE/RegisterUsersInfo.vue';
+import { useAuthStore } from '@/store/auth';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
 
@@ -169,34 +107,54 @@ const authStore = useAuthStore();
 const toast = useToast();
 const isFileUploaded = ref(false);
 const rawUserFile = ref({});
-const returnedData = ref([]);
+const registeredUsers = ref([]);
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
-const tableColumns = ref([]);
-const dropdownSelections = ref({});
-const dropdownOptions = ref([
-  {
-    label: 'Required',
-    items: [
-      { label: 'ID', value: 'id' },
-      { label: 'User Type', value: 'userType' },
-      { label: 'Month', value: 'month' },
-      { label: 'Year', value: 'year' },
-      { label: 'Group', value: 'group' },
-    ],
-  },
-  {
-    label: 'Optional',
-    items: [
-      { label: 'Child ID', value: 'childId' },
-      { label: 'Parent ID', value: 'parentId' },
-      { label: 'Teacher ID', value: 'teacherId' },
-      { label: 'Ignore this column', value: 'ignore' },
-    ],
-  },
-]);
+
 const requiredFields = ['id', 'userType', 'month', 'year', 'group'];
+const allFields = [
+  {
+    field: 'id',
+    header: 'ID',
+    dataType: 'number',
+  },
+  {
+    field: 'userType',
+    header: 'User Type',
+    dataType: 'string',
+  },
+  {
+    field: 'parentId',
+    header: 'Parent ID',
+    dataType: 'number',
+  },
+  {
+    field: 'childId',
+    header: 'Child ID',
+    dataType: 'number',
+  },
+  {
+    field: 'teacherId',
+    header: 'Teacher ID',
+    dataType: 'number',
+  },
+  {
+    field: 'month',
+    header: 'Month',
+    dataType: 'number',
+  },
+  {
+    field: 'year',
+    header: 'Year',
+    dataType: 'number',
+  },
+  {
+    field: 'group',
+    header: 'Group',
+    dataType: 'string',
+  },
+];
 
 // Error Users Table refs
 const errorTable = ref();
@@ -204,23 +162,83 @@ const errorUsers = ref([]);
 const errorUserColumns = ref([]);
 const errorMessage = ref('');
 const showErrorTable = ref(false);
+const errorMissingColumns = ref(false);
 
 const activeSubmit = ref(false);
 
+watch(
+  errorUsers,
+  () => {
+    // Scroll to bottom of page after error table is displayed
+    // Using nextTick to ensure the error table is rendered otherwise the scroll
+    // happens before the table is rendered
+    nextTick(() => {
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+  },
+  { deep: true },
+);
+
 // Functions supporting the uploader
 const onFileUpload = async (event) => {
-  rawUserFile.value = await csvFileToJson(event.files[0]);
-  tableColumns.value = generateColumns(toRaw(rawUserFile.value[0]));
-  populateDropdown(tableColumns.value);
-  isFileUploaded.value = true;
-  toast.add({ severity: 'success', summary: 'Success', detail: 'File Successfully Uploaded', life: 3000 });
-};
+  // Reset in case of previous error
+  rawUserFile.value = {};
+  errorUsers.value = [];
+  errorUserColumns.value = [];
+  showErrorTable.value = false;
+  errorMessage.value = '';
+  errorTable.value = null;
+  errorMissingColumns.value = false;
 
-function populateDropdown(columns) {
-  _forEach(columns, (col) => {
-    dropdownSelections.value[col.field] = '';
+  rawUserFile.value = await csvFileToJson(event.files[0]);
+
+  // Check uploaded CSV has required columns
+  const missingColumns = requiredFields.filter((col) => !rawUserFile.value[0].hasOwnProperty(col));
+  if (missingColumns.length > 0) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error: Missing Columns: ' + missingColumns.join(', '),
+      life: 5000,
+    });
+    errorMissingColumns.value = true;
+    return;
+  }
+
+  const careGiverRequiredFields = ['id', 'userType', 'group'];
+
+  // check each user's required fields are not empty
+  rawUserFile.value.forEach((user) => {
+    // If user is not a child we dont need to check for month and year
+    if (user.userType?.toLowerCase() === 'parent' || user.userType?.toLowerCase() === 'teacher') {
+      const missingFields = careGiverRequiredFields.filter((field) => !user[field]);
+      if (missingFields.length > 0) {
+        addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
+      }
+    } else {
+      const missingFields = requiredFields.filter((field) => !user[field]);
+      if (missingFields.length > 0) {
+        addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
+      }
+    }
   });
-}
+
+  if (errorUsers.value.length) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error: Missing Fields. See below for details.',
+      life: 5000,
+    });
+  }
+
+  // TODO: Check that links are correct if parent / teacher users exist
+
+  if (!missingColumns.length && !errorUsers.value.length) {
+    isFileUploaded.value = true;
+    errorMissingColumns.value = false;
+    showErrorTable.value = false;
+    toast.add({ severity: 'success', summary: 'Success', detail: 'File Successfully Uploaded', life: 3000 });
+  }
+};
 
 function generateColumns(rawJson) {
   let columns = [];
@@ -239,14 +257,6 @@ function generateColumns(rawJson) {
   return columns;
 }
 
-function getKeyByValue(object, value) {
-  return Object.keys(object).find((key) => object[key] === value);
-}
-
-function containsRequiredFields(subset, superset) {
-  return _every(subset, (element) => _includes(superset, element));
-}
-
 async function submitUsers() {
   // Reset error users
   activeSubmit.value = true;
@@ -254,78 +264,51 @@ async function submitUsers() {
   errorUserColumns.value = [];
   showErrorTable.value = false;
   errorMessage.value = '';
-  // activeSubmit.value = true;
-  const selections = _compact(Object.values(dropdownSelections.value));
-  // Check that all required dropdowns are selected.
-  const _selections = selections.sort();
-  const _requiredFields = requiredFields.sort();
-  if (!containsRequiredFields(_requiredFields, _selections)) {
-    errorMessage.value = 'Please assign a single column to each of the required fields.';
-    activeSubmit.value = false;
-    return;
-  }
 
-  let submitUsersList = [];
+  // Group needs to be an array of strings
 
-  // TODO: Do we need this for LEVANTE?
-  // Construct list of user objects, handle special columns
-  _forEach(rawUserFile.value, (user) => {
-    let individualUser = {};
-    let dropdownMap = _cloneDeep(dropdownSelections.value);
-    _forEach(selections, (col) => {
-      const columnMap = getKeyByValue(dropdownMap, col);
-      if (['ignore'].includes(col)) {
-        return;
-      }
-      individualUser[col] = user[columnMap];
-    });
-    submitUsersList.push(individualUser);
-  });
+  const usersToBeRegistered = _cloneDeep(rawUserFile.value);
 
-  // Begin submit process
-  // Org must be created before users can be created
+  for (const user of usersToBeRegistered) {
+    const groupNames = user.group.split(',');
 
-  // Check if the org (group) actually exists
-  for (const user of submitUsersList) {
-    if (user.userType.toLowerCase() === 'child') {
-      const groupNames = user.group.split(',');
-
-      for (const groupName of groupNames) {
-        const groupInfo = await getOrgId(
-          pluralizeFirestoreCollection('group'),
-          groupName,
-          ref(undefined),
-          ref(undefined),
-        );
-        // TODO: Check this logic
-        if (_isEmpty(groupInfo)) {
-          addErrorUser(user, `Error: ${'group'} '${groupName}' is invalid`);
-        } else {
-          user.group = groupInfo.map((group) => group.id);
-        }
+    for (const groupName of groupNames) {
+      const groupInfo = await getOrgId(
+        pluralizeFirestoreCollection('group'),
+        groupName,
+        ref(undefined),
+        ref(undefined),
+      );
+      // TODO: Check this logic
+      if (_isEmpty(groupInfo)) {
+        addErrorUser(user, `Error: Group '${groupName}' does not exist`);
+      } else {
+        user.group = groupInfo.map((group) => group.id);
       }
     }
   }
 
-  try {
-    // showErrorTable.value = true;
-    // throw new Error('test');
+  const submitUsersList = [...toRaw(usersToBeRegistered)];
 
+  // Begin submit process
+  // Org must be created before users can be created
+
+  try {
     const res = await authStore.createLevanteUsers(submitUsersList);
     toast.add({
       severity: 'success',
       summary: 'User Creation Success',
       life: 9000,
     });
-    console.log('Users created successfully response: ', res);
-    activeSubmit.value = false;
 
-    returnedData.value = res.data.data;
+    activeSubmit.value = false;
+    registeredUsers.value = res.data.data;
 
     // add the account info to the existing csv data
     rawUserFile.value.forEach((user, index) => {
-      user.email = res.data.data[index].user.email;
-      user.password = res.data.data[index].user.password;
+      user.email = registeredUsers.value[index].user.email;
+      user.password = registeredUsers.value[index].user.password;
+      user.uid = registeredUsers.value[index].uid;
     });
 
     convertUsersToCSV();
@@ -334,7 +317,7 @@ async function submitUsers() {
 
     toast.add({
       severity: 'error',
-      summary: 'User Creation Failed. See below for details.',
+      summary: 'User Creation Failure: ' + error.message,
       life: 9000,
     });
 
@@ -398,6 +381,8 @@ function addErrorUser(user, error) {
   });
 }
 
+// TODO: Refactor this to be a single call
+
 const orgIds = ref({
   districts: {},
   schools: {},
@@ -422,11 +407,6 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
 
   return orgs;
 };
-
-// Functions supporting error table
-function downloadErrorTable() {
-  errorTable.value.exportCSV();
-}
 </script>
 
 <style scoped>
@@ -434,42 +414,9 @@ function downloadErrorTable() {
   min-height: 33vh;
 }
 
-.info-message-container {
-  display: flex;
-  background-color: rgb(252, 252, 218);
-  border: 2px solid rgb(228, 206, 7);
-  border-radius: 0.5rem;
-  color: rgb(199, 180, 7);
-  margin-bottom: 1rem;
-
-  p {
-    font-weight: bold;
-    margin: 1rem 1rem 1rem 0;
-  }
-
-  i {
-    margin: 1rem;
-  }
-}
-
 .optional-fields {
   margin-bottom: 2rem;
 }
-
-#example-image {
-  width: 100%;
-  border-radius: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-/* .info-box {
-  padding: 0.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  background-color: var(--surface-b);
-  border-radius: 5px;
-  border: 1px solid var(--surface-d);
-} */
 
 .error-box {
   padding: 0.5rem;
