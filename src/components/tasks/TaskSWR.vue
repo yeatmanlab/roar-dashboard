@@ -42,7 +42,7 @@ const handlePopState = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig()) init();
+  if (state.roarfirekit.restConfig) init();
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
@@ -70,7 +70,7 @@ onMounted(async () => {
     console.error('An error occurred while importing the game module.', error);
   }
 
-  if (roarfirekit.value.restConfig()) init();
+  if (roarfirekit.value.restConfig) init();
   if (isFirekitInit.value && !isLoadingUserData.value) {
     await startTask();
   }

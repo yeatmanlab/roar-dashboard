@@ -540,11 +540,11 @@ const init = () => {
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig()) init();
+  if (state.roarfirekit.restConfig) init();
 });
 
 onMounted(async () => {
-  if (roarfirekit.value.restConfig()) init();
+  if (roarfirekit.value.restConfig) init();
 });
 
 watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {

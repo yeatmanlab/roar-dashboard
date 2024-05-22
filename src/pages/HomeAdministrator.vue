@@ -145,11 +145,11 @@ const init = () => {
 };
 
 unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig()) init();
+  if (state.roarfirekit.restConfig) init();
 });
 
 onMounted(() => {
-  if (roarfirekit.value.restConfig()) init();
+  if (roarfirekit.value.restConfig) init();
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
