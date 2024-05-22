@@ -64,7 +64,7 @@ const sidebarActionOptions = [
   {
     title: 'Manage Tasks',
     icon: 'pi pi-pencil',
-    buttonLink: { name: 'ManageTasks' },
+    buttonLink: { name: 'ManageTasksVariants' },
     requiresSuperAdmin: true,
     requiresAdmin: true,
     project: 'ALL',

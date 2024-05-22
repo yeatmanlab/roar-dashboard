@@ -187,9 +187,9 @@ const routes = [
     meta: { pageTitle: 'Crowding' },
   },
   {
-    path: '/manage-tasks',
-    name: 'ManageTasks',
-    component: () => import('../pages/ManageTasks.vue'),
+    path: '/manage-tasks-variants',
+    name: 'ManageTasksVariants',
+    component: () => import('../pages/ManageTasksVariants.vue'),
     meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
   },
   {

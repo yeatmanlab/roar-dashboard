@@ -9,14 +9,24 @@
         <div class="text-md text-gray-500 ml-6">Manage tasks and variants.</div>
       </div>
       <div class="register-container mx-auto md:flex-none">
-        <RegisterTask />
+        <PvTabView>
+          <PvTabPanel header="Tasks">
+            <ManageTasks />
+          </PvTabPanel>
+
+          <PvTabPanel header="Variants">
+            <ManageVariants />
+          </PvTabPanel>
+        </PvTabView>
       </div>
     </section>
   </main>
 </template>
 
 <script setup>
-import RegisterTask from '@/components/tasks/ManageTasks.vue';
+import ManageTasks from '@/components/tasks/ManageTasks.vue';
+import ManageVariants from '../components/tasks/ManageVariants.vue';
+import { ref } from 'vue';
 </script>
 
 <style scoped>
