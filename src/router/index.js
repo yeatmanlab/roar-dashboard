@@ -32,6 +32,12 @@ const routes = [
     meta: { pageTitle: 'Logging You In' },
   },
   {
+    path: '/classlink-user',
+    name: 'ClassLinkLanding',
+    component: () => import('../pages/ClassLinkLanding.vue'),
+    meta: { pageTitle: 'Logging You In' },
+  },
+  {
     path: '/game/swr',
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
@@ -255,6 +261,14 @@ const routes = [
     meta: { pageTitle: 'Clever Authentication' },
   },
   {
+    path: '/auth-classlink',
+    name: 'AuthClassLink',
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import('../components/auth/AuthClassLink.vue'),
+    props: (route) => ({ code: route.query.code }),
+    meta: { pageTitle: 'ClassLink Authentication' },
+  },
+  {
     path: '/auth-email-link',
     name: 'AuthEmailLink',
     beforeRouteLeave: [removeQueryParams, removeHash],
@@ -381,7 +395,14 @@ router.beforeEach(async (to, from, next) => {
 
   const store = useAuthStore();
 
-  const allowedUnauthenticatedRoutes = ['SignIn', 'AuthClever', 'AuthEmailLink', 'AuthEmailSent', 'Register'];
+  const allowedUnauthenticatedRoutes = [
+    'SignIn',
+    'AuthClever',
+    'AuthClassLink',
+    'AuthEmailLink',
+    'AuthEmailSent',
+    'Register',
+  ];
 
   // Check if user is signed in. If not, go to signin
   if (

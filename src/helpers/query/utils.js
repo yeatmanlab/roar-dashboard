@@ -196,7 +196,7 @@ export const fetchSubcollection = async (collectionPath, subcollectionName, sele
     .catch((error) => {
       console.error(error);
       return {
-        error: `${error.response.status === 404 ? 'Subcollection not found' : error.message}`,
+        error: `${error.response?.status === 404 ? 'Subcollection not found' : error.message}`,
       };
     });
 };
