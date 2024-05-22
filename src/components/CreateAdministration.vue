@@ -7,14 +7,6 @@
             <i class="pi pi-sliders-h text-gray-400 rounded" style="font-size: 1.6rem" />
             <div class="admin-page-header">{{ header }}</div>
           </div>
-          <button
-            v-if="isSuperAdmin"
-            v-tooltip.top="'Sync Clever orgs'"
-            class="p-panel-header-icon mr-2"
-            @click="syncClever"
-          >
-            <span :class="cleverSyncIcon"></span>
-          </button>
         </div>
         <div class="text-md text-gray-500 ml-6">{{ description }}</div>
       </div>

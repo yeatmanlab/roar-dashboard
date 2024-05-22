@@ -190,11 +190,6 @@ export const useAuthStore = () => {
           console.log('Cant log out while not logged in');
         }
       },
-      async syncCleverOrgs() {
-        return this.roarfirekit.syncCleverOrgs(false);
-      },
-      // TODO: rostering from ClassLink
-
       async createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData = false) {
         return this.roarfirekit.createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData);
       },
