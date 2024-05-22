@@ -17,7 +17,6 @@ const authStore = useAuthStore();
 let userDataCheckInterval;
 async function checkForUserType() {
   try {
-    await authStore.forceIdTokenRefresh();
     const userData = await fetchDocById('users', authStore.uid);
     const userType = _get(userData, 'userType');
     if (userType && userType !== 'guest') {
