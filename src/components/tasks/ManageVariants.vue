@@ -122,7 +122,7 @@
                 </div>
 
                 <div>
-                  <button type="button" @click="moveToDeletedParams(param.name)">Delete</button>
+                  <PvButton type="button" @click="moveToDeletedParams(param.name)">Delete</PvButton>
                 </div>
               </div>
 
