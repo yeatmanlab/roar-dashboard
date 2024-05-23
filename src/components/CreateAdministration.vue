@@ -433,18 +433,6 @@ const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
 };
 
-// async function updateConsent() {
-//   let consentDoc;
-//   if (state.consent.type === 'Assent-es') {
-//     consentDoc = await authStore.getLegalDoc('assent-es');
-//   } else {
-//     consentDoc = await authStore.getLegalDoc(_lowerCase(toRaw(state.consent.type)));
-//   }
-//   consentVersion.value = consentDoc.version;
-//   await authStore.updateConsentStatus(consentDoc.type, consentVersion.value);
-//   userQueryKeyIndex.value += 1;
-// }
-
 const handleConsentSelected = (newConsentAssent) => {
   console.log(newConsentAssent);
   state.consent = newConsentAssent.consent;
