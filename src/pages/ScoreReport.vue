@@ -528,6 +528,8 @@ const {
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+    if (assessment.taskId.includes('es')) {
+    }
     if (support_level === 'Optional') {
       return '#a1d8e3';
     } else if (support_level === 'Needs Extra Support') {
@@ -538,6 +540,8 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       return '#c0d9bd';
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
+    } else {
+      return '#d3d3d3';
     }
   }
   return tag_color;
@@ -705,7 +709,6 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].tagColor = supportLevelColors.Assessed;
           scoreFilterTags += ' Assessed ';
         }
 
