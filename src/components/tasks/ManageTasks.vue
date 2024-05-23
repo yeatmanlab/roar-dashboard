@@ -500,7 +500,7 @@ const handleUpdateTask = async () => {
 
   try {
     authStore.roarfirekit.updateTaskOrVariant({ taskId: selectedTask.value, taskData: updatedTaskData });
-    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully updated.', life: 3000 });
+    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Task successfully updated.', life: 3000 });
 
     resetUpdateTaskForm();
   } catch (error) {
