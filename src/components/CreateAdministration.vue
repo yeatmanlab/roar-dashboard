@@ -209,7 +209,7 @@ const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
-  queryFn: () => variantsFetcher(),
+  queryFn: () => variantsFetcher(true),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
