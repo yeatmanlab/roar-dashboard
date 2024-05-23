@@ -141,7 +141,7 @@ const distributionChartFacet = (taskId) => {
           labelExpr:
             props.facetMode.name === 'Grade'
               ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')"
-              : 'split(slice(datum.value, 1, datum.value.length), " ")',
+              : 'split(slice(datum.value, 2, datum.value.length), " ")',
           labelLimit: 200,
           labelSeparation: 2, // Set the spacing between lines in pixels
         },
