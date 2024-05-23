@@ -1,7 +1,7 @@
 <template>
   <div class="loading-container">
     <AppSpinner style="margin-bottom: 1rem" />
-    <span>{{ $t('cleverLanding.cleverLoading') }}</span>
+    <span>{{ $t('classLinkLanding.classLinkLoading') }}</span>
   </div>
 </template>
 <script setup>
@@ -15,6 +15,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 let userDataCheckInterval;
+
 async function checkForUserType() {
   try {
     const userData = await fetchDocById('users', authStore.uid);
@@ -30,7 +31,7 @@ async function checkForUserType() {
   }
 }
 
-userDataCheckInterval = setInterval(checkForUserType, 1000);
+userDataCheckInterval = setInterval(checkForUserType, 500);
 </script>
 <style>
 .loading-container {

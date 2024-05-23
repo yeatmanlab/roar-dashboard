@@ -23,7 +23,9 @@ export const useAuthStore = () => {
         userData: null,
         userClaims: null,
         cleverOAuthRequested: false,
+        classLinkOAuthRequested: false,
         authFromClever: false,
+        authFromClassLink: false,
         userQueryKeyIndex: 0,
         assignmentQueryKeyIndex: 0,
         administrationQueryKeyIndex: 0,
@@ -129,12 +131,22 @@ export const useAuthStore = () => {
           return this.roarfirekit.signInWithPopup('clever');
         }
       },
+      async signInWithClassLinkPopup() {
+        this.authFromClasslink = true;
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup('classlink');
+        }
+      },
       async signInWithGoogleRedirect() {
         return this.roarfirekit.initiateRedirect('google');
       },
       async signInWithCleverRedirect() {
         this.authFromClever = true;
         return this.roarfirekit.initiateRedirect('clever');
+      },
+      async signInWithClassLinkRedirect() {
+        this.authFromClassLink = true;
+        return this.roarfirekit.initiateRedirect('classlink');
       },
       async initStateFromRedirect() {
         this.spinner = true;
@@ -143,7 +155,7 @@ export const useAuthStore = () => {
           router.replace({ name: 'EnableCookies' });
         };
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
+          return await this.roarfirekit.signInFromRedirectResult(enableCookiesCallback).then((result) => {
             // If the result is null, then no redirect operation was called.
             if (result !== null) {
               this.spinner = true;
@@ -153,11 +165,15 @@ export const useAuthStore = () => {
           });
         }
       },
+      async forceIdTokenRefresh() {
+        await this.roarfirekit.forceIdTokenRefresh();
+      },
       async signOut() {
         if (this.isAuthenticated && this.isFirekitInit) {
           return this.roarfirekit.signOut().then(() => {
             this.adminOrgs = null;
             this.authFromClever = false;
+            this.authFromClassLink = false;
             this.firebaseUser = {
               adminFirebaseUser: null,
               appFirebaseUser: null,
@@ -176,9 +192,6 @@ export const useAuthStore = () => {
         } else {
           console.log('Cant log out while not logged in');
         }
-      },
-      async syncCleverOrgs() {
-        return this.roarfirekit.syncCleverOrgs(false);
       },
       async createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData = false) {
         return this.roarfirekit.createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData);

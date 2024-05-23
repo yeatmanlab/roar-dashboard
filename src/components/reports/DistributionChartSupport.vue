@@ -188,17 +188,18 @@ const distributionBySupport = computed(() => {
               ]
             : 'ascending',
         axis: {
-          labelAngle: 0,
-          labelAlign: 'right',
+          labelBaseline: 'line-bottom',
           titleFontSize: 14,
-          labelLimit: 150,
+          labelLimit: 180,
+          labelPadding: 8,
           labelFontSize: 14,
           labelColor: 'navy',
-          labelFontStyle: 'bold',
+          labelFontStyle: '',
+          transform: [{ calculate: "split(datum.address, ' ')", as: 'address' }],
           labelExpr:
             props.facetMode.name === 'Grade'
               ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')"
-              : 'slice(datum.value, 1, datum.value.length)',
+              : 'split(slice(datum.value, 2, datum.value.length), " ")',
         },
       },
       yOffset: {
