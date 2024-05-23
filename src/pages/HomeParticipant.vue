@@ -102,7 +102,7 @@ const init = () => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit, consentSpinner } = storeToRefs(authStore);
+const { roarfirekit, consentSpinner, userQueryKeyIndex } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -122,7 +122,7 @@ const {
   isFetching: isFetchingUserData,
   data: userData,
 } = useQuery({
-  queryKey: ['userData', authStore.uid, authStore.userQueryKeyIndex],
+  queryKey: ['userData', authStore.uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('users', authStore.uid),
   keepPreviousData: true,
   enabled: initialized,
