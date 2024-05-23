@@ -98,7 +98,7 @@ async function updateConsent() {
 }
 
 function refreshDocs() {
-  userQueryKeyIndex.value += 1;
+  authStore.refreshQueryKeys();
 }
 
 async function checkConsent() {
