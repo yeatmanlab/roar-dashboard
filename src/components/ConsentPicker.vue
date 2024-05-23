@@ -298,15 +298,13 @@ function checkBoxStatus() {
     amount: amount.value,
     expectedTime: expectedTime.value,
   };
-  if (paramCheckboxData.value) {
-    if (paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
-      specialParam.value = false;
-      getDefaults();
-    }
-  } else if (specialParam.value) {
-    if (specialParam.value?.find((item) => item === 'hasVideo' || item === 'hasAudio' || item === 'hasEyeTracking')) {
-      getConsentAssent();
-    }
+  if (paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
+    specialParam.value = false;
+    getDefaults();
+  } else if (
+    specialParam.value?.find((item) => item === 'hasVideo' || item === 'hasAudio' || item === 'hasEyeTracking')
+  ) {
+    getConsentAssent();
   }
 }
 
