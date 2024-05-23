@@ -96,7 +96,7 @@
 
                 <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
 
-                <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" show-buttons />
+                <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
 
                 <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(gameConfig, index)" />
               </div>
@@ -118,7 +118,7 @@
 
                 <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
 
-                <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" show-buttons />
+                <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
 
                 <PvButton icon="pi pi-trash" text class="delete-btn" @click="removeField(taskParams, index)" />
               </div>
@@ -166,12 +166,176 @@
       </div>
     </PvTabPanel>
 
-    <PvTabPanel header="Edit Task"> Coming soon </PvTabPanel>
+    <PvTabPanel header="Update Task">
+      <h1 class="text-center font-bold">Update a Task</h1>
+      <form @submit.prevent="handleUpdateTask">
+        <section class="flex flex-column gap-2 mb-4">
+          <label for="variant-fields" class="my-2">Select an Existing Task<span class="required">*</span></label>
+          <PvDropdown
+            v-model="selectedTask"
+            :options="tasks"
+            option-label="name"
+            option-value="id"
+            placeholder="Select a Task"
+          />
+        </section>
+
+        <section v-if="taskData" class="flex flex-column align-items-start mt-4">
+          <div class="flex flex-column w-8">
+            <label for="fieldsOutput">
+              <strong>Fields</strong>
+            </label>
+            <div v-for="(value, key) in taskData" :key="key">
+              <div v-if="!ignoreFields.includes(key)">
+                <div
+                  v-if="updatedTaskData[key] !== undefined"
+                  class="flex align-items-center justify-content-between gap-2 mb-1"
+                >
+                  <label :for="key" class="w-2">
+                    <em>{{ key }}</em>
+                  </label>
+                  <PvInputText :placeholder="typeof value" disabled class="w-2" />
+
+                  <PvInputText
+                    v-if="typeof value === 'string'"
+                    v-model="updatedTaskData[key]"
+                    :placeholder="value"
+                    class="flex-grow-1"
+                  />
+                  <PvInputNumber
+                    v-else-if="typeof value === 'number'"
+                    v-model="updatedTaskData[key]"
+                    class="flex-grow-1"
+                  />
+                  <PvDropdown
+                    v-else-if="typeof value === 'boolean'"
+                    v-model="updatedTaskData[key]"
+                    :options="booleanDropDownOptions"
+                    option-label="label"
+                    option-value="value"
+                    class="flex-grow-1"
+                  />
+                  <PvButton type="button" @click="deleteParam(key)">Delete</PvButton>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="newFields.length > 0">
+            <div v-for="(field, index) in newFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
+              <PvInputText v-model="field.name" placeholder="Field Name" />
+              <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+
+              <PvInputText
+                v-if="field.type === 'string'"
+                v-model="field.value"
+                placeholder="Field Value"
+                class="flex-grow-1"
+              />
+              <PvInputNumber
+                v-if="field.type === 'number'"
+                v-model="field.value"
+                placeholder="Field Value"
+                class="flex-grow-1"
+              />
+              <PvDropdown
+                v-if="field.type === 'boolean'"
+                v-model="field.value"
+                placeholder="Field Value"
+                :options="booleanDropDownOptions"
+                option-label="label"
+                option-value="value"
+                class="flex-grow-1"
+              />
+              <PvButton type="button" @click="removeNewField(field.name, newFields)">Delete</PvButton>
+            </div>
+          </div>
+          <PvButton label="Add Field" text icon="pi pi-plus" class="my-4" @click="newField" />
+
+          <div class="flex flex-column w-8">
+            <label for="gameConfigOutput">
+              <strong>Game Configuration</strong>
+            </label>
+            <div
+              v-for="(param, paramName) in updatedTaskData.gameConfig"
+              id="paramsOutput"
+              :key="paramName"
+              class="mb-1"
+            >
+              <div
+                v-if="updatedTaskData.gameConfig[paramName] !== undefined"
+                class="flex align-items-center justify-content-end column-gap-2"
+              >
+                <label :for="paramName" class="w-2">
+                  <em>{{ paramName }} </em>
+                </label>
+                <PvInputText id="inputEditParamType" :placeholder="typeof param" class="w-2" disabled />
+                <PvInputText
+                  v-if="typeof param === 'string'"
+                  v-model="updatedTaskData.gameConfig[paramName]"
+                  :placeholder="param"
+                  class="flex-grow-1"
+                />
+                <PvInputNumber
+                  v-else-if="typeof param === 'number'"
+                  v-model="updatedTaskData.gameConfig[paramName]"
+                  class="flex-grow-1"
+                />
+                <PvDropdown
+                  v-else-if="typeof param === 'boolean'"
+                  v-model="updatedTaskData.gameConfig[paramName]"
+                  :options="booleanDropDownOptions"
+                  option-label="label"
+                  option-value="value"
+                  class="flex-grow-1"
+                />
+                <PvButton type="button" @click="deleteParam(paramName)">Delete</PvButton>
+              </div>
+            </div>
+            <div v-if="addedGameConfig.length > 0">
+              <div
+                v-for="(field, index) in addedGameConfig"
+                :key="index"
+                class="flex align-items-center column-gap-2 mb-1"
+              >
+                <PvInputText v-model="field.name" placeholder="Field Name" />
+                <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+                <PvInputText
+                  v-if="field.type === 'string'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  class="flex-grow-1"
+                />
+                <PvInputNumber
+                  v-if="field.type === 'number'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  class="flex-grow-1"
+                />
+                <PvDropdown
+                  v-if="field.type === 'boolean'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  :options="booleanDropDownOptions"
+                  option-label="label"
+                  option-value="value"
+                  class="flex-grow-1"
+                />
+                <PvButton type="button" @click="removeNewField(field.name, addedGameConfig)">Delete</PvButton>
+              </div>
+            </div>
+          </div>
+          <PvButton label="Add Param" text icon="pi pi-plus" class="my-4" @click="addGameConfig" />
+        </section>
+
+        <PvButton type="submit" class="my-4">Update Task</PvButton>
+      </form>
+    </PvTabPanel>
   </PvTabView>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
@@ -179,16 +343,48 @@ import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { taskFetcher } from '@/helpers/query/tasks';
+import { cloneDeep } from 'lodash';
 
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
 const taskCheckboxData = ref();
-const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
+const selectedTask = ref(null);
+let taskData = computed(() => {
+  if (!selectedTask.value) return null;
+
+  return tasks.value.find((task) => task.id === selectedTask.value);
+});
+
+// Reactive clone for holding changes made to taskData without affecting the original taskData and avoiding reactivity issues
+let updatedTaskData = reactive(cloneDeep(taskData.value));
+// Array of objects which models the new fields for the task object being updated
+// This array of objects is later converted back into an object and spread into the updatedTaskData object
+let newFields = reactive([]);
+// Array of objects which models the new fields for the gameConfig object being updated
+// This array of objects is later converted back into an object and spread into the updatedTaskData object
+let addedGameConfig = reactive([]);
+
+watch(taskData, (newVal) => {
+  updatedTaskData = reactive(cloneDeep(newVal));
+});
+
+// Ignore these fields when displaying the task data
+const ignoreFields = ['id', 'lastUpdated', 'gameConfig', 'parentDoc'];
+
+const typeOptions = ['string', 'number', 'boolean'];
+
+const booleanDropDownOptions = [
+  { label: 'true', value: true },
+  { label: 'false', value: false },
+];
+
+const submitted = ref(false);
+const created = ref(false);
 
 let unsubscribe;
 const init = () => {
@@ -204,14 +400,15 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { isFetching: isFetchingTasks, data: tasks } = useQuery({
+const { data: tasks } = useQuery({
   queryKey: ['tasks', registeredTasksOnly],
-  queryFn: () => taskFetcher(registeredTasksOnly.value),
+  queryFn: () => taskFetcher(registeredTasksOnly.value, true),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+// For modeling a task to submit to the DB
 const taskFields = reactive({
   taskName: '',
   taskURL: '',
@@ -223,12 +420,17 @@ const taskFields = reactive({
   external: isExternalTask,
 });
 
+// Validation rules for task fields
 const taskRules = {
   taskName: { required },
   taskURL: { required: requiredIf(isExternalTask.value), url },
   taskId: { required },
 };
 
+const t$ = useVuelidate(taskRules, taskFields);
+
+// Array of objects which models the game configuration fields
+// This array of objects is later converted back into an object and spread into the task object
 const gameConfig = ref([
   {
     name: '',
@@ -237,6 +439,7 @@ const gameConfig = ref([
   },
 ]);
 
+// Array of objects which models the task parameters and is used to build the task URL
 const taskParams = ref([
   {
     name: '',
@@ -245,69 +448,7 @@ const taskParams = ref([
   },
 ]);
 
-const variantFields = reactive({
-  variantName: '',
-  selectedGame: {},
-  // Based on type of account?
-  external: true,
-});
-
-const variantRules = {
-  variantName: { required },
-  selectedGame: {
-    id: { required },
-  },
-};
-
-// Turn mappedGameConfig into an object {key: value, key: value...} which models gameConfig, filtered for deleted params
-// This builds the object of parameters that will be sent to the DB
-const variantParams = computed(() => {
-  const params = reactive({});
-
-  if (!mappedGameConfig.value) {
-    return params;
-  }
-
-  filteredMappedGameConfig.value.forEach((param) => {
-    params[param.name] = param.value;
-  });
-
-  return params;
-});
-
-// Turn the gameConfig object into an array of key/value pairs [{name: 'key', value: 'value', type: 'type'}...]
-// This allows simplified editing of the gameConfig object
-const mappedGameConfig = computed(() => {
-  // Prevent any errors if selectedGame is not set
-  if (!variantFields.selectedGame?.gameConfig) {
-    return [];
-  }
-
-  return Object.entries(variantFields.selectedGame.gameConfig).map(([key, value]) => ({
-    name: key,
-    type: typeof value,
-    value: value,
-  }));
-});
-
-// Filter out any deleted params
-const filteredMappedGameConfig = computed(() => {
-  if (!mappedGameConfig.value) {
-    return [];
-  }
-
-  return mappedGameConfig.value.filter((param) => !deletedParams.value.includes(param.name));
-});
-
-// Keep track of params that are not needed for the particular variant
-const deletedParams = ref([]);
-
-// Push the name of the param to the deletedParams array,
-// Triggering a computation of the filteredMappedGameConfig and variantParams
-const deleteParam = (param) => {
-  deletedParams.value.push(param);
-};
-
+// For adding a new field to the new task document
 function addField(type) {
   type.push({
     name: '',
@@ -316,21 +457,56 @@ function addField(type) {
   });
 }
 
+// For removing a field from the task document
 function removeField(type, index) {
   type.splice(index, 1);
 }
 
-const typeOptions = ['string', 'number', 'boolean'];
+// Adds a new object to the newFields array, which models a new field for the task object being updated
+const newField = () => {
+  newFields.push({ name: '', value: '', type: 'string' });
+};
 
-const booleanDropDownOptions = [
-  { label: 'true', value: true },
-  { label: 'false', value: false },
-];
+// Removes a field from the newFields or addedGameConfig array
+const removeNewField = (field, array) => {
+  const updatedFields = array.filter((item) => item.name !== field);
+  array.splice(0, array.length, ...updatedFields);
+};
 
-const t$ = useVuelidate(taskRules, taskFields);
-const v$ = useVuelidate(variantRules, variantFields);
-const submitted = ref(false);
-const created = ref(false);
+// Deletes a parameter from the updatedTaskData object
+const deleteParam = (param) => {
+  if (updatedTaskData['gameConfig'][param] !== undefined) {
+    delete updatedTaskData['gameConfig'][param];
+  }
+  delete updatedTaskData[param];
+};
+
+// Adds a new object to the addedGameConfig array, which models a new field for the gameConfig object being updated
+const addGameConfig = () => {
+  addedGameConfig.push({ name: '', value: '', type: 'string' });
+};
+
+const handleUpdateTask = async () => {
+  const convertedFields = convertParamsToObj(newFields);
+  const convertedGameConfig = convertParamsToObj(addedGameConfig);
+  updatedTaskData = {
+    ...updatedTaskData,
+    ...convertedFields,
+    gameConfig: {
+      ...updatedTaskData.gameConfig,
+      ...convertedGameConfig,
+    },
+  };
+
+  try {
+    authStore.roarfirekit.updateTaskOrVariant({ taskId: selectedTask.value, taskData: updatedTaskData });
+    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully updated.', life: 3000 });
+
+    resetUpdateTaskForm();
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 const handleNewTaskSubmit = async (isFormValid) => {
   submitted.value = true;
@@ -371,57 +547,13 @@ const handleNewTaskSubmit = async (isFormValid) => {
   }
 };
 
-const handleVariantSubmit = async (isFormValid) => {
-  submitted.value = true;
-  const isDemoData = !!variantCheckboxData.value?.find((item) => item === 'isDemoVariant');
-  const isTestData = !!variantCheckboxData.value?.find((item) => item === 'isTestVariant');
-  // const isExternalVariant = !!variantCheckboxData.value?.find((item) => item === 'isExternalVariant');
-  const isRegisteredVariant = !!variantCheckboxData.value?.find((item) => item === 'isRegisteredVariant');
-
-  if (!isFormValid) {
-    return;
-  }
-
-  const newVariantObject = reactive({
-    taskId: variantFields.selectedGame.id,
-    taskDescription: variantFields.selectedGame.description,
-    taskImage: variantFields.selectedGame.image,
-    variantName: variantFields.variantName,
-    variantParams: variantParams,
-    // TODO: Check if this is the valid way to see demo/test data values
-    demoData: { task: !!variantFields.selectedGame?.demoData, variant: isDemoData },
-    testData: { task: !!variantFields.selectedGame?.testData, variant: isTestData },
-    registered: isRegisteredVariant,
-  });
-
-  // I don't think that this is necessary for variants anymore, commenting out for now
-  // if (isExternalVariant) {
-  //   const mappedVariantParams = Object.entries(variantParams.value).map(([key, value]) => ({ key, value }));
-  //   console.log(mappedVariantParams.value)
-  //   newVariantObject.variantParams = {
-  //     ...variantParams,
-  //     variantURL: buildTaskURL(variantFields.selectedGame?.taskURL || '', mappedVariantParams),
-  //   };
-  // }
-
-  // Write variant to Db
-  try {
-    await authStore.roarfirekit.registerTaskVariant({ ...newVariantObject });
-
-    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully created.', life: 3000 });
-
-    submitted.value = false;
-
-    resetVariantForm();
-  } catch (error) {
-    console.error(error);
-  }
-};
-
 function convertParamsToObj(paramType) {
-  return paramType.value.reduce((acc, item) => {
+  // If the paramType is an array of objects with a key called "value", convert it to an object
+  // Otherwise, just use the paramType object
+  const target = paramType.value !== undefined ? paramType.value : paramType;
+
+  return target.reduce((acc, item) => {
     if (item.name) {
-      // Check if name is not empty
       acc[item.name] = item.value;
     }
     return acc;
@@ -448,21 +580,16 @@ function buildTaskURL(url, params) {
   return completeURL;
 }
 
-function resetVariantForm() {
-  Object.assign(variantFields, {
-    variantName: '',
-    selectedGame: {},
-    external: true,
-  });
+const resetUpdateTaskForm = () => {
+  selectedTask.value = null;
+  updatedTaskData = reactive(cloneDeep(taskData.value));
+  clearFieldConfigArrays();
+};
 
-  variantParams.value = [
-    {
-      name: '',
-      value: '',
-      type: 'String',
-    },
-  ];
-}
+const clearFieldConfigArrays = () => {
+  newFields = reactive([]);
+  addedGameConfig = reactive([]);
+};
 </script>
 
 <style>

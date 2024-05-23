@@ -26,7 +26,6 @@
 <script setup>
 import ManageTasks from '@/components/tasks/ManageTasks.vue';
 import ManageVariants from '../components/tasks/ManageVariants.vue';
-import { ref } from 'vue';
 </script>
 
 <style scoped>

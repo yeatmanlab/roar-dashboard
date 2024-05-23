@@ -5,6 +5,7 @@ import { convertValues, getAxiosInstance, mapFields } from './utils';
 
 export const getTasksRequestBody = ({
   registered = true,
+  allData = false,
   orderBy,
   aggregationQuery,
   pageLimit,
@@ -24,9 +25,11 @@ export const getTasksRequestBody = ({
       requestBody.structuredQuery.offset = page * pageLimit;
     }
 
-    requestBody.structuredQuery.select = {
-      fields: select.map((field) => ({ fieldPath: field })),
-    };
+    if (!allData) {
+      requestBody.structuredQuery.select = {
+        fields: select.map((field) => ({ fieldPath: field })),
+      };
+    }
   }
 
   requestBody.structuredQuery.from = [
@@ -63,13 +66,14 @@ export const getTasksRequestBody = ({
   return requestBody;
 };
 
-export const taskFetcher = async (registered = true, select = ['name', 'gameConfig', 'testData', 'demoData']) => {
+export const taskFetcher = async (registered = true, allData = false, select = ['name', 'testData', 'demoData']) => {
   const axiosInstance = getAxiosInstance('app');
   const requestBody = getTasksRequestBody({
     registered,
+    allData,
     aggregationQuery: false,
     paginate: false,
-    select: select,
+    select: allData ? '' : select,
   });
 
   return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
