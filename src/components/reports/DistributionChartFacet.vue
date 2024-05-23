@@ -176,13 +176,14 @@ const distributionChartFacet = (taskId) => {
         aggregate: 'count',
         title: 'Count',
         axis: {
-          labelBaseline: 'line-bottom',
+          labelBaseline: 'right',
           titleFontSize: 14,
           labelLimit: 180,
           labelPadding: 8,
           labelFontSize: 14,
           labelColor: 'navy',
           labelFontStyle: '',
+          format: '.0f',
         },
       },
       tooltip: [
