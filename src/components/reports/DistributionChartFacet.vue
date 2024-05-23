@@ -132,19 +132,21 @@ const distributionChartFacet = (taskId) => {
           titleAnchor: 'middle',
           labelColor: 'navy',
           labelFontSize: 14,
-          labelFontStyle: 'bold',
-          labelAnchor: 'middle',
+          labelFontStyle: '',
+          labelAnchor: 'top',
           labelAngle: 0,
-          labelAlign: 'left',
+          labelAlign: 'right',
           labelOrient: 'left',
+          labelBaseline: 'line-bottom',
+          labelPadding: 0,
           labelExpr:
             props.facetMode.name === 'Grade'
-              ? "join(['Grade ',if(datum.value == '0', 'K', datum.value ), ], '')"
-              : 'slice(datum.value, 1, datum.value.length)',
+              ? "join(['Grade ',if(datum.value == 'Kindergarten', 'K', datum.value ), ], '')"
+              : 'split(slice(datum.value, 2, datum.value.length), " ")',
           labelLimit: 150,
-          labelSeparation: 5, // Set the spacing between lines in pixels
+          labelSeparation: 0, // Set the spacing between lines in pixels
         },
-        spacing: 10,
+        spacing: 18,
         sort: 'ascending',
       },
 
@@ -175,9 +177,13 @@ const distributionChartFacet = (taskId) => {
         aggregate: 'count',
         title: 'Count',
         axis: {
-          orient: 'right',
+          labelBaseline: 'right',
           titleFontSize: 14,
+          labelLimit: 180,
+          labelPadding: 8,
           labelFontSize: 14,
+          labelColor: 'navy',
+          labelFontStyle: '',
           format: '.0f',
         },
       },

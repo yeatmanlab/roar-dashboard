@@ -22,7 +22,11 @@ describe('The partner admin user', () => {
   beforeEach(() => {
     cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
     cy.wait(0.2 * timeout);
+    cy.navigateTo('/');
+    cy.wait(0.2 * timeout);
     cy.navigateTo(listOrgsUrl, { timeout: timeout });
+    // cy.get('button').contains('Organizations').click();
+    // cy.get('button').contains('List Organizations').click();
   });
 
   orgs.forEach((org) => {
