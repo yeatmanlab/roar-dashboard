@@ -125,12 +125,12 @@
             </div>
           </div>
 
-          <div class="w-full flex justify-content-end">
+          <div class="w-full flex justify-content-center">
             <div v-if="!isExternalTask" class="w-2">
-              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(gameConfig)" />
+              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(gameConfig)" class="my-4" />
             </div>
             <div v-else class="w-2">
-              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(taskParams)" />
+              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(taskParams)" class="my-4" />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
