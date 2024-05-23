@@ -85,9 +85,8 @@
               >
                 <div class="flex align-items-center">
                   <label for="inputParamName">Parameter:</label>
-                  <div class="inputTextDisabledWrapper">
-                    <PvInputText id="inputParamName" v-model="variantParams[param.name]" :value="param.name" disabled />
-                  </div>
+
+                  <PvInputText id="inputParamName" v-model="variantParams[param.name]" :value="param.name" disabled />
                 </div>
 
                 <div class="flex align-items-center">
@@ -117,14 +116,11 @@
                     id="inputParamValue"
                     v-model="variantParams[param.name]"
                     placeholder="Set game parameter to desired value"
-                    button-layout="vertical"
-                    show-buttons
-                    style="width: 3em"
                   />
                 </div>
 
                 <div>
-                  <button type="button" @click="deleteParam(param.name)">Delete</button>
+                  <button type="button" @click="moveToDeletedParams(param.name)">Delete</button>
                 </div>
               </div>
             </div>
@@ -176,15 +172,169 @@
     </PvTabPanel>
 
     <PvTabPanel header="Edit Variant">
-      <form>
-        <PvDropdown v-model="selectedTask" :options="tasks" option-label="name" option-value="id" />
+      <form @submit.prevent="handleUpdateVariant">
+        <section class="flex gap-2 mb-4">
+          <PvDropdown
+            v-model="selectedTask"
+            :options="tasks"
+            option-label="name"
+            option-value="id"
+            placeholder="Select a Game"
+          />
+          <PvDropdown
+            v-model="selectedVariant"
+            :options="filteredVariants"
+            :option-label="(data) => (data.variant.name ? data.variant.name : data.variant.id)"
+            option-value="variant"
+            placeholder="Select a Variant"
+          />
+        </section>
+
+        <section v-if="selectedVariant" class="flex flex-column align-items-start gap-4">
+          <div class="flex flex-column">
+            <label for="fieldsOutput">
+              <strong>Fields</strong>
+            </label>
+            <div v-for="(value, key) in selectedVariant" id="fieldsOutput" :key="key" class="">
+              <div v-if="!ignoreFields.includes(key)">
+                <div
+                  v-if="updatedVariantData[key] !== undefined"
+                  class="flex align-items-center justify-content-between gap-2 mb-1"
+                >
+                  <label :for="key">
+                    <em>{{ key }}</em>
+                  </label>
+                  <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="flex-grow-1" />
+                  <PvInputText
+                    v-if="typeof value === 'string'"
+                    v-model="updatedVariantData[key]"
+                    :placeholder="value"
+                    class="flex-grow-1"
+                  />
+                  <PvInputNumber
+                    v-else-if="typeof value === 'number'"
+                    v-model="updatedVariantData[key]"
+                    class="flex-grow-1"
+                  />
+                  <PvDropdown
+                    v-else-if="typeof value === 'boolean'"
+                    v-model="updatedVariantData[key]"
+                    :options="booleanDropDownOptions"
+                    option-label="label"
+                    option-value="value"
+                    class="flex-grow-1"
+                  />
+                  <PvButton type="button" @click="deleteParam(key)">Delete</PvButton>
+                </div>
+              </div>
+            </div>
+            <div v-if="addedFields.length > 0">
+              <div v-for="(field, index) in addedFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
+                <PvInputText v-model="field.name" placeholder="Field Name" />
+                <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+
+                <PvInputText
+                  v-if="field.type === 'string'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  class="flex-grow-1"
+                />
+                <PvInputNumber
+                  v-if="field.type === 'number'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  class="flex-grow-1"
+                />
+                <PvDropdown
+                  v-if="field.type === 'boolean'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  :options="booleanDropDownOptions"
+                  option-label="label"
+                  option-value="value"
+                  class="flex-grow-1"
+                />
+                <PvButton type="button" @click="removeField(field.name, addedFields)">Delete</PvButton>
+              </div>
+            </div>
+            <PvButton label="Add Field" text icon="pi pi-plus" @click="addField" />
+          </div>
+
+          <div class="flex flex-column">
+            <label for="paramsOutput">
+              <strong>Game Params</strong>
+            </label>
+            <div v-for="(param, paramName) in selectedVariant.params" id="paramsOutput" :key="paramName" class="mb-1">
+              <div
+                v-if="updatedVariantData.params[paramName] !== undefined"
+                class="flex align-items-center justify-content-end column-gap-2"
+              >
+                <label :for="paramName">
+                  <em>{{ paramName }} </em>
+                </label>
+                <PvInputText id="inputEditParamType" :placeholder="typeof param" class="flex-grow-1" disabled />
+                <PvInputText
+                  v-if="typeof param === 'string'"
+                  v-model="updatedVariantData.params[paramName]"
+                  :placeholder="param"
+                  class="flex-grow-1"
+                />
+                <PvInputNumber
+                  v-else-if="typeof param === 'number'"
+                  v-model="updatedVariantData.params[paramName]"
+                  class="flex-grow-1"
+                />
+                <PvDropdown
+                  v-else-if="typeof param === 'boolean'"
+                  v-model="updatedVariantData.params[paramName]"
+                  :options="booleanDropDownOptions"
+                  option-label="label"
+                  option-value="value"
+                  class="flex-grow-1"
+                />
+                <PvButton type="button" @click="deleteParam(paramName)">Delete</PvButton>
+              </div>
+            </div>
+            <div v-if="addedParams.length > 0">
+              <div v-for="(field, index) in addedParams" :key="index" class="flex align-items-center column-gap-2 mb-1">
+                <PvInputText v-model="field.name" placeholder="Field Name" />
+                <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+                <PvInputText
+                  v-if="field.type === 'string'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  class="flex-grow-1"
+                />
+                <PvInputNumber
+                  v-if="field.type === 'number'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  class="flex-grow-1"
+                />
+                <PvDropdown
+                  v-if="field.type === 'boolean'"
+                  v-model="field.value"
+                  placeholder="Field Value"
+                  :options="booleanDropDownOptions"
+                  option-label="label"
+                  option-value="value"
+                  class="flex-grow-1"
+                />
+                <PvButton type="button" @click="removeField(field.name, addedParams)">Delete</PvButton>
+              </div>
+            </div>
+            <PvButton label="Add Param" text icon="pi pi-plus" @click="addParam" />
+          </div>
+        </section>
+
+        <PvButton type="submit" class="m-4">Update Variant</PvButton>
       </form>
     </PvTabPanel>
   </PvTabView>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
@@ -193,16 +343,24 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { taskFetcher } from '@/helpers/query/tasks';
 import { variantsFetcher } from '../../helpers/query/tasks';
+import { cloneDeep } from 'lodash';
 
 const toast = useToast();
 const initialized = ref(false);
 const registeredTasksOnly = ref(true);
-const taskCheckboxData = ref();
 const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
 const selectedTask = ref(null);
+const selectedVariant = ref(null);
+let updatedVariantData = reactive(cloneDeep(selectedVariant.value));
+let addedFields = reactive([]);
+let addedParams = reactive([]);
+
+watch(selectedVariant, (newVal) => {
+  updatedVariantData = reactive(cloneDeep(newVal));
+});
 
 let unsubscribe;
 const init = () => {
@@ -232,6 +390,16 @@ const { data: allVariants } = useQuery({
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const ignoreFields = ['id', 'lastUpdated', 'params', 'parentDoc'];
+
+const filteredVariants = computed(() => {
+  if (!allVariants.value || !selectedTask.value) {
+    return [];
+  }
+
+  return allVariants.value.filter((variant) => variant.task.id === selectedTask.value);
 });
 
 const variantFields = reactive({
@@ -293,8 +461,15 @@ const deletedParams = ref([]);
 
 // Push the name of the param to the deletedParams array,
 // Triggering a computation of the filteredMappedGameConfig and variantParams
-const deleteParam = (param) => {
+const moveToDeletedParams = (param) => {
   deletedParams.value.push(param);
+};
+
+const deleteParam = (param) => {
+  if (updatedVariantData['params'][param] !== undefined) {
+    delete updatedVariantData['params'][param];
+  }
+  delete updatedVariantData[param];
 };
 
 const booleanDropDownOptions = [
@@ -304,6 +479,59 @@ const booleanDropDownOptions = [
 
 const v$ = useVuelidate(variantRules, variantFields);
 const submitted = ref(false);
+
+const addField = () => {
+  addedFields.push({ name: '', value: '', type: 'string' });
+};
+
+const removeField = (field, array) => {
+  const updatedFields = array.filter((item) => item.name !== field);
+  array.splice(0, array.length, ...updatedFields);
+};
+
+const addParam = () => {
+  addedParams.push({ name: '', value: '', type: 'string' });
+};
+
+const resetUpdateVariantForm = () => {
+  selectedTask.value = null;
+  selectedVariant.value = null;
+  updatedVariantData = {};
+  addedFields = reactive([{}]);
+  addedParams = reactive([{}]);
+};
+
+function convertParamsToObj(paramType) {
+  return paramType.reduce((acc, item) => {
+    if (item.name) {
+      // Check if name is not empty
+      acc[item.name] = item.value;
+    }
+    return acc;
+  }, {});
+}
+
+const handleUpdateVariant = async () => {
+  const convertedFields = convertParamsToObj(addedFields);
+  const convertedParams = convertParamsToObj(addedParams);
+  updatedVariantData = {
+    ...updatedVariantData,
+    ...convertedFields,
+    params: {
+      ...updatedVariantData.params,
+      ...convertedParams,
+    },
+  };
+
+  try {
+    authStore.roarfirekit.updateVariant(selectedTask.value, selectedVariant.value.id, updatedVariantData);
+    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully updated.', life: 3000 });
+
+    resetUpdateVariantForm();
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 const handleVariantSubmit = async (isFormValid) => {
   submitted.value = true;
@@ -406,18 +634,5 @@ function resetVariantForm() {
 
 .delete-btn {
   padding: 0.8rem;
-}
-
-.dynamic-param-container {
-}
-
-#inputParamName {
-  color: black;
-  font-weight: bold;
-}
-
-#inputParamType {
-  color: black;
-  font-weight: bold;
 }
 </style>

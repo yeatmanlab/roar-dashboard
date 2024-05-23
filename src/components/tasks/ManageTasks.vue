@@ -483,17 +483,4 @@ function resetVariantForm() {
 .delete-btn {
   padding: 0.8rem;
 }
-
-.dynamic-param-container {
-}
-
-#inputParamName {
-  color: black;
-  font-weight: bold;
-}
-
-#inputParamType {
-  color: black;
-  font-weight: bold;
-}
 </style>
