@@ -128,11 +128,11 @@ const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, userClaimsQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -165,7 +165,7 @@ const {
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
-  queryKey: ['administrations', authStore.uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
+  queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
   queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
   keepPreviousData: true,
   enabled: canQueryAdministrations,

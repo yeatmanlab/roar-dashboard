@@ -54,7 +54,7 @@ import { singularizeFirestoreCollection } from '@/helpers';
 
 const authStore = useAuthStore();
 
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const initialized = ref(false);
 
 const page = ref(0);
@@ -80,7 +80,7 @@ const {
   isFetching,
   data: users,
 } = useQuery({
-  queryKey: ['usersByOrgPage', authStore.uid, props.orgType, props.orgId, page, orderBy],
+  queryKey: ['usersByOrgPage', uid, props.orgType, props.orgId, page, orderBy],
   queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, ref(1000000), page, orderBy),
   keepPreviousData: true,
   enabled: initialized,

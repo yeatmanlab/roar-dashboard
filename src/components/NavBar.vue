@@ -60,7 +60,7 @@ import LanguageSelector from './LanguageSelector.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
@@ -88,8 +88,8 @@ onUnmounted(() => {
 // ---------------------------------------------------------------
 
 const { data: userClaims, isLoading: userClaimsLoading } = useQuery({
-  queryKey: ['userClaims', authStore.uid],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes

@@ -6,6 +6,7 @@
 </template>
 <script setup>
 import { useAuthStore } from '@/store/auth.js';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import AppSpinner from '@/components/AppSpinner.vue';
@@ -13,11 +14,12 @@ import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const { uid } = storeToRefs(authStore);
 
 let userDataCheckInterval;
 async function checkForUserType() {
   try {
-    const userData = await fetchDocById('users', authStore.uid);
+    const userData = await fetchDocById('users', uid.value);
     const userType = _get(userData, 'userType');
     if (userType && userType !== 'guest') {
       clearInterval(userDataCheckInterval);

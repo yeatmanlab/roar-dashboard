@@ -41,7 +41,7 @@ import { useI18n } from 'vue-i18n';
 let HomeParticipant, HomeAdministrator, ConsentModal;
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
 
 const gameStore = useGameStore();
 const { requireRefresh } = storeToRefs(gameStore);
@@ -58,16 +58,16 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
-  queryKey: ['userData', authStore.uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', authStore.uid),
+  queryKey: ['userData', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
