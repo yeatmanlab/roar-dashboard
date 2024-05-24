@@ -23,13 +23,13 @@ import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const success = ref(false);
 
 authStore.$subscribe(async () => {
-  if (authStore.uid) {
-    const userData = await fetchDocById('users', authStore.uid);
-    const userClaims = await fetchDocById('userClaims', authStore.uid);
+  if (uid.value) {
+    const userData = await fetchDocById('users', uid.value);
+    const userClaims = await fetchDocById('userClaims', uid.value);
     authStore.userData = userData;
     authStore.userClaims = userClaims;
     success.value = true;
@@ -79,9 +79,9 @@ const loginFromEmailLink = async (email) => {
       }
     })
     .then(async () => {
-      if (authStore.uid) {
-        const userData = await fetchDocById('users', authStore.uid);
-        const userClaims = await fetchDocById('userClaims', authStore.uid);
+      if (uid) {
+        const userData = await fetchDocById('users', uid.value);
+        const userClaims = await fetchDocById('userClaims', uid.value);
         authStore.userData = userData;
         authStore.userClaims = userClaims;
         success.value = true;

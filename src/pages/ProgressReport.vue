@@ -169,6 +169,8 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 
 const authStore = useAuthStore();
 
+const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+
 const props = defineProps({
   administrationId: {
     type: String,
@@ -233,8 +235,8 @@ const pageLimit = ref(10);
 
 // User Claims
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -244,7 +246,7 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
-  queryKey: ['administrationInfo', authStore.uid, props.administrationId],
+  queryKey: ['administrationInfo', uid, props.administrationId],
   queryFn: () =>
     fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments'], 'admin'),
   keepPreviousData: true,
@@ -253,7 +255,7 @@ const { data: administrationInfo } = useQuery({
 });
 
 const { data: adminStats } = useQuery({
-  queryKey: ['administrationStats', authStore.uid, props.administrationId],
+  queryKey: ['administrationStats', uid, props.administrationId],
   queryFn: () => fetchDocById('administrations', `${props.administrationId}/stats/total`),
   keepPreviousData: true,
   enabled: initialized,
@@ -264,7 +266,7 @@ const { data: adminStats } = useQuery({
 });
 
 const { data: orgInfo } = useQuery({
-  queryKey: ['orgInfo', authStore.uid, props.orgId],
+  queryKey: ['orgInfo', uid, props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
   enabled: initialized,
@@ -273,7 +275,7 @@ const { data: orgInfo } = useQuery({
 
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
-  queryKey: ['schools', authStore.uid, ref(props.orgId)],
+  queryKey: ['schools', uid, ref(props.orgId)],
   queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
   keepPreviousData: true,
   enabled: props.orgType === 'district' && initialized,
@@ -287,7 +289,7 @@ const {
   isFetching: isFetchingScores,
   data: assignmentData,
 } = useQuery({
-  queryKey: ['assignments', authStore.uid, props.administrationId, props.orgId],
+  queryKey: ['assignments', uid, props.administrationId, props.orgId],
   queryFn: () => assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true),
   keepPreviousData: true,
   enabled: scoreQueryEnabled,
@@ -553,7 +555,7 @@ const refresh = () => {
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) refresh();
 });
-const { roarfirekit } = storeToRefs(authStore);
+
 onMounted(async () => {
   if (roarfirekit.value.restConfig) refresh();
 });

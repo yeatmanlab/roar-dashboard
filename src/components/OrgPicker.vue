@@ -101,6 +101,7 @@ import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
+const { roarfirekit, uid } = storeToRefs(authStore);
 
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -141,8 +142,8 @@ watch(
 );
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -251,8 +252,6 @@ const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
-
-const { roarfirekit } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
