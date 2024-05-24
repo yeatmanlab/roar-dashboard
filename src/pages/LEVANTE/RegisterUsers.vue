@@ -318,7 +318,7 @@ async function submitUsers() {
 
     toast.add({
       severity: 'error',
-      summary: 'User Creation Failure: ' + error.message,
+      summary: 'Error registering users: ' + error.message,
       life: 9000,
     });
 

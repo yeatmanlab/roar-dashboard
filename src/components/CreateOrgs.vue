@@ -426,7 +426,7 @@ const submit = async () => {
         })
         .catch((error) => {
           toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org', error);
+          console.error('Error creating org:', error);
         });
     } else {
       await roarfirekit.value
@@ -438,7 +438,7 @@ const submit = async () => {
         })
         .catch((error) => {
           toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org', error);
+          console.error('Error creating org:', error);
         });
     }
   } else {
