@@ -70,7 +70,9 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   // Get the support level and flags, if they exist
   if (_colData.scores?.[_taskId]?.supportLevel) {
     _toolTip += _colData.scores?.[_taskId]?.supportLevel + '\n' + '\n';
-    _toolTip += getFlags(_colData, _taskId);
+    if (!_taskId.includes('pa')) {
+      _toolTip += getFlags(_colData, _taskId);
+    }
   }
 
   // If the task does not have a raw score, then display no scores
