@@ -155,6 +155,35 @@ const allFields = [
     dataType: 'string',
   },
 ];
+// Used to remove all other fields in the uploaded CSV
+const allFieldsIdsList = allFields.map((a) => a.field);
+const sanitizeAndValidateSubmittedUsers = (users) => {
+  const userIdMap = {};
+  const filteredFieldsUsers = users.map((user) => {
+    const acc = {};
+    Object.keys(user).forEach((uKey) => {
+      if (allFieldsIdsList.includes(uKey)) {
+        acc[uKey] = user[uKey];
+      }
+    });
+    // Allowing 0 as a valid id
+    const idList = [user['childId'], user['teacherId'], user['parentId']].filter((a) => 0 || !!a);
+    if (idList.length === 0) {
+      throw new Error(`User Row validation:, No Child, Teacher or Parent Id found for: ${JSON.stringify(user)}`);
+    }
+    if (idList.length > 1) {
+      throw new Error(`User Row validation: Mutliple Child, Teacher or Parent Id found for: ${JSON.stringify(user)}`);
+    }
+    if (userIdMap[idList[0]]) {
+      throw new Error(`User Row validation:, Duplicate id present for ${JSON.stringify(user)}, with id: ${idList[0]}`);
+    } else {
+      userIdMap[idList[0]] = true;
+    }
+    return acc;
+  });
+
+  return filteredFieldsUsers;
+};
 
 // Error Users Table refs
 const errorTable = ref();
@@ -268,7 +297,18 @@ async function submitUsers() {
 
   // Group needs to be an array of strings
 
-  const usersToBeRegistered = _cloneDeep(rawUserFile.value);
+  let usersToBeRegistered;
+  try {
+    usersToBeRegistered = sanitizeAndValidateSubmittedUsers(_cloneDeep(rawUserFile.value));
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: error.message,
+      life: 9000,
+    });
+    activeSubmit.value = false;
+    return;
+  }
 
   for (const user of usersToBeRegistered) {
     const groupNames = user.group.split(',');
