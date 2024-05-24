@@ -139,6 +139,8 @@ const {
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 min
+  // For MEFS, since it is opened in a separate tab
+  refetchOnWindowFocus: 'always',
 });
 
 const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));
@@ -173,14 +175,15 @@ const {
   data: taskInfo,
 } = useQuery({
   queryKey: ['tasks', authStore.uid, taskIds],
-  queryFn: () =>
-    fetchDocsById(
+  queryFn: () => {
+    return fetchDocsById(
       taskIds.value.map((taskId) => ({
         collection: 'tasks',
         docId: taskId,
       })),
       'app',
-    ),
+    );
+  },
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000,

@@ -184,15 +184,16 @@ async function routeExternalTask(game) {
   if (game.taskData.name.toLowerCase() === 'mefs') {
     const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
     url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
+    window.open(url, '_blank').focus();
+    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
   } else {
     url += `&participant=${props.userData.assessmentPid}${
       props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
     }${props.userData.classes.current.length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''}`;
+
+    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
+    window.location.href = url;
   }
-
-  await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-
-  window.location.href = url;
 }
 
 const returnVideoOptions = (videoURL) => {
