@@ -128,10 +128,10 @@ const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, authStore.userClaimsQueryKeyIndex],
+  queryKey: ['userClaims', authStore.uid, userClaimsQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', authStore.uid),
   keepPreviousData: true,
   enabled: initialized,

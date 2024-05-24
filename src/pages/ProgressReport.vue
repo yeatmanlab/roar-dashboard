@@ -169,6 +169,8 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 
 const authStore = useAuthStore();
 
+const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
+
 const props = defineProps({
   administrationId: {
     type: String,
@@ -233,7 +235,7 @@ const pageLimit = ref(10);
 
 // User Claims
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+  queryKey: ['userClaims', authStore.uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', authStore.uid),
   keepPreviousData: true,
   enabled: initialized,
@@ -553,7 +555,7 @@ const refresh = () => {
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) refresh();
 });
-const { roarfirekit } = storeToRefs(authStore);
+
 onMounted(async () => {
   if (roarfirekit.value.restConfig) refresh();
 });

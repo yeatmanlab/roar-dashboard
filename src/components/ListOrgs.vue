@@ -99,9 +99,10 @@ const schoolPlaceholder = computed(() => {
 
 // Authstore and Sidebar
 const authStore = useAuthStore();
+const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+  queryKey: ['userClaims', authStore.uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', authStore.uid),
   keepPreviousData: true,
   enabled: initialized,
@@ -254,8 +255,6 @@ const initTable = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
-
-const { roarfirekit } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) initTable();

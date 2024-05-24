@@ -330,7 +330,7 @@ let TaskReport, DistributionChartOverview, NextSteps;
 
 const authStore = useAuthStore();
 
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, userQueryKeyIndex } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -453,7 +453,7 @@ const pageLimit = ref(10);
 
 // User Claims
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
+  queryKey: ['userClaims', authStore.uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', authStore.uid),
   keepPreviousData: true,
   enabled: initialized,

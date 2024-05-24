@@ -102,7 +102,7 @@ const init = () => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit, consentSpinner, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -134,7 +134,7 @@ const {
   isFetching: isFetchingAssignments,
   data: assignmentInfo,
 } = useQuery({
-  queryKey: ['assignments', authStore.uid, authStore.assignmentQueryKeyIndex],
+  queryKey: ['assignments', authStore.uid, assignmentQueryKeyIndex],
   queryFn: () => getUserAssignments(authStore.uid),
   keepPreviousData: true,
   enabled: initialized,
