@@ -70,9 +70,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   // Get the support level and flags, if they exist
   if (_colData.scores?.[_taskId]?.supportLevel) {
     _toolTip += _colData.scores?.[_taskId]?.supportLevel + '\n' + '\n';
-    if (!_taskId.includes('pa')) {
-      _toolTip += getFlags(_colData, _taskId);
-    }
+    _toolTip += getFlags(_colData, _taskId);
   }
 
   // If the task does not have a raw score, then display no scores
@@ -113,11 +111,15 @@ function getFlags(colData, taskId) {
 
   // If there are flags and the assessment is not reliable, return the flags
   if (flags && !colData.scores[taskId].reliable) {
-    const reliabilityFlags = Object.keys(flags).map((flag) => {
-      return flagMessages[flag] || _lowerCase(flag);
-    });
+    if (!taskId.includes('pa')) {
+      const reliabilityFlags = Object.keys(flags).map((flag) => {
+        return flagMessages[flag] || _lowerCase(flag);
+      });
+      return 'Engagement Flags: ' + reliabilityFlags.join('\n') + '\n\n';
+    } else {
+      return 'Unreliable \n\n';
+    }
     // Join the returned flags with a newline character, then add two newlines for spacing
-    return 'Engagement Flags: ' + reliabilityFlags.join('\n') + '\n\n';
   } else {
     return '';
   }

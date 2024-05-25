@@ -528,23 +528,18 @@ const {
 // Return a faded color if assessment is not reliable
 function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
   if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
-    if (assessment.taskId.includes('pa-es')) {
+    if (support_level === 'Optional') {
+      return '#a1d8e3';
+    } else if (support_level === 'Needs Extra Support') {
+      return '#d6b8c7';
+    } else if (support_level === 'Developing Skill') {
+      return '#e8dbb5';
+    } else if (support_level === 'Achieved Skill') {
+      return '#c0d9bd';
+    } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
-    }
-    if (assessment.taskId !== 'pa') {
-      if (support_level === 'Optional') {
-        return '#a1d8e3';
-      } else if (support_level === 'Needs Extra Support') {
-        return '#d6b8c7';
-      } else if (support_level === 'Developing Skill') {
-        return '#e8dbb5';
-      } else if (support_level === 'Achieved Skill') {
-        return '#c0d9bd';
-      } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
-        return 'white';
-      } else {
-        return '#d3d3d3';
-      }
+    } else {
+      return '#d3d3d3';
     }
   }
   return tag_color;
@@ -874,18 +869,20 @@ const exportSelected = (selectedRows) => {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
       }
-      if (!taskId.includes('pa')) {
-        if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
-          const engagementFlags = Object.keys(score.engagementFlags);
-          if (engagementFlags.length > 0) {
+      if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
+        const engagementFlags = Object.keys(score.engagementFlags);
+        if (engagementFlags.length > 0) {
+          if (!taskId.includes('pa')) {
             const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
             tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
           } else {
-            tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
+            tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Unreliable';
           }
         } else {
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
         }
+      } else {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
       }
     }
     return tableRow;
@@ -924,18 +921,21 @@ const exportAll = async () => {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
       }
-      if (!taskId.includes('pa')) {
-        if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
-          const engagementFlags = Object.keys(score.engagementFlags);
-          if (engagementFlags.length > 0) {
+
+      if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
+        const engagementFlags = Object.keys(score.engagementFlags);
+        if (engagementFlags.length > 0) {
+          if (!taskId.includes('pa')) {
             const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
             tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
           } else {
-            tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
+            tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Unreliable';
           }
         } else {
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
+          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
         }
+      } else {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
       }
     }
     return tableRow;
