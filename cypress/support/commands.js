@@ -94,11 +94,11 @@ Cypress.Commands.add(
 );
 
 Cypress.Commands.add('activateAdminSidebar', () => {
-  cy.get('[data-cy="button-admin-sidebar"]').click().wait(1000);
+  cy.get('[data-cy="button-admin-sidebar"]').click();
+  cy.wait(1000);
 });
 
 Cypress.Commands.add('selectAdministration', (testAdministration) => {
-  cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).should('exist');
   cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
   cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
     .contains(testAdministration)
