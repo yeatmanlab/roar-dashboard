@@ -322,9 +322,6 @@ import {
   gradeOptions,
   tasksToDisplayCorrectIncorrectDifference,
 } from '@/helpers/reports.js';
-// import TaskReport from '@/components/reports/tasks/TaskReport.vue';
-// import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
-// import NextSteps from '@/assets/NextSteps.pdf';
 
 let TaskReport, DistributionChartOverview, NextSteps;
 
@@ -859,6 +856,11 @@ const exportSelected = (selectedRows) => {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Correct/Incorrect Difference`] =
+          score.correctIncorrectDifference;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       } else {
@@ -882,7 +884,12 @@ const exportSelected = (selectedRows) => {
     }
     return tableRow;
   });
-  exportCsv(computedExportData, 'roar-scores-selected.csv');
+  exportCsv(
+    computedExportData,
+    `roar-scores-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+      orgInfo.value.name,
+    )}-selected.csv`,
+  );
   return;
 };
 
@@ -906,6 +913,11 @@ const exportAll = async () => {
       if (tasksToDisplayPercentCorrect.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Correct/Incorrect Difference`] =
+          score.correctIncorrectDifference;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
