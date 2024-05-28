@@ -430,7 +430,7 @@ const submit = async () => {
         });
     } else {
       await roarfirekit.value
-        .createOrg(orgType.value.firestoreCollection, orgData, isTestData, isDemoData)
+        .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
         .then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
           submitted.value = false;
