@@ -65,7 +65,9 @@
     "surveyName": "Pensamientos y Sentimientos",
     "surveyDescription": "Responde a las preguntas sobre tu estancia en el colegio.",
     "mefsName": "Juego del León y el Mono",
-    "mefsDescription": "Empareja las formas y los colores."
+    "mefsDescription": "Empareja las formas y los colores.",
+    "vocabName": "Juego de Vocabulario",
+    "vocabDescription": "Escucha la palabra y elige la imagen correspondiente."
   },
   "navBar": {
     "signOut": "Salir"

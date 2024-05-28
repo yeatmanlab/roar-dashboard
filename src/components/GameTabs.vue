@@ -52,7 +52,7 @@
               <span v-else>{{ taskCompletedMessage }}</span>
               <router-link
                 v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
-                :to="{ path: `${game.taskId === 'survey' ? '/survey' : 'game/' + game.taskId}` }"
+                :to="{ path: getRoutePath(game.taskId) }"
               ></router-link>
             </div>
           </div>
@@ -93,6 +93,7 @@ const props = defineProps({
   sequential: { type: Boolean, required: false, default: true },
   userData: { type: Object, required: true },
 });
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { t, locale } = useI18n();
 
@@ -107,6 +108,7 @@ const levanteTasks = [
   'trog',
   'survey',
   'mefs',
+  'vocab',
 ];
 const getTaskName = (taskId, taskName) => {
   // Translate Levante task names. The task name is not the same as the taskId.
@@ -125,6 +127,18 @@ const getTaskDescription = (taskId, taskDescription) => {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
   return taskDescription;
+};
+
+const getRoutePath = (taskId) => {
+  const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
+
+  if (lowerCasedAndCamelizedTaskId === 'survey') {
+    return '/survey';
+  } else if (isLevante && levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
+    return '/game/core-tasks/' + taskId;
+  } else {
+    return '/game/' + taskId;
+  }
 };
 
 const taskCompletedMessage = computed(() => {

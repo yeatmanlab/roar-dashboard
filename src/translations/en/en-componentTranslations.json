@@ -64,7 +64,9 @@
     "surveyName": "Thoughts and Feelings",
     "surveyDescription": "Answer questions about your time at school.",
     "mefsName": "Lion and Monkey Game",
-    "mefsDescription": "Match the shapes and colors."
+    "mefsDescription": "Match the shapes and colors.",
+    "vocabName": "Vocabulary Game",
+    "vocabDescription": "Listen to the word and choose the matching image."
   },
   "navBar": {
     "signOut": "Sign Out"
