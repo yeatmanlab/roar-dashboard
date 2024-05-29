@@ -103,6 +103,7 @@
                     id="inputParamValue"
                     v-model="variantParams[param.name]"
                     placeholder="Set game parameter to desired value"
+                    class="flex-grow-1"
                   />
                   <PvDropdown
                     v-else-if="param.type === 'boolean'"
@@ -112,12 +113,14 @@
                     option-label="label"
                     option-value="value"
                     placeholder="Set game parameter to desired value"
+                    class="flex-grow-1"
                   />
                   <PvInputNumber
                     v-else-if="param.type === 'number'"
                     id="inputParamValue"
                     v-model="variantParams[param.name]"
                     placeholder="Set game parameter to desired value"
+                    class="flex-grow-1"
                   />
                 </div>
 
@@ -126,13 +129,14 @@
                 </div>
               </div>
 
-              <div v-if="newParams.length > 0">
+              <div v-if="newParams.length > 0" class="w-full">
                 <div v-for="(field, index) in newParams" :key="index" class="flex align-items-center column-gap-2 mb-1">
                   <PvInputText v-model="field.name" placeholder="Field Name" />
                   <PvDropdown
                     v-model="field.type"
                     :options="['string', 'number', 'boolean']"
                     placeholder="Field Type"
+                    class="flex-grow-1"
                   />
 
                   <PvInputText
@@ -156,10 +160,10 @@
                     option-value="value"
                     class="flex-grow-1"
                   />
-                  <PvButton type="button" @click="removeField(field.name, newParams)">Delete</PvButton>
+                  <PvButton type="button" class="w-2" @click="removeField(field.name, newParams)">Delete</PvButton>
                 </div>
               </div>
-              <PvButton label="Add Param" text icon="pi pi-plus" class="m-auto my-4" @click="newParam" />
+              <PvButton label="Add Param" text icon="pi pi-plus" class="m-auto my-4 w-2" @click="newParam" />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">

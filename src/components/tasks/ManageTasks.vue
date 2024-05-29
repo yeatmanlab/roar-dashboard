@@ -222,7 +222,7 @@
           </div>
 
           <div v-if="newFields.length > 0" class="w-full">
-            <div v-for="(field, index) in newFields" :key="index" class="flex align-items-center mb-1">
+            <div v-for="(field, index) in newFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
               <PvInputText v-model="field.name" placeholder="Field Name" />
               <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
 
