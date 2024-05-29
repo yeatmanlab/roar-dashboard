@@ -49,7 +49,7 @@
     "heartsAndFlowersName": "Hearts and Flowers",
     "egmaMathDescription": "Solve the math problems.",
     "egmaMathName": "Math Game",
-    "matrixReasoningDescription": "¡Find the missing piece to complete the puzzle.",
+    "matrixReasoningDescription": "Find the missing piece to complete the puzzle.",
     "matrixReasoningName": "Puzzle Game",
     "memoryGameDescription": "Watch the squares light up. Remember the order and make the same pattern.",
     "memoryGameName": "Memory Game",
@@ -64,7 +64,9 @@
     "surveyName": "Thoughts and Feelings",
     "surveyDescription": "Answer questions about your time at school.",
     "mefsName": "Lion and Monkey Game",
-    "mefsDescription": "Match the shapes and colors."
+    "mefsDescription": "Match the shapes and colors.",
+    "vocabName": "Vocabulary Game",
+    "vocabDescription": "Listen to the word and choose the matching image."
   },
   "navBar": {
     "signOut": "Sign Out"
