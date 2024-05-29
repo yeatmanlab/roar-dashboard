@@ -345,6 +345,8 @@ async function submitStudents() {
   const totalUsers = submitObject.length;
   const chunkedSubmitObject = _chunk(submitObject, 10);
   for (const chunk of chunkedSubmitObject) {
+    const students = [];
+    // TODO: Chunk into groups of 1000 and use importUsers (from registerBatchWithEmailPassword in auth store) to register users
     for (const user of chunk) {
       // Handle Email Registration
       const {
@@ -407,37 +409,39 @@ async function submitStudents() {
         }
       }
 
-      authStore
-        .registerWithEmailAndPassword(sendObject)
-        .then(() => {
-          toast.add({
-            severity: 'success',
-            summary: 'User Creation Success',
-            detail: `${sendObject.email} was sucessfully created.`,
-            life: 9000,
-          });
-          processedUsers = processedUsers + 1;
-          if (processedUsers >= totalUsers) {
-            activeSubmit.value = false;
-            if (errorUsers.value.length === 0) {
-              // Processing is finished, and there are no error users.
-              router.push({ name: 'Home' });
-            }
-          }
-        })
-        .catch((e) => {
-          toast.add({
-            severity: 'error',
-            summary: 'User Creation Failed',
-            detail: 'Please see error table below.',
-            life: 3000,
-          });
-          addErrorUser(user, e);
-          if (processedUsers >= totalUsers) {
-            activeSubmit.value = false;
-          }
-        });
+      // authStore
+      //   .registerWithEmailAndPassword(sendObject)
+      //   .then(() => {
+      //     toast.add({
+      //       severity: 'success',
+      //       summary: 'User Creation Success',
+      //       detail: `${sendObject.email} was sucessfully created.`,
+      //       life: 9000,
+      //     });
+      //     processedUsers = processedUsers + 1;
+      //     if (processedUsers >= totalUsers) {
+      //       activeSubmit.value = false;
+      //       if (errorUsers.value.length === 0) {
+      //         // Processing is finished, and there are no error users.
+      //         router.push({ name: 'Home' });
+      //       }
+      //     }
+      //   })
+      //   .catch((e) => {
+      //     toast.add({
+      //       severity: 'error',
+      //       summary: 'User Creation Failed',
+      //       detail: 'Please see error table below.',
+      //       life: 3000,
+      //     });
+      //     addErrorUser(user, e);
+      //     if (processedUsers >= totalUsers) {
+      //       activeSubmit.value = false;
+      //     }
+      //   });
     }
+    // TODO: process
+    authStore.registerBatchWithEmailPassword(students);
     await delay(2250);
   }
 }
