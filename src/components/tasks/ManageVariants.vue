@@ -397,11 +397,13 @@ let updatedVariantData = reactive(cloneDeep(selectedVariant.value));
 // Array of objects which models the new fields added to the variant
 // This array of objects is later converted back into an object and spread into the updatedVariantData object
 let addedFields = reactive([]);
+
 // Array of objects which models the new params added to the variant
 // This array of objects is later converted back into an object and spread into the updatedVariantData object
 // let addedParams = reactive([]);
 // Array of objects which models the new params added to the variant to be created
 // This array of objects is later converted back into an object and spread into the variantParams object
+
 let newParams = reactive([]);
 
 // Fields to ignore when displaying variant data
