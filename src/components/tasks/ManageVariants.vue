@@ -163,7 +163,7 @@
                   <PvButton type="button" class="w-2" @click="removeField(field.name, newParams)">Delete</PvButton>
                 </div>
               </div>
-              <PvButton label="Add Param" text icon="pi pi-plus" class="m-auto my-4 w-2" @click="newParam" />
+              <PvButton label="Add Param" text icon="pi pi-plus" class="m-auto my-4" @click="newParam" />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
@@ -240,10 +240,10 @@
                   v-if="updatedVariantData[key] !== undefined"
                   class="flex align-items-center justify-content-between gap-2 mb-1"
                 >
-                  <label :for="key" class="w-fit">
+                  <label :for="key" class="w-1">
                     <em>{{ key }}</em>
                   </label>
-                  <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="w-2 text-center" />
+                  <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="text-right" />
                   <PvInputText
                     v-if="typeof value === 'string'"
                     v-model="updatedVariantData[key]"

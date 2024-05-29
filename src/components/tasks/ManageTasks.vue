@@ -191,10 +191,10 @@
                   v-if="updatedTaskData[key] !== undefined"
                   class="flex align-items-center justify-content-between gap-2 mb-1"
                 >
-                  <label :for="key" class="w-fit">
+                  <label :for="key" class="w-1">
                     <em>{{ key }}</em>
                   </label>
-                  <PvInputText :placeholder="typeof value" disabled class="w-2 text-center" />
+                  <PvInputText :placeholder="typeof value" class="text-right" disabled />
 
                   <PvInputText
                     v-if="typeof value === 'string'"
