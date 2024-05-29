@@ -156,7 +156,7 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 const router = useRouter();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex, uid } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -390,7 +390,7 @@ const fetchTreeOrgs = async () => {
 };
 
 const { data: orgs, isLoading: loadingDsgfOrgs } = useQuery({
-  queryKey: ['dsgfOrgs', authStore.uid, props.id],
+  queryKey: ['dsgfOrgs', uid, props.id],
   queryFn: () => fetchTreeOrgs(),
   keepPreviousData: true,
   staleTime: 5 * 60 * 1000, // 5 minutes

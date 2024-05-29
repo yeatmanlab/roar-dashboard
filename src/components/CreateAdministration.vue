@@ -209,7 +209,7 @@ const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
-  queryFn: () => variantsFetcher(),
+  queryFn: () => variantsFetcher(true),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -496,21 +496,27 @@ const submit = async () => {
         if (isTestData.value) args.isTestData = true;
         if (props.adminId) args.administrationId = props.adminId;
 
-        await roarfirekit.value.createAdministration(args).then(() => {
-          toast.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: props.adminId ? 'Administration updated' : 'Administration created',
-            life: 3000,
+        await roarfirekit.value
+          .createAdministration(args)
+          .then(() => {
+            toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: props.adminId ? 'Administration updated' : 'Administration created',
+              life: 3000,
+            });
+            administrationQueryKeyIndex.value += 1;
+
+            // TODO: Invalidate for administrations query.
+            // This does not work in prod for some reason.
+            // queryClient.invalidateQueries({ queryKey: ['administrations'] })
+
+            router.push({ name: 'Home' });
+          })
+          .catch((error) => {
+            toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
+            console.error('Error creating administration:', error.message);
           });
-          administrationQueryKeyIndex.value += 1;
-
-          // TODO: Invalidate for administrations query.
-          // This does not work in prod for some reason.
-          // queryClient.invalidateQueries({ queryKey: ['administrations'] })
-
-          router.push({ name: 'Home' });
-        });
       } else {
         console.log('need at least one org');
         orgError.value = 'At least one organization needs to be selected.';

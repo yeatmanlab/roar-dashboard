@@ -216,7 +216,7 @@ const isTestData = ref(false);
 const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const state = reactive({
@@ -245,8 +245,8 @@ onMounted(() => {
 });
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -426,11 +426,11 @@ const submit = async () => {
         })
         .catch((error) => {
           toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org', error);
+          console.error('Error creating org:', error);
         });
     } else {
       await roarfirekit.value
-        .createOrg(orgType.value.firestoreCollection, orgData, isTestData, isDemoData)
+        .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
         .then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
           submitted.value = false;
@@ -438,7 +438,7 @@ const submit = async () => {
         })
         .catch((error) => {
           toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org', error);
+          console.error('Error creating org:', error);
         });
     }
   } else {

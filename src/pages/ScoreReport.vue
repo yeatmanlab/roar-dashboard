@@ -322,15 +322,12 @@ import {
   gradeOptions,
   tasksToDisplayCorrectIncorrectDifference,
 } from '@/helpers/reports.js';
-// import TaskReport from '@/components/reports/tasks/TaskReport.vue';
-// import DistributionChartOverview from '@/components/reports/DistributionChartOverview.vue';
-// import NextSteps from '@/assets/NextSteps.pdf';
 
 let TaskReport, DistributionChartOverview, NextSteps;
 
 const authStore = useAuthStore();
 
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -453,8 +450,8 @@ const pageLimit = ref(10);
 
 // User Claims
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -464,7 +461,7 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
 const { data: administrationInfo } = useQuery({
-  queryKey: ['administrationInfo', authStore.uid, props.administrationId],
+  queryKey: ['administrationInfo', uid, props.administrationId],
   queryFn: () => fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments']),
   keepPreviousData: true,
   enabled: initialized,
@@ -472,7 +469,7 @@ const { data: administrationInfo } = useQuery({
 });
 
 const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
-  queryKey: ['orgInfo', authStore.uid, props.orgId],
+  queryKey: ['orgInfo', uid, props.orgId],
   queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
   keepPreviousData: true,
   enabled: initialized,
@@ -481,7 +478,7 @@ const { data: orgInfo, isLoading: isLoadingOrgInfo } = useQuery({
 
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
-  queryKey: ['schools', authStore.uid, ref(props.orgId)],
+  queryKey: ['schools', uid, ref(props.orgId)],
   queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
   keepPreviousData: true,
   enabled: props.orgType === 'district' && initialized,
@@ -518,7 +515,7 @@ const {
   isFetching: isFetchingScores,
   data: assignmentData,
 } = useQuery({
-  queryKey: ['scores', authStore.uid, props.administrationId, props.orgId],
+  queryKey: ['scores', uid, props.administrationId, props.orgId],
   queryFn: () => assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true),
   keepPreviousData: true,
   enabled: scoresQueryEnabled,
@@ -860,6 +857,11 @@ const exportSelected = (selectedRows) => {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Correct/Incorrect Difference`] =
+          score.correctIncorrectDifference;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       } else {
@@ -887,7 +889,12 @@ const exportSelected = (selectedRows) => {
     }
     return tableRow;
   });
-  exportCsv(computedExportData, 'roar-scores-selected.csv');
+  exportCsv(
+    computedExportData,
+    `roar-scores-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+      orgInfo.value.name,
+    )}-selected.csv`,
+  );
   return;
 };
 
@@ -911,6 +918,11 @@ const exportAll = async () => {
       if (tasksToDisplayPercentCorrect.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Correct/Incorrect Difference`] =
+          score.correctIncorrectDifference;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;

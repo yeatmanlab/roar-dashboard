@@ -102,7 +102,7 @@ const init = () => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit, consentSpinner } = storeToRefs(authStore);
+const { roarfirekit, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -122,8 +122,8 @@ const {
   isFetching: isFetchingUserData,
   data: userData,
 } = useQuery({
-  queryKey: ['userData', authStore.uid, authStore.userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', authStore.uid),
+  queryKey: ['userData', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -134,11 +134,13 @@ const {
   isFetching: isFetchingAssignments,
   data: assignmentInfo,
 } = useQuery({
-  queryKey: ['assignments', authStore.uid, authStore.assignmentQueryKeyIndex],
-  queryFn: () => getUserAssignments(authStore.uid),
+  queryKey: ['assignments', uid, assignmentQueryKeyIndex],
+  queryFn: () => getUserAssignments(uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 min
+  // For MEFS, since it is opened in a separate tab
+  refetchOnWindowFocus: 'always',
 });
 
 const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));
@@ -149,7 +151,7 @@ const {
   isFetching: isFetchingAdmins,
   data: adminInfo,
 } = useQuery({
-  queryKey: ['administrations', authStore.uid, administrationIds],
+  queryKey: ['administrations', uid, administrationIds],
   queryFn: () =>
     fetchDocsById(
       administrationIds.value.map((administrationId) => {
@@ -172,23 +174,24 @@ const {
   isFetching: isFetchingTasks,
   data: taskInfo,
 } = useQuery({
-  queryKey: ['tasks', authStore.uid, taskIds],
-  queryFn: () =>
-    fetchDocsById(
+  queryKey: ['tasks', uid, taskIds],
+  queryFn: () => {
+    return fetchDocsById(
       taskIds.value.map((taskId) => ({
         collection: 'tasks',
         docId: taskId,
       })),
       'app',
-    ),
+    );
+  },
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000,
 });
 
 const { data: surveyResponsesData } = useQuery({
-  queryKey: ['surveyResponses', authStore.uid],
-  queryFn: () => fetchSubcollection(`users/${authStore.uid}`, 'surveyResponses'),
+  queryKey: ['surveyResponses', uid],
+  queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
   keepPreviousData: true,
   enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
   staleTime: 5 * 60 * 1000,
