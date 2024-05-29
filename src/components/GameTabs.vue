@@ -108,8 +108,19 @@ const levanteTasks = [
   'trog',
   'survey',
   'mefs',
-  'vocab',
 ];
+
+const levantifiedRoarTasks = [
+  'vocab',
+  // Not yet implemented
+  // 'swr',
+  // 'swr-es',
+  // 'sre',
+  // 'sre-es',
+  // 'pa',
+  // 'pa-es',
+];
+
 const getTaskName = (taskId, taskName) => {
   // Translate Levante task names. The task name is not the same as the taskId.
   const taskIdLowercased = taskId.toLowerCase();
@@ -134,7 +145,10 @@ const getRoutePath = (taskId) => {
 
   if (lowerCasedAndCamelizedTaskId === 'survey') {
     return '/survey';
-  } else if (isLevante && levanteTasks.includes(lowerCasedAndCamelizedTaskId)) {
+  } else if (
+    levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
+    (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
+  ) {
     return '/game/core-tasks/' + taskId;
   } else {
     return '/game/' + taskId;
