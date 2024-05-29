@@ -134,7 +134,7 @@ export const variantsFetcher = async (registered = false) => {
   return axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
     // Convert to regular object. Second arg is true to return parent doc ID as well.
     const variants = mapFields(data, true);
-
+    console.log('variants', variants);
     // Retrieve all paths to the parent task documents. Note that there will be
     // duplicates so we use _uniq. We also use _without to remove undefined
     // values. The undefined values come from continuation tokens when the query
