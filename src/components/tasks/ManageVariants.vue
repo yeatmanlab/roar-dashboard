@@ -9,7 +9,7 @@
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
               <div class="flex justify-content-between align-items-center">
-                <label for="variant-fields">Select an Existing Task (Task ID) <span class="required">*</span></label>
+                <label for="variant-fields">Select an Existing Task <span class="required">*</span></label>
                 <div class="flex flex-column gap-2 align-items-end">
                   <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
                     <!--                    This does not seemt to function properly, comming it out for now.-->
@@ -21,7 +21,7 @@
               <PvDropdown
                 v-model="v$.selectedGame.$model"
                 :options="tasks"
-                option-label="id"
+                option-label="name"
                 placeholder="Select a Game"
                 :loading="isFetchingTasks"
                 :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
@@ -661,7 +661,7 @@ const resetUpdateVariantForm = () => {
 
 const clearFieldParamArrays = () => {
   addedFields = reactive([]);
-  addedParams = reactive([]);
+  // addedParams = reactive([]);
   newParams = reactive([]);
 };
 </script>
