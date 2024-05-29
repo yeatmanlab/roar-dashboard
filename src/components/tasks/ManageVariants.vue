@@ -163,8 +163,8 @@
                   <PvButton type="button" class="w-2" @click="removeField(field.name, newParams)">Delete</PvButton>
                 </div>
               </div>
-              <PvButton label="Add Param" text icon="pi pi-plus" class="m-auto my-4" @click="newParam" />
             </div>
+            <PvButton label="Add Param" text icon="pi pi-plus" class="w-2 m-auto my-4" @click="newParam" />
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
