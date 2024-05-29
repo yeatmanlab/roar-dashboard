@@ -226,7 +226,7 @@
         </section>
 
         <section v-if="selectedVariant" class="flex flex-column align-items-start mt-4">
-          <div class="flex flex-column w-8">
+          <div class="flex flex-column w-full">
             <label for="fieldsOutput">
               <strong>Fields</strong>
             </label>
@@ -236,10 +236,10 @@
                   v-if="updatedVariantData[key] !== undefined"
                   class="flex align-items-center justify-content-between gap-2 mb-1"
                 >
-                  <label :for="key" class="w-2">
+                  <label :for="key" class="w-fit">
                     <em>{{ key }}</em>
                   </label>
-                  <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="w-2" />
+                  <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="w-2 text-center" />
                   <PvInputText
                     v-if="typeof value === 'string'"
                     v-model="updatedVariantData[key]"
@@ -263,7 +263,8 @@
                 </div>
               </div>
             </div>
-            <div v-if="addedFields.length > 0">
+
+            <div v-if="addedFields.length > 0" class="w-full">
               <div v-for="(field, index) in addedFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
                 <PvInputText v-model="field.name" placeholder="Field Name" />
                 <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />

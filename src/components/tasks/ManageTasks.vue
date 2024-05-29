@@ -127,10 +127,10 @@
 
           <div class="w-full flex justify-content-center">
             <div v-if="!isExternalTask" class="w-2">
-              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(gameConfig)" class="my-4" />
+              <PvButton label="Add Field" text icon="pi pi-plus" class="my-4" @click="addField(gameConfig)" />
             </div>
             <div v-else class="w-2">
-              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(taskParams)" class="my-4" />
+              <PvButton label="Add Field" text icon="pi pi-plus" class="my-4" @click="addField(taskParams)" />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
@@ -181,7 +181,7 @@
         </section>
 
         <section v-if="taskData" class="flex flex-column align-items-start mt-4">
-          <div class="flex flex-column w-8">
+          <div class="flex flex-column w-full">
             <label for="fieldsOutput">
               <strong>Fields</strong>
             </label>
@@ -191,10 +191,10 @@
                   v-if="updatedTaskData[key] !== undefined"
                   class="flex align-items-center justify-content-between gap-2 mb-1"
                 >
-                  <label :for="key" class="w-2">
+                  <label :for="key" class="w-fit">
                     <em>{{ key }}</em>
                   </label>
-                  <PvInputText :placeholder="typeof value" disabled class="w-2" />
+                  <PvInputText :placeholder="typeof value" disabled class="w-2 text-center" />
 
                   <PvInputText
                     v-if="typeof value === 'string'"
@@ -221,8 +221,8 @@
             </div>
           </div>
 
-          <div v-if="newFields.length > 0">
-            <div v-for="(field, index) in newFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
+          <div v-if="newFields.length > 0" class="w-full">
+            <div v-for="(field, index) in newFields" :key="index" class="flex align-items-center mb-1">
               <PvInputText v-model="field.name" placeholder="Field Name" />
               <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
 
@@ -402,7 +402,8 @@ onMounted(() => {
 
 const { data: tasks } = useQuery({
   queryKey: ['tasks', registeredTasksOnly],
-  queryFn: () => taskFetcher(registeredTasksOnly.value, true),
+  // non-registered tasks, all data
+  queryFn: () => taskFetcher(false, true),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
