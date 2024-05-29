@@ -489,17 +489,20 @@ const addGameConfig = () => {
 const handleUpdateTask = async () => {
   const convertedFields = convertParamsToObj(newFields);
   const convertedGameConfig = convertParamsToObj(addedGameConfig);
-  updatedTaskData = {
-    ...updatedTaskData,
-    ...convertedFields,
-    gameConfig: {
-      ...updatedTaskData.gameConfig,
-      ...convertedGameConfig,
+  const updateData = {
+    taskId: selectedTask.value,
+    data: {
+      ...updatedTaskData,
+      ...convertedFields,
+      gameConfig: {
+        ...updatedTaskData.gameConfig,
+        ...convertedGameConfig,
+      },
     },
   };
 
   try {
-    authStore.roarfirekit.updateTaskOrVariant({ taskId: selectedTask.value, taskData: updatedTaskData });
+    await authStore.roarfirekit.updateTaskOrVariant(updateData);
     toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Task successfully updated.', life: 3000 });
 
     resetUpdateTaskForm();

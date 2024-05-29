@@ -295,6 +295,8 @@
           </div>
           <PvButton label="Add Field" text icon="pi pi-plus" class="my-4" @click="addField" />
 
+          <!--          **** Disabling the function to edit game params for now ****-->
+
           <!--          <div class="flex flex-column w-8">-->
           <!--            <label for="paramsOutput">-->
           <!--              <strong>Game Params</strong>-->
@@ -396,7 +398,7 @@ let updatedVariantData = reactive(cloneDeep(selectedVariant.value));
 let addedFields = reactive([]);
 // Array of objects which models the new params added to the variant
 // This array of objects is later converted back into an object and spread into the updatedVariantData object
-let addedParams = reactive([]);
+// let addedParams = reactive([]);
 // Array of objects which models the new params added to the variant to be created
 // This array of objects is later converted back into an object and spread into the variantParams object
 let newParams = reactive([]);
@@ -539,9 +541,9 @@ const removeField = (field, array) => {
 };
 
 // Add a new param to the updatedVariantData object when updating a variant
-const addParam = () => {
-  addedParams.push({ name: '', value: '', type: 'string' });
-};
+// const addParam = () => {
+//   addedParams.push({ name: '', value: '', type: 'string' });
+// };
 
 // Add a new param to the newParams array when creating a new variant
 const newParam = () => {
@@ -562,21 +564,21 @@ function convertParamsToObj(paramType) {
 const handleUpdateVariant = async () => {
   const convertedFields = convertParamsToObj(addedFields);
   // const convertedParams = convertParamsToObj(addedParams);
-  updatedVariantData = {
-    ...updatedVariantData,
-    ...convertedFields,
-    params: {
-      ...updatedVariantData.params,
-      // ...convertedParams,
+  const updateData = {
+    taskId: selectedTask.value,
+    variantId: selectedVariant.value.id,
+    data: {
+      ...updatedVariantData,
+      ...convertedFields,
+      // params: {
+      //   ...updatedVariantData.params,
+      //   ...convertedParams,
+      // },
     },
   };
 
   try {
-    authStore.roarfirekit.updateTaskOrVariant({
-      taskId: selectedTask.value,
-      variantId: selectedVariant.value.id,
-      variantData: updatedVariantData,
-    });
+    await authStore.roarfirekit.updateTaskOrVariant(updateData);
     toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully updated.', life: 3000 });
 
     resetUpdateVariantForm();
