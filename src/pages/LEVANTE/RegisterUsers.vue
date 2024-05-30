@@ -47,11 +47,7 @@
         </PvDataTable>
 
         <div class="submit-container">
-          <PvButton
-            v-if="registeredUsers.length"
-            label="Download Registered Users"
-            @click="addAccountToCSV(registeredUsers)"
-          />
+          <PvButton v-if="registeredUsers.length" label="Download Registered Users" @click="downloadCSV" />
           <PvButton
             v-else
             :label="activeSubmit ? 'Registering Users' : 'Start Registration'"
@@ -326,18 +322,20 @@ async function submitUsers() {
   }
 }
 
+const csvBlob = ref(null);
+const csvURL = ref(null);
+
 function convertUsersToCSV() {
-  const filename = 'registered-users.csv';
   const headerObj = toRaw(rawUserFile.value[0]);
 
   // Convert Objects to CSV String
-  const csvHeader = Object.keys(headerObj).join(',') + '\n'; // Get header from keys of first object
+  const csvHeader = Object.keys(headerObj).join(',') + '\n';
   const csvRows = rawUserFile.value
     .map((obj) =>
       Object.values(obj)
         .map((value) => {
-          if (value === null || value === undefined) return ''; // Handle null/undefined values
-          return `"${value.toString().replace(/"/g, '""')}"`; // Handle values containing commas or quotes
+          if (value === null || value === undefined) return '';
+          return `"${value.toString().replace(/"/g, '""')}"`;
         })
         .join(','),
     )
@@ -346,21 +344,31 @@ function convertUsersToCSV() {
   const csvString = csvHeader + csvRows;
 
   // Create Blob from CSV String
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  csvBlob.value = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
 
-  // Create Download Link
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  document.body.appendChild(link); // Required for Firefox
+  // Create URL from Blob
+  csvURL.value = URL.createObjectURL(csvBlob.value);
 
-  // Trigger the Download
-  link.click();
+  // Initiate download
+  downloadCSV();
+}
 
-  // Cleanup
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+function downloadCSV() {
+  const filename = 'registered-users.csv';
+
+  if (csvURL.value) {
+    // Create Download Link
+    const link = document.createElement('a');
+    link.setAttribute('href', csvURL.value);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link); // Required for Firefox
+
+    // Trigger the Download
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+  }
 }
 
 function addErrorUser(user, error) {
