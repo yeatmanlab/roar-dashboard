@@ -11,6 +11,7 @@ import { useGameStore } from '@/store/game';
 import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
+import { useToast } from 'primevue/usetoast';
 
 const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
@@ -43,6 +44,7 @@ const audioLoading = ref(false);
 const router = useRouter();
 const context = new AudioContext();
 const audioLinks = ref({});
+const toast = useToast();
 
 let currentAudioSource = null;
 
@@ -167,6 +169,7 @@ async function saveResults(sender) {
   isSavingResponses.value = true;
 
   // call cloud function to save the survey results
+  // TODO: Use tanstack-query mutation for automaitic retries.
   try {
     const res = await roarfirekit.value.saveSurveyResponses(sender.data);
     console.log('response: ', res);
@@ -180,6 +183,11 @@ async function saveResults(sender) {
   } catch (error) {
     isSavingResponses.value = false;
     console.error(error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error saving survey responses: ' + error.message,
+      life: 3000,
+    });
   }
 }
 </script>
