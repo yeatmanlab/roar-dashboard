@@ -185,8 +185,9 @@
         <div class="grid">
           <div class="col-12">
             <PvButton
-              :label="`Create ${orgTypeLabel}`"
-              :disabled="orgTypeLabel === 'Org'"
+              :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
+              :disabled="orgTypeLabel === 'Org' || v$.$invalid || submitted"
+              :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
               data-cy="button-create-org"
               @click="submit"
             />
@@ -427,6 +428,7 @@ const submit = async () => {
         .catch((error) => {
           toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
           console.error('Error creating org:', error);
+          submitted.value = false;
         });
     } else {
       await roarfirekit.value
@@ -439,6 +441,7 @@ const submit = async () => {
         .catch((error) => {
           toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
           console.error('Error creating org:', error);
+          submitted.value = false;
         });
     }
   } else {
