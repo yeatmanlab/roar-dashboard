@@ -77,7 +77,7 @@
     </div>
   </div>
   <ConsentModal
-    v-if="showConsent"
+    v-if="showConsent && !isLevante"
     :consent-text="confirmText"
     :consent-type="consentType"
     @accepted="updateConsent"

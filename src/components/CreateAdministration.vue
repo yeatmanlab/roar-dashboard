@@ -111,9 +111,9 @@
           :input-variants="preSelectedVariants"
           @variants-changed="handleVariantsChanged"
         />
-        <div class="mt-2 flex w-full">
+        <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker @consent-selected="handleConsentSelected" />
-          <small v-if="v$.consent.$invalid && submitted" class="p-error mt-2"
+          <small v-if="v$.consent.$invalid && submitted && !isLevante" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
@@ -170,7 +170,7 @@ import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
 import _lowerCase from 'lodash/lowerCase';
 import { useVuelidate } from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
+import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
@@ -178,6 +178,8 @@ import { variantsFetcher } from '@/helpers/query/tasks';
 import TaskPicker from './TaskPicker.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import ConsentPicker from './ConsentPicker.vue';
+
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -392,9 +394,10 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { required },
-  assent: { required },
+  consent: { requiredIf: requiredIf(!isLevante) },
+  assent: { requiredIf: requiredIf(!isLevante) },
 };
+
 const v$ = useVuelidate(rules, state);
 const pickListError = ref('');
 const orgError = ref('');
@@ -439,11 +442,6 @@ const handleConsentSelected = (newConsentAssent) => {
   state.assent = newConsentAssent.assent;
   state.amount = newConsentAssent.amount;
   state.expectedTime = newConsentAssent.expectedTime;
-};
-
-// Card event handlers
-const setVariants = (variants) => {
-  console.log(variants);
 };
 
 const checkForUniqueTasks = (assignments) => {
