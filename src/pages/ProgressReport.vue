@@ -48,9 +48,14 @@
               :key="taskId"
               class="flex justify-content-between align-items-center"
             >
-              <div class="text-lg font-bold text-gray-600 w-full">
+              <div v-if="taskDisplayNames[taskId]" class="text-lg font-bold text-gray-600 w-full">
                 {{ taskDisplayNames[taskId].extendedName }}
-                <span class="font-light uppercase text-sm"> ({{ taskId }}) </span>
+                <span class="font-light uppercase text-sm" v-if="taskDisplayNames[taskId].name">
+                  ({{ taskDisplayNames[taskId].name }})
+                </span>
+              </div>
+              <div v-else class="text-lg font-bold text-gray-600 w-full">
+                {{ taskId }}
               </div>
               <PvChart
                 type="bar"
