@@ -38,6 +38,7 @@ import {
   rawOnlyTasks,
   scoredTasks,
 } from '@/helpers/reports.js';
+import { includedValidityFlags } from '@/helpers/reports';
 
 defineProps({
   colData: {
@@ -111,14 +112,20 @@ function getFlags(colData, taskId) {
 
   // If there are flags and the assessment is not reliable, return the flags
   if (flags && !colData.scores[taskId].reliable) {
-    if (!taskId.includes('pa')) {
+    if (includedValidityFlags[taskId]) {
+      // only display flags that are included in the includedValidityFlags object
+      const filteredFlags = Object.keys(flags).filter((flag) => includedValidityFlags[taskId].includes(flag));
+      const reliabilityFlags = filteredFlags.map((flag) => {
+        return flagMessages[flag] || _lowerCase(flag);
+      });
+      if (reliabilityFlags.length === 0) return '';
+      return 'Unreliable Score' + '\n' + reliabilityFlags.join('\n') + '\n\n';
+    } else {
       const reliabilityFlags = Object.keys(flags).map((flag) => {
         return flagMessages[flag] || _lowerCase(flag);
       });
       // Join the returned flags with a newline character, then add two newlines for spacing
-      return 'Engagement Flags: ' + reliabilityFlags.join('\n') + '\n\n';
-    } else {
-      return 'Unreliable \n\n';
+      return 'Unreliable Score: ' + '\n' + reliabilityFlags.join('\n') + '\n\n';
     }
   } else {
     return '';

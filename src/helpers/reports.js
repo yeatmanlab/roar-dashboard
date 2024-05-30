@@ -187,6 +187,15 @@ export const addElementToPdf = async (element, document, yCounter, offset = 0) =
   return yCounter;
 };
 
+export const includedValidityFlags = {
+  pa: ['incomplete'],
+  'pa-es': ['incomplete'],
+  sre: ['incomplete', 'responseTimeTooFast'],
+  'sre-es': ['incomplete', 'responseTimeTooFast'],
+  swr: ['responseTimeTooFast'],
+  'swr-es': ['responseTimeTooFast'],
+};
+
 /*
  *  Tasks to Display Graphs
  *  A list of tasks who, when included in a score report, will generate breakdown graphs.
