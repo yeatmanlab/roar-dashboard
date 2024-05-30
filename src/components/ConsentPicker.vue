@@ -298,7 +298,7 @@ function checkBoxStatus() {
     amount: amount.value,
     expectedTime: expectedTime.value,
   };
-  if (paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
+  if (paramCheckboxData.value && paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
     specialParam.value = false;
     getDefaults();
   } else if (
@@ -395,10 +395,11 @@ function processConsentAssentDefault(consent, targetArray) {
 }
 
 function getConsentAssent() {
+  let foundConsent = false;
   if (consents.value !== undefined) {
     _forEach(consents.value, (consent) => {
-      if (consent.type.toLowerCase().includes('consent')) {
-        processConsentAssent(consent, result.consent);
+      if (consent.type.toLowerCase().includes('consent') && !foundConsent) {
+        foundConsent = processConsentAssent(consent, result.consent);
       } else if (consent.type.toLowerCase().includes('assent')) {
         processConsentAssentDefault(consent, result.assent);
       }
@@ -411,13 +412,33 @@ function getConsentAssent() {
 function processConsentAssent(consent, targetArray) {
   if (consent.params) {
     const params = consent.params;
+    let flag = true;
 
     _forEach(params, (param) => {
       const paramName = param;
-      if (specialParams.some((param) => param.name === paramName)) {
-        targetArray.push(consent);
-        return false;
+      if (
+        specialParam.value?.every((item) => item !== 'hasAudio') &&
+        specialParam.value?.every((item) => item !== 'hasVideo') &&
+        paramName === 'eye-tracking' &&
+        params.length === 1
+      ) {
+        // console.log('specialParams ', specialParam.value.length, consent.type,'special ', specialParams.some((param) => param.name === 'eye-tracking'), 'param name ', paramName, specialParam.value.length === 1 )
+        targetArray[0] = consent;
+        console.log('I picked the first');
+        return true;
+      } else if (
+        specialParam.value?.every((item) => item !== 'hasEyeTracking') &&
+        (paramName === 'video recording' || paramName === 'audio recording')
+      ) {
+        targetArray[0] = consent;
+        console.log('I picked the second', specialParam.value);
+        return true;
       }
+      // else if (specialParam.value?.every(item => item === 'hasEyeTracking') && (paramName === 'video recording' || paramName === 'audio recording') && paramName !== 'eye-tracking' && params.length > 1) {
+      //   targetArray[0] = consent;
+      //   console.log('I picked the third', specialParam.value)
+      //   return true;
+      // }
     });
   }
 }
