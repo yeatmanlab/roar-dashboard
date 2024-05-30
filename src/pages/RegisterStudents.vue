@@ -343,7 +343,7 @@ async function submitStudents() {
   }
   // Begin submit process
   const totalUsers = submitObject.length;
-  const chunkedSubmitObject = _chunk(submitObject, 10);
+  const chunkedSubmitObject = _chunk(submitObject, 1000);
   for (const chunk of chunkedSubmitObject) {
     const students = [];
     // TODO: Chunk into groups of 1000 and use importUsers (from registerBatchWithEmailPassword in auth store) to register users
@@ -363,15 +363,15 @@ async function submitStudents() {
         ...userData
       } = user;
       const computedEmail = email || `${username}@roar-auth.com`;
-      let sendObject = {
+      let studentObj = {
         email: computedEmail,
         password,
         userData,
       };
-      if (username) _set(sendObject, 'userData.username', username);
-      if (firstName) _set(sendObject, 'userData.name.first', firstName);
-      if (middleName) _set(sendObject, 'userData.name.middle', middleName);
-      if (lastName) _set(sendObject, 'userData.name.last', lastName);
+      if (username) _set(studentObj, 'userData.username', username);
+      if (firstName) _set(studentObj, 'userData.name.first', firstName);
+      if (middleName) _set(studentObj, 'userData.name.middle', middleName);
+      if (lastName) _set(studentObj, 'userData.name.last', lastName);
 
       const orgNameMap = {
         district: district,
@@ -382,7 +382,7 @@ async function submitStudents() {
 
       // If orgType is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
-      //   the sendObject. If not, reject user
+      //   the studentObj. If not, reject user
       for (const [orgType, orgName] of Object.entries(orgNameMap)) {
         if (orgName) {
           let orgInfo;
@@ -398,7 +398,7 @@ async function submitStudents() {
           }
 
           if (!_isEmpty(orgInfo)) {
-            _set(sendObject, `userData.${orgType}`, orgInfo);
+            _set(studentObj, `userData.${orgType}`, orgInfo);
           } else {
             addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
             if (processedUsers >= totalUsers) {
@@ -409,13 +409,17 @@ async function submitStudents() {
         }
       }
 
+      students.push(studentObj);
+
+      // add each individual student Obj to the students array
+
       // authStore
-      //   .registerWithEmailAndPassword(sendObject)
+      //   .registerWithEmailAndPassword(studentObj)
       //   .then(() => {
       //     toast.add({
       //       severity: 'success',
       //       summary: 'User Creation Success',
-      //       detail: `${sendObject.email} was sucessfully created.`,
+      //       detail: `${studentObj.email} was sucessfully created.`,
       //       life: 9000,
       //     });
       //     processedUsers = processedUsers + 1;
@@ -441,7 +445,9 @@ async function submitStudents() {
       //   });
     }
     // TODO: process
-    authStore.registerBatchWithEmailPassword(students);
+
+    // submit a batched array of students to register
+    authStore.registerBatchWithEmailPassword({ students: students });
     await delay(2250);
   }
 }
