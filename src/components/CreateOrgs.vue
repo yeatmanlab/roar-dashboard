@@ -26,7 +26,7 @@
                 class="w-full"
                 data-cy="dropdown-org-type"
               />
-              <label for="org-type">Org Type</label>
+              <label for="org-type">Org Type<span id="required-asterisk">*</span></label>
             </span>
           </div>
         </div>
@@ -45,7 +45,7 @@
                 class="w-full"
                 data-cy="dropdown-parent-district"
               />
-              <label for="parent-district">District</label>
+              <label for="parent-district">District<span id="required-asterisk">*</span></label>
               <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a district. </small>
             </span>
           </div>
@@ -63,7 +63,7 @@
                 class="w-full"
                 data-cy="dropdown-parent-school"
               />
-              <label for="parent-school">School</label>
+              <label for="parent-school">School<span id="required-asterisk">*</span></label>
               <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a district. </small>
             </span>
           </div>
@@ -73,7 +73,7 @@
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name" />
-              <label for="org-name">{{ orgTypeLabel }} Name</label>
+              <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </span>
           </div>
@@ -81,7 +81,7 @@
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
-              <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
+              <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
             </span>
           </div>
@@ -98,7 +98,7 @@
                 class="w-full"
                 data-cy="dropdown-grade"
               />
-              <label for="grade">Grade</label>
+              <label for="grade">Grade<span id="required-asterisk">*</span></label>
               <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
             </span>
           </div>
@@ -526,5 +526,9 @@ const resetForm = () => {
   .hide {
     display: none;
   }
+}
+
+#required-asterisk {
+  color: #ff0000;
 }
 </style>
