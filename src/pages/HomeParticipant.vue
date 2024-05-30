@@ -328,7 +328,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+    if (authStore.userData.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {

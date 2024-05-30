@@ -3,6 +3,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
+import { isLevante } from '@/helpers';
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -398,7 +399,6 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const isLevante = import.meta.env.MODE === 'LEVANTE';
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
   if (!isLevante && to.meta?.project === 'LEVANTE') {
     next({ name: 'Home' });

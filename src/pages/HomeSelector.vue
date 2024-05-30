@@ -37,9 +37,10 @@ import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
+import { isLevante } from '@/helpers';
 
 let HomeParticipant, HomeAdministrator, ConsentModal;
-const isLevante = import.meta.env.MODE === 'LEVANTE';
+
 const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
 
