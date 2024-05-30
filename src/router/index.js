@@ -164,7 +164,7 @@ const routes = [
     meta: { pageTitle: 'Fluency-Alpaca ES' },
   },
   {
-    path: '/game/:taskId',
+    path: '/game/core-tasks/:taskId',
     name: 'Core Tasks',
     component: () => import('../components/tasks/TaskLevante.vue'),
     props: true,

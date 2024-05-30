@@ -52,7 +52,7 @@
               <span v-else>{{ taskCompletedMessage }}</span>
               <router-link
                 v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
-                :to="{ path: `${game.taskId === 'survey' ? '/survey' : 'game/' + game.taskId}` }"
+                :to="{ path: getRoutePath(game.taskId) }"
               ></router-link>
             </div>
           </div>
@@ -93,6 +93,7 @@ const props = defineProps({
   sequential: { type: Boolean, required: false, default: true },
   userData: { type: Object, required: true },
 });
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { t, locale } = useI18n();
 
@@ -108,6 +109,18 @@ const levanteTasks = [
   'survey',
   'mefs',
 ];
+
+const levantifiedRoarTasks = [
+  'vocab',
+  // Not yet implemented
+  // 'swr',
+  // 'swr-es',
+  // 'sre',
+  // 'sre-es',
+  // 'pa',
+  // 'pa-es',
+];
+
 const getTaskName = (taskId, taskName) => {
   // Translate Levante task names. The task name is not the same as the taskId.
   const taskIdLowercased = taskId.toLowerCase();
@@ -125,6 +138,21 @@ const getTaskDescription = (taskId, taskDescription) => {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
   }
   return taskDescription;
+};
+
+const getRoutePath = (taskId) => {
+  const lowerCasedAndCamelizedTaskId = camelize(taskId.toLowerCase());
+
+  if (lowerCasedAndCamelizedTaskId === 'survey') {
+    return '/survey';
+  } else if (
+    levanteTasks.includes(lowerCasedAndCamelizedTaskId) ||
+    (isLevante && levantifiedRoarTasks.includes(lowerCasedAndCamelizedTaskId))
+  ) {
+    return '/game/core-tasks/' + taskId;
+  } else {
+    return '/game/' + taskId;
+  }
 };
 
 const taskCompletedMessage = computed(() => {
@@ -184,15 +212,16 @@ async function routeExternalTask(game) {
   if (game.taskData.name.toLowerCase() === 'mefs') {
     const ageInMonths = getAgeData(props.userData.birthMonth, props.userData.birthYear).ageMonths;
     url += `participantID=${props.userData.id}&participantAgeInMonths=${ageInMonths}&lng=${locale.value}`;
+    window.open(url, '_blank').focus();
+    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
   } else {
     url += `&participant=${props.userData.assessmentPid}${
       props.userData.schools.length ? '&schoolId=' + props.userData.schools.current.join('“%2C”') : ''
     }${props.userData.classes.current.length ? '&classId=' + props.userData.classes.current.join('“%2C”') : ''}`;
+
+    await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
+    window.location.href = url;
   }
-
-  await authStore.completeAssessment(selectedAdmin.value.id, game.taskId);
-
-  window.location.href = url;
 }
 
 const returnVideoOptions = (videoURL) => {

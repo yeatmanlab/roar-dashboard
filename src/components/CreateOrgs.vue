@@ -26,7 +26,7 @@
                 class="w-full"
                 data-cy="dropdown-org-type"
               />
-              <label for="org-type">Org Type</label>
+              <label for="org-type">Org Type<span id="required-asterisk">*</span></label>
             </span>
           </div>
         </div>
@@ -45,7 +45,7 @@
                 class="w-full"
                 data-cy="dropdown-parent-district"
               />
-              <label for="parent-district">District</label>
+              <label for="parent-district">District<span id="required-asterisk">*</span></label>
               <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a district. </small>
             </span>
           </div>
@@ -63,7 +63,7 @@
                 class="w-full"
                 data-cy="dropdown-parent-school"
               />
-              <label for="parent-school">School</label>
+              <label for="parent-school">School<span id="required-asterisk">*</span></label>
               <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a district. </small>
             </span>
           </div>
@@ -73,7 +73,7 @@
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name" />
-              <label for="org-name">{{ orgTypeLabel }} Name</label>
+              <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
             </span>
           </div>
@@ -81,7 +81,7 @@
           <div class="col-12 md:col-6 lg:col-4 mt-3">
             <span class="p-float-label">
               <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
-              <label for="org-initial">{{ orgTypeLabel }} Abbreviation</label>
+              <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
             </span>
           </div>
@@ -98,7 +98,7 @@
                 class="w-full"
                 data-cy="dropdown-grade"
               />
-              <label for="grade">Grade</label>
+              <label for="grade">Grade<span id="required-asterisk">*</span></label>
               <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
             </span>
           </div>
@@ -185,8 +185,9 @@
         <div class="grid">
           <div class="col-12">
             <PvButton
-              :label="`Create ${orgTypeLabel}`"
-              :disabled="orgTypeLabel === 'Org'"
+              :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
+              :disabled="orgTypeLabel === 'Org' || v$.$invalid || submitted"
+              :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
               data-cy="button-create-org"
               @click="submit"
             />
@@ -216,7 +217,7 @@ const isTestData = ref(false);
 const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const state = reactive({
@@ -245,8 +246,8 @@ onMounted(() => {
 });
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -426,11 +427,12 @@ const submit = async () => {
         })
         .catch((error) => {
           toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org', error);
+          console.error('Error creating org:', error);
+          submitted.value = false;
         });
     } else {
       await roarfirekit.value
-        .createOrg(orgType.value.firestoreCollection, orgData, isTestData, isDemoData)
+        .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
         .then(() => {
           toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
           submitted.value = false;
@@ -438,7 +440,8 @@ const submit = async () => {
         })
         .catch((error) => {
           toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-          console.error('Error creating org', error);
+          console.error('Error creating org:', error);
+          submitted.value = false;
         });
     }
   } else {
@@ -523,5 +526,9 @@ const resetForm = () => {
   .hide {
     display: none;
   }
+}
+
+#required-asterisk {
+  color: #ff0000;
 }
 </style>

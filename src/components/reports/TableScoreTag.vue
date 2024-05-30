@@ -111,11 +111,15 @@ function getFlags(colData, taskId) {
 
   // If there are flags and the assessment is not reliable, return the flags
   if (flags && !colData.scores[taskId].reliable) {
-    const reliabilityFlags = Object.keys(flags).map((flag) => {
-      return flagMessages[flag] || _lowerCase(flag);
-    });
-    // Join the returned flags with a newline character, then add two newlines for spacing
-    return 'Engagement Flags: ' + reliabilityFlags.join('\n') + '\n\n';
+    if (!taskId.includes('pa')) {
+      const reliabilityFlags = Object.keys(flags).map((flag) => {
+        return flagMessages[flag] || _lowerCase(flag);
+      });
+      // Join the returned flags with a newline character, then add two newlines for spacing
+      return 'Engagement Flags: ' + reliabilityFlags.join('\n') + '\n\n';
+    } else {
+      return 'Unreliable \n\n';
+    }
   } else {
     return '';
   }

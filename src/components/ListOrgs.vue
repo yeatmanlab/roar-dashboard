@@ -99,10 +99,11 @@ const schoolPlaceholder = computed(() => {
 
 // Authstore and Sidebar
 const authStore = useAuthStore();
+const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid, authStore.userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -148,7 +149,7 @@ const activeOrgType = computed(() => {
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 
 const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts', authStore.uid, orgsQueryKeyIndex],
+  queryKey: ['districts', uid, orgsQueryKeyIndex],
   queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: claimsLoaded,
@@ -160,7 +161,7 @@ const schoolQueryEnabled = computed(() => {
 });
 
 const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', authStore.uid, selectedDistrict, orgsQueryKeyIndex],
+  queryKey: ['schools', uid, selectedDistrict, orgsQueryKeyIndex],
   queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
   enabled: schoolQueryEnabled,
@@ -172,7 +173,7 @@ const {
   isFetching,
   data: orgData,
 } = useQuery({
-  queryKey: ['orgsPage', authStore.uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
+  queryKey: ['orgsPage', uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
   queryFn: () =>
     orgPageFetcher(
       activeOrgType,
@@ -254,8 +255,6 @@ const initTable = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
-
-const { roarfirekit } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) initTable();

@@ -68,7 +68,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 import router from '../router';
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const spinner = ref(false);
 let unsubscribe;
@@ -89,8 +89,8 @@ onMounted(() => {
 // const claimsLoaded = computed(() => !isLoadingClaims.value);
 
 const { data: userClaims } = useQuery({
-  queryKey: ['userClaims', authStore.uid],
-  queryFn: () => fetchDocById('userClaims', authStore.uid),
+  queryKey: ['userClaims', uid],
+  queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes

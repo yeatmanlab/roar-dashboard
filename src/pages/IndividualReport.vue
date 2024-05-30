@@ -165,7 +165,7 @@ import jsPDF from 'jspdf';
 
 const authStore = useAuthStore();
 
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -189,7 +189,7 @@ const props = defineProps({
 const initialized = ref(false);
 
 const { data: studentData } = useQuery({
-  queryKey: ['users', authStore.uid, props.userId],
+  queryKey: ['users', uid, props.userId],
   queryFn: () => fetchDocById('users', props.userId),
   enabled: initialized,
   keepPreviousData: true,
@@ -197,7 +197,7 @@ const { data: studentData } = useQuery({
 });
 
 const { data: assignmentData } = useQuery({
-  queryKey: ['assignments', authStore.uid, props.userId, props.administrationId],
+  queryKey: ['assignments', uid, props.userId, props.administrationId],
   queryFn: () => fetchDocById('users', `${props.userId}/assignments/${props.administrationId}`),
   enabled: initialized,
   keepPreviousData: true,
@@ -205,7 +205,7 @@ const { data: assignmentData } = useQuery({
 });
 
 const { data: taskData } = useQuery({
-  queryKey: ['runs', authStore.uid, props.administrationId, props.userId, props.orgType, props.orgId],
+  queryKey: ['runs', uid, props.administrationId, props.userId, props.orgType, props.orgId],
   queryFn: () =>
     runPageFetcher({
       administrationId: props.administrationId,
@@ -222,7 +222,7 @@ const { data: taskData } = useQuery({
 });
 
 const { data: administrationData } = useQuery({
-  queryKey: ['administrations', authStore.uid, props.administrationId],
+  queryKey: ['administrations', uid, props.administrationId],
   queryFn: () => fetchDocById('administrations', props.administrationId),
   enabled: initialized,
   keepPreviousData: true,
