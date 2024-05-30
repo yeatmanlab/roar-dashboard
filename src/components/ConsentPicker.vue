@@ -74,18 +74,18 @@
             </div>
           </div>
         </div>
-        <div>
+        <div class="hidden">
           <h3 class="mb-4 mt-4">Consent Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
               <span class="p-float-label">
-                <PvInputText id="consent-amount" v-model="amount" class="w-full" />
+                <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
               </span>
             </div>
             <div class="ml-3">
               <span class="p-float-label">
-                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" />
+                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
               </span>
             </div>
@@ -98,7 +98,7 @@
           v-model="selectedConsent"
           :options="listOfDocs.consent"
           optionLabel="fileName"
-          class="w-full md:w-14rem"
+          style="width: 70%"
           @change="updateConsent"
         />
         <h3 class="pt-3">Select an Assent Form</h3>
@@ -106,21 +106,21 @@
           v-model="selectedAssent"
           :options="listOfDocs.assent"
           optionLabel="fileName"
-          class="w-full md:w-14rem"
+          style="width: 70%"
           @change="updateAssent"
         />
-        <div>
+        <div div class="hidden">
           <h3 class="mb-4 mt-5">Consent Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
               <span class="p-float-label">
-                <PvInputText id="consent-amount" v-model="amount" class="w-full" />
+                <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
               </span>
             </div>
             <div class="ml-3">
               <span class="p-float-label">
-                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" />
+                <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
               </span>
             </div>
@@ -302,6 +302,7 @@ function checkBoxStatus() {
     specialParam.value = false;
     getDefaults();
   } else if (
+    specialParam.value &&
     specialParam.value?.find((item) => item === 'hasVideo' || item === 'hasAudio' || item === 'hasEyeTracking')
   ) {
     getConsentAssent();
@@ -396,12 +397,13 @@ function processConsentAssentDefault(consent, targetArray) {
 
 function getConsentAssent() {
   let foundConsent = false;
+  let foundAssent = false;
   if (consents.value !== undefined) {
     _forEach(consents.value, (consent) => {
       if (consent.type.toLowerCase().includes('consent') && !foundConsent) {
         foundConsent = processConsentAssent(consent, result.consent);
-      } else if (consent.type.toLowerCase().includes('assent')) {
-        processConsentAssentDefault(consent, result.assent);
+      } else if (consent.type.toLowerCase().includes('assent') && !foundAssent) {
+        foundAssent = processConsentAssent(consent, result.assent);
       }
     });
     emit('consent-selected', result);
@@ -410,37 +412,33 @@ function getConsentAssent() {
 }
 
 function processConsentAssent(consent, targetArray) {
-  if (consent.params) {
-    const params = consent.params;
-    let flag = true;
+  const params = consent.params;
 
-    _forEach(params, (param) => {
-      const paramName = param;
-      if (
-        specialParam.value?.every((item) => item !== 'hasAudio') &&
-        specialParam.value?.every((item) => item !== 'hasVideo') &&
-        paramName === 'eye-tracking' &&
-        params.length === 1
-      ) {
-        // console.log('specialParams ', specialParam.value.length, consent.type,'special ', specialParams.some((param) => param.name === 'eye-tracking'), 'param name ', paramName, specialParam.value.length === 1 )
+  _forEach(params, (param) => {
+    const paramName = param;
+    if (
+      specialParam.value?.every((item) => item !== 'hasAudio') &&
+      specialParam.value?.every((item) => item !== 'hasVideo') &&
+      paramName === 'eye-tracking' &&
+      params.length === 1
+    ) {
+      targetArray[0] = consent;
+      return true;
+    } else if (
+      specialParam.value?.every((item) => item !== 'hasEyeTracking') &&
+      (paramName === 'video recording' || paramName === 'audio recording')
+    ) {
+      targetArray[0] = consent;
+      return true;
+    } else if (params.length === 3) {
+      const requiredElements = ['hasVideo', 'hasAudio', 'hasEyeTracking'];
+      const matchingElements = specialParam.value?.filter((item) => requiredElements.includes(item)) || [];
+      if (matchingElements.length >= 2) {
         targetArray[0] = consent;
-        console.log('I picked the first');
-        return true;
-      } else if (
-        specialParam.value?.every((item) => item !== 'hasEyeTracking') &&
-        (paramName === 'video recording' || paramName === 'audio recording')
-      ) {
-        targetArray[0] = consent;
-        console.log('I picked the second', specialParam.value);
         return true;
       }
-      // else if (specialParam.value?.every(item => item === 'hasEyeTracking') && (paramName === 'video recording' || paramName === 'audio recording') && paramName !== 'eye-tracking' && params.length > 1) {
-      //   targetArray[0] = consent;
-      //   console.log('I picked the third', specialParam.value)
-      //   return true;
-      // }
-    });
-  }
+    }
+  });
 }
 
 watch(amount, (newValue) => {
