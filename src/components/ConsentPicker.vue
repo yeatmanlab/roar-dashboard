@@ -209,6 +209,13 @@ import _lowerCase from 'lodash/lowerCase';
 import _mapValues from 'lodash/mapValues';
 import _forEach from 'lodash/forEach';
 
+const props = defineProps({
+  consentPicked: { type: Object, required: false },
+  assentPicked: { type: Object, required: false },
+});
+
+console.log('props for consetPicker: ', props);
+
 const defaultParams = [
   {
     name: 'Mouse and click',
@@ -249,8 +256,8 @@ const specialParam = ref(false);
 const amount = ref('');
 const expectedTime = ref('');
 const helpMeSelect = ref(null);
-const selectedConsent = ref(null);
-const selectedAssent = ref(null);
+let selectedConsent = ref(null);
+let selectedAssent = ref(null);
 const knowWhatIWant = ref(false);
 const decision = ref('');
 
@@ -260,6 +267,20 @@ let result = {
   amount: amount.value,
   expectedTime: expectedTime.value,
 };
+
+selectedConsent = computed(() => {
+  if (props) {
+    knowWhatIWant.value = true;
+    return props.consentPicked.fileName;
+  }
+});
+
+selectedAssent = computed(() => {
+  if (props) {
+    knowWhatIWant.value = true;
+    return props.assentPicked.fileName;
+  }
+});
 
 function whatDecision() {
   if (decision.value === 'know') {
