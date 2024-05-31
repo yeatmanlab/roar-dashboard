@@ -196,7 +196,12 @@ const validateRoarEmail = _debounce(
 );
 
 function checkForCapsLock(e) {
-  capsLockEnabled.value = e.getModifierState('CapsLock');
+  // Make sure the event is a keyboard event.
+  // Using password autofill will trigger a regular
+  //   event which does not have a getModifierState method.
+  if (e instanceof KeyboardEvent) {
+    capsLockEnabled.value = e.getModifierState('CapsLock');
+  }
 }
 
 watch(
