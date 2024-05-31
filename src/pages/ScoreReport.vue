@@ -321,6 +321,7 @@ import {
   getScoreKeys,
   gradeOptions,
   tasksToDisplayCorrectIncorrectDifference,
+  includedValidityFlags,
 } from '@/helpers/reports.js';
 
 let TaskReport, DistributionChartOverview, NextSteps;
@@ -874,11 +875,19 @@ const exportSelected = (selectedRows) => {
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
         const engagementFlags = Object.keys(score.engagementFlags);
         if (engagementFlags.length > 0) {
-          if (!taskId.includes('pa')) {
+          if (includedValidityFlags[taskId]) {
+            const filteredFlags = Object.keys(score.engagementFlags).filter((flag) =>
+              includedValidityFlags[taskId].includes(flag),
+            );
+            if (filteredFlags.length === 0) {
+              tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Unreliable';
+            } else {
+              const engagementFlagString = 'Unreliable: ' + filteredFlags.map((key) => _lowerCase(key)).join(', ');
+              tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
+            }
+          } else {
             const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
             tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
-          } else {
-            tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Unreliable';
           }
         } else {
           tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
@@ -937,11 +946,19 @@ const exportAll = async () => {
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
         const engagementFlags = Object.keys(score.engagementFlags);
         if (engagementFlags.length > 0) {
-          if (!taskId.includes('pa')) {
+          if (includedValidityFlags[taskId]) {
+            const filteredFlags = Object.keys(score.engagementFlags).filter((flag) =>
+              includedValidityFlags[taskId].includes(flag),
+            );
+            if (filteredFlags.length === 0) {
+              tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Unreliable';
+            } else {
+              const engagementFlagString = 'Unreliable: ' + filteredFlags.map((key) => _lowerCase(key)).join(', ');
+              tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
+            }
+          } else {
             const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
             tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
-          } else {
-            tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Unreliable';
           }
         } else {
           tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
