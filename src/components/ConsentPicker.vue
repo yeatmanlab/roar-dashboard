@@ -14,7 +14,7 @@
     </div>
     <div class="flex flex-row">
       <div class="align-content-center" style="width: 50%" v-if="helpMeSelect">
-        <h3>Default Params</h3>
+        <h3>Default Data Collection</h3>
         <div class="border-solid border-round" style="width: 70%">
           <div v-for="param in defaultParams" :key="param" class="mt-1 mb-1 ml-2 text-center flex">
             <div class="ml-2 mr-3 flex" style="width: 80%">- {{ param.name }}</div>
@@ -31,13 +31,13 @@
                 @change="checkBoxStatus"
               />
               <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="default-params"
-                >Only Default Parameters</label
+                >Only Default Data Collection Values</label
               >
               <i class="pi pi-align-justify" style="font-size: 1rem; width: 20%"></i>
             </div>
           </div>
         </div>
-        <h3 class="mt-5">Special Params</h3>
+        <h3 class="mt-5">Additional Data Collection</h3>
         <div class="border-solid border-round" style="width: 70%; cursor: pointer">
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
@@ -69,7 +69,7 @@
                 value="hasEyeTracking"
                 @change="checkBoxStatus"
               />
-              <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="eye-tracking">Eye Tracking</label>
+              <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="eye-tracking">Eye - Tracking</label>
               <i class="pi pi-eye" style="font-size: 1rem; width: 20%"></i>
             </div>
           </div>
