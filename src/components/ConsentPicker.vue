@@ -382,9 +382,9 @@ function updateAssent() {
 function getDefaults() {
   if (consents.value !== undefined) {
     _forEach(consents.value, (consent) => {
-      if (consent.type.toLowerCase().includes('consent')) {
+      if (consent.type.toLowerCase().includes('consent') && !consent.type.toLowerCase().includes('es')) {
         processConsentAssentDefault(consent, result.consent);
-      } else if (consent.type.toLowerCase().includes('assent')) {
+      } else if (consent.type.toLowerCase().includes('assent') && !consent.type.toLowerCase().includes('es')) {
         processConsentAssentDefault(consent, result.assent);
       }
     });
@@ -422,9 +422,17 @@ function getConsentAssent() {
   let foundAssent = false;
   if (consents.value !== undefined) {
     _forEach(consents.value, (consent) => {
-      if (consent.type.toLowerCase().includes('consent') && !foundConsent) {
+      if (
+        consent.type.toLowerCase().includes('consent') &&
+        !foundConsent &&
+        !consent.type.toLowerCase().includes('es')
+      ) {
         foundConsent = processConsentAssent(consent, result.consent);
-      } else if (consent.type.toLowerCase().includes('assent') && !foundAssent) {
+      } else if (
+        consent.type.toLowerCase().includes('assent') &&
+        !foundAssent &&
+        !consent.type.toLowerCase().includes('es')
+      ) {
         foundAssent = processConsentAssent(consent, result.assent);
       }
     });
