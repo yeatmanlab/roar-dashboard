@@ -1,3 +1,5 @@
+import { isLevante } from '../helpers';
+
 const sidebarActionOptions = [
   {
     title: 'Back to Dashboard',
@@ -90,7 +92,7 @@ const sidebarActionOptions = [
 ];
 
 export const getSidebarActions = ({ isSuperAdmin = false, isAdmin = false }) => {
-  if (import.meta.env.MODE === 'LEVANTE') {
+  if (isLevante) {
     return sidebarActionOptions.filter((action) => {
       if (action.project === 'LEVANTE' || action.project === 'ALL') {
         // If the action requires admin and the user is an admin, or if the action

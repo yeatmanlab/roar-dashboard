@@ -27,8 +27,8 @@ import AppHead from '@/components/AppHead.vue';
 import { i18n } from '@/translations/i18n';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
+import { isLevante } from '@/helpers';
 
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 const route = useRoute();
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;

@@ -87,13 +87,13 @@ import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { camelize, getAgeData } from '@bdelab/roar-utils';
 import VideoPlayer from '@/components/VideoPlayer.vue';
+import { isLevante } from '@/helpers';
 
 const props = defineProps({
   games: { type: Array, required: true },
   sequential: { type: Boolean, required: false, default: true },
   userData: { type: Object, required: true },
 });
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { t, locale } = useI18n();
 

@@ -91,9 +91,9 @@ import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
+import { isLevante } from '@/helpers';
 
 let GameTabs, ParticipantSidebar;
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
@@ -193,7 +193,7 @@ const { data: surveyResponsesData } = useQuery({
   queryKey: ['surveyResponses', uid],
   queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
   keepPreviousData: true,
-  enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
+  enabled: initialized.value && isLevante,
   staleTime: 5 * 60 * 1000,
 });
 
@@ -245,7 +245,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+    if (authStore.userData.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
