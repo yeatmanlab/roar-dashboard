@@ -1,7 +1,7 @@
 let appConfig; // assessment project
 let adminConfig;
 
-if (import.meta.env.DEV) {
+if (import.meta.env.VITE_FIREBASE_PROJECT === 'DEV') {
   appConfig = {
     apiKey: 'AIzaSyC9IoJBEyN-BxHobeoMQRuEu0CtyQDOg8k',
     authDomain: 'hs-levante-assessment-dev.firebaseapp.com',
