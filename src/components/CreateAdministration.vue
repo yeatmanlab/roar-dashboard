@@ -112,11 +112,7 @@
           @variants-changed="handleVariantsChanged"
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
-          <ConsentPicker
-            :consent-picked="state.consent"
-            :assent-picked="state.assent"
-            @consent-selected="handleConsentSelected"
-          />
+          <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
           <small v-if="v$.consent.$invalid && submitted && !isLevante" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
@@ -367,6 +363,7 @@ const state = reactive({
   dateStarted: null,
   dateClosed: null,
   sequential: null,
+  legal: null,
   consent: null,
   assent: null,
   districts: [],
@@ -602,8 +599,7 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
         preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
     });
-    state.assent = adminInfo.legal.assent[0];
-    state.consent = adminInfo.legal.consent[0];
+    state.legal = adminInfo.legal;
   }
 });
 

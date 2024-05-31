@@ -210,11 +210,8 @@ import _mapValues from 'lodash/mapValues';
 import _forEach from 'lodash/forEach';
 
 const props = defineProps({
-  consentPicked: { type: Object },
-  assentPicked: { type: Object },
+  legal: { type: Object, required: false },
 });
-
-console.log('props for consetPicker: ', props);
 
 const defaultParams = [
   {
@@ -296,22 +293,24 @@ const emit = defineEmits(['consent-selected']);
 
 onMounted(() => {
   initialized.value = true;
+  if (props !== null) {
+    decision.value = 'know';
+    knowWhatIWant.value = true;
+  }
 });
 
-// Watch for prop changes and log them
 watch(
-  () => props.consentPicked,
-  (newVal) => {
-    if (props.consentPicked && props.assentPicked) {
-      decision.value = 'know';
-      knowWhatIWant.value = true;
-      selectedConsent.value = props.consentPicked;
-      selectedAssent.value = props.assentPicked;
-      result.consent[0] = props.consentPicked;
-      result.assent[0] = props.assentPicked;
+  () => props.legal,
+  (newValue, oldValue) => {
+    if (newValue) {
+      result.consent[0] = newValue.consent[0];
+      result.assent[0] = newValue.assent[0];
+      result.amount = newValue.amount;
+      result.expectedTime - newValue.expectedTime;
+      selectedConsent.value = newValue.consent[0];
+      selectedAssent.value = newValue.assent[0];
     }
   },
-  { immediate: true },
 );
 
 function checkBoxStatus() {
