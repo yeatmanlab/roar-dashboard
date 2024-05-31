@@ -167,7 +167,6 @@ const props = defineProps({
   assignees: { type: Object, required: true },
   assessments: { type: Array, required: true },
   showParams: { type: Boolean, required: true },
-  legal: { type: Object, required: true },
   isSuperAdmin: { type: Boolean, required: true },
 });
 
