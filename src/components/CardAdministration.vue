@@ -171,8 +171,6 @@ const props = defineProps({
   isSuperAdmin: { type: Boolean, required: true },
 });
 
-console.log('props: ', props);
-
 const confirm = useConfirm();
 const toast = useToast();
 
