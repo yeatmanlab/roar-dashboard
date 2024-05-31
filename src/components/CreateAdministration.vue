@@ -113,7 +113,6 @@
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker
-            v-model="state.legal"
             :consent-picked="state.consent"
             :assent-picked="state.assent"
             @consent-selected="handleConsentSelected"
@@ -369,7 +368,6 @@ const state = reactive({
   dateClosed: null,
   sequential: null,
   consent: null,
-  legal: null,
   assent: null,
   districts: [],
   schools: [],
@@ -606,7 +604,6 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
     });
     state.assent = adminInfo.legal.assent[0];
     state.consent = adminInfo.legal.consent[0];
-    console.log('state.legal: ', state.legal);
   }
 });
 
