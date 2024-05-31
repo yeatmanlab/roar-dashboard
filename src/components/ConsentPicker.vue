@@ -210,7 +210,7 @@ import _mapValues from 'lodash/mapValues';
 import _forEach from 'lodash/forEach';
 
 const props = defineProps({
-  legal: { type: Object, required: false },
+  legal: { type: Object, required: false, default: null },
 });
 
 const defaultParams = [
@@ -293,7 +293,7 @@ const emit = defineEmits(['consent-selected']);
 
 onMounted(() => {
   initialized.value = true;
-  if (props !== null) {
+  if (!props.legal || Object.keys(props.legal).length === 0) {
     decision.value = 'know';
     knowWhatIWant.value = true;
   }
