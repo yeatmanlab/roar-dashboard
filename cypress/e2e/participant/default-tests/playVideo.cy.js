@@ -3,9 +3,10 @@ describe('Playing Video', () => {
   it('plays-video', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/', { timeout: 2 * timeout });
-    cy.get('.p-tabview .p-tabview-nav li .p-tabview-nav-link', { timeout: 2 * timeout })
+    cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
+    cy.get('.tabview-nav-link-label', { timeout: 2 * timeout })
       .contains('ROAR - Word')
-      .dblclick();
+      .click();
     cy.get('.vjs-big-play-button', { timeout: 2 * timeout }).click();
   });
 });
