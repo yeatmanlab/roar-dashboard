@@ -1,0 +1,35 @@
+# Deploy to Firebase Preview Hosting Channel (Dev Firebase Project)
+
+# name: Levante Preview Deployment
+# on:
+#   pull_request:
+#     types: [opened, reopened, synchronize]
+
+# concurrency:
+#   group: ci-preview-tests-${{ github.ref }}-1
+#   cancel-in-progress: true
+
+# jobs:
+#   build-and-preview:
+#     name: Deploy Preview
+#     if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: 'lts/*'
+#       - name: 'Build'
+#         run: npm ci && npm run build:levante-dev
+#       - name: Deploy to Firebase Hosting Channel
+#         id: firebase-deploy
+#         uses: FirebaseExtended/action-hosting-deploy@v0
+#         with:
+#           repoToken: '${{ secrets.GITHUB_TOKEN }}'
+#           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LEVANTE_ADMIN_DEV }}'
+#           projectId: hs-levante-admin-dev
+#           target: staging
+#       - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
+#     outputs:
+#       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
+

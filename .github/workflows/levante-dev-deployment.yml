@@ -1,0 +1,53 @@
+# name: Levante Dev Deployment
+
+# on:
+#     push:
+#       branches:
+#         - main
+#     pull_request:
+#       branches:
+#         - main
+# jobs:
+#   build-and-deploy:
+#     name: Deploy to Firebase Production Hosting Channel (Dev Firebase Project)
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: 'lts/*'
+#       - name: 'vite production build'
+#         env:
+#           NODE_OPTIONS: '--max_old_space_size=8192'
+#         run: npm ci && npm run build:levante-dev
+#       - uses: FirebaseExtended/action-hosting-deploy@v0
+#         with:
+#           repoToken: '${{ secrets.GITHUB_TOKEN }}'
+#           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LEVANTE_ADMIN_DEV }}'
+#           channelId: live
+#           projectId: hs-levante-admin-dev
+#           target: production
+
+#     #   - name: Create Sentry release and upload source maps
+#     #     uses: getsentry/action-release@v1.7.0
+#     #     env:
+#     #       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+#     #       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+#     #       SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+#     #     with:
+#     #       environment: production
+#     #       sourcemaps: ./dist/assets/*.js.map
+#     #       version: ${{ github.ref }}
+
+#       - name: Notify on failure
+#         if: failure()
+#         uses: actions/github-script@v5
+#         with:
+#           script: |
+#             const issue = {
+#               owner: context.repo.owner,
+#               repo: context.repo.repo,
+#               title: "Combined workflow failed",
+#               body: `The workflow failed on [${context.sha.substring(0, 7)}](${context.payload.repository.html_url}/commit/${context.sha}). Please check it.`,
+#             };
+#             github.rest.issues.create(issue);
