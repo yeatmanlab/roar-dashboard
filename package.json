@@ -10,6 +10,7 @@
     "dev": "export VITE_FIREBASE_DATA_SOURCE=sandbox && vite --force --host",
     "dev:live": "export VITE_FIREBASE_DATA_SOURCE=live && vite --force --host",
     "dev:levante": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=DEV && vite --force --host",
+    "dev:levante-prod": "export VITE_LEVANTE=TRUE && export VITE_FIREBASE_PROJECT=PROD && vite --force --host",
     "dev:emulate": "export VITE_FIREBASE_EMULATOR=true && vite --force --host",
     "deploy:levante-dev": "npm run build:levante-dev && firebase use levante-admin-dev && firebase deploy --only hosting --config levante-firebase.json",
     "deploy:levante-prod": "npm run build:levante-prod && firebase use levante-admin-prod && firebase deploy --only hosting --config levante-firebase.json",

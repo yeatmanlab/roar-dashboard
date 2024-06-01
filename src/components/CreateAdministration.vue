@@ -185,8 +185,7 @@ import { variantsFetcher } from '@/helpers/query/tasks';
 import TaskPicker from './TaskPicker.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import ConsentPicker from './ConsentPicker.vue';
-
-const isLevante = import.meta.env.MODE === 'LEVANTE';
+import { isLevante } from '@/helpers';
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },

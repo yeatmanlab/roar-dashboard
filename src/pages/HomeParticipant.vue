@@ -106,6 +106,7 @@ import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import { isLevante } from '@/helpers';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -113,7 +114,6 @@ const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
 
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
@@ -328,7 +328,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData.userType === 'student' && isLevante) {
+    if (authStore?.userData.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
