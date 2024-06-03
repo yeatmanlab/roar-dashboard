@@ -169,13 +169,10 @@ const sanitizeAndValidateSubmittedUsers = (users) => {
     // Allowing 0 as a valid id
     const idList = [user['childId'], user['teacherId'], user['parentId']].filter((a) => 0 || !!a);
     if (idList.length === 0) {
-      throw new Error(`User Row validation:, No Child, Teacher or Parent Id found for: ${JSON.stringify(user)}`);
-    }
-    if (idList.length > 1) {
-      throw new Error(`User Row validation: Mutliple Child, Teacher or Parent Id found for: ${JSON.stringify(user)}`);
+      const errorMessage = addErrorUser(user, 'No Child, Teacher or Parent Id found');
     }
     if (userIdMap[idList[0]]) {
-      throw new Error(`User Row validation:, Duplicate id present for ${JSON.stringify(user)}, with id: ${idList[0]}`);
+      addErrorUser(user, `Duplicate id present with id: ${idList[0]}`);
     } else {
       userIdMap[idList[0]] = true;
     }
