@@ -31,7 +31,7 @@
                 @change="checkBoxStatus"
               />
               <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="default-params"
-                >Only Default Data Collection Values</label
+                >Default Data Collection Values</label
               >
               <i class="pi pi-align-justify" style="font-size: 1rem; width: 20%"></i>
             </div>
@@ -320,8 +320,11 @@ function checkBoxStatus() {
     amount: amount.value,
     expectedTime: expectedTime.value,
   };
-  if (paramCheckboxData.value && paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
-    specialParam.value = false;
+  if (
+    paramCheckboxData.value &&
+    paramCheckboxData.value?.find((item) => item === 'hasDefault') &&
+    !specialParam.value
+  ) {
     getDefaults();
   } else if (
     specialParam.value &&
