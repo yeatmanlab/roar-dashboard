@@ -323,7 +323,7 @@ function checkBoxStatus() {
   if (
     paramCheckboxData.value &&
     paramCheckboxData.value?.find((item) => item === 'hasDefault') &&
-    !specialParam.value
+    (!specialParam.value || specialParam.value.length === 0)
   ) {
     getDefaults();
   } else if (
