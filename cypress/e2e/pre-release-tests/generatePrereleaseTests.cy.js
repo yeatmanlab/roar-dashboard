@@ -2,7 +2,7 @@ import { testSpecs } from '../../fixtures/taskTestSpecs';
 import { generatedSpecTemplate } from '../../fixtures/generatedTestTemplate';
 import { getDevFirebase } from '../../support/devFirebase';
 import { getOpenAdministrations } from '../../support/query';
-import fs from 'fs';
+import * as path from 'path';
 
 const timeout = Cypress.env('timeout');
 
@@ -14,8 +14,12 @@ async function getOpenAdmins() {
 }
 
 function createAdminTestSpec(adminName) {
-  cy.log(fs);
-  fs.writeFileSync(`generated-tests/${adminName}.cy.js`, generatedSpecTemplate(adminName));
+  cy.log(adminName);
+  // cy.log(fs);
+  const currentPath = __dirname;
+  cy.fsWriteFile(`${currentPath}/generated-tests/${adminName}.cy.js`, generatedSpecTemplate(adminName), {
+    flags: 'w+',
+  });
 }
 
 describe('Generating administration spec files', () => {
@@ -48,10 +52,22 @@ describe('Generating administration spec files', () => {
     cy.get('@openAdmins').then((openAdmins) => {
       openAdmins.forEach((admin) => {
         // Creating a test spec file for the current administration
-        cy.log(admin);
-        // createAdminTestSpec(admin);
+        // cy.log(admin);
+        createAdminTestSpec(admin);
       });
     });
     cy.log('Successfully tested all games for all open administrations!');
   });
 });
+
+// describe('Testing individual synced administration', () => {
+//   it('Tests a synced administration', () => {
+//     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+//     cy.visit('/', { timeout: 2 * timeout });
+//     cy.selectAdministration(adminName);
+//     cy.log(`Found administration: ${adminName}`);
+//     // testSpecs.forEach((spec) => {
+//     //   testGame(spec, 'Synced Administration');
+//     // });
+//   });
+// });
