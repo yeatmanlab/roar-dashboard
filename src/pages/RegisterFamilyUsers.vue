@@ -36,9 +36,9 @@
             </PvButton>
           </div>
         </div>
-        <div v-else class="loading-container flex text-center justify-content-center align-content-center">
+        <div v-else class="loading-container flex flex-column text-center justify-content-center align-content-center">
           <AppSpinner style="margin-bottom: 1rem" />
-          <span class="flex text-center">Creating Family</span>
+          <span class="text-center">Creating Family</span>
         </div>
         <PvDialog
           v-model:visible="isDialogVisible"
