@@ -306,7 +306,7 @@ watch(
       result.consent[0] = newValue.consent[0];
       result.assent[0] = newValue.assent[0];
       result.amount = newValue.amount;
-      result.expectedTime - newValue.expectedTime;
+      result.expectedTime = newValue.expectedTime;
       selectedConsent.value = newValue.consent[0];
       selectedAssent.value = newValue.assent[0];
     }
