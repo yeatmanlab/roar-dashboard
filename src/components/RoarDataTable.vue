@@ -294,6 +294,22 @@
               </PvButton>
             </template>
           </PvColumn>
+          <PvColumn
+            v-if="isInsideListOrgs"
+            header="Code Generation"
+            header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+          >
+            <template #body="{ data: colData }">
+              <div>
+                <PvButton
+                  label="Generate Code"
+                  icon="pi pi-cog"
+                  class="bg-white text-primary mr-2 hover:bg-primary hover:text-white"
+                  @click="viewOrgCode(colData)"
+                />
+              </div>
+            </template>
+          </PvColumn>
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No results found</div>
@@ -360,6 +376,10 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
+  isInsideListOrgs: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const inputColumns = ref(props.columns);
@@ -415,6 +435,10 @@ const onSelectAll = () => {
 const onSelectionChange = () => {
   emit('selection', selectedRows.value);
 };
+
+function viewOrgCode(data) {
+  console.log('data from col ', data, props);
+}
 
 const dataTable = ref();
 

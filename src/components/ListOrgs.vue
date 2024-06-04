@@ -57,6 +57,7 @@
             sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
+            :is-inside-list-orgs="true"
             @export-all="exportAll"
           />
           <AppSpinner v-else />
@@ -155,6 +156,8 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
   enabled: claimsLoaded,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+console.log('allDistricts ', allDistricts);
 
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
