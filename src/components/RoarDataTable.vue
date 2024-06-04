@@ -566,7 +566,7 @@ const onFreezeToggle = (selected) => {
 };
 
 // Pass through data table events
-const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected']);
+const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'selected-org-id']);
 </script>
 <style>
 .small-circle {

@@ -184,14 +184,21 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const ShowCode = (selectedOrg) => {
-  allDistricts.value.map((district) => {
-    if (district.id === selectedOrg) {
-      activationCode.value = district.currentActivateCode;
-      isDialogVisible.value = true;
-    }
-  });
-};
+const { data: allGroups } = useQuery({
+  queryKey: ['groups'],
+  queryFn: () => orgFetcher('groups', undefined, isSuperAdmin, adminOrgs, ['name', 'id', 'currentActivateCode']),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const { data: allClasses } = useQuery({
+  queryKey: ['classes', selectedSchool],
+  queryFn: () => orgFetcher('classes', selectedSchool, isSuperAdmin, adminOrgs, ['name', 'id', 'currentActivateCode']),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
 
 function copyToClipboard(text) {
   navigator.clipboard
@@ -306,6 +313,19 @@ const tableData = computed(() => {
     };
   });
 });
+
+const ShowCode = (selectedOrg) => {
+  const collections = [allDistricts.value, allSchools.value, allClasses.value, allGroups.value];
+
+  for (const collection of collections) {
+    const match = collection?.find((item) => item.id === selectedOrg && item.currentActivateCode);
+    if (match) {
+      activationCode.value = match.currentActivateCode;
+      isDialogVisible.value = true;
+      break;
+    }
+  }
+};
 
 const closeDialog = () => {
   isDialogVisible.value = false;
