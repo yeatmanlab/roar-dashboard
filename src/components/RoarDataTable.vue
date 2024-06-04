@@ -437,7 +437,7 @@ const onSelectionChange = () => {
 };
 
 function viewOrgCode(data) {
-  console.log('data from col ', data, props);
+  emit('selected-org-id', data.id);
 }
 
 const dataTable = ref();

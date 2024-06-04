@@ -1,4 +1,5 @@
 <template>
+  <PvToast />
   <main class="container main">
     <section class="main-body">
       <div class="flex flex-column mb-5">
@@ -59,11 +60,34 @@
             :allow-filtering="false"
             :is-inside-list-orgs="true"
             @export-all="exportAll"
+            @selected-org-id="ShowCode"
           />
           <AppSpinner v-else />
         </PvTabPanel>
       </PvTabView>
       <AppSpinner v-else />
+    </section>
+    <section class="flex mt-8 justify-content-end">
+      <PvDialog
+        v-model:visible="isDialogVisible"
+        header="Here is your code!"
+        :style="{ width: '50rem' }"
+        :position="position"
+        :modal="true"
+        :draggable="false"
+      >
+        <PvInputGroup>
+          <PvInputText
+            style="width: 70%"
+            :value="`https://roar.education/Register/?code=${activationCode}`"
+            autocomplete="off"
+          />
+          <PvButton @click="copyToClipboard(`https://roar.education/Register/?code=${activationCode}`)">
+            <i class="pi pi-copy"></i>
+          </PvButton>
+        </PvInputGroup>
+        <PvButton class="mt-3" @click="closeDialog">Close</PvButton>
+      </PvDialog>
     </section>
   </main>
 </template>
@@ -74,15 +98,18 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
-
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 const orderBy = ref(orderByDefault);
+let activationCode = ref(null);
+const isDialogVisible = ref(false);
+const toast = useToast();
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -157,7 +184,35 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-console.log('allDistricts ', allDistricts);
+const ShowCode = (selectedOrg) => {
+  allDistricts.value.map((district) => {
+    if (district.id === selectedOrg) {
+      activationCode.value = district.currentActivateCode;
+      isDialogVisible.value = true;
+    }
+  });
+};
+
+function copyToClipboard(text) {
+  navigator.clipboard
+    .writeText(text)
+    .then(function () {
+      toast.add({
+        severity: 'success',
+        summary: 'Hoorah!',
+        detail: 'Your code has been successfully copied to clipboard!',
+        life: 3000,
+      });
+    })
+    .catch(function (error) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error!',
+        detail: 'Your code has not been copied to clipboard! \n Please try again',
+        life: 3000,
+      });
+    });
+}
 
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
@@ -202,7 +257,6 @@ const exportAll = async () => {
     isSuperAdmin,
     adminOrgs,
   );
-  console.log('Exporting all:', exportData);
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
@@ -252,6 +306,10 @@ const tableData = computed(() => {
     };
   });
 });
+
+const closeDialog = () => {
+  isDialogVisible.value = false;
+};
 
 let unsubscribe;
 const initTable = () => {
