@@ -5,6 +5,7 @@ import vitePluginFaviconsInject from 'vite-plugin-favicons-inject';
 import Vue from '@vitejs/plugin-vue';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,7 +13,31 @@ export default defineConfig({
     Vue({
       include: [/\.vue$/, /\.md$/],
     }),
-    VitePWA({ registerType: 'autoUpdate' }),
+    VitePWA({
+      manifest: {
+        // Modify manifest options here...
+        name: 'ROAR Dashboard',
+        short_name: 'ROAD',
+        start_url: '.',
+        display: 'standalone',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        // Add more manifest options as needed
+      },
+      /* enable sw on development */
+      devOptions: {
+        enabled: true,
+        /* other options */
+      },
+      // Enable auto-generated icons
+      generate: {
+        // Set the source image for icon generation
+        icons: true,
+        // Optionally specify the output directory for generated icons
+        // output: '/path/to/output/directory'
+      },
+      registerType: 'autoUpdate',
+    }),
     vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
     ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
     nodePolyfills({
