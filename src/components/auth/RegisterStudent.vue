@@ -2,7 +2,7 @@
   <div class="card">
     <form class="p-fluid">
       <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
-        <!-- <section class="form-section">
+        <section class="form-section">
           <div class="p-input-icon-right">
             <div class="flex justify-content-between">
               <label for="activationCode">Activation code <span class="required">*</span></label>
@@ -16,16 +16,23 @@
                 <label for="noActivationCode" class="ml-2">I don't have code</label>
               </div>
             </div>
-            <PvInputText
-              v-if="!student.noActivationCode"
-              v-model="student.activationCode"
-              name="noActivationCode"
-              :class="{
-                'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
-              }"
-              aria-describedby="activation-code-error"
-              :disabled="student.noActivationCode"
-            />
+            <PvInputGroup>
+              <PvInputText
+                v-if="!student.noActivationCode"
+                v-model="student.activationCode"
+                name="noActivationCode"
+                :class="{
+                  'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
+                }"
+                aria-describedby="activation-code-error"
+                :disabled="student.noActivationCode"
+              />
+              <PvButton
+                @click="validateCode"
+                class="w-4 bg-primary text-white hover:bg-red-900"
+                label="Validate Code"
+              />
+            </PvInputGroup>
           </div>
           <span
             v-if="
@@ -41,7 +48,7 @@
               <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
             </span>
           </span>
-        </section> -->
+        </section>
         <section class="form-section">
           <div class="p-input-icon-right">
             <label for="studentUsername">Student Username <span class="required">*</span></label>
@@ -284,27 +291,94 @@
         <PvButton @click="closeErrorDialog">Close</PvButton>
       </PvDialog>
     </section>
+    <section class="flex mt-8 justify-content-end">
+      <PvDialog
+        v-model:visible="isDialogVisible"
+        header="Your Admin is: "
+        :style="{ width: '50rem' }"
+        :position="position"
+        :modal="true"
+        :draggable="false"
+      >
+        <PvInputText style="width: 70%" :value="selectedAdmin" autocomplete="off" />
+        <PvButton class="mt-3" @click="closeDialog">Close</PvButton>
+      </PvDialog>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, computed, onMounted } from 'vue';
+import { orgFetcher } from '@/helpers/query/orgs';
 import { required, minLength, helpers } from '@vuelidate/validators';
+import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import { useQuery } from '@tanstack/vue-query';
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const dialogMessage = ref('');
+const initialized = ref(false);
 
 const today = new Date();
 today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
+const selectedAdmin = ref(null);
 
-defineProps({
+const props = defineProps({
   isRegistering: { type: Boolean, default: true },
+  code: { type: String },
 });
+
+let unsubscribe;
+const initTable = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) initTable();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) initTable();
+});
+
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+  queryKey: ['userClaims', uid],
+  queryFn: () => fetchDocById('userClaims', uid.value),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+
+const claimsLoaded = computed(() => !isLoadingClaims.value);
+
+const { data: allDistricts } = useQuery({
+  queryKey: ['districts'],
+  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs, ['name', 'id']),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const validateCode = () => {
+  const collections = [allDistricts.value, allSchools.value, allClasses.value, allGroups.value];
+
+  for (const collection of collections) {
+    const match = collection?.find((item) => item.id === props.code && item.currentActivateCode);
+    if (match) {
+      selectedAdmin.value = match.name;
+      isDialogVisible.value = true;
+      break;
+    }
+  }
+};
 
 const isDialogVisible = ref(false);
 const submitted = ref(false);
@@ -317,14 +391,14 @@ const closeErrorDialog = () => {
   isDialogVisible.value = false;
 };
 
-// const noActivationCodeRef = ref(false);
+const noActivationCodeRef = ref(false);
 const yearOnlyCheckRef = ref(false);
 
 const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      // activationCode: '',
+      activationCode: props.code ?? '',
       studentUsername: '',
       password: '',
       confirmPassword: '',
@@ -340,7 +414,7 @@ const state = reactive({
       race: [],
       hispanicEthnicity: '',
       homeLanguage: [],
-      // noActivationCode: noActivationCodeRef.value,
+      noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
     },
   ],
@@ -349,7 +423,7 @@ const state = reactive({
 const rules = {
   students: {
     $each: helpers.forEach({
-      // activationCode: { required },
+      activationCode: { required },
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
@@ -365,7 +439,7 @@ const rules = {
       race: {},
       hispanicEthnicity: {},
       homeLanguage: {},
-      // noActivationCode: {},
+      noActivationCode: {},
       yearOnlyCheck: {},
     }),
   },
@@ -373,7 +447,7 @@ const rules = {
 
 function addStudent() {
   state.students.push({
-    // activationCode: '',
+    activationCode: props.code ?? '',
     studentUsername: '',
     password: '',
     confirmPassword: '',
@@ -389,20 +463,20 @@ function addStudent() {
     race: [],
     hispanicEthnicity: '',
     homeLanguage: [],
-    // noActivationCode: noActivationCodeRef.value,
+    noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
   });
 }
 
-// function updateActivationCode() {
-//   state.students.forEach((student) => {
-//     if (student.noActivationCode) {
-//       student.activationCode = 'noActivationCode';
-//     } else {
-//       student.activationCode = '';
-//     }
-//   });
-// }
+function updateActivationCode() {
+  state.students.forEach((student) => {
+    if (student.noActivationCode) {
+      student.activationCode = 'noActivationCode';
+    } else {
+      student.activationCode = '';
+    }
+  });
+}
 
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
