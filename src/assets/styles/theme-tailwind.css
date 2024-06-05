@@ -1086,7 +1086,7 @@
   padding: 0.5rem;
   color: var(--text-color);
   font-weight: 700;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 .p-fieldset.p-fieldset-toggleable .p-fieldset-legend {
   padding: 0;

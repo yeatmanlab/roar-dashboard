@@ -1,5 +1,5 @@
 <template>
-  <PvPanel class="m-0 p-0 w-full" header="Select params for the Consent and Assent forms">
+  <PvPanel class="m-0 p-0 w-full" header="Select Consent and Assent Forms">
     <div class="card flex justify-content-center">
       <div class="flex flex-wrap gap-3">
         <div class="flex align-items-center">
@@ -13,69 +13,117 @@
       </div>
     </div>
     <div class="flex flex-row">
-      <div class="align-content-center" style="width: 50%" v-if="helpMeSelect">
+      <div class="align-content-center" style="width: 50%" v-if="userDrivenFlow">
         <h3>Default Data Collection</h3>
-        <div class="border-solid border-round" style="width: 70%">
-          <div v-for="param in defaultParams" :key="param" class="mt-1 mb-1 ml-2 text-center flex">
-            <div class="ml-2 mr-3 flex" style="width: 80%">- {{ param.name }}</div>
-            <i :class="param.icon" style="font-size: 1rem; width: 20%"></i>
+        <div class="border-solid border-round border-1 border-black-alpha-30" style="width: 70%">
+          <div style="width: 70%; cursor: pointer">
+            <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer" style="width: 100%">
+              <div class="flex flex-row w-full cursor-pointer mt-1">
+                <PvCheckbox
+                  v-model="paramCheckboxData"
+                  input-id="default-params"
+                  value="hasDefault"
+                  @change="checkBoxStatus"
+                />
+                <i class="pi pi-align-justify" style="font-size: 1rem; width: 8%"></i>
+                <label class="mr-3 p-0 ml-1 flex cursor-pointer" style="width: 80%" for="default-params"
+                  >Default Data Collection Values</label
+                >
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="border-solid border-round mt-3" style="width: 70%; cursor: pointer">
-          <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
-            <div class="flex flex-row w-full cursor-pointer">
-              <PvCheckbox
-                v-model="paramCheckboxData"
-                input-id="default-params"
-                value="hasDefault"
-                @change="checkBoxStatus"
-              />
-              <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="default-params"
-                >Default Data Collection Values</label
-              >
-              <i class="pi pi-align-justify" style="font-size: 1rem; width: 20%"></i>
+          <hr />
+          <div class="ml-5" style="width: 70%">
+            <div v-for="param in defaultParams" :key="param" class="mt-1 mb-1 ml-3 mr-0 p-0 text-center flex">
+              <i :class="param.icon" style="font-size: 1rem; width: 10%"></i>
+              <div class="mr-3 ml-0 p-0 flex" style="width: 80%">{{ param.name }}</div>
             </div>
           </div>
         </div>
         <h3 class="mt-5">Additional Data Collection</h3>
-        <div class="border-solid border-round" style="width: 70%; cursor: pointer">
+        <div
+          :class="[
+            'border-solid border-round border-1 border-black-alpha-30 mt-2',
+            { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
+          ]"
+          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
+          style="width: 70%; cursor: pointer"
+        >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
-              <PvCheckbox v-model="specialParam" input-id="video-recording" value="hasVideo" @change="checkBoxStatus" />
-              <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="video-recording"
+              <PvCheckbox
+                v-model="specialParam"
+                input-id="video-recording"
+                value="hasVideo"
+                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                @change="checkBoxStatus"
+              />
+              <i class="pi pi-video" style="font-size: 1rem; width: 8%"></i>
+              <label
+                :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                style="width: 80%"
+                for="video-recording"
                 >Video Recording</label
               >
-              <i class="pi pi-video" style="font-size: 1rem; width: 20%"></i>
             </div>
           </div>
         </div>
-        <div class="border-solid mt-2 border-round" style="width: 70%; cursor: pointer">
+        <div
+          :class="[
+            'border-solid border-round border-1 border-black-alpha-30 mt-2',
+            { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
+          ]"
+          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
+          style="width: 70%; cursor: pointer"
+        >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
-              <PvCheckbox v-model="specialParam" input-id="audio-recording" value="hasAudio" @change="checkBoxStatus" />
-              <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="audio-recording"
+              <PvCheckbox
+                v-model="specialParam"
+                input-id="audio-recording"
+                value="hasAudio"
+                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                @change="checkBoxStatus"
+              />
+              <i class="pi pi-phone" style="font-size: 1rem; width: 8%"></i>
+              <label
+                :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                style="width: 80%"
+                for="audio-recording"
                 >Audio Recording</label
               >
-              <i class="pi pi-phone" style="font-size: 1rem; width: 20%"></i>
             </div>
           </div>
         </div>
-        <div class="border-solid mt-2 border-round" style="width: 70%; cursor: pointer">
+        <div
+          :class="[
+            'border-solid border-round border-1 border-black-alpha-30 mt-2',
+            { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
+          ]"
+          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
+          style="width: 70%; cursor: pointer"
+        >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
             <div class="flex flex-row w-full cursor-pointer">
               <PvCheckbox
                 v-model="specialParam"
                 input-id="eye-tracking"
                 value="hasEyeTracking"
+                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
-              <label class="ml-2 mr-3 flex cursor-pointer" style="width: 80%" for="eye-tracking">Eye - Tracking</label>
-              <i class="pi pi-eye" style="font-size: 1rem; width: 20%"></i>
+              <i class="pi pi-eye" style="font-size: 1rem; width: 8%"></i>
+              <label
+                :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
+                style="width: 80%"
+                for="eye-tracking"
+                >Eye - Tracking</label
+              >
             </div>
           </div>
         </div>
         <div class="hidden">
-          <h3 class="mb-4 mt-4">Consent Amount and Expected Time</h3>
+          <h3 class="mb-4 mt-4">Compensation Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
               <span class="p-float-label">
@@ -127,7 +175,7 @@
           </div>
         </div>
       </div>
-      <div v-if="knowWhatIWant || helpMeSelect" class="flex-column" style="width: 50%">
+      <div v-if="knowWhatIWant || userDrivenFlow" class="flex-column" style="width: 50%">
         <h3 class="font-bold text-center text-xl">Suggested Forms</h3>
         <div class="w-full">
           <PvFieldset legend="Consent" v-if="consents && consents.length > 0">
@@ -164,7 +212,7 @@
                   <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName }} <br />
                   <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit }}
                   <br />
-                  <span class="font-bold">GitHub Org: </span>{{ result.assent?.gitHubOrg }} <br />
+                  <span class="font-bold">GitHub Org: </span>{{ result.assent[0]?.gitHubOrg }} <br />
                   <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository }}
                   <br />
                   <span class="font-bold">Last Updated: </span>{{ result.assent[0]?.lastUpdated }} <br />
@@ -252,11 +300,13 @@ const paramCheckboxData = ref(false);
 const specialParam = ref(false);
 const amount = ref('');
 const expectedTime = ref('');
-const helpMeSelect = ref(null);
+const userDrivenFlow = ref(null);
 let selectedConsent = ref(null);
 let selectedAssent = ref(null);
 const knowWhatIWant = ref(false);
 const decision = ref('');
+const disableIfNotDefault = ref(false);
+const tooltip = ref('Please check the "Default Data Collection Values" first');
 
 let result = {
   consent: [],
@@ -268,11 +318,11 @@ let result = {
 function whatDecision() {
   if (decision.value === 'know') {
     knowWhatIWant.value = true;
-    helpMeSelect.value = false;
+    userDrivenFlow.value = false;
   }
   if (decision.value === 'help') {
     knowWhatIWant.value = false;
-    helpMeSelect.value = true;
+    userDrivenFlow.value = true;
   }
   specialParam.value = false;
   paramCheckboxData.value = false;
@@ -325,12 +375,18 @@ function checkBoxStatus() {
     paramCheckboxData.value?.find((item) => item === 'hasDefault') &&
     (!specialParam.value || specialParam.value.length === 0)
   ) {
+    disableIfNotDefault.value = true;
     getDefaults();
   } else if (
+    paramCheckboxData.value &&
+    paramCheckboxData.value?.find((item) => item === 'hasDefault') &&
     specialParam.value &&
     specialParam.value?.find((item) => item === 'hasVideo' || item === 'hasAudio' || item === 'hasEyeTracking')
   ) {
     getConsentAssent();
+  } else {
+    disableIfNotDefault.value = false;
+    specialParam.value = false;
   }
 }
 
