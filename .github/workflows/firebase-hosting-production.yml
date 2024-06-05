@@ -9,44 +9,77 @@ name: Deploy to Firebase Hosting (production) with Pre-Release Tests
       - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
 jobs:
-  #  pre-release-tests:
-  #    name: Run Cypress Pre-Release Tests
-  #    needs: [build-and-preview]
-  #    runs-on: ubuntu-latest
-  #    timeout-minutes: 180
-  #    strategy:
-  #      fail-fast: false
-  #      matrix:
-  #        browser: [chromium, edge]
-  #        containers: [1, 2]
-  #    env:
-  #      NODE_ENV: 'test'
-  #      CYPRESS_BASE_URL: 'http://localhost:5173'
-  #      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-  #      COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
-  #      COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-  #      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
-  #      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
-  #      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #    steps:
-  #      - name: Checkout
-  #        uses: actions/checkout@v4
-  #      - name: Cypress run
-  #        uses: cypress-io/github-action@v6
-  #        with:
-  #          browser: ${{ matrix.browser }}
-  #          build: npm ci && npm run build
-  #          start: npm run dev
-  #          wait-on: ${{ env.CYPRESS_BASE_URL }}
-  #          wait-on-timeout: 120
-  #          record: true
-  #          parallel: true
-  #          spec: 'cypress/e2e/pre-release-tests/**/*'
-  #          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
-
+  build-pre-release-tests:
+    name: Run Cypress Pre-Release Tests
+    #  needs: [build-and-preview]
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, edge]
+        containers: [1, 2]
+    env:
+      NODE_ENV: 'test'
+      CYPRESS_BASE_URL: 'http://localhost:5173'
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
+      COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          browser: ${{ matrix.browser }}
+          build: npm ci && npm run build
+          start: npm run dev
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 120
+          record: true
+          parallel: true
+          spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+  pre-release-tests:
+    name: Run Cypress Pre-Release Tests
+    needs: [build-pre-release-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, edge]
+        containers: [1, 2]
+    env:
+      NODE_ENV: 'test'
+      CYPRESS_BASE_URL: 'http://localhost:5173'
+      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+      COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
+      COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          browser: ${{ matrix.browser }}
+          build: npm ci && npm run build
+          start: npm run dev
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 120
+          record: true
+          parallel: true
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/**/*'
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
-    # needs: [pre-release-tests]
+    needs: [pre-release-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -64,7 +97,6 @@ jobs:
           channelId: live
           projectId: gse-roar-admin
           target: production
-
       - name: Create Sentry release and upload source maps
         uses: getsentry/action-release@v1.7.0
         env:
@@ -75,7 +107,6 @@ jobs:
           environment: production
           sourcemaps: ./dist/assets/*.js.map
           version: ${{ github.ref }}
-
       - name: Notify on failure
         if: failure()
         uses: actions/github-script@v5
