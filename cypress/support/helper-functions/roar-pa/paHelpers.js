@@ -109,7 +109,7 @@ function playThirdTutorial() {
 }
 
 export function playPA({
-  administration = Cypress.env('testRoarAppsAdministration'),
+  administration = Cypress.env('testRoarAppsAdministrationParticipant'),
   language = 'en',
   optional = false,
   startText = 'In this game we are going to look for words that BEGIN with the same sound.',

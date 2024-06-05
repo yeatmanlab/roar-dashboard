@@ -152,7 +152,7 @@ function checkGameComplete(endText, continueText = null) {
 }
 
 export function playFluencyARF({
-  administration = Cypress.env('testRoarAppsAdministration'),
+  administration = Cypress.env('testRoarAppsAdministrationParticipant'),
   language = 'en',
   task = 'fluency-arf',
   optional = false,
@@ -187,7 +187,7 @@ export function playFluencyARF({
 }
 
 export function playFluencyCALF({
-  administration = Cypress.env('testRoarAppsAdministration'),
+  administration = Cypress.env('testRoarAppsAdministrationParticipant'),
   language = 'en',
   task = 'fluency-calf',
   optional = false,

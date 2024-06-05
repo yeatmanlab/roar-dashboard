@@ -61,7 +61,7 @@ function startGame(administration, language, optional) {
 }
 
 export function playVocabulary({
-  administration = Cypress.env('testRoarAppsAdministration'),
+  administration = Cypress.env('testRoarAppsAdministrationParticipant'),
   language = 'en',
   gameCompleteText = 'We’ve all learned so much!',
   optional = false,

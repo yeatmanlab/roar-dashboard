@@ -62,7 +62,7 @@ export function startGame(administration, language, optional) {
 }
 
 export function playLetter({
-  administration = Cypress.env('testRoarAppsAdministration'),
+  administration = Cypress.env('testRoarAppsAdministrationParticipant'),
   language = 'en',
   gameCompleteText = 'Congratulations',
   optional = false,

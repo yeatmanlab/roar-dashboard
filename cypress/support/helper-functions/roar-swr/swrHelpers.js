@@ -3,7 +3,7 @@ import { languageOptions } from './languageOptions';
 const timeout = Cypress.env('timeout');
 
 export const playSWR = ({
-  administration = Cypress.env('testRoarAppsAdministration'),
+  administration = Cypress.env('testRoarAppsAdministrationParticipant'),
   language = 'en',
   optional = false,
 } = {}) => {

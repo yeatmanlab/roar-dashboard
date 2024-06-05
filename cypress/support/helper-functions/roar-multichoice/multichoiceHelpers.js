@@ -62,7 +62,7 @@ export function startGame(administration, language, optional, task) {
 }
 
 export function playMorphology({
-  administration = Cypress.env('testRoarAppsAdministration'),
+  administration = Cypress.env('testRoarAppsAdministrationParticipant'),
   language = 'en',
   optional = false,
   task = 'morphology',
@@ -86,7 +86,7 @@ export function playMorphology({
 }
 
 export function playWrittenVocabulary({
-  administration = Cypress.env('testRoarAppsAdministration'),
+  administration = Cypress.env('testRoarAppsAdministrationParticipant'),
   language = 'en',
   optional = false,
   task = 'cva',
