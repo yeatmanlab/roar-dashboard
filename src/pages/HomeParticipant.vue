@@ -183,13 +183,15 @@ const {
 });
 
 async function checkConsent() {
+  if (isLevante) return
+
+  const legal = selectedAdmin.value?.legal;
+  if (!legal) return;
+  
   const dob = new Date(userData.value?.studentData.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
-  const legal = selectedAdmin.value?.legal;
-
-  if (!legal) return;
 
   const isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
