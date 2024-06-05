@@ -18,6 +18,7 @@ import { useToast } from 'primevue/usetoast';
 import { marked } from 'marked';
 import { useAuthStore } from '@/store/auth';
 import { useI18n } from 'vue-i18n';
+import _lowerCase from 'lodash/lowerCase';
 
 const authStore = useAuthStore();
 const i18n = useI18n();
@@ -26,12 +27,7 @@ const props = defineProps({
   consentText: { type: String, require: true, default: 'Text Here' },
   consentType: { type: String, require: true, default: 'Consent' },
 });
-const consentHeader = {
-  tos: 'Terms of Service',
-  consent: 'Consent',
-  assent: 'Assent',
-  'assent-es': 'Asentimiento',
-};
+
 const emit = defineEmits(['accepted', 'delayed']);
 
 const confirm = useConfirm();
@@ -49,8 +45,8 @@ onMounted(() => {
   confirm.require({
     group: 'templating',
     header: props.consentType.includes('-es')
-      ? `Formulario de ${consentHeader[props.consentType]}`
-      : `${consentHeader[props.consentType]} Form`,
+      ? `FORMULARIO DE ${_lowerCase(props.consentType).toUpperCase()}`
+      : `${_lowerCase(props.consentType).toUpperCase()} FORM`,
     icon: 'pi pi-question-circle',
     acceptLabel: i18n.t('consentModal.acceptButton'),
     acceptIcon: 'pi pi-check',
@@ -59,8 +55,8 @@ onMounted(() => {
         severity: 'info',
         summary: i18n.t('consentModal.toastHeader'),
         detail: props.consentType.includes('-es')
-          ? `Estado de ${consentHeader[props.consentType]} actualizado`
-          : `${consentHeader[props.consentType]} status updated.`,
+          ? `ESTADO DE ${_lowerCase(props.consentType).toUpperCase()} ACTUALIZADO`
+          : `${_lowerCase(props.consentType).toUpperCase()} STATUS UPDATED.`,
         life: 3000,
       });
       emit('accepted');
