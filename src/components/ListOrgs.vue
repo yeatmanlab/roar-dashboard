@@ -79,10 +79,10 @@
         <PvInputGroup>
           <PvInputText
             style="width: 70%"
-            :value="`https://roar.education/Register/?code=${activationCode}`"
+            :value="`https://roar.education/register/?code=${activationCode}`"
             autocomplete="off"
           />
-          <PvButton @click="copyToClipboard(`https://roar.education/Register/?code=${activationCode}`)">
+          <PvButton @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)">
             <i class="pi pi-copy"></i>
           </PvButton>
         </PvInputGroup>

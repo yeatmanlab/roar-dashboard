@@ -82,16 +82,6 @@ const init = () => {
   initialized.value = true;
 };
 
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
-});
-
-// const claimsLoaded = computed(() => !isLoadingClaims.value);
-
 const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid],
   queryFn: () => fetchDocById('userClaims', uid.value),
