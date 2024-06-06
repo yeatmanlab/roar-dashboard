@@ -12,6 +12,7 @@ import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
 import { useToast } from 'primevue/usetoast';
+import { useQueryClient } from '@tanstack/vue-query'
 
 const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
@@ -32,7 +33,7 @@ const fetchAudioLinks = async (surveyType) => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const fetchedSurvey = ref(null);
 const survey = ref(null);
 const isSavingResponses = ref(false);
@@ -45,6 +46,7 @@ const router = useRouter();
 const context = new AudioContext();
 const audioLinks = ref({});
 const toast = useToast();
+const queryClient = useQueryClient();
 
 let currentAudioSource = null;
 
@@ -153,11 +155,8 @@ async function playAudio(name) {
 }
 
 async function saveResults(sender) {
-  console.log('sender.data: ', sender.data);
-
   // If user did not fill out the survey, do not save the results
   if (Object.keys(sender.data).length === 0) {
-    console.log('No data to save');
     // update game store to let game tabs know
     gameStore.requireHomeRefresh();
     gameStore.setSurveyCompleted();
@@ -176,6 +175,7 @@ async function saveResults(sender) {
 
     // update game store to let game tabs know
     gameStore.setSurveyCompleted();
+    queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] })
 
     // route back to game tabs (HomeParticipant)
     gameStore.requireHomeRefresh();

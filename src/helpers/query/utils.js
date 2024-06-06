@@ -198,6 +198,8 @@ export const fetchSubcollection = async (collectionPath, subcollectionName, sele
   return axiosInstance
     .get(subcollectionPath + queryString)
     .then(({ data }) => {
+      // console.log('subcollection data: ', data);
+
       // Assuming the API returns an array of document data in the subcollection
       return data.documents
         ? data.documents.map((doc) => {
