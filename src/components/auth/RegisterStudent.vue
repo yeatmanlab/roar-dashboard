@@ -380,7 +380,7 @@ const state = reactive({
 const rules = {
   students: {
     $each: helpers.forEach({
-      activationCode: { required },
+      activationCode: {},
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
@@ -404,7 +404,7 @@ const rules = {
 
 function addStudent() {
   state.students.push({
-    activationCode: student.code ?? '',
+    activationCode: props.code ?? '',
     studentUsername: '',
     password: '',
     confirmPassword: '',
@@ -428,7 +428,7 @@ function addStudent() {
 function updateActivationCode() {
   state.students.forEach((student) => {
     if (student.noActivationCode) {
-      student.activationCode = 'noActivationCode';
+      student.activationCode = null;
     } else {
       student.activationCode = props.code;
     }
@@ -459,6 +459,23 @@ const handleFormSubmit = async (isFormValid) => {
     return;
   }
 
+  const validationPromises = state.students.map(async (student) => {
+    const isCodeValid = await validateCode(student.activationCode, false);
+    if (!isCodeValid && isCodeValid) {
+      if (student.noActivationCode) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const validationResults = await Promise.all(validationPromises);
+
+  if (validationResults.includes(false)) {
+    submitted.value = false;
+    return;
+  }
+
   if (await validateRoarUsername()) {
     // format username as an email
     if (isFormValid) {
@@ -474,20 +491,30 @@ const handleFormSubmit = async (isFormValid) => {
   }
 };
 
-const validateCode = async (studentCode) => {
+const validateCode = async (studentCode, showModal = true) => {
   if (studentCode !== '') {
     const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true).catch(
       (error) => {
         errors.value = error;
+        dialogMessage.value =
+          'The code does not belong to any organization \n Please enter a valid code or select: \n "I don`t have code "';
+        showErrorDialog();
+        submitted.value = false;
         return null;
       },
     );
     if (activationCode.orgId && errors.value === '') {
-      console.log('activation Code ', activationCode);
       orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
-      showOrg.value = true;
+      if (showModal) {
+        showOrg.value = true;
+      }
     } else {
       errors.value = '';
+      if (!student.noActivationCode) {
+        dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have code"`;
+        showErrorDialog();
+      }
+      return false;
     }
   }
 };
