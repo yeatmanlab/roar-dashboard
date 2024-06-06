@@ -45,6 +45,11 @@ jobs:
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+      - uses: actions/upload-artifact@master
+        with:
+          name: my-artifact
+          path: cypress/e2e/pre-release-tests/generated-tests
+
   pre-release-tests:
     name: Run Cypress Pre-Release Tests
     needs: [build-pre-release-tests]
@@ -67,6 +72,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: actions/download-artifact@master
+        with:
+          name: my-artifact
+          path: cypress/e2e/pre-release-tests/generated-tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
