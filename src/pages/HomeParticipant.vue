@@ -103,7 +103,6 @@ import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 
-let GameTabs, ParticipantSidebar;
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
