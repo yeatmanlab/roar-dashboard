@@ -28,6 +28,7 @@
                 :disabled="student.noActivationCode"
               />
               <PvButton
+                v-if="!student.noActivationCode"
                 @click="validateCode(student.activationCode)"
                 class="w-4 bg-primary text-white hover:bg-red-900"
                 label="Validate Code"
@@ -314,6 +315,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import _capitalize from 'lodash/capitalize';
 
 const authStore = useAuthStore();
 const { roarfirekit, uid } = storeToRefs(authStore);
@@ -481,7 +483,8 @@ const validateCode = async (studentCode) => {
       },
     );
     if (activationCode.orgId && errors.value === '') {
-      orgName.value = activationCode.orgId;
+      console.log('activation Code ', activationCode);
+      orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
       showOrg.value = true;
     } else {
       errors.value = '';

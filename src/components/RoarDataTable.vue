@@ -296,14 +296,14 @@
           </PvColumn>
           <PvColumn
             v-if="isInsideListOrgs"
-            header="Code Generation"
+            header="SignUp Code"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
             <template #body="{ data: colData }">
               <div>
                 <PvButton
-                  label="Generate Code"
-                  icon="pi pi-cog"
+                  label="Invite Users"
+                  icon="pi pi-send"
                   class="bg-white text-primary mr-2 hover:bg-primary hover:text-white"
                   @click="viewOrgCode(colData)"
                 />

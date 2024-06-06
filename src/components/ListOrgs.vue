@@ -70,7 +70,7 @@
     <section class="flex mt-8 justify-content-end">
       <PvDialog
         v-model:visible="isDialogVisible"
-        header="Here is your code!"
+        header="Invitation link:"
         :style="{ width: '50rem' }"
         :position="position"
         :modal="true"
