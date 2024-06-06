@@ -17,7 +17,6 @@ function createAdminTestSpec(adminName) {
   cy.log(adminName);
   const currentPath = __dirname;
   const testSpecPath = path.join(currentPath, 'generated-tests', `${adminName.replaceAll(' ', '_')}.cy.js`);
-  cy.log('Current directory:', currentPath);
   cy.fsWriteFile(testSpecPath, generatedSpecTemplate(adminName));
 }
 
@@ -54,22 +53,9 @@ describe('Generating administration spec files', () => {
       cy.fsCreateDirectory(dirPath);
       openAdmins.forEach((admin) => {
         // Creating a test spec file for the current administration
-        // cy.log(admin);
         createAdminTestSpec(admin);
       });
     });
     cy.log('Successfully tested all games for all open administrations!');
   });
 });
-
-// describe('Testing individual synced administration', () => {
-//   it('Tests a synced administration', () => {
-//     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-//     cy.visit('/', { timeout: 2 * timeout });
-//     cy.selectAdministration(adminName);
-//     cy.log(`Found administration: ${adminName}`);
-//     // testSpecs.forEach((spec) => {
-//     //   testGame(spec, 'Synced Administration');
-//     // });
-//   });
-// });
