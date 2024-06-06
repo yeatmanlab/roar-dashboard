@@ -168,11 +168,13 @@ const sanitizeAndValidateSubmittedUsers = (users) => {
     });
     // Allowing 0 as a valid id
     const idList = [user['childId'], user['teacherId'], user['parentId']].filter((a) => 0 || !!a);
-    if (idList.length === 0) {
-      const errorMessage = addErrorUser(user, 'No Child, Teacher or Parent Id found');
+    if (idList.length > 1) {
+      addErrorUser(user, `Multiple ids present for the user: ${user.id}`);
+      throw new Error(`Mutliple ids found for user, please see the table below for more details`);
     }
     if (userIdMap[idList[0]]) {
       addErrorUser(user, `Duplicate id present with id: ${idList[0]}`);
+      throw new Error(`Duplicate ids found for user, please see the table below for more details`);
     } else {
       userIdMap[idList[0]] = true;
     }
