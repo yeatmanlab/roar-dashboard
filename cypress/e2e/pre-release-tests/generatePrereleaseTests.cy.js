@@ -17,9 +17,13 @@ function createAdminTestSpec(adminName) {
   cy.log(adminName);
   // cy.log(fs);
   const currentPath = __dirname;
-  cy.fsWriteFile(`${currentPath}/generated-tests/${adminName}.cy.js`, generatedSpecTemplate(adminName), {
-    flags: 'w+',
-  });
+  cy.fsWriteFile(
+    `${currentPath}/generated-tests/${adminName.replaceAll(' ', '_')}.cy.js`,
+    generatedSpecTemplate(adminName),
+    {
+      flags: 'w+',
+    },
+  );
 }
 
 describe('Generating administration spec files', () => {
