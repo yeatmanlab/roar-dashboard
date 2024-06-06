@@ -20,9 +20,6 @@ function createAdminTestSpec(adminName) {
   cy.fsWriteFile(
     `${currentPath}/generated-tests/${adminName.replaceAll(' ', '_')}.cy.js`,
     generatedSpecTemplate(adminName),
-    {
-      flags: 'w+',
-    },
   );
 }
 
