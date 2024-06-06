@@ -15,12 +15,10 @@ async function getOpenAdmins() {
 
 function createAdminTestSpec(adminName) {
   cy.log(adminName);
-  // cy.log(fs);
   const currentPath = __dirname;
-  cy.fsWriteFile(
-    `${currentPath}/generated-tests/${adminName.replaceAll(' ', '_')}.cy.js`,
-    generatedSpecTemplate(adminName),
-  );
+  const testSpecPath = path.join(currentPath, 'generated-tests', `${adminName.replaceAll(' ', '_')}.cy.js`);
+  cy.log('Current directory:', currentPath);
+  cy.fsWriteFile(testSpecPath, generatedSpecTemplate(adminName));
 }
 
 describe('Generating administration spec files', () => {
@@ -51,6 +49,9 @@ describe('Generating administration spec files', () => {
     cy.visit('/', { timeout: 2 * timeout });
 
     cy.get('@openAdmins').then((openAdmins) => {
+      const currentPath = __dirname;
+      const dirPath = path.join(currentPath, 'generated-tests');
+      cy.fsCreateDirectory(dirPath);
       openAdmins.forEach((admin) => {
         // Creating a test spec file for the current administration
         // cy.log(admin);
