@@ -77,7 +77,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/**/*'
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
