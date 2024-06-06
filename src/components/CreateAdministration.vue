@@ -111,7 +111,12 @@
           :input-variants="preSelectedVariants"
           @variants-changed="handleVariantsChanged"
         />
-
+        <div v-if="!isLevante" class="mt-2 flex w-full">
+          <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
+          <small v-if="v$.consent.$invalid && submitted && !isLevante" class="p-error mt-2"
+            >Please select a consent/assent form.</small
+          >
+        </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
             <div class="flex">
@@ -163,14 +168,18 @@ import _isEqual from 'lodash/isEqual';
 import _union from 'lodash/union';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
+import _lowerCase from 'lodash/lowerCase';
 import { useVuelidate } from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
+import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import OrgPicker from '@/components/OrgPicker.vue';
 import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
 import { variantsFetcher } from '@/helpers/query/tasks';
 import TaskPicker from './TaskPicker.vue';
 import { useConfirm } from 'primevue/useconfirm';
+import ConsentPicker from './ConsentPicker.vue';
+
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -205,7 +214,7 @@ const initialized = ref(false);
 const confirm = useConfirm();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex, userQueryKeyIndex } = storeToRefs(authStore);
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
@@ -354,11 +363,16 @@ const state = reactive({
   dateStarted: null,
   dateClosed: null,
   sequential: null,
+  legal: null,
+  consent: null,
+  assent: null,
   districts: [],
   schools: [],
   classes: [],
   groups: [],
   families: [],
+  amount: '',
+  expectedTime: '',
 });
 
 const minStartDate = computed(() => {
@@ -381,7 +395,10 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
+  consent: { requiredIf: requiredIf(!isLevante) },
+  assent: { requiredIf: requiredIf(!isLevante) },
 };
+
 const v$ = useVuelidate(rules, state);
 const pickListError = ref('');
 const orgError = ref('');
@@ -418,6 +435,13 @@ const variantsByTaskId = computed(() => {
 
 const handleVariantsChanged = (newVariants) => {
   variants.value = newVariants;
+};
+
+const handleConsentSelected = (newConsentAssent) => {
+  state.consent = newConsentAssent.consent;
+  state.assent = newConsentAssent.assent;
+  state.amount = newConsentAssent.amount;
+  state.expectedTime = newConsentAssent.expectedTime;
 };
 
 const checkForUniqueTasks = (assignments) => {
@@ -492,6 +516,12 @@ const submit = async () => {
           sequential: toRaw(state).sequential,
           orgs: orgs,
           isTestData: isTestData.value,
+          legal: {
+            consent: toRaw(state).consent,
+            assent: toRaw(state).assent,
+            amount: toRaw(state).amount,
+            expectedTime: toRaw(state).expectedTime,
+          },
         };
         if (isTestData.value) args.isTestData = true;
         if (props.adminId) args.administrationId = props.adminId;
@@ -569,6 +599,7 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
         preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
     });
+    state.legal = adminInfo.legal;
   }
 });
 

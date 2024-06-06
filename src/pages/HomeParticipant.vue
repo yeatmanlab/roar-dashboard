@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="!noGamesAvailable || consentSpinner">
-      <div v-if="isFetching || consentSpinner" class="loading-container">
+      <div v-if="isFetching" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
@@ -76,23 +76,38 @@
       </div>
     </div>
   </div>
+  <ConsentModal
+    v-if="showConsent && !isLevante"
+    :consent-text="confirmText"
+    :consent-type="consentType"
+    @accepted="updateConsent"
+    @delayed="refreshDocs"
+  />
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, ref, watch, computed, toRaw } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
+import _forEach from 'lodash/forEach';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
+import ConsentModal from '../components/ConsentModal.vue';
 
 let GameTabs, ParticipantSidebar;
+const showConsent = ref(false);
+const consentVersion = ref('');
+const confirmText = ref('');
+const consentType = ref('');
+const consentParams = ref({});
+
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 const initialized = ref(false);
@@ -158,7 +173,7 @@ const {
         return {
           collection: 'administrations',
           docId: administrationId,
-          select: ['name', 'publicName', 'sequential', 'assessments'],
+          select: ['name', 'publicName', 'sequential', 'assessments', 'legal'],
         };
       }),
     ),
@@ -166,6 +181,65 @@ const {
   enabled: administrationQueryEnabled,
   staleTime: 5 * 60 * 1000,
 });
+
+async function checkConsent() {
+  const dob = new Date(userData.value?.studentData.dob);
+  const grade = userData.value?.studentData.grade;
+  const currentDate = new Date();
+  const age = currentDate.getFullYear() - dob.getFullYear();
+  const legal = selectedAdmin.value?.legal;
+
+  if (!legal) return;
+
+  const isAdult = age >= 18;
+  const isSeniorGrade = grade >= 12;
+  const isOlder = isAdult || isSeniorGrade;
+
+  let docTypeKey = isOlder ? 'consent' : 'assent';
+  let docType = (legal[docTypeKey][0]?.type).toLowerCase();
+  let docAmount = legal?.amount;
+  let docExpectedTime = legal?.expectedTime;
+
+  consentType.value = docType;
+
+  const consentStatus = _get(userData.value, `legal.${consentType.value}`);
+  const consentDoc = await authStore.getLegalDoc(docType);
+  consentVersion.value = consentDoc.version;
+
+  if (_get(toRaw(consentStatus), consentDoc.version)) {
+    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+    let found = false;
+    _forEach(legalDocs, (document) => {
+      if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
+        found = true;
+      }
+    });
+
+    if (!found) {
+      if (docAmount !== '' || docExpectedTime !== '') {
+        confirmText.value = consentDoc.text;
+        showConsent.value = true;
+      }
+    }
+  } else if (age > 7 || grade > 1) {
+    confirmText.value = consentDoc.text;
+    showConsent.value = true;
+  }
+}
+
+async function updateConsent() {
+  consentParams.value = {
+    amount: selectedAdmin.value?.legal.amount,
+    expectedTime: selectedAdmin.value?.legal.expectedTime,
+    dateSigned: new Date(),
+  };
+  try {
+    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value);
+    userQueryKeyIndex.value += 1;
+  } catch {
+    console.log("Couldn't update consent value");
+  }
+}
 
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
 
@@ -211,7 +285,8 @@ const noGamesAvailable = computed(() => {
 });
 
 const showOptionalAssessments = ref(null);
-const toggleShowOptionalAssessments = () => {
+const toggleShowOptionalAssessments = async () => {
+  await checkConsent();
   showOptionalAssessments.value = null;
 };
 
@@ -245,7 +320,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+    if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
@@ -300,6 +375,20 @@ const studentInfo = computed(() => {
     grade: _get(userData.value, 'studentData.grade'),
   };
 });
+
+watch(consentParams, (newValue) => {
+  consentParams.value = newValue;
+});
+
+watch(
+  selectedAdmin,
+  async (newValue) => {
+    if (newValue) {
+      await checkConsent();
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   adminInfo,

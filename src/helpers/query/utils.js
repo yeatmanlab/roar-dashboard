@@ -1,6 +1,7 @@
 import axios from 'axios';
 import Papa from 'papaparse';
 import _get from 'lodash/get';
+import _isEmpty from 'lodash/isEmpty';
 import _fromPairs from 'lodash/fromPairs';
 import _last from 'lodash/last';
 import _mapValues from 'lodash/mapValues';
@@ -103,6 +104,12 @@ export const fetchDocById = async (
   unauthenticated = false,
   isShallowError = false,
 ) => {
+  if (!collection || !docId) {
+    console.warn(
+      `fetchDocById: Collection or docId not provided. Called with collection "${collection}" and docId "${docId}"`,
+    );
+    return {};
+  }
   const docPath = `/${collection}/${docId}`;
   const axiosInstance = getAxiosInstance(db, unauthenticated);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
@@ -127,6 +134,10 @@ export const fetchDocById = async (
 };
 
 export const fetchDocsById = async (documents, db = 'admin') => {
+  if (_isEmpty(documents)) {
+    console.warn('FetchDocsById: No documents provided!');
+    return [];
+  }
   const axiosInstance = getAxiosInstance(db);
   const promises = [];
   for (const { collection, docId, select } of documents) {
@@ -147,6 +158,10 @@ export const fetchDocsById = async (documents, db = 'admin') => {
 };
 
 export const batchGetDocs = async (docPaths, select = [], db = 'admin') => {
+  if (_isEmpty(docPaths)) {
+    console.warn('BatchGetDocs: No document paths provided!');
+    return [];
+  }
   const axiosInstance = getAxiosInstance(db);
   const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
   const documents = docPaths.map((docPath) => `${baseURL}/${docPath}`);

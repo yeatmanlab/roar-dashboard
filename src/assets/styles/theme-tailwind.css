@@ -1083,12 +1083,10 @@
   border-radius: var(--border-radius);
 }
 .p-fieldset .p-fieldset-legend {
-  padding: 1.25rem;
-  border: 1px solid var(--surface-d);
+  padding: 0.5rem;
   color: var(--text-color);
-  background: var(--surface-b);
   font-weight: 700;
-  border-radius: var(--border-radius);
+  font-size: 1.25rem;
 }
 .p-fieldset.p-fieldset-toggleable .p-fieldset-legend {
   padding: 0;
@@ -1117,7 +1115,7 @@
   color: var(--surface-900);
 }
 .p-fieldset .p-fieldset-content {
-  padding: 1.25rem;
+  padding: 0.25rem;
 }
 
 .p-divider .p-divider-content {
