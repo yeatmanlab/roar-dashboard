@@ -100,8 +100,9 @@ import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
+import GameTabs from '@/components/GameTabs.vue';
+import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 
-let GameTabs, ParticipantSidebar;
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
@@ -124,8 +125,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 onMounted(async () => {
-  GameTabs = (await import('../components/GameTabs.vue')).default;
-  ParticipantSidebar = (await import('../components/ParticipantSidebar.vue')).default;
   if (roarfirekit.value.restConfig) init();
 });
 
