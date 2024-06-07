@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient } from '@tanstack/vue-query'
+import  _merge from 'lodash/merge';
 
 const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
@@ -155,14 +156,13 @@ async function playAudio(name) {
 }
 
 async function saveResults(sender) {
-  // If user did not fill out the survey, do not save the results
-  if (Object.keys(sender.data).length === 0) {
-    // update game store to let game tabs know
-    gameStore.requireHomeRefresh();
-    gameStore.setSurveyCompleted();
-    router.push({ name: 'Home' });
-    return;
-  }
+  const allQuestions = sender.getAllQuestions();
+  const unansweredQuestions = {}
+
+  allQuestions.forEach((question) => unansweredQuestions[question.name] = null);
+
+  // Values from the second object overwrite values from the first
+  const responsesWithAllQuestions = _merge(unansweredQuestions, sender.data);
 
   // turn on loading state
   isSavingResponses.value = true;
@@ -170,8 +170,7 @@ async function saveResults(sender) {
   // call cloud function to save the survey results
   // TODO: Use tanstack-query mutation for automaitic retries.
   try {
-    const res = await roarfirekit.value.saveSurveyResponses(sender.data);
-    console.log('response: ', res);
+    const res = await roarfirekit.value.saveSurveyResponses(responsesWithAllQuestions);
 
     // update game store to let game tabs know
     gameStore.setSurveyCompleted();

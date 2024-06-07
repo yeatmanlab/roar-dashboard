@@ -265,12 +265,15 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
-const { data: surveyResponsesData, error } = useQuery({
+const { data: surveyResponsesData, } = useQuery({
   queryKey: ['surveyResponses', uid],
   queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
-  keepPreviousData: true,
-  enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
-  staleTime: 5 * 60 * 1000,
+  enabled: initialized && import.meta.env.MODE === 'LEVANTE',
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: 10 * 60 * 1000,
+  // refetchOnMount: false,
+  // refetchOnWindowFocus: false,
+  // refetchOnReconnect: false,
 });
 
 const isLoading = computed(() => {
@@ -324,11 +327,6 @@ const assessments = computed(() => {
 
     if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
       // This is just to mark the card as complete
-      // console.log('surveyResponsesData: ', surveyResponsesData.value);
-      // console.log('isSurveyCompleted: ', gameStore.isSurveyCompleted);
-      // console.log('surveyResponses error: ', surveyResponsesData.error?.value);
-
-
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
           if (assessment.taskId === 'survey') {
@@ -376,7 +374,7 @@ let completeGames = computed(() => {
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => {
   if (isLevante) {
-    return null;
+    return {};
   }
   return {
     grade: _get(userData.value, 'studentData.grade'),
