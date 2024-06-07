@@ -299,7 +299,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, toRaw } from 'vue';
 import { required, minLength, helpers } from '@vuelidate/validators';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
@@ -314,8 +314,8 @@ const dialogMessage = ref('');
 const today = new Date();
 today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
-const showOrg = ref(false);
 const orgName = ref('');
+const activationCodeRef = ref('');
 const errors = ref('');
 const studentGotOrg = ref('');
 
@@ -342,7 +342,7 @@ const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      activationCode: props.code ?? '',
+      activationCode: activationCodeRef.value,
       studentUsername: '',
       password: '',
       confirmPassword: '',
@@ -393,7 +393,7 @@ const rules = {
 
 function addStudent() {
   state.students.push({
-    activationCode: props.code ?? '',
+    activationCode: '',
     studentUsername: '',
     password: '',
     confirmPassword: '',
@@ -425,16 +425,16 @@ async function validateAllCodes() {
 }
 
 onMounted(async () => {
-  validateCode(props.code);
+  if (props.code) {
+    validateCode(props.code);
+  }
 });
 
 function updateActivationCode() {
-  state.students.forEach((student) => {
+  toRaw(state).students.forEach((student) => {
     if (student.noActivationCode) {
       student.activationCode = null;
       student.orgName = 'ROAR families';
-    } else {
-      student.activationCode = props.code;
     }
   });
 }
@@ -463,8 +463,8 @@ const handleFormSubmit = async (isFormValid) => {
     return;
   }
 
-  const validationPromises = state.students.map(async (student) => {
-    const isCodeValid = await validateCode(student.activationCode);
+  const validationPromises = toRaw(state).students.map(async (student, index) => {
+    const isCodeValid = await validateCode(student.activationCode, index);
     if (!isCodeValid && isCodeValid) {
       if (student.noActivationCode) {
         return false;
@@ -483,7 +483,7 @@ const handleFormSubmit = async (isFormValid) => {
   if (await validateRoarUsername()) {
     // format username as an email
     if (isFormValid) {
-      const computedStudents = state.students.map((student) => {
+      const computedStudents = toRaw(state).students.map((student) => {
         const { studentUsername, ...studentData } = student;
         return {
           studentUsername: `${studentUsername}@roar-auth.com`,
@@ -496,7 +496,7 @@ const handleFormSubmit = async (isFormValid) => {
 };
 
 const validateCode = async (studentCode, outerIndex = 0) => {
-  if (studentCode !== '') {
+  if (studentCode && studentCode !== '') {
     const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true).catch(
       (error) => {
         errors.value = error;
@@ -511,10 +511,11 @@ const validateCode = async (studentCode, outerIndex = 0) => {
       state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
         activationCode.orgName ?? activationCode.orgId
       }`;
+      state.students[outerIndex].activationCode = studentCode;
       orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
     } else {
       errors.value = '';
-      if (!state.students[outerIndex].noActivationCode && props.code) {
+      if (!state.students[outerIndex].noActivationCode || props.code) {
         dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have code"`;
         showErrorDialog();
       }
