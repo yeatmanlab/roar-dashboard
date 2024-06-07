@@ -515,6 +515,8 @@ const addGameConfig = () => {
   addedGameConfig.push({ name: '', value: '', type: 'string' });
 };
 
+// Takes the array of objects that will be added to the current data object in Firestore
+// and checks if any of the new fields are duplicates of existing fields to prevent overwriting data
 const checkForDuplicates = (newItemsArray, currentDataObject) => {
   const keys = Object.keys(currentDataObject);
   for (const newItem of newItemsArray) {
@@ -525,6 +527,8 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
   return { isDuplicate: false, duplicateField: '' };
 };
 
+// Helper function to check for errors before updating a task
+// Returns true if there are errors, false if there are none
 const checkForErrors = () => {
   console.log('Checking for errors...');
   if (!selectedTask.value) {
@@ -557,9 +561,11 @@ const checkForErrors = () => {
       return true;
     }
   }
+  return false;
 };
 
 const handleUpdateTask = async () => {
+  // Check for errors before updating the task; end function if errors are found
   if (checkForErrors()) return;
 
   const convertedFields = convertParamsToObj(newFields);
