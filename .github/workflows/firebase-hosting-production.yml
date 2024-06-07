@@ -44,10 +44,10 @@ jobs:
           record: true
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
-          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
       - uses: actions/upload-artifact@master
         with:
-          name: my-artifact
+          name: generated-tests-${{ matrix.containers }}-${{ matrix.browser }}
           path: cypress/e2e/pre-release-tests/generated-tests
 
   pre-release-tests:
@@ -74,7 +74,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: actions/download-artifact@master
         with:
-          name: my-artifact
+          name: generated-tests-${{ matrix.containers }}-${{ matrix.browser }}
           path: cypress/e2e/pre-release-tests/generated-tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
