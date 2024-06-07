@@ -151,6 +151,51 @@ const allFields = [
     dataType: 'string',
   },
 ];
+// Used to remove all other fields in the uploaded CSV
+const allFieldsIdsList = allFields.map((a) => a.field);
+const sanitizeAndValidateSubmittedUsers = (users) => {
+  const userIdMap = {};
+  const filteredFieldsUsers = users.map((user) => {
+    const acc = {};
+    Object.keys(user).forEach((uKey) => {
+      if (allFieldsIdsList.includes(uKey)) {
+        acc[uKey] = user[uKey];
+      }
+    });
+    // Allowing 0 as a valid id
+    const idList = [user['childId'], user['teacherId'], user['parentId']].filter((a) => 0 || !!a);
+    if (idList.length > 1) {
+      addErrorUser(user, `Multiple ids present for the user: ${user.id}`);
+      // throw new Error(`Mutliple ids found for user, please see the table below for more details`);
+    }
+    if (userIdMap[idList[0]]) {
+      addErrorUser(
+        user,
+        `Duplicate id present for the user: ${user.id}, duplicate id: ${idList[0]} shared with user: ${
+          userIdMap[idList[0]].userId
+        }`,
+      );
+      // throw new Error(`Duplicate ids found for user, please see the table below for more details`);
+    } else if (!!idList[0]) {
+      // Avoid undefined
+      userIdMap[idList[0]] = {
+        userId: user.id,
+      };
+    }
+    return acc;
+  });
+
+  if (errorUsers.value.length) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error: There is some issues with user validation. Please check below for more details',
+      life: 5000,
+    });
+    return [];
+  }
+
+  return filteredFieldsUsers;
+};
 
 // Error Users Table refs
 const errorTable = ref();
@@ -264,7 +309,11 @@ async function submitUsers() {
 
   // Group needs to be an array of strings
 
-  const usersToBeRegistered = _cloneDeep(rawUserFile.value);
+  const usersToBeRegistered = sanitizeAndValidateSubmittedUsers(_cloneDeep(rawUserFile.value));
+  if (!usersToBeRegistered) {
+    activeSubmit.value = false;
+    return;
+  }
 
   for (const user of usersToBeRegistered) {
     const groupNames = user.group.split(',');
@@ -289,7 +338,7 @@ async function submitUsers() {
 
   // Begin submit process
   // Org must be created before users can be created
-
+  return;
   try {
     const res = await authStore.createLevanteUsers(submitUsersList);
     toast.add({
