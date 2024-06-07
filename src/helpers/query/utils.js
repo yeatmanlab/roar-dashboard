@@ -188,32 +188,29 @@ export const matchMode2Op = {
   notEquals: 'NOT_EQUAL',
 };
 
-export const fetchSubcollection = async (collectionPath, subcollectionName, select = [], db = 'admin') => {
-  const axiosInstance = getAxiosInstance(db);
-  // Construct the path to the subcollection
-  const subcollectionPath = `/${collectionPath}/${subcollectionName}`;
-  const queryParams = select.map((field) => `mask.fieldPaths=${field}`).join('&');
-  const queryString = queryParams ? `?${queryParams}` : '';
+export const fetchSubcollection = async (collectionPath, subcollectionName, select = [], db = 'admin') => {  
+  try {
+    const axiosInstance = getAxiosInstance(db);
+    const subcollectionPath = `/${collectionPath}/${subcollectionName}`;
 
-  return axiosInstance
-    .get(subcollectionPath + queryString)
-    .then(({ data }) => {
-      // console.log('subcollection data: ', data);
+    // Build query string for selected fields
+    const queryParams = select.map((field) => `mask.fieldPaths=${field}`).join('&');
+    const queryString = queryParams ? `?${queryParams}` : '';
 
-      // Assuming the API returns an array of document data in the subcollection
-      return data.documents
-        ? data.documents.map((doc) => {
-            return {
-              id: doc.name.split('/').pop(), // Extract document ID from the document name/path
-              ..._mapValues(doc.fields, (value) => convertValues(value)),
-            };
-          })
-        : [];
-    })
-    .catch((error) => {
-      console.error(error);
-      return {
-        error: `${error.response?.status === 404 ? 'Subcollection not found' : error.message}`,
-      };
-    });
+    const response = await axiosInstance.get(subcollectionPath + queryString);
+
+    // Check if the API returns an array of document data in the subcollection
+    const documents = response.data.documents || [];
+
+    // Map and return the documents with the required format
+    return documents.map((doc) => ({
+      id: doc.name.split('/').pop(), // Extract document ID from the document name/path
+      ..._mapValues(doc.fields, (value) => convertValues(value)),
+    }));
+  } catch (error) {
+    console.error('Failed to fetch subcollection: ', error);
+    return {
+      error: error.response?.status === 404 ? 'Subcollection not found' : error.message,
+    };
+  }
 };
