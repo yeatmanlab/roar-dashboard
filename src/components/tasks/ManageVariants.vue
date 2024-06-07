@@ -9,7 +9,10 @@
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
               <div class="flex justify-content-between align-items-center">
-                <label for="variant-fields">Select an Existing Task <span class="required">*</span></label>
+                <label for="variant-fields">
+                  <small class="text-gray-400 font-bold">Select an Existing Task </small>
+                  <span class="required">*</span></label
+                >
                 <div class="flex flex-column gap-2 align-items-end">
                   <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
                     <!--                    This does not seemt to function properly, comming it out for now.-->
@@ -43,7 +46,10 @@
 
             <section class="form-section">
               <div class="p-input-icon-right">
-                <label for="variantName">Variant Name <span class="required">*</span></label>
+                <label for="variantName">
+                  <small class="text-gray-400 font-bold">Variant Name </small>
+                  <span class="required">*</span></label
+                >
                 <PvInputText
                   v-model="v$.variantName.$model"
                   name="variantName"
@@ -66,7 +72,9 @@
           </div>
 
           <div class="flex flex-column align-items-center">
-            <h3 class="text-center">Configure Game Parameters</h3>
+            <h3 class="text-center">
+              <strong>Configure Game Parameters</strong>
+            </h3>
             <h4 class="text-center">
               Set the game parameters for a new variant of task <strong>{{ variantFields.selectedGame.id }}</strong>
             </h4>
@@ -208,8 +216,9 @@
       <h1 class="text-center font-bold">Update a Variant</h1>
       <form @submit.prevent="handleUpdateVariant()">
         <section class="flex flex-column gap-2 mb-4">
-          <label for="variant-fields" class="my-2"
-            >Select an Existing Task and Variant <span class="required">*</span></label
+          <label for="task-select" class="my-2">
+            <small class="text-gray-400 font-bold">Select an Existing Task </small>
+            <span class="required">*</span></label
           >
           <PvDropdown
             v-model="selectedTask"
@@ -219,6 +228,10 @@
             placeholder="Select a Game"
             @click="clearFieldParamArrays()"
           />
+          <label for="variant-select" class="my-2">
+            <small class="text-gray-400 font-bold">Select an Existing Variant </small>
+            <span class="required">*</span></label
+          >
           <PvDropdown
             v-model="selectedVariant"
             :options="filteredVariants"
@@ -243,7 +256,7 @@
                   <label :for="key" class="w-1">
                     <em>{{ key }}</em>
                   </label>
-                  <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="text-right" />
+                  <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="w-2 text-center" />
                   <PvInputText
                     v-if="typeof value === 'string'"
                     v-model="updatedVariantData[key]"
@@ -684,7 +697,6 @@ const handleVariantSubmit = async (isFormValid) => {
     taskImage: variantFields.selectedGame.image,
     variantName: variantFields.variantName,
     variantParams: combinedParams,
-    // TODO: Check if this is the valid way to see demo/test data values
     demoData: { task: !!variantFields.selectedGame?.demoData, variant: isDemoData },
     testData: { task: !!variantFields.selectedGame?.testData, variant: isTestData },
     registered: isRegisteredVariant,

@@ -10,7 +10,10 @@
           <div class="flex flex-column row-gap-3">
             <section class="form-section">
               <div class="p-input-icon-right">
-                <label for="taskName">Task Name <span class="required">*</span></label>
+                <label for="taskName">
+                  <small class="text-gray-400 font-bold">Task Name </small>
+                  <span class="required">*</span></label
+                >
                 <PvInputText
                   v-model="t$.taskName.$model"
                   name="taskName"
@@ -30,7 +33,10 @@
             <!-- Task ID -->
             <section class="form-section">
               <div class="p-input-icon-right">
-                <label for="taskId">Task ID <span class="required">*</span></label>
+                <label for="taskId">
+                  <small class="text-gray-400 font-bold">Task ID </small>
+                  <span class="required">*</span></label
+                >
                 <PvInputText
                   v-model="t$.taskId.$model"
                   name="taskId"
@@ -50,21 +56,28 @@
             <!-- Cover Image -->
             <section class="form-section">
               <div>
-                <label for="coverImage">Cover Image (URL)</label>
+                <label for="coverImage">
+                  <small class="text-gray-400 font-bold">Cover Image (URL)</small>
+                </label>
                 <PvInputText v-model="taskFields.coverImage" name="coverImage" />
               </div>
             </section>
             <!--Description-->
             <section class="form-section">
               <div class="p-input-icon-right">
-                <label for="description">Description </label>
+                <label for="description">
+                  <small class="text-gray-400 font-bold">Description</small>
+                </label>
                 <PvInputText v-model="taskFields.description" name="description" />
               </div>
             </section>
             <!--Task URL-->
             <section class="form-section">
               <div v-if="isExternalTask">
-                <label for="taskURL">Task URL <span class="required">*</span></label>
+                <label for="taskURL">
+                  <small class="text-gray-400 font-bold">Task URL </small>
+                  <span class="required">*</span></label
+                >
                 <PvInputText
                   v-model="t$.taskURL.$model"
                   name="taskURL"
@@ -84,7 +97,9 @@
           </div>
 
           <div v-if="!isExternalTask">
-            <h3 class="text-center">Configure Game Parameters</h3>
+            <h3 class="text-center">
+              <strong>Configure Game Parameters</strong>
+            </h3>
             <h4 class="text-center">Create the configurable game parameters for variants of this task.</h4>
             <div v-for="(param, index) in gameConfig" :key="index">
               <div class="flex gap-2 align-content-start flex-grow-0 params-container">
@@ -170,7 +185,10 @@
       <h1 class="text-center font-bold">Update a Task</h1>
       <form @submit.prevent="handleUpdateTask()">
         <section class="flex flex-column gap-2 mb-4">
-          <label for="variant-fields" class="my-2">Select an Existing Task<span class="required">*</span></label>
+          <label for="variant-fields" class="my-2">
+            <small class="text-gray-400 font-bold">Select an Existing Task </small>
+            <span class="required">*</span></label
+          >
           <PvDropdown
             v-model="selectedTask"
             :options="formattedTasks"
@@ -194,7 +212,7 @@
                   <label :for="key" class="w-1">
                     <em>{{ key }}</em>
                   </label>
-                  <PvInputText :placeholder="typeof value" class="text-right" disabled />
+                  <PvInputText :placeholder="typeof value" class="w-2 text-center" disabled />
 
                   <PvInputText
                     v-if="typeof value === 'string'"
@@ -269,7 +287,7 @@
                 <label :for="paramName" class="w-2">
                   <em>{{ paramName }} </em>
                 </label>
-                <PvInputText id="inputEditParamType" :placeholder="typeof param" class="w-2" disabled />
+                <PvInputText id="inputEditParamType" :placeholder="typeof param" class="w-2 text-center" disabled />
                 <PvInputText
                   v-if="typeof param === 'string'"
                   v-model="updatedTaskData.gameConfig[paramName]"

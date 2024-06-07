@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import ManageTasks from '@/components/tasks/ManageTasks.vue';
+import ManageTasks from '../components/tasks/ManageTasks.vue';
 import ManageVariants from '../components/tasks/ManageVariants.vue';
 </script>
 
