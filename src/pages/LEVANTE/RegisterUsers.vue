@@ -170,16 +170,33 @@ const sanitizeAndValidateSubmittedUsers = (users) => {
     const idList = [user['childId'], user['teacherId'], user['parentId']].filter((a) => 0 || !!a);
     if (idList.length > 1) {
       addErrorUser(user, `Multiple ids present for the user: ${user.id}`);
-      throw new Error(`Mutliple ids found for user, please see the table below for more details`);
+      // throw new Error(`Mutliple ids found for user, please see the table below for more details`);
     }
     if (userIdMap[idList[0]]) {
-      addErrorUser(user, `Duplicate id present with id: ${idList[0]}`);
-      throw new Error(`Duplicate ids found for user, please see the table below for more details`);
-    } else {
-      userIdMap[idList[0]] = true;
+      addErrorUser(
+        user,
+        `Duplicate id present for the user: ${user.id}, duplicate id: ${idList[0]} shared with user: ${
+          userIdMap[idList[0]].userId
+        }`,
+      );
+      // throw new Error(`Duplicate ids found for user, please see the table below for more details`);
+    } else if (!!idList[0]) {
+      // Avoid undefined
+      userIdMap[idList[0]] = {
+        userId: user.id,
+      };
     }
     return acc;
   });
+
+  if (errorUsers.value.length) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error: There is some issues with user validation. Please check below for more details',
+      life: 5000,
+    });
+    return [];
+  }
 
   return filteredFieldsUsers;
 };
@@ -296,15 +313,8 @@ async function submitUsers() {
 
   // Group needs to be an array of strings
 
-  let usersToBeRegistered;
-  try {
-    usersToBeRegistered = sanitizeAndValidateSubmittedUsers(_cloneDeep(rawUserFile.value));
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: error.message,
-      life: 9000,
-    });
+  const usersToBeRegistered = sanitizeAndValidateSubmittedUsers(_cloneDeep(rawUserFile.value));
+  if (!usersToBeRegistered) {
     activeSubmit.value = false;
     return;
   }
@@ -332,7 +342,7 @@ async function submitUsers() {
 
   // Begin submit process
   // Org must be created before users can be created
-
+  return;
   try {
     const res = await authStore.createLevanteUsers(submitUsersList);
     toast.add({
