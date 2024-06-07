@@ -20,7 +20,7 @@
               </div>
               <PvDropdown
                 v-model="v$.selectedGame.$model"
-                :options="tasks"
+                :options="formattedTasks"
                 option-label="name"
                 placeholder="Select a Game"
                 :loading="isFetchingTasks"
@@ -206,14 +206,14 @@
 
     <PvTabPanel header="Update Variant">
       <h1 class="text-center font-bold">Update a Variant</h1>
-      <form @submit.prevent="handleUpdateVariant">
+      <form @submit.prevent="handleUpdateVariant()">
         <section class="flex flex-column gap-2 mb-4">
           <label for="variant-fields" class="my-2"
             >Select an Existing Task and Variant <span class="required">*</span></label
           >
           <PvDropdown
             v-model="selectedTask"
-            :options="tasks"
+            :options="formattedTasks"
             option-label="name"
             option-value="id"
             placeholder="Select a Game"
@@ -452,6 +452,16 @@ const { data: allVariants } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+const formattedTasks = computed(() => {
+  if (!tasks.value) return [];
+  return tasks.value.map((task) => {
+    return {
+      name: task.taskName ?? task.id,
+      ...task,
+    };
+  });
+});
+
 // Filter variants based on selected task
 const filteredVariants = computed(() => {
   if (!allVariants.value || !selectedTask.value) {
@@ -568,7 +578,61 @@ function convertParamsToObj(paramType) {
   }, {});
 }
 
+const checkForDuplicates = (newItemsArray, currentDataObject) => {
+  const keys = Object.keys(currentDataObject);
+  for (const newItem of newItemsArray) {
+    if (keys.includes(newItem.name)) {
+      return { isDuplicate: true, duplicateField: newItem.name };
+    }
+  }
+  return { isDuplicate: false, duplicateField: '' };
+};
+
+const checkForErrors = () => {
+  console.log('Checking for errors...');
+
+  if (addedFields.length > 0) {
+    const { isDuplicate, duplicateField } = checkForDuplicates(addedFields, updatedVariantData);
+    if (isDuplicate) {
+      toast.add({
+        severity: 'error',
+        summary: 'Oops!',
+        detail: `Duplicate field name detected: ${duplicateField}.`,
+        life: 3000,
+      });
+      return true;
+    }
+  }
+
+  if (newParams.length > 0) {
+    const { isDuplicate, duplicateField } = checkForDuplicates(newParams, variantParams.value);
+    if (isDuplicate) {
+      toast.add({
+        severity: 'error',
+        summary: 'Oops!',
+        detail: `Duplicate field name detected: ${duplicateField}.`,
+        life: 3000,
+      });
+      return true;
+    }
+  }
+};
+
 const handleUpdateVariant = async () => {
+  if (checkForErrors()) return;
+
+  // Additional error checking; could be combined into checkForErrors()
+  // With some additional logic
+  if (!selectedTask.value) {
+    toast.add({ severity: 'error', summary: 'Invalid Form', detail: 'Please select a task.', life: 3000 });
+    return;
+  }
+
+  if (!selectedVariant.value) {
+    toast.add({ severity: 'error', summary: 'Invalid Form', detail: 'Please select a variant.', life: 3000 });
+    return;
+  }
+
   const convertedFields = convertParamsToObj(addedFields);
   // const convertedParams = convertParamsToObj(addedParams);
   const updateData = {
@@ -595,6 +659,8 @@ const handleUpdateVariant = async () => {
 };
 
 const handleVariantSubmit = async (isFormValid) => {
+  if (checkForErrors()) return;
+
   submitted.value = true;
   const isDemoData = !!variantCheckboxData.value?.find((item) => item === 'isDemoVariant');
   const isTestData = !!variantCheckboxData.value?.find((item) => item === 'isTestVariant');

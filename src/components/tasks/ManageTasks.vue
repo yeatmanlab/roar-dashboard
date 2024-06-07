@@ -168,12 +168,12 @@
 
     <PvTabPanel header="Update Task">
       <h1 class="text-center font-bold">Update a Task</h1>
-      <form @submit.prevent="handleUpdateTask">
+      <form @submit.prevent="handleUpdateTask()">
         <section class="flex flex-column gap-2 mb-4">
           <label for="variant-fields" class="my-2">Select an Existing Task<span class="required">*</span></label>
           <PvDropdown
             v-model="selectedTask"
-            :options="tasks"
+            :options="formattedTasks"
             option-label="name"
             option-value="id"
             placeholder="Select a Task"
@@ -409,6 +409,16 @@ const { data: tasks } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+const formattedTasks = computed(() => {
+  if (!tasks.value) return [];
+  return tasks.value.map((task) => {
+    return {
+      name: task.taskName ?? task.id,
+      ...task,
+    };
+  });
+});
+
 // For modeling a task to submit to the DB
 const taskFields = reactive({
   taskName: '',
@@ -487,7 +497,53 @@ const addGameConfig = () => {
   addedGameConfig.push({ name: '', value: '', type: 'string' });
 };
 
+const checkForDuplicates = (newItemsArray, currentDataObject) => {
+  const keys = Object.keys(currentDataObject);
+  for (const newItem of newItemsArray) {
+    if (keys.includes(newItem.name)) {
+      return { isDuplicate: true, duplicateField: newItem.name };
+    }
+  }
+  return { isDuplicate: false, duplicateField: '' };
+};
+
+const checkForErrors = () => {
+  console.log('Checking for errors...');
+  if (!selectedTask.value) {
+    toast.add({ severity: 'error', summary: 'Oops!', detail: 'Please select a task to update.', life: 3000 });
+    return true;
+  }
+
+  if (newFields.length > 0) {
+    const { isDuplicate, duplicateField } = checkForDuplicates(newFields, updatedTaskData);
+    if (isDuplicate) {
+      toast.add({
+        severity: 'error',
+        summary: 'Oops!',
+        detail: `Duplicate field name detected: ${duplicateField}.`,
+        life: 3000,
+      });
+      return true;
+    }
+  }
+
+  if (addedGameConfig.length > 0) {
+    const { isDuplicate, duplicateField } = checkForDuplicates(addedGameConfig, updatedTaskData.gameConfig);
+    if (isDuplicate) {
+      toast.add({
+        severity: 'error',
+        summary: 'Oops!',
+        detail: `Duplicate field name detected: ${duplicateField}.`,
+        life: 3000,
+      });
+      return true;
+    }
+  }
+};
+
 const handleUpdateTask = async () => {
+  if (checkForErrors()) return;
+
   const convertedFields = convertParamsToObj(newFields);
   const convertedGameConfig = convertParamsToObj(addedGameConfig);
   const updateData = {
