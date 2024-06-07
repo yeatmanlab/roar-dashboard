@@ -70,12 +70,15 @@
     <section class="flex mt-8 justify-content-end">
       <PvDialog
         v-model:visible="isDialogVisible"
-        header="Invitation link:"
+        dialog-title="text-primary"
         :style="{ width: '50rem' }"
-        :position="position"
         :modal="true"
         :draggable="false"
       >
+        <template #header>
+          <h1 class="text-primary font-bold m-0">Invitation</h1>
+        </template>
+        <p class="font-bold text-lg">Link:</p>
         <PvInputGroup>
           <PvInputText
             style="width: 70%"
@@ -83,6 +86,13 @@
             autocomplete="off"
           />
           <PvButton @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)">
+            <i class="pi pi-copy"></i>
+          </PvButton>
+        </PvInputGroup>
+        <p class="font-bold text-lg">Code:</p>
+        <PvInputGroup class="mt-3">
+          <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" />
+          <PvButton @click="copyToClipboard(activationCode)">
             <i class="pi pi-copy"></i>
           </PvButton>
         </PvInputGroup>

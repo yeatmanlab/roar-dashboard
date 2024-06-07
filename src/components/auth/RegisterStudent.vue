@@ -2,7 +2,7 @@
   <div class="card">
     <form class="p-fluid">
       <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
-        <section class="form-section">
+        <section v-if="!code && !student.orgName" class="form-section">
           <div class="p-input-icon-right">
             <div class="flex justify-content-between">
               <label for="activationCode">Activation code <span class="required">*</span></label>
@@ -29,7 +29,7 @@
               />
               <PvButton
                 v-if="!student.noActivationCode"
-                @click="validateCode(student.activationCode)"
+                @click="validateCode(student.activationCode, outerIndex)"
                 class="w-4 bg-primary text-white hover:bg-red-900"
                 label="Validate Code"
               />
@@ -49,6 +49,10 @@
               <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
             </span>
           </span>
+        </section>
+        <section v-else>
+          <h2 class="text-primary font-bold">You are registering for:</h2>
+          <h2 class="text-primary">{{ student.orgName }}</h2>
         </section>
         <section class="form-section">
           <div class="p-input-icon-right">
@@ -269,7 +273,7 @@
           </PvAccordionTab>
         </PvAccordion>
         <section class="form-section-button">
-          <PvButton v-if="index !== 0" class="p-button p-component" @click="deleteStudentForm(outerIndex)">
+          <PvButton v-if="outerIndex !== 0" class="p-button p-component" @click="deleteStudentForm(outerIndex)">
             Delete Student
           </PvButton>
         </section>
@@ -284,7 +288,6 @@
         v-model:visible="isDialogVisible"
         header="Error!"
         :style="{ width: '25rem' }"
-        :position="position"
         :modal="true"
         :draggable="false"
       >
@@ -292,24 +295,11 @@
         <PvButton @click="closeErrorDialog">Close</PvButton>
       </PvDialog>
     </section>
-    <section class="flex mt-8 justify-content-end">
-      <PvDialog
-        v-model:visible="showOrg"
-        header="Your Organization is: "
-        :style="{ width: '50rem' }"
-        :position="position"
-        :modal="true"
-        :draggable="false"
-      >
-        <p>{{ orgName }}</p>
-        <PvButton class="mt-3" @click="closeDialog">Close</PvButton>
-      </PvDialog>
-    </section>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, onMounted } from 'vue';
 import { required, minLength, helpers } from '@vuelidate/validators';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
@@ -327,6 +317,7 @@ const maxDoB = ref(today);
 const showOrg = ref(false);
 const orgName = ref('');
 const errors = ref('');
+const studentGotOrg = ref('');
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
@@ -342,10 +333,6 @@ const showErrorDialog = () => {
 
 const closeErrorDialog = () => {
   isDialogVisible.value = false;
-};
-
-const closeDialog = () => {
-  showOrg.value = false;
 };
 
 const noActivationCodeRef = ref(false);
@@ -373,6 +360,7 @@ const state = reactive({
       homeLanguage: [],
       noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
+      orgName: studentGotOrg.value,
     },
   ],
 });
@@ -398,6 +386,7 @@ const rules = {
       homeLanguage: {},
       noActivationCode: {},
       yearOnlyCheck: {},
+      orgName: {},
     }),
   },
 };
@@ -422,13 +411,28 @@ function addStudent() {
     homeLanguage: [],
     noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
+    orgName: studentGotOrg.value,
   });
+  if (props.code) {
+    validateAllCodes();
+  }
 }
+
+async function validateAllCodes() {
+  for (let index = 0; index < state.students.length; index++) {
+    await validateCode(props.code, index);
+  }
+}
+
+onMounted(async () => {
+  validateCode(props.code);
+});
 
 function updateActivationCode() {
   state.students.forEach((student) => {
     if (student.noActivationCode) {
       student.activationCode = null;
+      student.orgName = 'ROAR families';
     } else {
       student.activationCode = props.code;
     }
@@ -460,7 +464,7 @@ const handleFormSubmit = async (isFormValid) => {
   }
 
   const validationPromises = state.students.map(async (student) => {
-    const isCodeValid = await validateCode(student.activationCode, false);
+    const isCodeValid = await validateCode(student.activationCode);
     if (!isCodeValid && isCodeValid) {
       if (student.noActivationCode) {
         return false;
@@ -491,7 +495,7 @@ const handleFormSubmit = async (isFormValid) => {
   }
 };
 
-const validateCode = async (studentCode, showModal = true) => {
+const validateCode = async (studentCode, outerIndex = 0) => {
   if (studentCode !== '') {
     const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true).catch(
       (error) => {
@@ -504,13 +508,13 @@ const validateCode = async (studentCode, showModal = true) => {
       },
     );
     if (activationCode.orgId && errors.value === '') {
+      state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
+        activationCode.orgName ?? activationCode.orgId
+      }`;
       orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
-      if (showModal) {
-        showOrg.value = true;
-      }
     } else {
       errors.value = '';
-      if (!student.noActivationCode) {
+      if (!state.students[outerIndex].noActivationCode && props.code) {
         dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have code"`;
         showErrorDialog();
       }
@@ -576,6 +580,7 @@ const races = [
   'asian',
   'black or african American',
   'native hawaiian or other pacific islander',
+  'hispanic or latino',
   'white',
 ];
 

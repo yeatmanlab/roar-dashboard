@@ -44,7 +44,6 @@
           v-model:visible="isDialogVisible"
           :header="dialogHeader"
           :style="{ width: '25rem' }"
-          :position="position"
           :modal="true"
           :draggable="false"
         >
