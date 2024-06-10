@@ -6,6 +6,7 @@
       :options="languageDropdownOptions"
       option-label="name"
       option-value="value"
+      placeholder="Select Language"
       :highlight-on-select="true"
     >
       <template #header>
@@ -34,7 +35,6 @@ const languageDropdownOptions = computed(() => {
   return Object.entries(sortedLanguageOptions).map(([key, value]) => {
     return {
       name: value.language,
-      locale: value.locale,
       code: value.code,
       value: key,
     };
