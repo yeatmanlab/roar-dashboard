@@ -2,7 +2,7 @@
   <div class="card">
     <form class="p-fluid">
       <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
-        <section v-if="!code && !student.orgName" class="form-section">
+        <section v-if="!student.orgName" class="form-section">
           <div class="p-input-icon-right">
             <div class="flex justify-content-between">
               <label for="activationCode">Activation code <span class="required">*</span></label>
@@ -16,9 +16,8 @@
                 <label for="noActivationCode" class="ml-2">I don't have code</label>
               </div>
             </div>
-            <PvInputGroup>
+            <PvInputGroup v-if="!student.noActivationCode">
               <PvInputText
-                v-if="!student.noActivationCode"
                 v-model="student.activationCode"
                 name="noActivationCode"
                 :class="{
@@ -28,7 +27,6 @@
                 :disabled="student.noActivationCode"
               />
               <PvButton
-                v-if="!student.noActivationCode"
                 @click="validateCode(student.activationCode, outerIndex)"
                 class="w-4 bg-primary text-white hover:bg-red-900"
                 label="Validate Code"
@@ -52,7 +50,14 @@
         </section>
         <section v-else>
           <h2 class="text-primary font-bold">You are registering for:</h2>
-          <h2 class="text-primary">{{ student.orgName }}</h2>
+          <div class="flex">
+            <h2 class="text-primary h-3 m-0 p-0" style="width: 70%">{{ student.orgName }}</h2>
+            <PvButton
+              @click="codeNotRight(outerIndex)"
+              class="w-4 bg-primary text-white ml-5 hover:bg-red-900"
+              label="This is not right?"
+            />
+          </div>
         </section>
         <section class="form-section">
           <div class="p-input-icon-right">
@@ -317,7 +322,6 @@ const maxDoB = ref(today);
 const orgName = ref('');
 const activationCodeRef = ref('');
 const errors = ref('');
-const studentGotOrg = ref('');
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
@@ -360,7 +364,7 @@ const state = reactive({
       homeLanguage: [],
       noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
-      orgName: studentGotOrg.value,
+      orgName: '',
     },
   ],
 });
@@ -411,16 +415,10 @@ function addStudent() {
     homeLanguage: [],
     noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
-    orgName: studentGotOrg.value,
+    orgName: '',
   });
   if (props.code) {
-    validateAllCodes();
-  }
-}
-
-async function validateAllCodes() {
-  for (let index = 0; index < state.students.length; index++) {
-    await validateCode(props.code, index);
+    validateCode(props.code, state.students.length - 1);
   }
 }
 
@@ -439,6 +437,11 @@ function updateActivationCode() {
   });
 }
 
+function codeNotRight(index) {
+  state.students[index].orgName = '';
+  state.students[index].noActivationCode = false;
+}
+
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
     state.students.splice(student, 1); // Remove the student at the specified index
@@ -448,7 +451,7 @@ function deleteStudentForm(student) {
   }
 }
 function isPasswordMismatch(index) {
-  return state.students[index]?.password !== state.students[index]?.confirmPassword;
+  return state.students[index].password !== state.students[index]?.confirmPassword;
 }
 
 const v$ = useVuelidate(rules, state);
