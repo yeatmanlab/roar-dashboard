@@ -24,7 +24,8 @@
     "prepare": "husky install",
     "preversion": "npm run lint",
     "preview": "vite preview",
-    "version": "npm run format && git add -A"
+    "version": "npm run format && git add -A",
+    "generate-pwa-assets": "pwa-assets-generator"
   },
   "dependencies": {
     "@bdelab/roam-fluency": "1.11.21",
@@ -82,6 +83,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.196",
+    "@vite-pwa/assets-generator": "^0.2.4",
     "@vitejs/plugin-basic-ssl": "^1.0.1",
     "@vitejs/plugin-vue": "^4.0.0",
     "cypress": "^13.10.0",
