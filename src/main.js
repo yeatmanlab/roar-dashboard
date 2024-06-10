@@ -120,7 +120,6 @@ app.use(createHead());
 app.use(TextClamp);
 app.use(VueQueryPlugin);
 app.use(i18n);
-app.use(CountryFlag);
 app.use(surveyPlugin);
 
 app.component('PvAccordion', PvAccordion);
