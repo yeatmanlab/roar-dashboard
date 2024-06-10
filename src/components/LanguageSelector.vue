@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-column align-items-center gap-1">
+  <div class="flex align-items-center gap-1">
     <PvDropdown
       v-model="$i18n.locale"
       class=""
@@ -10,9 +10,9 @@
       :highlight-on-select="true"
     >
       <template #header>
-        <small class="text-gray-400"
-          ><strong>{{ $t('authSignIn.selectLanguage') }}</strong></small
-        >
+        <small class="m-2 font-bold uppercase text-gray-400">
+          {{ $t('authSignIn.selectLanguage') }}
+        </small>
       </template>
     </PvDropdown>
   </div>
