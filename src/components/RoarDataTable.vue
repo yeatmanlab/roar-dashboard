@@ -161,7 +161,7 @@
                     v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
-                    class="border-none border-round text-primary p-2 hover:bg-primary hover:text-white"
+                    class="border-none border-round bg-white text-primary p-2 hover:surface-200"
                     :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
