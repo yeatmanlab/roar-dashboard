@@ -98,14 +98,27 @@ Cypress.Commands.add('activateAdminSidebar', () => {
   cy.wait(1000);
 });
 
-Cypress.Commands.add('selectAdministration', (testAdministration) => {
-  cy.then(() => {
-    cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
-    cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
-      .contains(testAdministration)
-      .click();
-    cy.log('Selected administration:', testAdministration);
-  });
+Cypress.Commands.add('selectAdministration', function selectAdministration(testAdministration, retries = 0) {
+  cy.log(`'Selecting administration: ${testAdministration}, attempt: ${retries + 1}`);
+  if (retries > 3) {
+    cy.log('Retries exceeded, administration not found, exiting test...');
+    return;
+  }
+
+  cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
+  cy.get('body', { timeout: 2 * Cypress.env('timeout') })
+    .invoke('text')
+    .then((text) => {
+      if (text.includes(testAdministration)) {
+        cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
+          .contains(testAdministration)
+          .click();
+        cy.log('Selected administration:', testAdministration);
+      } else {
+        cy.log('Administration not found, retrying...');
+        selectAdministration(testAdministration, retries + 1);
+      }
+    });
 });
 
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
