@@ -115,7 +115,13 @@
               name="accept"
               binary
               :disabled="showConsent"
-              :class="{ 'p-invalid': v$.accept.$invalid && submitted }"
+              :class="[
+                {
+                  'p-2 border-2 border-round border-300': !v$.accept.$model, // Always apply these classes
+                  'p-1 border-round border-none text-white bg-primary': v$.accept.$model, // Apply when selected
+                },
+                { 'p-invalid': v$.accept.$invalid && submitted },
+              ]"
               @change="getConsent"
             />
             <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"

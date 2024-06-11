@@ -139,7 +139,16 @@
               >
             </div>
             <div class="mt-2 mb-2">
-              <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
+              <PvCheckbox
+                v-model="isTestData"
+                :binary="true"
+                :class="{
+                  'p-2 border-2 border-round border-300': !isTestData, // Always apply these classes
+                  'p-1 border-round border-none text-white bg-primary': isTestData, // Apply when selected
+                }"
+                data-cy="checkbutton-test-data"
+                input-id="isTestData"
+              />
               <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
             </div>
           </div>

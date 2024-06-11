@@ -111,7 +111,15 @@
             <div class="flex justify-content-between">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
-                <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
+                <PvCheckbox
+                  v-model="student.yearOnlyCheckRef"
+                  :binary="true"
+                  name="yearOnly"
+                  :class="{
+                    'p-2 border-2 border-round border-300': !student.yearOnlyCheckRef, // Always apply these classes
+                    'p-1 border-round border-none text-white bg-primary': student.yearOnlyCheckRef, // Apply when selected
+                  }"
+                />
                 <label for="yearOnly" class="ml-2">Use Year Only</label>
               </div>
             </div>

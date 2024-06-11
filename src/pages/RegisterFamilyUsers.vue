@@ -24,7 +24,16 @@
             class="flex flex-row justify-content-center align-content-center z-2 absolute ml-5"
             style="margin-top: -5rem; margin-bottom: 4rem"
           >
-            <PvCheckbox :model-value="isTestData" :binary="true" name="isTestDatalabel" @change="updateState" />
+            <PvCheckbox
+              :model-value="isTestData"
+              :binary="true"
+              name="isTestDatalabel"
+              @change="updateState"
+              :class="{
+                'p-2 border-2 border-round border-300': !isTestData, // Always apply these classes
+                'p-1 border-round border-none text-white bg-primary': isTestData, // Apply when selected
+              }"
+            />
             <label for="isTestDatalabel" class="ml-2">This is test data</label>
           </div>
           <div v-if="activeIndex === 1">

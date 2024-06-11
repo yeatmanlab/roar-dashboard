@@ -161,7 +161,7 @@
                 :options="allTags"
                 :suggestions="tagSuggestions"
                 name="tags"
-                class="w-full"
+                class="w-full card"
                 data-cy="input-autocomplete"
                 @complete="searchTags"
               />
@@ -171,11 +171,27 @@
         </div>
         <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
           <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isDemoData" input-id="chbx-demodata" :binary="true" />
+            <PvCheckbox
+              v-model="isDemoData"
+              :class="{
+                'p-2 border-2 border-round border-300': !isDemoData, // Always apply these classes
+                'p-1 border-round border-none text-white bg-primary': isDemoData, // Apply when selected
+              }"
+              input-id="chbx-demodata"
+              :binary="true"
+            />
             <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
           </div>
           <div class="flex flex-row align-items-center">
-            <PvCheckbox v-model="isTestData" input-id="chbx-testdata" :binary="true" />
+            <PvCheckbox
+              v-model="isTestData"
+              :class="{
+                'p-2 border-2 border-round border-300': !isTestData, // Always apply these classes
+                'p-1 border-round border-none text-white bg-primary': isTestData, // Apply when selected
+              }"
+              input-id="chbx-testdata"
+              :binary="true"
+            />
             <label class="ml-1 mr-3" for="chbx-testdata">Mark as <b>Test Organization</b></label>
           </div>
         </div>
@@ -464,6 +480,32 @@ const resetForm = () => {
 .return-button {
   display: block;
   margin: 1rem 1.75rem;
+}
+
+.p-autocomplete-panel {
+  background: var(--surface-a);
+  color: var(--text-color);
+  border: 0 none;
+  border-radius: var(--border-radius);
+  box-shadow:
+    0 0 #0000,
+    0 0 #0000,
+    0 10px 15px -3px #0000001a,
+    0 4px 6px -2px #0000000d;
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+  margin: 0;
+  padding: var(--inline-spacing-larger) 1rem;
+  border: 0 none;
+  color: var(--text-color);
+  background: transparent;
+  transition: none;
+  border-radius: 0;
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
+  background-color: gainsboro;
 }
 
 button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {

@@ -22,11 +22,11 @@
         </div>
       </div>
       <!--Upload file section-->
-      <div v-if="!isFileUploaded" class="text-gray-500 mb-7">
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-7 surface-100 border-round-top-md">
         <PvDivider />
         <PvFileUpload
           name="massUploader[]"
-          class="bg-primary text-white border-none border-round w-1 h-2rem m-0 pl-2 hover:bg-red-900"
+          class="bg-primary mb-2 ml-2 p-3 w-1 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           custom-upload
           accept=".csv"
           auto
@@ -94,7 +94,15 @@
         </PvDataTable>
         <div class="submit-container">
           <div class="m-2">
-            <PvCheckbox v-model="isAllTestData" :binary="true" input-id="isTestData" />
+            <PvCheckbox
+              v-model="isAllTestData"
+              :binary="true"
+              input-id="isTestData"
+              :class="{
+                'p-2 border-2 border-round border-300': !isAllTestData, // Always apply these classes
+                'p-1 border-round border-none text-white bg-primary': isAllTestData, // Apply when selected
+              }"
+            />
             <label for="isTestData" class="ml-2">All users are test accounts</label>
           </div>
           <PvButton
@@ -509,6 +517,12 @@ function downloadErrorTable() {
 <style scoped>
 .extra-height {
   min-height: 33vh;
+}
+
+.p-fileupload-buttonbar {
+  padding: 1.5rem !important;
+  background-color: gainsboro !important;
+  border-radius: 20px !important;
 }
 
 .info-box {
