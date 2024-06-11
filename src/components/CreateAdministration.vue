@@ -59,6 +59,7 @@
                 :number-of-months="1"
                 :manual-input="false"
                 show-icon
+                icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-start-date"
               />
@@ -78,6 +79,7 @@
                 :number-of-months="1"
                 :manual-input="false"
                 show-icon
+                icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-end-date"
               />
@@ -143,7 +145,13 @@
           </div>
           <div class="divider mx-2 my-3" />
           <div class="mb-2 w-full flex justify-content-center">
-            <PvButton :label="submitLabel" data-cy="button-create-administration" style="margin: 0" @click="submit" />
+            <PvButton
+              :label="submitLabel"
+              class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
+              data-cy="button-create-administration"
+              style="margin: 0"
+              @click="submit"
+            />
           </div>
         </div>
       </div>
@@ -644,6 +652,17 @@ function findVariantWithParams(variants, params) {
   margin-top: 2rem;
 }
 
+button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
+  border: none;
+  background-color: var(--primary-color);
+  margin-left: -0.5rem;
+  width: 3rem;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 20%;
+  border-bottom-right-radius: 20%;
+}
+
 .divider {
   min-height: 100%;
   max-width: 0;
@@ -720,15 +739,6 @@ function findVariantWithParams(variants, params) {
     font-family: 'Source Sans Pro', sans-serif;
     color: #c4c4c4;
   }
-
-  // .p-button {
-  //   width: 11.5625rem;
-  //   height: 2.25rem;
-  //   border-radius: 3.9375rem;
-  //   margin: 1.5rem 0rem;
-  //   margin-right: 1.375rem;
-  //   float: right;
-  // }
 
   .hide {
     display: none;

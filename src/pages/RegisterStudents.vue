@@ -26,6 +26,7 @@
         <PvDivider />
         <PvFileUpload
           name="massUploader[]"
+          class="bg-primary text-white border-none border-round w-1 h-2rem m-0 pl-2 hover:bg-red-900"
           custom-upload
           accept=".csv"
           auto
@@ -98,6 +99,7 @@
           </div>
           <PvButton
             label="Start Registration"
+            class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             style="margin-bottom: 4rem"

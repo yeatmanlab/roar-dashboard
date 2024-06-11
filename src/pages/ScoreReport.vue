@@ -28,6 +28,7 @@
                   <div class="uppercase text-sm text-gray-600">VIEW</div>
                   <PvSelectButton
                     v-model="reportView"
+                    v-tooltip.top="'View different report'"
                     :options="reportViews"
                     option-disabled="constant"
                     :allow-empty="false"
@@ -39,8 +40,8 @@
                 </div>
                 <div v-if="!isLoadingScores">
                   <PvButton
-                    class="flex flex-row p-2 text-sm"
-                    :icon="!exportLoading ? 'pi pi-download' : 'pi pi-spin pi-spinner'"
+                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                    :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
                     data-html2canvas-ignore="true"
@@ -995,7 +996,7 @@ const scoreReportColumns = computed(() => {
     link: true,
     routeName: 'StudentReport',
     routeTooltip: 'Student Score Report',
-    routeIcon: 'pi pi-chart-bar',
+    routeIcon: 'pi pi-chart-bar border-none text-primary hover:text-white',
     sort: false,
     pinned: true,
     orgType: props.orgType,
@@ -1286,5 +1287,19 @@ onMounted(async () => {
 
 .confirm .p-dialog-header-close {
   display: none !important;
+}
+
+.select-button .p-button:last-of-type:not(:only-of-type) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 25rem;
+  border-bottom-right-radius: 25rem;
+}
+
+.select-button .p-button:first-of-type:not(:only-of-type) {
+  border-top-left-radius: 25rem;
+  border-bottom-left-radius: 25rem;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 </style>

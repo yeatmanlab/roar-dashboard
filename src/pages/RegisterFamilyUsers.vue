@@ -29,7 +29,7 @@
           </div>
           <div v-if="activeIndex === 1">
             <PvButton
-              class="justify-start z-1 hover:surface-300 hover:text-900 border-none"
+              class="justify-start z-1 bg-primary text-white text-center justify-content-center border-none border-round p-2 h-3rem hover:surface-300 hover:text-900 border-none"
               style="margin-top: -3.2rem; width: 11rem; margin-left: 2rem"
               @click="activeIndex = 0"
               ><i class="pi pi-arrow-left mr-2"></i> Back

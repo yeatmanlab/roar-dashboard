@@ -25,7 +25,11 @@
                         @complete="autocomplete"
                         @keyup.enter="onSearch"
                       />
-                      <PvButton icon="pi pi-search" class="text-xs" @click="onSearch" />
+                      <PvButton
+                        icon="pi pi-search"
+                        class="text-xs bg-primary border-none text-white pl-3 pr-3"
+                        @click="onSearch"
+                      />
                     </PvInputGroup>
                   </div>
                 </div>

@@ -34,7 +34,13 @@
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
       <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
-        <PvButton text :label="rowViewMode" class="my-1" @click="toggleView" />
+        <PvButton
+          text
+          :label="rowViewMode"
+          v-tooltip.bottom="'Expand or Compress table rows'"
+          class="my-1 m-1 h-3rem text-primary surface-ground border-none border-round h-2rem text-sm hover:bg-gray-300"
+          @click="toggleView"
+        />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="
@@ -45,14 +51,14 @@
           label="Export Selected"
           :badge="selectedRows?.length?.toString()"
           :disabled="selectedRows.length === 0"
-          class="m-1"
+          class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           @click="exportCSV(true, $event)"
         />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
-          class="m-1"
+          class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           @click="exportCSV(false, $event)"
         />
       </span>
@@ -150,6 +156,7 @@
                     v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
+                    class="border-none border-round text-primary p-2 hover:bg-primary hover:text-white"
                     :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"

@@ -27,18 +27,18 @@
       <div class="flex gap-2">
         <PvButton
           outlined
-          class="text-white"
+          class="text-white bg-primary border-white border-1 border-round h-3rem p-3 hover:bg-red-900"
           :label="!expanded ? 'Expand All Sections' : 'Collapse All Sections'"
-          :icon="!expanded ? 'pi pi-plus' : 'pi pi-minus'"
+          :icon="!expanded ? 'pi pi-plus ml-2' : 'pi pi-minus ml-2'"
           icon-pos="right"
           data-html2canvas-ignore="true"
           @click="setExpand"
         />
         <PvButton
           outlined
-          class="text-white"
+          class="text-white bg-primary border-white border-1 border-round h-3rem p-3 hover:bg-red-900"
           label="Export to PDF"
-          :icon="exportLoading ? 'pi pi-spin pi-spinner' : 'pi pi-download'"
+          :icon="exportLoading ? 'pi pi-spin pi-spinner ml-2' : 'pi pi-download ml-2'"
           :disabled="exportLoading"
           icon-pos="right"
           data-html2canvas-ignore="true"

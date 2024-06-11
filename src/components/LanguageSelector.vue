@@ -14,7 +14,7 @@
       </template>
       <template #value="locale">
         <div v-if="locale.value" class="flex flex-row justify-content-center align-items-center">
-          <country-flag :country="getCountryFlag(locale.value)" class="" size="small" />
+          <country-flag :country="getCountryFlag(locale.value)" class="flex" size="small" />
         </div>
         <span v-else>
           {{ locale.placeholder }}
