@@ -49,7 +49,8 @@ onMounted(() => {
       : `${_lowerCase(props.consentType).toUpperCase()} FORM`,
     icon: 'pi pi-question-circle',
     acceptLabel: i18n.t('consentModal.acceptButton'),
-    acceptIcon: 'pi pi-check',
+    acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
+    acceptIcon: 'pi pi-check mr-2',
     accept: async () => {
       toast.add({
         severity: 'info',
