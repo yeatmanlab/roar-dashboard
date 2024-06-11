@@ -6,6 +6,7 @@ import Vue from '@vitejs/plugin-vue';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
+import mkcert from 'vite-plugin-mkcert';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -22,6 +23,12 @@ export default defineConfig({
         display: 'standalone',
         theme_color: '#ffffff',
         background_color: '#ffffff',
+        // inject service worker automatically
+        strategies: 'injectManifest',
+        injectRegister: 'manual',
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
+        },
         icons: [
           {
             src: 'pwa-64x64.png',
@@ -51,6 +58,7 @@ export default defineConfig({
       /* enable sw on development */
       devOptions: {
         enabled: true,
+        type: 'module',
         /* other options */
       },
       // Enable auto-generated icons
@@ -61,8 +69,10 @@ export default defineConfig({
       },
       registerType: 'autoUpdate',
     }),
-    vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
-    ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
+    mkcert(),
+    // basicSsl(),
+    // vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
+    // ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
     nodePolyfills({
       globals: {
         process: true,
@@ -80,6 +90,7 @@ export default defineConfig({
     },
   },
   server: {
+    https: true,
     fs: {
       allow: ['..'],
     },

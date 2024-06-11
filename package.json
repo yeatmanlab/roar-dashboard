@@ -71,6 +71,7 @@
     "vega-embed": "^6.23.0",
     "vega-lite": "^5.16.3",
     "video.js": "^8.10.0",
+    "vite-plugin-mkcert": "^1.17.5",
     "vite-plugin-node-polyfills": "^0.9.0",
     "vue": "^3.2.25",
     "vue-country-flag-next": "^2.3.2",
@@ -85,7 +86,7 @@
   "devDependencies": {
     "@types/lodash": "^4.14.196",
     "@vite-pwa/assets-generator": "^0.2.4",
-    "@vitejs/plugin-basic-ssl": "^1.0.1",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vitejs/plugin-vue": "^4.0.0",
     "cypress": "^13.10.0",
     "eslint": "^8.53.0",
@@ -98,6 +99,7 @@
     "sass": "^1.50.1",
     "vite": "^4.1.4",
     "vite-plugin-favicons-inject": "^2.2.0",
-    "vite-plugin-pwa": "^0.20.0"
+    "vite-plugin-pwa": "^0.20.0",
+    "workbox-precaching": "^7.1.0"
   }
 }
