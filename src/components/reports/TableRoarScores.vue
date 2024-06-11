@@ -43,8 +43,6 @@
   >
     <template #empty> No students found. </template>
     <template #loading> Loading ROAR scores. Please wait. </template>
-    <PvColumn selection-mode="multiple" header-style="width: 3rem"></PvColumn>
-
     <PvColumn field="studentId" header="Student ID" sortable style="min-width: 8rem">
       <template #body="{ colData }">
         {{ colData.studentId }}

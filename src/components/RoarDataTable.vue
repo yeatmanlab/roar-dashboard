@@ -98,7 +98,12 @@
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
         >
-          <PvColumn selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
+          <PvColumn
+            selectionMode="multiple"
+            header-style="background-color: var(--primary-color); border:none;"
+            :reorderable-column="false"
+            frozen
+          />
           <PvColumn
             v-for="(col, index) of computedColumns"
             :key="col.field + '_' + index"
@@ -564,6 +569,23 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   margin-left: 5px;
   margin-top: 3px;
   margin-bottom: 3px;
+}
+
+.p-checkbox .p-checkbox-box {
+  border: 2px solid var(--surface-300);
+  background: var(--surface-a);
+  width: 16px;
+  height: 16px;
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  transition: none;
+}
+
+.p-checkbox-box.p-component.p-highlight {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.25rem;
 }
 
 .circle {
