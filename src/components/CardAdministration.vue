@@ -103,7 +103,7 @@
               >
                 <PvButton
                   v-tooltip.top="'See completion details'"
-                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round"
+                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
                   style="height: 2.5rem"
                   severity="secondary"
                   text
@@ -123,7 +123,7 @@
               >
                 <PvButton
                   v-tooltip.top="'See Scores'"
-                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round"
+                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
                   style="height: 2.5rem"
                   severity="secondary"
                   text
