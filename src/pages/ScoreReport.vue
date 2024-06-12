@@ -1069,17 +1069,10 @@ const scoreReportColumns = computed(() => {
   const priorityTasks = ['swr', 'sre', 'pa'];
   const orderedTasks = [];
 
-  for (const task of priorityTasks) {
-    if (sortedTasks.includes(task)) {
-      orderedTasks.push(task);
-    }
-  }
+const filteredPriorityTasks = priorityTasks.filter( task => sortedTask.includes(task))
+const filteredSortedTasks = sortedTasks.filter( task => !priorityTasks.includes(task))
 
-  for (const task of sortedTasks) {
-    if (!priorityTasks.includes(task)) {
-      orderedTasks.push(task);
-    }
-  }
+const orderedTasks = filteredPriorityTasks.concat(filteredSortedTasks)
 
   for (const taskId of orderedTasks) {
     let colField;
