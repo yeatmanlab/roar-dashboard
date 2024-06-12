@@ -1065,7 +1065,23 @@ const scoreReportColumns = computed(() => {
       return -1;
     }
   });
-  for (const taskId of sortedTasks) {
+
+  const priorityTasks = ['swr', 'sre', 'pa'];
+  const orderedTasks = [];
+
+  for (const task of priorityTasks) {
+    if (sortedTasks.includes(task)) {
+      orderedTasks.push(task);
+    }
+  }
+
+  for (const task of sortedTasks) {
+    if (!priorityTasks.includes(task)) {
+      orderedTasks.push(task);
+    }
+  }
+
+  for (const taskId of orderedTasks) {
     let colField;
     const isOptional = `scores.${taskId}.optional`;
     // Color needs to include a field to allow sorting.
@@ -1079,6 +1095,15 @@ const scoreReportColumns = computed(() => {
     } else if (rawOnlyTasks.includes(taskId)) {
       colField = `scores.${taskId}.rawScore`;
     }
+
+    let backgroundColor = '';
+
+    if (taskId === 'pa' || taskId === 'sre' || taskId === 'swr') {
+      backgroundColor = 'transparent';
+    } else {
+      backgroundColor = '#E6E6E6';
+    }
+
     tableColumns.push({
       field: colField,
       header: taskDisplayNames[taskId]?.name ?? taskId,
@@ -1094,6 +1119,7 @@ const scoreReportColumns = computed(() => {
         !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
         (viewMode.value === 'color' || isOptional),
       tagColor: `scores.${taskId}.tagColor`,
+      style: `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; `,
     });
   }
   return tableColumns;
@@ -1106,15 +1132,19 @@ const allTasks = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  const res = Object.keys(computeAssignmentAndRunData.value.runsByTaskId).toSorted((p1, p2) => {
-    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
-      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-    } else {
-      return -1;
-    }
+  const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
+  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId).includes(id));
+  const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+
+  remainingTaskIds.sort((p1, p2) => {
+    return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
   });
-  return res;
+
+  const sortedIds = specialTaskIds.concat(remainingTaskIds);
+  return sortedIds;
 });
+
+console.log('sorted tasks ids', sortedTaskIds);
 
 const sortedAndFilteredTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
