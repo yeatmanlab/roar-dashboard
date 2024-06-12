@@ -377,17 +377,9 @@ const studentInfo = computed(() => {
 });
 
 watch(
-  selectedAdmin,
-  () => {
-    checkConsent();
-  },
-  { immediate: true },
-);
-
-watch(
-  adminInfo,
-  () => {
-    if (selectedAdmin.value) {
+  [selectedAdmin, adminInfo],
+  ([updateSelectedAdmin]) => {
+    if (updateSelectedAdmin) {
       checkConsent();
     }
     const selectedAdminId = selectedAdmin.value?.id;
