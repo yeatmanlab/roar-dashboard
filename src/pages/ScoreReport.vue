@@ -1069,10 +1069,17 @@ const scoreReportColumns = computed(() => {
   const priorityTasks = ['swr', 'sre', 'pa'];
   const orderedTasks = [];
 
-const filteredPriorityTasks = priorityTasks.filter( task => sortedTask.includes(task))
-const filteredSortedTasks = sortedTasks.filter( task => !priorityTasks.includes(task))
+  for (const task of priorityTasks) {
+    if (sortedTasks.includes(task)) {
+      orderedTasks.push(task);
+    }
+  }
 
-const orderedTasks = filteredPriorityTasks.concat(filteredSortedTasks)
+  for (const task of sortedTasks) {
+    if (!priorityTasks.includes(task)) {
+      orderedTasks.push(task);
+    }
+  }
 
   for (const taskId of orderedTasks) {
     let colField;
@@ -1091,7 +1098,7 @@ const orderedTasks = filteredPriorityTasks.concat(filteredSortedTasks)
 
     let backgroundColor = '';
 
-    if (priorityTasks.includes(taskId) {
+    if (priorityTasks.includes(taskId)) {
       backgroundColor = 'transparent';
     } else {
       backgroundColor = '#E6E6E6';
@@ -1126,7 +1133,7 @@ const allTasks = computed(() => {
 
 const sortedTaskIds = computed(() => {
   const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = priorityTasks.filter((id) => Object.keys(runsByTaskId).includes(id));
+  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId).includes(id));
   const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
 
   remainingTaskIds.sort((p1, p2) => {
@@ -1136,7 +1143,6 @@ const sortedTaskIds = computed(() => {
   const sortedIds = specialTaskIds.concat(remainingTaskIds);
   return sortedIds;
 });
-
 
 const sortedAndFilteredTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
