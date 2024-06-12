@@ -328,9 +328,9 @@ const ShowCode = (selectedOrg) => {
   const collections = [allDistricts.value, allSchools.value, allClasses.value, allGroups.value];
 
   for (const collection of collections) {
-    const match = collection?.find((item) => item.id === selectedOrg && item.currentActivateCode);
+    const match = collection?.find((item) => item.id === selectedOrg && item.currentActivationCode);
     if (match) {
-      activationCode.value = match.currentActivateCode;
+      activationCode.value = match.currentActivationCode;
       isDialogVisible.value = true;
       break;
     }
