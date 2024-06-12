@@ -1137,7 +1137,6 @@ const sortedTaskIds = computed(() => {
   return sortedIds;
 });
 
-console.log('sorted tasks ids', sortedTaskIds);
 
 const sortedAndFilteredTaskIds = computed(() => {
   return sortedTaskIds.value?.filter((taskId) => {
