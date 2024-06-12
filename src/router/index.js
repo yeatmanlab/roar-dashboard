@@ -189,7 +189,7 @@ const routes = [
   {
     path: '/game/mep',
     name: 'MEP',
-    component: () => import('../components/tasks/taskMEP.vue'),
+    component: () => import('../components/tasks/TaskMEP.vue'),
     props: { taskId: 'roav-mep', language: 'en' },
     meta: { pageTitle: 'MEP' },
   },

@@ -130,7 +130,7 @@ async function startTask() {
 }
 </script>
 <style>
-@import '@bdelab/roav-crowding/lib/resources/roav-mep.css';
+@import '@bdelab/roav-mep/lib/resources/roav-mep.css';
 
 .game-target {
   position: absolute;
