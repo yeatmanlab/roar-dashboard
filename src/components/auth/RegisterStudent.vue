@@ -55,7 +55,7 @@
             <PvButton
               @click="codeNotRight(outerIndex)"
               class="w-4 bg-primary text-white ml-5 hover:bg-red-900"
-              label="This is not right?"
+              label="Is this not right?"
             />
           </div>
         </section>
