@@ -377,14 +377,6 @@ const studentInfo = computed(() => {
 });
 
 watch(
-  consentParams,
-  (newValue) => {
-    consentParams.value = newValue;
-  },
-  { immediate: true },
-);
-
-watch(
   selectedAdmin,
   () => {
     checkConsent();
