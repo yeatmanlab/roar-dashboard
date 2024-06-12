@@ -1098,7 +1098,7 @@ const scoreReportColumns = computed(() => {
 
     let backgroundColor = '';
 
-    if (taskId === 'pa' || taskId === 'sre' || taskId === 'swr') {
+    if (priorityTasks.includes(taskId) {
       backgroundColor = 'transparent';
     } else {
       backgroundColor = '#E6E6E6';
