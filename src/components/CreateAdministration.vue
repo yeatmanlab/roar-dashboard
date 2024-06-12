@@ -108,6 +108,7 @@
         </PvConfirmDialog>
         <TaskPicker
           :all-variants="variantsByTaskId"
+          :task-packages="taskPackages"
           :input-variants="preSelectedVariants"
           @variants-changed="handleVariantsChanged"
         />
@@ -184,6 +185,7 @@ const isLevante = import.meta.env.MODE === 'LEVANTE';
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
 });
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const header = computed(() => {
   if (props.adminId) {
@@ -221,6 +223,20 @@ const { data: allVariants } = useQuery({
   queryFn: () => variantsFetcher(true),
   keepPreviousData: true,
   enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+async function getTaskPackages() {
+  const res = await authStore.getTaskPackages();
+  console.log('res in getTaskPackages:', res);
+  return res;
+}
+
+const { data: taskPackages } = useQuery({
+  queryKey: ['taskPackages'],
+  queryFn: getTaskPackages,
+  keepPreviousData: true,
+  enabled: initialized.value && isLevante,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
