@@ -290,13 +290,24 @@
             </template>
             <template #filterclear="{ filterCallback }">
               <div class="flex flex-row-reverse">
-                <PvButton type="button" text icon="pi pi-times" class="p-2" severity="primary" @click="filterCallback()"
+                <PvButton
+                  type="button"
+                  text
+                  icon="pi pi-times"
+                  class="p-2 bg-primary text-white border-round border-none hover:bg-red-900"
+                  severity="primary"
+                  @click="filterCallback()"
                   >Clear</PvButton
                 >
               </div>
             </template>
             <template #filterapply="{ filterCallback }">
-              <PvButton type="button" icon="pi pi-times" class="px-2" severity="primary" @click="filterCallback()"
+              <PvButton
+                type="button"
+                icon="pi pi-times"
+                class="px-2 p-2 bg-primary text-white border-round border-none hover:bg-red-900"
+                severity="primary"
+                @click="filterCallback()"
                 >Apply
               </PvButton>
             </template>
