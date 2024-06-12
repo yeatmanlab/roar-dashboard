@@ -1133,7 +1133,7 @@ const allTasks = computed(() => {
 
 const sortedTaskIds = computed(() => {
   const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
-  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId).includes(id));
+  const specialTaskIds = priorityTasks.filter((id) => Object.keys(runsByTaskId).includes(id));
   const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
 
   remainingTaskIds.sort((p1, p2) => {
