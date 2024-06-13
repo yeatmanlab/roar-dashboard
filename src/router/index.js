@@ -187,6 +187,12 @@ const routes = [
     meta: { pageTitle: 'Crowding' },
   },
   {
+    path: '/offline',
+    name: 'Offline',
+    component: () => import('../pages/HomeOffline.vue'),
+    meta: { pageTitle: 'HomeOffline' },
+  },
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),

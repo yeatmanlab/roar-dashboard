@@ -1,3 +1,107 @@
 import { precacheAndRoute } from 'workbox-precaching';
 
+// // Listen for fetch events
+// self.addEventListener('fetch', (event) => {
+//   // Respond with Vue offline page when the user is offline
+//   event.respondWith(
+//     fetch(event.request).catch(() => {
+//       return caches.match(offlinePage);
+//     }),
+//   );
+// });
+
+// const cacheResources = [
+//   // Add other resources your PWA needs to function offline
+//   offlinePage,
+//   // Add other necessary assets here
+// ];
+
+// // Cache resources during service worker installation
+// self.addEventListener('install', (event) => {
+//   event.waitUntil(
+//     caches.open('offline-cache').then((cache) => {
+//       return cache.addAll(cacheResources);
+//     }),
+//   );
+// });
+
+console.log('sw loaded');
 precacheAndRoute(self.__WB_MANIFEST);
+
+// // List of URLs to precache
+// const urlsToCache = [
+//     "https://storage.googleapis.com/roar-swr/en/shared/arrow_left_p2.webp",
+//     "https://storage.googleapis.com/roar-swr/en/shared/arrow_p3.webp",
+//     "https://storage.googleapis.com/roar-swr/en/shared/arrow_right_p2.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/break.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/adventurer1.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/adventurer2.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/adventurer3.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/animated_left_key.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/animated_right_key.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/arrow_p2.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/arrowkey_lex.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/arrowkey_lex_left.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/arrowkey_lex_right.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/coin_bag.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/coin_bag_old.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/coin_icon.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/ending.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/ending_background.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/ending_coinbag.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/ending_gate.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/ending_gate_coinbag.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/gate_close.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/gate_open.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/gold_coin.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/guardian1.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/guardian2.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/guardian3.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/half_valley.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/reward_anim.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/static_center_key.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/static_left_key.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/static_right_key.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/swr_laptop.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/valley.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/valley2.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/valley3.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/valley4.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/valley5.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/wizard_coin.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/wizard_idle.webp",
+//     "https://storage.googleapis.com/roar-swr/shared/wizard_magic.webp",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/coin_intro.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/end_block_1.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/end_block_1_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/end_block_2.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/end_block_2_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/end_game.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/end_game_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/end_block_general_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_1_correct.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_1_correct_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_1_wrong.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_1_wrong_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_2_correct.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_2_correct_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_2_wrong.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_2_wrong_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_3_correct.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_3_correct_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_3_wrong.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_3_wrong_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_4_correct.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_4_correct_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_4_wrong.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_4_wrong_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_5_correct.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_5_correct_ns.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_5_wrong.mp3",
+//     "https://storage.googleapis.com/roar-swr/en/desktop/feedback_5_wrong_ns.mp3"
+// ];
+
+// // Call precacheAndRoute with the list of URLs
+// precacheAndRoute(urlsToCache);
+
+// Additional service worker code goes here...
