@@ -60,7 +60,7 @@ export default defineConfig({
         /* other options */
       },
     }),
-    mkcert(),
+    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     nodePolyfills({
       globals: {
         process: true,
