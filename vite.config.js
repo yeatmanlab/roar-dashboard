@@ -5,6 +5,7 @@ import Vue from '@vitejs/plugin-vue';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
 import mkcert from 'vite-plugin-mkcert';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -60,7 +61,7 @@ export default defineConfig({
         /* other options */
       },
     }),
-    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
+    ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
     nodePolyfills({
       globals: {
         process: true,
