@@ -205,7 +205,6 @@ async function routeExternalTask(game) {
     url = game.taskData.variantURL;
   } else if (!allGamesComplete.value && game.taskData?.taskURL) {
     url = game.taskData.taskURL;
-    url = game.taskData.variantURL;
   } else {
     return;
   }
