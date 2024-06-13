@@ -23,7 +23,7 @@ export default defineConfig({
         background_color: '#ffffff',
         // inject service worker automatically
         strategies: 'injectManifest',
-        injectRegister: 'manual',
+        injectRegister: 'script',
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
         },
