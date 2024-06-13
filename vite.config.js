@@ -59,7 +59,6 @@ export default defineConfig({
         type: 'module',
         /* other options */
       },
-      registerType: 'autoUpdate',
     }),
     mkcert(),
     nodePolyfills({
