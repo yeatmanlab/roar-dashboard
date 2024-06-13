@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 import Vue from '@vitejs/plugin-vue';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
-import basicSsl from '@vitejs/plugin-basic-ssl';
+import mkcert from 'vite-plugin-mkcert';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -23,7 +23,7 @@ export default defineConfig({
         background_color: '#ffffff',
         // inject service worker automatically
         strategies: 'injectManifest',
-        injectRegister: 'script',
+        injectRegister: 'manual',
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
         },
@@ -60,7 +60,7 @@ export default defineConfig({
         /* other options */
       },
     }),
-    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
+    mkcert(),
     nodePolyfills({
       globals: {
         process: true,
