@@ -1,5 +1,5 @@
 <template>
-  <PvDialog :visible="isOpen" modal :close="console.log('onClose')">
+  <PvDialog :visible="isOpen" modal @hide="closeModal">
     <template #header>
       <div class="modal-header gap-2">
         <i class="pi pi-pencil text-gray-400 modal-icon"></i>
