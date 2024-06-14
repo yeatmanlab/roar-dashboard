@@ -66,10 +66,10 @@ export default defineConfig({
         process: true,
       },
     }),
-    sentryVitePlugin({
-      org: 'roar-89588e380',
-      project: 'dashboard',
-    }),
+    // sentryVitePlugin({
+    //   org: 'roar-89588e380',
+    //   project: 'dashboard',
+    // }),
   ],
   resolve: {
     alias: {
@@ -78,6 +78,7 @@ export default defineConfig({
     },
   },
   server: {
+    https: true,
     fs: {
       allow: ['..'],
     },
