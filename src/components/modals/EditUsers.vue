@@ -1,122 +1,124 @@
 <template>
-  <PvConfirmDialog group="headless" :close="console.log('onClose')">
-    <template #container="{ message, acceptCallback, rejectCallback }">
-      <div class="flex flex-column align-items-center surface-overlay border-round" style="width: 66vw; gap: 2rem">
-        <!-- <p class="mb-0">{{ userData }}</p> -->
-        <!-- Fields for userData form -->
-        <div class="modal-header gap-2">
-          <i class="pi pi-pencil text-gray-400 modal-icon"></i>
-          <div class="flex flex-column">
-            <h1 class="modal-title admin-page-header">
-              Edit User Information - {{ localUserData.name.first }} {{ localUserData.name.last }}
-            </h1>
-            <span class="text-md text-gray-500">Modify, add, or remove user information</span>
-          </div>
-        </div>
-        <div v-if="localUserType === 'student'" class="form-container">
-          <div class="form-column">
-            <div class="form-field">
-              <label>First Name</label>
-              <PvInputText v-model="localUserData.name.first" />
-            </div>
-            <div class="form-field">
-              <label>Middle Name</label>
-              <PvInputText v-model="localUserData.name.middle" />
-            </div>
-            <div class="form-field">
-              <label>Last Name</label>
-              <PvInputText v-model="localUserData.name.last" />
-            </div>
-
-            <div class="form-field">
-              <label>Date of Birth <span v-if="localUserType === 'student'" class="required">*</span></label>
-              <PvCalendar v-model="localUserData.studentData.dob" />
-            </div>
-
-            <div class="form-field">
-              <label>Grade <span v-if="localUserType === 'student'" class="required">*</span></label>
-              <PvInputText v-model="localUserData.studentData.grade" />
-            </div>
-            <div>
-              <div>
-                <PvCheckbox binary v-model="localUserData.testData" />
-                <label class="ml-2">Test Data? <span class="admin-only">*</span></label>
-              </div>
-              <div>
-                <PvCheckbox binary v-model="localUserData.demoData" />
-                <label class="ml-2">Demo Data? <span class="admin-only">*</span></label>
-              </div>
-            </div>
-          </div>
-          <div class="form-column">
-            <div class="form-field">
-              <label>Gender</label>
-              <PvInputText v-model="localUserData.studentData.gender" />
-            </div>
-
-            <div class="form-field">
-              <label>English as a Second Language</label>
-              <PvDropdown
-                v-model="localUserData.studentData.ell_status"
-                optionLabel="label"
-                optionValue="value"
-                :options="binaryDropdownOptions"
-              />
-            </div>
-            <div class="form-field">
-              <label>IEP Status</label>
-              <PvDropdown
-                v-model="localUserData.studentData.iep_status"
-                optionLabel="label"
-                optionValue="value"
-                :options="binaryDropdownOptions"
-              />
-            </div>
-            <div class="form-field">
-              <label>Free-Reduced Lunch</label>
-              <PvDropdown
-                v-model="localUserData.studentData.frl_status"
-                optionLabel="label"
-                optionValue="value"
-                :options="binaryDropdownOptions"
-              />
-            </div>
-
-            <div class="form-field">
-              <label for="race">Race </label>
-              <PvAutoComplete
-                v-model="localUserData.studentData.race"
-                multiple
-                :suggestions="raceOptions"
-                name="race"
-                @complete="searchRaces"
-              />
-            </div>
-            <div class="form-field">
-              <label>Hispanic or Latino Ethnicity</label>
-              <PvDropdown
-                v-model="localUserData.studentData.hispanic_ethnicity"
-                optionLabel="label"
-                optionValue="value"
-                :options="binaryDropdownOptions"
-              />
-            </div>
-          </div>
-        </div>
-        <div v-else-if="localUserType === 'admin'">Admin Edit User Modal Under Construction</div>
-
-        <!-- End fields for userData form-->
-        <!-- <div class="flex align-items-center gap-2 mt-4"> -->
-        <div class="modal-footer">
-          <PvButton tabindex="0" text label="Cancel" outlined @click="rejectCallback"></PvButton>
-          <PvButton tabindex="0" label="Save" @click="acceptCallback"></PvButton>
+  <PvDialog :visible="isOpen" modal :close="console.log('onClose')">
+    <template #header>
+      <div class="modal-header gap-2">
+        <i class="pi pi-pencil text-gray-400 modal-icon"></i>
+        <div class="flex flex-column">
+          <h1 class="modal-title admin-page-header">
+            Edit User Information - {{ localUserData.name.first }} {{ localUserData.name.last }}
+          </h1>
+          <span class="text-md text-gray-500">Modify, add, or remove user information</span>
         </div>
       </div>
     </template>
-  </PvConfirmDialog>
+    <div class="flex flex-column align-items-center surface-overlay border-round" style="width: 66vw; gap: 2rem">
+      <!-- Fields for userData form -->
+      <div v-if="localUserType === 'student'" class="form-container">
+        <div class="form-column">
+          <div class="form-field">
+            <label>First Name</label>
+            <PvInputText v-model="localUserData.name.first" />
+          </div>
+          <div class="form-field">
+            <label>Middle Name</label>
+            <PvInputText v-model="localUserData.name.middle" />
+          </div>
+          <div class="form-field">
+            <label>Last Name</label>
+            <PvInputText v-model="localUserData.name.last" />
+          </div>
+
+          <div class="form-field">
+            <label>Date of Birth <span v-if="localUserType === 'student'" class="required">*</span></label>
+            <PvCalendar v-model="localUserData.studentData.dob" />
+          </div>
+
+          <div class="form-field">
+            <label>Grade <span v-if="localUserType === 'student'" class="required">*</span></label>
+            <PvInputText v-model="localUserData.studentData.grade" />
+          </div>
+          <div>
+            <div>
+              <PvCheckbox binary v-model="localUserData.testData" />
+              <label class="ml-2">Test Data? <span class="admin-only">*</span></label>
+            </div>
+            <div>
+              <PvCheckbox binary v-model="localUserData.demoData" />
+              <label class="ml-2">Demo Data? <span class="admin-only">*</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="form-column">
+          <div class="form-field">
+            <label>Gender</label>
+            <PvInputText v-model="localUserData.studentData.gender" />
+          </div>
+
+          <div class="form-field">
+            <label>English as a Second Language</label>
+            <PvDropdown
+              v-model="localUserData.studentData.ell_status"
+              optionLabel="label"
+              optionValue="value"
+              :options="binaryDropdownOptions"
+            />
+          </div>
+          <div class="form-field">
+            <label>IEP Status</label>
+            <PvDropdown
+              v-model="localUserData.studentData.iep_status"
+              optionLabel="label"
+              optionValue="value"
+              :options="binaryDropdownOptions"
+            />
+          </div>
+          <div class="form-field">
+            <label>Free-Reduced Lunch</label>
+            <PvDropdown
+              v-model="localUserData.studentData.frl_status"
+              optionLabel="label"
+              optionValue="value"
+              :options="binaryDropdownOptions"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="race">Race </label>
+            <PvAutoComplete
+              v-model="localUserData.studentData.race"
+              multiple
+              :suggestions="raceOptions"
+              name="race"
+              @complete="searchRaces"
+            />
+          </div>
+          <div class="form-field">
+            <label>Hispanic or Latino Ethnicity</label>
+            <PvDropdown
+              v-model="localUserData.studentData.hispanic_ethnicity"
+              optionLabel="label"
+              optionValue="value"
+              :options="binaryDropdownOptions"
+            />
+          </div>
+        </div>
+      </div>
+      <div v-else-if="localUserType === 'admin'">Admin Edit User Modal Under Construction</div>
+
+      <!-- End fields for userData form-->
+    </div>
+    <template #footer>
+      <div class="modal-footer">
+        <PvButton tabindex="0" text label="Cancel" outlined @click="onReject"></PvButton>
+        <PvButton tabindex="0" label="Save" @click="onAccept"
+          ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+        ></PvButton>
+      </div>
+    </template>
+    <!-- </template> -->
+  </PvDialog>
 </template>
 <script setup>
-import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
@@ -151,40 +153,44 @@ watch(
     if (isEnabled) {
       localUserData.value = setupUserData();
       console.log('userData', localUserData.value);
-      requireConfirmModal();
+      isOpen.value = true;
     }
   },
 );
 
-const confirm = useConfirm();
 const toast = useToast();
-const requireConfirmModal = () => {
-  confirm.require({
-    group: 'headless',
-    header: 'Are you sure?',
-    message: 'Please confirm to proceed.',
-    accept: async () => {
-      console.log('Accepted');
-      console.log('userData to send', localUserData.value);
-      // await roarfirekit.value
-      //   .updateUserData(props.userData.id, localUserData.value)
-      //   .then((res) => {
-      //     toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
-      //   })
-      //   .catch((error) => {
-      //     console.log('error', error);
-      //   });
-      emit('modalClosed');
-    },
-    reject: () => {
-      console.log('Rejected');
-      emit('modalClosed');
-    },
-  });
+
+// Handle Modal Actions
+const closeModal = () => {
+  isOpen.value = false;
+  emit('modalClosed');
+};
+
+const onAccept = async () => {
+  console.log('Accepted');
+  console.log('userData to send', localUserData.value);
+  isSubmitting.value = true;
+  await roarfirekit.value
+    .updateUserData(props.userData.id, localUserData.value)
+    .then((res) => {
+      isSubmitting.value = false;
+      closeModal();
+      toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
+    })
+    .catch((error) => {
+      console.log('error', error);
+      isSubmitting.value = false;
+    });
+};
+
+const onReject = () => {
+  closeModal();
 };
 
 // Utility functions
+const isOpen = ref(false);
 const localUserData = ref({});
+const isSubmitting = ref(false);
 
 const setupUserData = () => {
   let user = {
@@ -263,8 +269,6 @@ onMounted(() => {
   flex-direction: row;
   gap: 1rem;
   width: 100%;
-  padding-right: 2rem;
-  padding-left: 2rem;
 }
 .form-column {
   display: flex;
@@ -278,10 +282,8 @@ onMounted(() => {
 }
 .modal-header {
   margin-right: auto;
-  margin-top: 2rem;
   display: flex;
   flex-direction: row;
-  margin-left: 2rem;
 }
 .modal-icon {
   font-size: 1.6rem;
@@ -303,8 +305,11 @@ onMounted(() => {
   justify-content: flex-end;
   width: 100%;
   gap: 1rem;
-  padding: 2rem;
+  padding: 1.5rem;
   background-color: #e6e7eb;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+.p-dialog .p-dialog-footer {
+  padding: 0;
 }
 </style>
