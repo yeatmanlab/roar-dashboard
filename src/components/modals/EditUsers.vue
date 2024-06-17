@@ -29,22 +29,42 @@
           </div>
 
           <div class="form-field">
-            <label>Date of Birth <span v-if="localUserType === 'student'" class="required">*</span></label>
-            <PvCalendar v-model="localUserData.studentData.dob" />
+            <label
+              >Date of Birth
+              <span v-if="localUserType === 'student'" class="required" v-tooltip.top="'Required'">*</span></label
+            >
+            <PvCalendar
+              v-model="localUserData.studentData.dob"
+              :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
+            />
+            <small v-if="errorMessage.includes('Date of birth')" class="p-error"
+              >Date of Birth can not be in the future.</small
+            >
           </div>
 
           <div class="form-field">
-            <label>Grade <span v-if="localUserType === 'student'" class="required">*</span></label>
-            <PvInputText v-model="localUserData.studentData.grade" />
+            <label
+              >Grade
+              <span v-if="localUserType === 'student'" class="required" v-tooltip.top="'Required'">*</span></label
+            >
+            <PvInputText
+              v-model="localUserData.studentData.grade"
+              :class="{ 'p-invalid': errorMessage.includes('Grade') }"
+            />
+            <small v-if="errorMessage.includes('Grade')" class="p-error">Grade must be a number 1-13, or K/PK/TK</small>
           </div>
-          <div>
+          <div v-if="isSuperAdmin">
             <div>
               <PvCheckbox binary v-model="localUserData.testData" />
-              <label class="ml-2">Test Data? <span class="admin-only">*</span></label>
+              <label class="ml-2"
+                >Test Data? <span class="admin-only" v-tooltip.top="'Super Admin Only'">*</span></label
+              >
             </div>
             <div>
               <PvCheckbox binary v-model="localUserData.demoData" />
-              <label class="ml-2">Demo Data? <span class="admin-only">*</span></label>
+              <label class="ml-2"
+                >Demo Data? <span class="admin-only" v-tooltip.top="'Super Admin Only'">*</span></label
+              >
             </div>
           </div>
         </div>
@@ -122,6 +142,8 @@
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import { useQuery } from '@tanstack/vue-query';
+import { fetchDocById } from '@/helpers/query/utils';
 import { watch, ref, onMounted, computed } from 'vue';
 const props = defineProps({
   userData: {
@@ -143,7 +165,7 @@ const props = defineProps({
 const emit = defineEmits(['modalClosed']);
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
 const initialized = ref(false);
 
 watch(
@@ -162,11 +184,13 @@ const toast = useToast();
 
 // Handle Modal Actions
 const closeModal = () => {
+  errorMessage.value = '';
   isOpen.value = false;
   emit('modalClosed');
 };
 
 const onAccept = async () => {
+  errorMessage.value = '';
   console.log('Accepted');
   console.log('userData to send', localUserData.value);
   isSubmitting.value = true;
@@ -178,7 +202,8 @@ const onAccept = async () => {
       toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
     })
     .catch((error) => {
-      console.log('error', error);
+      console.log('Error occurred during submission:', error);
+      errorMessage.value = error.message;
       isSubmitting.value = false;
     });
 };
@@ -191,6 +216,7 @@ const onReject = () => {
 const isOpen = ref(false);
 const localUserData = ref({});
 const isSubmitting = ref(false);
+const errorMessage = ref('');
 
 const setupUserData = () => {
   let user = {
@@ -261,6 +287,20 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
+});
+
+// Determine if the user is an admin
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+  queryKey: ['userClaims', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const isSuperAdmin = computed(() => {
+  if (userClaims.value?.claims?.super_admin) return true;
+  return false;
 });
 </script>
 <style lang="scss">
