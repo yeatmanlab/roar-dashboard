@@ -71,7 +71,11 @@
         <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
         <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
         <router-link :to="{ name: 'SignOut' }">
-          <PvButton :label="$t('navBar.signOut')" class="no-underline" icon="pi pi-sign-out" />
+          <PvButton
+            :label="$t('navBar.signOut')"
+            class="no-underline bg-primary border-none border-round p-2 text-white"
+            icon="pi pi-sign-out"
+          />
         </router-link>
       </div>
     </div>
@@ -182,6 +186,7 @@ const {
 });
 
 async function checkConsent() {
+  showConsent.value = false;
   const dob = new Date(userData.value?.studentData.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
@@ -375,23 +380,12 @@ const studentInfo = computed(() => {
   };
 });
 
-watch(consentParams, (newValue) => {
-  consentParams.value = newValue;
-});
-
 watch(
-  selectedAdmin,
-  async (newValue) => {
-    if (newValue) {
-      await checkConsent();
+  [selectedAdmin, adminInfo],
+  ([updateSelectedAdmin]) => {
+    if (updateSelectedAdmin) {
+      checkConsent();
     }
-  },
-  { immediate: true },
-);
-
-watch(
-  adminInfo,
-  () => {
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list

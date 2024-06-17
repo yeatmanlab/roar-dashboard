@@ -661,6 +661,19 @@ function findVariantWithParams(variants, params) {
   margin-top: 2rem;
 }
 
+.p-datepicker .p-datepicker-buttonbar .p-button {
+  width: auto;
+  background-color: white;
+  border: none;
+  border-radius: 0.375rem;
+  color: var(--primary-color);
+  padding: 0.5rem;
+  margin: 0.5rem;
+}
+.p-datepicker .p-datepicker-buttonbar .p-button:hover {
+  background-color: var(--surface-100);
+}
+
 button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
   border: none;
   background-color: var(--primary-color);

@@ -539,6 +539,19 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
+.p-confirm-popup .p-confirm-popup-footer button {
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 0.35rem;
+  padding: 0.4em;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  color: white;
+}
+.p-confirm-popup .p-confirm-popup-footer button:hover {
+  background-color: var(--red-900);
+}
+
 .card-administration {
   text-align: left;
   width: 100%;

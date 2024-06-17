@@ -13,6 +13,7 @@
     "passwordId": "password",
     "passwordPlaceholder": "Password",
     "pickPassword": "Pick a password",
+    "selectLanguage": "Select Language",
     "signInWithEmailLinkPlaceHolder": "Press Go to sign-in with an email link.",
     "signInWithEmailLinkInstead": "Sign-in using email link",
     "signInWithPasswordInstead": "Sign-in using password",
