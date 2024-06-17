@@ -506,7 +506,23 @@ const progressReportColumns = computed(() => {
       return -1;
     }
   });
-  for (const taskId of sortedTasks) {
+
+  const priorityTasks = ['swr', 'sre', 'pa'];
+  const orderedTasks = [];
+
+  for (const task of priorityTasks) {
+    if (sortedTasks.includes(task)) {
+      orderedTasks.push(task);
+    }
+  }
+
+  for (const task of sortedTasks) {
+    if (!priorityTasks.includes(task)) {
+      orderedTasks.push(task);
+    }
+  }
+
+  for (const taskId of orderedTasks) {
     tableColumns.push({
       field: `progress.${taskId}.value`,
       filterField: `progress.${taskId}.tags`,
