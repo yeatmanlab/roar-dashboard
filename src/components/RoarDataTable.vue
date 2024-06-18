@@ -104,6 +104,7 @@
             :filter-field="col?.filterField ? col.filterField : col.field"
             :show-add-button="col.allowMultipleFilters === true"
             :frozen="col.pinned"
+            :style="col.style"
             align-frozen="left"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
@@ -130,7 +131,7 @@
                   :severity="_get(colData, col.severityField)"
                   :value="_get(colData, col.field)"
                   :icon="_get(colData, col.iconField)"
-                  :style="`min-width: 2rem; font-weight: bold`"
+                  :style="`min-width: 2rem; font-weight: bold;`"
                   rounded
                 />
               </div>

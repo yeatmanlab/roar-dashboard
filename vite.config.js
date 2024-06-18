@@ -56,6 +56,7 @@ export default defineConfig({
           vocab: ['@bdelab/roar-vocab'],
           ran: ['@bdelab/roav-ran'],
           crowding: ['@bdelab/roav-crowding'],
+          'roav-mep': ['@bdelab/roav-mep'],
         },
       },
     },
