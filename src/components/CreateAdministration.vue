@@ -168,7 +168,6 @@ import _isEqual from 'lodash/isEqual';
 import _union from 'lodash/union';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
-import _lowerCase from 'lodash/lowerCase';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -214,7 +213,7 @@ const initialized = ref(false);
 const confirm = useConfirm();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
