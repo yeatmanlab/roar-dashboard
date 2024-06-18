@@ -594,6 +594,8 @@ function convertParamsToObj(paramType) {
 // Takes the array of objects that will be added to the current data object in Firestore
 // and checks if any of the new fields are duplicates of existing fields to prevent overwriting data
 const checkForDuplicates = (newItemsArray, currentDataObject) => {
+  if (currentDataObject === undefined) return { isDuplicate: false, duplicateField: '' };
+
   const keys = Object.keys(currentDataObject);
   for (const newItem of newItemsArray) {
     if (keys.includes(newItem.name)) {
