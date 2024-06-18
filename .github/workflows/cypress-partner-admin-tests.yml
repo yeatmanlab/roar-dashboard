@@ -20,7 +20,7 @@ jobs:
     env:
       NODE_OPTIONS: '--max_old_space_size=8192'
       NODE_ENV: 'test'
-      CYPRESS_BASE_URL: 'http://localhost:5173'
+      CYPRESS_BASE_URL: 'https://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
