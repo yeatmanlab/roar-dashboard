@@ -25,7 +25,8 @@ export default defineConfig({
         strategies: 'injectManifest',
         injectRegister: 'manual',
         workbox: {
-          globPatterns: process.env.NODE_ENV !== 'development' ? ['**/*.{js,css,html,ico,png,svg,mp3}'] : [],
+          // globPatterns: process.env.NODE_ENV !== 'development' ? ['**/*.{js,css,html,ico,png,svg,mp3}'] : [],
+          globPatterns: [],
         },
         icons: [
           {
