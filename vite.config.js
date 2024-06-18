@@ -5,6 +5,7 @@ import Vue from '@vitejs/plugin-vue';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
 import mkcert from 'vite-plugin-mkcert';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -29,23 +30,23 @@ export default defineConfig({
         },
         icons: [
           {
-            src: 'public/pwa-64x64.png',
+            src: '/pwa-64x64.png',
             sizes: '64x64',
             type: 'image/png',
           },
           {
-            src: 'public/pwa-192x192.png',
+            src: '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'public/pwa-512x512.png',
+            src: '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: 'public/maskable-icon-512x512.png',
+            src: '/maskable-icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
@@ -60,6 +61,7 @@ export default defineConfig({
         /* other options */
       },
     }),
+    // basic
     ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     nodePolyfills({
       globals: {
