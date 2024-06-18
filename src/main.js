@@ -91,7 +91,6 @@ import './assets/styles/theme.scss'; // ROAR theme
 // translations
 import { i18n } from '@/translations/i18n.js';
 // https://www.npmjs.com/package/vue-country-flag-next
-import CountryFlag from 'vue-country-flag-next';
 
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
 
@@ -121,7 +120,6 @@ app.use(createHead());
 app.use(TextClamp);
 app.use(VueQueryPlugin);
 app.use(i18n);
-app.use(CountryFlag);
 app.use(surveyPlugin);
 
 app.component('PvAccordion', PvAccordion);
