@@ -187,6 +187,14 @@ const routes = [
     meta: { pageTitle: 'Crowding' },
   },
   {
+    path: '/game/roav-mep',
+    name: 'MEP',
+    component: () => import('../components/tasks/TaskMEP.vue'),
+    props: { taskId: 'roav-mep', language: 'en' },
+    meta: { pageTitle: 'MEP' },
+  },
+
+  {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
     component: () => import('../pages/ManageTasksVariants.vue'),

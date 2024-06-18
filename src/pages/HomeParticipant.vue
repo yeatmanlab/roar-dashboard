@@ -182,6 +182,7 @@ const {
 });
 
 async function checkConsent() {
+  showConsent.value = false;
   const dob = new Date(userData.value?.studentData.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
@@ -375,23 +376,12 @@ const studentInfo = computed(() => {
   };
 });
 
-watch(consentParams, (newValue) => {
-  consentParams.value = newValue;
-});
-
 watch(
-  selectedAdmin,
-  async (newValue) => {
-    if (newValue) {
-      await checkConsent();
+  [selectedAdmin, adminInfo],
+  ([updateSelectedAdmin]) => {
+    if (updateSelectedAdmin) {
+      checkConsent();
     }
-  },
-  { immediate: true },
-);
-
-watch(
-  adminInfo,
-  () => {
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list
