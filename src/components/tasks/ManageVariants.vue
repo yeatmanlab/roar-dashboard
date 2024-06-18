@@ -89,11 +89,11 @@
             variantParams[param.name] returns the value of variantParams.someParam,which is the value that we want to change for a new variant
 -->
               <div
-                v-for="(param, index) in filteredMappedGameConfig"
+                v-for="(param, index) in mappedGameConfig"
                 :key="index"
                 class="flex align-items-center justify-content-center dynamic-param-container gap-4"
               >
-                <div class="flex align-items-center">
+                <div v-if="!deletedParams.includes(param.name)" class="flex align-items-center">
                   <label for="inputParamName">Parameter:</label>
 
                   <PvInputText id="inputParamName" v-model="variantParams[param.name]" :value="param.name" disabled />
@@ -144,20 +144,20 @@
                     v-model="field.type"
                     :options="['string', 'number', 'boolean']"
                     placeholder="Field Type"
-                    class="flex-grow-1"
+                    class="w-fit"
                   />
 
                   <PvInputText
                     v-if="field.type === 'string'"
                     v-model="field.value"
                     placeholder="Field Value"
-                    class="flex-grow-1"
+                    class="w-full"
                   />
                   <PvInputNumber
                     v-if="field.type === 'number'"
                     v-model="field.value"
                     placeholder="Field Value"
-                    class="flex-grow-1"
+                    class="w-full"
                   />
                   <PvDropdown
                     v-if="field.type === 'boolean'"
@@ -166,7 +166,7 @@
                     :options="booleanDropDownOptions"
                     option-label="label"
                     option-value="value"
-                    class="flex-grow-1"
+                    class="w-full"
                   />
                   <PvButton type="button" class="w-2" @click="removeField(field.name, newParams)">Delete</PvButton>
                 </div>
@@ -511,7 +511,7 @@ const variantParams = computed(() => {
     return params;
   }
 
-  filteredMappedGameConfig.value.forEach((param) => {
+  mappedGameConfig.value.forEach((param) => {
     params[param.name] = param.value;
   });
 
@@ -533,21 +533,21 @@ const mappedGameConfig = computed(() => {
   }));
 });
 
-// Filter out any deleted params when updating game configuration for the variant
-const filteredMappedGameConfig = computed(() => {
-  if (!mappedGameConfig.value) {
-    return [];
-  }
-
-  return mappedGameConfig.value.filter((param) => !deletedParams.value.includes(param.name));
-});
-
 // Keep track of params that are not needed for the particular variant when creating a new variant
 const deletedParams = ref([]);
 
-// Push the name of the param to the deletedParams array,
-// Triggering a computation of the filteredMappedGameConfig and variantParams
+// Push the name of the param to the deletedParams array
+// Remove the param from the mappedGameConfig array
+// Remove the param from the variantParams object
 const moveToDeletedParams = (param) => {
+  for (const _param of mappedGameConfig.value) {
+    if (_param.name === param) {
+      console.log(mappedGameConfig.value.indexOf(_param));
+      const index = mappedGameConfig.value.indexOf(_param);
+      mappedGameConfig.value = mappedGameConfig.value.splice(index, 1);
+      delete variantParams.value[_param.name];
+    }
+  }
   deletedParams.value.push(param);
 };
 
