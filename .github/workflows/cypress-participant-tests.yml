@@ -20,7 +20,7 @@ jobs:
     env:
       NODE_OPTIONS: '--max_old_space_size=8192'
       NODE_ENV: 'test'
-      NODE_EXTRA_CA_CERTS: 'NODE_/home/runner/.vite-plugin-mkcert/cert.pem'
+      NODE_EXTRA_CA_CERTS: '/home/runner/.vite-plugin-mkcert/cert.pem'
       CYPRESS_BASE_URL: 'https://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
