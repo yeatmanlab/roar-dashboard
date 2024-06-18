@@ -22,7 +22,7 @@ export default defineConfig({
         theme_color: '#ffffff',
         background_color: '#ffffff',
         // inject service worker automatically
-        strategies: 'injectManifest',
+        strategies: 'generateSW',
         injectRegister: 'manual',
         workbox: {
           // globPatterns: process.env.NODE_ENV !== 'development' ? ['**/*.{js,css,html,ico,png,svg,mp3}'] : [],
