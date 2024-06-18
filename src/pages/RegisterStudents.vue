@@ -94,15 +94,7 @@
         </PvDataTable>
         <div class="submit-container">
           <div class="m-2">
-            <PvCheckbox
-              v-model="isAllTestData"
-              :binary="true"
-              input-id="isTestData"
-              :class="{
-                'p-2 border-2 border-round border-300': !isAllTestData, // Always apply these classes
-                'p-1 border-round border-none text-white bg-primary': isAllTestData, // Apply when selected
-              }"
-            />
+            <PvCheckbox v-model="isAllTestData" :binary="true" input-id="isTestData" />
             <label for="isTestData" class="ml-2">All users are test accounts</label>
           </div>
           <PvButton
@@ -517,6 +509,11 @@ function downloadErrorTable() {
 <style scoped>
 .extra-height {
   min-height: 33vh;
+}
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 
 .p-fileupload-buttonbar {

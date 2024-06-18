@@ -115,13 +115,7 @@
               name="accept"
               binary
               :disabled="showConsent"
-              :class="[
-                {
-                  'p-2 border-2 border-round border-300': !v$.accept.$model, // Always apply these classes
-                  'p-1 border-round border-none text-white bg-primary': v$.accept.$model, // Apply when selected
-                },
-                { 'p-invalid': v$.accept.$invalid && submitted },
-              ]"
+              :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
               @change="getConsent"
             />
             <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
@@ -283,6 +277,12 @@ const isNextButtonDisabled = computed(() => {
 </script>
 
 <style scoped>
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
 .submit-button {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;

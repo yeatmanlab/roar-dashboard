@@ -621,7 +621,11 @@ button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
   border: var(--surface-300);
   color: black;
 }
-
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
 .required {
   color: var(--bright-red);
 }

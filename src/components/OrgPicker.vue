@@ -55,17 +55,7 @@
               >
                 <template #option="slotProps">
                   <div class="flex align-items-center">
-                    <PvCheckbox
-                      :binary="true"
-                      :class="{
-                        'p-2 border-2 border-round border-300': !isSelected(activeOrgType, slotProps.option.id), // Always apply these classes
-                        'p-1 border-round border-none text-white bg-primary': isSelected(
-                          activeOrgType,
-                          slotProps.option.id,
-                        ), // Apply when selected
-                      }"
-                      :model-value="isSelected(activeOrgType, slotProps.option.id)"
-                    />
+                    <PvCheckbox :binary="true" :model-value="isSelected(activeOrgType, slotProps.option.id)" />
                     <div class="ml-2">{{ slotProps.option.name }}</div>
                   </div>
                 </template>
@@ -285,3 +275,11 @@ watch(selectedOrgs, (newValue) => {
   emit('selection', newValue);
 });
 </script>
+
+<style>
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+</style>

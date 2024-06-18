@@ -119,30 +119,15 @@
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
-              <PvCheckbox
-                v-model="taskCheckboxData"
-                input-id="chbx-demoTask"
-                value="isDemoTask"
-                :class="checkboxTask('isDemoTask')"
-              />
+              <PvCheckbox v-model="taskCheckboxData" input-id="chbx-demoTask" value="isDemoTask" />
               <label class="ml-1 mr-3" for="chbx-demoTask">Mark as <b>Demo Task</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox
-                v-model="taskCheckboxData"
-                input-id="chbx-testTask"
-                value="isTestTask"
-                :class="checkboxTask('isTestTask')"
-              />
+              <PvCheckbox v-model="taskCheckboxData" input-id="chbx-testTask" value="isTestTask" />
               <label class="ml-1 mr-3" for="chbx-testTask">Mark as <b>Test Task</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox
-                v-model="taskCheckboxData"
-                input-id="chbx-externalTask"
-                value="isExternalTask"
-                :class="checkboxTask('isExternalTask')"
-              />
+              <PvCheckbox v-model="taskCheckboxData" input-id="chbx-externalTask" value="isExternalTask" />
               <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Task</b> </label>
             </div>
           </div>
@@ -178,15 +163,7 @@
                 <div class="flex flex-column gap-2 align-items-end">
                   <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
                     <label class="ml-7" for="chbx-registeredTask">Search registered tasks only?</label>
-                    <PvCheckbox
-                      v-model="registeredTasksOnly"
-                      :class="{
-                        'p-2 border-2 border-round border-300': !registeredTasksOnly, // Always apply these classes
-                        'p-1 border-round border-none text-white bg-primary': registeredTasksOnly, // Apply when selected
-                      }"
-                      input-id="chbx-registeredTask"
-                      :binary="true"
-                    />
+                    <PvCheckbox v-model="registeredTasksOnly" input-id="chbx-registeredTask" :binary="true" />
                   </div>
                 </div>
               </div>
@@ -277,18 +254,11 @@
                 input-id="chbx-demoVariant"
                 name="variantCheckboxData"
                 value="isDemoVariant"
-                :class="checkboxVariant('isDemoVariant')"
               />
               <label class="ml-1 mr-3" for="chbx-demoVariant">Mark as <b>Demo Variant</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox
-                v-model="variantCheckboxData"
-                input-id="chbx-testVariant"
-                name="variantCheckboxData"
-                value="isTestVariant"
-                :class="checkboxVariant('isTestVariant')"
-              />
+              <PvCheckbox v-model="variantCheckboxData" input-id="chbx-testVariant" name="variantCheckboxData" />
               <label class="ml-1 mr-3" for="chbx-testVariant">Mark as <b>Test Variant</b></label>
             </div>
             <div class="flex flex-row align-items-center">
@@ -297,7 +267,6 @@
                 input-id="chbx-externalVariant"
                 name="variantCheckboxData"
                 value="isExternalVariant"
-                :class="checkboxVariant('isExternalVariant')"
               />
               <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>External Variant</b></label>
             </div>
@@ -510,22 +479,6 @@ function convertParamsToObj(paramType) {
   }, {});
 }
 
-function checkboxTask(param) {
-  if (taskCheckboxData.value && taskCheckboxData.value?.find((item) => item === param)) {
-    return 'p-1 border-round border-none text-white bg-primary';
-  } else {
-    return 'p-2 h-1rem border-2 border-round border-300';
-  }
-}
-
-function checkboxVariant(param) {
-  if (variantCheckboxData.value && variantCheckboxData.value?.find((item) => item === param)) {
-    return 'p-1 border-round border-none text-white bg-primary';
-  } else {
-    return 'p-2 h-1rem border-2 border-round border-300';
-  }
-}
-
 function buildTaskURL(url, params) {
   const baseURL = url;
 
@@ -564,6 +517,11 @@ function resetVariantForm() {
 </script>
 
 <style>
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
 .submit-button {
   margin: auto;
   margin-top: 1rem;

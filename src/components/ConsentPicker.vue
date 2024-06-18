@@ -23,7 +23,6 @@
                   v-model="paramCheckboxData"
                   input-id="default-params"
                   value="hasDefault"
-                  :class="checkboxClassesDefault()"
                   @change="checkBoxStatus"
                 />
                 <i class="pi pi-align-justify" style="font-size: 1rem; width: 8%"></i>
@@ -56,11 +55,7 @@
                 v-model="specialParam"
                 input-id="video-recording"
                 value="hasVideo"
-                :class="[
-                  checkboxClassesSpecial('hasVideo'),
-                  'cursor-pointer',
-                  { 'pointer-events-none': !disableIfNotDefault },
-                ]"
+                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
               <i class="pi pi-video" style="font-size: 1rem; width: 8%"></i>
@@ -87,11 +82,7 @@
                 v-model="specialParam"
                 input-id="audio-recording"
                 value="hasAudio"
-                :class="[
-                  checkboxClassesSpecial('hasAudio'),
-                  'cursor-pointer',
-                  { 'pointer-events-none': !disableIfNotDefault },
-                ]"
+                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
               <i class="pi pi-phone" style="font-size: 1rem; width: 8%"></i>
@@ -118,11 +109,7 @@
                 v-model="specialParam"
                 input-id="eye-tracking"
                 value="hasEyeTracking"
-                :class="[
-                  checkboxClassesSpecial('hasEyeTracking'),
-                  'cursor-pointer',
-                  { 'pointer-events-none': !disableIfNotDefault },
-                ]"
+                :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
               <i class="pi pi-eye" style="font-size: 1rem; width: 8%"></i>
@@ -543,22 +530,6 @@ function processConsentAssent(consent, targetArray) {
   });
 }
 
-function checkboxClassesDefault() {
-  if (paramCheckboxData.value && paramCheckboxData.value?.find((item) => item === 'hasDefault')) {
-    return 'p-1 border-round border-none text-white bg-primary';
-  } else {
-    return 'p-2 h-1rem border-2 border-round border-300';
-  }
-}
-
-function checkboxClassesSpecial(param) {
-  if (specialParam.value && specialParam.value?.find((item) => item === param)) {
-    return 'p-1 border-round border-none text-white bg-primary';
-  } else {
-    return 'p-2 h-1rem border-2 border-round border-300';
-  }
-}
-
 watch(amount, (newValue) => {
   result.amount = newValue;
   emit('consent-selected', result);
@@ -569,3 +540,10 @@ watch(expectedTime, (newValue) => {
   emit('consent-selected', result);
 });
 </script>
+<style>
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+</style>

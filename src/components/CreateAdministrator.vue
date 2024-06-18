@@ -56,15 +56,7 @@
           <OrgPicker @selection="selection($event)" />
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
-              <PvCheckbox
-                v-model="isTestData"
-                :class="{
-                  'p-2 border-2 border-round border-300': !isTestData, // Always apply these classes
-                  'p-1 border-round border-none text-white bg-primary': isTestData, // Apply when selected
-                }"
-                input-id="chbx-externalTask"
-                :binary="true"
-              />
+              <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
               <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Test Administrator</b></label>
             </div>
           </div>
@@ -194,6 +186,12 @@ const submit = async () => {
 .return-button {
   display: block;
   margin: 1rem 1.75rem;
+}
+
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 
 #rectangle {
