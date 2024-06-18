@@ -278,14 +278,23 @@
           </PvAccordionTab>
         </PvAccordion>
         <section class="form-section-button">
-          <PvButton v-if="outerIndex !== 0" class="p-button p-component" @click="deleteStudentForm(outerIndex)">
+          <PvButton
+            v-if="outerIndex !== 0"
+            class="bg-primary border-none border-round text-white hover:surface-300 hover:text-black-alpha-90"
+            @click="deleteStudentForm(outerIndex)"
+          >
             Delete Student
           </PvButton>
         </section>
       </div>
     </form>
     <div class="form-section-button2">
-      <PvButton class="p-button p-component" @click="addStudent()"> Add another student </PvButton>
+      <PvButton
+        class="bg-primary border-none border-round text-white hover:surface-300 hover:text-black-alpha-90"
+        @click="addStudent()"
+      >
+        Add another student
+      </PvButton>
     </div>
     <section class="flex mt-8 justify-content-end">
       <PvButton type="submit" label="Submit" class="submit-button" @click.prevent="handleFormSubmit(!v$.$invalid)" />
