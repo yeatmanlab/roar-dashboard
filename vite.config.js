@@ -5,7 +5,6 @@ import Vue from '@vitejs/plugin-vue';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
 import mkcert from 'vite-plugin-mkcert';
-import basicSsl from '@vitejs/plugin-basic-ssl';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -26,8 +25,7 @@ export default defineConfig({
         strategies: 'generateSW',
         injectRegister: 'manual',
         workbox: {
-          // globPatterns: process.env.NODE_ENV !== 'development' ? ['**/*.{js,css,html,ico,png,svg,mp3}'] : [],
-          globPatterns: [],
+          globPatterns: ['**/*.{js,css,html,ico}'],
         },
         icons: [
           {
@@ -62,8 +60,7 @@ export default defineConfig({
         /* other options */
       },
     }),
-    // mkcert(),
-    ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
+    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     nodePolyfills({
       globals: {
         process: true,
@@ -111,7 +108,6 @@ export default defineConfig({
           vocab: ['@bdelab/roar-vocab'],
           ran: ['@bdelab/roav-ran'],
           crowding: ['@bdelab/roav-crowding'],
-          'roav-mep': ['@bdelab/roav-mep'],
         },
       },
     },
