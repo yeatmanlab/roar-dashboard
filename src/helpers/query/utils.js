@@ -188,7 +188,7 @@ export const matchMode2Op = {
   notEquals: 'NOT_EQUAL',
 };
 
-export const fetchSubcollection = async (collectionPath, subcollectionName, select = [], db = 'admin') => {  
+export const fetchSubcollection = async (collectionPath, subcollectionName, select = [], db = 'admin') => {
   try {
     const axiosInstance = getAxiosInstance(db);
     const subcollectionPath = `/${collectionPath}/${subcollectionName}`;

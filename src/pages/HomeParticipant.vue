@@ -182,11 +182,11 @@ const {
 });
 
 async function checkConsent() {
-  if (isLevante) return
+  if (isLevante) return;
 
   const legal = selectedAdmin.value?.legal;
   if (!legal) return;
-  
+
   const dob = new Date(userData.value?.studentData.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
@@ -264,10 +264,10 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
-const { data: surveyResponsesData, } = useQuery({
+const { data: surveyResponsesData } = useQuery({
   queryKey: ['surveyResponses', uid],
   queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
-  enabled: initialized && import.meta.env.MODE === 'LEVANTE',
+  enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
   staleTime: 5 * 60 * 1000, // 5 minutes
   cacheTime: 10 * 60 * 1000,
   // refetchOnMount: false,

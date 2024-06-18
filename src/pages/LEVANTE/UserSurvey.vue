@@ -12,8 +12,8 @@ import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
 import { useToast } from 'primevue/usetoast';
-import { useQueryClient } from '@tanstack/vue-query'
-import  _merge from 'lodash/merge';
+import { useQueryClient } from '@tanstack/vue-query';
+import _merge from 'lodash/merge';
 
 const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
@@ -157,9 +157,9 @@ async function playAudio(name) {
 
 async function saveResults(sender) {
   const allQuestions = sender.getAllQuestions();
-  const unansweredQuestions = {}
+  const unansweredQuestions = {};
 
-  allQuestions.forEach((question) => unansweredQuestions[question.name] = null);
+  allQuestions.forEach((question) => (unansweredQuestions[question.name] = null));
 
   // Values from the second object overwrite values from the first
   const responsesWithAllQuestions = _merge(unansweredQuestions, sender.data);
@@ -174,7 +174,7 @@ async function saveResults(sender) {
 
     // update game store to let game tabs know
     gameStore.setSurveyCompleted();
-    queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] })
+    queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
     // route back to game tabs (HomeParticipant)
     gameStore.requireHomeRefresh();

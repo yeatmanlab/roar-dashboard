@@ -3,17 +3,17 @@
     <div class="card flex justify-content-center">
       <div class="flex flex-wrap gap-3">
         <div class="flex align-items-center">
-          <PvRadioButton v-model="decision" inputId="helpChoose" name="help" value="help" @change="whatDecision" />
+          <PvRadioButton v-model="decision" input-id="helpChoose" name="help" value="help" @change="whatDecision" />
           <label for="helpChoose" class="ml-2">Help me choose</label>
         </div>
         <div class="flex align-items-center">
-          <PvRadioButton v-model="decision" inputId="iKnow" name="know" value="know" @change="whatDecision" />
+          <PvRadioButton v-model="decision" input-id="iKnow" name="know" value="know" @change="whatDecision" />
           <label for="iKnow" class="ml-2">I know what to select</label>
         </div>
       </div>
     </div>
     <div class="flex flex-row">
-      <div class="align-content-center" style="width: 50%" v-if="userDrivenFlow">
+      <div v-if="userDrivenFlow" class="align-content-center" style="width: 50%">
         <h3>Default Data Collection</h3>
         <div class="border-solid border-round border-1 border-black-alpha-30" style="width: 70%">
           <div style="width: 70%; cursor: pointer">
@@ -42,11 +42,11 @@
         </div>
         <h3 class="mt-5">Additional Data Collection</h3>
         <div
+          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
           ]"
-          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
           style="width: 70%; cursor: pointer"
         >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
@@ -69,11 +69,11 @@
           </div>
         </div>
         <div
+          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
           ]"
-          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
           style="width: 70%; cursor: pointer"
         >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
@@ -96,11 +96,11 @@
           </div>
         </div>
         <div
+          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
           :class="[
             'border-solid border-round border-1 border-black-alpha-30 mt-2',
             { 'opacity-80 surface-200 mt-2': !disableIfNotDefault },
           ]"
-          v-tooltip.top="!disableIfNotDefault ? tooltip : ''"
           style="width: 70%; cursor: pointer"
         >
           <div class="mt-1 mb-1 ml-2 text-center flex cursor-pointer">
@@ -145,7 +145,7 @@
         <PvDropdown
           v-model="selectedConsent"
           :options="listOfDocs.consent"
-          optionLabel="fileName"
+          option-label="fileName"
           style="width: 70%"
           @change="updateConsent"
         />
@@ -153,7 +153,7 @@
         <PvDropdown
           v-model="selectedAssent"
           :options="listOfDocs.assent"
-          optionLabel="fileName"
+          option-label="fileName"
           style="width: 70%"
           @change="updateAssent"
         />
@@ -178,7 +178,7 @@
       <div v-if="knowWhatIWant || userDrivenFlow" class="flex-column" style="width: 50%">
         <h3 class="font-bold text-center text-xl">Suggested Forms</h3>
         <div class="w-full">
-          <PvFieldset legend="Consent" v-if="consents && consents.length > 0">
+          <PvFieldset v-if="consents && consents.length > 0" legend="Consent">
             <div class="flex flex-row w-full">
               <div style="width: 80%">
                 <p class="m-0">
@@ -205,7 +205,7 @@
           </div>
         </div>
         <div class="w-full mt-2">
-          <PvFieldset legend="Assent" v-if="consents && consents.length > 0">
+          <PvFieldset v-if="consents && consents.length > 0" legend="Assent">
             <div class="flex flex-row w-full">
               <div style="width: 80%">
                 <p class="m-0">
