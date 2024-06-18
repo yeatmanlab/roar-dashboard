@@ -25,7 +25,7 @@ export default defineConfig({
         strategies: 'injectManifest',
         injectRegister: 'manual',
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
+          globPatterns: process.env.NODE_ENV !== 'development' ? ['**/*.{js,css,html,ico,png,svg,mp3}'] : [],
         },
         icons: [
           {
@@ -66,10 +66,14 @@ export default defineConfig({
         process: true,
       },
     }),
-    // sentryVitePlugin({
-    //   org: 'roar-89588e380',
-    //   project: 'dashboard',
-    // }),
+    ...(process.env.NODE_ENV !== 'development'
+      ? [
+          sentryVitePlugin({
+            org: 'roar-89588e380',
+            project: 'dashboard',
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
