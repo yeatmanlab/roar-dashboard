@@ -14,7 +14,12 @@
             <i class="pi pi-search" />
             <PvInputText v-model="searchTerm" placeholder="Variant name, ID, or Task ID" data-cy="input-variant-name" />
           </div>
-          <PvButton v-if="searchTerm" style="margin-right: 0" @click="clearSearch">
+          <PvButton
+            v-if="searchTerm"
+            class="bg-primary text-white border-none border-round pl-3 pr-3 hover:bg-red-900"
+            style="margin-right: 0"
+            @click="clearSearch"
+          >
             <i class="pi pi-times" />
           </PvButton>
         </div>
