@@ -25,7 +25,11 @@
                         @complete="autocomplete"
                         @keyup.enter="onSearch"
                       />
-                      <PvButton icon="pi pi-search" class="text-xs" @click="onSearch" />
+                      <PvButton
+                        icon="pi pi-search"
+                        class="text-xs bg-primary border-none text-white pl-3 pr-3"
+                        @click="onSearch"
+                      />
                     </PvInputGroup>
                   </div>
                 </div>
@@ -50,7 +54,13 @@
             <div>
               You searched for <strong>{{ search }}</strong>
             </div>
-            <PvButton text class="text-xs p-2" @click="clearSearch"> Clear Search </PvButton>
+            <PvButton
+              text
+              class="text-xs p-2 border-none border-round text-primary hover:surface-200"
+              @click="clearSearch"
+            >
+              Clear Search
+            </PvButton>
           </div>
         </div>
         <div v-if="initialized && !isLoadingAdministrations">
