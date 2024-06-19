@@ -4,7 +4,7 @@ require('dotenv').config();
 module.exports = defineConfig({
   projectId: 'cobw62',
   e2e: {
-    baseUrl: 'https://localhost:5173',
+    baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
     retries: 2,
@@ -18,7 +18,7 @@ module.exports = defineConfig({
     },
   },
   env: {
-    baseUrl: 'https://localhost:5173',
+    baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     firestoreUrl: 'https://firestore.googleapis.com/**/*',
     timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
@@ -77,7 +77,6 @@ module.exports = defineConfig({
     stanfordUniversityAddress: '450 Jane Stanford Way, Stanford, CA 94305, USA',
     testTag: 'stanford university',
     cypressDownloads: 'cypress/downloads',
-    testRoarAppsAdministrationParticipant: 'CypressTestRoarAppsAdministration',
     testRoarAppsAdministration: 'CypressTestRoarAppsAdministration',
     testRoarAppsAdministrationId: 'K8UaI8p79Dntj5Z2CJk8',
     testOptionalRoarAppsAdministration: 'Cypress Test Optional Roar Apps Administration',
