@@ -113,7 +113,12 @@
 
                 <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
 
-                <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(gameConfig, index)" />
+                <PvButton
+                  icon="pi pi-trash"
+                  class="delete-btn my-1 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                  text
+                  @click="removeField(gameConfig, index)"
+                />
               </div>
             </div>
           </div>
@@ -135,17 +140,34 @@
 
                 <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
 
-                <PvButton icon="pi pi-trash" text class="delete-btn" @click="removeField(taskParams, index)" />
+                <PvButton
+                  icon="pi pi-trash"
+                  text
+                  class="delete-btn bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                  @click="removeField(taskParams, index)"
+                />
               </div>
             </div>
           </div>
 
           <div class="w-full flex justify-content-center">
             <div v-if="!isExternalTask" class="w-2">
-              <PvButton label="Add Field" text icon="pi pi-plus" class="my-4" @click="addField(gameConfig)" />
+              <PvButton
+                label="Add Field"
+                text
+                icon="pi pi-plus"
+                class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                @click="addField(gameConfig)"
+              />
             </div>
             <div v-else class="w-2">
-              <PvButton label="Add Field" text icon="pi pi-plus" class="my-4" @click="addField(taskParams)" />
+              <PvButton
+                label="Add Field"
+                text
+                icon="pi pi-plus"
+                class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                @click="addField(taskParams)"
+              />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
@@ -167,7 +189,12 @@
             </div>
           </div>
           <div class="form-submit">
-            <PvButton type="submit" label="Submit" class="submit-button" severity="primary" />
+            <PvButton
+              type="submit"
+              label="Submit"
+              class="submit-button bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+              severity="primary"
+            />
           </div>
         </form>
       </div>
@@ -233,7 +260,13 @@
                     option-value="value"
                     class="flex-grow-1"
                   />
-                  <PvButton type="button" @click="deleteParam(key)">Delete</PvButton>
+                  <PvButton
+                    type="button"
+                    icon="pi pi-trash"
+                    class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                    text
+                    @click="deleteParam(key)"
+                  />
                 </div>
               </div>
             </div>
@@ -265,10 +298,22 @@
                 option-value="value"
                 class="flex-grow-1"
               />
-              <PvButton type="button" @click="removeNewField(field.name, newFields)">Delete</PvButton>
+              <PvButton
+                type="button"
+                icon="pi pi-trash"
+                class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                text
+                @click="removeNewField(field.name, newFields)"
+              />
             </div>
           </div>
-          <PvButton label="Add Field" text icon="pi pi-plus" class="my-4" @click="newField" />
+          <PvButton
+            label="Add Field"
+            text
+            icon="pi pi-plus"
+            class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+            @click="newField"
+          />
 
           <div class="flex flex-column w-8">
             <label for="gameConfigOutput">
@@ -307,7 +352,13 @@
                   option-value="value"
                   class="flex-grow-1"
                 />
-                <PvButton type="button" @click="deleteParam(paramName)">Delete</PvButton>
+                <PvButton
+                  type="button"
+                  icon="pi pi-trash"
+                  class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                  text
+                  @click="deleteParam(paramName)"
+                />
               </div>
             </div>
             <div v-if="addedGameConfig.length > 0">
@@ -339,14 +390,28 @@
                   option-value="value"
                   class="flex-grow-1"
                 />
-                <PvButton type="button" @click="removeNewField(field.name, addedGameConfig)">Delete</PvButton>
+                <PvButton
+                  type="button"
+                  icon="pi pi-trash"
+                  class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                  text
+                  @click="removeNewField(field.name, addedGameConfig)"
+                />
               </div>
             </div>
           </div>
-          <PvButton label="Add Param" text icon="pi pi-plus" class="my-4" @click="addGameConfig" />
+          <PvButton
+            label="Add Param"
+            text
+            icon="pi pi-plus"
+            class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+            @click="addGameConfig"
+          />
         </section>
 
-        <PvButton type="submit" class="my-4">Update Task</PvButton>
+        <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+          >Update Task</PvButton
+        >
       </form>
     </PvTabPanel>
   </PvTabView>

@@ -133,7 +133,13 @@
                 </div>
 
                 <div>
-                  <PvButton type="button" @click="moveToDeletedParams(param.name)">Delete</PvButton>
+                  <PvButton
+                    type="button"
+                    icon="pi pi-trash"
+                    class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                    text
+                    @click="moveToDeletedParams(param.name)"
+                  />
                 </div>
               </div>
 
@@ -168,11 +174,23 @@
                     option-value="value"
                     class="w-full"
                   />
-                  <PvButton type="button" class="w-2" @click="removeField(field.name, newParams)">Delete</PvButton>
+                  <PvButton
+                    type="button"
+                    icon="pi pi-trash"
+                    class="w-4rem bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                    text
+                    @click="removeField(field.name, newParams)"
+                  />
                 </div>
               </div>
             </div>
-            <PvButton label="Add Param" text icon="pi pi-plus" class="w-2 m-auto my-4" @click="newParam" />
+            <PvButton
+              label="Add Param"
+              text
+              icon="pi pi-plus"
+              class="w-2 my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+              @click="newParam"
+            />
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
@@ -206,7 +224,12 @@
             </div>
           </div>
           <div class="form-submit">
-            <PvButton type="submit" label="Submit" class="submit-button" severity="primary" />
+            <PvButton
+              type="submit"
+              label="Submit"
+              class="submit-button w-2 my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+              severity="primary"
+            />
           </div>
         </form>
       </div>
@@ -276,7 +299,13 @@
                     option-value="value"
                     class="flex-grow-1"
                   />
-                  <PvButton type="button" @click="deleteParam(key)">Delete</PvButton>
+                  <PvButton
+                    type="button"
+                    icon="pi pi-trash"
+                    class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                    text
+                    @click="deleteParam(key)"
+                  />
                 </div>
               </div>
             </div>
@@ -307,11 +336,22 @@
                   option-value="value"
                   class="flex-grow-1"
                 />
-                <PvButton type="button" @click="removeField(field.name, addedFields)">Delete</PvButton>
+                <PvButton
+                  type="button"
+                  icon="pi pi-trash"
+                  class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                  @click="removeField(field.name, addedFields)"
+                />
               </div>
             </div>
           </div>
-          <PvButton label="Add Field" text icon="pi pi-plus" class="my-4" @click="addField" />
+          <PvButton
+            label="Add Field"
+            text
+            icon="pi pi-plus"
+            class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+            @click="addField"
+          />
 
           <!--          **** Disabling the function to edit game params for now ****-->
 
@@ -382,7 +422,9 @@
           <!--          <PvButton label="Add Param" text icon="pi pi-plus" class="my-4" @click="addParam" />-->
         </section>
 
-        <PvButton type="submit" class="my-4">Update Variant</PvButton>
+        <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+          >Update Variant</PvButton
+        >
       </form>
     </PvTabPanel>
   </PvTabView>
