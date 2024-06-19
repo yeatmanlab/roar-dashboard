@@ -328,10 +328,10 @@ const onSortChange = (event) => {
   border: 0 none;
   border-radius: var(--border-radius);
   box-shadow:
-    0 0 #0000,
-    0 0 #0000,
-    0 10px 15px -3px #0000001a,
-    0 4px 6px -2px #0000000d;
+    0 0 rgba(0, 0, 0, 0),
+    0 0 rgba(0, 0, 0, 0),
+    0 10px 15px -3px rgba(0, 0, 0, 0.1019607843),
+    0 4px 6px -2px rgba(0, 0, 0, 0.0509803922);
 }
 
 .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
@@ -346,6 +346,14 @@ const onSortChange = (event) => {
 
 .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
   background-color: gainsboro;
+}
+
+button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 20%;
+  width: 3rem;
 }
 
 .card-container {
