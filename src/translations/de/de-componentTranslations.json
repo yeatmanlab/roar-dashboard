@@ -1,0 +1,105 @@
+{
+  "authSignIn": {
+    "atLeastOneLowercase": "Mindestens ein Kleinbuchstabe",
+    "atLeastOneUpperCase": "Mindestens ein Großbuchstabe",
+    "atLeastOneNumber": "Mindestens eine Zahl",
+    "atLeastOneNumeric": "Mindestens eine Nummer",
+    "buttonLabel": "Los!",
+    "minimumCharacters": "Mindestens 8 Zeichen",
+    "emailId": "E-Mail",
+    "emailPlaceholder": "Benutzername oder E-Mail",
+    "incorrectEmailOrPassword": "Falscher Benutzername/E-Mail oder Passwort",
+    "invalidEmailPlaceholder": "Fehler: Ungültige E-Mail",
+    "passwordId": "Passwort",
+    "passwordPlaceholder": "Passwort",
+    "pickPassword": "Wählen Sie ein Passwort",
+    "selectLanguage": "Sprache auswählen",
+    "signInWithEmailLinkPlaceHolder": "Drücken Sie „Los“, um sich mit einem E-Mail-Link anzumelden.",
+    "signInWithEmailLinkInstead": "Mit E-Mail-Link anmelden",
+    "signInWithPasswordInstead": "Mit Passwort anmelden",
+    "suggestions": "Vorschläge"
+  },
+  "cleverLanding": {
+    "cleverLoading": "Loading your data from Clever..."
+  },
+  "classLinkLanding": {
+    "classLinkLoading": "Loading your data from ClassLink..."
+  },
+  "consentModal": {
+    "title": "Consent",
+    "acceptButton": "Continue",
+    "toastHeader": "Confirmed"
+  },
+  "homeParticipant": {
+    "showOptionalAssignments": "Optionale Zuordnungen anzeigen",
+    "loadingAssignments": "Lade Zuordnungen",
+    "selectAssignment": "Wählen Sie eine Zuordnung aus",
+    "noAssignments": "Sie haben keine Zuordnungen!",
+    "contactAdministrator": "Bitte kontaktieren Sie Ihren Administrator, um zu einer Zuordnung hinzugefügt zu werden."
+  },
+  "homeSelector": {
+    "loading": "Laden...",
+    "inactivityLogout": "Sie werden aus Sicherheitsgründen bald abgemeldet. Bitte klicken Sie auf 'Fortsetzen', wenn Sie Ihre Sitzung fortsetzen möchten. Andernfalls werden Sie automatisch in { timeLeft } Sekunden abgemeldet.",
+    "inactivityLogoutAcceptLabel": "Fortsetzen"
+  },
+  "gameTabs": {
+    "clickToStart": "Klicken zum Starten",
+    "taskCompleted": "Aufgabe abgeschlossen!",
+    "LEVANTE TRANSLATIONS--------------------------": "",
+    "heartsAndFlowersDescription": "Wählen Sie die richtige Seite für die Herzen und Blumen.",
+    "heartsAndFlowersName": "Herzen und Blumen",
+    "egmaMathDescription": "Lösen Sie die Mathematikaufgaben.",
+    "egmaMathName": "Mathe-Spiel",
+    "matrixReasoningDescription": "Finden Sie das fehlende Teil, um das Puzzle zu vervollständigen.",
+    "matrixReasoningName": "Puzzle-Spiel",
+    "memoryGameDescription": "Beobachten Sie, wie die Quadrate aufleuchten. Merken Sie sich die Reihenfolge und machen Sie dasselbe Muster.",
+    "memoryGameName": "Gedächtnisspiel",
+    "mentalRotationDescription": "Bilder zuordnen.",
+    "mentalRotationName": "Zuordnungsspiel",
+    "sameDifferentSelectionDescription": "Finden Sie Gemeinsamkeiten der Formen.",
+    "sameDifferentSelectionName": "Formen-Spiel",
+    "theoryOfMindDescription": "Hören Sie sich die Geschichten an und beantworten Sie die Fragen.",
+    "theoryOfMindName": "Geschichten-Spiel",
+    "trogDescription": "Hören Sie sich die Wörter an und wählen Sie das passende Bild aus.",
+    "trogName": "Wörter und Bilder-Spiel",
+    "surveyName": "Gedanken und Gefühle",
+    "surveyDescription": "Beantworten Sie Fragen zu Ihrer Schulzeit.",
+    "mefsName": "Löwen- und Affenspiel",
+    "mefsDescription": "Formen und Farben zuordnen.",
+    "vocabName": "Wortschatzspiel",
+    "vocabDescription": "Hören Sie sich das Wort an und wählen Sie das passende Bild aus."
+  },
+  "navBar": {
+    "signOut": "Abmelden"
+  },
+  "notFound": {
+    "label": "Klicken Sie hier, um zur Startseite zu gelangen.",
+    "pageNotFound": "Seite nicht gefunden",
+    "sorry": "Entschuldigung, wir konnten diese Seite nicht finden!"
+  },
+  "participantSidebar": {
+    "grade": "Klasse",
+    "studentInfo": "Schülerinformationen",
+    "tasksCompleted": "Aufgaben abgeschlossen!"
+  },
+  "pageSignIn": {
+    "havingTrouble": "Haben Sie Schwierigkeiten?",
+    "login": "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",
+    "loginWith": "Anmelden mit",
+    "welcome": "Willkommen bei ROAR!"
+  },
+  "tasks": {
+    "preparing": "Bereite Ihr Spiel vor!",
+    "loading": "Laden"
+  },
+  "sentryForm": {
+    "formTitle": "Ein Problem bei ROAR melden",
+    "buttonLabel": "Ein Problem melden",
+    "submitButtonLabel": "Problembericht einreichen",
+    "cancelButtonLabel": "Abbrechen",
+    "namePlaceholder": "Ihr Name (optional)",
+    "emailPlaceholder": "ihre.email@beispiel.org (optional)",
+    "messageLabel": "Beschreibung",
+    "messagePlaceholder": "Was ist das Problem? Was wollten Sie stattdessen erleben? Vielen Dank für Ihr Feedback."
+  }
+}
