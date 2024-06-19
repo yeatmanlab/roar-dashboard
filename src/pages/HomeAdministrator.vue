@@ -321,7 +321,7 @@ const onSortChange = (event) => {
 };
 </script>
 
-<style scoped>
+<style>
 .p-autocomplete-panel {
   background: var(--surface-a);
   color: var(--text-color);
