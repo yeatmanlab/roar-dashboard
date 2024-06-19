@@ -74,7 +74,7 @@
     "signOut": "Salir"
   },
   "notFound": {
-    "label": "Haz clic aquí para ir a la página de inicio.",
+    "label": "Ir a la página de inicio.",
     "pageNotFound": "Página no encontrada",
     "sorry": "¡Lo siento, no pudimos encontrar esa página!"
   },

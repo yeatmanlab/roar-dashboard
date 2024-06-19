@@ -200,7 +200,7 @@ async function checkConsent() {
   const isOlder = isAdult || isSeniorGrade;
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
-  let docType = (legal[docTypeKey][0]?.type).toLowerCase();
+  let docType = legal[docTypeKey][0]?.type.toLowerCase();
   let docAmount = legal?.amount;
   let docExpectedTime = legal?.expectedTime;
 
