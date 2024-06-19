@@ -20,6 +20,7 @@ module.exports = defineConfig({
   env: {
     baseUrl: 'https://localhost:5173',
     firestoreUrl: 'https://firestore.googleapis.com/**/*',
+    NODE_EXTRA_CA_CERTS: '$(mkcert -CAROOT)/cert.pem',
     timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
