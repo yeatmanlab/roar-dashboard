@@ -71,7 +71,11 @@
         <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
         <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
         <router-link :to="{ name: 'SignOut' }">
-          <PvButton :label="$t('navBar.signOut')" class="no-underline" icon="pi pi-sign-out" />
+          <PvButton
+            :label="$t('navBar.signOut')"
+            class="no-underline bg-primary border-none border-round p-2 text-white"
+            icon="pi pi-sign-out"
+          />
         </router-link>
       </div>
     </div>

@@ -200,7 +200,7 @@ async function saveResults(sender) {
       <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
         <PvButton
           :id="'audio-button-' + item.name"
-          icon="pi pi-volume-up"
+          icon="pi pi-volume-up text-white"
           style="display: none"
           @click="playAudio(item.name)"
         />
@@ -220,5 +220,11 @@ async function saveResults(sender) {
   margin-right: -36px;
   width: 40px;
   height: 40px;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 25%;
+}
+.play-button-visible:hover {
+  background-color: var(--primary-color-hover);
 }
 </style>

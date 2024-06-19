@@ -22,14 +22,21 @@
                     {{ userDisplayName }}
                   </div>
                   <router-link :to="{ name: 'SignOut' }" class="signout-button">
-                    <PvButton text data-cy="button-sign-out" class="no-underline h-2 p-1"
+                    <PvButton
+                      text
+                      data-cy="button-sign-out"
+                      class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
                       >{{ $t('navBar.signOut') }}
                     </PvButton>
                   </router-link>
                 </div>
                 <div v-else>
                   <router-link :to="{ name: 'SignOut' }" class="signout-button">
-                    <PvButton data-cy="button-sign-out" class="no-underline">{{ $t('navBar.signOut') }}</PvButton>
+                    <PvButton
+                      data-cy="button-sign-out"
+                      class="no-underline m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                      >{{ $t('navBar.signOut') }}</PvButton
+                    >
                   </router-link>
                 </div>
                 <div class="my-2">
