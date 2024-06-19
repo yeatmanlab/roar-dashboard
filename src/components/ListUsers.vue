@@ -140,12 +140,10 @@ const columns = ref([
     sort: false,
   },
   {
+    header: 'Edit',
     button: true,
     eventName: 'edit-button',
-    buttonLabel: 'edit',
-    routeTooltip: 'View users',
-    routeLabel: 'Users',
-    routeIcon: 'pi pi-user',
+    buttonIcon: 'pi pi-user-edit',
     sort: false,
   },
 ]);
