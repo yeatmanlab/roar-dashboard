@@ -100,6 +100,14 @@
   box-sizing: border-box;
 }
 
+/* Styles default HTML tags */
+
+button {
+  background-color: #8c1515;
+  color: white;
+  border-radius: 0.2rem 0.3rem;
+}
+
 .p-component {
   font-family:
     Inter,
@@ -2156,8 +2164,8 @@
 
 .p-button.p-button-outlined {
   background-color: transparent;
-  color: #8c1515;
-  border: 1px solid;
+  /* color: #8c1515; */
+  /* border: 1px solid; */
 }
 
 .p-button.p-button-outlined:enabled:hover {

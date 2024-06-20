@@ -63,11 +63,10 @@
       </div>
       <div v-if="isAssigned">
         <PvButton
-          class="mt-2 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           :icon="toggleIcon"
           style="padding: 1rem; padding-top: 1.2rem; padding-bottom: 1.2rem"
-          size="small"
-          :label="toggleLabel"
+          size="x-small"
+          :label="showDetailsToggle"
           @click="toggleTable"
         />
       </div>
@@ -257,7 +256,7 @@ const toggleIcon = computed(() => {
   return 'pi pi-chevron-right mr-2';
 });
 
-const toggleLabel = computed(() => {
+const showDetailsToggle = computed(() => {
   if (showTable.value) {
     return 'Hide details';
   }
