@@ -129,8 +129,19 @@
     </div>
     <template #footer>
       <div class="modal-footer">
-        <PvButton tabindex="0" text label="Cancel" outlined @click="onReject"></PvButton>
-        <PvButton tabindex="0" label="Save" @click="onAccept"
+        <PvButton
+          tabindex="0"
+          class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+          text
+          label="Cancel"
+          outlined
+          @click="onReject"
+        ></PvButton>
+        <PvButton
+          tabindex="0"
+          class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+          label="Save"
+          @click="onAccept"
           ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
         ></PvButton>
       </div>
