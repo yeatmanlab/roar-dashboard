@@ -85,18 +85,30 @@
             :value="`https://roar.education/register/?code=${activationCode}`"
             autocomplete="off"
           />
-          <PvButton @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)">
-            <i class="pi pi-copy"></i>
+          <PvButton
+            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
+          >
+            <i class="pi pi-copy p-2"></i>
           </PvButton>
         </PvInputGroup>
         <p class="font-bold text-lg">Code:</p>
         <PvInputGroup class="mt-3">
           <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" />
-          <PvButton @click="copyToClipboard(activationCode)">
-            <i class="pi pi-copy"></i>
+          <PvButton
+            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            @click="copyToClipboard(activationCode)"
+          >
+            <i class="pi pi-copy p-2"></i>
           </PvButton>
         </PvInputGroup>
-        <PvButton class="mt-3" @click="closeDialog">Close</PvButton>
+        <div class="flex justify-content-end">
+          <PvButton
+            class="mt-3 bg-primary border-none border-round p-3 text-white hover:bg-red-900"
+            @click="closeDialog"
+            >Close</PvButton
+          >
+        </div>
       </PvDialog>
     </section>
   </main>

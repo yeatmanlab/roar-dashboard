@@ -322,8 +322,8 @@
               <div>
                 <PvButton
                   label="Invite Users"
-                  icon="pi pi-send"
-                  class="bg-white text-primary mr-2 hover:bg-primary hover:text-white"
+                  icon="pi pi-send mr-2"
+                  class="bg-white border-none border-round text-primary p-2 mr-2 hover:surface-300"
                   @click="viewOrgCode(colData)"
                 />
               </div>
@@ -333,7 +333,12 @@
             <div class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No results found</div>
               <div class="font-light">The filters applied have no matching results .</div>
-              <PvButton text class="my-2" @click="resetFilters">Reset Filters</PvButton>
+              <PvButton
+                text
+                class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900"
+                @click="resetFilters"
+                >Reset Filters</PvButton
+              >
             </div>
           </template>
         </PvDataTable>

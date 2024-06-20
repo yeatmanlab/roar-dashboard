@@ -54,7 +54,7 @@
             <h2 class="text-primary h-3 m-0 p-0" style="width: 70%">{{ student.orgName }}</h2>
             <PvButton
               @click="codeNotRight(outerIndex)"
-              class="w-4 bg-primary text-white ml-5 hover:bg-red-900"
+              class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
               label="Is this not right?"
             />
           </div>
@@ -292,7 +292,7 @@
         <section class="form-section-button">
           <PvButton
             v-if="outerIndex !== 0"
-            class="bg-primary border-none border-round text-white hover:surface-300 hover:text-black-alpha-90"
+            class="bg-primary border-none border-round p-3 text-white hover:surface-300 hover:text-black-alpha-90"
             @click="deleteStudentForm(outerIndex)"
           >
             Delete Student
@@ -302,7 +302,7 @@
     </form>
     <div class="form-section-button2">
       <PvButton
-        class="bg-primary border-none border-round text-white hover:surface-300 hover:text-black-alpha-90"
+        class="bg-primary border-none border-round text-white p-3 hover:surface-300 hover:text-black-alpha-90"
         @click="addStudent()"
       >
         Add another student
@@ -312,7 +312,7 @@
       <PvButton
         type="submit"
         label="Submit"
-        class="bg-primary text-white border-none border-round w-4 p-2 h-3rem hover:bg-red-900 mr-3"
+        class="bg-primary text-white border-none border-round w-4 p-2 h-3rem mr-3 hover:surface-300 hover:text-black-alpha-90"
         @click.prevent="handleFormSubmit(!v$.$invalid)"
       />
       <PvDialog
