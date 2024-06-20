@@ -88,11 +88,23 @@ import 'primeflex/primeflex.scss'; // primeflex
 import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import './assets/styles/theme.scss'; // ROAR theme
 
-// translations
-import { i18n } from '@/translations/i18n.js';
-// https://www.npmjs.com/package/vue-country-flag-next
-
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
+import { i18n } from '@/translations/i18n.js';
+
+const vueQueryPluginOptions = {
+  queryClientConfig: {
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 10, // Optional: time in milliseconds before data is considered stale (10 minutes)
+        cacheTime: Infinity, // Optional: cache time in milliseconds (Infinity means cache forever)
+        // Set network mode here:
+        networkMode: 'offlineFirst',
+      },
+    },
+  },
+};
+
+console.log('network mode is offline');
 
 // Begin the app!
 const app = createApp(App);
@@ -105,6 +117,7 @@ app.use(VueRecaptchaPlugin, {
 
 initSentry(app);
 
+app.use(VueQueryPlugin, vueQueryPluginOptions);
 app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
 app.use(ConfirmationService);
@@ -118,7 +131,6 @@ app.use(VueGoogleMaps, {
 });
 app.use(createHead());
 app.use(TextClamp);
-app.use(VueQueryPlugin);
 app.use(i18n);
 app.use(surveyPlugin);
 
