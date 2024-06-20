@@ -188,6 +188,7 @@
               :label="submitted ? `Creating ${orgTypeLabel}` : `Create ${orgTypeLabel}`"
               :disabled="orgTypeLabel === 'Org' || v$.$invalid || submitted"
               :icon="submitted ? 'pi pi-spin pi-spinner' : ''"
+              class="bg-primary text-white border-none border-round h-3rem w-3 hover:bg-red-900"
               data-cy="button-create-org"
               @click="submit"
             />
@@ -463,6 +464,14 @@ const resetForm = () => {
 .return-button {
   display: block;
   margin: 1rem 1.75rem;
+}
+
+button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 20%;
+  width: 3rem;
 }
 
 #rectangle {

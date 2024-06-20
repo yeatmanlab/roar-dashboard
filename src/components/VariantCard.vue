@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!hasControls"
-    class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover"
+    class="flex-1 flex h-6rem flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover"
   >
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
@@ -76,8 +76,8 @@
     </div>
   </div>
   <!---------- end card without buttons ----- >-->
-  <div v-else :id="variant.id" :class="isActive()">
-    <div class="ml-0 pl-0">
+  <div v-else class="h-6rem" :id="variant.id" :class="isActive()">
+    <div class="ml-0 pl-0 flex flex-column">
       <PvButton
         class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
         @click="handleRemove"

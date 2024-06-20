@@ -73,7 +73,7 @@
     "signOut": "Sign Out"
   },
   "notFound": {
-    "label": "Click here to go to the home page.",
+    "label": "Return to Home",
     "pageNotFound": "Page not found",
     "sorry": "Sorry, we could not find that page!"
   },

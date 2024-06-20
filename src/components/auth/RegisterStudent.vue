@@ -133,10 +133,22 @@
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
-              <PvCalendar v-model="student.dob" :max-date="maxDoB" view="date" date-format="mm/dd/yy" show-icon />
+              <PvCalendar
+                v-model="student.dob"
+                :max-date="maxDoB"
+                view="date"
+                date-format="mm/dd/yy"
+                icon="pi pi-calendar text-white p-1"
+              />
             </div>
             <div v-else>
-              <PvCalendar v-model="student.dob" :max-date="maxDoB" view="year" date-format="yy" show-icon />
+              <PvCalendar
+                v-model="student.dob"
+                :max-date="maxDoB"
+                view="year"
+                date-format="yy"
+                icon="pi pi-calendar text-white p-1"
+              />
             </div>
             <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
               v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
@@ -297,7 +309,12 @@
       </PvButton>
     </div>
     <section class="flex mt-8 justify-content-end">
-      <PvButton type="submit" label="Submit" class="submit-button" @click.prevent="handleFormSubmit(!v$.$invalid)" />
+      <PvButton
+        type="submit"
+        label="Submit"
+        class="bg-primary text-white border-none border-round w-4 p-2 h-3rem hover:bg-red-900 mr-3"
+        @click.prevent="handleFormSubmit(!v$.$invalid)"
+      />
       <PvDialog
         v-model:visible="isDialogVisible"
         header="Error!"
@@ -665,6 +682,11 @@ const validateRoarUsername = async () => {
 .stepper {
   margin: 2rem 0rem;
 }
+
+button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
+  background: blue;
+}
+
 .p-fluid .p-button {
   width: 50%;
   align-items: center;

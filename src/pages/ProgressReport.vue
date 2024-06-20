@@ -22,6 +22,7 @@
           <div class="uppercase text-sm text-gray-600">VIEW</div>
           <PvSelectButton
             v-model="reportView"
+            v-tooltip.top="'View different report'"
             :options="reportViews"
             option-disabled="constant"
             :allow-empty="false"
@@ -645,5 +646,19 @@ onMounted(async () => {
   width: 25px;
   vertical-align: middle;
   margin-right: 10px;
+}
+
+.select-button .p-button:last-of-type:not(:only-of-type) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 25rem;
+  border-bottom-right-radius: 25rem;
+}
+
+.select-button .p-button:first-of-type:not(:only-of-type) {
+  border-top-left-radius: 25rem;
+  border-bottom-left-radius: 25rem;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 </style>
