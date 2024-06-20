@@ -144,7 +144,6 @@
           v-model:visible="isDialogVisible"
           header="Error!"
           :style="{ width: '25rem' }"
-          :position="position"
           :modal="true"
           :draggable="false"
         >

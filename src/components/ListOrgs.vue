@@ -1,4 +1,5 @@
 <template>
+  <PvToast />
   <main class="container main">
     <section class="main-body">
       <div class="flex flex-column mb-5">
@@ -57,12 +58,58 @@
             sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
+            :is-inside-list-orgs="true"
             @export-all="exportAll"
+            @selected-org-id="ShowCode"
           />
           <AppSpinner v-else />
         </PvTabPanel>
       </PvTabView>
       <AppSpinner v-else />
+    </section>
+    <section class="flex mt-8 justify-content-end">
+      <PvDialog
+        v-model:visible="isDialogVisible"
+        dialog-title="text-primary"
+        :style="{ width: '50rem' }"
+        :modal="true"
+        :draggable="false"
+      >
+        <template #header>
+          <h1 class="text-primary font-bold m-0">Invitation</h1>
+        </template>
+        <p class="font-bold text-lg">Link:</p>
+        <PvInputGroup>
+          <PvInputText
+            style="width: 70%"
+            :value="`https://roar.education/register/?code=${activationCode}`"
+            autocomplete="off"
+          />
+          <PvButton
+            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
+          >
+            <i class="pi pi-copy p-2"></i>
+          </PvButton>
+        </PvInputGroup>
+        <p class="font-bold text-lg">Code:</p>
+        <PvInputGroup class="mt-3">
+          <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" />
+          <PvButton
+            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            @click="copyToClipboard(activationCode)"
+          >
+            <i class="pi pi-copy p-2"></i>
+          </PvButton>
+        </PvInputGroup>
+        <div class="flex justify-content-end">
+          <PvButton
+            class="mt-3 bg-primary border-none border-round p-3 text-white hover:bg-red-900"
+            @click="closeDialog"
+            >Close</PvButton
+          >
+        </div>
+      </PvDialog>
     </section>
   </main>
 </template>
@@ -73,15 +120,18 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
-
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 const orderBy = ref(orderByDefault);
+let activationCode = ref(null);
+const isDialogVisible = ref(false);
+const toast = useToast();
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -156,6 +206,43 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+const { data: allGroups } = useQuery({
+  queryKey: ['groups'],
+  queryFn: () => orgFetcher('groups', undefined, isSuperAdmin, adminOrgs, ['name', 'id', 'currentActivateCode']),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const { data: allClasses } = useQuery({
+  queryKey: ['classes', selectedSchool],
+  queryFn: () => orgFetcher('classes', selectedSchool, isSuperAdmin, adminOrgs, ['name', 'id', 'currentActivateCode']),
+  keepPreviousData: true,
+  enabled: claimsLoaded,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+function copyToClipboard(text) {
+  navigator.clipboard
+    .writeText(text)
+    .then(function () {
+      toast.add({
+        severity: 'success',
+        summary: 'Hoorah!',
+        detail: 'Your code has been successfully copied to clipboard!',
+        life: 3000,
+      });
+    })
+    .catch(function (error) {
+      toast.add({
+        severity: 'error',
+        summary: 'Error!',
+        detail: 'Your code has not been copied to clipboard! \n Please try again',
+        life: 3000,
+      });
+    });
+}
+
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
@@ -199,7 +286,6 @@ const exportAll = async () => {
     isSuperAdmin,
     adminOrgs,
   );
-  console.log('Exporting all:', exportData);
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
@@ -249,6 +335,23 @@ const tableData = computed(() => {
     };
   });
 });
+
+const ShowCode = (selectedOrg) => {
+  const collections = [allDistricts.value, allSchools.value, allClasses.value, allGroups.value];
+
+  for (const collection of collections) {
+    const match = collection?.find((item) => item.id === selectedOrg && item.currentActivationCode);
+    if (match) {
+      activationCode.value = match.currentActivationCode;
+      isDialogVisible.value = true;
+      break;
+    }
+  }
+};
+
+const closeDialog = () => {
+  isDialogVisible.value = false;
+};
 
 let unsubscribe;
 const initTable = () => {

@@ -313,11 +313,32 @@
               </PvButton>
             </template>
           </PvColumn>
+          <PvColumn
+            v-if="isInsideListOrgs"
+            header="SignUp Code"
+            header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+          >
+            <template #body="{ data: colData }">
+              <div>
+                <PvButton
+                  label="Invite Users"
+                  icon="pi pi-send mr-2"
+                  class="bg-white border-none border-round text-primary p-2 mr-2 hover:surface-300"
+                  @click="viewOrgCode(colData)"
+                />
+              </div>
+            </template>
+          </PvColumn>
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No results found</div>
               <div class="font-light">The filters applied have no matching results .</div>
-              <PvButton text class="my-2" @click="resetFilters">Reset Filters</PvButton>
+              <PvButton
+                text
+                class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900"
+                @click="resetFilters"
+                >Reset Filters</PvButton
+              >
             </div>
           </template>
         </PvDataTable>
@@ -379,6 +400,10 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
+  isInsideListOrgs: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const inputColumns = ref(props.columns);
@@ -434,6 +459,10 @@ const onSelectAll = () => {
 const onSelectionChange = () => {
   emit('selection', selectedRows.value);
 };
+
+function viewOrgCode(data) {
+  emit('selected-org-id', data.id);
+}
 
 const dataTable = ref();
 
@@ -561,7 +590,7 @@ const onFreezeToggle = (selected) => {
 };
 
 // Pass through data table events
-const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected']);
+const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'selected-org-id']);
 </script>
 <style>
 .small-circle {

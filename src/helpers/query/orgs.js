@@ -231,7 +231,13 @@ export const fetchOrgByName = async (orgType, orgName, selectedDistrict, selecte
   return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
 };
 
-export const orgFetcher = async (orgType, selectedDistrict, isSuperAdmin, adminOrgs, select = ['name', 'id']) => {
+export const orgFetcher = async (
+  orgType,
+  selectedDistrict,
+  isSuperAdmin,
+  adminOrgs,
+  select = ['name', 'id', 'currentActivationCode'],
+) => {
   if (isSuperAdmin.value) {
     const axiosInstance = getAxiosInstance();
     const requestBody = getOrgsRequestBody({

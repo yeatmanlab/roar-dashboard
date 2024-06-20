@@ -28,8 +28,8 @@
     "generate-pwa-assets": "pwa-assets-generator"
   },
   "dependencies": {
+    "@bdelab/roar-firekit": "^6.1.2",
     "@bdelab/roam-fluency": "1.11.21",
-    "@bdelab/roar-firekit": "^6.0.1",
     "@bdelab/roar-letter": "^1.11.4",
     "@bdelab/roar-multichoice": "^1.11.3",
     "@bdelab/roar-pa": "2.2.4",
