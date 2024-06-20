@@ -4,19 +4,28 @@
       <div class="flex flex-column mb-5">
         <div class="flex align-items-center flex-wrap gap-3 mb-2">
           <i class="pi pi-pencil text-gray-400 rounded" style="font-size: 1.6rem" />
-          <div class="admin-page-header">Register Task</div>
+          <div class="admin-page-header">Manage Tasks</div>
         </div>
-        <div class="text-md text-gray-500 ml-6">Register a new task or variant.</div>
+        <div class="text-md text-gray-500 ml-6">Manage tasks and variants.</div>
       </div>
       <div class="register-container mx-auto md:flex-none">
-        <RegisterTask />
+        <PvTabView>
+          <PvTabPanel header="Tasks">
+            <ManageTasks />
+          </PvTabPanel>
+
+          <PvTabPanel header="Variants">
+            <ManageVariants />
+          </PvTabPanel>
+        </PvTabView>
       </div>
     </section>
   </main>
 </template>
 
 <script setup>
-import RegisterTask from '@/components/tasks/RegisterTask.vue';
+import ManageTasks from '../components/tasks/ManageTasks.vue';
+import ManageVariants from '../components/tasks/ManageVariants.vue';
 </script>
 
 <style scoped>
