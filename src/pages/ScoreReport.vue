@@ -498,16 +498,6 @@ const schoolsDictWithGrade = computed(() => {
   }
 });
 
-const schoolNameDictionary = computed(() => {
-  if (schoolsInfo.value) {
-    return schoolsInfo.value.reduce((acc, school) => {
-      acc[school.id] = school.name;
-      return acc;
-    }, {});
-  } else {
-    return {};
-  }
-});
 
 const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
 
@@ -577,6 +567,7 @@ const getScoresAndSupportFromAssessment = ({
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
 const computeAssignmentAndRunData = computed(() => {
+<<<<<<< Updated upstream
   if (!assignmentData.value || assignmentData.value.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   } else {
@@ -584,6 +575,10 @@ const computeAssignmentAndRunData = computed(() => {
     const assignmentTableDataAcc = [];
     // runsByTaskId is an object with keys as taskIds and values as arrays of scores
     const runsByTaskIdAcc = {};
+=======
+  const promise = new Promise((resolve, reject) => {
+    const worker = new Worker('/worker.js', { type: "module" });
+>>>>>>> Stashed changes
 
     for (const { assignment, user } of assignmentData.value) {
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
@@ -781,8 +776,23 @@ const computeAssignmentAndRunData = computed(() => {
       return Object.keys(taskInfoById).includes(taskId);
     });
 
+<<<<<<< Updated upstream
     return { runsByTaskId: filteredRunsByTaskId, assignmentTableData: assignmentTableDataAcc };
   }
+=======
+    // Handle errors from the worker
+    worker.addEventListener('error', (error) => {
+      reject(error);
+      worker.terminate(); // Terminate the worker in case of an error
+    });
+
+    console.log('jsonstring assndata', JSON.stringify(assignmentData.value))
+    // Send assignmentData to the worker for processing
+    worker.postMessage(JSON.stringify(assignmentData.value));
+  });
+  console.log('worker promise', promise);
+  return promise;
+>>>>>>> Stashed changes
 });
 
 const filteredTableData = ref(computeAssignmentAndRunData.value.assignmentTableData);
