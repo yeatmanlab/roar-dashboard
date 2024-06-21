@@ -66,7 +66,6 @@ const sidebarActionOptions = [
     icon: 'pi pi-pencil',
     buttonLink: { name: 'RegisterGame' },
     requiresSuperAdmin: true,
-    requiresAdmin: true,
     project: 'ALL',
     category: 'Administrations',
   },

@@ -199,7 +199,7 @@ const routes = [
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),
-    meta: { pageTitle: 'Register Game', requireAdmin: true, requireSuperAdmin: true },
+    meta: { pageTitle: 'Register Game', requireSuperAdmin: true },
   },
   {
     path: '/register',

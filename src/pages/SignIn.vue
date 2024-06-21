@@ -20,10 +20,17 @@
           <SignIn :invalid="incorrect" @submit="authWithEmail" />
         </section>
         <section v-if="isLevante" class="w-full mb-2">
-          <p class="text-center m-auto">
+          <!-- <p class="text-center m-auto">
             Are you an Admin? Click
             <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">Here</span> to Sign In
-          </p>
+          </p> -->
+          <i18n-t keypath="pageSignIn.adminPrompt" tag="p" class="text-center m-auto">
+            <template #action>
+              <span class="underline text-red-700 cursor-pointer" @click="toggleAdminSignIn">{{
+                $t('pageSignIn.adminAction')
+              }}</span>
+            </template>
+          </i18n-t>
         </section>
         <section v-if="adminSignIn || !isLevante" class="signin-option-container signin-option-providers">
           <h4 class="signin-option-title">{{ $t('pageSignIn.loginWith') }}</h4>
@@ -56,6 +63,7 @@
               <span>ClassLink</span>
             </PvButton>
           </div>
+          <p class="text-xs">*{{ $t('pageSignIn.adminInfoPrompt') }}</p>
         </section>
         <!-- <section class="signin-option-container signin-option-providers">
           <div class="flex flex-row justify-content-center w-full">
@@ -116,7 +124,6 @@ authStore.$subscribe(() => {
 });
 
 const toggleAdminSignIn = () => {
-  console.log('toggleAdminSignIn');
   adminSignIn.value = !adminSignIn.value;
 };
 

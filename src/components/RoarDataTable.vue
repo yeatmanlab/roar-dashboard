@@ -35,9 +35,9 @@
       </span>
       <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
         <PvButton
+          v-tooltip.bottom="'Expand or Compress table rows'"
           text
           :label="rowViewMode"
-          v-tooltip.bottom="'Expand or Compress table rows'"
           class="my-1 m-1 h-3rem text-primary surface-ground border-none border-round h-2rem text-sm hover:bg-gray-300"
           @click="toggleView"
         />

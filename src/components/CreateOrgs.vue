@@ -161,7 +161,7 @@
                 :options="allTags"
                 :suggestions="tagSuggestions"
                 name="tags"
-                class="w-full"
+                class="w-full pr-2 mr-2"
                 data-cy="input-autocomplete"
                 @complete="searchTags"
               />
@@ -169,7 +169,7 @@
             </span>
           </div>
         </div>
-        <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
+        <div v-if="!isLevante" class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
           <div class="flex flex-row align-items-center">
             <PvCheckbox v-model="isDemoData" input-id="chbx-demodata" :binary="true" />
             <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
@@ -472,6 +472,10 @@ button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
   border: none;
   border-radius: 20%;
   width: 3rem;
+}
+
+button.p-autocomplete-dropdown {
+  margin-left: 0.3rem;
 }
 
 #rectangle {

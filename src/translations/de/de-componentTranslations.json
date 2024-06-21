@@ -86,7 +86,10 @@
     "havingTrouble": "Haben Sie Schwierigkeiten?",
     "login": "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen",
     "loginWith": "Anmelden mit",
-    "welcome": "Willkommen bei ROAR!"
+    "welcome": "Willkommen bei ROAR!",
+    "adminPrompt": "Sind Sie ein Administrator? Klicken Sie {action}, um sich anzumelden.",
+    "adminAction": "hier",
+    "adminInfoPrompt": "Wenn Sie sich mit einer Google-E-Mail oder Ihr E-Mail-Anbieter Google SSO verwendet, registriert haben."
   },
   "tasks": {
     "preparing": "Bereite Ihr Spiel vor!",
