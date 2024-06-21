@@ -1,10 +1,11 @@
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vite';
-import vitePluginFaviconsInject from 'vite-plugin-favicons-inject';
 import Vue from '@vitejs/plugin-vue';
-import basicSsl from '@vitejs/plugin-basic-ssl';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { VitePWA } from 'vite-plugin-pwa';
+import mkcert from 'vite-plugin-mkcert';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,17 +13,68 @@ export default defineConfig({
     Vue({
       include: [/\.vue$/, /\.md$/],
     }),
-    vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
-    ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
+    VitePWA({
+      manifest: {
+        // Modify manifest options here...
+        name: 'ROAR Dashboard',
+        short_name: 'ROAD',
+        start_url: '.',
+        display: 'standalone',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        // inject service worker automatically
+        strategies: 'generateSW',
+        injectRegister: 'manual',
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico}'],
+        },
+        icons: [
+          {
+            src: '/pwa-64x64.png',
+            sizes: '64x64',
+            type: 'image/png',
+          },
+          {
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+        // Add more manifest options as needed
+      },
+      /* enable sw on development */
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        /* other options */
+      },
+    }),
+    mkcert(),
     nodePolyfills({
       globals: {
         process: true,
       },
     }),
-    sentryVitePlugin({
-      org: 'roar-89588e380',
-      project: 'dashboard',
-    }),
+    ...(process.env.NODE_ENV !== 'development'
+      ? [
+          sentryVitePlugin({
+            org: 'roar-89588e380',
+            project: 'dashboard',
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
@@ -31,6 +83,7 @@ export default defineConfig({
     },
   },
   server: {
+    https: true,
     fs: {
       allow: ['..'],
     },
@@ -56,7 +109,6 @@ export default defineConfig({
           vocab: ['@bdelab/roar-vocab'],
           ran: ['@bdelab/roav-ran'],
           crowding: ['@bdelab/roav-crowding'],
-          'roav-mep': ['@bdelab/roav-mep'],
         },
       },
     },

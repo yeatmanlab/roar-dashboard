@@ -97,13 +97,24 @@
 
               <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <PvButton icon="pi pi-trash" text class="delete-btn" @click="removeField(taskParams, index)" />
+              <PvButton
+                icon="pi pi-trash"
+                text
+                class="bg-primary text-white w-2 border-round border-none hover:bg-red-900"
+                @click="removeField(taskParams, index)"
+              />
             </div>
           </div>
 
           <div class="w-full flex justify-content-end">
             <div class="w-2">
-              <PvButton label="Add Field" text icon="pi pi-plus" @click="addField(taskParams)" />
+              <PvButton
+                label="Add Field"
+                class="surface-ground w-10 h-3rem p-3rem text-primary border-round border-none hover:bg-primary hover:text-white"
+                text
+                icon="pi pi-plus ml-2"
+                @click="addField(taskParams)"
+              />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
@@ -120,8 +131,13 @@
               <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>External Task</b> </label>
             </div>
           </div>
-          <div class="form-submit">
-            <PvButton type="submit" label="Submit" class="submit-button" severity="primary" />
+          <div class="form-submit flex justify-content-center">
+            <PvButton
+              type="submit"
+              label="Submit"
+              class="bg-primary h-3rem w-3 text-white border-round border-none hover:bg-red-900"
+              severity="primary"
+            />
           </div>
         </form>
       </div>
@@ -211,13 +227,24 @@
 
               <PvInputNumber v-else-if="param.type === 'Number'" v-model="param.value" show-buttons />
 
-              <PvButton icon="pi pi-trash" class="delete-btn" text @click="removeField(variantParams, index)" />
+              <PvButton
+                icon="pi pi-trash"
+                class="bg-primary text-white w-2 border-round border-none hover:bg-red-900"
+                text
+                @click="removeField(variantParams, index)"
+              />
             </div>
           </div>
 
           <div class="w-full flex justify-content-end">
             <div class="w-2">
-              <PvButton icon="pi pi-plus" label="Add Field" text @click="addField(variantParams)" />
+              <PvButton
+                class="surface-ground w-10 h-3rem p-3rem text-primary border-round border-none hover:bg-primary hover:text-white"
+                icon="pi pi-plus ml-2"
+                label="Add Field"
+                text
+                @click="addField(variantParams)"
+              />
             </div>
           </div>
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
@@ -249,8 +276,13 @@
               <label class="ml-1 mr-3" for="chbx-externalVariant">Mark as <b>External Variant</b></label>
             </div>
           </div>
-          <div class="form-submit">
-            <PvButton type="submit" label="Submit" class="submit-button" severity="primary" />
+          <div class="form-submit flex justify-content-center">
+            <PvButton
+              type="submit"
+              label="Submit"
+              class="bg-primary h-3rem w-3 text-white border-round border-none hover:bg-red-900"
+              severity="primary"
+            />
           </div>
         </form>
       </div>

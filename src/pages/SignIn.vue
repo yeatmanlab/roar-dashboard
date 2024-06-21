@@ -28,16 +28,31 @@
         <section v-if="adminSignIn || !isLevante" class="signin-option-container signin-option-providers">
           <h4 class="signin-option-title">{{ $t('pageSignIn.loginWith') }}</h4>
           <div class="flex">
-            <PvButton label="Sign in with Google" class="signin-button" @click="authWithGoogle">
-              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="signin-button-icon" />
+            <PvButton
+              label="Sign in with Google"
+              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem"
+              @click="authWithGoogle"
+            >
+              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
               <span>Google</span>
             </PvButton>
-            <PvButton v-if="!isLevante" class="signin-button" @click="authWithClever">
-              <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="signin-button-icon" />
+            <PvButton
+              v-if="!isLevante"
+              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem"
+              @click="authWithClever"
+            >
+              <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
               <span>Clever</span>
             </PvButton>
-            <PvButton v-if="!isLevante" class="signin-button" @click="authWithClassLink">
-              <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="signin-button-icon" />
+            <PvButton
+              v-if="!isLevante"
+              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem"
+              @click="authWithClassLink"
+            >
+              <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
               <span>ClassLink</span>
             </PvButton>
           </div>

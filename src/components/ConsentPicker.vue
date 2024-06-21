@@ -243,6 +243,7 @@
     :style="{ width: '65vw' }"
     :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
   >
+    <!-- eslint-disable-next-line vue/no-v-html -->
     <div v-html="confirmText"></div>
   </PvDialog>
 </template>
@@ -253,8 +254,6 @@ import { fetchLegalDocs } from '@/helpers/query/legal';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { marked } from 'marked';
-import _lowerCase from 'lodash/lowerCase';
-import _mapValues from 'lodash/mapValues';
 import _forEach from 'lodash/forEach';
 
 const props = defineProps({
@@ -351,7 +350,8 @@ onMounted(() => {
 
 watch(
   () => props.legal,
-  (newValue, oldValue) => {
+  // eslint-disable-next-line no-unused-vars
+  (newValue, _) => {
     if (newValue) {
       result.consent[0] = newValue.consent[0];
       result.assent[0] = newValue.assent[0];
@@ -417,7 +417,7 @@ async function seeConsent(consent) {
   if (consent?.type === 'Assent-es') {
     consentDoc = await authStore.getLegalDoc('assent-es');
   } else {
-    consentDoc = await authStore.getLegalDoc((consent?.type).toLowerCase());
+    consentDoc = await authStore.getLegalDoc(consent?.type.toLowerCase());
   }
   consentVersion.value = consentDoc.version;
   confirmText.value = marked(consentDoc.text);

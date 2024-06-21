@@ -105,7 +105,12 @@
           <div v-if="capsLockEnabled" class="mt-2 p-error">⇪ Caps Lock is on!</div>
         </div>
       </div>
-      <PvButton type="submit" :label="$t('authSignIn.buttonLabel') + ' &rarr;'" class="submit-button" />
+      <PvButton
+        type="submit"
+        class="mt-5 flex w-5 p-3 border-none border-round hover:bg-black-alpha-20"
+        :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
+      />
+      <hr class="opacity-20 mt-5" />
     </form>
   </div>
 </template>
