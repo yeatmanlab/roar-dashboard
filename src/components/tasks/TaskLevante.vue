@@ -24,7 +24,7 @@ const props = defineProps({
 let levanteTaskLauncher;
 
 const taskId = props.taskId;
-const { version } = packageLockJson.packages['node_modules/core-tasks'];
+const { version } = packageLockJson.packages['node_modules/@levante-framework/core-tasks'];
 const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
@@ -65,7 +65,7 @@ window.addEventListener(
 
 onMounted(async () => {
   try {
-    let module = await import('core-tasks');
+    let module = await import('@levante-framework/core-tasks');
     levanteTaskLauncher = module.TaskLauncher;
   } catch (error) {
     console.error('An error occurred while importing the game module.', error);
@@ -131,7 +131,7 @@ async function startTask() {
 </script>
 
 <style>
-@import 'core-tasks/lib/resources/core-tasks.css';
+@import '@levante-framework/core-tasks/lib/resources/core-tasks.css';
 
 .game-target {
   position: absolute;

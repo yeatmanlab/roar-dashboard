@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 
@@ -242,13 +243,17 @@ const routes = [
     path: '/signout',
     name: 'SignOut',
     async beforeEnter() {
-      const store = useAuthStore();
-      if (store.isAuthenticated) {
-        await store.signOut();
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated) {
+        await authStore.signOut();
       }
       // Clear auth and game store so kids playing on the same device don't run into issues
       sessionStorage.removeItem('gameStore');
       sessionStorage.removeItem('authStore');
+
+      const gameStore = useGameStore();
+      gameStore.$reset();
+
       return { name: 'SignIn' };
     },
     meta: {

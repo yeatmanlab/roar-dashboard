@@ -186,14 +186,15 @@ const {
 });
 
 async function checkConsent() {
-  showConsent.value = false;
+  if (isLevante) return;
+
+  const legal = selectedAdmin.value?.legal;
+  if (!legal) return;
+
   const dob = new Date(userData.value?.studentData.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
-  const legal = selectedAdmin.value?.legal;
-
-  if (!legal) return;
 
   const isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
@@ -270,9 +271,12 @@ const {
 const { data: surveyResponsesData } = useQuery({
   queryKey: ['surveyResponses', uid],
   queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
-  keepPreviousData: true,
   enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
-  staleTime: 5 * 60 * 1000,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: 10 * 60 * 1000,
+  // refetchOnMount: false,
+  // refetchOnWindowFocus: false,
+  // refetchOnReconnect: false,
 });
 
 const isLoading = computed(() => {
@@ -328,7 +332,7 @@ const assessments = computed(() => {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'Survey') {
+          if (assessment.taskId === 'survey') {
             assessment.completedOn = new Date();
           }
         });
@@ -373,7 +377,7 @@ let completeGames = computed(() => {
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => {
   if (isLevante) {
-    return null;
+    return {};
   }
   return {
     grade: _get(userData.value, 'studentData.grade'),
