@@ -107,7 +107,7 @@ import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 
-const awaitingDelayEvent = ref(true);
+const awaitingDelayEvent = ref(false);
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
@@ -233,6 +233,7 @@ async function checkConsent() {
 }
 
 async function updateConsent() {
+  awaitingDelayEvent.value = true;
   consentParams.value = {
     amount: selectedAdmin.value?.legal.amount,
     expectedTime: selectedAdmin.value?.legal.expectedTime,
