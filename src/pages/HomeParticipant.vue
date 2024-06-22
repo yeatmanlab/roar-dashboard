@@ -245,6 +245,10 @@ async function updateConsent() {
   }
 }
 
+function refreshDocs() {
+  authStore.refreshQueryKeys();
+}
+
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
 
 const {
