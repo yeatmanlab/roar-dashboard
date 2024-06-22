@@ -73,7 +73,7 @@
         <router-link :to="{ name: 'SignOut' }">
           <PvButton
             :label="$t('navBar.signOut')"
-            class="no-underline bg-primary border-none border-round p-2 text-white"
+            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
             icon="pi pi-sign-out"
           />
         </router-link>

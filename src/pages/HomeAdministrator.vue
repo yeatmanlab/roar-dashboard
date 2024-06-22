@@ -321,7 +321,41 @@ const onSortChange = (event) => {
 };
 </script>
 
-<style scoped>
+<style>
+.p-autocomplete-panel {
+  background: var(--surface-a);
+  color: var(--text-color);
+  border: 0 none;
+  border-radius: var(--border-radius);
+  box-shadow:
+    0 0 rgba(0, 0, 0, 0),
+    0 0 rgba(0, 0, 0, 0),
+    0 10px 15px -3px rgba(0, 0, 0, 0.1019607843),
+    0 4px 6px -2px rgba(0, 0, 0, 0.0509803922);
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+  margin: 0;
+  padding: var(--inline-spacing-larger) 1rem;
+  border: 0 none;
+  color: var(--text-color);
+  background: transparent;
+  transition: none;
+  border-radius: 0;
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
+  background-color: gainsboro;
+}
+
+button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 20%;
+  width: 3rem;
+}
+
 .card-container {
   display: flex;
   flex-direction: row;
