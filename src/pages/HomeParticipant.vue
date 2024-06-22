@@ -107,6 +107,7 @@ import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 
+const awaitingDelayEvent = ref(true);
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
@@ -247,6 +248,7 @@ async function updateConsent() {
 
 function refreshDocs() {
   authStore.refreshQueryKeys();
+  awaitingDelayEvent.value = false;
 }
 
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
@@ -284,7 +286,13 @@ const isLoading = computed(() => {
 });
 
 const isFetching = computed(() => {
-  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingAdmins.value || isFetchingTasks.value;
+  return (
+    isFetchingUserData.value ||
+    isFetchingAssignments.value ||
+    isFetchingAdmins.value ||
+    isFetchingTasks.value ||
+    awaitingDelayEvent.value
+  );
 });
 
 const noGamesAvailable = computed(() => {
