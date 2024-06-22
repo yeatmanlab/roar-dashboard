@@ -107,7 +107,7 @@ import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 
-const awaitingDelayEvent = ref(false);
+const awaitingDelayEvent = ref(true);
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
@@ -194,7 +194,10 @@ async function checkConsent() {
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  if (!legal) return;
+  if (!legal) {
+    awaitingDelayEvent.value = false;
+    return;
+  }
 
   const isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
@@ -223,17 +226,21 @@ async function checkConsent() {
     if (!found) {
       if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
+        awaitingDelayEvent.value = true;
         showConsent.value = true;
+        return;
       }
     }
   } else if (age > 7 || grade > 1) {
     confirmText.value = consentDoc.text;
+    awaitingDelayEvent.value = true;
     showConsent.value = true;
+    return;
   }
+  awaitingDelayEvent.value = false;
 }
 
 async function updateConsent() {
-  awaitingDelayEvent.value = true;
   consentParams.value = {
     amount: selectedAdmin.value?.legal.amount,
     expectedTime: selectedAdmin.value?.legal.expectedTime,
