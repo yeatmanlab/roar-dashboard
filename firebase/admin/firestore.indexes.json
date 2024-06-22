@@ -3333,6 +3333,20 @@
           "arrayConfig": "CONTAINS"
         },
         {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districts.current",
+          "arrayConfig": "CONTAINS"
+        },
+        {
           "fieldPath": "name.first",
           "order": "ASCENDING"
         }
