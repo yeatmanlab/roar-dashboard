@@ -99,7 +99,7 @@
           @row-unselect="onSelectionChange"
         >
           <PvColumn
-            selectionMode="multiple"
+            selection-mode="multiple"
             header-style="background-color: var(--primary-color); border:none;"
             :reorderable-column="false"
             frozen
