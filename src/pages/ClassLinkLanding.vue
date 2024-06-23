@@ -15,7 +15,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { uid } = storeToRefs(authStore);
+const { uid, authFromClassLink } = storeToRefs(authStore);
 
 let userDataCheckInterval;
 
@@ -31,11 +31,14 @@ async function checkForUserType() {
       const allAssignmentIds = _union(...Object.values(assignments));
       if (allAssignmentIds.length > 0) {
         console.log(`User ${uid.value} found with assignments.`, { userData, assignments });
+        console.log('Routing to Home');
         clearInterval(userDataCheckInterval);
         router.push({ name: 'Home' });
       } else {
-        console.log(`User ${uid.value} found with userType ${userType} but no assignments.`);
+        console.log(`User ${uid.value} found with userType ${userType} but no assignments. Retrying...`);
       }
+    } else {
+      console.log(`User ${uid.value} found with userType ${userType}. Retrying...`);
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {
@@ -44,6 +47,8 @@ async function checkForUserType() {
   }
 }
 
+console.log(`Arrived at ClassLinkLanding.vue with uid: ${uid.value} and authFromClever: ${authFromClassLink.value} `);
+authFromClassLink.value = false;
 userDataCheckInterval = setInterval(checkForUserType, 500);
 </script>
 <style>
