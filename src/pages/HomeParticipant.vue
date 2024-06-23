@@ -85,7 +85,6 @@
     :consent-text="confirmText"
     :consent-type="consentType"
     @accepted="updateConsent"
-    @delayed="refreshDocs"
   />
 </template>
 
@@ -107,7 +106,6 @@ import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 
-const awaitingDelayEvent = ref(true);
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
@@ -195,7 +193,6 @@ async function checkConsent() {
   const legal = selectedAdmin.value?.legal;
 
   if (!legal) {
-    awaitingDelayEvent.value = false;
     return;
   }
 
@@ -226,18 +223,15 @@ async function checkConsent() {
     if (!found) {
       if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
-        awaitingDelayEvent.value = true;
         showConsent.value = true;
         return;
       }
     }
   } else if (age > 7 || grade > 1) {
     confirmText.value = consentDoc.text;
-    awaitingDelayEvent.value = true;
     showConsent.value = true;
     return;
   }
-  awaitingDelayEvent.value = false;
 }
 
 async function updateConsent() {
@@ -252,11 +246,6 @@ async function updateConsent() {
   } catch {
     console.log("Couldn't update consent value");
   }
-}
-
-function refreshDocs() {
-  authStore.refreshQueryKeys();
-  awaitingDelayEvent.value = false;
 }
 
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
@@ -294,13 +283,7 @@ const isLoading = computed(() => {
 });
 
 const isFetching = computed(() => {
-  return (
-    isFetchingUserData.value ||
-    isFetchingAssignments.value ||
-    isFetchingAdmins.value ||
-    isFetchingTasks.value ||
-    awaitingDelayEvent.value
-  );
+  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingAdmins.value || isFetchingTasks.value;
 });
 
 const noGamesAvailable = computed(() => {

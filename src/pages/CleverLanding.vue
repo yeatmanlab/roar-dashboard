@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/auth.js';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
+import _union from 'lodash/union';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
 
@@ -22,8 +23,15 @@ async function checkForUserType() {
     const userData = await fetchDocById('users', uid.value);
     const userType = _get(userData, 'userType');
     if (userType && userType !== 'guest') {
-      clearInterval(userDataCheckInterval);
-      router.push({ name: 'Home' });
+      // The user document exists and is not a guest. This means that the
+      // on-demand account provisioning cloud function has completed.  However,
+      // we still need to wait for the user's assignments to be loaded.
+      const assignments = _get(userData, 'assignments', {});
+      const allAssignmentIds = _union(...Object.values(assignments));
+      if (allAssignmentIds.length > 0) {
+        clearInterval(userDataCheckInterval);
+        router.push({ name: 'Home' });
+      }
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {
