@@ -32,6 +32,8 @@ async function checkForUserType() {
       if (allAssignmentIds.length > 0) {
         clearInterval(userDataCheckInterval);
         router.push({ name: 'Home' });
+      } else {
+        console.log(`User ${uid.value} found with userType ${userType} but no assignments.`);
       }
     }
   } catch (error) {
