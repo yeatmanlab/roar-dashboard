@@ -29,11 +29,15 @@ async function checkForUserType() {
       const assignments = _get(userData, 'assignments', {});
       const allAssignmentIds = _union(...Object.values(assignments));
       if (allAssignmentIds.length > 0) {
+        console.log(`User ${uid.value} found with assignments.`, { userData, assignments });
+        console.log('Routing to Home');
         clearInterval(userDataCheckInterval);
         router.push({ name: 'Home' });
       } else {
-        console.log(`User ${uid.value} found with userType ${userType} but no assignments.`);
+        console.log(`User ${uid.value} found with userType ${userType} but no assignments. Retrying...`);
       }
+    } else {
+      console.log(`User ${uid.value} found with userType ${userType}. Retrying...`);
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {
@@ -42,6 +46,7 @@ async function checkForUserType() {
   }
 }
 
+console.log(`Arrived at CleverLanding.vue with uid: ${uid.value}`);
 userDataCheckInterval = setInterval(checkForUserType, 1000);
 </script>
 <style>

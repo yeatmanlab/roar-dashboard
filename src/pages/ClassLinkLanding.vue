@@ -30,6 +30,7 @@ async function checkForUserType() {
       const assignments = _get(userData, 'assignments', {});
       const allAssignmentIds = _union(...Object.values(assignments));
       if (allAssignmentIds.length > 0) {
+        console.log(`User ${uid.value} found with assignments.`, { userData, assignments });
         clearInterval(userDataCheckInterval);
         router.push({ name: 'Home' });
       } else {
