@@ -70,17 +70,6 @@
                 >
               </div>
             </div>
-            <!-- <div class="form-field">
-              <label>Change Password</label>
-              <PvInputText v-model="newPassword" :class="{ 'p-invalid': errorMessage.includes('6 characters') }" />
-              <small v-if="errorMessage.includes('6 characters')" class="p-error"
-                >Password must be at least 6 characters.</small
-              >
-              <label>Confirm New Password</label>
-              <PvInputText v-model="confirmPassword" :class="{ 'p-invalid': errorMessage.includes('do not match') }" />
-              <small v-if="errorMessage.includes('do not match')" class="p-error">Passwords do not match.</small>
-              <PvButton @click="changePassword">Change Password</PvButton>
-            </div> -->
           </div>
           <div class="form-column">
             <div class="form-field">
@@ -152,7 +141,6 @@
             <PvInputText v-model="confirmPassword" :class="{ 'p-invalid': errorMessage.includes('do not match') }" />
             <small v-if="errorMessage.includes('do not match')" class="p-error">Passwords do not match.</small>
           </div>
-          <!-- <PvButton @click="changePassword">Change Password</PvButton> -->
         </div>
       </div>
       <div v-else-if="localUserType === 'admin'">Admin Edit User Modal Under Construction</div>
@@ -249,8 +237,6 @@ const onAccept = async () => {
     sentUserObject.password = newPassword.value;
   }
 
-  // console.log('sending:', sentUserObject);
-
   isSubmitting.value = true;
   await roarfirekit.value
     .updateUserData(props.userData.id, { ...localUserData.value })
@@ -268,25 +254,6 @@ const onAccept = async () => {
 
 const onReject = () => {
   closeModal();
-};
-
-const changePassword = () => {
-  errorMessage.value = '';
-  if (newPassword.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match';
-    return;
-  }
-  console.log('newPassword', newPassword.value);
-  roarfirekit.value
-    .updateUserRecord(props.userData.id, { password: newPassword.value })
-    .then((res) => {
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'Password has been updated', life: 3000 });
-    })
-    .catch((error) => {
-      console.log('Error occurred during submission:', error);
-      errorMessage.value = error.message;
-      isSubmitting.value = false;
-    });
 };
 
 // Utility functions
