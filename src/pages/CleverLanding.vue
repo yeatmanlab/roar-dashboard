@@ -23,7 +23,7 @@ async function checkForUserType() {
   try {
     const userData = await fetchDocById('users', uid.value);
     const userType = _get(userData, 'userType');
-    if (userType && userType !== 'guest') {
+    if (userType && userType === 'student') {
       // The user document exists and is not a guest. This means that the
       // on-demand account provisioning cloud function has completed.  However,
       // we still need to wait for the user's assignments to be loaded.
@@ -37,6 +37,11 @@ async function checkForUserType() {
       } else {
         console.log(`User ${uid.value} found with userType ${userType} but no assignments. Retrying...`);
       }
+    } else if (userType !== 'guest') {
+      console.log(`User ${uid.value} found with userType ${userType}.`);
+      console.log('Routing to Home');
+      clearInterval(userDataCheckInterval);
+      router.push({ name: 'Home' });
     } else {
       console.log(`User ${uid.value} found with userType ${userType}. Retrying...`);
     }
