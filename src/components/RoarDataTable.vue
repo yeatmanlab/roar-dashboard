@@ -171,6 +171,20 @@
                   />
                 </router-link>
               </div>
+              <div v-else-if="col.button">
+                <PvButton
+                  severity="secondary"
+                  text
+                  class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                  :label="col.buttonLabel"
+                  :aria-label="col.buttonTooltip"
+                  :icon="col.buttonIcon"
+                  data-cy="event-button"
+                  size="small"
+                  @click="$emit(col.eventName, colData)"
+                />
+              </div>
+
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
               </div>
