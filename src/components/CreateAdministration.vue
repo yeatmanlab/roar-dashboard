@@ -633,6 +633,12 @@ function findVariantWithParams(variants, params) {
   margin: 1rem 1.75rem;
 }
 
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
 .loading-container {
   width: 100%;
   text-align: center;

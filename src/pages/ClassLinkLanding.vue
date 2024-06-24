@@ -9,12 +9,13 @@ import { useAuthStore } from '@/store/auth.js';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
+import _union from 'lodash/union';
 import AppSpinner from '@/components/AppSpinner.vue';
 import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { uid } = storeToRefs(authStore);
+const { uid, authFromClassLink } = storeToRefs(authStore);
 
 let userDataCheckInterval;
 
@@ -23,8 +24,21 @@ async function checkForUserType() {
     const userData = await fetchDocById('users', uid.value);
     const userType = _get(userData, 'userType');
     if (userType && userType !== 'guest') {
-      clearInterval(userDataCheckInterval);
-      router.push({ name: 'Home' });
+      // The user document exists and is not a guest. This means that the
+      // on-demand account provisioning cloud function has completed.  However,
+      // we still need to wait for the user's assignments to be loaded.
+      const assignments = _get(userData, 'assignments', {});
+      const allAssignmentIds = _union(...Object.values(assignments));
+      if (allAssignmentIds.length > 0) {
+        console.log(`User ${uid.value} found with assignments.`, { userData, assignments });
+        console.log('Routing to Home');
+        clearInterval(userDataCheckInterval);
+        router.push({ name: 'Home' });
+      } else {
+        console.log(`User ${uid.value} found with userType ${userType} but no assignments. Retrying...`);
+      }
+    } else {
+      console.log(`User ${uid.value} found with userType ${userType}. Retrying...`);
     }
   } catch (error) {
     if (error.code !== 'ERR_BAD_REQUEST') {
@@ -33,6 +47,8 @@ async function checkForUserType() {
   }
 }
 
+console.log(`Arrived at ClassLinkLanding.vue with uid: ${uid.value} and authFromClever: ${authFromClassLink.value} `);
+authFromClassLink.value = false;
 userDataCheckInterval = setInterval(checkForUserType, 500);
 </script>
 <style>

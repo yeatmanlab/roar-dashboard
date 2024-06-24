@@ -258,12 +258,7 @@
               <label class="ml-1 mr-3" for="chbx-demoVariant">Mark as <b>Demo Variant</b></label>
             </div>
             <div class="flex flex-row align-items-center">
-              <PvCheckbox
-                v-model="variantCheckboxData"
-                input-id="chbx-testVariant"
-                name="variantCheckboxData"
-                value="isTestVariant"
-              />
+              <PvCheckbox v-model="variantCheckboxData" input-id="chbx-testVariant" name="variantCheckboxData" />
               <label class="ml-1 mr-3" for="chbx-testVariant">Mark as <b>Test Variant</b></label>
             </div>
             <div class="flex flex-row align-items-center">
@@ -522,6 +517,11 @@ function resetVariantForm() {
 </script>
 
 <style>
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
 .submit-button {
   margin: auto;
   margin-top: 1rem;
