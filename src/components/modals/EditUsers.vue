@@ -228,14 +228,15 @@ const toast = useToast();
 // Handle Modal Actions
 const closeModal = () => {
   errorMessage.value = '';
+  newPassword.value = '';
+  confirmPassword.value = '';
   isOpen.value = false;
   emit('modalClosed');
 };
 
 const onAccept = async () => {
   errorMessage.value = '';
-  console.log('Accepted');
-  console.log('userData to send', localUserData.value);
+  const sentUserObject = localUserData.value;
   if (newPassword.value) {
     if (newPassword.value.length < 6) {
       errorMessage.value = 'Password must be at least 6 characters';
@@ -245,10 +246,14 @@ const onAccept = async () => {
       errorMessage.value = 'Passwords do not match';
       return;
     }
+    sentUserObject.password = newPassword.value;
   }
+
+  // console.log('sending:', sentUserObject);
+
   isSubmitting.value = true;
   await roarfirekit.value
-    .updateUserData(props.userData.id, { ...localUserData.value, password: newPassword.value })
+    .updateUserData(props.userData.id, { ...localUserData.value })
     .then((res) => {
       isSubmitting.value = false;
       closeModal();
