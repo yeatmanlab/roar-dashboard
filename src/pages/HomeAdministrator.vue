@@ -180,6 +180,7 @@ const {
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
+  // TODO: refactoring to offline queries will mean that this onSuccess post processing will need to moved to an external function
   onSuccess: (data) => {
     for (const admin of data) {
       adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));

@@ -73,7 +73,8 @@ import PvTooltip from 'primevue/tooltip';
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
 
-import { VueQueryPlugin } from '@tanstack/vue-query';
+import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
+import { experimental_createPersister } from '@tanstack/query-persist-client-core';
 import VueGoogleMaps from 'vue-google-maps-community-fork';
 
 // Internal Roar components
@@ -91,15 +92,34 @@ import './assets/styles/theme.scss'; // ROAR theme
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
 import { i18n } from '@/translations/i18n.js';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 30, // 30 seconds
+      staleTime: 1000 * 60 * 10, // Optional: time in milliseconds before data is considered stale (10 minutes)
+      cacheTime: Infinity, // Optional: cache time in milliseconds (Infinity means cache forever)
+      // Set network mode here:
+      networkMode: 'offlineFirst',
+      persister: experimental_createPersister({
+        storage: localStorage,
+        maxAge: 1000 * 60 * 60 * 12, // 12 hours
+      }),
+    },
+  },
+});
+
 const vueQueryPluginOptions = {
-  queryClientConfig: {
-    defaultOptions: {
-      queries: {
-        staleTime: 1000 * 60 * 10, // Optional: time in milliseconds before data is considered stale (10 minutes)
-        cacheTime: Infinity, // Optional: cache time in milliseconds (Infinity means cache forever)
-        // Set network mode here:
-        networkMode: 'offlineFirst',
-      },
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 30, // 30 seconds
+      staleTime: 1000 * 60 * 10, // Optional: time in milliseconds before data is considered stale (10 minutes)
+      cacheTime: Infinity, // Optional: cache time in milliseconds (Infinity means cache forever)
+      // Set network mode here:
+      networkMode: 'offlineFirst',
+      persister: experimental_createPersister({
+        storage: localStorage,
+        maxAge: 1000 * 60 * 60 * 12, // 12 hours
+      }),
     },
   },
 };
