@@ -31,7 +31,7 @@
           <div class="form-field">
             <label
               >Date of Birth
-              <span v-if="localUserType === 'student'" class="required" v-tooltip.top="'Required'">*</span></label
+              <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
             >
             <PvCalendar
               v-model="localUserData.studentData.dob"
@@ -45,7 +45,7 @@
           <div class="form-field">
             <label
               >Grade
-              <span v-if="localUserType === 'student'" class="required" v-tooltip.top="'Required'">*</span></label
+              <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
             >
             <PvInputText
               v-model="localUserData.studentData.grade"
@@ -55,15 +55,15 @@
           </div>
           <div v-if="isSuperAdmin">
             <div>
-              <PvCheckbox binary v-model="localUserData.testData" />
+              <PvCheckbox v-model="localUserData.testData" binary />
               <label class="ml-2"
-                >Test Data? <span class="admin-only" v-tooltip.top="'Super Admin Only'">*</span></label
+                >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
               >
             </div>
             <div>
-              <PvCheckbox binary v-model="localUserData.demoData" />
+              <PvCheckbox v-model="localUserData.demoData" binary />
               <label class="ml-2"
-                >Demo Data? <span class="admin-only" v-tooltip.top="'Super Admin Only'">*</span></label
+                >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
               >
             </div>
           </div>
@@ -78,8 +78,8 @@
             <label>English as a Second Language</label>
             <PvDropdown
               v-model="localUserData.studentData.ell_status"
-              optionLabel="label"
-              optionValue="value"
+              option-label="label"
+              option-value="value"
               :options="binaryDropdownOptions"
             />
           </div>
@@ -87,8 +87,8 @@
             <label>IEP Status</label>
             <PvDropdown
               v-model="localUserData.studentData.iep_status"
-              optionLabel="label"
-              optionValue="value"
+              option-label="label"
+              option-value="value"
               :options="binaryDropdownOptions"
             />
           </div>
@@ -96,8 +96,8 @@
             <label>Free-Reduced Lunch</label>
             <PvDropdown
               v-model="localUserData.studentData.frl_status"
-              optionLabel="label"
-              optionValue="value"
+              option-label="label"
+              option-value="value"
               :options="binaryDropdownOptions"
             />
           </div>
@@ -116,8 +116,8 @@
             <label>Hispanic or Latino Ethnicity</label>
             <PvDropdown
               v-model="localUserData.studentData.hispanic_ethnicity"
-              optionLabel="label"
-              optionValue="value"
+              option-label="label"
+              option-value="value"
               :options="binaryDropdownOptions"
             />
           </div>
@@ -207,7 +207,7 @@ const onAccept = async () => {
   isSubmitting.value = true;
   await roarfirekit.value
     .updateUserData(props.userData.id, localUserData.value)
-    .then((res) => {
+    .then(() => {
       isSubmitting.value = false;
       closeModal();
       toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
@@ -256,6 +256,7 @@ const setupUserData = () => {
 const localUserType = computed(() => {
   if (props.userData?.userType) return props.userData.userType;
   if (props.userType) return props.userType;
+  return null;
 });
 
 const races = [
@@ -301,7 +302,7 @@ onMounted(() => {
 });
 
 // Determine if the user is an admin
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
