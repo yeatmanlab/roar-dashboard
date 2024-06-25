@@ -153,7 +153,7 @@ watch(isLoading, async (newValue) => {
   }
 });
 
-const { idle } = useIdle(10 * 60 * 1000); // 10 min
+const { idle } = useIdle(10 * 1000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
 const i18n = useI18n();
@@ -175,7 +175,7 @@ watch(idle, (idleValue) => {
       group: 'inactivity-logout',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: t('homeSelector.inactivityLogoutAcceptLabel'),
-      acceptIcon: 'pi pi-check',
+      acceptIcon: 'pi pi-check mr-2',
       accept: () => {
         clearInterval(timer);
         timeLeft.value = 60;
@@ -186,6 +186,14 @@ watch(idle, (idleValue) => {
 </script>
 
 <style>
+button.p-button.p-component.p-confirm-dialog-accept {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }
