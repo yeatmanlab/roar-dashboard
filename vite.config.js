@@ -12,8 +12,56 @@ export default defineConfig({
     Vue({
       include: [/\.vue$/, /\.md$/],
     }),
-    vitePluginFaviconsInject('./src/assets/roar-icon.svg'),
-    ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
+    VitePWA({
+      manifest: {
+        // Modify manifest options here...
+        name: 'ROAR Dashboard',
+        short_name: 'ROAD',
+        start_url: '.',
+        display: 'standalone',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        // inject service worker automatically
+        strategies: 'generateSW',
+        injectRegister: 'manual',
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico}'],
+        },
+        icons: [
+          {
+            src: '/pwa-64x64.png',
+            sizes: '64x64',
+            type: 'image/png',
+          },
+          {
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+        // Add more manifest options as needed
+      },
+      /* enable sw on development */
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        /* other options */
+      },
+    }),
+    mkcert(),
+    basicSsl(),
     nodePolyfills({
       globals: {
         process: true,
