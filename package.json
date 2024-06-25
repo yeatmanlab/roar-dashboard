@@ -95,6 +95,8 @@
     "prettier": "3.0.3",
     "sass": "^1.50.1",
     "vite": "^4.1.4",
-    "vite-plugin-favicons-inject": "^2.2.0"
+    "vite-plugin-favicons-inject": "^2.2.0",
+    "vite-plugin-mkcert": "^1.17.5",
+    "vite-plugin-pwa": "^0.20.0"
   }
 }
