@@ -1,5 +1,82 @@
 import html2canvas from 'html2canvas';
-import { getGrade } from '@bdelab/roar-utils';
+// import { getGrade } from '@bdelab/roar-utils';
+
+export const getGrade = (inputGrade, gradeMin = 0, gradeMax = 13) => {
+  const parsedGrade = Number(inputGrade);
+  const gradeStringMap = {
+    k: 0,
+    tk: 0,
+    pk: 0,
+    preschool: 0,
+    prekindergarten: 0,
+    transitionalkindergarten: 0,
+    kindergarten: 0,
+    infanttoddler: 0,
+    infant: 0,
+    toddler: 0,
+    first: 1,
+    firstgrade: 1,
+    second: 2,
+    secondgrade: 2,
+    third: 3,
+    thirdgrade: 3,
+    fourth: 4,
+    fourthgrade: 4,
+    fifth: 5,
+    fifthgrade: 5,
+    sixth: 6,
+    sixthgrade: 6,
+    seventh: 7,
+    seventhgrade: 7,
+    eighth: 8,
+    eighthgrade: 8,
+    ninth: 9,
+    ninthgrade: 9,
+    tenth: 10,
+    tenthgrade: 10,
+    eleventh: 11,
+    eleventhgrade: 11,
+    twelfth: 12,
+    twelfthgrade: 12,
+    freshman: 9,
+    sophomore: 10,
+    junior: 11,
+    senior: 12,
+    postgraduate: 13,
+    university: 13,
+    graduate: 13,
+    master: 13,
+    doctorate: 13,
+    masters: 13,
+  };
+
+  // if inputGrade is null or undefined, return undefined to avoid an error with undefined.toLowerCase()
+  if (inputGrade === null || inputGrade === undefined) {
+    return undefined;
+  }
+
+  if (Number.isNaN(parsedGrade)) {
+    // Grade is a string. Remove any whitespace and hyphens. Make lowercase.
+    // And refer to the gradeStringMap for the mapping.
+    const spaceRegex = /\s/g;
+    const hyphenRegex = /-/g;
+    const standardizedGradeString = inputGrade.toLowerCase().replace(spaceRegex, '').replace(hyphenRegex, '');
+    const grade = gradeStringMap[standardizedGradeString];
+    if (grade === undefined) return undefined;
+    if (grade < gradeMin) return gradeMin;
+    if (grade > gradeMax) return gradeMax;
+    return grade;
+  }
+  if (parsedGrade < gradeMin) {
+    return gradeMin;
+  }
+  if (parsedGrade > gradeMax) {
+    return gradeMax;
+  }
+
+  // grade is within range and is a number
+  return parsedGrade;
+};
 
 /*
  *  Task Display Names

@@ -1,23 +1,101 @@
-// Function to process assignment data
-function processAssignmentData(assignmentData) {
-  console.log('assignmentData from worker', assignmentData);
+import {
+  taskInfoById,
+  supportLevelColors,
+  rawOnlyTasks,
+  tasksToDisplayPercentCorrect,
+  getScoreKeys,
+  tasksToDisplayCorrectIncorrectDifference,
+  getGrade,
+} from '@/helpers/reports.js';
+import _get from 'lodash/get';
+import _toUpper from 'lodash/toUpper';
+import _pickBy from 'lodash/pickBy';
+
+self.onmessage = function (message) {
+  console.log('message from main thread', message);
+  // Fetch coins data from the API and send the result back to the main thread
+  processAssignmentData(message.data);
+};
+
+function getScoreKeysByRow(row, grade) {
+  const taskId = row?.taskId;
+  return getScoreKeys(taskId, grade);
+}
+
+// Return a faded color if assessment is not reliable
+function returnColorByReliability(assessment, rawScore, support_level, tag_color) {
+  if (assessment.reliable !== undefined && !assessment.reliable && assessment.engagementFlags !== undefined) {
+    if (support_level === 'Optional') {
+      return '#a1d8e3';
+    } else if (support_level === 'Needs Extra Support') {
+      return '#d6b8c7';
+    } else if (support_level === 'Developing Skill') {
+      return '#e8dbb5';
+    } else if (support_level === 'Achieved Skill') {
+      return '#c0d9bd';
+    } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
+      return 'white';
+    } else {
+      return '#d3d3d3';
+    }
+  }
+  return tag_color;
+}
+
+const getScoresAndSupportFromAssessment = ({
+  grade,
+  assessment,
+  standardScoreDisplayKey,
+  percentileScoreKey,
+  percentileScoreDisplayKey,
+  rawScoreKey,
+  taskId,
+  optional,
+}) => {
+  let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
+  let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
+  let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
+  let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
+
+  const support_level = 'needs support';
+  const tag_color = 'black';
+  // const { support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional);
+  if (percentile) percentile = _round(percentile);
+  if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
+
+  return {
+    support_level,
+    tag_color,
+    percentile,
+    percentileString,
+    standardScore,
+    rawScore,
+  };
+};
+
+// This function takes in the return from assignmentFetchAll and returns 2 objects
+// 1. assignmentTableData: The data that should be passed into the ROARDataTable component
+// 2. runsByTaskId: run data for the TaskReport distribution chartsb
+function processAssignmentData(computeData) {
+  const parsedComputeData = JSON.parse(computeData);
+  const { schoolNameDictionary, schoolsDictWithGrade, assignmentData, adminInfo } = parsedComputeData;
   if (!assignmentData || assignmentData.length === 0) {
     return { assignmentTableData: [], runsByTaskId: {} };
   }
 
-  const formattedAssignmentData = JSON.parse(assignmentData);
-
+  console.log('assignment', assignmentData);
   const assignmentTableDataAcc = [];
   const runsByTaskIdAcc = {};
+  console.log(schoolNameDictionary, assignmentData);
 
-  for (const { assignment, user } of formattedAssignmentData) {
+  for (const { assignment, user } of assignmentData) {
     // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
     const grade = user.studentData?.grade;
     // compute schoolName
     let schoolName = '';
     const schoolId = user?.schools?.current[0];
     if (schoolId) {
-      schoolName = schoolNameDictionary.value[schoolId];
+      schoolName = schoolNameDictionary[schoolId];
     }
 
     const firstNameOrUsername = user.name.first ?? user.username;
@@ -35,9 +113,9 @@ function processAssignmentData(assignmentData) {
       },
       tooltip: `View ${firstNameOrUsername}'s Score Report`,
       routeParams: {
-        administrationId: props.administrationId,
-        orgId: props.orgId,
-        orgType: props.orgType,
+        administrationId: adminInfo.administrationId,
+        orgId: adminInfo.orgId,
+        orgType: adminInfo.orgType,
         userId: user.userId,
       },
       // compute and add scores data in next step as so
@@ -77,6 +155,7 @@ function processAssignmentData(assignmentData) {
 
       const { percentileScoreKey, rawScoreKey, percentileScoreDisplayKey, standardScoreDisplayKey } = getScoreKeysByRow(
         assessment,
+        1,
         getGrade(_get(user, 'studentData.grade')),
       );
       // compute and add scores data in next step as so
@@ -172,7 +251,8 @@ function processAssignmentData(assignmentData) {
       // Logic to update runsByTaskIdAcc
       const run = {
         // A bit of a workaround to properly sort grades in facetted graphs (changes Kindergarten to grade 0)
-        grade: getGrade(grade),
+        // grade: getGrade(grade),
+        grade: 1,
         scores: {
           support_level: support_level,
           stdPercentile: percentile,
@@ -181,7 +261,7 @@ function processAssignmentData(assignmentData) {
         taskId,
         user: {
           grade: grade,
-          schoolName: schoolsDictWithGrade.value[schoolId],
+          schoolName: schoolsDictWithGrade[schoolId],
         },
         tag_color: tag_color,
       };
@@ -204,22 +284,15 @@ function processAssignmentData(assignmentData) {
 
   // sort by numAssignmentsCompleted
   assignmentTableDataAcc.sort((a, b) => b.numAssignmentsCompleted - a.numAssignmentsCompleted);
+  console.log('assignmentTableDataAcc', assignmentTableDataAcc);
 
   const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
     return Object.keys(taskInfoById).includes(taskId);
   });
 
+  console.log('filteredRunsByTaskid', filteredRunsByTaskId);
   // Return processed data
-  return { assignmentTableData: assignmentTableDataAcc, runsByTaskId: filteredRunsByTaskId };
+  self.postMessage({ assignmentTableData: assignmentTableDataAcc, runsByTaskId: filteredRunsByTaskId });
+  return;
+  // return { assignmentTableData: assignmentTableDataAcc, runsByTaskId: filteredRunsByTaskId };
 }
-
-// Respond to messages from the main thread
-self.addEventListener('message', async (event) => {
-  const { assignmentData } = event.data;
-
-  // Process assignment data
-  const result = await processAssignmentData(assignmentData);
-
-  // Post the processed data back to the main thread
-  self.postMessage(result);
-});
