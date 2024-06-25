@@ -170,7 +170,10 @@ async function saveResults(sender) {
   // call cloud function to save the survey results
   // TODO: Use tanstack-query mutation for automaitic retries.
   try {
-    const res = await roarfirekit.value.saveSurveyResponses(responsesWithAllQuestions);
+    const res = await roarfirekit.value.saveSurveyResponses({
+      responses: responsesWithAllQuestions,
+      administrationId: gameStore.selectedAdmin.id,
+    });
 
     // update game store to let game tabs know
     gameStore.setSurveyCompleted();
