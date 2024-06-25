@@ -291,6 +291,7 @@ const setupUserData = () => {
 const localUserType = computed(() => {
   if (props.userData?.userType) return props.userData.userType;
   if (props.userType) return props.userType;
+  return null;
 });
 
 const races = [
@@ -336,7 +337,7 @@ onMounted(() => {
 });
 
 // Determine if the user is an admin
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,

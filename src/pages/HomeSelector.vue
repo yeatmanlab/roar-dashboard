@@ -41,7 +41,16 @@ import { useI18n } from 'vue-i18n';
 let HomeParticipant, HomeAdministrator, ConsentModal;
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
+
+const router = useRouter();
+if (authFromClever.value) {
+  console.log('Detected Clever authentication, routing to CleverLanding page');
+  router.push({ name: 'CleverLanding' });
+} else if (authFromClassLink.value) {
+  console.log('Detected ClassLink authentication, routing to ClassLinkLanding page');
+  router.push({ name: 'ClassLinkLanding' });
+}
 
 const gameStore = useGameStore();
 const { requireRefresh } = storeToRefs(gameStore);
@@ -119,8 +128,6 @@ async function checkConsent() {
     }
   }
 }
-
-const router = useRouter();
 
 onMounted(async () => {
   HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
