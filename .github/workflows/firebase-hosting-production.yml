@@ -19,7 +19,6 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        containers: [1, 2]
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
@@ -41,25 +40,48 @@ jobs:
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
-          parallel: false # This step does not need parallelization
+          parallel: false
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
-          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+          ci-build-id: ${{ matrix.browser }}
       - uses: actions/upload-artifact@v2
         with:
-          name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
+          name: generated-tests-${{ matrix.browser }}
           path: cypress/e2e/pre-release-tests/generated-tests
 
-  pre-release-tests:
-    name: Run Cypress Pre-Release Tests
+  discover-tests:
+    name: Discover Generated Test Files
     needs: [build-pre-release-tests]
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/download-artifact@v2
+        with:
+          name: generated-tests-chromium
+          path: cypress/e2e/pre-release-tests/generated-tests
+      - uses: actions/download-artifact@v2
+        with:
+          name: generated-tests-edge
+          path: cypress/e2e/pre-release-tests/generated-tests
+      - name: List test files
+        id: list_tests
+        run: |
+          find cypress/e2e/pre-release-tests/generated-tests -name "*.cy.js" > test_files.txt
+          echo "test_files=$(cat test_files.txt | paste -sd,)" >> $GITHUB_ENV
+        shell: bash
+
+    outputs:
+      test_files: ${{ steps.list_tests.outputs.test_files }}
+
+  run-pre-release-tests:
+    name: Run Cypress Pre-Release Tests
+    needs: [discover-tests]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        containers: [1, 2]
-        parallel-group: [1, 2, 3, 4] # Adjust the number of groups as needed
+        test_file: ${{ fromJson(needs.discover-tests.outputs.test_files) }}
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
@@ -74,7 +96,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: actions/download-artifact@v2
         with:
-          name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
+          name: generated-tests-${{ matrix.browser }}
           path: cypress/e2e/pre-release-tests/generated-tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
@@ -86,13 +108,12 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          group: ${{ matrix.parallel-group }}-${{ matrix.browser }}
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/${{ matrix.test_file }}'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
 
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
-    needs: [pre-release-tests]
+    needs: [run-pre-release-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
