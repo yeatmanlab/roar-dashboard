@@ -68,6 +68,7 @@ jobs:
         run: |
           find cypress/e2e/pre-release-tests/generated-tests -name "*.cy.js" > test_files.txt
           echo "test_files=$(cat test_files.txt | paste -sd,)" >> $GITHUB_ENV
+          echo "::set-output name=test_files::$(cat test_files.txt | paste -sd,)"
         shell: bash
 
     outputs:
@@ -108,13 +109,14 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/${{ matrix.test_file }}'
+          spec: ${{ matrix.test_file }}
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
 
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
     needs: [run-pre-release-tests]
     runs-on: ubuntu-latest
+    if: success()
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v4
