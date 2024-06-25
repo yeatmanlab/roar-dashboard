@@ -111,15 +111,35 @@
             <div class="flex justify-content-between">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
-                <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
+                <PvCheckbox
+                  v-model="student.yearOnlyCheckRef"
+                  :binary="true"
+                  name="yearOnly"
+                  :class="{
+                    'p-2 border-2 border-round border-300': !student.yearOnlyCheckRef, // Always apply these classes
+                    'p-1 border-round border-none text-white bg-primary': student.yearOnlyCheckRef, // Apply when selected
+                  }"
+                />
                 <label for="yearOnly" class="ml-2">Use Year Only</label>
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
-              <PvCalendar v-model="student.dob" :max-date="maxDoB" view="date" date-format="mm/dd/yy" show-icon />
+              <PvCalendar
+                v-model="student.dob"
+                :max-date="maxDoB"
+                view="date"
+                date-format="mm/dd/yy"
+                icon="pi pi-calendar text-white p-1"
+              />
             </div>
             <div v-else>
-              <PvCalendar v-model="student.dob" :max-date="maxDoB" view="year" date-format="yy" show-icon />
+              <PvCalendar
+                v-model="student.dob"
+                :max-date="maxDoB"
+                view="year"
+                date-format="yy"
+                icon="pi pi-calendar text-white p-1"
+              />
             </div>
             <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
               v$.students.$each.$response.$errors[outerIndex].dob.$message.replace('Value', 'Date of Birth')
@@ -261,17 +281,31 @@
           </PvAccordionTab>
         </PvAccordion>
         <section class="form-section-button">
-          <PvButton v-if="index !== 0" class="p-button p-component" @click="deleteStudentForm(outerIndex)">
+          <PvButton
+            v-if="index !== 0"
+            class="text-primary border-300 border-round p-2 h-3rem hover:bg-primary hover:text-white"
+            @click="deleteStudentForm(outerIndex)"
+          >
             Delete Student
           </PvButton>
         </section>
       </div>
     </form>
     <div class="form-section-button2">
-      <PvButton class="p-button p-component" @click="addStudent()"> Add another student </PvButton>
+      <PvButton
+        class="bg-primary text-white border-none border-round p-2 h-3rem hover:bg-red-900"
+        @click="addStudent()"
+      >
+        Add another student
+      </PvButton>
     </div>
     <section class="flex mt-8 justify-content-end">
-      <PvButton type="submit" label="Submit" class="submit-button" @click.prevent="handleFormSubmit(!v$.$invalid)" />
+      <PvButton
+        type="submit"
+        label="Submit"
+        class="bg-primary text-white border-none border-round w-4 p-2 h-3rem hover:bg-red-900 mr-3"
+        @click.prevent="handleFormSubmit(!v$.$invalid)"
+      />
       <PvDialog
         v-model:visible="isDialogVisible"
         header="Error!"
@@ -573,6 +607,11 @@ const validateRoarUsername = async () => {
 .stepper {
   margin: 2rem 0rem;
 }
+
+button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
+  background: blue;
+}
+
 .p-fluid .p-button {
   width: 50%;
   align-items: center;
@@ -582,7 +621,11 @@ const validateRoarUsername = async () => {
   border: var(--surface-300);
   color: black;
 }
-
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
 .required {
   color: var(--bright-red);
 }

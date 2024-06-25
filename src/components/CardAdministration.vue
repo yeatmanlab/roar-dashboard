@@ -14,9 +14,9 @@
             :model="speedDialItems"
             direction="left"
             :transition-delay="80"
-            show-icon="pi pi-cog"
+            show-icon="pi pi-cog text-primary"
             hide-icon="pi pi-times"
-            button-class="p-button-outlined p-button-sm w-3rem h-3rem"
+            button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
             :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
           />
@@ -62,7 +62,14 @@
         </div>
       </div>
       <div v-if="isAssigned">
-        <PvButton class="mt-2 ml-0" :icon="toggleIcon" size="small" :label="toggleLabel" @click="toggleTable" />
+        <PvButton
+          class="mt-2 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+          :icon="toggleIcon"
+          style="padding: 1rem; padding-top: 1.2rem; padding-bottom: 1.2rem"
+          size="small"
+          :label="toggleLabel"
+          @click="toggleTable"
+        />
       </div>
       <PvTreeTable
         v-if="showTable"
@@ -96,7 +103,8 @@
               >
                 <PvButton
                   v-tooltip.top="'See completion details'"
-                  class="m-0"
+                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
+                  style="height: 2.5rem"
                   severity="secondary"
                   text
                   raised
@@ -115,7 +123,8 @@
               >
                 <PvButton
                   v-tooltip.top="'See Scores'"
-                  class="m-0"
+                  class="m-0 mr-1 surface-0 text-bluegray-500 shadow-1 border-none p-2 border-round hover:surface-100"
+                  style="height: 2.5rem"
                   severity="secondary"
                   text
                   raised
@@ -243,16 +252,16 @@ const enableQueries = ref(false);
 
 const toggleIcon = computed(() => {
   if (showTable.value) {
-    return 'pi pi-chevron-down';
+    return 'pi pi-chevron-down mr-1';
   }
-  return 'pi pi-chevron-right';
+  return 'pi pi-chevron-right mr-2';
 });
 
 const toggleLabel = computed(() => {
   if (showTable.value) {
     return 'Hide details';
   }
-  return 'Show details';
+  return ' Show details';
 });
 
 const toggleTable = () => {
@@ -530,6 +539,19 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
+.p-confirm-popup .p-confirm-popup-footer button {
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 0.35rem;
+  padding: 0.4em;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  color: white;
+}
+.p-confirm-popup .p-confirm-popup-footer button:hover {
+  background-color: var(--red-900);
+}
+
 .card-administration {
   text-align: left;
   width: 100%;

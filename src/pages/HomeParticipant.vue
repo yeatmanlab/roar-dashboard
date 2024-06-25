@@ -71,7 +71,11 @@
         <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
         <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
         <router-link :to="{ name: 'SignOut' }">
-          <PvButton :label="$t('navBar.signOut')" class="no-underline" icon="pi pi-sign-out" />
+          <PvButton
+            :label="$t('navBar.signOut')"
+            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
+            icon="pi pi-sign-out"
+          />
         </router-link>
       </div>
     </div>
@@ -81,7 +85,6 @@
     :consent-text="confirmText"
     :consent-type="consentType"
     @accepted="updateConsent"
-    @delayed="refreshDocs"
   />
 </template>
 
@@ -182,20 +185,23 @@ const {
 });
 
 async function checkConsent() {
-  const dob = new Date(userData.value?.studentData.dob);
+  showConsent.value = false;
+  const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  if (!legal) return;
+  if (!legal?.consent) {
+    return;
+  }
 
   const isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
   const isOlder = isAdult || isSeniorGrade;
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
-  let docType = (legal[docTypeKey][0]?.type).toLowerCase();
+  let docType = legal[docTypeKey][0]?.type.toLowerCase();
   let docAmount = legal?.amount;
   let docExpectedTime = legal?.expectedTime;
 
@@ -218,11 +224,13 @@ async function checkConsent() {
       if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
+        return;
       }
     }
   } else if (age > 7 || grade > 1) {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
+    return;
   }
 }
 
@@ -375,23 +383,12 @@ const studentInfo = computed(() => {
   };
 });
 
-watch(consentParams, (newValue) => {
-  consentParams.value = newValue;
-});
-
 watch(
-  selectedAdmin,
-  async (newValue) => {
-    if (newValue) {
-      await checkConsent();
+  [selectedAdmin, adminInfo],
+  ([updateSelectedAdmin]) => {
+    if (updateSelectedAdmin) {
+      checkConsent();
     }
-  },
-  { immediate: true },
-);
-
-watch(
-  adminInfo,
-  () => {
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list

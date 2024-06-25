@@ -34,7 +34,13 @@
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
       <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
-        <PvButton text :label="rowViewMode" class="my-1" @click="toggleView" />
+        <PvButton
+          v-tooltip.bottom="'Expand or Compress table rows'"
+          text
+          :label="rowViewMode"
+          class="my-1 m-1 h-3rem text-primary surface-ground border-none border-round h-2rem text-sm hover:bg-gray-300"
+          @click="toggleView"
+        />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="
@@ -45,14 +51,14 @@
           label="Export Selected"
           :badge="selectedRows?.length?.toString()"
           :disabled="selectedRows.length === 0"
-          class="m-1"
+          class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           @click="exportCSV(true, $event)"
         />
         <PvButton
           v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
-          class="m-1"
+          class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           @click="exportCSV(false, $event)"
         />
       </span>
@@ -92,7 +98,12 @@
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
         >
-          <PvColumn selection-mode="multiple" header-style="width: 3rem" :reorderable-column="false" frozen />
+          <PvColumn
+            selection-mode="multiple"
+            header-style="background-color: var(--primary-color); border:none;"
+            :reorderable-column="false"
+            frozen
+          />
           <PvColumn
             v-for="(col, index) of computedColumns"
             :key="col.field + '_' + index"
@@ -104,6 +115,7 @@
             :filter-field="col?.filterField ? col.filterField : col.field"
             :show-add-button="col.allowMultipleFilters === true"
             :frozen="col.pinned"
+            :style="col.style"
             align-frozen="left"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
@@ -130,7 +142,7 @@
                   :severity="_get(colData, col.severityField)"
                   :value="_get(colData, col.field)"
                   :icon="_get(colData, col.iconField)"
-                  :style="`min-width: 2rem; font-weight: bold`"
+                  :style="`min-width: 2rem; font-weight: bold;`"
                   rounded
                 />
               </div>
@@ -150,6 +162,7 @@
                     v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
+                    class="border-none border-round bg-white text-primary p-2 hover:surface-200"
                     :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
@@ -158,6 +171,20 @@
                   />
                 </router-link>
               </div>
+              <div v-else-if="col.button">
+                <PvButton
+                  severity="secondary"
+                  text
+                  class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                  :label="col.buttonLabel"
+                  :aria-label="col.buttonTooltip"
+                  :icon="col.buttonIcon"
+                  data-cy="event-button"
+                  size="small"
+                  @click="$emit(col.eventName, colData)"
+                />
+              </div>
+
               <div v-else-if="col.dataType === 'date'">
                 {{ getFormattedDate(_get(colData, col.field)) }}
               </div>
@@ -283,13 +310,24 @@
             </template>
             <template #filterclear="{ filterCallback }">
               <div class="flex flex-row-reverse">
-                <PvButton type="button" text icon="pi pi-times" class="p-2" severity="primary" @click="filterCallback()"
+                <PvButton
+                  type="button"
+                  text
+                  icon="pi pi-times"
+                  class="p-2 bg-primary text-white border-round border-none hover:bg-red-900"
+                  severity="primary"
+                  @click="filterCallback()"
                   >Clear</PvButton
                 >
               </div>
             </template>
             <template #filterapply="{ filterCallback }">
-              <PvButton type="button" icon="pi pi-times" class="px-2" severity="primary" @click="filterCallback()"
+              <PvButton
+                type="button"
+                icon="pi pi-times"
+                class="px-2 p-2 bg-primary text-white border-round border-none hover:bg-red-900"
+                severity="primary"
+                @click="filterCallback()"
                 >Apply
               </PvButton>
             </template>
@@ -557,6 +595,23 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   margin-left: 5px;
   margin-top: 3px;
   margin-bottom: 3px;
+}
+
+.p-checkbox .p-checkbox-box {
+  border: 2px solid var(--surface-300);
+  background: var(--surface-a);
+  width: 16px;
+  height: 16px;
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  transition: none;
+}
+
+.p-checkbox-box.p-component.p-highlight {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.25rem;
 }
 
 .circle {

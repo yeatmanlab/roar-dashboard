@@ -110,11 +110,17 @@ export const taskDisplayNames = {
     extendedName: 'Crowding',
     order: 24,
   },
+  'roav-mep': {
+    name: 'MEP',
+    extendedTitle: 'ROAV - MEP',
+    extendedName: 'MEP',
+    order: 25,
+  },
   ExternalTest: {
     name: 'External Test',
     extendedTitle: 'ROAR- External Test',
     extendedName: 'External Test',
-    order: 25,
+    order: 26,
   },
 };
 
@@ -143,6 +149,7 @@ export const extendedDescriptions = {
   fluency: 'Temporary description for fluency',
   ran: 'Temporary description for ran',
   crowding: 'Temporary description for crowding',
+  'roav-mep': 'Temporary description for mep',
 };
 
 /*

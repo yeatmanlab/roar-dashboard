@@ -72,9 +72,6 @@
   right: var(--inline-spacing-larger);
   color: var(--text-color-secondary);
 }
-.p-multiselect-panel .p-multiselect-header .p-checkbox {
-  margin-right: var(--inline-spacing);
-}
 .p-multiselect-panel .p-multiselect-header .p-multiselect-close {
   margin-left: var(--inline-spacing);
   width: 2rem;
@@ -121,9 +118,6 @@
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):not(.p-disabled):hover {
   color: var(--surface-900);
   background: var(--surface-c);
-}
-.p-multiselect-panel .p-multiselect-items .p-multiselect-item .p-checkbox {
-  margin-right: var(--inline-spacing);
 }
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item-group {
   margin: 0;

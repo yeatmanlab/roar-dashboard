@@ -187,6 +187,14 @@ const routes = [
     meta: { pageTitle: 'Crowding' },
   },
   {
+    path: '/game/roav-mep',
+    name: 'MEP',
+    component: () => import('../components/tasks/TaskMEP.vue'),
+    props: { taskId: 'roav-mep', language: 'en' },
+    meta: { pageTitle: 'MEP' },
+  },
+
+  {
     path: '/register-game',
     name: 'RegisterGame',
     component: () => import('../pages/RegisterGame.vue'),

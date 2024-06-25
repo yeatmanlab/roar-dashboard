@@ -41,7 +41,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const { consentSpinner } = storeToRefs(authStore);
 
 onMounted(() => {
-  const delayPromise = delay(8000);
+  const delayPromise = delay(1000);
   confirm.require({
     group: 'templating',
     header: props.consentType.includes('-es')
@@ -49,7 +49,8 @@ onMounted(() => {
       : `${_lowerCase(props.consentType).toUpperCase()} FORM`,
     icon: 'pi pi-question-circle',
     acceptLabel: i18n.t('consentModal.acceptButton'),
-    acceptIcon: 'pi pi-check',
+    acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
+    acceptIcon: 'pi pi-check mr-2',
     accept: async () => {
       toast.add({
         severity: 'info',

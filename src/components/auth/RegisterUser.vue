@@ -249,6 +249,11 @@ const sexOptions = ref([
 ]);
 </script>
 <style scoped>
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
 .name-container {
   display: flex;
   flex-direction: row;

@@ -28,6 +28,7 @@
                   <div class="uppercase text-sm text-gray-600">VIEW</div>
                   <PvSelectButton
                     v-model="reportView"
+                    v-tooltip.top="'View different report'"
                     :options="reportViews"
                     option-disabled="constant"
                     :allow-empty="false"
@@ -39,8 +40,8 @@
                 </div>
                 <div v-if="!isLoadingScores">
                   <PvButton
-                    class="flex flex-row p-2 text-sm"
-                    :icon="!exportLoading ? 'pi pi-download' : 'pi pi-spin pi-spinner'"
+                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                    :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
                     data-html2canvas-ignore="true"
@@ -995,7 +996,7 @@ const scoreReportColumns = computed(() => {
     link: true,
     routeName: 'StudentReport',
     routeTooltip: 'Student Score Report',
-    routeIcon: 'pi pi-chart-bar',
+    routeIcon: 'pi pi-chart-bar border-none text-primary hover:text-white',
     sort: false,
     pinned: true,
     orgType: props.orgType,
@@ -1065,7 +1066,23 @@ const scoreReportColumns = computed(() => {
       return -1;
     }
   });
-  for (const taskId of sortedTasks) {
+
+  const priorityTasks = ['swr', 'sre', 'pa'];
+  const orderedTasks = [];
+
+  for (const task of priorityTasks) {
+    if (sortedTasks.includes(task)) {
+      orderedTasks.push(task);
+    }
+  }
+
+  for (const task of sortedTasks) {
+    if (!priorityTasks.includes(task)) {
+      orderedTasks.push(task);
+    }
+  }
+
+  for (const taskId of orderedTasks) {
     let colField;
     const isOptional = `scores.${taskId}.optional`;
     // Color needs to include a field to allow sorting.
@@ -1079,6 +1096,15 @@ const scoreReportColumns = computed(() => {
     } else if (rawOnlyTasks.includes(taskId)) {
       colField = `scores.${taskId}.rawScore`;
     }
+
+    let backgroundColor = '';
+
+    if (priorityTasks.includes(taskId)) {
+      backgroundColor = 'transparent';
+    } else {
+      backgroundColor = '#E6E6E6';
+    }
+
     tableColumns.push({
       field: colField,
       header: taskDisplayNames[taskId]?.name ?? taskId,
@@ -1094,6 +1120,7 @@ const scoreReportColumns = computed(() => {
         !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
         (viewMode.value === 'color' || isOptional),
       tagColor: `scores.${taskId}.tagColor`,
+      style: `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; `,
     });
   }
   return tableColumns;
@@ -1106,14 +1133,16 @@ const allTasks = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  const res = Object.keys(computeAssignmentAndRunData.value.runsByTaskId).toSorted((p1, p2) => {
-    if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
-      return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
-    } else {
-      return -1;
-    }
+  const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId;
+  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId).includes(id));
+  const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+
+  remainingTaskIds.sort((p1, p2) => {
+    return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
   });
-  return res;
+
+  const sortedIds = specialTaskIds.concat(remainingTaskIds);
+  return sortedIds;
 });
 
 const sortedAndFilteredTaskIds = computed(() => {
@@ -1286,5 +1315,19 @@ onMounted(async () => {
 
 .confirm .p-dialog-header-close {
   display: none !important;
+}
+
+.select-button .p-button:last-of-type:not(:only-of-type) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 25rem;
+  border-bottom-right-radius: 25rem;
+}
+
+.select-button .p-button:first-of-type:not(:only-of-type) {
+  border-top-left-radius: 25rem;
+  border-bottom-left-radius: 25rem;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 </style>

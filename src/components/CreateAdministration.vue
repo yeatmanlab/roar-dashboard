@@ -59,6 +59,7 @@
                 :number-of-months="1"
                 :manual-input="false"
                 show-icon
+                icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-start-date"
               />
@@ -78,6 +79,7 @@
                 :number-of-months="1"
                 :manual-input="false"
                 show-icon
+                icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-end-date"
               />
@@ -113,7 +115,7 @@
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="v$.consent.$invalid && submitted && !isLevante" class="p-error mt-2"
+          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
@@ -143,7 +145,13 @@
           </div>
           <div class="divider mx-2 my-3" />
           <div class="mb-2 w-full flex justify-content-center">
-            <PvButton :label="submitLabel" data-cy="button-create-administration" style="margin: 0" @click="submit" />
+            <PvButton
+              :label="submitLabel"
+              class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
+              data-cy="button-create-administration"
+              style="margin: 0"
+              @click="submit"
+            />
           </div>
         </div>
       </div>
@@ -168,7 +176,6 @@ import _isEqual from 'lodash/isEqual';
 import _union from 'lodash/union';
 import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
-import _lowerCase from 'lodash/lowerCase';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
@@ -214,7 +221,7 @@ const initialized = ref(false);
 const confirm = useConfirm();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
@@ -389,14 +396,16 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
+let noConsent = '';
+
 const rules = {
   administrationName: { required },
   administrationPublicName: { required },
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante) },
-  assent: { requiredIf: requiredIf(!isLevante) },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -438,10 +447,15 @@ const handleVariantsChanged = (newVariants) => {
 };
 
 const handleConsentSelected = (newConsentAssent) => {
-  state.consent = newConsentAssent.consent;
-  state.assent = newConsentAssent.assent;
-  state.amount = newConsentAssent.amount;
-  state.expectedTime = newConsentAssent.expectedTime;
+  if (newConsentAssent !== 'No Consent') {
+    noConsent = '';
+    state.consent = newConsentAssent.consent;
+    state.assent = newConsentAssent.assent;
+    state.amount = newConsentAssent.amount;
+    state.expectedTime = newConsentAssent.expectedTime;
+  } else {
+    noConsent = newConsentAssent;
+  }
 };
 
 const checkForUniqueTasks = (assignments) => {
@@ -517,10 +531,10 @@ const submit = async () => {
           orgs: orgs,
           isTestData: isTestData.value,
           legal: {
-            consent: toRaw(state).consent,
-            assent: toRaw(state).assent,
-            amount: toRaw(state).amount,
-            expectedTime: toRaw(state).expectedTime,
+            consent: toRaw(state).consent ?? null,
+            assent: toRaw(state).assent ?? null,
+            amount: toRaw(state).amount ?? '',
+            expectedTime: toRaw(state).expectedTime ?? '',
           },
         };
         if (isTestData.value) args.isTestData = true;
@@ -626,6 +640,12 @@ function findVariantWithParams(variants, params) {
   margin: 1rem 1.75rem;
 }
 
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
 .loading-container {
   width: 100%;
   text-align: center;
@@ -642,6 +662,30 @@ function findVariantWithParams(variants, params) {
 .org-dropdown {
   margin-right: 3rem;
   margin-top: 2rem;
+}
+
+.p-datepicker .p-datepicker-buttonbar .p-button {
+  width: auto;
+  background-color: white;
+  border: none;
+  border-radius: 0.375rem;
+  color: var(--primary-color);
+  padding: 0.5rem;
+  margin: 0.5rem;
+}
+.p-datepicker .p-datepicker-buttonbar .p-button:hover {
+  background-color: var(--surface-100);
+}
+
+button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
+  border: none;
+  background-color: var(--primary-color);
+  margin-left: -0.5rem;
+  width: 3rem;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 20%;
+  border-bottom-right-radius: 20%;
 }
 
 .divider {
@@ -720,15 +764,6 @@ function findVariantWithParams(variants, params) {
     font-family: 'Source Sans Pro', sans-serif;
     color: #c4c4c4;
   }
-
-  // .p-button {
-  //   width: 11.5625rem;
-  //   height: 2.25rem;
-  //   border-radius: 3.9375rem;
-  //   margin: 1.5rem 0rem;
-  //   margin-right: 1.375rem;
-  //   float: right;
-  // }
 
   .hide {
     display: none;

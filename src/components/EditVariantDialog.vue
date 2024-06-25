@@ -106,7 +106,12 @@
           <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
           <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
             <template #body="{ index }">
-              <PvButton text icon="pi pi-trash" @click="removeAssignedRow(index)" />
+              <PvButton
+                text
+                class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                icon="pi pi-trash"
+                @click="removeAssignedRow(index)"
+              />
             </template>
           </PvColumn>
         </PvDataTable>
@@ -114,8 +119,8 @@
           <div class="mt-2 flex">
             <PvButton
               label="Add Assigned Condition"
-              icon="pi pi-plus"
-              class=""
+              icon="pi pi-plus mr-2"
+              class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
               data-cy="button-assigned-condition"
               @click="addAssignedCondition"
             />
@@ -194,7 +199,11 @@
             <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
             <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
               <template #body="{ index }">
-                <PvButton icon="pi pi-trash" @click="removeOptionalRow(index)" />
+                <PvButton
+                  icon="pi pi-trash"
+                  class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                  @click="removeOptionalRow(index)"
+                />
               </template>
             </PvColumn>
           </PvDataTable>
@@ -210,8 +219,8 @@
             <div class="mt-2 flex gap-2">
               <PvButton
                 label="Add Optional Condition"
-                icon="pi pi-plus"
-                class=""
+                icon="pi pi-plus mr-2"
+                class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
                 :disabled="optionalForAllFlag === true"
                 @click="addOptionalCondition"
               />
@@ -231,8 +240,21 @@
         </div>
       </div>
       <div class="flex justify-content-center gap-2">
-        <PvButton type="button" label="Cancel" text severity="error" @click="handleClose"></PvButton>
-        <PvButton type="button" label="Save" data-cy="button-save-conditions" @click="handleSubmit"></PvButton>
+        <PvButton
+          type="button"
+          class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+          label="Cancel"
+          text
+          severity="error"
+          @click="handleClose"
+        ></PvButton>
+        <PvButton
+          type="button"
+          class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+          label="Save"
+          data-cy="button-save-conditions"
+          @click="handleSubmit"
+        ></PvButton>
       </div>
     </div>
   </PvDialog>

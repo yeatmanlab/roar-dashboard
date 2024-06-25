@@ -8,6 +8,7 @@ import {
   playWrittenVocabulary,
 } from '../../support/helper-functions/roar-multichoice/multichoiceHelpers';
 import { playVocabulary } from '../../support/helper-functions/roar-vocab/vocabHelpers';
+import { playSyntax } from '../../support/helper-functions/roar-syntax/syntaxHelpers';
 import { getOpenAdministrations } from '../../support/query';
 import { getDevFirebase } from '../../support/devFirebase';
 
@@ -102,6 +103,12 @@ const testSpecs = [
     app: '@bdelab/roam-fluency',
     spec: playFluencyCALF,
     language: 'es',
+  },
+  {
+    name: 'Words and Pictures Game',
+    app: 'core-tasks',
+    spec: playSyntax,
+    language: 'en',
   },
 ];
 

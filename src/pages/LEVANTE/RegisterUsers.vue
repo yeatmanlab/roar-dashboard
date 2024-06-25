@@ -12,6 +12,7 @@
           name="massUploader[]"
           custom-upload
           accept=".csv"
+          class="bg-primary text-white border-none border-round w-1 h-2rem m-0 pl-2 hover:bg-red-900"
           auto
           :show-upload-button="false"
           :show-cancel-button="false"

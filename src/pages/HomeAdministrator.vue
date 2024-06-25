@@ -25,7 +25,11 @@
                         @complete="autocomplete"
                         @keyup.enter="onSearch"
                       />
-                      <PvButton icon="pi pi-search" class="text-xs" @click="onSearch" />
+                      <PvButton
+                        icon="pi pi-search"
+                        class="text-xs bg-primary border-none text-white pl-3 pr-3"
+                        @click="onSearch"
+                      />
                     </PvInputGroup>
                   </div>
                 </div>
@@ -50,7 +54,13 @@
             <div>
               You searched for <strong>{{ search }}</strong>
             </div>
-            <PvButton text class="text-xs p-2" @click="clearSearch"> Clear Search </PvButton>
+            <PvButton
+              text
+              class="text-xs p-2 border-none border-round text-primary hover:surface-200"
+              @click="clearSearch"
+            >
+              Clear Search
+            </PvButton>
           </div>
         </div>
         <div v-if="initialized && !isLoadingAdministrations">
@@ -311,7 +321,41 @@ const onSortChange = (event) => {
 };
 </script>
 
-<style scoped>
+<style>
+.p-autocomplete-panel {
+  background: var(--surface-a);
+  color: var(--text-color);
+  border: 0 none;
+  border-radius: var(--border-radius);
+  box-shadow:
+    0 0 rgba(0, 0, 0, 0),
+    0 0 rgba(0, 0, 0, 0),
+    0 10px 15px -3px rgba(0, 0, 0, 0.1019607843),
+    0 4px 6px -2px rgba(0, 0, 0, 0.0509803922);
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+  margin: 0;
+  padding: var(--inline-spacing-larger) 1rem;
+  border: 0 none;
+  color: var(--text-color);
+  background: transparent;
+  transition: none;
+  border-radius: 0;
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
+  background-color: gainsboro;
+}
+
+button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 20%;
+  width: 3rem;
+}
+
 .card-container {
   display: flex;
   flex-direction: row;
@@ -324,11 +368,6 @@ const onSortChange = (event) => {
   width: 100%;
   text-decoration: none;
   color: inherit;
-}
-
-.card-title {
-  text-align: left;
-  height: 100%;
 }
 
 .card-button {

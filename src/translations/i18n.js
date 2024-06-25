@@ -2,10 +2,10 @@ import { createI18n } from 'vue-i18n';
 import { enTranslations, enUSTranslations, esTranslations, esCOTranslations } from './exports';
 
 export const languageOptions = {
-  'en-US': { translations: enUSTranslations, country: 'United States', code: 'usa' },
-  en: { translations: enTranslations, country: 'United Kingdom', code: 'gb' },
-  es: { translations: esTranslations, country: 'Spain', code: 'es' },
-  'es-CO': { translations: esCOTranslations, country: 'Colombia', code: 'col' },
+  'en-US': { translations: enUSTranslations, language: 'English (United States)', code: 'usa' },
+  en: { translations: enTranslations, language: 'English (United Kingdom)', code: 'gb' },
+  es: { translations: esTranslations, language: 'Español (Spain)', code: 'es' },
+  'es-CO': { translations: esCOTranslations, language: 'Español (América Latina)', code: 'col' },
 };
 export let browserLocale = window.navigator.language;
 

@@ -22,10 +22,11 @@
         </div>
       </div>
       <!--Upload file section-->
-      <div v-if="!isFileUploaded" class="text-gray-500 mb-7">
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-7 surface-100 border-round-top-md">
         <PvDivider />
         <PvFileUpload
           name="massUploader[]"
+          class="bg-primary mb-2 ml-2 p-3 w-1 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           custom-upload
           accept=".csv"
           auto
@@ -98,6 +99,7 @@
           </div>
           <PvButton
             label="Start Registration"
+            class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             style="margin-bottom: 4rem"
@@ -507,6 +509,17 @@ function downloadErrorTable() {
 <style scoped>
 .extra-height {
   min-height: 33vh;
+}
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.p-fileupload-buttonbar {
+  padding: 1.5rem !important;
+  background-color: gainsboro !important;
+  border-radius: 20px !important;
 }
 
 .info-box {

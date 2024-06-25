@@ -275,3 +275,11 @@ watch(selectedOrgs, (newValue) => {
   emit('selection', newValue);
 });
 </script>
+
+<style>
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+</style>
