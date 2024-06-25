@@ -142,7 +142,7 @@ jobs:
         with:
           environment: production
           sourcemaps: ./dist/assets/*.js.map
-          version: ${{ github.ref }}
+          version: ${{ github.sha }}
       - name: Notify on failure
         if: failure()
         uses: actions/github-script@v5
