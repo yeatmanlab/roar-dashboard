@@ -77,7 +77,6 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   // If the task does not have a raw score, then display no scores
   // if score exists
   if (
-    _colData.scores?.[_taskId]?.rawScore ||
     _colData.scores?.[_taskId]?.rawScore === 0 ||
     _colData.scores?.[_taskId]?.percentCorrect ||
     _colData.scores?.[_taskId]?.correctIncorrectDifference
