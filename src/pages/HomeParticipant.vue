@@ -186,13 +186,13 @@ const {
 
 async function checkConsent() {
   showConsent.value = false;
-  const dob = new Date(userData.value?.studentData.dob);
+  const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  if (!legal) {
+  if (!legal?.consent) {
     return;
   }
 
