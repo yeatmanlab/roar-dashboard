@@ -370,11 +370,6 @@ button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
   color: inherit;
 }
 
-.card-title {
-  text-align: left;
-  height: 100%;
-}
-
 .card-button {
   display: flex;
   justify-content: flex-end;
