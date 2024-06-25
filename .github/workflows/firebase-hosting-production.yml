@@ -116,7 +116,7 @@ jobs:
     name: Deploy to Firebase Production Hosting Channel
     needs: [run-pre-release-tests]
     runs-on: ubuntu-latest
-    if: success()
+    if: always() # This ensures the job runs even if previous jobs fail
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v4
