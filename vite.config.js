@@ -1,10 +1,8 @@
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vite';
-import vitePluginFaviconsInject from 'vite-plugin-favicons-inject';
 import Vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
-// import mkcert from 'vite-plugin-mkcert';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
