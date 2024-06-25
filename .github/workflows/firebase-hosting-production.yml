@@ -44,7 +44,7 @@ jobs:
           record: true
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
-          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
       - uses: actions/upload-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
@@ -88,6 +88,7 @@ jobs:
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
     needs: [pre-release-tests]
