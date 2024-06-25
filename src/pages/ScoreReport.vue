@@ -60,7 +60,7 @@
                   <div v-for="taskId of sortedAndFilteredTaskIds" :key="taskId" style="width: 33%">
                     <div class="distribution-overview-wrapper">
                       <DistributionChartOverview
-                        :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                        :runs="runsByTaskId[taskId]"
                         :initialized="initialized"
                         :task-id="taskId"
                         :org-type="props.orgType"
@@ -230,11 +230,11 @@
             <div :id="'tab-view-' + taskId">
               <TaskReport
                 v-if="taskId"
-                :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                :computed-table-data="assignmentTableData"
                 :task-id="taskId"
                 :initialized="initialized"
                 :administration-id="administrationId"
-                :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                :runs="runsByTaskId[taskId]"
                 :org-type="orgType"
                 :org-id="orgId"
                 :org-info="orgInfo"
@@ -526,36 +526,49 @@ const {
 const assignmentTableData = ref([]);
 const runsByTaskId = ref({});
 
-const computeAssignmentAndRunData = computed(() => {
-  const promise = new Promise((resolve, reject) => {
-    const worker = new Worker();
+const watchruns = watch(
+  runsByTaskId,
+  (newData) => {
+    if (newData) {
+      console.log('runsbytaskid', runsByTaskId.value);
+    }
+  },
+  { immediate: true },
+);
 
-    // Listen for messages from the worker
-    worker.addEventListener('message', (event) => {
-      console.log('event', event);
-      const { assignmentTableData, runsByTaskId } = event?.data;
-      assignmentTableData.value = assignmentTableData;
-      runsByTaskId.value = runsByTaskId;
-      resolve(event.data);
-      worker.terminate(); // Terminate the worker after it's done
-    });
+const worker = new Worker();
 
-    // Handle errors from the worker
-    worker.addEventListener('error', (error) => {
-      reject(error);
-      worker.terminate(); // Terminate the worker in case of an error
-    });
+worker.addEventListener('message', (event) => {
+  const { assignmentTableData: newData, runsByTaskId: newRuns } = event?.data;
+  console.log('setting refs with data', newData, newRuns);
+  assignmentTableData.value = newData;
+  runsByTaskId.value = newRuns;
+  // Optionally, trigger component reactivity if needed
+});
 
-    const adminInfo = { adminId: props.administrationId, orgType: props.orgType, orgId: props.orgId };
-    const computeData = {
-      schoolNameDictionary: schoolNameDictionary.value,
-      schoolsDictWithGrade: schoolsDictWithGrade.value,
-      assignmentData: assignmentData.value,
-      adminInfo: adminInfo,
-    };
-    worker.postMessage(JSON.stringify(computeData));
+const fetchRunsDataFromWorker = computed(() => {
+  const worker = new Worker();
+
+  worker.addEventListener('message', (event) => {
+    const { assignmentTableData: newData, runsByTaskId: newRuns } = event?.data;
+    console.log('setting refs with data', newData, newRuns);
+    assignmentTableData.value = newData;
+    runsByTaskId.value = newRuns;
   });
-  return promise;
+
+  worker.addEventListener('error', (error) => {
+    console.error('Worker error:', error);
+  });
+
+  const adminInfo = { adminId: props.administrationId, orgType: props.orgType, orgId: props.orgId };
+  const computeData = {
+    schoolNameDictionary: schoolNameDictionary.value,
+    schoolsDictWithGrade: schoolsDictWithGrade.value,
+    assignmentData: assignmentData.value,
+    adminInfo: adminInfo,
+  };
+
+  worker.postMessage(JSON.stringify(computeData));
 });
 
 const filteredTableData = ref(assignmentTableData.value);
@@ -563,9 +576,9 @@ const filteredTableData = ref(assignmentTableData.value);
 // Flag to track whether the watcher is already processing an update
 const isUpdating = ref(false);
 
-watch(computeAssignmentAndRunData, (newValue) => {
+watch(fetchRunsDataFromWorker, (newValue) => {
   // Update filteredTableData when computedProgressData changes
-  filteredTableData.value = newValue.assignmentTableData;
+  filteredTableData.value = assignmentTableData.value;
 });
 
 watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
@@ -592,7 +605,7 @@ watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
 
     isUpdating.value = false; // Reset the flag after the update
   } else {
-    filteredTableData.value = computeAssignmentAndRunData.value.assignmentTableData;
+    filteredTableData.value = assignmentTableData.value;
   }
 });
 
@@ -682,7 +695,7 @@ const exportSelected = (selectedRows) => {
 };
 
 const exportAll = async () => {
-  const computedExportData = _map(computeAssignmentAndRunData.value.assignmentTableData, ({ user, scores }) => {
+  const computedExportData = _map(assignmentTableData.value, ({ user, scores }) => {
     let tableRow = {
       Username: _get(user, 'username'),
       Email: _get(user, 'email'),
@@ -906,12 +919,11 @@ const allTasks = computed(() => {
 });
 
 const sortedTaskIds = computed(() => {
-  const runsByTaskId = computeAssignmentAndRunData.value.runsByTaskId ?? {};
-  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId).includes(id));
-  const remainingTaskIds = Object.keys(runsByTaskId).filter((id) => !specialTaskIds.includes(id));
+  const specialTaskIds = ['swr', 'sre', 'pa'].filter((id) => Object.keys(runsByTaskId.value).includes(id));
+  const remainingTaskIds = Object.keys(runsByTaskId.value).filter((id) => !specialTaskIds.includes(id));
 
   remainingTaskIds.sort((p1, p2) => {
-    return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
+    return taskDisplayNames[p1]?.order - taskDisplayNames[p2]?.order;
   });
 
   const sortedIds = specialTaskIds.concat(remainingTaskIds);
