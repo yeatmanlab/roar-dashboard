@@ -78,6 +78,7 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   // if score exists
   if (
     _colData.scores?.[_taskId]?.rawScore ||
+    _colData.scores?.[_taskId]?.rawScore === 0 ||
     _colData.scores?.[_taskId]?.percentCorrect ||
     _colData.scores?.[_taskId]?.correctIncorrectDifference
   ) {
