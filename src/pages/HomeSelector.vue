@@ -57,6 +57,24 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
+onMounted(async () => {
+  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+
+  if (requireRefresh.value) {
+    requireRefresh.value = false;
+    router.go(0);
+  }
+  if (roarfirekit.value.restConfig) init();
+  if (!isLoading.value) {
+    refreshDocs();
+    if (isAdmin.value) {
+      await checkConsent();
+    }
+  }
+});
+
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
   queryKey: ['userData', uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('users', uid.value),
@@ -122,27 +140,18 @@ async function checkConsent() {
 
 const router = useRouter();
 
-onMounted(async () => {
-  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
-
-  if (requireRefresh.value) {
-    requireRefresh.value = false;
-    router.go(0);
-  }
-  if (roarfirekit.value.restConfig) init();
-  if (!isLoading.value) {
-    refreshDocs();
-    if (isAdmin.value) {
-      await checkConsent();
-    }
-  }
-});
-
 watch(isLoading, async (newValue) => {
   if (!newValue && isAdmin.value) {
     await checkConsent();
+  }
+});
+
+watch(userData, async (newValue) => {
+  if (newValue) {
+    const userType = toRaw(newValue).userType.toLowerCase();
+    if (userType === 'parent' || userType === 'teacher') {
+      router.push({ name: 'Survey' });
+    }
   }
 });
 

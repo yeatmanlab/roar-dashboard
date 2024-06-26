@@ -100,15 +100,7 @@ const { spinner, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
-    if (authStore.userData && isLevante) {
-      if (
-        toRaw(authStore.userData?.userType?.toLowerCase()) === 'parent' ||
-        toRaw(authStore.userData?.userType?.toLowerCase()) === 'teacher'
-      ) {
-        router.push({ name: 'Survey' });
-        return;
-      }
-    }
+    console.log('userData in subscription:', authStore.userData);
 
     if (authFromClever.value) {
       router.push({ name: 'CleverLanding' });
@@ -172,7 +164,7 @@ const authWithClassLink = () => {
   }
 };
 
-const authWithEmail = (state) => {
+const authWithEmail = async (state) => {
   // If username is supplied instead of email
   // turn it into our internal auth email
   incorrect.value = false;
@@ -186,16 +178,9 @@ const authWithEmail = (state) => {
       creds.email = `${creds.email}@roar-auth.com`;
     }
 
-    authStore
+    await authStore
       .logInWithEmailAndPassword(creds)
-      .then(async () => {
-        if (authStore.uid) {
-          const userData = await fetchDocById('users', authStore.uid);
-          const userClaims = await fetchDocById('userClaims', authStore.uid);
-          authStore.userData = userData;
-          authStore.userClaims = userClaims;
-        }
-
+      .then(() => {
         spinner.value = true;
       })
       .catch((e) => {
