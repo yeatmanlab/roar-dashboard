@@ -48,7 +48,7 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
-          path: cypress/e2e/pre-release-tests/generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
+          path: cypress/e2e/pre-release-tests/${{ matrix.browser }}-${{ matrix.containers }}
 
       - name: Confirm artifact upload
         run: echo "Artifact generated-tests-${{ matrix.browser }}-${{ matrix.containers }} uploaded"
@@ -78,7 +78,7 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
-          path: cypress/e2e/pre-release-tests/generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
+          path: cypress/e2e/pre-release-tests/${{ matrix.browser }}-${{ matrix.containers }}
 
       - name: Cypress run to test open administrations
         uses: cypress-io/github-action@v6
@@ -90,7 +90,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests-${{ matrix.browser }}-${{ matrix.containers }}/*.cy.js'
+          spec: 'cypress/e2e/pre-release-tests/${{ matrix.browser }}-${{ matrix.containers }}/*.cy.js'
 
   # build-and-deploy:
   #   name: Deploy to Firebase Production Hosting Channel

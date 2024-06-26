@@ -16,7 +16,7 @@ async function getOpenAdmins() {
 function createAdminTestSpec(adminName) {
   cy.log(adminName);
   const currentPath = __dirname;
-  const testSpecPath = path.join(currentPath, 'generated-tests', `${adminName.replaceAll(' ', '_')}.cy.js`);
+  const testSpecPath = path.join(currentPath, `${adminName.replaceAll(' ', '_')}.cy.js`);
   cy.fsWriteFile(testSpecPath, generatedSpecTemplate(adminName));
 }
 
