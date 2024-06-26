@@ -78,7 +78,7 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
-          path: cypress/e2e/pre-release-tests/generated-tests
+          path: cypress/e2e/pre-release-tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
@@ -89,7 +89,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
+          spec: 'cypress/e2e/pre-release-tests/*.cy.js'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
 
   # build-and-deploy:
