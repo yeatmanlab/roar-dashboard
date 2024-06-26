@@ -12,6 +12,7 @@ name: Deploy to Firebase Hosting (production) with Pre-Release Tests
 jobs:
   build-pre-release-tests:
     name: Build Cypress Pre-Release Tests
+    #  needs: [build-and-preview]
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
@@ -40,43 +41,40 @@ jobs:
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
-          parallel: false # This step does not need parallelization
+          parallel: true
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
           path: cypress/e2e/pre-release-tests/generated-tests
 
   pre-release-tests:
     name: Run Cypress Pre-Release Tests
+    needs: [build-pre-release-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 180
-
     strategy:
+      fail-fast: false
       matrix:
         browser: [chromium, edge]
         containers: [1, 2]
-
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
       COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: List spec files
-        id: list-specs
-        run: |
-          echo "::set-output name=specs::$(ls cypress/e2e/pre-release-tests/generated-tests/*.cy.js)"
-
+      - uses: actions/download-artifact@master
+        with:
+          name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
+          path: cypress/e2e/pre-release-tests/generated-tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
@@ -87,48 +85,48 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          group: ${{ github.run_id }}-${{ matrix.browser }}-${{ matrix.containers }}
-          spec: ${{ steps.list-specs.outputs.specs }}
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
 
-  build-and-deploy:
-    name: Deploy to Firebase Production Hosting Channel
-    needs: [pre-release-tests]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-      - name: 'vite production build'
-        env:
-          NODE_OPTIONS: '--max_old_space_size=8192'
-        run: npm ci && npm run build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
-          channelId: live
-          projectId: gse-roar-admin
-          target: production
-      - name: Create Sentry release and upload source maps
-        uses: getsentry/action-release@v1.7.0
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-        with:
-          environment: production
-          sourcemaps: ./dist/assets/*.js.map
-          version: ${{ github.ref }}
-      - name: Notify on failure
-        if: failure()
-        uses: actions/github-script@v5
-        with:
-          script: |
-            const issue = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: "Combined workflow failed",
-              body: The workflow failed on [${context.sha.substring(0, 7)}](${context.payload.repository.html_url}/commit/${context.sha}). Please check it.,
-            };
-            github.rest.issues.create(issue);
+  # build-and-deploy:
+  #   name: Deploy to Firebase Production Hosting Channel
+  #   needs: [pre-release-tests]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 'lts/*'
+  #     - name: 'vite production build'
+  #       env:
+  #         NODE_OPTIONS: '--max_old_space_size=8192'
+  #       run: npm ci && npm run build
+  #     - uses: FirebaseExtended/action-hosting-deploy@v0
+  #       with:
+  #         repoToken: '${{ secrets.GITHUB_TOKEN }}'
+  #         firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
+  #         channelId: live
+  #         projectId: gse-roar-admin
+  #         target: production
+  #     - name: Create Sentry release and upload source maps
+  #       uses: getsentry/action-release@v1.7.0
+  #       env:
+  #         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  #         SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+  #         SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+  #       with:
+  #         environment: production
+  #         sourcemaps: ./dist/assets/*.js.map
+  #         version: ${{ github.ref }}
+  #     - name: Notify on failure
+  #       if: failure()
+  #       uses: actions/github-script@v5
+  #       with:
+  #         script: |
+  #           const issue = {
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             title: "Combined workflow failed",
+  #             body: The workflow failed on [${context.sha.substring(0, 7)}](${context.payload.repository.html_url}/commit/${context.sha}). Please check it.,
+  #           };
+  #           github.rest.issues.create(issue);
