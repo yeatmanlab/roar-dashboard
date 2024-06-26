@@ -30,7 +30,7 @@ export default defineConfig({
         background_color: '#ffffff',
         injectRegister: 'manual',
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico}'],
+          globPatterns: ['**/*.{vue,js,css,html,ico}'],
         },
         icons: [
           {
