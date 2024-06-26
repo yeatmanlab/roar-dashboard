@@ -44,10 +44,17 @@ jobs:
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+
+      - name: List files before upload
+        run: ls -R cypress/e2e/pre-release-tests/generated-tests
+
       - uses: actions/upload-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
           path: cypress/e2e/pre-release-tests/generated-tests
+
+      - name: Confirm artifact upload
+        run: echo "Artifact generated-tests-${{ matrix.browser }}-${{ matrix.containers }} uploaded"
 
   pre-release-tests:
     name: Run Cypress Pre-Release Tests
