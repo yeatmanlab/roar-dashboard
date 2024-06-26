@@ -19,13 +19,14 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
+        test-number: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] # Adjust according to the number of tests
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
       COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -40,56 +41,32 @@ jobs:
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
-          parallel: false
-          spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
-          ci-build-id: ${{ matrix.browser }}
+          parallel: false # This step does not need parallelization
+          spec: 'cypress/e2e/pre-release-tests/test${{ matrix.test-number }}.spec.js' # Adjust to your test naming convention
+          ci-build-id: ${{ matrix.browser }}-${{ matrix.test-number }}
       - uses: actions/upload-artifact@v2
         with:
-          name: generated-tests-${{ matrix.browser }}
+          name: generated-tests-${{ matrix.browser }}-${{ matrix.test-number }}
           path: cypress/e2e/pre-release-tests/generated-tests
 
-  discover-tests:
-    name: Discover Generated Test Files
+  pre-release-tests:
+    name: Run Cypress Pre-Release Tests
     needs: [build-pre-release-tests]
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: actions/download-artifact@v2
-        with:
-          name: generated-tests-chromium
-          path: cypress/e2e/pre-release-tests/generated-tests
-      - uses: actions/download-artifact@v2
-        with:
-          name: generated-tests-edge
-          path: cypress/e2e/pre-release-tests/generated-tests
-      - name: List test files
-        id: list_tests
-        run: |
-          find cypress/e2e/pre-release-tests/generated-tests -name "*.cy.js" > test_files.txt
-          echo "test_files=$(cat test_files.txt | paste -sd,)" >> $GITHUB_ENV
-          echo "::set-output name=test_files::$(cat test_files.txt | paste -sd,)"
-        shell: bash
-
-    outputs:
-      test_files: ${{ steps.list_tests.outputs.test_files }}
-
-  run-pre-release-tests:
-    name: Run Cypress Pre-Release Tests
-    needs: [discover-tests]
-    runs-on: ubuntu-latest
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        test_file: ${{ fromJson(needs.discover-tests.outputs.test_files) }}
+        test-number: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] # Adjust according to the number of tests
+        parallel-group: [1, 2] # Adjust the number of groups as needed
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
       COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -97,7 +74,7 @@ jobs:
         uses: actions/checkout@v4
       - uses: actions/download-artifact@v2
         with:
-          name: generated-tests-${{ matrix.browser }}
+          name: generated-tests-${{ matrix.browser }}-${{ matrix.test-number }}
           path: cypress/e2e/pre-release-tests/generated-tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
@@ -109,14 +86,14 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: ${{ matrix.test_file }}
-          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+          group: ${{ matrix.parallel-group }}-${{ matrix.browser }}
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/test${{ matrix.test-number }}.spec.js' # Adjust to your test naming convention
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}-${{ matrix.test-number }}
 
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
-    needs: [run-pre-release-tests]
+    needs: [pre-release-tests]
     runs-on: ubuntu-latest
-    if: always() # This ensures the job runs even if previous jobs fail
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v4
@@ -142,7 +119,7 @@ jobs:
         with:
           environment: production
           sourcemaps: ./dist/assets/*.js.map
-          version: ${{ github.sha }}
+          version: ${{ github.ref }}
       - name: Notify on failure
         if: failure()
         uses: actions/github-script@v5
