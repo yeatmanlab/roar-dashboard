@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   cypress-run:
+    if: github.repository == 'yeatmanlab/roar-dashboard'
     name: Run Cypress Network Tests
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -20,7 +21,7 @@ jobs:
         browser: [chromium, edge]
         containers: [1, 2]
     env:
-      CYPRESS_BASE_URL: ${{ secrets.ROAR_PRODUCTION_URL }}
+      CYPRESS_BASE_URL: ${{ secrets.PRODUCTION_URL }}
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Network Tests for Release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}:" "${{ github.event.release.body }}"
       COMMIT_INFO_SHA: ${{ github.event.release.release_id }}

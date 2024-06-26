@@ -10,6 +10,7 @@ name: Deploy to Firebase Hosting (production) with Pre-Release Tests
       - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
 jobs:
   #  pre-release-tests:
+  #    if: github.repository == 'yeatmanlab/roar-dashboard'
   #    name: Run Cypress Pre-Release Tests
   #    needs: [build-and-preview]
   #    runs-on: ubuntu-latest
@@ -45,6 +46,7 @@ jobs:
   #          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
 
   build-and-deploy:
+    if: github.repository == 'yeatmanlab/roar-dashboard'
     name: Deploy to Firebase Production Hosting Channel
     # needs: [pre-release-tests]
     runs-on: ubuntu-latest
@@ -60,9 +62,9 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ADMIN_PROD }}'
           channelId: live
-          projectId: gse-roar-admin
+          projectId: '${{ secrets.FIREBASE_PROJECT_ID_ADMIN_PROD }}'
           target: production
 
       - name: Create Sentry release and upload source maps
