@@ -95,6 +95,7 @@ const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.valu
 
 const isAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;
+  if (userClaims.value?.claims?.admin) return true;
   if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
   return true;
 });
@@ -151,7 +152,7 @@ watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
     authStore.userData = newUserData;
     authStore.userClaims = newUserClaims;
 
-    const userType = toRaw(newValue)?.userType?.toLowerCase();
+    const userType = toRaw(newUserData)?.userType?.toLowerCase();
     if (userType === 'parent' || userType === 'teacher') {
       router.push({ name: 'Survey' });
     }

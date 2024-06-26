@@ -100,8 +100,6 @@ const { spinner, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
-    console.log('userData in subscription:', authStore.userData);
-
     if (authFromClever.value) {
       router.push({ name: 'CleverLanding' });
     } else {
