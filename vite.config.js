@@ -24,7 +24,7 @@ export default defineConfig({
         strategies: 'injectManifest',
         srcDir: 'src',
         filename: 'sw.ts',
-        injectRegister: 'manual',
+        // injectRegister: 'manual',
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico}'],
         },
