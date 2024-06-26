@@ -43,8 +43,8 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
-          path: cypress/e2e/pre-release-tests/generated-tests
+          name: generated-tests
+          path: cypress/e2e/pre-release-tests/
 
   pre-release-tests:
     name: Run Cypress Pre-Release Tests
@@ -71,7 +71,7 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v2
         with:
-          name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
+          name: generated-tests
           path: cypress/e2e/pre-release-tests/generated-tests
       - name: Cypress run
         uses: cypress-io/github-action@v6
