@@ -21,8 +21,9 @@ export default defineConfig({
         display: 'standalone',
         theme_color: '#ffffff',
         background_color: '#ffffff',
-        // inject service worker automatically
-        strategies: 'generateSW',
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
         injectRegister: 'manual',
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico}'],
