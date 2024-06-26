@@ -3,7 +3,7 @@ import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vite';
 import Vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
-import basicSsl from '@vitejs/plugin-basic-ssl';
+import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vitejs.dev/config/
@@ -13,6 +13,13 @@ export default defineConfig({
       include: [/\.vue$/, /\.md$/],
     }),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        injectionPoint: undefined,
+        rollupFormat: 'iife',
+      },
       manifest: {
         // Modify manifest options here...
         name: 'ROAR Dashboard',
@@ -21,11 +28,9 @@ export default defineConfig({
         display: 'standalone',
         theme_color: '#ffffff',
         background_color: '#ffffff',
-        // inject service worker automatically
-        strategies: 'generateSW',
         injectRegister: 'manual',
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico}'],
+          globPatterns: ['**/*.{vue,js,css,html,ico}'],
         },
         icons: [
           {
@@ -60,16 +65,20 @@ export default defineConfig({
         /* other options */
       },
     }),
-    ...(process.env.NODE_ENV === 'development' ? [basicSsl()] : []),
+    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     nodePolyfills({
       globals: {
         process: true,
       },
     }),
-    sentryVitePlugin({
-      org: 'roar-89588e380',
-      project: 'dashboard',
-    }),
+    ...(process.env.NODE_ENV !== 'development'
+      ? [
+          sentryVitePlugin({
+            org: 'roar-89588e380',
+            project: 'dashboard',
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
