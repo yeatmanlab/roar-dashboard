@@ -45,15 +45,10 @@ jobs:
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
 
-      - name: Move generated test files
-        run: |
-          mkdir -p generated-tests
-          mv cypress/e2e/pre-release-tests/ generated-tests/
-
       - uses: actions/upload-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
-          path: cypress/e2e/pre-release-tests/generated-tests
+          path: cypress/e2e/pre-release-tests
 
       - name: Confirm artifact upload
         run: echo "Artifact generated-tests-${{ matrix.browser }}-${{ matrix.containers }} uploaded"
