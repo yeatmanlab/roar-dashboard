@@ -526,24 +526,16 @@ const {
 const assignmentTableData = ref([]);
 const runsByTaskId = ref({});
 
-const watchruns = watch(
-  runsByTaskId,
-  (newData) => {
-    if (newData) {
-      console.log('runsbytaskid', runsByTaskId.value);
-    }
-  },
-  { immediate: true },
-);
-
 const worker = new Worker();
 
 worker.addEventListener('message', (event) => {
   const { assignmentTableData: newData, runsByTaskId: newRuns } = event?.data;
   console.log('setting refs with data', newData, newRuns);
+  isUpdating.value = true;
   assignmentTableData.value = newData;
   runsByTaskId.value = newRuns;
-  // Optionally, trigger component reactivity if needed
+  isUpdating.value = false;
+  resetFilters();
 });
 
 const fetchRunsDataFromWorker = computed(() => {
@@ -577,8 +569,7 @@ const filteredTableData = ref(assignmentTableData.value);
 const isUpdating = ref(false);
 
 watch(fetchRunsDataFromWorker, (newValue) => {
-  // Update filteredTableData when computedProgressData changes
-  filteredTableData.value = assignmentTableData.value;
+  filteredTableData.value = newValue;
 });
 
 watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
