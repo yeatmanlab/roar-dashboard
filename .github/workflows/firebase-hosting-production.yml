@@ -44,7 +44,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: generated-tests
-          path: cypress/e2e/pre-release-tests/generated-tests
+          path: cypress/e2e/pre-release-tests
 
   pre-release-tests:
     name: Run Cypress Pre-Release Tests
