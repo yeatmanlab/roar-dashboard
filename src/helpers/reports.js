@@ -1,5 +1,4 @@
 import html2canvas from 'html2canvas';
-// import { getGrade } from '@bdelab/roar-utils';
 
 export const getGrade = (inputGrade, gradeMin = 0, gradeMax = 13) => {
   const parsedGrade = Number(inputGrade);
