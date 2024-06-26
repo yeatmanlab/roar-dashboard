@@ -146,9 +146,12 @@ watch(isLoading, async (newValue) => {
   }
 });
 
-watch(userData, async (newValue) => {
-  if (newValue) {
-    const userType = toRaw(newValue).userType.toLowerCase();
+watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
+  if (newUserData && newUserClaims) {
+    authStore.userData = newUserData;
+    authStore.userClaims = newUserClaims;
+
+    const userType = toRaw(newValue)?.userType?.toLowerCase();
     if (userType === 'parent' || userType === 'teacher') {
       router.push({ name: 'Survey' });
     }

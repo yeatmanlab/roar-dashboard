@@ -88,6 +88,8 @@ const showAndPlaceAudioButton = (playAudioButton, el) => {
 };
 
 async function getSurvey() {
+  console.log('userData in authStore', authStore.userData);
+
   let userType = toRaw(authStore.userData.userType.toLowerCase());
   if (userType === 'student') userType = 'child';
 
