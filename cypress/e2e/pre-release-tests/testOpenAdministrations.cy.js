@@ -1,16 +1,16 @@
-import { playSWR } from '../../support/helper-functions/roar-swr/swrHelpers';
-import { playSRE } from '../../support/helper-functions/roar-sre/sreHelpers';
-import { playLetter } from '../../support/helper-functions/roar-letter/letterHelpers';
-import { playPA } from '../../support/helper-functions/roar-pa/paHelpers';
-import { playFluencyARF, playFluencyCALF } from '../../support/helper-functions/roam-fluency/fluencyHelpers';
+import { playSWR } from '../../../support/helper-functions/roar-swr/swrHelpers';
+import { playSRE } from '../../../support/helper-functions/roar-sre/sreHelpers';
+import { playLetter } from '../../../support/helper-functions/roar-letter/letterHelpers';
+import { playPA } from '../../../support/helper-functions/roar-pa/paHelpers';
+import { playFluencyARF, playFluencyCALF } from '../../../support/helper-functions/roam-fluency/fluencyHelpers';
 import {
   playMorphology,
   playWrittenVocabulary,
-} from '../../support/helper-functions/roar-multichoice/multichoiceHelpers';
-import { playVocabulary } from '../../support/helper-functions/roar-vocab/vocabHelpers';
-import { playSyntax } from '../../support/helper-functions/roar-syntax/syntaxHelpers';
-import { getOpenAdministrations } from '../../support/query';
-import { getDevFirebase } from '../../support/devFirebase';
+} from '../../../support/helper-functions/roar-multichoice/multichoiceHelpers';
+import { playVocabulary } from '../../../support/helper-functions/roar-vocab/vocabHelpers';
+import { playSyntax } from '../../../support/helper-functions/roar-syntax/syntaxHelpers';
+import { getOpenAdministrations } from '../../../support/query';
+import { getDevFirebase } from '../../../support/devFirebase';
 
 const timeout = Cypress.env('timeout');
 const testSpecs = [
