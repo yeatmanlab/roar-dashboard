@@ -41,7 +41,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: false # This step does not need parallelization
-          group: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
+          spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
       - uses: actions/upload-artifact@v2
         with:
@@ -50,31 +50,33 @@ jobs:
 
   pre-release-tests:
     name: Run Cypress Pre-Release Tests
-    needs: [build-pre-release-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 180
+
     strategy:
-      fail-fast: false
       matrix:
         browser: [chromium, edge]
         containers: [1, 2]
-        parallel-group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] # Adjust the number of groups as needed
+
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
       COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v2
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
           path: cypress/e2e/pre-release-tests/generated-tests
+
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
@@ -85,9 +87,8 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          group: ${{ matrix.parallel-group }}-${{ matrix.browser }}
+          group: ${{ github.run_id }}-${{ matrix.browser }}-${{ matrix.containers }}
           spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
-          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
 
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
