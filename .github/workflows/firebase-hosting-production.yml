@@ -5,14 +5,9 @@ name: Deploy to Firebase Hosting (production) with Pre-Release Tests
   push:
     branches:
       - 'enh/seperate-test-all-admins'
-    # tags:
-    #   - 'v[0-9]+.[0-9]+.[0-9]+'
-    #   - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
-    #   - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
 jobs:
   build-pre-release-tests:
     name: Build Cypress Pre-Release Tests
-    #  needs: [build-and-preview]
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
@@ -45,13 +40,10 @@ jobs:
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
 
-      - uses: actions/upload-artifact@master
+      - uses: actions/upload-artifact@v2
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
-          path: cypress/e2e/pre-release-tests
-
-      - name: Confirm artifact upload
-        run: echo "Artifact generated-tests-${{ matrix.browser }}-${{ matrix.containers }} uploaded"
+          path: cypress/e2e/pre-release-tests/generated-tests
 
   pre-release-tests:
     name: Run Cypress Pre-Release Tests
@@ -75,7 +67,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v2
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
           path: cypress/e2e/pre-release-tests/generated-tests
