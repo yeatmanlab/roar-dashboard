@@ -32,9 +32,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create directory for generated tests
-        run: mkdir -p cypress/e2e/pre-release-tests/${{ matrix.browser }}-${{ matrix.containers }}
-
       - name: Cypress run to generate test files
         uses: cypress-io/github-action@v6
         with:
