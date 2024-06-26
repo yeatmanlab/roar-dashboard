@@ -12,7 +12,6 @@ name: Deploy to Firebase Hosting (production) with Pre-Release Tests
 jobs:
   build-pre-release-tests:
     name: Build Cypress Pre-Release Tests
-    #  needs: [build-and-preview]
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
@@ -26,13 +25,17 @@ jobs:
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
       COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Cypress run
+
+      - name: Create directory for generated tests
+        run: mkdir -p cypress/e2e/pre-release-tests/${{ matrix.browser }}-${{ matrix.containers }}
+
+      - name: Cypress run to generate test files
         uses: cypress-io/github-action@v6
         with:
           browser: ${{ matrix.browser }}
@@ -48,7 +51,7 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
-          path: cypress/e2e/pre-release-tests
+          path: cypress/e2e/pre-release-tests/${{ matrix.browser }}-${{ matrix.containers }}
 
       - name: Confirm artifact upload
         run: echo "Artifact generated-tests-${{ matrix.browser }}-${{ matrix.containers }} uploaded"
@@ -69,7 +72,7 @@ jobs:
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
       COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
       COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME }}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -78,8 +81,9 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
-          path: cypress/e2e/pre-release-tests
-      - name: Cypress run
+          path: cypress/e2e/pre-release-tests/${{ matrix.browser }}-${{ matrix.containers }}
+
+      - name: Cypress run to test open administrations
         uses: cypress-io/github-action@v6
         with:
           browser: ${{ matrix.browser }}
@@ -89,8 +93,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/pre-release-tests/*.cy.js'
-          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+          spec: 'cypress/e2e/pre-release-tests/${{ matrix.browser }}-${{ matrix.containers }}/*.cy.js'
 
   # build-and-deploy:
   #   name: Deploy to Firebase Production Hosting Channel
