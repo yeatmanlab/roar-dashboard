@@ -526,26 +526,14 @@ const {
 const assignmentTableData = ref([]);
 const runsByTaskId = ref({});
 
-const worker = new Worker();
-
-worker.addEventListener('message', (event) => {
-  const { assignmentTableData: newData, runsByTaskId: newRuns } = event?.data;
-  console.log('setting refs with data', newData, newRuns);
-  isUpdating.value = true;
-  assignmentTableData.value = newData;
-  runsByTaskId.value = newRuns;
-  isUpdating.value = false;
-  resetFilters();
-});
-
 const fetchRunsDataFromWorker = computed(() => {
   const worker = new Worker();
 
   worker.addEventListener('message', (event) => {
     const { assignmentTableData: newData, runsByTaskId: newRuns } = event?.data;
-    console.log('setting refs with data', newData, newRuns);
     assignmentTableData.value = newData;
     runsByTaskId.value = newRuns;
+    resetFilters();
   });
 
   worker.addEventListener('error', (error) => {
