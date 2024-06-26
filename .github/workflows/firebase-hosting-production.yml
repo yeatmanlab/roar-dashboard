@@ -40,7 +40,8 @@ jobs:
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
 
-      - uses: actions/upload-artifact@v2
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
           path: cypress/e2e/pre-release-tests/generated-tests
@@ -67,7 +68,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - uses: actions/download-artifact@v2
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
         with:
           name: generated-tests-${{ matrix.browser }}-${{ matrix.containers }}
           path: cypress/e2e/pre-release-tests/generated-tests
@@ -81,7 +83,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
+          spec: 'generated-tests/*.cy.js'
 
   # build-and-deploy:
   #   name: Deploy to Firebase Production Hosting Channel
