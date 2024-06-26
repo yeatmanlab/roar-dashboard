@@ -41,7 +41,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: false # This step does not need parallelization
-          spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
+          group: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
       - uses: actions/upload-artifact@v2
         with:
