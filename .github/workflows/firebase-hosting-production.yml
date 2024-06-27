@@ -89,6 +89,9 @@ jobs:
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generated-tests/generatePrereleaseTests.cy.js'
 
+      - name: List contents of the folder after generate Tests
+        run: ls -la cypress/e2e/pre-release-tests/generated-tests/
+
       - name: Cypress run admins
         uses: cypress-io/github-action@v6
         with:
