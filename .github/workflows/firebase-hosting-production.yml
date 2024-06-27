@@ -87,6 +87,18 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/generatePrereleaseTests.cy.js'
+
+      - name: Cypress run admins
+        uses: cypress-io/github-action@v6
+        with:
+          browser: ${{ matrix.browser }}
+          # build: npm ci && npm run build
+          start: npm run dev
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 120
+          record: true
+          parallel: true
           spec: 'cypress/e2e/pre-release-tests/generated-tests/generated-tests/*.cy.js'
 
   # build-and-deploy:
