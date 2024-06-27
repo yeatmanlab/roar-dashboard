@@ -93,15 +93,20 @@ async function getSurvey() {
 
   try {
     const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey.json`);
-    const audioLinkMap = await fetchAudioLinks('child-survey');
-    audioLinks.value = audioLinkMap;
+
+    if (userType === 'child') {
+      const audioLinkMap = await fetchAudioLinks('child-survey');
+      audioLinks.value = audioLinkMap;
+    }
     fetchedSurvey.value = response.data;
     // Create the survey model with the fetched data
     const surveyInstance = new Model(fetchedSurvey.value);
 
     surveyInstance.locale = locale.value;
 
-    fetchBuffer(getParsedLocale(locale.value));
+    if (userType === 'child') {
+      fetchBuffer(getParsedLocale(locale.value));
+    }
 
     survey.value = surveyInstance;
     survey.value.onTextMarkdown.add(function (survey, options) {
@@ -115,16 +120,18 @@ async function getSurvey() {
     });
 
     survey.value.onComplete.add(saveResults);
-    survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
-      const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
-      if (currentAudioSource) {
-        currentAudioSource.stop();
-      }
-      questionElements.forEach((el) => {
-        const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
-        showAndPlaceAudioButton(playAudioButton, el);
+    if (userType === 'child') {
+      survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
+        const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
+        if (currentAudioSource) {
+          currentAudioSource.stop();
+        }
+        questionElements.forEach((el) => {
+          const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
+          showAndPlaceAudioButton(playAudioButton, el);
+        });
       });
-    });
+    }
   } catch (error) {
     console.error(error);
   }
@@ -170,7 +177,7 @@ async function saveResults(sender) {
   // call cloud function to save the survey results
   // TODO: Use tanstack-query mutation for automaitic retries.
   try {
-    const res = await roarfirekit.value.saveSurveyResponses({
+    await roarfirekit.value.saveSurveyResponses({
       responses: responsesWithAllQuestions,
       administrationId: gameStore.selectedAdmin.id,
     });
@@ -198,14 +205,16 @@ async function saveResults(sender) {
   <div v-if="survey && !isSavingResponses && !audioLoading">
     <SurveyComponent :model="survey" />
 
-    <div v-for="page in fetchedSurvey.pages" :key="page.name">
-      <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
-        <PvButton
-          :id="'audio-button-' + item.name"
-          icon="pi pi-volume-up text-white"
-          style="display: none"
-          @click="playAudio(item.name)"
-        />
+    <div v-if="authStore.userData.userType === 'student'">
+      <div v-for="page in fetchedSurvey.pages" :key="page.name">
+        <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
+          <PvButton
+            :id="'audio-button-' + item.name"
+            icon="pi pi-volume-up text-white"
+            style="display: none"
+            @click="playAudio(item.name)"
+          />
+        </div>
       </div>
     </div>
   </div>
