@@ -73,6 +73,10 @@ jobs:
         with:
           name: generated-tests
           path: cypress/e2e/pre-release-tests/generated-tests
+
+      - name: List contents of the folder
+        run: ls -la cypress/e2e/pre-release-tests/generated-tests/generated-tests
+
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
@@ -83,7 +87,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/generated-tests/*.cy.js'
 
   # build-and-deploy:
   #   name: Deploy to Firebase Production Hosting Channel
