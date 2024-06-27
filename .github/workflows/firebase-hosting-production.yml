@@ -55,7 +55,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, edge]
-        containers: [1, 2]
+        containers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
@@ -103,9 +103,8 @@ jobs:
           record: true
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generated-tests/generated-tests/*.cy.js'
-
-      - name: List contents of the folder after running tests
-        run: ls cypress/e2e/pre-release-tests/generated-tests/
+          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+          group: 'parallel-group-${{ matrix.containers }}-${{ matrix.browser }}'
 
   # build-and-deploy:
   #   name: Deploy to Firebase Production Hosting Channel
