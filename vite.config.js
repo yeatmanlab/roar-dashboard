@@ -30,7 +30,7 @@ export default defineConfig({
         background_color: '#ffffff',
         injectRegister: 'manual',
         workbox: {
-          globPatterns: ['**/*.{vue,js,css,html,ico}'],
+          globPatterns: ['**/*.{css,html,ico}'],
         },
         icons: [
           {
@@ -60,7 +60,7 @@ export default defineConfig({
       },
       /* enable sw on development */
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module',
         /* other options */
       },
