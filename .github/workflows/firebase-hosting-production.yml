@@ -75,7 +75,7 @@ jobs:
           path: cypress/e2e/pre-release-tests/generated-tests
 
       - name: List contents of the folder
-        run: ls -la cypress/e2e/pre-release-tests/generated-tests/
+        run: ls cypress/e2e/pre-release-tests/generated-tests/
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
