@@ -86,7 +86,7 @@ jobs:
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
-          parallel: true
+          # parallel: true
           spec: 'cypress/e2e/pre-release-tests/generated-tests/generatePrereleaseTests.cy.js'
 
       - name: List contents of the folder after generate Tests
@@ -101,7 +101,7 @@ jobs:
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
-          parallel: true
+          # parallel: true
           spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
 
       - name: List contents of the folder after running tests
