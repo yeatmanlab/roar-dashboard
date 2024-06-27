@@ -419,10 +419,14 @@ router.beforeEach(async (to, from, next) => {
     'Register',
   ];
 
-  const inMaintenanceMode = true;
+  const inMaintenanceMode = false;
 
   if (inMaintenanceMode && to.name !== 'Maintenance') {
     next({ name: 'Maintenance' });
+    return;
+  } else if (!inMaintenanceMode && to.name === 'Maintenance') {
+    next({ name: 'Home' });
+    return false;
   }
   // Check if user is signed in. If not, go to signin
   if (
