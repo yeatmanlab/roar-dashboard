@@ -90,7 +90,7 @@ jobs:
           spec: 'cypress/e2e/pre-release-tests/generated-tests/generatePrereleaseTests.cy.js'
 
       - name: List contents of the folder after generate Tests
-        run: ls cypress/e2e/pre-release-tests/generated-tests/
+        run: ls cypress/e2e/pre-release-tests/generated-tests/generated-tests/
 
       - name: Cypress run admins
         uses: cypress-io/github-action@v6
