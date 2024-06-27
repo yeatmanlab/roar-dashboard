@@ -102,7 +102,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           # parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/*.cy.js'
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/generated-tests/*.cy.js'
 
       - name: List contents of the folder after running tests
         run: ls cypress/e2e/pre-release-tests/generated-tests/
