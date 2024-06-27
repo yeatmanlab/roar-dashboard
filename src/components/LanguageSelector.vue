@@ -8,6 +8,7 @@
       option-value="value"
       placeholder="Select Language"
       :highlight-on-select="true"
+      @change="onLanguageChange"
     >
       <template #header>
         <small class="m-2 font-bold uppercase text-gray-400">
@@ -21,6 +22,7 @@
 <script setup>
 import { computed } from 'vue';
 import { languageOptions } from '@/translations/i18n.js';
+const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 // Convert the object to an array of [key, value] pairs
 let languageOptionsArray = Object.entries(languageOptions);
@@ -40,6 +42,10 @@ const languageDropdownOptions = computed(() => {
     };
   });
 });
+
+function onLanguageChange(event) {
+  sessionStorage.setItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`, event.value);
+}
 </script>
 
 <style scoped></style>
