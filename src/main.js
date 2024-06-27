@@ -94,6 +94,19 @@ import { i18n } from '@/translations/i18n.js';
 
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
 
+import { useRegisterSW } from 'virtual:pwa-register/vue';
+
+const intervalMS = 60 * 60 * 1000;
+
+const updateServiceWorker = useRegisterSW({
+  onRegistered(r) {
+    r &&
+      setInterval(() => {
+        r.update();
+      }, intervalMS);
+  },
+});
+
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia();
@@ -121,6 +134,7 @@ app.use(TextClamp);
 app.use(VueQueryPlugin);
 app.use(i18n);
 app.use(surveyPlugin);
+app.use(updateServiceWorker);
 
 app.component('PvAccordion', PvAccordion);
 app.component('PvAccordionTab', PvAccordionTab);

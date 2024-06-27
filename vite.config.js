@@ -17,8 +17,9 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.js',
       injectManifest: {
-        injectionPoint: undefined,
-        rollupFormat: 'iife',
+        // injectionPoint: undefined,
+        // rollupFormat: 'iife',
+        globPatterns: ['*.{css,html,ico}'],
       },
       manifest: {
         // Modify manifest options here...
@@ -29,9 +30,6 @@ export default defineConfig({
         theme_color: '#ffffff',
         background_color: '#ffffff',
         injectRegister: 'manual',
-        workbox: {
-          globPatterns: ['**/*.{css,html,ico}'],
-        },
         icons: [
           {
             src: '/pwa-64x64.png',
