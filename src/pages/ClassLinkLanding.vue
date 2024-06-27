@@ -33,14 +33,16 @@ async function checkForUserType() {
         console.log(`User ${uid.value} found with assignments.`, { userData, assignments });
         console.log('Routing to Home');
         clearInterval(userDataCheckInterval);
+        authStore.refreshQueryKeys();
         router.push({ name: 'Home' });
       } else {
         console.log(`User ${uid.value} found with userType ${userType} but no assignments. Retrying...`);
       }
-    } else if (userType !== 'guest') {
+    } else if (userType && userType !== 'guest') {
       console.log(`User ${uid.value} found with userType ${userType}.`);
       console.log('Routing to Home');
       clearInterval(userDataCheckInterval);
+      authStore.refreshQueryKeys();
       router.push({ name: 'Home' });
     } else {
       console.log(`User ${uid.value} found with userType ${userType}. Retrying...`);
