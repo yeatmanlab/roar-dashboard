@@ -1,4 +1,3 @@
-import { testSpecs } from '../../../fixtures/taskTestSpecs';
 import { generatedSpecTemplate } from '../../../fixtures/generatedTestTemplate';
 import { getDevFirebase } from '../../../support/devFirebase';
 import { getOpenAdministrations } from '../../../support/query';
