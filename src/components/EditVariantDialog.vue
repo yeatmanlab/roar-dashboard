@@ -274,7 +274,44 @@ const props = defineProps({
     type: Function,
     required: true,
   },
+  preExistingAssessmentInfo: {
+    type: Array,
+    default: () => [],
+  },
 });
+
+onMounted(() => {
+  const existingAssignedConditions = getAssignedConditions(props.assessment.task.id);
+  const existingOptionalConditions = getOptionalConditions(props.assessment.task.id);
+  setAssignedConditions(existingAssignedConditions);
+  setOptionalConditions(existingOptionalConditions);
+});
+
+// Get the assigned and optional conditions from the pre-existing admin info
+function getAssignedConditions(taskId) {
+  return props.preExistingAssessmentInfo.find((assessment) => assessment.taskId === taskId)?.conditions?.assigned
+    ?.conditions;
+}
+
+function getOptionalConditions(taskId) {
+  return props.preExistingAssessmentInfo.find((assessment) => assessment.taskId === taskId)?.conditions?.optional
+    ?.conditions;
+}
+
+// Set the assigned and optional conditions from the pre-existing admin info
+function setAssignedConditions(existingAssignedConditions) {
+  if (!existingAssignedConditions) return;
+  for (const condition of existingAssignedConditions) {
+    assignedConditions.value = [condition, ...assignedConditions.value];
+  }
+}
+
+function setOptionalConditions(existingOptionalConditions) {
+  if (!existingOptionalConditions) return;
+  for (const condition of existingOptionalConditions) {
+    optionalConditions.value = [condition, ...optionalConditions.value];
+  }
+}
 
 const addOptionalCondition = () => {
   optionalConditions.value.push({ id: assignedConditions.value.length, field: '', op: '', value: '' });
@@ -298,19 +335,16 @@ const errorSubmitText = ref('');
 
 const handleOptionalForAllSwitch = () => {
   if (optionalForAllFlag.value === true) {
+    // Store the optional conditions in case the optionalForAllFlag is toggled on and off again
+    previousOptionalConditions.value = optionalConditions.value;
     optionalConditions.value = [];
+  } else {
+    optionalConditions.value = previousOptionalConditions.value;
   }
 };
 
 const optionalAllFlagAndOptionalConditionsPresent = computed(() => {
   return optionalForAllFlag.value && computedConditions.value['optional']?.conditions?.length > 0;
-});
-
-onMounted(() => {
-  if (props.assessment?.conditions) {
-    optionalConditions.value = props.assessments?.conditions?.optional?.conditions;
-    assignedConditions.value = props.assessments?.conditions?.assigned?.conditions;
-  }
 });
 
 const handleClose = () => {
@@ -376,6 +410,8 @@ const removeOptionalRow = (index) => {
 
 const optionalConditions = ref([]);
 const assignedConditions = ref([]);
+// Store optional conditions in case the optionalForAllFlag is toggled on and off again (prevents the form from resetting to the original state)
+const previousOptionalConditions = ref([]);
 
 const computedConditions = computed(() => {
   return {
@@ -408,6 +444,7 @@ const operators = ref([
 const onAssignedRowEditSave = (event) => {
   let { newData, index } = event;
   // Update the specific row in the conditions array
+  console.log(newData, index);
   assignedConditions.value[index] = newData;
 
   // Remove the index from the editingRows array to stop editing

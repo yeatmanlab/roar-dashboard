@@ -153,7 +153,11 @@
       </PvOverlayPanel>
     </div>
     <div class="mr-0 pl-0 flex flex-column">
-      <EditVariantDialog :assessment="variant" :update-variant="updateVariant" />
+      <EditVariantDialog
+        :assessment="variant"
+        :update-variant="updateVariant"
+        :pre-existing-assessment-info="preExistingAssessmentInfo"
+      />
       <PvButton
         v-if="variant.variant?.conditions?.assigned || variant.variant?.conditions?.optional"
         class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
@@ -267,6 +271,10 @@ const props = defineProps({
   updateVariant: {
     type: Function,
     required: true,
+  },
+  preExistingAssessmentInfo: {
+    type: Array,
+    default: () => [],
   },
 });
 

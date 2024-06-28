@@ -111,6 +111,7 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
+          :pre-existing-assessment-info="preExistingAdminInfo?.assessments"
           @variants-changed="handleVariantsChanged"
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
