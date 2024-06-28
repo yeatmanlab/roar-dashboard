@@ -83,7 +83,7 @@
     "zipson": "^0.2.12"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.196",
+    "@types/lodash": "^4.17.6",
     "@vite-pwa/assets-generator": "^0.2.4",
     "@vitejs/plugin-basic-ssl": "^1.0.1",
     "@vitejs/plugin-vue": "^4.0.0",
