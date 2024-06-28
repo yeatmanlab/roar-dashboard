@@ -1,7 +1,7 @@
 describe('Cypress test to login in Clever', () => {
   it('passes', () => {
     cy.visit(
-      'https://clever.com/oauth/authorize?response_type=code&redirect_uri=https%3A%2F%2Flocalhost%3A5173t%2Fauth-clever&client_id=1150d0bd8a44909bfdab',
+      'https://clever.com/oauth/authorize?response_type=code&redirect_uri=https%3A%2F%2Flocalhost%3A5173%2Fauth-clever&client_id=1150d0bd8a44909bfdab',
     );
     // cy.visit('c');
     cy.get('button', { timeout: 10000 }).contains('Clever').click();
