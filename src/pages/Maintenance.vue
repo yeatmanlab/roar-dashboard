@@ -7,9 +7,10 @@
           <ROARLogoShort v-else />
         </div>
       </header>
-      <section class="px-3 flex flex-column gap-3 text-center">
-        <h1>ROAR is currently down for maintenance!</h1>
-        <span>We apologize for any inconvenience, please check back later!</span>
+      <section class="px-3 flex flex-column gap-3 text-center align-items-center">
+        <h1>We'll be back soon!</h1>
+        <img src="../assets/maintenance-lion.jpg" alt="Maintenance" width="240" />
+        <span class="font-light font-md">We apologize for any inconvenience, please check back later.</span>
       </section>
     </section>
   </div>
