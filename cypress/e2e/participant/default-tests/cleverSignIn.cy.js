@@ -32,7 +32,5 @@ describe('Cypress test to login in Clever', () => {
 
     // Click the login button
     cy.get('button#UsernamePasswordForm--loginButton').click();
-
-    cy.wait(100 * timeout);
   });
 });
