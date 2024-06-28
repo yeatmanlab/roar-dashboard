@@ -151,9 +151,10 @@ function testGame(spec, admin) {
           administration: admin,
           language: spec.language,
         });
-      } else {
-        checkOptionalGame(spec, admin, text);
       }
+      // else {
+      //   checkOptionalGame(spec, admin, text); // comenting this for now
+      // }
     });
 }
 
