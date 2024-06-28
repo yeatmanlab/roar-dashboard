@@ -19,7 +19,7 @@ export default defineConfig({
       injectManifest: {
         // injectionPoint: undefined,
         // rollupFormat: 'iife',
-        globPatterns: ['./src/*.{css,html}'],
+        globPatterns: ['**/*.{html}'],
       },
       manifest: {
         // Modify manifest options here...
