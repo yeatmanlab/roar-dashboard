@@ -17,8 +17,8 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.js',
       injectManifest: {
-        // injectionPoint: undefined,
-        // rollupFormat: 'iife',
+        injectionPoint: undefined,
+        rollupFormat: 'iife',
         globPatterns: ['**/*.{html}'],
       },
       manifest: {
@@ -54,12 +54,10 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
-        // Add more manifest options as needed
       },
       /* enable sw on development */
       devOptions: {
         enabled: true,
-        /* when using generateSW the PWA plugin will switch to classic */
         type: 'module',
         navigateFallback: 'index.html',
         suppressWarnings: true,

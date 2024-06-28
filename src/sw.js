@@ -1,4 +1,4 @@
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { cleanupOutdatedCaches } from 'workbox-precaching';
 
 cleanupOutdatedCaches();
-precacheAndRoute(self.__WB_MANIFEST || []);
+self.__WB_MANIFEST;
