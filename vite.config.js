@@ -58,9 +58,11 @@ export default defineConfig({
       },
       /* enable sw on development */
       devOptions: {
-        enabled: false,
+        enabled: true,
+        /* when using generateSW the PWA plugin will switch to classic */
         type: 'module',
-        /* other options */
+        navigateFallback: 'index.html',
+        suppressWarnings: true,
       },
     }),
     ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
