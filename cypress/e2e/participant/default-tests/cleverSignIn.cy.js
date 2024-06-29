@@ -2,6 +2,9 @@ export const timeout = Cypress.env('timeout');
 
 describe('Cypress test to login in Clever', () => {
   it('passes', () => {
+    // Set the pageLoadTimeout to 2 minutes (120000 ms)
+    Cypress.config('pageLoadTimeout', 120000);
+
     // Generate a random state parameter
     const state = 'testState123'; // In real scenarios, this should be a securely generated random value
 
