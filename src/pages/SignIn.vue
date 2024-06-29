@@ -133,12 +133,12 @@ const authWithGoogle = () => {
 
 const authWithClever = () => {
   console.log('---> authWithClever');
-  if (isMobileBrowser()) {
-    authStore.signInWithCleverRedirect();
+  const isLocalHost = import.meta.env.DEV;
+  if (isLocalHost) {
+    authStore.signInWithCleverPopup();
     spinner.value = true;
   } else {
     authStore.signInWithCleverRedirect();
-    // authStore.signInWithCleverPopup();
     spinner.value = true;
   }
 };
