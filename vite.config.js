@@ -19,6 +19,7 @@ export default defineConfig({
       injectManifest: {
         injectionPoint: undefined,
         rollupFormat: 'iife',
+        globPatterns: ['**/*.{html}'],
       },
       manifest: {
         // Modify manifest options here...
@@ -29,9 +30,6 @@ export default defineConfig({
         theme_color: '#ffffff',
         background_color: '#ffffff',
         injectRegister: 'manual',
-        workbox: {
-          globPatterns: ['**/*.{vue,js,css,html,ico}'],
-        },
         icons: [
           {
             src: '/pwa-64x64.png',
@@ -56,13 +54,13 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
-        // Add more manifest options as needed
       },
       /* enable sw on development */
       devOptions: {
         enabled: true,
         type: 'module',
-        /* other options */
+        navigateFallback: 'index.html',
+        suppressWarnings: true,
       },
     }),
     ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
