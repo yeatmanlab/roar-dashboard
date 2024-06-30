@@ -18,8 +18,12 @@
         >This Administration does not require a consent/assent</label
       >
     </div>
+    <div class="flex justify-content-center mt-2">
+      <PvCheckbox v-model="adobeSign" input-id="no-consent" class="flex" value="adobeSign" />
+      <label class="ml-2 flex text-center" for="no-consent">This Administration uses Adobe Sign</label>
+    </div>
     <div class="flex flex-row">
-      <div v-if="userDrivenFlow && !noConsent" class="align-content-center" style="width: 50%">
+      <div v-if="userDrivenFlow && !noConsent && !adobeSign" class="align-content-center" style="width: 50%">
         <h3>Default Data Collection</h3>
         <div class="border-solid border-round border-1 border-black-alpha-30" style="width: 70%">
           <div style="width: 70%; cursor: pointer">
@@ -146,7 +150,7 @@
           </div>
         </div>
       </div>
-      <div v-if="knowWhatIWant && !noConsent" class="flex flex-column pl-3" style="width: 50%">
+      <div v-if="knowWhatIWant && !noConsent && !adobeSign" class="flex flex-column pl-3" style="width: 50%">
         <h3>Select a Consent Form</h3>
         <PvDropdown
           v-model="selectedConsent"
@@ -181,7 +185,7 @@
           </div>
         </div>
       </div>
-      <div v-if="(knowWhatIWant || userDrivenFlow) && !noConsent" class="flex-column" style="width: 50%">
+      <div v-if="(knowWhatIWant || userDrivenFlow) && !noConsent && !adobeSign" class="flex-column" style="width: 50%">
         <h3 class="font-bold text-center text-xl">Suggested Forms</h3>
         <div class="w-full">
           <PvFieldset v-if="consents && consents.length > 0" legend="Consent">
@@ -307,6 +311,7 @@ const amount = ref('');
 const expectedTime = ref('');
 const userDrivenFlow = ref(null);
 const noConsent = ref(false);
+const adobeSign = ref(false);
 let selectedConsent = ref(null);
 let selectedAssent = ref(null);
 const knowWhatIWant = ref(false);
@@ -553,6 +558,15 @@ watch(noConsent, () => {
   } else {
     emit('consent-selected', '');
     noConsent.value = false;
+  }
+});
+
+watch(adobeSign, () => {
+  if (adobeSign.value && adobeSign.value?.find((item) => item === 'adobeSign')) {
+    emit('consent-selected', 'adobeSign');
+  } else {
+    emit('consent-selected', '');
+    adobeSign.value = false;
   }
 });
 </script>

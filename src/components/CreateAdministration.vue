@@ -115,18 +115,9 @@
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
+          <small v-if="submitted && !isLevante && noConsent === '' && adobeSign === ''" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
-        </div>
-        <div>
-          <iframe
-            src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhCXQNRVP9a6SqFzLnQwhXKuIWgJQmfzbEgKfGpRk12y0wrtLrI6kSAxpeAgn87SqeA*&hosted=false"
-            width="100%"
-            height="100%"
-            frameborder="0"
-            style="border: 0; overflow: hidden; min-height: 500px; min-width: 600px"
-          ></iframe>
         </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
@@ -406,6 +397,7 @@ const minEndDate = computed(() => {
 });
 
 let noConsent = '';
+let adobeSign = '';
 
 const rules = {
   administrationName: { required },
@@ -413,8 +405,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
-  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '' && adobeSign !== '') },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '' && adobeSign !== '') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -456,14 +448,17 @@ const handleVariantsChanged = (newVariants) => {
 };
 
 const handleConsentSelected = (newConsentAssent) => {
-  if (newConsentAssent !== 'No Consent') {
+  if (newConsentAssent !== 'No Consent' && newConsentAssent !== 'adobeSign') {
     noConsent = '';
+    adobeSign = '';
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
     state.expectedTime = newConsentAssent.expectedTime;
-  } else {
+  } else if (newConsentAssent === 'No Consent') {
     noConsent = newConsentAssent;
+  } else if (newConsentAssent === 'adobeSign') {
+    adobeSign = newConsentAssent;
   }
 };
 
@@ -544,7 +539,9 @@ const submit = async () => {
             assent: toRaw(state).assent ?? null,
             amount: toRaw(state).amount ?? '',
             expectedTime: toRaw(state).expectedTime ?? '',
+            isAdobeSign: adobeSign,
           },
+          // isAdobeSign: adobeSign,
         };
         if (isTestData.value) args.isTestData = true;
         if (props.adminId) args.administrationId = props.adminId;
