@@ -249,8 +249,12 @@ async function checkConsent() {
   const isSeniorGrade = grade >= 12;
   const isOlder = isAdult || isSeniorGrade;
 
-  if ((!legal?.consent || !legal?.consent !== 'no consent') && !isLevante && !legal?.isAdobeSign) {
+  if (!legal?.consent && !isLevante && !legal?.isAdobeSign) {
     return;
+  } else {
+    if (legal?.consent === 'no consent') {
+      return;
+    }
   }
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
