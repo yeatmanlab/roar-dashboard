@@ -14,112 +14,132 @@
     <div class="flex flex-column align-items-center surface-overlay border-round" style="width: 66vw; gap: 2rem">
       <!-- Fields for userData form -->
       <div v-if="localUserType === 'student'" class="form-container">
-        <div class="form-column">
-          <div class="form-field">
-            <label>First Name</label>
-            <PvInputText v-model="localUserData.name.first" />
-          </div>
-          <div class="form-field">
-            <label>Middle Name</label>
-            <PvInputText v-model="localUserData.name.middle" />
-          </div>
-          <div class="form-field">
-            <label>Last Name</label>
-            <PvInputText v-model="localUserData.name.last" />
-          </div>
+        <div class="flex flex-row" style="gap: 1rem">
+          <div class="form-column">
+            <div class="form-field">
+              <label>First Name</label>
+              <PvInputText v-model="localUserData.name.first" />
+            </div>
+            <div class="form-field">
+              <label>Middle Name</label>
+              <PvInputText v-model="localUserData.name.middle" />
+            </div>
+            <div class="form-field">
+              <label>Last Name</label>
+              <PvInputText v-model="localUserData.name.last" />
+            </div>
 
-          <div class="form-field">
-            <label
-              >Date of Birth
-              <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
-            >
-            <PvCalendar
-              v-model="localUserData.studentData.dob"
-              :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
-            />
-            <small v-if="errorMessage.includes('Date of birth')" class="p-error"
-              >Date of Birth can not be in the future.</small
-            >
-          </div>
-
-          <div class="form-field">
-            <label
-              >Grade
-              <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
-            >
-            <PvInputText
-              v-model="localUserData.studentData.grade"
-              :class="{ 'p-invalid': errorMessage.includes('Grade') }"
-            />
-            <small v-if="errorMessage.includes('Grade')" class="p-error">Grade must be a number 1-13, or K/PK/TK</small>
-          </div>
-          <div v-if="isSuperAdmin">
-            <div>
-              <PvCheckbox v-model="localUserData.testData" binary />
-              <label class="ml-2"
-                >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+            <div class="form-field">
+              <label
+                >Date of Birth
+                <span v-if="localUserType === 'student'" class="required" v-tooltip.top="'Required'">*</span></label
+              >
+              <PvCalendar
+                v-model="localUserData.studentData.dob"
+                :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
+              />
+              <small v-if="errorMessage.includes('Date of birth')" class="p-error"
+                >Date of Birth can not be in the future.</small
               >
             </div>
-            <div>
-              <PvCheckbox v-model="localUserData.demoData" binary />
-              <label class="ml-2"
-                >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+
+            <div class="form-field">
+              <label
+                >Grade
+                <span v-if="localUserType === 'student'" class="required" v-tooltip.top="'Required'">*</span></label
               >
+              <PvInputText
+                v-model="localUserData.studentData.grade"
+                :class="{ 'p-invalid': errorMessage.includes('Grade') }"
+              />
+              <small v-if="errorMessage.includes('Grade')" class="p-error"
+                >Grade must be a number 1-13, or K/PK/TK</small
+              >
+            </div>
+            <div v-if="isSuperAdmin">
+              <div>
+                <PvCheckbox binary v-model="localUserData.testData" />
+                <label class="ml-2"
+                  >Test Data? <span class="admin-only" v-tooltip.top="'Super Admin Only'">*</span></label
+                >
+              </div>
+              <div>
+                <PvCheckbox binary v-model="localUserData.demoData" />
+                <label class="ml-2"
+                  >Demo Data? <span class="admin-only" v-tooltip.top="'Super Admin Only'">*</span></label
+                >
+              </div>
+            </div>
+          </div>
+          <div class="form-column">
+            <div class="form-field">
+              <label>Gender</label>
+              <PvInputText v-model="localUserData.studentData.gender" />
+            </div>
+
+            <div class="form-field">
+              <label>English as a Second Language</label>
+              <PvDropdown
+                v-model="localUserData.studentData.ell_status"
+                optionLabel="label"
+                optionValue="value"
+                :options="binaryDropdownOptions"
+              />
+            </div>
+            <div class="form-field">
+              <label>IEP Status</label>
+              <PvDropdown
+                v-model="localUserData.studentData.iep_status"
+                optionLabel="label"
+                optionValue="value"
+                :options="binaryDropdownOptions"
+              />
+            </div>
+            <div class="form-field">
+              <label>Free-Reduced Lunch</label>
+              <PvDropdown
+                v-model="localUserData.studentData.frl_status"
+                optionLabel="label"
+                optionValue="value"
+                :options="binaryDropdownOptions"
+              />
+            </div>
+
+            <div class="form-field">
+              <label for="race">Race </label>
+              <PvAutoComplete
+                v-model="localUserData.studentData.race"
+                multiple
+                :suggestions="raceOptions"
+                name="race"
+                @complete="searchRaces"
+              />
+            </div>
+            <div class="form-field">
+              <label>Hispanic or Latino Ethnicity</label>
+              <PvDropdown
+                v-model="localUserData.studentData.hispanic_ethnicity"
+                optionLabel="label"
+                optionValue="value"
+                :options="binaryDropdownOptions"
+              />
             </div>
           </div>
         </div>
-        <div class="form-column">
-          <div class="form-field">
-            <label>Gender</label>
-            <PvInputText v-model="localUserData.studentData.gender" />
+        <!-- Bottom of form, change password-->
+        <div class="divider"><span class="text-gray-400">Change Password</span></div>
+        <div class="flex" style="gap: 1rem">
+          <div class="form-field" style="width: 100%">
+            <label>New Password</label>
+            <PvInputText v-model="newPassword" :class="{ 'p-invalid': errorMessage.includes('6 characters') }" />
+            <small v-if="errorMessage.includes('6 characters')" class="p-error"
+              >Password must be at least 6 characters.</small
+            >
           </div>
-
-          <div class="form-field">
-            <label>English as a Second Language</label>
-            <PvDropdown
-              v-model="localUserData.studentData.ell_status"
-              option-label="label"
-              option-value="value"
-              :options="binaryDropdownOptions"
-            />
-          </div>
-          <div class="form-field">
-            <label>IEP Status</label>
-            <PvDropdown
-              v-model="localUserData.studentData.iep_status"
-              option-label="label"
-              option-value="value"
-              :options="binaryDropdownOptions"
-            />
-          </div>
-          <div class="form-field">
-            <label>Free-Reduced Lunch</label>
-            <PvDropdown
-              v-model="localUserData.studentData.frl_status"
-              option-label="label"
-              option-value="value"
-              :options="binaryDropdownOptions"
-            />
-          </div>
-
-          <div class="form-field">
-            <label for="race">Race </label>
-            <PvAutoComplete
-              v-model="localUserData.studentData.race"
-              multiple
-              :suggestions="raceOptions"
-              name="race"
-              @complete="searchRaces"
-            />
-          </div>
-          <div class="form-field">
-            <label>Hispanic or Latino Ethnicity</label>
-            <PvDropdown
-              v-model="localUserData.studentData.hispanic_ethnicity"
-              option-label="label"
-              option-value="value"
-              :options="binaryDropdownOptions"
-            />
+          <div class="form-field" style="width: 100%">
+            <label>Confirm New Password</label>
+            <PvInputText v-model="confirmPassword" :class="{ 'p-invalid': errorMessage.includes('do not match') }" />
+            <small v-if="errorMessage.includes('do not match')" class="p-error">Passwords do not match.</small>
           </div>
         </div>
       </div>
@@ -196,18 +216,31 @@ const toast = useToast();
 // Handle Modal Actions
 const closeModal = () => {
   errorMessage.value = '';
+  newPassword.value = '';
+  confirmPassword.value = '';
   isOpen.value = false;
   emit('modalClosed');
 };
 
 const onAccept = async () => {
   errorMessage.value = '';
-  console.log('Accepted');
-  console.log('userData to send', localUserData.value);
+  const sentUserObject = localUserData.value;
+  if (newPassword.value) {
+    if (newPassword.value.length < 6) {
+      errorMessage.value = 'Password must be at least 6 characters';
+      return;
+    }
+    if (newPassword.value !== confirmPassword.value) {
+      errorMessage.value = 'Passwords do not match';
+      return;
+    }
+    sentUserObject.password = newPassword.value;
+  }
+
   isSubmitting.value = true;
   await roarfirekit.value
-    .updateUserData(props.userData.id, localUserData.value)
-    .then(() => {
+    .updateUserData(props.userData.id, { ...localUserData.value })
+    .then((res) => {
       isSubmitting.value = false;
       closeModal();
       toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
@@ -226,6 +259,8 @@ const onReject = () => {
 // Utility functions
 const isOpen = ref(false);
 const localUserData = ref({});
+const newPassword = ref('');
+const confirmPassword = ref('');
 const isSubmitting = ref(false);
 const errorMessage = ref('');
 
@@ -318,7 +353,7 @@ const isSuperAdmin = computed(() => {
 <style lang="scss">
 .form-container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: 1rem;
   width: 100%;
 }
@@ -363,5 +398,18 @@ const isSuperAdmin = computed(() => {
 }
 .p-dialog .p-dialog-footer {
   padding: 0;
+}
+.divider {
+  width: 100%;
+  text-align: center;
+  border-bottom: 1px solid var(--gray-400);
+  line-height: 0.1em;
+  margin: 10px 0 20px;
+}
+
+.divider span {
+  background: #fff;
+  padding: 0 10px;
+  user-select: none;
 }
 </style>
