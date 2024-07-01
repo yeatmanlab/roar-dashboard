@@ -21,6 +21,8 @@ export default defineConfig({
         rollupFormat: 'iife',
         globPatterns: ['**/*'],
       },
+      // adds static assets in the public folder to cache
+      includeAssets: ['**/*'],
       manifest: {
         // Modify manifest options here...
         name: 'ROAR Dashboard',

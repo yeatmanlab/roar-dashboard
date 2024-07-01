@@ -1,6 +1,7 @@
 import { cleanupOutdatedCaches, PrecacheController } from 'workbox-precaching';
 import { swrAudioURLs, swrImageUrls, swrLookupTableUrl } from '@/helpers/swrAssetsList.js';
 
+self.__WB_MANIFEST;
 const urlsToCache = [...swrAudioURLs, ...swrImageUrls, ...swrLookupTableUrl];
 
 const precacheController = new PrecacheController();
@@ -9,7 +10,7 @@ precacheController.addToCacheList(urlsToCache);
 precacheController.addToCacheList([
   {
     url: '/index.html',
-    revision: 'abcd',
+    revision: null,
   },
 ]);
 
@@ -29,12 +30,4 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(caches.match(cacheKey));
 });
 
-// console.log('urlstocache', urlsToCache);
-
-// precacheAndRoute(urlsToCache, {
-//     // Ignore all URL parameters.
-//     ignoreURLParametersMatching: [/.*/],
-//   });
-
 cleanupOutdatedCaches();
-self.__WB_MANIFEST;
