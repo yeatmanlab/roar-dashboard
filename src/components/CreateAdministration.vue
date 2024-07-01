@@ -115,7 +115,7 @@
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="submitted && !isLevante && noConsent === '' && adobeSign === ''" class="p-error mt-2"
+          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
@@ -398,7 +398,6 @@ const minEndDate = computed(() => {
 });
 
 let noConsent = '';
-let adobeSign = '';
 
 const rules = {
   administrationName: { required },
@@ -406,8 +405,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '' && adobeSign !== '') },
-  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '' && adobeSign !== '') },
+  consent: { requiredIf: requiredIf(!isLevante) },
+  assent: { requiredIf: requiredIf(!isLevante) },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -450,17 +449,17 @@ const handleVariantsChanged = (newVariants) => {
 
 const handleConsentSelected = (newConsentAssent) => {
   if (newConsentAssent !== 'No Consent') {
-    noConsent = '';
-    adobeSign = '';
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
     state.expectedTime = newConsentAssent.expectedTime;
     state.isAdobeSign = newConsentAssent.isAdobeSign;
   } else if (newConsentAssent === 'No Consent') {
-    noConsent = newConsentAssent;
-  } else if (newConsentAssent === 'adobeSign') {
-    adobeSign = newConsentAssent;
+    state.consent = 'no consent';
+    state.assent = 'no assent';
+    state.amount = newConsentAssent.amount;
+    state.expectedTime = newConsentAssent.expectedTime;
+    state.isAdobeSign = newConsentAssent.isAdobeSign;
   }
 };
 
