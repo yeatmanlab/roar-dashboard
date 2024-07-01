@@ -87,20 +87,46 @@
     @accepted="updateConsent"
   />
   <div>
-    <PvDialog v-if="!isLevante" v-model:visible="isAdobe" class="w-12 bg-primary border-1">
-      <iframe
-        src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhCXQNRVP9a6SqFzLnQwhXKuIWgJQmfzbEgKfGpRk12y0wrtLrI6kSAxpeAgn87SqeA*&hosted=false"
-        width="100%"
-        height="100%"
-        frameborder="0"
-        style="border: 0; overflow: hidden; min-height: 500px; min-width: 600px"
-        @load="onIframeLoad"
-      ></iframe>
-      <div class="flex justify-content-end">
-        <PvButton @click="closeConsent" class="bg-primary p-2 border-none border-round text-white"
-          >I have signed</PvButton
+    <PvDialog
+      v-if="isAdobe"
+      v-model:visible="isAdobe"
+      header="Please Sign"
+      :pt="{
+        mask: {
+          style: 'backdrop-filter: blur(2px)',
+        },
+      }"
+      :draggable="false"
+      :modal="false"
+      class="border-1"
+    >
+      <template #container="{}">
+        <iframe
+          v-if="isAssentAdobe"
+          src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhCXQNRVP9a6SqFzLnQwhXKuIWgJQmfzbEgKfGpRk12y0wrtLrI6kSAxpeAgn87SqeA*&hosted=false"
+          width="100%"
+          height="100%"
+          frameborder="0"
+          style="border: 0; overflow: hidden; min-height: 40rem; min-width: 70rem"
+        ></iframe>
+        <iframe
+          v-else
+          src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhB9FtUL7OC0zZpSmTi0OTvwmq9LEGru-MYgs_UGJKyUgwFw6c_jFgrJlGh-xhaodhc*&hosted=false"
+          width="100%"
+          height="100%"
+          frameborder="0"
+          style="border: 0; overflow: hidden; min-height: 40rem; min-width: 70rem"
         >
-      </div>
+        </iframe>
+        <div class="flex justify-content-end">
+          <PvButton
+            label="By clicking here you confirm have signed and confirmed your email address to adobeSign"
+            @click="closeConsent()"
+            text
+            class="p-3 m-2 bg-primary border-none border-round text-white hover:bg-red-900"
+          ></PvButton>
+        </div>
+      </template>
     </PvDialog>
   </div>
 </template>
@@ -129,6 +155,7 @@ const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
 const isAdobe = ref(false);
+const isAssentAdobe = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
@@ -203,11 +230,15 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 function closeConsent() {
+  isSignedWithAdobe = true;
+  updateConsent();
   isAdobe.value = false;
 }
 
 async function checkConsent() {
   showConsent.value = false;
+  isAssentAdobe.value = false;
+  isSignedWithAdobe = false;
   const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
@@ -218,15 +249,7 @@ async function checkConsent() {
   const isSeniorGrade = grade >= 12;
   const isOlder = isAdult || isSeniorGrade;
 
-  if (legal?.isAdobeSign === 'adobeSign') {
-    if (isAdult) {
-      isAdobe.value = true;
-      return;
-    } else {
-      isAdobe.value = true;
-      return;
-    }
-  } else if (!legal?.consent) {
+  if (!legal?.consent && !legal?.isAdobeSign && !isLevante) {
     return;
   }
 
@@ -251,15 +274,29 @@ async function checkConsent() {
     });
 
     if (!found) {
-      if (docAmount !== '' || docExpectedTime !== '') {
+      if (legal?.isAdobeSign) {
+        if (!isAdult) {
+          isAssentAdobe.value = true;
+        }
+        isAdobe.value = true;
+        return;
+      } else if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
         return;
       }
     }
   } else if (age > 7 || grade > 1) {
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
+    if (legal?.isAdobeSign) {
+      if (!isAdult) {
+        isAssentAdobe.value = true;
+      }
+      isAdobe.value = true;
+      return;
+    } else {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
+    }
     return;
   }
 }

@@ -380,6 +380,7 @@ const state = reactive({
   families: [],
   amount: '',
   expectedTime: '',
+  isAdobeSign: false,
 });
 
 const minStartDate = computed(() => {
@@ -448,13 +449,14 @@ const handleVariantsChanged = (newVariants) => {
 };
 
 const handleConsentSelected = (newConsentAssent) => {
-  if (newConsentAssent !== 'No Consent' && newConsentAssent !== 'adobeSign') {
+  if (newConsentAssent !== 'No Consent') {
     noConsent = '';
     adobeSign = '';
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
     state.expectedTime = newConsentAssent.expectedTime;
+    state.isAdobeSign = newConsentAssent.isAdobeSign;
   } else if (newConsentAssent === 'No Consent') {
     noConsent = newConsentAssent;
   } else if (newConsentAssent === 'adobeSign') {
@@ -539,9 +541,8 @@ const submit = async () => {
             assent: toRaw(state).assent ?? null,
             amount: toRaw(state).amount ?? '',
             expectedTime: toRaw(state).expectedTime ?? '',
-            isAdobeSign: adobeSign,
+            isAdobeSign: toRaw(state).isAdobeSign ?? false,
           },
-          // isAdobeSign: adobeSign,
         };
         if (isTestData.value) args.isTestData = true;
         if (props.adminId) args.administrationId = props.adminId;
