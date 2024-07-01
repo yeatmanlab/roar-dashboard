@@ -382,7 +382,7 @@ const routes = [
   {
     path: '/maintenance',
     name: 'Maintenance',
-    component: () => import('../pages/Maintenance.vue'),
+    component: () => import('../pages/MaintenancePage.vue'),
     meta: { pageTitle: 'Down for Maintenance' },
   },
 ];
