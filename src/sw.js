@@ -14,20 +14,20 @@ precacheController.addToCacheList([
   },
 ]);
 
-self.addEventListener('install', (event) => {
-  // Passing in event is required in Workbox v6+
-  event.waitUntil(precacheController.install(event));
-});
+// self.addEventListener('install', (event) => {
+//   // Passing in event is required in Workbox v6+
+//   event.waitUntil(precacheController.install(event));
+// });
 
-self.addEventListener('activate', (event) => {
-  // Passing in event is required in Workbox v6+
-  event.waitUntil(precacheController.activate(event));
-});
+// self.addEventListener('activate', (event) => {
+//   // Passing in event is required in Workbox v6+
+//   event.waitUntil(precacheController.activate(event));
+// });
 
-self.addEventListener('fetch', (event) => {
-  const cacheKey = precacheController.getCacheKeyForURL(event.request.url);
-  //   event.respondWith(caches.match(cacheKey).then(...));
-  event.respondWith(caches.match(cacheKey));
-});
+// self.addEventListener('fetch', (event) => {
+//   const cacheKey = precacheController.getCacheKeyForURL(event.request.url);
+//   //   event.respondWith(caches.match(cacheKey).then(...));
+//   event.respondWith(caches.match(cacheKey));
+// });
 
 cleanupOutdatedCaches();
