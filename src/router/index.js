@@ -382,7 +382,7 @@ const routes = [
   {
     path: '/maintenance',
     name: 'Maintenance',
-    component: () => import('../pages/Maintenance.vue'),
+    component: () => import('../pages/MaintenancePage.vue'),
     meta: { pageTitle: 'Down for Maintenance' },
   },
 ];
@@ -419,7 +419,7 @@ router.beforeEach(async (to, from, next) => {
     'Register',
   ];
 
-  const inMaintenanceMode = false;
+  const inMaintenanceMode = true;
 
   if (inMaintenanceMode && to.name !== 'Maintenance') {
     next({ name: 'Maintenance' });
