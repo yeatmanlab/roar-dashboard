@@ -86,17 +86,23 @@
     :consent-type="consentType"
     @accepted="updateConsent"
   />
-  <PvDialog v-if="isAdobe && !isLevante">
-    <div>
+  <div>
+    <PvDialog v-if="!isLevante" v-model:visible="isAdobe" class="w-12 bg-primary border-1">
       <iframe
         src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhCXQNRVP9a6SqFzLnQwhXKuIWgJQmfzbEgKfGpRk12y0wrtLrI6kSAxpeAgn87SqeA*&hosted=false"
         width="100%"
         height="100%"
         frameborder="0"
         style="border: 0; overflow: hidden; min-height: 500px; min-width: 600px"
+        @load="onIframeLoad"
       ></iframe>
-    </div>
-  </PvDialog>
+      <div class="flex justify-content-end">
+        <PvButton @click="closeConsent" class="bg-primary p-2 border-none border-round text-white"
+          >I have signed</PvButton
+        >
+      </div>
+    </PvDialog>
+  </div>
 </template>
 
 <script setup>
@@ -122,9 +128,11 @@ const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
+const isAdobe = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
+let isSignedWithAdobe = false;
 const initialized = ref(false);
 const init = () => {
   if (unsubscribe) unsubscribe();
@@ -194,6 +202,9 @@ const {
   enabled: administrationQueryEnabled,
   staleTime: 5 * 60 * 1000,
 });
+function closeConsent() {
+  isAdobe.value = false;
+}
 
 async function checkConsent() {
   showConsent.value = false;
@@ -203,13 +214,21 @@ async function checkConsent() {
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  if (!legal?.consent) {
-    return;
-  }
-
   const isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
   const isOlder = isAdult || isSeniorGrade;
+
+  if (legal?.isAdobeSign === 'adobeSign') {
+    if (isAdult) {
+      isAdobe.value = true;
+      return;
+    } else {
+      isAdobe.value = true;
+      return;
+    }
+  } else if (!legal?.consent) {
+    return;
+  }
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
   let docType = legal[docTypeKey][0]?.type.toLowerCase();
@@ -249,6 +268,7 @@ async function updateConsent() {
   consentParams.value = {
     amount: selectedAdmin.value?.legal.amount,
     expectedTime: selectedAdmin.value?.legal.expectedTime,
+    isSignedWithAdobe,
     dateSigned: new Date(),
   };
   try {
