@@ -286,5 +286,4 @@ function processAssignmentData(computeData) {
 
   self.postMessage({ assignmentTableData: assignmentTableDataAcc, runsByTaskId: filteredRunsByTaskId });
   return;
-  // return { assignmentTableData: assignmentTableDataAcc, runsByTaskId: filteredRunsByTaskId };
 }
