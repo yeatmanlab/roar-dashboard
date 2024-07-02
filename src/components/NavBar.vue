@@ -13,7 +13,12 @@
               </router-link>
             </template>
             <template #menubuttonicon>
-              <PvButton icon="pi pi-bars" label="Menu" @click="toggleMenu" />
+              <PvButton
+                icon="pi pi-bars mr-2"
+                class="bg-primary text-white p-2 mr-2 border-none border-round hover:bg-red-900"
+                label="Menu"
+                @click="toggleMenu"
+              />
             </template>
             <template #end>
               <div class="flex gap-2 align-items-center justify-content-center mr-3">

@@ -2,10 +2,9 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { fileURLToPath, URL } from 'url';
 import { defineConfig } from 'vite';
 import Vue from '@vitejs/plugin-vue';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
 import mkcert from 'vite-plugin-mkcert';
-import basicSsl from '@vitejs/plugin-basic-ssl';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -14,6 +13,14 @@ export default defineConfig({
       include: [/\.vue$/, /\.md$/],
     }),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        injectionPoint: undefined,
+        rollupFormat: 'iife',
+        globPatterns: ['**/*.{html}'],
+      },
       manifest: {
         // Modify manifest options here...
         name: 'ROAR Dashboard',
@@ -22,12 +29,7 @@ export default defineConfig({
         display: 'standalone',
         theme_color: '#ffffff',
         background_color: '#ffffff',
-        // inject service worker automatically
-        strategies: 'generateSW',
         injectRegister: 'manual',
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico}'],
-        },
         icons: [
           {
             src: '/pwa-64x64.png',
@@ -52,16 +54,16 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
-        // Add more manifest options as needed
       },
       /* enable sw on development */
       devOptions: {
         enabled: true,
         type: 'module',
-        /* other options */
+        navigateFallback: 'index.html',
+        suppressWarnings: true,
       },
     }),
-    mkcert(),
+    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     nodePolyfills({
       globals: {
         process: true,
@@ -83,7 +85,6 @@ export default defineConfig({
     },
   },
   server: {
-    https: true,
     fs: {
       allow: ['..'],
     },
@@ -109,6 +110,7 @@ export default defineConfig({
           vocab: ['@bdelab/roar-vocab'],
           ran: ['@bdelab/roav-ran'],
           crowding: ['@bdelab/roav-crowding'],
+          'roav-mep': ['@bdelab/roav-mep'],
         },
       },
     },

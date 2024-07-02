@@ -73,7 +73,7 @@
         <router-link :to="{ name: 'SignOut' }">
           <PvButton
             :label="$t('navBar.signOut')"
-            class="no-underline bg-primary border-none border-round p-2 text-white"
+            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
             icon="pi pi-sign-out"
           />
         </router-link>
@@ -85,7 +85,6 @@
     :consent-text="confirmText"
     :consent-type="consentType"
     @accepted="updateConsent"
-    @delayed="refreshDocs"
   />
 </template>
 
@@ -187,13 +186,15 @@ const {
 
 async function checkConsent() {
   showConsent.value = false;
-  const dob = new Date(userData.value?.studentData.dob);
+  const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  if (!legal) return;
+  if (!legal?.consent) {
+    return;
+  }
 
   const isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
@@ -223,11 +224,13 @@ async function checkConsent() {
       if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
+        return;
       }
     }
   } else if (age > 7 || grade > 1) {
     confirmText.value = consentDoc.text;
     showConsent.value = true;
+    return;
   }
 }
 

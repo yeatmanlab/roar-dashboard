@@ -161,7 +161,7 @@
                 :options="allTags"
                 :suggestions="tagSuggestions"
                 name="tags"
-                class="w-full"
+                class="w-full card"
                 data-cy="input-autocomplete"
                 @complete="searchTags"
               />
@@ -464,6 +464,38 @@ const resetForm = () => {
 .return-button {
   display: block;
   margin: 1rem 1.75rem;
+}
+
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.p-autocomplete-panel {
+  background: var(--surface-a);
+  color: var(--text-color);
+  border: 0 none;
+  border-radius: var(--border-radius);
+  box-shadow:
+    0 0 #0000,
+    0 0 #0000,
+    0 10px 15px -3px #0000001a,
+    0 4px 6px -2px #0000000d;
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+  margin: 0;
+  padding: var(--inline-spacing-larger) 1rem;
+  border: 0 none;
+  color: var(--text-color);
+  background: transparent;
+  transition: none;
+  border-radius: 0;
+}
+
+.p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover {
+  background-color: gainsboro;
 }
 
 button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
