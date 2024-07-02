@@ -1,4 +1,5 @@
 <template>
+  <PvToast />
   <div>
     <div v-if="!noGamesAvailable || consentSpinner">
       <div v-if="isFetching" class="loading-container">
@@ -90,41 +91,42 @@
     <PvDialog
       v-if="isAdobe"
       v-model:visible="isAdobe"
-      header="Please Sign"
-      :pt="{
-        mask: {
-          style: 'backdrop-filter: blur(2px)',
-        },
-      }"
+      :pt="{ mask: { style: 'backdrop-filter: blur(2px);' } }"
       :draggable="false"
       :modal="false"
-      class="border-1"
+      class="border-1h-3rem bg-white"
     >
-      <template #container="{}">
-        <iframe
-          v-if="isAssentAdobe"
-          src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhCXQNRVP9a6SqFzLnQwhXKuIWgJQmfzbEgKfGpRk12y0wrtLrI6kSAxpeAgn87SqeA*&hosted=false"
-          width="100%"
-          height="100%"
-          frameborder="0"
-          style="border: 0; overflow: hidden; min-height: 40rem; min-width: 70rem"
-        ></iframe>
-        <iframe
-          v-else
-          src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhB9FtUL7OC0zZpSmTi0OTvwmq9LEGru-MYgs_UGJKyUgwFw6c_jFgrJlGh-xhaodhc*&hosted=false"
-          width="100%"
-          height="100%"
-          frameborder="0"
-          style="border: 0; overflow: hidden; min-height: 40rem; min-width: 70rem"
-        >
-        </iframe>
-        <div class="flex justify-content-end">
-          <PvButton
-            label="By clicking here you confirm you have signed and confirmed your email address to adobeSign"
-            @click="closeConsent"
-            text
-            class="p-3 m-2 bg-primary border-none border-round text-white hover:bg-red-900"
-          ></PvButton>
+      <template #container>
+        <div v-if="!docCreated" class="bg-white p-3 border-1 border-round w-full">
+          <h2>Please enter your email to proceed</h2>
+          <div class="p-10 flex justify-content-center w-full">
+            <!-- <span class="p-float-label"> -->
+            <PvInputText
+              id="signer-email"
+              v-model="signerEmail"
+              class="w-10"
+              style="width: 25rem"
+              placeholder="Email"
+              type="email"
+              enabled
+            />
+          </div>
+          <div class="flex justify-content-center">
+            <PvButton
+              label="Done"
+              class="no-underline bg-primary mt-2 border-none border-round p-3 w-5 text-white hover:bg-red-900"
+              @click="createConsent"
+            />
+          </div>
+        </div>
+        <div v-else class="bg-white p-3 border-1 border-round w-full">
+          <h2>Please review your email to sign the document and proceed</h2>
+          <div class="justify-content-center flex">
+            <img
+              src="/Users/emilyag/Documents/ROAR-dashboard/roar-dashboard/src/assets/signDoc2.webp"
+              style="width: 400px; border-radius: 0.5rem"
+            />
+          </div>
         </div>
       </template>
     </PvDialog>
@@ -148,6 +150,10 @@ import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import { createAgreement } from '../helpers/query/adobeSign';
+import { useToast } from 'primevue/usetoast';
+
+const toast = useToast();
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -156,6 +162,8 @@ const consentType = ref('');
 const consentParams = ref({});
 const isAdobe = ref(false);
 const isAssentAdobe = ref(false);
+const signerEmail = ref(null);
+const docCreated = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
@@ -230,64 +238,20 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
-async function getDocumentStatus() {
-  const documentStatusEndpoint = `https://api.na4.adobesign.com:443/api/rest/v6/widgets/CBJCHBCAABAAVubLlHg-6JD4psL6ilSGFISw0y3RR5PF/formData`;
-  const response = await fetch(documentStatusEndpoint, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer 3AAABLblqZhAxCk5nUr7jXBMmUtHAVDT0XnUHGYvWCpd0GMMahj6KPcdyFGMLP-Ydif73Mz1lUnm5UONWhb7mufa1plw-q3cq`,
-      'Content-Type': 'application/json',
-    },
-  });
+let isAdult = false;
 
-  const text = await response.text(); // Get raw response text
-  // console.log("Raw response:", text); // Log the raw response
+async function createConsent() {
+  docCreated.value = true;
 
-  // Parse the CSV data
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',');
-  const agreementIdIndex = headers.indexOf('"agreementId"');
-  if (agreementIdIndex === -1) {
-    throw new Error('agreementId column not found in CSV data');
+  let isSigned = await createAgreement(signerEmail.value, isAdult);
+  if (isSigned === 'SIGNED') {
+    isSignedWithAdobe = true;
+    updateConsent();
+    isAdobe.value = false;
+  } else {
+    docCreated.value = false;
+    toast.add({ severity: 'error', summary: 'Please retry', detail: 'Document not signed', life: 3000 });
   }
-
-  // Extract the last agreementId
-  const lastLine = lines[lines.length - 1];
-  const lastLineFields = lastLine.split(',');
-  const lastAgreementId = lastLineFields[agreementIdIndex];
-
-  console.log('Last agreementId:', lastAgreementId);
-  return lastAgreementId;
-}
-
-async function getDocumentStatus2() {
-  const documentStatusEndpoint = `https://api.na4.adobesign.com:443/api/rest/v6/widgets/CBJCHBCAABAAVubLlHg-6JD4psL6ilSGFISw0y3RR5PF/agreements`;
-  const response = await fetch(documentStatusEndpoint, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer 3AAABLblqZhAxCk5nUr7jXBMmUtHAVDT0XnUHGYvWCpd0GMMahj6KPcdyFGMLP-Ydif73Mz1lUnm5UONWhb7mufa1plw-q3cq`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  const data = await response.json();
-  const lastAgreement = await getDocumentStatus();
-
-  data.userAgreementList.some((agreement) => {
-    if (lastAgreement === `"${agreement.id}"`) {
-      console.log('FOUND');
-      return true; // This will exit the loop
-    } else {
-      console.log("I haven't found it");
-      return false; // Continue the loop
-    }
-  });
-}
-
-async function closeConsent() {
-  isSignedWithAdobe = true;
-  // updateConsent();
-  isAdobe.value = false;
 }
 
 async function checkConsent() {
@@ -300,7 +264,7 @@ async function checkConsent() {
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  const isAdult = age >= 18;
+  isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
   const isOlder = isAdult || isSeniorGrade;
 
@@ -338,8 +302,6 @@ async function checkConsent() {
           isAssentAdobe.value = true;
         }
         isAdobe.value = true;
-        getDocumentStatus();
-        getDocumentStatus2();
         return;
       } else if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
@@ -353,8 +315,6 @@ async function checkConsent() {
         isAssentAdobe.value = true;
       }
       isAdobe.value = true;
-      getDocumentStatus();
-      getDocumentStatus2();
       return;
     } else {
       confirmText.value = consentDoc.text;
