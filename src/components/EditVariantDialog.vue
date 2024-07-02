@@ -169,6 +169,7 @@
                   option-value="value"
                   editable
                   placeholder="Type or choose field"
+                  data-cy="dropdown-optional-field"
                 >
                 </PvDropdown>
               </template>
@@ -181,6 +182,7 @@
                   option-label="label"
                   option-value="value"
                   placeholder="Select Operator"
+                  data-cy="dropdown-optional-operator"
                 >
                   <template #option="slotProps">
                     <PvTag :value="slotProps.option.label" severity="warning" />
@@ -193,7 +195,7 @@
             </PvColumn>
             <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
               <template #editor="{ data, field }">
-                <PvInputText v-model="data[field]" />
+                <PvInputText v-model="data[field]" data-cy="optional-value-content" />
               </template>
             </PvColumn>
             <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
@@ -223,6 +225,7 @@
                 class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
                 :disabled="optionalForAllFlag === true"
                 @click="addOptionalCondition"
+                data-cy="button-optional-condition"
               />
             </div>
           </div>

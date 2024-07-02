@@ -7,7 +7,7 @@ module.exports = defineConfig({
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
-    retries: 2,
+    // retries: 2,
     setupNodeEvents(on) {
       on('task', {
         log(message) {
@@ -80,7 +80,7 @@ module.exports = defineConfig({
     testRoarAppsAdministration: 'Cypress Test Roar Apps Administration',
     testRoarAppsAdministrationId: 'K8UaI8p79Dntj5Z2CJk8',
     testOptionalRoarAppsAdministration: 'Cypress Test Optional Roar Apps Administration',
-    testOptionalRoarAppsAdministrationId: '',
+    testOptionalRoarAppsAdministrationId: 'Fuy4nQaMu6YmfNg1eBYH',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
     // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50
