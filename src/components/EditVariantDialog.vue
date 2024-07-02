@@ -294,8 +294,16 @@ function getAssignedConditions(taskId) {
 }
 
 function getOptionalConditions(taskId) {
-  return props.preExistingAssessmentInfo.find((assessment) => assessment.taskId === taskId)?.conditions?.optional
-    ?.conditions;
+  const task = props.preExistingAssessmentInfo.find((assessment) => assessment.taskId === taskId);
+  const hasOptionalConditions = task?.conditions?.optional?.conditions;
+
+  if (hasOptionalConditions) {
+    optionalForAllFlag.value = false;
+    return hasOptionalConditions;
+  } else {
+    optionalForAllFlag.value = !!task?.conditions?.optional;
+    return [];
+  }
 }
 
 // Set the assigned and optional conditions from the pre-existing admin info
