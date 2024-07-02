@@ -120,8 +120,8 @@
         </iframe>
         <div class="flex justify-content-end">
           <PvButton
-            label="By clicking here you confirm have signed and confirmed your email address to adobeSign"
-            @click="closeConsent()"
+            label="By clicking here you confirm you have signed and confirmed your email address to adobeSign"
+            @click="closeConsent"
             text
             class="p-3 m-2 bg-primary border-none border-round text-white hover:bg-red-900"
           ></PvButton>
@@ -229,9 +229,64 @@ const {
   enabled: administrationQueryEnabled,
   staleTime: 5 * 60 * 1000,
 });
-function closeConsent() {
+
+async function getDocumentStatus() {
+  const documentStatusEndpoint = `https://api.na4.adobesign.com:443/api/rest/v6/widgets/CBJCHBCAABAAVubLlHg-6JD4psL6ilSGFISw0y3RR5PF/formData`;
+  const response = await fetch(documentStatusEndpoint, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer 3AAABLblqZhAxCk5nUr7jXBMmUtHAVDT0XnUHGYvWCpd0GMMahj6KPcdyFGMLP-Ydif73Mz1lUnm5UONWhb7mufa1plw-q3cq`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const text = await response.text(); // Get raw response text
+  // console.log("Raw response:", text); // Log the raw response
+
+  // Parse the CSV data
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',');
+  const agreementIdIndex = headers.indexOf('"agreementId"');
+  if (agreementIdIndex === -1) {
+    throw new Error('agreementId column not found in CSV data');
+  }
+
+  // Extract the last agreementId
+  const lastLine = lines[lines.length - 1];
+  const lastLineFields = lastLine.split(',');
+  const lastAgreementId = lastLineFields[agreementIdIndex];
+
+  console.log('Last agreementId:', lastAgreementId);
+  return lastAgreementId;
+}
+
+async function getDocumentStatus2() {
+  const documentStatusEndpoint = `https://api.na4.adobesign.com:443/api/rest/v6/widgets/CBJCHBCAABAAVubLlHg-6JD4psL6ilSGFISw0y3RR5PF/agreements`;
+  const response = await fetch(documentStatusEndpoint, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer 3AAABLblqZhAxCk5nUr7jXBMmUtHAVDT0XnUHGYvWCpd0GMMahj6KPcdyFGMLP-Ydif73Mz1lUnm5UONWhb7mufa1plw-q3cq`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await response.json();
+  const lastAgreement = await getDocumentStatus();
+
+  data.userAgreementList.some((agreement) => {
+    if (lastAgreement === `"${agreement.id}"`) {
+      console.log('FOUND');
+      return true; // This will exit the loop
+    } else {
+      console.log("I haven't found it");
+      return false; // Continue the loop
+    }
+  });
+}
+
+async function closeConsent() {
   isSignedWithAdobe = true;
-  updateConsent();
+  // updateConsent();
   isAdobe.value = false;
 }
 
@@ -283,6 +338,8 @@ async function checkConsent() {
           isAssentAdobe.value = true;
         }
         isAdobe.value = true;
+        getDocumentStatus();
+        getDocumentStatus2();
         return;
       } else if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
@@ -296,6 +353,8 @@ async function checkConsent() {
         isAssentAdobe.value = true;
       }
       isAdobe.value = true;
+      getDocumentStatus();
+      getDocumentStatus2();
       return;
     } else {
       confirmText.value = consentDoc.text;
