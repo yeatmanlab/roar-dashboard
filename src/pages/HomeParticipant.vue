@@ -86,6 +86,49 @@
     :consent-type="consentType"
     @accepted="updateConsent"
   />
+  <div>
+    <PvDialog
+      v-if="isAdobe"
+      v-model:visible="isAdobe"
+      header="Please Sign"
+      :pt="{
+        mask: {
+          style: 'backdrop-filter: blur(2px)',
+        },
+      }"
+      :draggable="false"
+      :modal="false"
+      class="border-1"
+    >
+      <template #container="{}">
+        <iframe
+          v-if="isAssentAdobe"
+          src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhCXQNRVP9a6SqFzLnQwhXKuIWgJQmfzbEgKfGpRk12y0wrtLrI6kSAxpeAgn87SqeA*&hosted=false"
+          width="100%"
+          height="100%"
+          frameborder="0"
+          style="border: 0; overflow: hidden; min-height: 40rem; min-width: 70rem"
+        ></iframe>
+        <iframe
+          v-else
+          src="https://secure.na4.adobesign.com/public/esignWidget?wid=CBFCIBAA3AAABLblqZhB9FtUL7OC0zZpSmTi0OTvwmq9LEGru-MYgs_UGJKyUgwFw6c_jFgrJlGh-xhaodhc*&hosted=false"
+          width="100%"
+          height="100%"
+          frameborder="0"
+          style="border: 0; overflow: hidden; min-height: 40rem; min-width: 70rem"
+        >
+        </iframe>
+        <div class="flex justify-content-end">
+          <PvButton
+            label="By clicking here you confirm you have signed and confirmed your email address to adobeSign"
+            @click="closeConsent"
+            text
+            class="p-3 m-2 bg-primary border-none border-round text-white hover:bg-red-900"
+          ></PvButton>
+        </div>
+      </template>
+    </PvDialog>
+  </div>
 </template>
 
 <script setup>
@@ -111,9 +154,12 @@ const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
+const isAdobe = ref(false);
+const isAssentAdobe = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
+let isSignedWithAdobe = false;
 const initialized = ref(false);
 const init = () => {
   if (unsubscribe) unsubscribe();
@@ -184,21 +230,87 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
+async function getDocumentStatus() {
+  const documentStatusEndpoint = `https://api.na4.adobesign.com:443/api/rest/v6/widgets/CBJCHBCAABAAVubLlHg-6JD4psL6ilSGFISw0y3RR5PF/formData`;
+  const response = await fetch(documentStatusEndpoint, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer 3AAABLblqZhAxCk5nUr7jXBMmUtHAVDT0XnUHGYvWCpd0GMMahj6KPcdyFGMLP-Ydif73Mz1lUnm5UONWhb7mufa1plw-q3cq`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const text = await response.text(); // Get raw response text
+  // console.log("Raw response:", text); // Log the raw response
+
+  // Parse the CSV data
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',');
+  const agreementIdIndex = headers.indexOf('"agreementId"');
+  if (agreementIdIndex === -1) {
+    throw new Error('agreementId column not found in CSV data');
+  }
+
+  // Extract the last agreementId
+  const lastLine = lines[lines.length - 1];
+  const lastLineFields = lastLine.split(',');
+  const lastAgreementId = lastLineFields[agreementIdIndex];
+
+  console.log('Last agreementId:', lastAgreementId);
+  return lastAgreementId;
+}
+
+async function getDocumentStatus2() {
+  const documentStatusEndpoint = `https://api.na4.adobesign.com:443/api/rest/v6/widgets/CBJCHBCAABAAVubLlHg-6JD4psL6ilSGFISw0y3RR5PF/agreements`;
+  const response = await fetch(documentStatusEndpoint, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer 3AAABLblqZhAxCk5nUr7jXBMmUtHAVDT0XnUHGYvWCpd0GMMahj6KPcdyFGMLP-Ydif73Mz1lUnm5UONWhb7mufa1plw-q3cq`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await response.json();
+  const lastAgreement = await getDocumentStatus();
+
+  data.userAgreementList.some((agreement) => {
+    if (lastAgreement === `"${agreement.id}"`) {
+      console.log('FOUND');
+      return true; // This will exit the loop
+    } else {
+      console.log("I haven't found it");
+      return false; // Continue the loop
+    }
+  });
+}
+
+async function closeConsent() {
+  isSignedWithAdobe = true;
+  // updateConsent();
+  isAdobe.value = false;
+}
+
 async function checkConsent() {
   showConsent.value = false;
+  isAssentAdobe.value = false;
+  isSignedWithAdobe = false;
   const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  if (!legal?.consent) {
-    return;
-  }
-
   const isAdult = age >= 18;
   const isSeniorGrade = grade >= 12;
   const isOlder = isAdult || isSeniorGrade;
+
+  if (!legal?.consent && !isLevante && !legal?.isAdobeSign) {
+    return;
+  } else {
+    if (legal?.consent === 'no consent') {
+      return;
+    }
+  }
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
   let docType = legal[docTypeKey][0]?.type.toLowerCase();
@@ -221,15 +333,33 @@ async function checkConsent() {
     });
 
     if (!found) {
-      if (docAmount !== '' || docExpectedTime !== '') {
+      if (legal?.isAdobeSign) {
+        if (!isAdult) {
+          isAssentAdobe.value = true;
+        }
+        isAdobe.value = true;
+        getDocumentStatus();
+        getDocumentStatus2();
+        return;
+      } else if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
         return;
       }
     }
   } else if (age > 7 || grade > 1) {
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
+    if (legal?.isAdobeSign) {
+      if (!isAdult) {
+        isAssentAdobe.value = true;
+      }
+      isAdobe.value = true;
+      getDocumentStatus();
+      getDocumentStatus2();
+      return;
+    } else {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
+    }
     return;
   }
 }
@@ -238,6 +368,7 @@ async function updateConsent() {
   consentParams.value = {
     amount: selectedAdmin.value?.legal.amount,
     expectedTime: selectedAdmin.value?.legal.expectedTime,
+    isSignedWithAdobe,
     dateSigned: new Date(),
   };
   try {

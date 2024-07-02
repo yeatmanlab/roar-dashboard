@@ -18,6 +18,16 @@
         >This Administration does not require a consent/assent</label
       >
     </div>
+    <div class="flex justify-content-center mt-2">
+      <PvCheckbox
+        v-model="adobeSign"
+        input-id="no-consent"
+        class="flex"
+        value="adobeSign"
+        @change="getAdobeConsentAssent"
+      />
+      <label class="ml-2 flex text-center" for="no-consent">This Administration uses Adobe Sign</label>
+    </div>
     <div class="flex flex-row">
       <div v-if="userDrivenFlow && !noConsent" class="align-content-center" style="width: 50%">
         <h3>Default Data Collection</h3>
@@ -250,7 +260,26 @@
     :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
   >
     <!-- eslint-disable-next-line vue/no-v-html -->
-    <div v-html="confirmText"></div>
+    <div v-if="!isAdobeSign" v-html="confirmText"></div>
+    <div v-else>
+      <iframe
+        v-if="textTodisplay === 'assent'"
+        src="https://docs.google.com/viewer?url=https://raw.githubusercontent.com/yeatmanlab/roar-legal-documents/main/studentClinicAssent.pdf&embedded=true"
+        width="100%"
+        height="100%"
+        frameborder="0"
+        style="border: 0; overflow: hidden; min-height: 500px; min-width: 500px"
+      ></iframe>
+      <iframe
+        v-else
+        src="https://docs.google.com/viewer?url=https://raw.githubusercontent.com/yeatmanlab/roar-legal-documents/main/studentClinicConsent.pdf&embedded=true"
+        width="100%"
+        height="100%"
+        frameborder="0"
+        style="border: 0; overflow: hidden; min-height: 500px; min-width: 500px"
+      >
+      </iframe>
+    </div>
   </PvDialog>
 </template>
 
@@ -307,18 +336,22 @@ const amount = ref('');
 const expectedTime = ref('');
 const userDrivenFlow = ref(null);
 const noConsent = ref(false);
+const adobeSign = ref(false);
 let selectedConsent = ref(null);
 let selectedAssent = ref(null);
 const knowWhatIWant = ref(false);
 const decision = ref('');
 const disableIfNotDefault = ref(false);
+const isAdobeSign = ref(false);
 const tooltip = ref('Please check the "Default Data Collection Values" first');
+const textTodisplay = ref('');
 
 let result = {
   consent: [],
   assent: [],
   amount: amount.value,
   expectedTime: expectedTime.value,
+  isAdobeSign: isAdobeSign.value,
 };
 
 function whatDecision() {
@@ -341,6 +374,7 @@ function whatDecision() {
     assent: [],
     amount: amount.value,
     expectedTime: expectedTime.value,
+    isAdobeSign: isAdobeSign.value,
   };
 }
 
@@ -364,6 +398,7 @@ watch(
       result.assent[0] = newValue.assent[0];
       result.amount = newValue.amount;
       result.expectedTime = newValue.expectedTime;
+      result.isAdobeSign = newValue.isAdobeSign;
       selectedConsent.value = newValue.consent[0];
       selectedAssent.value = newValue.assent[0];
     }
@@ -376,6 +411,7 @@ function checkBoxStatus() {
     assent: [],
     amount: amount.value,
     expectedTime: expectedTime.value,
+    isAdobeSign: isAdobeSign.value,
   };
   if (
     paramCheckboxData.value &&
@@ -423,11 +459,20 @@ async function seeConsent(consent) {
   let consentDoc;
   if (consent?.type === 'Assent-es') {
     consentDoc = await authStore.getLegalDoc('assent-es');
+    consentVersion.value = consentDoc.version;
+    confirmText.value = marked(consentDoc.text);
   } else {
-    consentDoc = await authStore.getLegalDoc(consent?.type.toLowerCase());
+    if (isAdobeSign.value && consent?.type.includes('Assent')) {
+      textTodisplay.value = 'assent';
+    } else if (isAdobeSign.value && consent?.type.includes('Consent')) {
+      textTodisplay.value = 'consent';
+    } else {
+      isAdobeSign.value = false;
+      consentDoc = await authStore.getLegalDoc(consent?.type.toLowerCase());
+      consentVersion.value = consentDoc.version;
+      confirmText.value = marked(consentDoc.text);
+    }
   }
-  consentVersion.value = consentDoc.version;
-  confirmText.value = marked(consentDoc.text);
   showConsent.value = true;
 }
 
@@ -457,6 +502,46 @@ function getDefaults() {
     emit('consent-selected', result);
     return result;
   }
+}
+
+function getAdobeConsentAssent() {
+  result = {
+    consent: [],
+    assent: [],
+    amount: amount.value,
+    expectedTime: expectedTime.value,
+    isAdobeSign: isAdobeSign.value,
+  };
+  if (adobeSign.value && adobeSign.value?.find((item) => item === 'adobeSign')) {
+    isAdobeSign.value = true;
+    _forEach(consents.value, (consent) => {
+      if (
+        consent.type.toLowerCase().includes('consent') &&
+        !consent.type.toLowerCase().includes('es') &&
+        consent.fileName.includes('Clinic') &&
+        !result.consent[0]
+      ) {
+        result.consent[0] = consent;
+      }
+      if (
+        consent.type.toLowerCase().includes('assent') &&
+        !consent.type.toLowerCase().includes('es') &&
+        consent.fileName.includes('Clinic') &&
+        !result.assent[0]
+      ) {
+        result.assent[0] = consent;
+      }
+    });
+    selectedConsent.value = result.consent[0];
+    selectedAssent.value = result.assent[0];
+    knowWhatIWant.value = true;
+    userDrivenFlow.value = false;
+  } else {
+    isAdobeSign.value = false;
+    selectedConsent.value = null;
+    selectedAssent.value = null;
+  }
+  emit('consent-selected', result);
 }
 
 function processConsentAssentDefault(consent, targetArray) {
@@ -554,6 +639,15 @@ watch(noConsent, () => {
     emit('consent-selected', '');
     noConsent.value = false;
   }
+});
+
+watch(isAdobeSign, (newValue) => {
+  result.isAdobeSign = newValue;
+  emit('consent-selected', result);
+});
+
+watch(textTodisplay, (newValue) => {
+  textTodisplay.value = newValue;
 });
 </script>
 <style>
