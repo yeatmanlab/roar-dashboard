@@ -73,12 +73,12 @@
 
           <div class="flex flex-column align-items-center">
             <h3 class="text-center">
-              <strong>Configure Game Parameters</strong>
+              <strong>Configure Parameter Values</strong>
             </h3>
             <h4 class="text-center">
               Set the game parameters for a new variant of task <strong>{{ variantFields.selectedGame.id }}</strong>
             </h4>
-            <div class="flex flex-column gap-4 mb-2">
+            <div class="flex flex-column">
               <!--
             Each param looks like this:
             {"name": "someParam", "type": "string, boolean, or number", "value": "valueOfParam"}
@@ -185,7 +185,7 @@
               </div>
             </div>
             <PvButton
-              label="Add Param"
+              label="Add Parameter"
               text
               icon="pi pi-plus"
               class="w-2 my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
@@ -238,7 +238,7 @@
     <PvTabPanel header="Update Variant">
       <h1 class="text-center font-bold">Update a Variant</h1>
       <form @submit.prevent="handleUpdateVariant()">
-        <section class="flex flex-column gap-2 mb-4">
+        <section class="flex flex-column gap-2 mb-4 p-4">
           <label for="task-select" class="my-2">
             <small class="text-gray-400 font-bold">Select an Existing Task </small>
             <span class="required">*</span></label
@@ -265,7 +265,7 @@
           />
         </section>
 
-        <section v-if="selectedVariant" class="flex flex-column align-items-start mt-4">
+        <section v-if="selectedVariant" class="flex flex-column align-items-start mt-4 p-4">
           <div class="flex flex-column w-full">
             <label for="fieldsOutput">
               <strong>Fields</strong>
@@ -440,7 +440,7 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { taskFetcher } from '@/helpers/query/tasks';
 import { variantsFetcher } from '../../helpers/query/tasks';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, camelCase } from 'lodash';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -627,7 +627,7 @@ function convertParamsToObj(paramType) {
   return paramType.reduce((acc, item) => {
     if (item.name) {
       // Check if name is not empty
-      acc[item.name] = item.value;
+      acc[camelCase(item.name)] = item.value;
     }
     return acc;
   }, {});

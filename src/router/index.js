@@ -419,7 +419,7 @@ router.beforeEach(async (to, from, next) => {
     'Register',
   ];
 
-  const inMaintenanceMode = true;
+  const inMaintenanceMode = false;
 
   if (inMaintenanceMode && to.name !== 'Maintenance') {
     next({ name: 'Maintenance' });

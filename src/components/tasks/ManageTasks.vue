@@ -211,7 +211,7 @@
     <PvTabPanel header="Update Task">
       <h1 class="text-center font-bold">Update a Task</h1>
       <form @submit.prevent="handleUpdateTask()">
-        <section class="flex flex-column gap-2 mb-4">
+        <section class="flex flex-column gap-2 mb-4 p-4">
           <label for="variant-fields" class="my-2">
             <small class="text-gray-400 font-bold">Select an Existing Task </small>
             <span class="required">*</span></label
@@ -225,7 +225,7 @@
           />
         </section>
 
-        <section v-if="taskData" class="flex flex-column align-items-start mt-4">
+        <section v-if="taskData" class="flex flex-column align-items-start mt-4 p-4">
           <div class="flex flex-column w-full">
             <label for="fieldsOutput">
               <strong>Fields</strong>
@@ -315,9 +315,9 @@
             @click="newField"
           />
 
-          <div class="flex flex-column w-8">
+          <div class="flex flex-column w-full">
             <label for="gameConfigOutput">
-              <strong>Game Configuration</strong>
+              <strong>Game Parameters</strong>
             </label>
             <div
               v-for="(param, paramName) in updatedTaskData.gameConfig"
@@ -401,7 +401,7 @@
             </div>
           </div>
           <PvButton
-            label="Add Param"
+            label="Add Parameter"
             text
             icon="pi pi-plus"
             class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
@@ -426,7 +426,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { taskFetcher } from '@/helpers/query/tasks';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, camelCase } from 'lodash';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -705,7 +705,7 @@ function convertParamsToObj(paramType) {
 
   return target.reduce((acc, item) => {
     if (item.name) {
-      acc[item.name] = item.value;
+      acc[camelCase(item.name)] = item.value;
     }
     return acc;
   }, {});
