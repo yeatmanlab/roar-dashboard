@@ -22,6 +22,7 @@
             </template>
             <template #end>
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
+                <router-link :to="{ name: 'Profile' }"><PvButton>Profile</PvButton></router-link>
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
                   <div class="text-lg font-bold text-gray-600">
                     {{ userDisplayName }}
