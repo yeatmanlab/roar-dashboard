@@ -6,66 +6,63 @@ import { VitePWA } from 'vite-plugin-pwa';
 import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
-const pwaOptions = {
-  mode: 'development',
-  strategies: 'injectManifest',
-  injectManifest: {
-    injectionPoint: undefined,
-    rollupFormat: 'iife',
-    globPatterns: ['**/*.{html}'],
-    swSrc: './src/sw.js',
-    swDest: 'build/service-worker.js',
-  },
-  base: '/',
-  srcDir: 'src',
-  filename: 'sw.js',
-  includeAssets: ['**/*'],
-  manifest: {
-    name: 'ROAR Dashboard',
-    short_name: 'ROAD',
-    start_url: '.',
-    theme_color: '#ffffff',
-    icons: [
-      {
-        src: '/pwa-64x64.png',
-        sizes: '64x64',
-        type: 'image/png',
-      },
-      {
-        src: '/pwa-192x192.png',
-        sizes: '192x192',
-        type: 'image/png',
-      },
-      {
-        src: '/pwa-512x512.png',
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'any',
-      },
-      {
-        src: '/maskable-icon-512x512.png',
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
-    ],
-  },
-  devOptions: {
-    enabled: true,
-    /* when using generateSW the PWA plugin will switch to classic */
-    type: 'module',
-    navigateFallback: 'index.html',
-    suppressWarnings: true,
-  },
-};
-
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     Vue({
       include: [/\.vue$/, /\.md$/],
     }),
-    VitePWA(pwaOptions),
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        injectionPoint: undefined,
+        rollupFormat: 'iife',
+        globPatterns: ['**/*.{html}'],
+      },
+      manifest: {
+        // Modify manifest options here...
+        name: 'ROAR Dashboard',
+        short_name: 'ROAD',
+        start_url: '.',
+        display: 'standalone',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        injectRegister: 'manual',
+        icons: [
+          {
+            src: '/pwa-64x64.png',
+            sizes: '64x64',
+            type: 'image/png',
+          },
+          {
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      /* enable sw on development */
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html',
+        suppressWarnings: true,
+      },
+    }),
     ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     nodePolyfills({
       globals: {

@@ -1,29 +1,28 @@
 import { cleanupOutdatedCaches, PrecacheController, precacheAndRoute } from 'workbox-precaching';
 import { swrAudioURLs, swrImageUrls, swrLookupTableUrl } from '@/helpers/swrAssetsList.js';
 
-import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
-import { NavigationRoute, registerRoute } from 'workbox-routing';
+// import { NavigationRoute, registerRoute } from 'workbox-routing';
 
-console.log('selfself', self);
+self.__WB_MANIFEST;
 
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
-});
-
-// console.log(message)
-
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
-});
+// self.addEventListener('message', (event) => {
+//   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+// });
 
 // to allow work offline
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')));
+// registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')));
 
 // self.__WB_MANIFEST;
 const urlsToCache = [...swrAudioURLs, ...swrImageUrls, ...swrLookupTableUrl];
 
 const precacheController = new PrecacheController();
 precacheController.addToCacheList(urlsToCache);
+precacheController.addToCacheList([
+  {
+    url: 'src/**/*',
+    revision: null,
+  },
+]);
 
 precacheController.addToCacheList([
   {
@@ -31,12 +30,12 @@ precacheController.addToCacheList([
     revision: null,
   },
 ]);
-console.log('wbmanifest', self.__WB_MANIFEST);
-precacheAndRoute(self.__WB_MANIFEST ?? []);
+// console.log('wbmanifest', self.__WB_MANIFEST);
+// precacheAndRoute(self.__WB_MANIFEST ?? []);
 
-precacheAndRoute([{ url: '/index.html', revision: '383676' }], {
-  directoryIndex: null,
-});
+// precacheAndRoute([{ url: '/index.html', revision: '383676' }], {
+//   directoryIndex: null,
+// });
 
 self.addEventListener('install', (event) => {
   // Passing in event is required in Workbox v6+
