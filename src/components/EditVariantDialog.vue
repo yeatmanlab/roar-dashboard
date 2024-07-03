@@ -455,7 +455,6 @@ const operators = ref([
 const onAssignedRowEditSave = (event) => {
   let { newData, index } = event;
   // Update the specific row in the conditions array
-  console.log(newData, index);
   assignedConditions.value[index] = newData;
 
   // Remove the index from the editingRows array to stop editing
