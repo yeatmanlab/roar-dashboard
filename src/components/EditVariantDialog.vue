@@ -246,10 +246,10 @@
         <PvButton
           type="button"
           class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-          label="Cancel"
+          label="Reset"
           text
           severity="error"
-          @click="handleClose"
+          @click="handleReset"
         ></PvButton>
         <PvButton
           type="button"
@@ -284,11 +284,15 @@ const props = defineProps({
 });
 
 onMounted(() => {
-  const existingAssignedConditions = getAssignedConditions(props.assessment.task.id);
-  const existingOptionalConditions = getOptionalConditions(props.assessment.task.id);
+  getAllConditions(props.assessment.task.id);
+});
+
+function getAllConditions(taskId) {
+  const existingAssignedConditions = getAssignedConditions(taskId);
+  const existingOptionalConditions = getOptionalConditions(taskId);
   setAssignedConditions(existingAssignedConditions);
   setOptionalConditions(existingOptionalConditions);
-});
+}
 
 // Get the assigned and optional conditions from the pre-existing admin info
 function getAssignedConditions(taskId) {
@@ -325,7 +329,7 @@ function setOptionalConditions(existingOptionalConditions) {
 }
 
 const addOptionalCondition = () => {
-  optionalConditions.value.push({ id: assignedConditions.value.length, field: '', op: '', value: '' });
+  optionalConditions.value.push({ id: optionalConditions.value.length, field: '', op: '', value: '' });
   optionalEditingRows.value = [
     ...optionalEditingRows.value,
     optionalConditions.value[optionalConditions.value.length - 1],
@@ -358,14 +362,14 @@ const optionalAllFlagAndOptionalConditionsPresent = computed(() => {
   return optionalForAllFlag.value && computedConditions.value['optional']?.conditions?.length > 0;
 });
 
-const handleClose = () => {
-  if (assignedEditingRows.value.length > 0) {
-    assignedEditingRows.value = [];
-  }
-  if (optionalEditingRows.value.length > 0) {
-    optionalEditingRows.value = [];
-  }
-  visible.value = false;
+const handleReset = () => {
+  assignedConditions.value = [];
+  assignedEditingRows.value = [];
+
+  optionalConditions.value = [];
+  optionalEditingRows.value = [];
+
+  getAllConditions(props.assessment.task.id);
 };
 
 const handleSubmit = () => {
@@ -390,7 +394,7 @@ const handleSubmit = () => {
   }
 
   // Check for error where rows are still being edited
-  if (optionalEditingRows.value.length > 0 && assignedEditingRows.value.length > 0) {
+  if (optionalEditingRows.value.length > 0 || assignedEditingRows.value.length > 0) {
     error = true;
     errorSubmitText.value = 'Please save all rows before submitting.';
   }
@@ -412,11 +416,49 @@ const handleSubmit = () => {
   return;
 };
 
+const removeRowById = (type, index) => {
+  if (type === 'assigned') {
+    // Get the current data of the row to match later for deletion
+    const currentData = assignedConditions.value[index];
+
+    // Remove the row from the editing rows array by matching the id
+    const editingRowIndex = assignedEditingRows.value.findIndex((item) => item.id === currentData.id);
+    if (editingRowIndex > -1) {
+      assignedEditingRows.value.splice(editingRowIndex, 1);
+    }
+  } else if (type === 'optional') {
+    // Get the current data of the row to match later for deletion
+    const currentData = optionalConditions.value[index];
+
+    // Remove the row from the editing rows array by matching the id
+    const editingRowIndex = optionalEditingRows.value.findIndex((item) => item.id === currentData.id);
+    if (editingRowIndex > -1) {
+      optionalEditingRows.value.splice(editingRowIndex, 1);
+    }
+  } else {
+    console.error('Invalid type, choose one of "optional" or "assigned"');
+  }
+};
+
 const removeAssignedRow = (index) => {
+  removeRowById('assigned', index);
+
   assignedConditions.value.splice(index, 1);
+  // Update the id of each condition after removing a row to maintain proper indexing
+  for (let i = 0; i < assignedConditions.value.length; i++) {
+    assignedConditions.value[i].id = i;
+  }
 };
 const removeOptionalRow = (index) => {
+  removeRowById('optional', index);
+
+  // Remove the row from the conditions array
   optionalConditions.value.splice(index, 1);
+
+  // Update the id of each condition after removing a row to maintain proper indexing
+  for (let i = 0; i < optionalConditions.value.length; i++) {
+    optionalConditions.value[i].id = i;
+  }
 };
 
 const optionalConditions = ref([]);
@@ -456,17 +498,13 @@ const onAssignedRowEditSave = (event) => {
   let { newData, index } = event;
   // Update the specific row in the conditions array
   assignedConditions.value[index] = newData;
-
-  // Remove the index from the editingRows array to stop editing
-  assignedEditingRows.value.splice(assignedEditingRows.value.indexOf(index), 1);
+  removeRowById('assigned', index);
 };
 
 const onOptionalRowEditSave = (event) => {
   let { newData, index } = event;
   // Update the specific row in the conditions array
   optionalConditions.value[index] = newData;
-
-  // Remove the index from the editingRows array to stop editing
-  optionalEditingRows.value.splice(optionalEditingRows.value.indexOf(index), 1);
+  removeRowById('optional', index);
 };
 </script>
