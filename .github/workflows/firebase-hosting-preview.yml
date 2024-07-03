@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Preview Deploy
 on:
   pull_request:
     types: [opened, reopened, synchronize]
@@ -6,6 +6,12 @@ on:
 concurrency:
   group: ci-preview-tests-${{ github.ref }}-1
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  deployments: write
+  pull-requests: write
 
 jobs:
   build-and-preview:
@@ -17,16 +23,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-      - name: 'vite build'
+      - name: Build (ROAR)
+        if: ${{ contains(github.repository, 'roar') }}
         run: npm ci && npm run build
+      - name: Build (LEVANTE)
+        if: ${{ contains(github.repository, 'levante') }}
+        run: npm ci && npm run build:levante-dev
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
+          firebaseToolsVersion: v13.3.1 # <- Locking version because the newest (13.13.0) does not add the deploy URL to auth whitelist
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
-          projectId: gse-roar-admin
-          target: staging
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}'
+          projectId: '${{ secrets.FIREBASE_PROJECT }}'
+          target: ${{ contains(github.repository, 'levante') && 'production' || 'staging' }}
       - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
     outputs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}

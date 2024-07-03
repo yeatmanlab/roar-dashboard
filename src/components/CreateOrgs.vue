@@ -212,6 +212,7 @@ import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { orgFetcher } from '@/helpers/query/orgs';
+import { isLevante } from '@/helpers';
 
 const initialized = ref(false);
 const isTestData = ref(false);
@@ -219,7 +220,6 @@ const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
 const { roarfirekit, uid } = storeToRefs(authStore);
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const state = reactive({
   orgName: '',
