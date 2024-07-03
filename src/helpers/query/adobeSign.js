@@ -3,7 +3,7 @@ import axios from 'axios';
 const axiosInstance = axios.create({
   baseURL: 'https://api.na4.adobesign.com:443/api/rest/v6',
   headers: {
-    Authorization: `Bearer 3AAABLblqZhD_MwZJlZO86jinKOuRvij8rX1LHuoFXDqDiyz3gCP3m3pwav_31ZVPLf6LS99F_7U7KX2fIWN_SXrXxQjEpOef`,
+    Authorization: `Bearer 3AAABLblqZhBT5VPUksBDIwPl33-eMVU6YSzDrxFGzHzkW2vVpB8GItsQDkaHga0yUiGEw0zfSYkwlgK93x_9Id5pGF5UPSf6`,
     'Content-Type': 'application/json',
   },
 });
@@ -33,7 +33,7 @@ export async function createAgreement(email, isConsent) {
     signatureType: 'ESIGN',
     state: 'IN_PROCESS',
   });
-
+  console.log('agreement id ', postResponse.data.id);
   return await checkStatusUntilSigned(postResponse.data.id);
 }
 
@@ -47,7 +47,7 @@ async function checkStatusUntilSigned(agreementId) {
     const response = await fetch(documentStatusEndpoint, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer 3AAABLblqZhCd34TDuR6tT_LIc5QeJU0SkIAumaM10liW6KuBiQdicAzxAm5FXhYBpLlFWeaaisBRqyVOJZFWktT6eEC6SCyY`,
+        Authorization: `Bearer 3AAABLblqZhBT5VPUksBDIwPl33-eMVU6YSzDrxFGzHzkW2vVpB8GItsQDkaHga0yUiGEw0zfSYkwlgK93x_9Id5pGF5UPSf6`,
         'Content-Type': 'application/json',
       },
     });
@@ -57,6 +57,7 @@ async function checkStatusUntilSigned(agreementId) {
     if (data.status === 'SIGNED') {
       return 'SIGNED';
     }
+    console.log('status ', data.status);
 
     await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds before the next check
     attempts++;

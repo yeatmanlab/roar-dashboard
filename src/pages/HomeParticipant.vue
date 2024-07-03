@@ -98,7 +98,11 @@
     >
       <template #container>
         <div v-if="!docCreated" class="bg-white p-3 border-1 border-round w-full">
-          <h2>Please enter your email to proceed</h2>
+          <p class="text-center">
+            To proceed, please enter your email address below. <br />
+            This will initiate an Adobe Sign workflow to securely obtain your signature on a required
+            {{ isAdult ? 'consent' : 'assent' }} form.
+          </p>
           <div class="p-10 flex justify-content-center w-full">
             <!-- <span class="p-float-label"> -->
             <PvInputText
