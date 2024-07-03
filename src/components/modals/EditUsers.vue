@@ -5,16 +5,18 @@
         <i class="pi pi-pencil text-gray-400 modal-icon"></i>
         <div class="flex flex-column">
           <h1 class="modal-title admin-page-header">
-            Edit User Information - {{ localUserData.name.first }} {{ localUserData.name.last }}
+            {{ showPassword ? 'Change Password' : 'Edit User Information' }} - {{ localUserData.name.first }}
+            {{ localUserData.name.last }}
           </h1>
           <span class="text-md text-gray-500">Modify, add, or remove user information</span>
         </div>
       </div>
     </template>
     <div class="flex flex-column align-items-center surface-overlay border-round" style="width: 66vw; gap: 2rem">
-      <!-- Fields for userData form -->
+      <!-- Body of Modal -->
       <div v-if="localUserType === 'student'" class="form-container">
-        <div class="flex flex-row" style="gap: 1rem">
+        <!-- User Information View -->
+        <div v-if="!showPassword" class="flex flex-row" style="gap: 1rem">
           <div class="form-column">
             <div class="form-field">
               <label>First Name</label>
@@ -126,20 +128,28 @@
             </div>
           </div>
         </div>
-        <!-- Bottom of form, change password-->
-        <div class="divider"><span class="text-gray-400">Change Password</span></div>
-        <div class="flex" style="gap: 1rem">
-          <div class="form-field" style="width: 100%">
-            <label>New Password</label>
-            <PvInputText v-model="newPassword" :class="{ 'p-invalid': errorMessage.includes('6 characters') }" />
-            <small v-if="errorMessage.includes('6 characters')" class="p-error"
-              >Password must be at least 6 characters.</small
-            >
-          </div>
-          <div class="form-field" style="width: 100%">
-            <label>Confirm New Password</label>
-            <PvInputText v-model="confirmPassword" :class="{ 'p-invalid': errorMessage.includes('do not match') }" />
-            <small v-if="errorMessage.includes('do not match')" class="p-error">Passwords do not match.</small>
+        <!-- Bottom of form-->
+        <PvButton
+          v-if="!showPassword"
+          @click="showPassword = true"
+          class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
+          >Change Password</PvButton
+        >
+        <!-- Show password view -->
+        <div v-if="showPassword">
+          <div class="flex" style="gap: 1rem">
+            <div class="form-field" style="width: 100%">
+              <label>New Password</label>
+              <PvInputText v-model="newPassword" :class="{ 'p-invalid': errorMessage.includes('6 characters') }" />
+              <small v-if="errorMessage.includes('6 characters')" class="p-error"
+                >Password must be at least 6 characters.</small
+              >
+            </div>
+            <div class="form-field" style="width: 100%">
+              <label>Confirm New Password</label>
+              <PvInputText v-model="confirmPassword" :class="{ 'p-invalid': errorMessage.includes('do not match') }" />
+              <small v-if="errorMessage.includes('do not match')" class="p-error">Passwords do not match.</small>
+            </div>
           </div>
         </div>
       </div>
@@ -149,21 +159,40 @@
     </div>
     <template #footer>
       <div class="modal-footer">
-        <PvButton
-          tabindex="0"
-          class="border-none border-round bg-white text-primary p-2 hover:surface-200"
-          text
-          label="Cancel"
-          outlined
-          @click="onReject"
-        ></PvButton>
-        <PvButton
-          tabindex="0"
-          class="border-none border-round bg-primary text-white p-2 hover:surface-400"
-          label="Save"
-          @click="onAccept"
-          ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
-        ></PvButton>
+        <div v-if="!showPassword">
+          <PvButton
+            tabindex="0"
+            class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+            text
+            label="Cancel"
+            outlined
+            @click="onReject"
+          ></PvButton>
+          <PvButton
+            tabindex="0"
+            class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+            label="Save"
+            @click="onAccept"
+            ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+          ></PvButton>
+        </div>
+        <div v-else-if="showPassword">
+          <PvButton
+            tabindex="0"
+            class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+            text
+            label="Back to User Information"
+            outlined
+            @click="showPassword = false"
+          ></PvButton>
+          <PvButton
+            tabindex="0"
+            class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+            label="Save Password"
+            @click="updatePassword"
+            ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+          ></PvButton>
+        </div>
       </div>
     </template>
     <!-- </template> -->
@@ -218,25 +247,13 @@ const closeModal = () => {
   errorMessage.value = '';
   newPassword.value = '';
   confirmPassword.value = '';
+  showPassword.value = false;
   isOpen.value = false;
   emit('modalClosed');
 };
 
 const onAccept = async () => {
   errorMessage.value = '';
-  const sentUserObject = localUserData.value;
-  if (newPassword.value) {
-    if (newPassword.value.length < 6) {
-      errorMessage.value = 'Password must be at least 6 characters';
-      return;
-    }
-    if (newPassword.value !== confirmPassword.value) {
-      errorMessage.value = 'Passwords do not match';
-      return;
-    }
-    sentUserObject.password = newPassword.value;
-  }
-
   isSubmitting.value = true;
   await roarfirekit.value
     .updateUserData(props.userData.id, { ...localUserData.value })
@@ -244,6 +261,31 @@ const onAccept = async () => {
       isSubmitting.value = false;
       closeModal();
       toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
+    })
+    .catch((error) => {
+      console.log('Error occurred during submission:', error);
+      errorMessage.value = error.message;
+      isSubmitting.value = false;
+    });
+};
+
+const updatePassword = async () => {
+  if (newPassword.value.length < 6) {
+    errorMessage.value = 'Password must be at least 6 characters';
+    return;
+  }
+  if (newPassword.value !== confirmPassword.value) {
+    errorMessage.value = 'Passwords do not match';
+    return;
+  }
+  isSubmitting.value = true;
+
+  await roarfirekit.value
+    .updateUserData(props.userData.id, { password: newPassword.value })
+    .then((res) => {
+      isSubmitting.value = false;
+      showPassword.value = false;
+      toast.add({ severity: 'success', summary: 'Updated', detail: 'Password has been updated', life: 3000 });
     })
     .catch((error) => {
       console.log('Error occurred during submission:', error);
@@ -263,6 +305,7 @@ const newPassword = ref('');
 const confirmPassword = ref('');
 const isSubmitting = ref(false);
 const errorMessage = ref('');
+const showPassword = ref(false);
 
 const setupUserData = () => {
   let user = {
@@ -391,10 +434,13 @@ const isSuperAdmin = computed(() => {
   flex-direction: row;
   justify-content: flex-end;
   width: 100%;
-  gap: 1rem;
   padding: 1.5rem;
   background-color: #e6e7eb;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
+  & div {
+    display: flex;
+    gap: 1rem;
+  }
 }
 .p-dialog .p-dialog-footer {
   padding: 0;
