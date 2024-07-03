@@ -16,6 +16,7 @@
     <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
   </div>
+  <ReloadPrompt />
 </template>
 
 <script setup>
@@ -27,6 +28,7 @@ import AppHead from '@/components/AppHead.vue';
 import { i18n } from '@/translations/i18n';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
+import ReloadPrompt from '@/components/ReloadPrompt.vue';
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const route = useRoute();

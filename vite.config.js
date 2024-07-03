@@ -13,6 +13,8 @@ const pwaOptions = {
     injectionPoint: undefined,
     rollupFormat: 'iife',
     globPatterns: ['**/*.{html}'],
+    swSrc: './src/sw.js',
+    swDest: 'build/service-worker.js',
   },
   base: '/',
   srcDir: 'src',
@@ -56,33 +58,6 @@ const pwaOptions = {
     suppressWarnings: true,
   },
 };
-
-// const oldOptions = {
-//       strategies: 'injectManifest',
-//       injectManifest: {
-//         injectionPoint: undefined,
-//         rollupFormat: 'iife',
-//         globPatterns: ['**/*.{html}'],
-//       },
-//       // adds static assets in the public folder to cache
-//       includeAssets: ['**/*'],
-//       manifest: {
-//         // Modify manifest options here...
-//         display: 'standalone',
-//         theme_color: '#ffffff',
-//         background_color: '#ffffff',
-//         injectRegister: 'manual',
-//         icons: [
-//         ],
-//       },
-//       /* enable sw on development */
-//       devOptions: {
-//         enabled: true,
-//         type: 'module',
-//         navigateFallback: 'index.html',
-//         suppressWarnings: true,
-//       },
-//     }
 
 // https://vitejs.dev/config/
 export default defineConfig({
