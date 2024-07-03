@@ -37,7 +37,7 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV_ADMIN }}'
           projectId: '${{ secrets.FIREBASE_PROJECT }}'
-          target: production
+          target: ${{ contains(github.repository, 'levante') && 'production' || 'staging' }}
       - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
     outputs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
