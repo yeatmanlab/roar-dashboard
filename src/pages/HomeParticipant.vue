@@ -122,10 +122,7 @@
         <div v-else class="bg-white p-3 border-1 border-round w-full">
           <h2>Please review your email to sign the document and proceed</h2>
           <div class="justify-content-center flex">
-            <img
-              src="/Users/emilyag/Documents/ROAR-dashboard/roar-dashboard/src/assets/signDoc2.webp"
-              style="width: 400px; border-radius: 0.5rem"
-            />
+            <img src="../assets/signDoc2.webp" style="width: 400px; border-radius: 0.5rem" />
           </div>
         </div>
       </template>
