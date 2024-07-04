@@ -22,7 +22,7 @@
 <script setup>
 import { computed } from 'vue';
 import { languageOptions } from '@/translations/i18n.js';
-const isLevante = import.meta.env.MODE === 'LEVANTE';
+import { isLevante } from '@/helpers';
 
 // Convert the object to an array of [key, value] pairs
 let languageOptionsArray = Object.entries(languageOptions);
