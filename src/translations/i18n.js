@@ -1,5 +1,6 @@
 import { createI18n } from 'vue-i18n';
 import { enTranslations, enUSTranslations, esTranslations, esCOTranslations, deTranslations } from './exports';
+import { isLevante } from '@/helpers';
 
 export const languageOptions = {
   'en-US': { translations: enUSTranslations, language: 'English (United States)', code: 'usa' },
@@ -10,7 +11,6 @@ export const languageOptions = {
 };
 
 const browserLocale = window.navigator.language;
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const getLocale = (localeFromBrowser) => {
   const localeFromStorage = sessionStorage.getItem(`${isLevante ? 'levante' : 'roar'}PlatformLocale`);
