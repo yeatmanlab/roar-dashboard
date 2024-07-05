@@ -93,11 +93,6 @@ Cypress.Commands.add(
   },
 );
 
-Cypress.Commands.add('activateAdminSidebar', () => {
-  cy.get('[data-cy="button-admin-sidebar"]').click();
-  cy.wait(1000);
-});
-
 Cypress.Commands.add('selectAdministration', function selectAdministration(testAdministration, retries = 0) {
   cy.log(`'Selecting administration: ${testAdministration}, attempt: ${retries + 1}`);
   if (retries > 3) {

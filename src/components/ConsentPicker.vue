@@ -15,7 +15,7 @@
     <div class="flex justify-content-center mt-2">
       <PvCheckbox v-model="noConsent" input-id="no-consent" class="flex" value="noConsent" />
       <label class="ml-2 flex text-center" for="no-consent"
-        >This Administration does not require a consent/assent</label
+        >This administration does not require consent or assent forms</label
       >
     </div>
     <div class="flex flex-row">
@@ -153,6 +153,7 @@
           :options="listOfDocs.consent"
           option-label="fileName"
           style="width: 70%"
+          :placeholder="props.legal?.consent[0]?.fileName || 'Select a Consent Form'"
           @change="updateConsent"
         />
         <h3 class="pt-3">Select an Assent Form</h3>
@@ -161,6 +162,7 @@
           :options="listOfDocs.assent"
           option-label="fileName"
           style="width: 70%"
+          :placeholder="props.legal?.assent[0]?.fileName || 'Select an Assent Form'"
           @change="updateAssent"
         />
         <div div class="hidden">
@@ -352,6 +354,13 @@ onMounted(() => {
   if (!props.legal || Object.keys(props.legal).length === 0) {
     decision.value = 'know';
     knowWhatIWant.value = true;
+  } else {
+    result.consent[0] = props.legal.consent[0];
+    result.assent[0] = props.legal.assent[0];
+    result.amount = props.legal.amount;
+    result.expectedTime = props.legal.expectedTime;
+    selectedConsent.value = props.legal.consent[0];
+    selectedAssent.value = props.legal.assent[0];
   }
 });
 

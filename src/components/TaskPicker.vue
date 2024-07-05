@@ -124,6 +124,7 @@
                   :variant="element"
                   has-controls
                   :update-variant="updateVariant"
+                  :pre-existing-assessment-info="preExistingAssessmentInfo"
                   @remove="removeCard"
                   @move-up="moveCardUp"
                   @move-down="moveCardDown"
@@ -156,6 +157,10 @@ const props = defineProps({
     required: true,
   },
   inputVariants: {
+    type: Array,
+    default: () => [],
+  },
+  preExistingAssessmentInfo: {
     type: Array,
     default: () => [],
   },
