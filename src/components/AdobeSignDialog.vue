@@ -44,9 +44,29 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { createAgreement } from '../helpers/query/adobeSign';
+
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
+const initialized = ref(false);
+let unsubscribe;
+
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+});
 
 const signerEmail = ref('');
 const docCreated = ref(false);
@@ -65,13 +85,23 @@ isVisible.value = props.isAdobe;
 
 async function createConsent() {
   docCreated.value = true;
+  let docType = props.isAdult ? 'Assent' : 'Consent';
 
-  let isSigned = await createAgreement(signerEmail.value, props.isAdult);
-  if (isSigned === 'SIGNED') {
+  const agreementId = authStore.createAgreement(signerEmail.value, docType);
+
+  const docStatus = authStore.getAdobeSignAgreementStatus(agreementId);
+
+  const adobeUrl = authStore.getAdobeSignSigningUrl(signerEmail.value, agreementId);
+
+  console.log('agreementId ', agreementId);
+  console.log('Adobe URL ', adobeUrl);
+
+  if (docStatus === 'SIGNED') {
     props.isAdobe = false;
     isVisible.value = false;
-    emit('consent-signed', isSigned);
+    emit('consent-signed', docStatus);
   } else {
+    console.log('status ', docStatus);
     docCreated.value = false;
     toast.add({ severity: 'error', summary: 'Please retry', detail: 'Document not signed', life: 3000 });
   }
