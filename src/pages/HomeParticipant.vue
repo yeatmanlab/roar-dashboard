@@ -1,5 +1,4 @@
 <template>
-  <PvToast />
   <div>
     <div v-if="!noGamesAvailable || consentSpinner">
       <div v-if="isFetching" class="loading-container">
@@ -87,50 +86,8 @@
     :consent-type="consentType"
     @accepted="updateConsent"
   />
-  <div>
-    <PvDialog
-      v-if="isAdobe"
-      v-model:visible="isAdobe"
-      :pt="{ mask: { style: 'backdrop-filter: blur(2px);' } }"
-      :draggable="false"
-      :modal="false"
-      class="border-1h-3rem bg-white"
-    >
-      <template #container>
-        <div v-if="!docCreated" class="bg-white p-3 border-1 border-round w-full">
-          <p class="text-center">
-            To proceed, please enter your email address below. <br />
-            This will initiate an Adobe Sign workflow to securely obtain your signature on a required
-            {{ isAdult ? 'consent' : 'assent' }} form.
-          </p>
-          <div class="p-10 flex justify-content-center w-full">
-            <!-- <span class="p-float-label"> -->
-            <PvInputText
-              id="signer-email"
-              v-model="signerEmail"
-              class="w-10"
-              style="width: 25rem"
-              placeholder="Email"
-              type="email"
-              enabled
-            />
-          </div>
-          <div class="flex justify-content-center">
-            <PvButton
-              label="Done"
-              class="no-underline bg-primary mt-2 border-none border-round p-3 w-5 text-white hover:bg-red-900"
-              @click="createConsent"
-            />
-          </div>
-        </div>
-        <div v-else class="bg-white p-3 border-1 border-round w-full">
-          <h2>Please review your email to sign the document and proceed</h2>
-          <div class="justify-content-center flex">
-            <img src="../assets/signDoc2.webp" style="width: 400px; border-radius: 0.5rem" />
-          </div>
-        </div>
-      </template>
-    </PvDialog>
+  <div v-if="isAdobe && !isLevante">
+    <AdobeSignDialog :is-adobe="isAdobe" :is-adult="isAdult" @consent-signed="updateAdobe" />
   </div>
 </template>
 
@@ -151,10 +108,7 @@ import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
-import { createAgreement } from '../helpers/query/adobeSign';
-import { useToast } from 'primevue/usetoast';
-
-const toast = useToast();
+import AdobeSignDialog from '../components/AdobeSignDialog.vue';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -163,8 +117,6 @@ const consentType = ref('');
 const consentParams = ref({});
 const isAdobe = ref(false);
 const isAssentAdobe = ref(false);
-const signerEmail = ref(null);
-const docCreated = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
@@ -240,20 +192,6 @@ const {
 });
 
 let isAdult = false;
-
-async function createConsent() {
-  docCreated.value = true;
-
-  let isSigned = await createAgreement(signerEmail.value, isAdult);
-  if (isSigned === 'SIGNED') {
-    isSignedWithAdobe = true;
-    updateConsent();
-    isAdobe.value = false;
-  } else {
-    docCreated.value = false;
-    toast.add({ severity: 'error', summary: 'Please retry', detail: 'Document not signed', life: 3000 });
-  }
-}
 
 async function checkConsent() {
   showConsent.value = false;
@@ -339,7 +277,11 @@ async function updateConsent() {
     console.log("Couldn't update consent value");
   }
 }
-
+function updateAdobe() {
+  isAdobe.value = false;
+  isSignedWithAdobe = true;
+  updateConsent();
+}
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
 
 const {
