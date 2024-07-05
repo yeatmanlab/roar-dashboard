@@ -83,6 +83,7 @@
             style="width: 70%"
             :value="`https://roar.education/register/?code=${activationCode}`"
             autocomplete="off"
+            readonly
           />
           <PvButton
             class="bg-primary border-none p-2 text-white hover:bg-red-900"
@@ -93,7 +94,7 @@
         </PvInputGroup>
         <p class="font-bold text-lg">Code:</p>
         <PvInputGroup class="mt-3">
-          <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" />
+          <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" readonly />
           <PvButton
             class="bg-primary border-none p-2 text-white hover:bg-red-900"
             @click="copyToClipboard(activationCode)"
