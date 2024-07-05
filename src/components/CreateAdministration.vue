@@ -115,7 +115,7 @@
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="v$.consent.$invalid && submitted && !isLevante" class="p-error mt-2"
+          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
@@ -396,14 +396,16 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
+let noConsent = '';
+
 const rules = {
   administrationName: { required },
   administrationPublicName: { required },
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante) },
-  assent: { requiredIf: requiredIf(!isLevante) },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -445,10 +447,15 @@ const handleVariantsChanged = (newVariants) => {
 };
 
 const handleConsentSelected = (newConsentAssent) => {
-  state.consent = newConsentAssent.consent;
-  state.assent = newConsentAssent.assent;
-  state.amount = newConsentAssent.amount;
-  state.expectedTime = newConsentAssent.expectedTime;
+  if (newConsentAssent !== 'No Consent') {
+    noConsent = '';
+    state.consent = newConsentAssent.consent;
+    state.assent = newConsentAssent.assent;
+    state.amount = newConsentAssent.amount;
+    state.expectedTime = newConsentAssent.expectedTime;
+  } else {
+    noConsent = newConsentAssent;
+  }
 };
 
 const checkForUniqueTasks = (assignments) => {
@@ -524,10 +531,10 @@ const submit = async () => {
           orgs: orgs,
           isTestData: isTestData.value,
           legal: {
-            consent: toRaw(state).consent,
-            assent: toRaw(state).assent,
-            amount: toRaw(state).amount,
-            expectedTime: toRaw(state).expectedTime,
+            consent: toRaw(state).consent ?? null,
+            assent: toRaw(state).assent ?? null,
+            amount: toRaw(state).amount ?? '',
+            expectedTime: toRaw(state).expectedTime ?? '',
           },
         };
         if (isTestData.value) args.isTestData = true;
@@ -631,6 +638,12 @@ function findVariantWithParams(variants, params) {
 .return-button {
   display: block;
   margin: 1rem 1.75rem;
+}
+
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 
 .loading-container {

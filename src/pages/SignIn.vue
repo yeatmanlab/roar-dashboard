@@ -99,10 +99,7 @@ authStore.$subscribe(() => {
 
     if (authFromClever.value) {
       router.push({ name: 'CleverLanding' });
-    } else {
-      router.push({ name: 'Home' });
-    }
-    if (authFromClassLink.value) {
+    } else if (authFromClassLink.value) {
       router.push({ name: 'ClassLinkLanding' });
     } else {
       router.push({ name: 'Home' });
@@ -135,8 +132,10 @@ const authWithGoogle = () => {
 };
 
 const authWithClever = () => {
+  console.log('---> authWithClever');
   if (isMobileBrowser()) {
     authStore.signInWithCleverRedirect();
+    spinner.value = true;
   } else {
     authStore.signInWithCleverRedirect();
     // authStore.signInWithCleverPopup();
@@ -148,6 +147,7 @@ const authWithClassLink = () => {
   console.log('---> authWithClassLink');
   if (isMobileBrowser()) {
     authStore.signInWithClassLinkRedirect();
+    spinner.value = true;
   } else {
     authStore.signInWithClassLinkRedirect();
     // authStore.signInWithCleverPopup();

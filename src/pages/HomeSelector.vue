@@ -41,7 +41,16 @@ import { useI18n } from 'vue-i18n';
 let HomeParticipant, HomeAdministrator, ConsentModal;
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
+
+const router = useRouter();
+if (authFromClever.value) {
+  console.log('Detected Clever authentication, routing to CleverLanding page');
+  router.push({ name: 'CleverLanding' });
+} else if (authFromClassLink.value) {
+  console.log('Detected ClassLink authentication, routing to ClassLinkLanding page');
+  router.push({ name: 'ClassLinkLanding' });
+}
 
 const gameStore = useGameStore();
 const { requireRefresh } = storeToRefs(gameStore);
@@ -120,8 +129,6 @@ async function checkConsent() {
   }
 }
 
-const router = useRouter();
-
 onMounted(async () => {
   HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
   HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
@@ -146,7 +153,7 @@ watch(isLoading, async (newValue) => {
   }
 });
 
-const { idle } = useIdle(10 * 60 * 1000); // 10 min
+const { idle } = useIdle(60 * 10 * 1000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
 const i18n = useI18n();
@@ -168,7 +175,7 @@ watch(idle, (idleValue) => {
       group: 'inactivity-logout',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: t('homeSelector.inactivityLogoutAcceptLabel'),
-      acceptIcon: 'pi pi-check',
+      acceptIcon: 'pi pi-check mr-2',
       accept: () => {
         clearInterval(timer);
         timeLeft.value = 60;
@@ -179,6 +186,14 @@ watch(idle, (idleValue) => {
 </script>
 
 <style>
+button.p-button.p-component.p-confirm-dialog-accept {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }

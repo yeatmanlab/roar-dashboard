@@ -12,8 +12,14 @@
         </div>
       </div>
     </div>
+    <div class="flex justify-content-center mt-2">
+      <PvCheckbox v-model="noConsent" input-id="no-consent" class="flex" value="noConsent" />
+      <label class="ml-2 flex text-center" for="no-consent"
+        >This Administration does not require a consent/assent</label
+      >
+    </div>
     <div class="flex flex-row">
-      <div v-if="userDrivenFlow" class="align-content-center" style="width: 50%">
+      <div v-if="userDrivenFlow && !noConsent" class="align-content-center" style="width: 50%">
         <h3>Default Data Collection</h3>
         <div class="border-solid border-round border-1 border-black-alpha-30" style="width: 70%">
           <div style="width: 70%; cursor: pointer">
@@ -140,7 +146,7 @@
           </div>
         </div>
       </div>
-      <div v-if="knowWhatIWant" class="flex flex-column pl-3" style="width: 50%">
+      <div v-if="knowWhatIWant && !noConsent" class="flex flex-column pl-3" style="width: 50%">
         <h3>Select a Consent Form</h3>
         <PvDropdown
           v-model="selectedConsent"
@@ -175,7 +181,7 @@
           </div>
         </div>
       </div>
-      <div v-if="knowWhatIWant || userDrivenFlow" class="flex-column" style="width: 50%">
+      <div v-if="(knowWhatIWant || userDrivenFlow) && !noConsent" class="flex-column" style="width: 50%">
         <h3 class="font-bold text-center text-xl">Suggested Forms</h3>
         <div class="w-full">
           <PvFieldset v-if="consents && consents.length > 0" legend="Consent">
@@ -300,6 +306,7 @@ const specialParam = ref(false);
 const amount = ref('');
 const expectedTime = ref('');
 const userDrivenFlow = ref(null);
+const noConsent = ref(false);
 let selectedConsent = ref(null);
 let selectedAssent = ref(null);
 const knowWhatIWant = ref(false);
@@ -539,4 +546,20 @@ watch(expectedTime, (newValue) => {
   result.expectedTime = newValue;
   emit('consent-selected', result);
 });
+
+watch(noConsent, () => {
+  if (noConsent.value && noConsent.value?.find((item) => item === 'noConsent')) {
+    emit('consent-selected', 'No Consent');
+  } else {
+    emit('consent-selected', '');
+    noConsent.value = false;
+  }
+});
 </script>
+<style>
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+</style>
