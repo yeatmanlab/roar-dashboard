@@ -148,7 +148,11 @@
           :draggable="false"
         >
           <p>{{ dialogMessage }}</p>
-          <PvButton @click="closeErrorDialog">Close</PvButton>
+          <PvButton
+            @click="closeErrorDialog"
+            class="bg-primary text-white p-3 border-none border-round z-5 hover:bg-red-900"
+            >Close</PvButton
+          >
         </PvDialog>
       </div>
     </form>

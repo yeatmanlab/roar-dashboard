@@ -128,15 +128,7 @@
             <div class="flex justify-content-between">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
-                <PvCheckbox
-                  v-model="student.yearOnlyCheckRef"
-                  :binary="true"
-                  name="yearOnly"
-                  :class="{
-                    'p-2 border-2 border-round border-300': !student.yearOnlyCheckRef, // Always apply these classes
-                    'p-1 border-round border-none text-white bg-primary': student.yearOnlyCheckRef, // Apply when selected
-                  }"
-                />
+                <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
                 <label for="yearOnly" class="ml-2">Use Year Only</label>
               </div>
             </div>
@@ -331,7 +323,11 @@
         :draggable="false"
       >
         <p>{{ dialogMessage }}</p>
-        <PvButton @click="closeErrorDialog">Close</PvButton>
+        <PvButton
+          @click="closeErrorDialog"
+          class="bg-primary text-white border-none border-round p-2 h-3rem mr-3 hover:surface-300 hover:text-black-alpha-90"
+          >Close</PvButton
+        >
       </PvDialog>
     </section>
   </div>

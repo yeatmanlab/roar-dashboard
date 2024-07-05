@@ -102,7 +102,7 @@ export const fetchDocById = async (
   select,
   db = 'admin',
   unauthenticated = false,
-  isShallowError = false,
+  swallowErrors = false,
 ) => {
   if (!collection || !docId) {
     console.warn(
@@ -124,7 +124,7 @@ export const fetchDocById = async (
       };
     })
     .catch((error) => {
-      if (!isShallowError) {
+      if (!swallowErrors) {
         console.error(error);
       }
       return {

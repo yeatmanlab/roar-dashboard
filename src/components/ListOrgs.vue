@@ -60,7 +60,7 @@
             :allow-filtering="false"
             :is-inside-list-orgs="true"
             @export-all="exportAll"
-            @selected-org-id="ShowCode"
+            @selected-org-id="showCode"
           />
           <AppSpinner v-else />
         </PvTabPanel>
@@ -72,7 +72,6 @@
         v-model:visible="isDialogVisible"
         dialog-title="text-primary"
         :style="{ width: '50rem' }"
-        :modal="true"
         :draggable="false"
       >
         <template #header>
@@ -206,22 +205,6 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: allGroups } = useQuery({
-  queryKey: ['groups'],
-  queryFn: () => orgFetcher('groups', undefined, isSuperAdmin, adminOrgs, ['name', 'id', 'currentActivateCode']),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: allClasses } = useQuery({
-  queryKey: ['classes', selectedSchool],
-  queryFn: () => orgFetcher('classes', selectedSchool, isSuperAdmin, adminOrgs, ['name', 'id', 'currentActivateCode']),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
 function copyToClipboard(text) {
   navigator.clipboard
     .writeText(text)
@@ -336,16 +319,11 @@ const tableData = computed(() => {
   });
 });
 
-const ShowCode = (selectedOrg) => {
-  const collections = [allDistricts.value, allSchools.value, allClasses.value, allGroups.value];
-
-  for (const collection of collections) {
-    const match = collection?.find((item) => item.id === selectedOrg && item.currentActivationCode);
-    if (match) {
-      activationCode.value = match.currentActivationCode;
-      isDialogVisible.value = true;
-      break;
-    }
+const showCode = async (selectedOrg) => {
+  const orgInfo = await fetchDocById(activeOrgType.value, selectedOrg);
+  if (orgInfo?.currentActivationCode) {
+    activationCode.value = orgInfo.currentActivationCode;
+    isDialogVisible.value = true;
   }
 };
 
