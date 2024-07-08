@@ -200,7 +200,7 @@ export const fetchSubcollection = async (collectionPath, subcollectionName, sele
     const response = await axiosInstance.get(subcollectionPath + queryString);
 
     // Check if the API returns an array of document data in the subcollection
-    const documents = response.data.documents || [];
+    const documents = response.data.documents ?? [];
 
     // Map and return the documents with the required format
     return documents.map((doc) => ({
