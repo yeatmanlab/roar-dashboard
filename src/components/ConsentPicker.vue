@@ -26,7 +26,7 @@
         value="adobeSign"
         @change="getAdobeConsentAssent"
       />
-      <label class="ml-2 flex text-center" for="no-consent">This Administration uses Adobe Sign</label>
+      <label class="ml-2 flex text-center" for="adobe-sign">This Administration uses Adobe Sign</label>
     </div>
     <div class="flex flex-row">
       <div v-if="userDrivenFlow && !noConsent" class="align-content-center" style="width: 50%">
