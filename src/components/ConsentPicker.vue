@@ -264,7 +264,8 @@
     <div v-else>
       <iframe
         v-if="textTodisplay === 'assent'"
-        src="https://docs.google.com/viewer?url=https://raw.githubusercontent.com/yeatmanlab/roar-legal-documents/main/studentClinicAssent.pdf&embedded=true"
+        src="https://docs.google.com/gview?url=https://raw.githubusercontent.com/yeatmanlab/roar-legal-documents/main/studentClinicAssent.pdf&embedded=true"
+        lazy
         width="100%"
         height="100%"
         frameborder="0"
@@ -272,7 +273,8 @@
       ></iframe>
       <iframe
         v-else
-        src="https://docs.google.com/viewer?url=https://raw.githubusercontent.com/yeatmanlab/roar-legal-documents/main/studentClinicConsent.pdf&embedded=true"
+        src="https://docs.google.com/gview?url=https://raw.githubusercontent.com/yeatmanlab/roar-legal-documents/main/studentClinicConsent.pdf&embedded=true"
+        lazy
         width="100%"
         height="100%"
         frameborder="0"
@@ -446,9 +448,9 @@ const listOfDocs = computed(() => {
   let assent = [];
 
   _forEach(consents.value, (doc) => {
-    if (doc.type.toLowerCase().includes('consent')) {
+    if (doc.type.toLowerCase().includes('consent') && !doc.type.toLowerCase().includes('Clinic')) {
       consent.push(doc);
-    } else if (!doc.type.toLowerCase().includes('tos')) {
+    } else if (!doc.type.toLowerCase().includes('tos') && !doc.type.toLowerCase().includes('consent')) {
       assent.push(doc);
     }
   });
@@ -648,6 +650,10 @@ watch(isAdobeSign, (newValue) => {
 
 watch(textTodisplay, (newValue) => {
   textTodisplay.value = newValue;
+});
+
+watch(showConsent, (newValue) => {
+  showConsent.value = newValue;
 });
 </script>
 <style>
