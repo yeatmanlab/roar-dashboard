@@ -161,10 +161,8 @@ const submit = async () => {
   // also their parents.
   const orgs = _cloneDeep(adminOrgs);
 
-  if (adminOrgs.schools.length > 0) {
-    for (const school of selectedOrgs.value.schools) {
-      orgs.districts = _union(orgs.districts, [school.districtId]);
-    }
+  for (const school of selectedOrgs.value?.schools ?? []) {
+    orgs.districts = _union(orgs.districts, [school.districtId]);
   }
 
   if (adminOrgs.classes.length > 0) {
