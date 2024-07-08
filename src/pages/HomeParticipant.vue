@@ -185,6 +185,8 @@ const {
 });
 
 async function checkConsent() {
+  showConsent.value = false
+  
   if (isLevante) return;
 
   const legal = selectedAdmin.value?.legal;
