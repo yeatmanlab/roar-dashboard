@@ -150,11 +150,11 @@ const submit = async () => {
   };
 
   const adminOrgs = {
-    districts: selectedOrgs.value?.districts?.map((o) => o.id) || [],
-    schools: selectedOrgs.value?.schools?.map((o) => o.id) || [],
-    classes: selectedOrgs.value?.classes?.map((o) => o.id) || [],
-    groups: selectedOrgs.value?.groups?.map((o) => o.id) || [],
-    families: selectedOrgs.value?.families?.map((o) => o.id) || [],
+    districts: selectedOrgs.value?.districts?.map((o) => o.id) ?? [],
+    schools: selectedOrgs.value?.schools?.map((o) => o.id) ?? [],
+    classes: selectedOrgs.value?.classes?.map((o) => o.id) ?? [],
+    groups: selectedOrgs.value?.groups?.map((o) => o.id) ?? [],
+    families: selectedOrgs.value?.families?.map((o) => o.id) ?? [],
   };
 
   // Build orgs from admin orgs. Orgs should contain all of the admin orgs. And
