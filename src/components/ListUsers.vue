@@ -40,7 +40,34 @@
         />
       </div>
       <AppSpinner v-else />
-      <EditUsers :user-data="currentEditUser" :is-enabled="isModalEnabled" @modal-closed="isModalEnabled = false" />
+      <RoarModal
+        title="Edit User Information"
+        subtitle="Modify, add, or remove user information"
+        :is-enabled="isModalEnabled"
+        @modal-closed="isModalEnabled = false"
+      >
+        <EditUsersForm :user-data="currentEditUser" @update:userData="localUserData = $event" />
+        <template #footer>
+          <div>
+            <PvButton
+              tabindex="0"
+              class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+              text
+              label="Cancel"
+              outlined
+              @click="closeModal"
+            ></PvButton>
+            <PvButton
+              tabindex="0"
+              class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+              label="Save"
+              @click="updateUserData"
+              ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+            ></PvButton>
+          </div>
+        </template>
+      </RoarModal>
+      <!-- <EditUsers :user-data="currentEditUser" :is-enabled="isModalEnabled" @modal-closed="isModalEnabled = false" /> -->
     </section>
   </main>
 </template>
@@ -53,7 +80,8 @@ import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
 import { fetchUsersByOrg } from '@/helpers/query/users';
 import { singularizeFirestoreCollection } from '@/helpers';
-import EditUsers from './modals/EditUsers.vue';
+import EditUsersForm from './EditUsersForm.vue';
+import RoarModal from './modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 
@@ -151,10 +179,22 @@ const columns = ref([
 const currentEditUser = ref(null);
 const isModalEnabled = ref(false);
 
+// +-----------------+
+// | Edit User Modal |
+// +-----------------+
+const localUserData = ref(null);
+
 const onEditButtonClick = (event) => {
   currentEditUser.value = event;
   isModalEnabled.value = true;
   console.log(event);
+};
+
+const updateUserData = async () => {};
+
+const closeModal = () => {
+  isModalEnabled.value = false;
+  localUserData.value = null;
 };
 
 const onSort = (event) => {
