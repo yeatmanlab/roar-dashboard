@@ -165,11 +165,10 @@ const submit = async () => {
     orgs.districts = _union(orgs.districts, [school.districtId]);
   }
 
-  if (adminOrgs.classes.length > 0) {
-    for (const _class of selectedOrgs.value.classes) {
-      orgs.districts = _union(orgs.districts, [_class.districtId]);
-      orgs.schools = _union(orgs.schools, [_class.schoolId]);
-    }
+  for (const _class of selectedOrgs.value?.classes ?? []) {
+    orgs.districts = _union(orgs.districts, [_class.districtId]);
+    orgs.schools = _union(orgs.schools, [_class.schoolId]);
+  }
   }
 
   await roarfirekit.value
