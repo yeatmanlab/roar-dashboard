@@ -193,6 +193,12 @@ const submit = async () => {
   margin: 1rem 1.75rem;
 }
 
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
 #rectangle {
   background: #fcfcfc;
   border-radius: 0.3125rem;

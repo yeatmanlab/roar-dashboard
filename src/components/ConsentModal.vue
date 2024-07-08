@@ -41,7 +41,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const { consentSpinner } = storeToRefs(authStore);
 
 onMounted(() => {
-  const delayPromise = delay(8000);
+  const delayPromise = delay(1000);
   confirm.require({
     group: 'templating',
     header: props.consentType.includes('-es')

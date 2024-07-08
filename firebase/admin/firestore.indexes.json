@@ -1883,7 +1883,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "progress.roav-mep",
+          "fieldPath": "progress.roav_mep",
           "order": "ASCENDING"
         }
       ]
@@ -2507,7 +2507,7 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "progress.roav-mep",
+          "fieldPath": "progress.roav_mep",
           "order": "ASCENDING"
         }
       ]
@@ -3321,6 +3321,20 @@
         {
           "fieldPath": "userType",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districts.current",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
         }
       ]
     },

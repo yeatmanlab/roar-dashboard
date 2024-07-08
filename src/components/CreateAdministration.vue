@@ -111,13 +111,14 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
+          :pre-existing-assessment-info="preExistingAdminInfo?.assessments"
           @variants-changed="handleVariantsChanged"
         />
+        <small v-if="(v$.assent.requiredIf.$invalid || v$.consent.requiredIf.$invalid) && submitted" class="p-error"
+          >Please select consent and assent forms.</small
+        >
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="v$.consent.$invalid && submitted && !isLevante" class="p-error mt-2"
-            >Please select a consent/assent form.</small
-          >
         </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
@@ -133,10 +134,10 @@
                   :value="false"
                 />
                 <label for="No">No</label>
+                <small v-if="v$.sequential.$invalid && submitted" class="p-error mx-auto"
+                  >Please specify sequential behavior.</small
+                >
               </span>
-              <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
-                >Please specify sequential behavior.</small
-              >
             </div>
             <div v-if="!isLevante" class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
@@ -395,14 +396,16 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
+let noConsent = ref('');
+
 const rules = {
   administrationName: { required },
   administrationPublicName: { required },
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante) },
-  assent: { requiredIf: requiredIf(!isLevante) },
+  consent: { requiredIf: requiredIf(() => !isLevante && noConsent.value !== 'No Consent') },
+  assent: { requiredIf: requiredIf(() => !isLevante && noConsent.value !== 'No Consent') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -444,10 +447,15 @@ const handleVariantsChanged = (newVariants) => {
 };
 
 const handleConsentSelected = (newConsentAssent) => {
-  state.consent = newConsentAssent.consent;
-  state.assent = newConsentAssent.assent;
-  state.amount = newConsentAssent.amount;
-  state.expectedTime = newConsentAssent.expectedTime;
+  if (newConsentAssent !== 'No Consent') {
+    noConsent.value = '';
+    state.consent = newConsentAssent.consent;
+    state.assent = newConsentAssent.assent;
+    state.amount = newConsentAssent.amount;
+    state.expectedTime = newConsentAssent.expectedTime;
+  } else {
+    noConsent.value = newConsentAssent;
+  }
 };
 
 const checkForUniqueTasks = (assignments) => {
@@ -523,10 +531,10 @@ const submit = async () => {
           orgs: orgs,
           isTestData: isTestData.value,
           legal: {
-            consent: toRaw(state).consent,
-            assent: toRaw(state).assent,
-            amount: toRaw(state).amount,
-            expectedTime: toRaw(state).expectedTime,
+            consent: toRaw(state).consent ?? null,
+            assent: toRaw(state).assent ?? null,
+            amount: toRaw(state).amount ?? '',
+            expectedTime: toRaw(state).expectedTime ?? '',
           },
         };
         if (isTestData.value) args.isTestData = true;
@@ -605,7 +613,9 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
         preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
     });
-    state.legal = adminInfo.legal;
+    state.legal = adminInfo?.legal;
+    state.consent = adminInfo.legal?.consent;
+    state.assent = adminInfo.legal?.assent;
   }
 });
 
@@ -630,6 +640,12 @@ function findVariantWithParams(variants, params) {
 .return-button {
   display: block;
   margin: 1rem 1.75rem;
+}
+
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 
 .loading-container {

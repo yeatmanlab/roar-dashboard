@@ -231,6 +231,12 @@ onBeforeUnmount(() => {
   margin-top: 3rem;
 }
 
+.p-checkbox-box.p-highlight {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
 .submit-button {
   margin: auto;
   margin-top: 0.5rem;

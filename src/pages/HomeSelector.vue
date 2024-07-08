@@ -42,7 +42,16 @@ import { isLevante } from '@/helpers';
 let HomeParticipant, HomeAdministrator, ConsentModal;
 
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
+
+const router = useRouter();
+if (authFromClever.value) {
+  console.log('Detected Clever authentication, routing to CleverLanding page');
+  router.push({ name: 'CleverLanding' });
+} else if (authFromClassLink.value) {
+  console.log('Detected ClassLink authentication, routing to ClassLinkLanding page');
+  router.push({ name: 'ClassLinkLanding' });
+}
 
 const gameStore = useGameStore();
 const { requireRefresh } = storeToRefs(gameStore);
@@ -140,7 +149,23 @@ async function checkConsent() {
   }
 }
 
-const router = useRouter();
+onMounted(async () => {
+  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+
+  if (requireRefresh.value) {
+    requireRefresh.value = false;
+    router.go(0);
+  }
+  if (roarfirekit.value.restConfig) init();
+  if (!isLoading.value) {
+    refreshDocs();
+    if (isAdmin.value) {
+      await checkConsent();
+    }
+  }
+});
 
 watch(isLoading, async (newValue) => {
   if (!newValue && isAdmin.value) {
@@ -160,7 +185,19 @@ watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
   }
 });
 
-const { idle } = useIdle(10 * 60 * 1000); // 10 min
+watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
+  if (newUserData && newUserClaims) {
+    authStore.userData = newUserData;
+    authStore.userClaims = newUserClaims;
+
+    const userType = toRaw(newUserData)?.userType?.toLowerCase();
+    if (userType === 'parent' || userType === 'teacher') {
+      router.push({ name: 'Survey' });
+    }
+  }
+});
+
+const { idle } = useIdle(60 * 10 * 1000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
 const i18n = useI18n();
@@ -182,7 +219,7 @@ watch(idle, (idleValue) => {
       group: 'inactivity-logout',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: t('homeSelector.inactivityLogoutAcceptLabel'),
-      acceptIcon: 'pi pi-check',
+      acceptIcon: 'pi pi-check mr-2',
       accept: () => {
         clearInterval(timer);
         timeLeft.value = 60;
@@ -193,6 +230,14 @@ watch(idle, (idleValue) => {
 </script>
 
 <style>
+button.p-button.p-component.p-confirm-dialog-accept {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
 .confirm .p-confirm-dialog-reject {
   display: none !important;
 }

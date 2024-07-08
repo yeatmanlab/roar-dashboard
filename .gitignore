@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dev-dist
 *.local
 .idea
 /idea
@@ -28,9 +29,6 @@ cypress/downloads
 
 .env
 .vite/*
-
-# pwa build files
-/dev-dist
 
 # Sentry Config File
 .env.sentry-build-plugin

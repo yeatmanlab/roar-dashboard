@@ -80,7 +80,7 @@ module.exports = defineConfig({
     testRoarAppsAdministration: 'Cypress Test Roar Apps Administration',
     testRoarAppsAdministrationId: 'K8UaI8p79Dntj5Z2CJk8',
     testOptionalRoarAppsAdministration: 'Cypress Test Optional Roar Apps Administration',
-    testOptionalRoarAppsAdministrationId: '',
+    testOptionalRoarAppsAdministrationId: 'Fuy4nQaMu6YmfNg1eBYH',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
     // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50

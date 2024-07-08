@@ -36,9 +36,11 @@
           :allow-export="false"
           :allow-filtering="false"
           @sort="onSort($event)"
+          @edit-button="onEditButtonClick($event)"
         />
       </div>
       <AppSpinner v-else />
+      <EditUsers :user-data="currentEditUser" :is-enabled="isModalEnabled" @modal-closed="isModalEnabled = false" />
     </section>
   </main>
 </template>
@@ -51,6 +53,7 @@ import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
 import { fetchUsersByOrg } from '@/helpers/query/users';
 import { singularizeFirestoreCollection } from '@/helpers';
+import EditUsers from './modals/EditUsers.vue';
 
 const authStore = useAuthStore();
 
@@ -136,7 +139,23 @@ const columns = ref([
     dataType: 'string',
     sort: false,
   },
+  {
+    header: 'Edit',
+    button: true,
+    eventName: 'edit-button',
+    buttonIcon: 'pi pi-user-edit',
+    sort: false,
+  },
 ]);
+
+const currentEditUser = ref(null);
+const isModalEnabled = ref(false);
+
+const onEditButtonClick = (event) => {
+  currentEditUser.value = event;
+  isModalEnabled.value = true;
+  console.log(event);
+};
 
 const onSort = (event) => {
   const _orderBy = (event.multiSortMeta ?? []).map((item) => ({
@@ -158,5 +177,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
+  isModalEnabled.value = false;
 });
 </script>

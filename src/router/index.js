@@ -385,6 +385,12 @@ const routes = [
     component: () => import('../pages/LEVANTE/UserSurvey.vue'),
     meta: { pageTitle: 'Survey', project: 'LEVANTE' },
   },
+  {
+    path: '/maintenance',
+    name: 'Maintenance',
+    component: () => import('../pages/MaintenancePage.vue'),
+    meta: { pageTitle: 'Down for Maintenance' },
+  },
 ];
 
 const router = createRouter({
@@ -410,6 +416,7 @@ router.beforeEach(async (to, from, next) => {
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
+    'Maintenance',
     'AuthClever',
     'AuthClassLink',
     'AuthEmailLink',
@@ -417,6 +424,15 @@ router.beforeEach(async (to, from, next) => {
     'Register',
   ];
 
+  const inMaintenanceMode = false;
+
+  if (inMaintenanceMode && to.name !== 'Maintenance') {
+    next({ name: 'Maintenance' });
+    return;
+  } else if (!inMaintenanceMode && to.name === 'Maintenance') {
+    next({ name: 'Home' });
+    return false;
+  }
   // Check if user is signed in. If not, go to signin
   if (
     !to.path.includes('__/auth/handler') &&
