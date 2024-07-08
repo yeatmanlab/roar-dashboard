@@ -344,6 +344,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(() => {
   console.log('onMounted hook called');
   if (roarfirekit.value.restConfig) init();
+  if (props.userData) setupUserData();
 });
 
 // Automatically emit events when the local userData changes
