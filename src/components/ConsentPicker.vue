@@ -21,7 +21,7 @@
     <div class="flex justify-content-center mt-2">
       <PvCheckbox
         v-model="adobeSign"
-        input-id="no-consent"
+        input-id="adobe-sign"
         class="flex"
         value="adobeSign"
         @change="getAdobeConsentAssent"
