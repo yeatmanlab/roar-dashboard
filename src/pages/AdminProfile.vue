@@ -1,47 +1,61 @@
 <template>
   <div class="flex flex-row" style="max-height: 100vh">
     <!-- Sidebar -->
-    <div class="sidebar-container">
-      Sidebar content here
-      <a href="#change-password">Change Password</a>
-      <a href="#link-accounts">Link Accounts</a>
-    </div>
+    <!-- <div class="sidebar-container">
+      <a href="#your-information"><div class="sidebar-button">Your Information</div></a>
+      <a href="#change-password"><div class="sidebar-button">Change Password</div></a>
+      <a href="#link-accounts"><div class="sidebar-button">Link Accounts</div></a>
+    </div> -->
     <!-- Main Page Content-->
     <div class="page-container">
-      <section>
-        <EditUsersForm :user-data="userData" v-model="userDataModel" @update:userData="localUserData = $event" />
-        <PvButton @click="submitUserData" label="Update" />
-      </section>
-      <section id="change-password">
-        <h2>Change Your Password</h2>
-        <span>Update your password here.</span>
-        <div class="flex flex-column">
-          <label>New password</label>
-          <PvInputText v-model="v$.password.$model" :class="{ 'p-invalid': v$.password.$invalid && submitted }" />
-          <small v-if="v$.password.$invalid && submitted" class="p-error"
-            >Password must be at least 6 characters long.</small
-          >
-        </div>
-        <div class="flex flex-column">
-          <label>Confirm password</label>
-          <PvInputText
-            v-model="v$.confirmPassword.$model"
-            :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
-          />
-          <small v-if="v$.confirmPassword.$invalid && submitted" class="p-error">Passwords do not match.</small>
-        </div>
-        <PvButton @click="updatePassword" label="Update Password" />
-      </section>
-      <!-- <div v-for="(item, index) of arrayItems" class="py-5">Line here</div> -->
-      <section id="link-accounts">
-        <h2>Link Accounts</h2>
-        <span>Make logging in easy by linking your accounts.</span>
-        <div class="button-container">
-          <PvButton>Log in with Clever</PvButton>
-          <PvButton>Log in with Google</PvButton>
-          <PvButton>Log in with ClassLink</PvButton>
-        </div>
-      </section>
+      <div class="form-card">
+        <section id="your-information" class="form-section">
+          <h2>Your Information</h2>
+          <EditUsersForm :user-data="userData" v-model="userDataModel" @update:userData="localUserData = $event" />
+          <div class="flex">
+            <PvButton
+              @click="submitUserData"
+              label="Update"
+              class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
+            />
+          </div>
+        </section>
+        <section id="change-password" class="form-section">
+          <h2>Change Your Password</h2>
+          <div class="flex flex-column">
+            <label>New password</label>
+            <PvInputText v-model="v$.password.$model" :class="{ 'p-invalid': v$.password.$invalid && submitted }" />
+            <small v-if="v$.password.$invalid && submitted" class="p-error"
+              >Password must be at least 6 characters long.</small
+            >
+          </div>
+          <div class="flex flex-column mt-3">
+            <label>Confirm password</label>
+            <PvInputText
+              v-model="v$.confirmPassword.$model"
+              :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
+            />
+            <small v-if="v$.confirmPassword.$invalid && submitted" class="p-error">Passwords do not match.</small>
+          </div>
+          <div class="flex mt-3">
+            <PvButton
+              @click="updatePassword"
+              label="Update Password"
+              class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
+            />
+          </div>
+        </section>
+        <!-- <div v-for="(item, index) of arrayItems" class="py-5">Line here</div> -->
+        <section id="link-accounts">
+          <h2>Link Accounts</h2>
+          <span>Make logging in easy by linking your accounts.</span>
+          <div class="button-container">
+            <PvButton>Log in with Clever</PvButton>
+            <PvButton>Log in with Google</PvButton>
+            <PvButton>Log in with ClassLink</PvButton>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 </template>
@@ -146,23 +160,46 @@ const { data: userData } = useQuery({
 </script>
 <style lang="scss" scoped>
 .sidebar-container {
-  background-color: #b1b0b0;
+  background-color: var(--surface-b);
   flex-basis: 25%;
   height: calc(100vh - 119px);
+  border-right: 2px solid var(--surface-d);
+}
+.sidebar-button {
+  width: 100%;
+  background-color: var(--surface-d);
+  padding: 1rem;
 }
 .page-container {
+  background-color: red;
   flex-basis: 75%;
   flex-grow: 1;
   max-height: calc(100vh - 119px);
   overflow: scroll;
   padding: 1rem;
   scroll-behavior: smooth;
+  div {
+    width: 66vw;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
+.form-card {
+  padding: 1rem;
+  background-color: white;
+}
+.form-section {
+  background-color: white;
 }
 #link-accounts:target {
   animation: highlight-section 3s 1;
   -webkit-animation: highlight-section 3s 1;
 }
 #change-password:target {
+  animation: highlight-section 3s 1;
+  -webkit-animation: highlight-section 3s 1;
+}
+#your-information:target {
   animation: highlight-section 3s 1;
   -webkit-animation: highlight-section 3s 1;
 }
