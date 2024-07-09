@@ -3,12 +3,10 @@
   <PvSelectButton
     v-model="viewModel"
     :options="modelViews"
-    option-label="label"
-    option-value="value"
     class="flex my-2 select-button p-2"
     @change="handleViewChange($event.value)"
   />
-  <div v-show="viewModel.value === 'create'">
+  <div v-show="viewModel === 'Create Task'">
     <div v-if="!created" class="card px-3">
       <h1 class="text-center font-bold">Create a New Task</h1>
       <!-- <p class="login-title" align="left">Register for ROAR</p> -->
@@ -212,10 +210,15 @@
         Redirect to this URL upon task completion. ParticipantId can be any string, completed should be set to true.
       </p>
       <p>roar.education/?participantId=[$PARTICIPANT_ID]&completed=[$BOOLEAN]</p>
+      <PvButton
+        label="Create Another Task"
+        class="submit-button bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+        @click="created = false"
+      />
     </div>
   </div>
 
-  <div v-show="viewModel.value === 'update'">
+  <div v-show="viewModel === 'Update Task'">
     <h1 class="text-center font-bold">Update a Task</h1>
     <form @submit.prevent="handleUpdateTask()">
       <section class="flex flex-column gap-2 mb-4 p-4">
@@ -423,7 +426,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { taskFetcher } from '@/helpers/query/tasks';
@@ -435,6 +438,7 @@ const registeredTasksOnly = ref(true);
 const taskCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const queryClient = useQueryClient();
 
 const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
 const selectedTask = ref(null);
@@ -453,14 +457,11 @@ let newFields = reactive([]);
 // This array of objects is later converted back into an object and spread into the updatedTaskData object
 let addedGameConfig = reactive([]);
 
-const viewModel = ref({ label: 'Create Task', value: 'create' });
-const modelViews = [
-  { label: 'Create Task', value: 'create' },
-  { label: 'Update Task', value: 'update' },
-];
+const viewModel = ref('Create Task');
+const modelViews = ['Create Task', 'Update Task'];
 
 const handleViewChange = (value) => {
-  const selectedView = modelViews.find((view) => view.value === value);
+  const selectedView = modelViews.find((view) => view === value);
   if (selectedView) {
     viewModel.value = selectedView;
   }
@@ -667,7 +668,9 @@ const handleUpdateTask = async () => {
     await authStore.roarfirekit.updateTaskOrVariant(updateData);
     toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Task successfully updated.', life: 3000 });
 
+    // Reset the form and re-fetch the tasks
     resetUpdateTaskForm();
+    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
   } catch (error) {
     console.error(error);
   }
@@ -684,7 +687,7 @@ const handleNewTaskSubmit = async (isFormValid) => {
     return;
   }
 
-  const convertedGameConfig = convertParamsToObj(gameConfig);
+  const convertedGameConfig = convertParamsToObj(gameConfig) ?? {};
   const convertedTaskParams = isExternalTask ? convertParamsToObj(taskParams) : null;
 
   let newTaskObject = reactive({
@@ -707,6 +710,8 @@ const handleNewTaskSubmit = async (isFormValid) => {
   try {
     await authStore.roarfirekit.registerTaskVariant({ ...newTaskObject });
     created.value = true;
+    // Re-fetch tasks
+    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
   } catch (error) {
     console.error(error);
   }

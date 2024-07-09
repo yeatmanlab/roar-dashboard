@@ -3,12 +3,10 @@
   <PvSelectButton
     v-model="viewModel"
     :options="modelViews"
-    option-label="label"
-    option-value="value"
     class="flex my-2 select-button p-2"
     @change="handleViewChange($event.value)"
   />
-  <div v-show="viewModel.value === 'create'">
+  <div v-show="viewModel === 'Create Variant'">
     <div class="card px-3">
       <form class="p-fluid" @submit.prevent="handleVariantSubmit(!v$.$invalid)">
         <h1 class="text-center font-bold">Create a New Variant</h1>
@@ -242,7 +240,7 @@
     </div>
   </div>
 
-  <div v-show="viewModel.value === 'update'">
+  <div v-show="viewModel === 'Update Variant'">
     <h1 class="text-center font-bold">Update a Variant</h1>
     <form @submit.prevent="handleUpdateVariant()">
       <section class="flex flex-column gap-2 mb-4 p-4">
@@ -441,7 +439,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { taskFetcher } from '@/helpers/query/tasks';
@@ -454,6 +452,7 @@ const registeredTasksOnly = ref(true);
 const variantCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const queryClient = useQueryClient();
 
 const selectedTask = ref(null);
 const selectedVariant = ref(null);
@@ -471,14 +470,11 @@ let addedFields = reactive([]);
 
 let newParams = reactive([]);
 
-const viewModel = ref({ label: 'Create Variant', value: 'create' });
-const modelViews = [
-  { label: 'Create Variant', value: 'create' },
-  { label: 'Update Variant', value: 'update' },
-];
+const viewModel = ref('Create Variant');
+const modelViews = ['Create Variant', 'Update Variant'];
 
 const handleViewChange = (value) => {
-  const selectedView = modelViews.find((view) => view.value === value);
+  const selectedView = modelViews.find((view) => view === value);
   if (selectedView) {
     viewModel.value = selectedView;
   }
@@ -733,7 +729,10 @@ const handleUpdateVariant = async () => {
     await authStore.roarfirekit.updateTaskOrVariant(updateData);
     toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Variant successfully updated.', life: 3000 });
 
+    // Reset the form and re-fetch the data
     resetUpdateVariantForm();
+    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
+    await queryClient.invalidateQueries(['variants', 'all']);
   } catch (error) {
     console.error(error);
   }
@@ -752,7 +751,7 @@ const handleVariantSubmit = async (isFormValid) => {
     return;
   }
 
-  const convertedParams = convertParamsToObj(newParams);
+  const convertedParams = convertParamsToObj(newParams) ?? {};
 
   const combinedParams = {
     ...variantParams.value,
@@ -777,7 +776,10 @@ const handleVariantSubmit = async (isFormValid) => {
 
     submitted.value = false;
 
+    // Reset the form and re-fetch the data
     resetCreateVariantForm();
+    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
+    await queryClient.invalidateQueries(['variants', 'all']);
   } catch (error) {
     console.error(error);
   }
@@ -831,8 +833,17 @@ const clearFieldParamArrays = () => {
   color: black;
 }
 
-.p-selectbutton.active-button {
-  border: 2px solid red;
-  color: black;
+.select-button .p-button:last-of-type:not(:only-of-type) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 25rem;
+  border-bottom-right-radius: 25rem;
+}
+
+.select-button .p-button:first-of-type:not(:only-of-type) {
+  border-top-left-radius: 25rem;
+  border-bottom-left-radius: 25rem;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 </style>
