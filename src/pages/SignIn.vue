@@ -111,7 +111,6 @@ const authWithGoogle = () => {
   if (isMobileBrowser()) {
     authStore.signInWithGoogleRedirect();
   } else {
-    // authStore.signInWithGoogleRedirect();
     authStore
       .signInWithGooglePopup()
       .then(async () => {
@@ -134,13 +133,14 @@ const authWithGoogle = () => {
 const authWithClever = () => {
   console.log('---> authWithClever');
   const isLocalHost = import.meta.env.DEV;
-  if (!isLocalHost) {
-    authStore.signInWithCleverPopup();
-    spinner.value = true;
-  } else {
-    authStore.signInWithCleverRedirect();
-    spinner.value = true;
-  }
+  // // if localhost or not testing, use popup
+  // if (isLocalHost) {
+  //   authStore.signInWithCleverPopup();
+  //   spinner.value = true;
+  // } else {
+  authStore.signInWithCleverRedirect();
+  spinner.value = true;
+  // }
 };
 
 const authWithClassLink = () => {

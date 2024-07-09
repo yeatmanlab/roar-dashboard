@@ -2,8 +2,6 @@ export const timeout = Cypress.env('timeout');
 
 describe('Cypress test to login in Clever', () => {
   it('passes', () => {
-    // Generate a random state parameter
-    const state = 'testState123'; // In real scenarios, this should be a securely generated random value
     cy.visit('/');
     cy.wait(0.1 * timeout);
     cy.get('button').contains('Clever').click();
