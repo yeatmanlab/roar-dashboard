@@ -4,11 +4,11 @@
     v-model:visible="isVisible"
     :pt="{ mask: { style: 'backdrop-filter: blur(2px);' } }"
     :draggable="false"
-    :modal="false"
-    class="border-1h-3rem bg-white"
+    :modal="true"
+    class="border-1h-3rem bg-white w-8"
   >
     <template #container>
-      <div v-if="!docCreated" class="bg-white p-3 border-1 border-round w-full">
+      <div v-if="!docCreated" class="bg-white p-3 border-1 border-round">
         <p class="text-center">
           To proceed, please enter your email address below. <br />
           This will initiate an Adobe Sign workflow to securely obtain your signature on a required
@@ -33,10 +33,24 @@
           />
         </div>
       </div>
-      <div v-else class="bg-white p-3 border-1 border-round w-full">
-        <h2>Please review your email to sign the document and proceed</h2>
-        <div class="justify-content-center flex">
-          <img src="../assets/signDoc2.webp" style="width: 400px; border-radius: 0.5rem" />
+      <div v-if="hasSigningUrl" class="bg-white border-1 border-round w-full text-center">
+        <div class="flex flex-row">
+          <div class="justify-content-center flex">
+            <img src="../assets/signDoc2.webp" style="width: 40vh; padding: 0px" />
+          </div>
+          <div class="flex flex-column justify-content-center p-5">
+            <h3>
+              Thank you! An email has been sent to <span class="font-bold">{{ signerEmail }}</span> with further
+              instructions to sign the consent form. <br />
+              <br />
+              Please go to your inbox and complete the signing process.
+            </h3>
+            <h3>Alternatively, you can click the link below to go directly to the signing page:</h3>
+            <h4>
+              Sign the {{ isAdult ? 'consent' : 'assent' }} form now
+              <a :href="adobeUrl" target="blank"> Link to document </a>
+            </h4>
+          </div>
         </div>
       </div>
     </template>
@@ -46,13 +60,16 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
-
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
+const agreementId = ref(null);
+const docStatus = ref(null);
+const adobeUrl = ref(null);
+const hasSigningUrl = ref(false);
 let unsubscribe;
 
 const init = () => {
@@ -84,25 +101,36 @@ const props = defineProps({
 isVisible.value = props.isAdobe;
 
 async function createConsent() {
+  agreementId.value = null;
   docCreated.value = true;
   let docType = props.isAdult ? 'Assent' : 'Consent';
 
-  const agreementId = authStore.createAgreement(signerEmail.value, docType);
+  agreementId.value = await authStore.createAdobeSignAgreement(signerEmail.value, docType);
 
-  const docStatus = authStore.getAdobeSignAgreementStatus(agreementId);
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
-  const adobeUrl = authStore.getAdobeSignSigningUrl(signerEmail.value, agreementId);
+  if (agreementId.value) {
+    adobeUrl.value = await authStore.getAdobeSignSigningUrl(agreementId.value, signerEmail.value);
+    hasSigningUrl.value = true;
+  }
 
-  console.log('agreementId ', agreementId);
-  console.log('Adobe URL ', adobeUrl);
+  let tries = 0;
 
-  if (docStatus === 'SIGNED') {
+  while (tries < 20) {
+    docStatus.value = await authStore.getAdobeSignAgreementStatus(agreementId.value);
+    if (docStatus.value !== 'SIGNED') {
+      tries += 1;
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
+
+  if (docStatus.value === 'SIGNED') {
     props.isAdobe = false;
     isVisible.value = false;
-    emit('consent-signed', docStatus);
+    emit('consent-signed', docStatus.value);
   } else {
-    console.log('status ', docStatus);
     docCreated.value = false;
+    hasSigningUrl.value = false;
     toast.add({ severity: 'error', summary: 'Please retry', detail: 'Document not signed', life: 3000 });
   }
 }

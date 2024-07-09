@@ -83,7 +83,7 @@
   <ConsentModal
     v-if="showConsent && !isLevante"
     :consent-text="confirmText"
-    :consent-type="consentType"
+    :consent-type="isAdult"
     @accepted="updateConsent"
   />
   <div v-if="isAdobe && !isLevante">
@@ -117,6 +117,7 @@ const consentType = ref('');
 const consentParams = ref({});
 const isAdobe = ref(false);
 const isAssentAdobe = ref(false);
+const isAdult = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
@@ -191,8 +192,6 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
-let isAdult = false;
-
 async function checkConsent() {
   showConsent.value = false;
   isAssentAdobe.value = false;
@@ -203,9 +202,9 @@ async function checkConsent() {
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  isAdult = age >= 18;
+  isAdult.value = age >= 18;
   const isSeniorGrade = grade >= 12;
-  const isOlder = isAdult || isSeniorGrade;
+  const isOlder = isAdult.value || isSeniorGrade;
 
   if (!legal?.consent && !isLevante && !legal?.isAdobeSign) {
     return;
@@ -237,7 +236,7 @@ async function checkConsent() {
 
     if (!found) {
       if (legal?.isAdobeSign) {
-        if (!isAdult) {
+        if (!isAdult.value) {
           isAssentAdobe.value = true;
         }
         isAdobe.value = true;
@@ -250,7 +249,7 @@ async function checkConsent() {
     }
   } else if (age > 7 || grade > 1) {
     if (legal?.isAdobeSign) {
-      if (!isAdult) {
+      if (!isAdult.value) {
         isAssentAdobe.value = true;
       }
       isAdobe.value = true;

@@ -202,12 +202,12 @@ export const useAuthStore = () => {
         return this.roarfirekit.createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData);
       },
 
-      async createAdobeSignAgreement(email) {
-        return this.roarfirekit.createAdobeSignAgreement(email);
+      async createAdobeSignAgreement(email, agreementId) {
+        return this.roarfirekit.createAdobeSignAgreement(email, agreementId);
       },
 
       async getAdobeSignAgreementStatus(agreementId) {
-        return this.roarfirekit.createAdobeSignAgreement(agreementId);
+        return this.roarfirekit.getAdobeSignAgreementStatus(agreementId);
       },
 
       async getAdobeSignSigningUrl(email, agreementId) {
