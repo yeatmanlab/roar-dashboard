@@ -111,13 +111,14 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
+          :pre-existing-assessment-info="preExistingAdminInfo?.assessments"
           @variants-changed="handleVariantsChanged"
         />
+        <small v-if="(v$.assent.requiredIf.$invalid || v$.consent.requiredIf.$invalid) && submitted" class="p-error"
+          >Please select consent and assent forms.</small
+        >
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
-            >Please select a consent/assent form.</small
-          >
         </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
@@ -133,10 +134,10 @@
                   :value="false"
                 />
                 <label for="No">No</label>
+                <small v-if="v$.sequential.$invalid && submitted" class="p-error mx-auto"
+                  >Please specify sequential behavior.</small
+                >
               </span>
-              <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
-                >Please specify sequential behavior.</small
-              >
             </div>
             <div class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
@@ -396,7 +397,7 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
-let noConsent = '';
+let noConsent = ref('');
 
 const rules = {
   administrationName: { required },
@@ -404,8 +405,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
-  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
+  consent: { requiredIf: requiredIf(() => !isLevante && noConsent.value !== 'No Consent') },
+  assent: { requiredIf: requiredIf(() => !isLevante && noConsent.value !== 'No Consent') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -448,13 +449,13 @@ const handleVariantsChanged = (newVariants) => {
 
 const handleConsentSelected = (newConsentAssent) => {
   if (newConsentAssent !== 'No Consent') {
-    noConsent = '';
+    noConsent.value = '';
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
     state.expectedTime = newConsentAssent.expectedTime;
   } else {
-    noConsent = newConsentAssent;
+    noConsent.value = newConsentAssent;
   }
 };
 
@@ -613,7 +614,9 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
         preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
     });
-    state.legal = adminInfo.legal;
+    state.legal = adminInfo?.legal;
+    state.consent = adminInfo.legal?.consent;
+    state.assent = adminInfo.legal?.assent;
   }
 });
 
