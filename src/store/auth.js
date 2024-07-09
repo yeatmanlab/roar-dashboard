@@ -127,6 +127,7 @@ export const useAuthStore = () => {
       },
       async signInWithCleverPopup() {
         this.authFromClever = true;
+        console.log('clever sign in method');
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithPopup('clever');
         }

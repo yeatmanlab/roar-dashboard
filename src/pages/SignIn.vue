@@ -134,7 +134,7 @@ const authWithGoogle = () => {
 const authWithClever = () => {
   console.log('---> authWithClever');
   const isLocalHost = import.meta.env.DEV;
-  if (isLocalHost) {
+  if (!isLocalHost) {
     authStore.signInWithCleverPopup();
     spinner.value = true;
   } else {
