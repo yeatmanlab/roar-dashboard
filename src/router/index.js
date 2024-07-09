@@ -195,12 +195,11 @@ const routes = [
     props: { taskId: 'roav-mep', language: 'en' },
     meta: { pageTitle: 'MEP' },
   },
-
   {
-    path: '/register-game',
-    name: 'RegisterGame',
-    component: () => import('../pages/RegisterGame.vue'),
-    meta: { pageTitle: 'Register Game', requireSuperAdmin: true },
+    path: '/manage-tasks-variants',
+    name: 'ManageTasksVariants',
+    component: () => import('../pages/ManageTasksVariants.vue'),
+    meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/register',

@@ -64,9 +64,9 @@ const sidebarActionOptions = [
     category: 'Administrations',
   },
   {
-    title: 'Register Task',
+    title: 'Manage Tasks',
     icon: 'pi pi-pencil',
-    buttonLink: { name: 'RegisterGame' },
+    buttonLink: { name: 'ManageTasksVariants' },
     requiresSuperAdmin: true,
     project: 'ALL',
     category: 'Administrations',
