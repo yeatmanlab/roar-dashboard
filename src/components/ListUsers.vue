@@ -48,7 +48,7 @@
       >
         <EditUsersForm :user-data="currentEditUser" @update:userData="localUserData = $event" />
         <template #footer>
-          <div>
+          <div class="flex gap-2">
             <PvButton
               tabindex="0"
               class="border-none border-round bg-white text-primary p-2 hover:surface-200"
@@ -82,6 +82,7 @@ import { fetchUsersByOrg } from '@/helpers/query/users';
 import { singularizeFirestoreCollection } from '@/helpers';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
+import EditUsers from './modals/EditUsers.vue';
 
 const authStore = useAuthStore();
 

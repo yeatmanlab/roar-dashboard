@@ -104,7 +104,7 @@
       </div>
     </div>
   </div>
-  <div v-else-if="localUserType === 'admin'">
+  <div v-else-if="localUserType === 'admin'" class="form-container">
     <div class="form-column">
       <div class="form-field">
         <label>First Name</label>
@@ -119,30 +119,6 @@
         <PvInputText v-model="localUserData.name.last" />
       </div>
 
-      <div class="form-field">
-        <label
-          >Date of Birth
-          <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
-        >
-        <PvCalendar
-          v-model="localUserData.studentData.dob"
-          :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
-        />
-        <small v-if="errorMessage.includes('Date of birth')" class="p-error"
-          >Date of Birth can not be in the future.</small
-        >
-      </div>
-
-      <div class="form-field">
-        <label
-          >Grade <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
-        >
-        <PvInputText
-          v-model="localUserData.studentData.grade"
-          :class="{ 'p-invalid': errorMessage.includes('Grade') }"
-        />
-        <small v-if="errorMessage.includes('Grade')" class="p-error">Grade must be a number 1-13, or K/PK/TK</small>
-      </div>
       <div v-if="isSuperAdmin">
         <div>
           <PvCheckbox v-model="localUserData.testData" binary />
@@ -156,52 +132,27 @@
     </div>
     <div class="form-column">
       <div class="form-field">
-        <label>Gender</label>
+        <label
+          >Date of Birth
+          <span class="optional">(optional)</span>
+        </label>
+        <PvCalendar
+          v-model="localUserData.studentData.dob"
+          :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
+        />
+        <small v-if="errorMessage.includes('Date of birth')" class="p-error"
+          >Date of Birth can not be in the future.</small
+        >
+      </div>
+      <div class="form-field">
+        <label>Gender <span class="optional">(optional)</span></label>
         <PvInputText v-model="localUserData.studentData.gender" />
       </div>
 
       <div class="form-field">
-        <label>English as a Second Language</label>
+        <label>English as a Second Language <span class="optional">(optional)</span></label>
         <PvDropdown
           v-model="localUserData.studentData.ell_status"
-          option-label="label"
-          option-value="value"
-          :options="binaryDropdownOptions"
-        />
-      </div>
-      <div class="form-field">
-        <label>IEP Status</label>
-        <PvDropdown
-          v-model="localUserData.studentData.iep_status"
-          option-label="label"
-          option-value="value"
-          :options="binaryDropdownOptions"
-        />
-      </div>
-      <div class="form-field">
-        <label>Free-Reduced Lunch</label>
-        <PvDropdown
-          v-model="localUserData.studentData.frl_status"
-          option-label="label"
-          option-value="value"
-          :options="binaryDropdownOptions"
-        />
-      </div>
-
-      <div class="form-field">
-        <label for="race">Race </label>
-        <PvAutoComplete
-          v-model="localUserData.studentData.race"
-          multiple
-          :suggestions="raceOptions"
-          name="race"
-          @complete="searchRaces"
-        />
-      </div>
-      <div class="form-field">
-        <label>Hispanic or Latino Ethnicity</label>
-        <PvDropdown
-          v-model="localUserData.studentData.hispanic_ethnicity"
           option-label="label"
           option-value="value"
           :options="binaryDropdownOptions"
@@ -407,6 +358,11 @@ const isSuperAdmin = computed(() => {
 }
 .admin-only {
   color: var(--blue-600);
+}
+.optional {
+  color: var(--gray-500);
+  font-style: italic;
+  user-select: none;
 }
 .modal-footer {
   display: flex;

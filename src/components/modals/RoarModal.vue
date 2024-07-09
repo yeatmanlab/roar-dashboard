@@ -1,6 +1,6 @@
 <template>
   <template>
-    <PvDialog :visible="isOpen" modal @update:visible="emit('modalClosed')">
+    <PvDialog :visible="isOpen" modal @update:visible="emit('modalClosed')" style="width: 66vw">
       <template #header>
         <div class="modal-header gap-2">
           <i class="pi pi-pencil text-gray-400 modal-icon"></i>
