@@ -1,8 +1,8 @@
-import { playSWR } from '../../support/helper-functions/roar-swr/swrHelpers';
-import { playSRE } from '../../support/helper-functions/roar-sre/sreHelpers';
-import { playLetter } from '../../support/helper-functions/roar-letter/letterHelpers';
-import { playPA } from '../../support/helper-functions/roar-pa/paHelpers';
-import { playFluencyARF, playFluencyCALF } from '../../support/helper-functions/roam-fluency/fluencyHelpers';
+import { playSWR } from '../../../../../support/helper-functions/roar-swr/swrHelpers';
+import { playSRE } from '../../../../../support/helper-functions/roar-sre/sreHelpers';
+import { playLetter } from '../../../../../support/helper-functions/roar-letter/letterHelpers';
+import { playPA } from '../../../../../support/helper-functions/roar-pa/paHelpers';
+import { playFluencyARF, playFluencyCALF } from '../../../../../support/helper-functions/roam-fluency/fluencyHelpers';
 import {
   playMorphology,
   playWrittenVocabulary,
@@ -152,7 +152,7 @@ function testGame(spec, admin) {
           language: spec.language,
         });
       } else {
-        checkOptionalGame(spec, admin, text);
+        checkOptionalGame(spec, admin, text); // comenting this for now
       }
     });
 }
@@ -189,6 +189,7 @@ describe('Testing all open administrations', () => {
         cy.log(`Testing ${admin}`);
         cy.selectAdministration(admin);
         testSpecs.forEach((spec) => {
+          cy.log('sending this spec = ', spec);
           testGame(spec, admin);
         });
         cy.log('Successfully tested all games for administration: ', admin);
