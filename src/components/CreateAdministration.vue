@@ -55,11 +55,10 @@
                 v-model="state.dateStarted"
                 class="w-full"
                 :min-date="minStartDate"
-                input-id="start-date"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
                 icon="pi pi-calendar text-white p-1"
+                input-id="start-date"
                 show-button-bar
                 data-cy="input-start-date"
               />
@@ -78,7 +77,6 @@
                 input-id="end-date"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
                 icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-end-date"
@@ -111,14 +109,13 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
-          :pre-existing-assessment-info="preExistingAdminInfo?.assessments"
           @variants-changed="handleVariantsChanged"
         />
-        <small v-if="(v$.assent.requiredIf.$invalid || v$.consent.requiredIf.$invalid) && submitted" class="p-error"
-          >Please select consent and assent forms.</small
-        >
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
+          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
+            >Please select a consent/assent form.</small
+          >
         </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
@@ -134,10 +131,10 @@
                   :value="false"
                 />
                 <label for="No">No</label>
-                <small v-if="v$.sequential.$invalid && submitted" class="p-error mx-auto"
-                  >Please specify sequential behavior.</small
-                >
               </span>
+              <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
+                >Please specify sequential behavior.</small
+              >
             </div>
             <div class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
@@ -397,7 +394,7 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
-let noConsent = ref('');
+let noConsent = '';
 
 const rules = {
   administrationName: { required },
@@ -405,8 +402,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(() => !isLevante && noConsent.value !== 'No Consent') },
-  assent: { requiredIf: requiredIf(() => !isLevante && noConsent.value !== 'No Consent') },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -449,13 +446,13 @@ const handleVariantsChanged = (newVariants) => {
 
 const handleConsentSelected = (newConsentAssent) => {
   if (newConsentAssent !== 'No Consent') {
-    noConsent.value = '';
+    noConsent = '';
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
     state.expectedTime = newConsentAssent.expectedTime;
   } else {
-    noConsent.value = newConsentAssent;
+    noConsent = newConsentAssent;
   }
 };
 
@@ -614,9 +611,7 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
         preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
     });
-    state.legal = adminInfo?.legal;
-    state.consent = adminInfo.legal?.consent;
-    state.assent = adminInfo.legal?.assent;
+    state.legal = adminInfo.legal;
   }
 });
 
@@ -678,17 +673,6 @@ function findVariantWithParams(variants, params) {
 }
 .p-datepicker .p-datepicker-buttonbar .p-button:hover {
   background-color: var(--surface-100);
-}
-
-button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
-  border: none;
-  background-color: var(--primary-color);
-  margin-left: -0.5rem;
-  width: 3rem;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-top-right-radius: 20%;
-  border-bottom-right-radius: 20%;
 }
 
 .divider {

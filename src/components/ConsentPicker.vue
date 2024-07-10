@@ -7,7 +7,14 @@
           <label for="helpChoose" class="ml-2">Help me choose</label>
         </div>
         <div class="flex align-items-center">
-          <PvRadioButton v-model="decision" input-id="iKnow" name="know" value="know" @change="whatDecision" />
+          <PvRadioButton
+            v-model="decision"
+            input-id="iKnow"
+            class="border-1"
+            name="know"
+            value="know"
+            @change="whatDecision"
+          />
           <label for="iKnow" class="ml-2">I know what to select</label>
         </div>
       </div>

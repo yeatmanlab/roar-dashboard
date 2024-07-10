@@ -20,16 +20,7 @@
 .p-multiselect .p-multiselect-label.p-placeholder {
   color: var(--text-color-secondary);
 }
-.p-multiselect.p-multiselect-chip .p-multiselect-token {
-  padding: var(--border-radius) var(--inline-spacing-larger);
-  margin-right: var(--inline-spacing);
-  background: var(--surface-d);
-  color: var(--text-color);
-  border-radius: 16px;
-}
-.p-multiselect.p-multiselect-chip .p-multiselect-token .p-multiselect-token-icon {
-  margin-left: var(--inline-spacing);
-}
+
 .p-multiselect .p-multiselect-trigger {
   background: transparent;
   color: var(--text-color-secondary);
@@ -39,10 +30,6 @@
 }
 .p-multiselect.p-invalid.p-component {
   border-color: var(--red-100);
-}
-
-.p-inputwrapper-filled.p-multiselect.p-multiselect-chip .p-multiselect-label {
-  padding: var(--border-radius) var(--inline-spacing-larger);
 }
 
 .p-multiselect-panel {

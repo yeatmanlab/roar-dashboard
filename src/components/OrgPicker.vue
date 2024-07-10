@@ -74,7 +74,7 @@
               <PvChip
                 v-for="org in selectedOrgs[orgKey]"
                 :key="org.id"
-                class="m-1"
+                class="m-1 surface-200 p-2 text-black border-round"
                 removable
                 :label="org.name"
                 @remove="remove(org, orgKey)"
@@ -281,5 +281,12 @@ watch(selectedOrgs, (newValue) => {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: white;
+}
+
+g {
+  color: black;
+}
+.p-icon.p-chip-remove-icon {
+  margin-left: 0.5rem;
 }
 </style>
