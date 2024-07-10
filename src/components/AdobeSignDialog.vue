@@ -107,7 +107,7 @@ async function createConsent() {
 
   agreementId.value = await authStore.createAdobeSignAgreement(signerEmail.value, docType);
 
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   if (agreementId.value) {
     adobeUrl.value = await authStore.getAdobeSignSigningUrl(agreementId.value, signerEmail.value);

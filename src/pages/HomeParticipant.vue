@@ -83,7 +83,7 @@
   <ConsentModal
     v-if="showConsent && !isLevante"
     :consent-text="confirmText"
-    :consent-type="isAdult"
+    :consent-type="!isAdult ? 'assent' : 'consent'"
     @accepted="updateConsent"
   />
   <div v-if="isAdobe && !isLevante">
