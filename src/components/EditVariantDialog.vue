@@ -532,8 +532,8 @@ const assignedEditingRows = ref([]);
 const optionalEditingRows = ref([]);
 
 const fieldExamples = ref([
-  { label: 'studentData.grade', value: 'studentData.grade' },
-  { label: 'studentData.schoolLevel', value: 'studentData.schoolLevel' },
+  { label: 'Grade', value: 'studentData.grade' },
+  { label: 'School Level', value: 'studentData.schoolLevel' },
 ]);
 
 const levanteFields = ref([
