@@ -19,7 +19,7 @@ describe('ROAR - Written Vocabulary Playthrough', () => {
 describe('ROAR - Written Vocabulary Playthrough', () => {
   it('Plays CVA with Clever auth', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+      if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);

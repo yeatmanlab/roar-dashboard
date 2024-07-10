@@ -18,7 +18,7 @@ describe('ROAR - Vocabulary Play Through with username authentication', () => {
 describe('ROAR - Vocabulary Play Through with Clever authentication', () => {
   it('Plays Vocabulary', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
-      if (isCurrentVersion) {
+      if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
