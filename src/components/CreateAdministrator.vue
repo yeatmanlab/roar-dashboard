@@ -170,7 +170,6 @@ const submit = async () => {
     orgs.schools = _union(orgs.schools, [_class.schoolId]);
   }
 
-
   await roarfirekit.value
     .createAdministrator(email.value, name, orgs, adminOrgs, isTestData)
     .then(() => {
