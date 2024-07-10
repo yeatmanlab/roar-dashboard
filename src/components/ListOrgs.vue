@@ -58,7 +58,6 @@
             sortable
             :loading="isLoading || isFetching"
             :allow-filtering="false"
-            :is-inside-list-orgs="true"
             @export-all="exportAll"
             @selected-org-id="showCode"
           />
@@ -293,14 +292,24 @@ const tableColumns = computed(() => {
     columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
   }
 
-  columns.push({
-    link: true,
-    routeName: 'ListUsers',
-    routeTooltip: 'View users',
-    routeLabel: 'Users',
-    routeIcon: 'pi pi-user',
-    sort: false,
-  });
+  columns.push(
+    {
+      link: true,
+      routeName: 'ListUsers',
+      routeTooltip: 'View users',
+      routeLabel: 'Users',
+      routeIcon: 'pi pi-user',
+      sort: false,
+    },
+    {
+      header: 'SignUp Code',
+      buttonLabel: 'Invite Users',
+      button: true,
+      eventName: 'selected-org-id',
+      buttonIcon: 'pi pi-send mr-2',
+      sort: false,
+    },
+  );
 
   return columns;
 });
@@ -321,7 +330,7 @@ const tableData = computed(() => {
 });
 
 const showCode = async (selectedOrg) => {
-  const orgInfo = await fetchDocById(activeOrgType.value, selectedOrg);
+  const orgInfo = await fetchDocById(activeOrgType.value, selectedOrg.id);
   if (orgInfo?.currentActivationCode) {
     activationCode.value = orgInfo.currentActivationCode;
     isDialogVisible.value = true;

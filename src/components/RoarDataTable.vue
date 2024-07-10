@@ -332,22 +332,6 @@
               </PvButton>
             </template>
           </PvColumn>
-          <PvColumn
-            v-if="isInsideListOrgs"
-            header="SignUp Code"
-            header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
-          >
-            <template #body="{ data: colData }">
-              <div>
-                <PvButton
-                  label="Invite Users"
-                  icon="pi pi-send mr-2"
-                  class="bg-white border-none border-round text-primary p-2 mr-2 hover:surface-300"
-                  @click="viewOrgCode(colData)"
-                />
-              </div>
-            </template>
-          </PvColumn>
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
               <div class="text-lg font-bold my-2">No results found</div>
@@ -479,10 +463,6 @@ const onSelectionChange = () => {
   emit('selection', selectedRows.value);
 };
 
-function viewOrgCode(data) {
-  emit('selected-org-id', data.id);
-}
-
 const dataTable = ref();
 
 const exportCSV = (exportSelected) => {
@@ -609,7 +589,7 @@ const onFreezeToggle = (selected) => {
 };
 
 // Pass through data table events
-const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'selected-org-id']);
+const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected']);
 </script>
 <style>
 .small-circle {
