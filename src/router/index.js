@@ -358,6 +358,11 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: () => import('../pages/AdminProfile.vue'),
+    children: [
+      { path: '', component: () => import('../components/views/UserInfoView.vue') },
+      { path: 'password', component: () => import('../components/views/PasswordView.vue') },
+      { path: 'accounts', component: () => import('../components/views/LinkAccountsView.vue') },
+    ],
     meta: { pageTitle: 'Profile' },
   },
   {
