@@ -2,11 +2,20 @@
   <template>
     <PvDialog :visible="isOpen" modal @update:visible="emit('modalClosed')" style="width: 66vw">
       <template #header>
-        <div class="modal-header gap-2">
-          <i class="pi pi-pencil text-gray-400 modal-icon"></i>
+        <div v-if="!small" class="modal-header gap-2">
+          <i class="pi text-gray-400 modal-icon" :class="icon"></i>
           <div class="flex flex-column">
             <h1 class="modal-title admin-page-header">{{ title }}</h1>
             <span class="text-md text-gray-500">{{ subtitle }}</span>
+          </div>
+        </div>
+        <div v-else-if="small">
+          <div class="modal-header">
+            <i class="pi text-gray-400 modal-icon-small" :class="icon"></i>
+            <div class="flex flex-column">
+              <span class="text-lg font-bold text-gray-500">{{ title }}</span>
+              <span class="text-sm text-gray-500">{{ subtitle }}</span>
+            </div>
           </div>
         </div>
       </template>
@@ -41,6 +50,16 @@ const props = defineProps({
     type: String,
     required: true,
     default: '',
+  },
+  icon: {
+    type: String,
+    required: false,
+    default: 'pi-pencil',
+  },
+  small: {
+    type: Boolean,
+    required: false,
+    default: false,
   },
 });
 
@@ -95,6 +114,11 @@ onMounted(() => {
 .modal-icon {
   font-size: 1.6rem;
   margin-top: 6px;
+}
+.modal-icon-small {
+  font-size: 1rem;
+  margin-top: 4px;
+  margin-right: 0.5rem;
 }
 .modal-title {
   margin-top: 0;

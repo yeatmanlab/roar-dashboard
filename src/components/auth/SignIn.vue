@@ -119,12 +119,13 @@
   <RoarModal
     :is-enabled="forgotPasswordModalOpen"
     title="Forgot Password"
-    subtitle="Enter email to reset your password"
+    subtitle="Enter your email to reset your password"
+    small
     @modal-closed="forgotPasswordModalOpen = false"
   >
     <template #default>
       <div class="flex flex-column">
-        <label>Enter your email</label>
+        <label>Email</label>
         <PvInputText v-model="forgotEmail" />
       </div>
     </template>
