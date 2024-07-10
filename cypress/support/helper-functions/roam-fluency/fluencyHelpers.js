@@ -1,4 +1,5 @@
 import { languageOptions } from './languageOptions';
+import { signInWithClever } from '../participant/participant-helpers';
 
 const timeout = Cypress.env('timeout');
 const participantId = '123456789';
@@ -158,13 +159,18 @@ export function playFluencyARF({
   optional = false,
   endText = 'You are all done.',
   continueText = null,
+  auth = 'username',
 } = {}) {
   Cypress.on('uncaught:exception', () => {
     return false;
   });
 
-  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
   cy.visit('/');
+  if (auth === 'clever') {
+    signInWithClever();
+  } else if (auth === 'username') {
+    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+  }
 
   cy.selectAdministration(administration);
 
@@ -193,13 +199,18 @@ export function playFluencyCALF({
   optional = false,
   endText = 'You are all done.',
   continueText = null,
+  auth = 'username',
 } = {}) {
   Cypress.on('uncaught:exception', () => {
     return false;
   });
 
-  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
   cy.visit('/');
+  if (auth === 'clever') {
+    signInWithClever();
+  } else if (auth === 'username') {
+    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+  }
 
   cy.selectAdministration(administration);
 

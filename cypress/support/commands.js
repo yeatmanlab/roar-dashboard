@@ -99,21 +99,22 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     cy.log('Retries exceeded, administration not found, exiting test...');
     return;
   }
-
-  cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
-  cy.get('body', { timeout: 2 * Cypress.env('timeout') })
-    .invoke('text')
-    .then((text) => {
-      if (text.includes(testAdministration)) {
-        cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
-          .contains(testAdministration)
-          .click();
-        cy.log('Selected administration:', testAdministration);
-      } else {
-        cy.log('Administration not found, retrying...');
-        selectAdministration(testAdministration, retries + 1);
-      }
-    });
+  if (!cy.contains(testAdministration, { timeout: 2 * Cypress.env('timeout') })) {
+    cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
+    cy.get('body', { timeout: 2 * Cypress.env('timeout') })
+      .invoke('text')
+      .then((text) => {
+        if (text.includes(testAdministration)) {
+          cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
+            .contains(testAdministration)
+            .click();
+          cy.log('Selected administration:', testAdministration);
+        } else {
+          cy.log('Administration not found, retrying...');
+          selectAdministration(testAdministration, retries + 1);
+        }
+      });
+  }
 });
 
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {

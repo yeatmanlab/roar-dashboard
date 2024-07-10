@@ -10,7 +10,20 @@ describe('ROAR - Sentence Play Through', () => {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playSRE();
+        playSRE({ auth: 'username' });
+      }
+    });
+  });
+});
+
+describe('ROAR - Sentence Play Through', () => {
+  it('Plays SRE', () => {
+    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
+      if (isCurrentVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+      } else {
+        cy.log(`Detected a new version of ${app}, running test.`);
+        playSRE({ auth: 'clever' });
       }
     });
   });

@@ -10,7 +10,20 @@ describe('ROAR - Written Vocabulary Play Through', () => {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playMorphology();
+        playMorphology({ auth: 'username' });
+      }
+    });
+  });
+});
+
+describe('ROAR - Written Vocabulary Play Through', () => {
+  it('Plays Written Vocabulary', () => {
+    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
+      if (isCurrentVersion) {
+        cy.log(`Did not detect a new version of ${app}, skipping test.`);
+      } else {
+        cy.log(`Detected a new version of ${app}, running test.`);
+        playMorphology({ auth: 'clever' });
       }
     });
   });
