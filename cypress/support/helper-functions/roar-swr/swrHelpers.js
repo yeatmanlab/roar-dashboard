@@ -10,11 +10,12 @@ export const playSWR = ({
   auth = 'username',
 } = {}) => {
   // Log in once at the beginning of the test case that calls playSWR
-  cy.visit('/', { timeout: 2 * timeout });
   if (auth === 'username') {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/', { timeout: 2 * timeout });
   }
   if (auth === 'clever') {
+    cy.visit('/', { timeout: 2 * timeout });
     signInWithClever();
   }
 

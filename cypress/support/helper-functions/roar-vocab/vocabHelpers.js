@@ -46,6 +46,7 @@ function startGame(administration, language, optional, auth) {
   cy.visit('/', { timeout: 2 * timeout });
   if (auth === 'username') {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/', { timeout: 2 * timeout });
   }
   if (auth === 'clever') {
     signInWithClever();

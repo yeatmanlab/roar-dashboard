@@ -134,6 +134,7 @@ export function playPA({
   }
   if (auth === 'username') {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/');
   }
 
   cy.selectAdministration(administration);
