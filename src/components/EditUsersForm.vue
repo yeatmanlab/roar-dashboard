@@ -107,36 +107,41 @@
   <div v-else-if="localUserType === 'admin'" class="form-container">
     <div class="form-column">
       <div class="form-field">
-        <label>First Name</label>
-        <PvInputText v-model="localUserData.name.first" />
+        <label :class="{ 'font-bold': !editMode }">First Name</label>
+        <div v-if="!editMode">{{ userData?.name?.first ?? 'None' }}</div>
+        <PvInputText v-else v-model="localUserData.name.first" />
       </div>
       <div class="form-field">
-        <label>Middle Name</label>
-        <PvInputText v-model="localUserData.name.middle" />
+        <label :class="{ 'font-bold': !editMode }">Middle Name</label>
+        <div v-if="!editMode">{{ userData?.name?.middle ?? 'None' }}</div>
+        <PvInputText v-else v-model="localUserData.name.middle" />
       </div>
       <div class="form-field">
-        <label>Last Name</label>
-        <PvInputText v-model="localUserData.name.last" />
+        <label :class="{ 'font-bold': !editMode }">Last Name</label>
+        <div v-if="!editMode">{{ userData?.name?.last ?? 'None' }}</div>
+        <PvInputText v-else v-model="localUserData.name.last" />
       </div>
 
       <div v-if="isSuperAdmin">
         <div>
-          <PvCheckbox v-model="localUserData.testData" binary />
+          <PvCheckbox :disabled="!editMode" v-model="localUserData.testData" binary />
           <label class="ml-2">Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
         </div>
         <div>
-          <PvCheckbox v-model="localUserData.demoData" binary />
+          <PvCheckbox :disabled="!editMode" v-model="localUserData.demoData" binary />
           <label class="ml-2">Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
         </div>
       </div>
     </div>
     <div class="form-column">
       <div class="form-field">
-        <label
+        <label :class="{ 'font-bold': !editMode }"
           >Date of Birth
-          <span class="optional">(optional)</span>
+          <span v-if="editMode" class="optional">(optional)</span>
         </label>
+        <div v-if="!editMode">{{ userData?.studentData?.dob ?? 'None' }}</div>
         <PvCalendar
+          v-else
           v-model="localUserData.studentData.dob"
           :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
         />
@@ -145,13 +150,20 @@
         >
       </div>
       <div class="form-field">
-        <label>Gender <span class="optional">(optional)</span></label>
-        <PvInputText v-model="localUserData.studentData.gender" />
+        <label :class="{ 'font-bold': !editMode }"
+          >Gender <span v-if="editMode" class="optional">(optional)</span></label
+        >
+        <div v-if="!editMode">{{ userData?.studentData?.grade ?? 'None' }}</div>
+        <PvInputText v-else v-model="localUserData.studentData.gender" />
       </div>
 
       <div class="form-field">
-        <label>English as a Second Language <span class="optional">(optional)</span></label>
+        <label :class="{ 'font-bold': !editMode }"
+          >English as a Second Language <span v-if="editMode" class="optional">(optional)</span></label
+        >
+        <div v-if="!editMode">{{ userData?.studentData?.ell_status ?? false }}</div>
         <PvDropdown
+          v-else
           v-model="localUserData.studentData.ell_status"
           option-label="label"
           option-value="value"
@@ -178,6 +190,10 @@ const props = defineProps({
   userType: {
     type: String,
     default: 'student',
+  },
+  editMode: {
+    type: Boolean,
+    default: false,
   },
 });
 

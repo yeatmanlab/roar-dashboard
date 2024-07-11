@@ -1,7 +1,12 @@
 <template>
   <section id="your-information" class="form-section">
     <h2>Your Information</h2>
-    <EditUsersForm :user-data="userData" v-model="userDataModel" @update:userData="localUserData = $event" />
+    <EditUsersForm
+      :user-data="userData"
+      v-model="userDataModel"
+      @update:userData="localUserData = $event"
+      :edit-mode="isEditMode"
+    />
     <div class="flex">
       <PvButton
         v-if="!isEditMode"
@@ -9,12 +14,18 @@
         label="Edit"
         class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
       />
-      <PvButton
-        v-else
-        @click="submitUserData"
-        label="Update"
-        class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
-      />
+      <div v-else class="ml-auto">
+        <PvButton
+          @click="submitUserData"
+          label="Update"
+          class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
+        />
+        <PvButton
+          @click="isEditMode = false"
+          label="Cancel"
+          class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-2"
+        />
+      </div>
     </div>
   </section>
 </template>
@@ -25,6 +36,7 @@ import { useToast } from 'primevue/usetoast';
 import { useQuery } from '@tanstack/vue-query';
 import { ref, onMounted } from 'vue';
 import EditUsersForm from '../EditUsersForm.vue';
+import { fetchDocById } from '@/helpers/query/utils';
 
 // +----------------+
 // | Initialization |
