@@ -70,10 +70,13 @@ export const getProjectId = (project = 'admin') => {
   return roarfirekit.value.roarConfig?.[project]?.projectId;
 };
 
-export const getAxiosInstance = (db = 'admin') => {
+export const getAxiosInstance = (db = 'admin', unauthenticated = false) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
+  if (unauthenticated) {
+    delete axiosOptions.headers;
+  }
   return axios.create(axiosOptions);
 };
 
@@ -93,7 +96,14 @@ export const exportCsv = (data, filename) => {
   document.body.removeChild(a);
 };
 
-export const fetchDocById = async (collection, docId, select, db = 'admin') => {
+export const fetchDocById = async (
+  collection,
+  docId,
+  select,
+  db = 'admin',
+  unauthenticated = false,
+  swallowErrors = false,
+) => {
   if (!collection || !docId) {
     console.warn(
       `fetchDocById: Collection or docId not provided. Called with collection "${collection}" and docId "${docId}"`,
@@ -101,7 +111,7 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
     return {};
   }
   const docPath = `/${collection}/${docId}`;
-  const axiosInstance = getAxiosInstance(db);
+  const axiosInstance = getAxiosInstance(db, unauthenticated);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
   const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
   return axiosInstance
@@ -114,7 +124,9 @@ export const fetchDocById = async (collection, docId, select, db = 'admin') => {
       };
     })
     .catch((error) => {
-      console.error(error);
+      if (!swallowErrors) {
+        console.error(error);
+      }
       return {
         data: `${error.code === '404' ? 'Document not found' : error.message}`,
       };

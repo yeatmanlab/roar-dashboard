@@ -338,7 +338,7 @@
               <div class="font-light">The filters applied have no matching results .</div>
               <PvButton
                 text
-                class="my-2 bg-primary border-none border-round text-white p-2 hover:bg-red-900"
+                class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900"
                 @click="resetFilters"
                 >Reset Filters</PvButton
               >
@@ -403,6 +403,10 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   lazy: { type: Boolean, default: false },
   lazyPreSorting: { type: Array, required: false, default: () => [] },
+  isInsideListOrgs: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const inputColumns = ref(props.columns);

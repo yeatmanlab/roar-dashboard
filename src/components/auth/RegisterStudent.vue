@@ -2,7 +2,7 @@
   <div class="card">
     <form class="p-fluid">
       <div v-for="(student, outerIndex) in state.students" :key="outerIndex" class="student-form-border">
-        <!-- <section class="form-section">
+        <section v-if="!student.orgName" class="form-section">
           <div class="p-input-icon-right">
             <div class="flex justify-content-between">
               <label for="activationCode">Activation code <span class="required">*</span></label>
@@ -16,16 +16,22 @@
                 <label for="noActivationCode" class="ml-2">I don't have code</label>
               </div>
             </div>
-            <PvInputText
-              v-if="!student.noActivationCode"
-              v-model="student.activationCode"
-              name="noActivationCode"
-              :class="{
-                'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
-              }"
-              aria-describedby="activation-code-error"
-              :disabled="student.noActivationCode"
-            />
+            <PvInputGroup v-if="!student.noActivationCode">
+              <PvInputText
+                v-model="student.activationCode"
+                name="noActivationCode"
+                :class="{
+                  'p-invalid': v$.students.$each.$response.$data[outerIndex].activationCode.$invalid && submitted,
+                }"
+                aria-describedby="activation-code-error"
+                :disabled="student.noActivationCode"
+              />
+              <PvButton
+                @click="validateCode(student.activationCode, outerIndex)"
+                class="w-4 bg-primary text-white hover:bg-red-900"
+                label="Validate Code"
+              />
+            </PvInputGroup>
           </div>
           <span
             v-if="
@@ -41,7 +47,18 @@
               <small class="p-error">{{ error.$message.replace('Value', 'Activation Code') }}</small>
             </span>
           </span>
-        </section> -->
+        </section>
+        <section v-else>
+          <h2 class="text-primary font-bold">You are registering for:</h2>
+          <div class="flex">
+            <h2 class="text-primary h-3 m-0 p-0" style="width: 70%">{{ student.orgName }}</h2>
+            <PvButton
+              @click="codeNotRight(outerIndex)"
+              class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
+              label="Is this not right?"
+            />
+          </div>
+        </section>
         <section class="form-section">
           <div class="p-input-icon-right">
             <label for="studentUsername">Student Username <span class="required">*</span></label>
@@ -274,8 +291,8 @@
         </PvAccordion>
         <section class="form-section-button">
           <PvButton
-            v-if="index !== 0"
-            class="text-primary border-300 border-round p-2 h-3rem hover:bg-primary hover:text-white"
+            v-if="outerIndex !== 0"
+            class="bg-primary border-none border-round p-3 text-white hover:surface-300 hover:text-black-alpha-90"
             @click="deleteStudentForm(outerIndex)"
           >
             Delete Student
@@ -285,7 +302,7 @@
     </form>
     <div class="form-section-button2">
       <PvButton
-        class="bg-primary text-white border-none border-round p-2 h-3rem hover:bg-red-900"
+        class="bg-primary border-none border-round text-white p-3 hover:surface-300 hover:text-black-alpha-90"
         @click="addStudent()"
       >
         Add another student
@@ -295,41 +312,50 @@
       <PvButton
         type="submit"
         label="Submit"
-        class="bg-primary text-white border-none border-round w-4 p-2 h-3rem hover:bg-red-900 mr-3"
+        class="bg-primary text-white border-none border-round w-4 p-2 h-3rem mr-3 hover:surface-300 hover:text-black-alpha-90"
         @click.prevent="handleFormSubmit(!v$.$invalid)"
       />
       <PvDialog
         v-model:visible="isDialogVisible"
         header="Error!"
         :style="{ width: '25rem' }"
-        :position="position"
         :modal="true"
         :draggable="false"
       >
         <p>{{ dialogMessage }}</p>
-        <PvButton @click="closeErrorDialog">Close</PvButton>
+        <PvButton
+          @click="closeErrorDialog"
+          class="bg-primary text-white border-none border-round p-2 h-3rem mr-3 hover:surface-300 hover:text-black-alpha-90"
+          >Close</PvButton
+        >
       </PvDialog>
     </section>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { reactive, ref, onMounted, toRaw } from 'vue';
 import { required, minLength, helpers } from '@vuelidate/validators';
+import { fetchDocById } from '@/helpers/query/utils';
 import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import _capitalize from 'lodash/capitalize';
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const dialogMessage = ref('');
 
 const today = new Date();
 today.setFullYear(today.getFullYear() - 2);
 const maxDoB = ref(today);
+const orgName = ref('');
+const activationCodeRef = ref('');
+const errors = ref('');
 
-defineProps({
+const props = defineProps({
   isRegistering: { type: Boolean, default: true },
+  code: { type: String },
 });
 
 const isDialogVisible = ref(false);
@@ -343,14 +369,14 @@ const closeErrorDialog = () => {
   isDialogVisible.value = false;
 };
 
-// const noActivationCodeRef = ref(false);
+const noActivationCodeRef = ref(false);
 const yearOnlyCheckRef = ref(false);
 
 const emit = defineEmits(['submit']);
 const state = reactive({
   students: [
     {
-      // activationCode: '',
+      activationCode: activationCodeRef.value,
       studentUsername: '',
       password: '',
       confirmPassword: '',
@@ -366,8 +392,9 @@ const state = reactive({
       race: [],
       hispanicEthnicity: '',
       homeLanguage: [],
-      // noActivationCode: noActivationCodeRef.value,
+      noActivationCode: noActivationCodeRef.value,
       yearOnlyCheck: yearOnlyCheckRef.value,
+      orgName: '',
     },
   ],
 });
@@ -375,7 +402,7 @@ const state = reactive({
 const rules = {
   students: {
     $each: helpers.forEach({
-      // activationCode: { required },
+      activationCode: {},
       studentUsername: { required },
       password: { required, minLength: minLength(6) },
       confirmPassword: { required },
@@ -391,15 +418,16 @@ const rules = {
       race: {},
       hispanicEthnicity: {},
       homeLanguage: {},
-      // noActivationCode: {},
+      noActivationCode: {},
       yearOnlyCheck: {},
+      orgName: {},
     }),
   },
 };
 
 function addStudent() {
   state.students.push({
-    // activationCode: '',
+    activationCode: '',
     studentUsername: '',
     password: '',
     confirmPassword: '',
@@ -415,20 +443,34 @@ function addStudent() {
     race: [],
     hispanicEthnicity: '',
     homeLanguage: [],
-    // noActivationCode: noActivationCodeRef.value,
+    noActivationCode: noActivationCodeRef.value,
     yearOnlyCheck: yearOnlyCheckRef.value,
+    orgName: '',
+  });
+  if (props.code) {
+    validateCode(props.code, state.students.length - 1);
+  }
+}
+
+onMounted(async () => {
+  if (props.code) {
+    validateCode(props.code);
+  }
+});
+
+function updateActivationCode() {
+  toRaw(state).students.forEach((student) => {
+    if (student.noActivationCode) {
+      student.activationCode = null;
+      student.orgName = 'ROAR families';
+    }
   });
 }
 
-// function updateActivationCode() {
-//   state.students.forEach((student) => {
-//     if (student.noActivationCode) {
-//       student.activationCode = 'noActivationCode';
-//     } else {
-//       student.activationCode = '';
-//     }
-//   });
-// }
+function codeNotRight(index) {
+  state.students[index].orgName = '';
+  state.students[index].noActivationCode = false;
+}
 
 function deleteStudentForm(student) {
   if (state.students.length > 1) {
@@ -439,7 +481,7 @@ function deleteStudentForm(student) {
   }
 }
 function isPasswordMismatch(index) {
-  return state.students[index]?.password !== state.students[index]?.confirmPassword;
+  return state.students[index].password !== state.students[index]?.confirmPassword;
 }
 
 const v$ = useVuelidate(rules, state);
@@ -454,10 +496,27 @@ const handleFormSubmit = async (isFormValid) => {
     return;
   }
 
+  const validationPromises = toRaw(state).students.map(async (student, index) => {
+    const isCodeValid = await validateCode(student.activationCode, index);
+    if (!isCodeValid && isCodeValid) {
+      if (student.noActivationCode) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const validationResults = await Promise.all(validationPromises);
+
+  if (validationResults.includes(false)) {
+    submitted.value = false;
+    return;
+  }
+
   if (await validateRoarUsername()) {
     // format username as an email
     if (isFormValid) {
-      const computedStudents = state.students.map((student) => {
+      const computedStudents = toRaw(state).students.map((student) => {
         const { studentUsername, ...studentData } = student;
         return {
           studentUsername: `${studentUsername}@roar-auth.com`,
@@ -469,7 +528,34 @@ const handleFormSubmit = async (isFormValid) => {
   }
 };
 
-// const yearOnlyCheck = ref(false);
+const validateCode = async (studentCode, outerIndex = 0) => {
+  if (studentCode && studentCode !== '') {
+    const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true).catch(
+      (error) => {
+        errors.value = error;
+        dialogMessage.value =
+          'The code does not belong to any organization \n Please enter a valid code or select: \n "I don`t have code "';
+        showErrorDialog();
+        submitted.value = false;
+        return null;
+      },
+    );
+    if (activationCode.orgId && errors.value === '') {
+      state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
+        activationCode.orgName ?? activationCode.orgId
+      }`;
+      state.students[outerIndex].activationCode = studentCode;
+      orgName.value = `${_capitalize(activationCode.orgType)} - ${activationCode.orgName ?? activationCode.orgId}`;
+    } else {
+      errors.value = '';
+      if (!state.students[outerIndex].noActivationCode || props.code) {
+        dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have code"`;
+        showErrorDialog();
+      }
+      return false;
+    }
+  }
+};
 
 const searchRaces = (event) => {
   const query = event.query.toLowerCase();
@@ -528,6 +614,7 @@ const races = [
   'asian',
   'black or african American',
   'native hawaiian or other pacific islander',
+  'hispanic or latino',
   'white',
 ];
 
