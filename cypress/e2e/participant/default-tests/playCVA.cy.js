@@ -14,9 +14,6 @@ describe('ROAR - Written Vocabulary Playthrough', () => {
       }
     });
   });
-});
-
-describe('ROAR - Written Vocabulary Playthrough', () => {
   it('Plays CVA with Clever auth', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (!isCurrentVersion) {

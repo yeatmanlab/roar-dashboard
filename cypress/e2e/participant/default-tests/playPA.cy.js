@@ -3,8 +3,8 @@ import { isCurrentVersion } from '../../../support/utils';
 
 const app = '@bdelab/roar-pa';
 
-describe('Testing playthrough of ROAR-Phoneme as a participant using username authentication', () => {
-  it(`ROAR-Phoneme Playthrough Test`, () => {
+describe('Testing playthrough of ROAR-Phoneme as a participant', () => {
+  it(`ROAR-Phoneme Playthrough Test with username auth`, () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
@@ -14,10 +14,7 @@ describe('Testing playthrough of ROAR-Phoneme as a participant using username au
       }
     });
   });
-});
-
-describe('Testing playthrough of ROAR-Phoneme as a participant using Clever authentication', () => {
-  it(`ROAR-Phoneme Playthrough Test`, () => {
+  it(`ROAR-Phoneme Playthrough Test with Clever auth`, () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);

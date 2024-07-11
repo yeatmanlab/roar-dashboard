@@ -4,17 +4,17 @@ export function signInWithClever() {
   cy.wait(0.2 * timeout);
   cy.get('button', { timeout: timeout }).contains('Clever').click();
 
-  cy.origin('https://clever.com/oauth/authorize', () => {
+  cy.origin(Cypress.env('cleverOAuthLink'), () => {
     cy.get('input[title="School name"]', { timeout: 60000 })
-      .type('61e8aee84cf0e71b14295d45')
+      .type(Cypress.env('cleverSchoolName'))
       .wait(1000)
       .type('{enter}');
 
     // Find the username input field and input the username
-    cy.get('input#username').type('27988125011');
+    cy.get('input#username').type(Cypress.env('cleverUsername'));
 
     // Input password
-    cy.get('input#password').type('.EWKYDvAGNdGm!@g8a_E');
+    cy.get('input#password').type(Cypress.env('cleverPassword'));
 
     // Click the login button
     cy.get('button#UsernamePasswordForm--loginButton').click();

@@ -211,6 +211,7 @@ export function playFluencyCALF({
     signInWithClever();
   } else if (auth === 'username') {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/');
   }
 
   cy.selectAdministration(administration);

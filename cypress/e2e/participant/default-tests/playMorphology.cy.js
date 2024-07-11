@@ -4,7 +4,7 @@ import { isCurrentVersion } from '../../../support/utils';
 const app = '@bdelab/roar-multichoice';
 
 describe('ROAR - Written Vocabulary Play Through', () => {
-  it('Plays Written Vocabulary', () => {
+  it('Plays Written Vocabulary with username/password auth', () => {
     cy.wrap(!isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
@@ -14,10 +14,7 @@ describe('ROAR - Written Vocabulary Play Through', () => {
       }
     });
   });
-});
-
-describe('ROAR - Written Vocabulary Play Through', () => {
-  it('Plays Written Vocabulary', () => {
+  it('Plays Written Vocabulary with Clever auth', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);

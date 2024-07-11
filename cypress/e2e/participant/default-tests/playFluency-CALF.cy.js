@@ -14,10 +14,7 @@ describe('Test playthrough of Fluency as a participant using username authentica
       }
     });
   });
-});
-
-describe('Test playthrough of Fluency as a participant using Clever authentication', () => {
-  it('Fluency Playthrough Test', () => {
+  it('Fluency Playthrough Test using Clever authentication', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);

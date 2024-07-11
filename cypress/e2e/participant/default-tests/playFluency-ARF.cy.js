@@ -3,8 +3,8 @@ import { isCurrentVersion } from '../../../support/utils';
 
 const app = '@bdelab/roam-fluency';
 
-describe('Test playthrough of Fluency as a participant with username/password authentication', () => {
-  it('Fluency Playthrough Test', () => {
+describe('Test playthrough of Fluency as a participant', () => {
+  it('Fluency Playthrough Test with username/password authentication', () => {
     cy.wrap(!isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
@@ -14,10 +14,7 @@ describe('Test playthrough of Fluency as a participant with username/password au
       }
     });
   });
-});
-
-describe('Test playthrough of Fluency as a participant using Clever authentication', () => {
-  it('Fluency Playthrough Test', () => {
+  it('Fluency Playthrough Test with Clever authentication', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
