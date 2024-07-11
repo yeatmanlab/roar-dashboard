@@ -12,7 +12,7 @@ export const playSRE = ({
   Cypress.on('uncaught:exception', () => {
     return false;
   });
-
+  cy.visit('/', { timeout: 2 * timeout });
   if (auth === 'username') {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
   }

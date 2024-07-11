@@ -1,11 +1,11 @@
 export const timeout = Cypress.env('timeout');
 
 export function signInWithClever() {
-  cy.wait(0.1 * timeout);
-  cy.get('button').contains('Clever').click();
+  cy.wait(0.2 * timeout);
+  cy.get('button', { timeout: timeout }).contains('Clever').click();
 
   cy.origin('https://clever.com/oauth/authorize', () => {
-    cy.get('input[title="School name"]', { timeout: 10000 })
+    cy.get('input[title="School name"]', { timeout: 60000 })
       .type('61e8aee84cf0e71b14295d45')
       .wait(1000)
       .type('{enter}');

@@ -46,6 +46,7 @@ function startGame(administration, language, optional, task, auth) {
   if (auth === 'clever') {
     signInWithClever();
   }
+  cy.visit('/', { timeout: 2 * timeout });
   cy.selectAdministration(administration);
 
   if (optional) {

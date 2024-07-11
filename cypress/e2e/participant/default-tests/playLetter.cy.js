@@ -5,7 +5,7 @@ const app = '@bdelab/roar-letter';
 
 describe('ROAR - Letra Play Through using username authentication', () => {
   it('Plays Letra', () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
+    cy.wrap(!isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {

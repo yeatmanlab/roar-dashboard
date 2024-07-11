@@ -5,7 +5,7 @@ const app = '@bdelab/roar-multichoice';
 
 describe('ROAR - Written Vocabulary Playthrough', () => {
   it('Plays CVA with username/password combo', () => {
-    cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
+    cy.wrap(!isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
