@@ -80,7 +80,7 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, toHandlers } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 
@@ -114,14 +114,24 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-// +---
-// |
-// +---
+// +-----------------------+
+// | Linking and Unlinking |
+// +-----------------------+
 const linkAccount = async (providerId) => {
   console.log(`Linking account with ${providerId}`);
+  await roarfirekit.value
+    .linkAuthProviderWithPopup(providerId)
+    .then(() => {
+      return roarfirekit.value.forceIdTokenRefresh();
+    })
+    .catch((error) => {
+      console.log('caught error', error);
+      return roarfirekit.value.forceIdTokenRefresh();
+    });
 };
 const unlinkAccount = async (providerId) => {
   console.log(`Unlinking account with ${providerId}`);
+  roarfirekit.value.unlinkAuthProvider(providerId);
 };
 </script>
 <style scoped>
