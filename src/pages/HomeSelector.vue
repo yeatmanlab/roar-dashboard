@@ -175,10 +175,10 @@ watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
     authStore.userData = newUserData;
     authStore.userClaims = newUserClaims;
 
-    const userType = toRaw(newUserData)?.userType?.toLowerCase();
-    if (userType === 'parent' || userType === 'teacher') {
-      router.push({ name: 'Survey' });
-    }
+    // const userType = toRaw(newUserData)?.userType?.toLowerCase();
+    // if (userType === 'parent' || userType === 'teacher') {
+    //   router.push({ name: 'Survey' });
+    // }
   }
 });
 
