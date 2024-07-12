@@ -133,13 +133,13 @@ async function createConsent() {
 
   let tries = 0;
 
-  while (tries < 30) {
+  while (tries < 60) {
     docStatus.value = await authStore.getAdobeSignAgreementStatus(agreementId.value);
     if (docStatus.value !== 'SIGNED') {
       tries += 1;
       await new Promise((resolve) => setTimeout(resolve, 5000));
     } else {
-      tries = 30;
+      tries = 60;
     }
   }
 
