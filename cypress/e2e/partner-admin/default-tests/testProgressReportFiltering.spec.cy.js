@@ -34,6 +34,7 @@ function setFilterBySchool(school) {
 function setFilterByGrade(grade) {
   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
+  cy.get('body').type('{esc}');
   cy.wait(0.05 * timeout);
 }
 
@@ -41,6 +42,7 @@ function setFilterByProgressCategory(header, category) {
   cy.contains('div.p-column-header-content', header).find('button').click();
   cy.get('[data-cy="progress-filter-dropdown"]', { timeout: timeout }).click();
   cy.get('ul>li').find('.p-tag-value', { timeout: timeout }).contains(category).click();
+  // Click off the dropdown to prevent it from hiding other elements
   cy.get('button').contains('Apply').click();
   cy.wait(0.05 * timeout);
 }
