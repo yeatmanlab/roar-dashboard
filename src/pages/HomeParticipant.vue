@@ -206,7 +206,7 @@ async function checkConsent() {
   const isSeniorGrade = grade >= 12;
   const isOlder = isAdult.value || isSeniorGrade;
 
-  if (!legal?.consent && !isLevante && !legal?.isAdobeSign) {
+  if (isLevante) {
     return;
   } else {
     if (legal?.consent === 'no consent') {
@@ -214,10 +214,17 @@ async function checkConsent() {
     }
   }
 
+  let docType;
+
   let docTypeKey = isOlder ? 'consent' : 'assent';
-  let docType = legal[docTypeKey][0]?.type.toLowerCase();
-  let docAmount = legal?.amount;
-  let docExpectedTime = legal?.expectedTime;
+  let docAmount = legal?.amount || '';
+  let docExpectedTime = legal?.expectedTime || '';
+
+  if (legal?.consent) {
+    docType = legal[docTypeKey][0]?.type.toLowerCase();
+  } else {
+    docType = isAdult ? 'consent' : 'assent';
+  }
 
   consentType.value = docType;
 
