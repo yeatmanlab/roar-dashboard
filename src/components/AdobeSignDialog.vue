@@ -47,9 +47,20 @@
             </h3>
             <h3>Alternatively, you can click the link below to go directly to the signing page:</h3>
             <h4>
-              Sign the {{ isAdult ? 'consent' : 'assent' }} form now
+              Sign the {{ isAdult ? 'Consent' : 'Assent' }} form now
               <a :href="adobeUrl" target="blank"> Link to document </a>
             </h4>
+          </div>
+        </div>
+      </div>
+      <div v-if="!hasSigningUrl && docCreated">
+        <div class="flex flex-row">
+          <div class="justify-content-center flex">
+            <img src="../assets/loadinglion.webp" style="width: 40vh; padding: 0px" />
+          </div>
+          <div class="flex flex-column justify-content-center p-5">
+            <h3>We are creating your agreement document.</h3>
+            <h4>Please wait a few seconds</h4>
           </div>
         </div>
       </div>
