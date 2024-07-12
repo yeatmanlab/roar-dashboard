@@ -78,11 +78,29 @@
       </button>
     </div>
   </div>
+  <div>
+    <h2 style="margin-top: 3.5rem">Delete Password</h2>
+    <span
+      >You have the option to remove your password if you want to exclusively use an SSO option listed above. You must
+      have <span class="font-bold"> at least one</span> other login method linked to delete your password.</span
+    >
+    <div class="flex justify-content-end">
+      <button
+        @click="deletePassword"
+        :disabled="!canDeletePassword"
+        class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400"
+      >
+        Delete Password
+      </button>
+    </div>
+  </div>
+  <PvConfirmDialog />
 </template>
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
 import { storeToRefs } from 'pinia';
 
 // +----------------+
@@ -162,6 +180,45 @@ const linkAccount = async (providerId) => {
 const unlinkAccount = async (providerId) => {
   console.log(`Unlinking account with ${providerId}`);
   roarfirekit.value.unlinkAuthProvider(providerId);
+};
+
+// +-----------------+
+// | Delete Password |
+// +-----------------+
+const confirm = useConfirm();
+const canDeletePassword = computed(() => {
+  // Users can not delete their passwords until I overload the unlinkAuthProvider method.
+  return false;
+  // return providerIds.value.includes('password') && providerIds.value.length > 1;
+});
+const deletePassword = async () => {
+  confirm.require({
+    message: 'Once deleted, you will need to use an SSO option to access your account!',
+    header: 'Delete Password',
+    icon: 'pi pi-exclamation-triangle',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    rejectLabel: 'Cancel',
+    acceptLabel: 'Delete',
+    accept: async () => {
+      await unlinkAccount('password')
+        .then(() => {
+          toast.add({
+            severity: 'success',
+            summary: 'Password Deleted',
+            detail: 'Password authentication has been removed from your account.',
+            life: 3000,
+          });
+        })
+        .catch((error) => {
+          toast.add({
+            severity: 'error',
+            summary: 'Error occurred',
+            detail: 'An unexpected error occurred while deleting your password.',
+            life: 3000,
+          });
+        });
+    },
+  });
 };
 </script>
 <style scoped>
