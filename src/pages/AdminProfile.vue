@@ -7,7 +7,9 @@
           <div class="sidebar-button"><i class="pi pi-user" /><span>Your Info</span></div></router-link
         >
         <router-link to="/profile/password"
-          ><div class="sidebar-button"><i class="pi pi-key" /><span>Change Password</span></div></router-link
+          ><div class="sidebar-button">
+            <i class="pi pi-key" /><span v-if="hasPassword">Change Password</span><span v-else>Add Password</span>
+          </div></router-link
         >
         <router-link to="/profile/accounts"
           ><div class="sidebar-button"><i class="pi pi-users" /><span>Link Accounts</span></div></router-link
@@ -43,8 +45,42 @@
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
 const sidebarOpen = ref(true);
+
+const providerIds = computed(() => {
+  const providerData = roarfirekit.value?.admin?.user?.providerData;
+  return providerData.map((provider) => {
+    return provider.providerId;
+  });
+});
+
+const hasPassword = computed(() => {
+  return providerIds.value.includes('password');
+});
+
+// +-------------------------+
+// | Firekit Inititalization |
+// +-------------------------+
+const initialized = ref(false);
+let unsubscribe;
+const init = () => {
+  if (unsubscribe) unsubscribe();
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
+});
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+});
 </script>
 <style lang="scss" scoped>
 .sidebar-container {

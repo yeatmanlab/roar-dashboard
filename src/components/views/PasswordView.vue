@@ -1,5 +1,6 @@
 <template>
-  <h2>Change Your Password</h2>
+  <h2 v-if="hasPassword">Change Your Password</h2>
+  <h2 v-else>Add a Password</h2>
   <div class="flex flex-column">
     <label>New password</label>
     <PvInputText v-model="v$.password.$model" :class="{ 'p-invalid': v$.password.$invalid && submitted }" />
@@ -16,7 +17,7 @@
   <div class="flex mt-3">
     <PvButton
       @click="updatePassword"
-      label="Update Password"
+      :label="hasPassword ? 'Update Password' : 'Submit Password'"
       class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
     />
   </div>
@@ -55,6 +56,17 @@ const submitted = ref(false);
 const authStore = useAuthStore();
 const toast = useToast();
 const { roarfirekit, uid } = storeToRefs(authStore);
+
+const providerIds = computed(() => {
+  const providerData = roarfirekit.value?.admin?.user?.providerData;
+  return providerData.map((provider) => {
+    return provider.providerId;
+  });
+});
+
+const hasPassword = computed(() => {
+  return providerIds.value.includes('password');
+});
 
 async function updatePassword() {
   submitted.value = true;
