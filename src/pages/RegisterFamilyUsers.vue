@@ -17,7 +17,7 @@
         </div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" @submit="handleSubmit($event)" />
+            <component :is="activeComp()" :is-adobe-sign="isAdobeSign" @submit="handleSubmit($event)" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -72,6 +72,10 @@ const { roarfirekit, uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const spinner = ref(false);
 let unsubscribe;
+
+const props = defineProps({
+  isAdobeSign: { type: Boolean, default: false },
+});
 
 const init = () => {
   if (unsubscribe) unsubscribe();

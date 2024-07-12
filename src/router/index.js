@@ -209,6 +209,7 @@ const routes = [
         name: 'Register',
         path: '',
         component: () => import('../components/auth/RegisterParent.vue'),
+        props: { isAdobeSign: false },
       },
       {
         name: 'registerStudent',
@@ -216,6 +217,25 @@ const routes = [
         component: () => import('../components/auth/RegisterStudent.vue'),
       },
     ],
+    meta: { requiresGuest: true },
+  },
+  {
+    path: '/register-clinic',
+    name: 'RegisterClinic',
+    component: () => import('../pages/RegisterFamilyUsers.vue'),
+    children: [
+      {
+        name: 'RegisterClinic',
+        path: '',
+        component: () => import('../components/auth/RegisterParent.vue'),
+      },
+      {
+        name: 'registerStudent',
+        path: 'student',
+        component: () => import('../components/auth/RegisterStudent.vue'),
+      },
+    ],
+    props: { isAdobeSign: true },
     meta: { requiresGuest: true },
   },
   {
@@ -417,6 +437,7 @@ router.beforeEach(async (to, from, next) => {
     'AuthEmailLink',
     'AuthEmailSent',
     'Register',
+    'RegisterClinic',
   ];
 
   const inMaintenanceMode = false;
