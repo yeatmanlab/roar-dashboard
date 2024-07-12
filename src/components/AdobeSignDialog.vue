@@ -107,7 +107,13 @@ const toast = useToast();
 const props = defineProps({
   isAdobe: { type: Boolean, required: true, default: false },
   isAdult: { type: Boolean, required: true, default: false },
+  parentEmail: { type: String, required: false },
 });
+
+if (props.parentEmail) {
+  signerEmail.value = props.parentEmail;
+  createConsent();
+}
 
 isVisible.value = props.isAdobe;
 

@@ -134,7 +134,12 @@
         @accepted="handleConsentAccept"
       />
       <div v-if="isAdobe">
-        <AdobeSignDialog :is-adobe="isAdobe" :is-adult="true" @consent-signed="updateAdobe" />
+        <AdobeSignDialog
+          :is-adobe="isAdobe"
+          :is-adult="true"
+          :parent-email="state.ParentEmail"
+          @consent-signed="updateAdobe"
+        />
       </div>
       <div class="form-submit2">
         <PvButton
