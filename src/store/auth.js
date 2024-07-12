@@ -24,6 +24,7 @@ export const useAuthStore = () => {
         userClaims: null,
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
+        routeToProfile: false,
         authFromClever: false,
         authFromClassLink: false,
         userQueryKeyIndex: 0,

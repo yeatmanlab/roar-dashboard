@@ -25,6 +25,15 @@
           </h4>
           <div class="flex">
             <PvButton
+              label="Test Open Modal"
+              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem"
+              @click="warningModalOpen = true"
+            >
+              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
+              <span>Test Open Modal</span>
+            </PvButton>
+            <PvButton
               label="Sign in with Google"
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem"
@@ -66,6 +75,29 @@
       </footer>
     </section>
   </div>
+  <RoarModal
+    :is-enabled="warningModalOpen"
+    title="Email is already associated with an account"
+    subtitle=""
+    icon="pi-exclamation-triangle"
+    small
+    @modal-closed="handleWarningModalClose"
+  >
+    <template #default>
+      This email is already associated with an account on this platform. Please login using your existing credentials,
+      then you will be able to add this login method to your account.
+    </template>
+    <template #footer>
+      <PvButton
+        tabindex="0"
+        class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+        text
+        label="Back to Sign In"
+        outlined
+        @click="handleWarningModalClose"
+      ></PvButton>
+    </template>
+  </RoarModal>
 </template>
 
 <script setup>
@@ -77,13 +109,15 @@ import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { fetchDocById } from '../helpers/query/utils';
+import RoarModal from '../components/modals/RoarModal.vue';
 
 const incorrect = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { spinner, authFromClever, authFromClassLink } = storeToRefs(authStore);
+const { spinner, authFromClever, authFromClassLink, routeToProfile } = storeToRefs(authStore);
+const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
@@ -101,6 +135,8 @@ authStore.$subscribe(() => {
       router.push({ name: 'CleverLanding' });
     } else if (authFromClassLink.value) {
       router.push({ name: 'ClassLinkLanding' });
+    } else if (routeToProfile.value) {
+      router.push({ path: '/profile/accounts' });
     } else {
       router.push({ name: 'Home' });
     }
@@ -123,8 +159,15 @@ const authWithGoogle = () => {
         }
       })
       .catch((e) => {
-        console.log('caught error', e);
-        spinner.value = false;
+        const errorCode = e.code;
+        if (errorCode === 'auth/email-already-in-use') {
+          // User tried to register with an email that is already linked to a firebase account.
+          warningModalOpen.value = true;
+          spinner.value = false;
+        } else {
+          console.log('caught error', e);
+          spinner.value = false;
+        }
       });
 
     spinner.value = true;
@@ -190,6 +233,11 @@ const authWithEmail = (state) => {
         }
       });
   }
+};
+
+const handleWarningModalClose = () => {
+  authStore.routeToProfile = true;
+  warningModalOpen.value = false;
 };
 
 onMounted(() => {
