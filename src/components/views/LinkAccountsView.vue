@@ -80,8 +80,9 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted, computed, toHandlers } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
 
 // +----------------+
@@ -89,6 +90,7 @@ import { storeToRefs } from 'pinia';
 // +----------------+
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+const toast = useToast();
 const providerIds = computed(() => {
   const providerData = roarfirekit.value?.admin?.user?.providerData;
   return providerData.map((provider) => {
@@ -125,7 +127,35 @@ const linkAccount = async (providerId) => {
       return roarfirekit.value.forceIdTokenRefresh();
     })
     .catch((error) => {
-      console.log('caught error', error);
+      const errorCode = error.code;
+      if (errorCode === 'auth/provider-already-linked') {
+        // This user already has credentials for this provider
+        toast.add({
+          severity: 'error',
+          summary: 'Account already linked',
+          detail: 'This account is already associated with that provider.',
+          life: 3000,
+        });
+      } else if (errorCode === 'auth/auth/credential-already-in-use') {
+        // This credential is already linked with another account
+        toast.add({
+          severity: 'error',
+          summary: 'Email already in use',
+          detail: 'The login you provided is already associated with an existing account.',
+          life: 3000,
+        });
+      } else if (errorCode === 18) {
+        // Error code for known cross-origin popup issue. Ignore.
+        console.log('Cross-origin popup error ignored.');
+      } else {
+        // Oops! Error occured.
+        toast.add({
+          severity: 'error',
+          summary: 'Error occurred',
+          detail: 'An unexpected error occurred while linking this account.',
+          life: 3000,
+        });
+      }
       return roarfirekit.value.forceIdTokenRefresh();
     });
 };
