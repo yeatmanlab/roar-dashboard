@@ -39,6 +39,11 @@
     <div class="flex flex-column w-full my-2 gap-2">
       <div class="card p-fluid bg-gray-100 p-3">
         <div class="text-lg font-normal text-gray-500 uppercase mb-2">Assigned Conditions</div>
+        <div v-if="assignedConditions.length > 0" class="flex flex-row flex-wrap justify-content-around align-content-center w-full font-semibold uppercase pr-6">
+          <p>Field</p>
+          <p>Condition</p>
+          <p>Value</p>
+        </div>
         <div
           v-if="assignedConditions.length == 0"
           class="flex flex-column align-items-center justify-content-center py-2 gap-2"
@@ -53,36 +58,29 @@
 
         <div v-for="(condtion, index) in assignedConditions" :key="index">
             <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
-              <!-- <PvInputText v-model="param.name" placeholder="Name" /> -->
                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <label v-if="index === 0" for="Field" class="text-md font-semibold uppercase">Field</label>
+                <!-- <label v-if="index === 0" for="Field" class="text-md font-semibold uppercase">Field</label> -->
                 <PvDropdown v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <label v-if="index === 0" for="Condition" class="text-md font-semibold uppercase">Condition</label>
+                <!-- <label v-if="index === 0" for="Condition" class="text-md font-semibold uppercase">Condition</label> -->
                 <PvDropdown v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <label v-if="index === 0" for="Value" class="text-md font-semibold uppercase">Value</label>
+                <!-- <label v-if="index === 0" for="Value" class="text-md font-semibold uppercase">Value</label> -->
                 <PvDropdown v-model="condtion.value" :options="optionsForField(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
               </div>
 
-
-                <PvButton
-                  icon="pi pi-trash"
-                  text
-                  class="bg-primary text-white w-2 border-round border-none hover:bg-red-900"
-                  @click="removeCondtion(assignedConditions, index)"
-                />
-
+              <PvButton
+                icon="pi pi-trash"
+                text
+                class="bg-primary text-white w-2 border-round border-none hover:bg-red-900"
+                @click="removeCondition(assignedConditions, index)"
+              />
             </div>
         </div>
-
-
-
-
 
         <div class="flex flex-row-reverse justify-content-between align-items-center">
           <div class="mt-2 flex">
@@ -97,10 +95,16 @@
         </div>
       </div>
       <!-- OPTIONAL CONDITIONS -->
-    <div v-if="!isLevante">
+      <!-- v-if="!isLevante" -->
+    <div >
       <div class="mt-2 flex flex-column gap-2">
         <div class="card p-fluid bg-gray-100 p-3">
           <div class="text-lg font-normal text-gray-500 uppercase mb-2">Optional Conditions</div>
+          <div v-if="optionalConditions.length > 0" class="flex flex-row flex-wrap justify-content-around align-content-center w-full font-semibold uppercase pr-6">
+            <p>Field</p>
+            <p>Condition</p>
+            <p>Value</p>
+          </div>
           <div
             v-if="optionalConditions.length == 0"
             class="flex flex-column align-items-center justify-content-center py-2 gap-2"
@@ -115,71 +119,31 @@
               administration.
             </div>
           </div>
-          <PvDataTable
-            v-if="optionalConditions.length > 0"
-            v-model:editingRows="optionalEditingRows"
-            :value="optionalConditions"
-            edit-mode="row"
-            data-key="id"
-            :pt="{
-              table: { style: 'min-width: 50rem' },
-              column: {
-                bodycell: ({ state }) => ({
-                  style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem',
-                }),
-              },
-            }"
-            @row-edit-save="onOptionalRowEditSave"
-          >
-            <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
-              <template #editor="{ data, field }">
-                <PvDropdown
-                  v-model="data[field]"
-                  :options="fieldExamples"
-                  option-label="label"
-                  option-value="value"
-                  editable
-                  placeholder="Type or choose field"
-                  data-cy="dropdown-optional-field"
-                >
-                </PvDropdown>
-              </template>
-            </PvColumn>
-            <PvColumn field="op" header="Condition" style="width: 5%" body-style="text-align:center">
-              <template #editor="{ data, field }">
-                <PvDropdown
-                  v-model="data[field]"
-                  :options="conditions"
-                  option-label="label"
-                  option-value="value"
-                  placeholder="Select Condition"
-                  data-cy="dropdown-optional-condition"
-                >
-                  <template #option="slotProps">
-                    <PvTag :value="slotProps.option.label" severity="warning" />
-                  </template>
-                </PvDropdown>
-              </template>
-              <template #body="slotProps">
-                <PvTag :value="slotProps.data.op" severity="warning" />
-              </template>
-            </PvColumn>
-            <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
-              <template #editor="{ data, field }">
-                <PvInputText v-model="data[field]" data-cy="optional-value-content" />
-              </template>
-            </PvColumn>
-            <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
-            <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
-              <template #body="{ index }">
-                <PvButton
-                  icon="pi pi-trash"
-                  class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-                  @click="removeOptionalRow(index)"
-                />
-              </template>
-            </PvColumn>
-          </PvDataTable>
+
+          <!-- Where Optional conditions data table used to be -->
+          <div v-for="(condtion, index) in optionalConditions" :key="index">
+            <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
+               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
+              </div>
+
+              <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
+              </div>
+
+              <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.value" :options="optionsForField(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
+              </div>
+
+              <PvButton
+                icon="pi pi-trash"
+                text
+                class="bg-primary text-white w-2 border-round border-none hover:bg-red-900"
+                @click="removeCondition(optionalConditions, index)"
+              />
+            </div>
+        </div>
+
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
               <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
@@ -191,7 +155,7 @@
             </div>
             <div class="mt-2 flex gap-2">
               <PvButton
-                label="Add Optional Condition"
+                label="AddCondition"
                 icon="pi pi-plus mr-2"
                 class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
                 :disabled="optionalForAllFlag === true"
@@ -246,12 +210,7 @@ const selectedCondition = ref();
 const selectedValue = ref();
 
 
-const assignedConditions = ref([{
-  field: '',
-  op: '',
-  value: '',
-  id: 0
-}]);
+const assignedConditions = ref([]);
 
 const optionsForField = (field) => {
   const selectedField = toRaw(field.label);
@@ -290,7 +249,7 @@ const optionsForField = (field) => {
   }
 }
 
-const removeCondtion = (condtions, index) => {
+const removeCondition = (condtions, index) => {
   condtions.splice(index, 1);
 };
 
@@ -384,25 +343,14 @@ function setOptionalConditions(existingOptionalConditions) {
   for (const condition of existingOptionalConditions) {
     optionalConditions.value = [condition, ...optionalConditions.value];
   }
-}
+};
 
 const addOptionalCondition = () => {
   optionalConditions.value.push({ id: optionalConditions.value.length, field: '', op: '', value: '' });
-  optionalEditingRows.value = [
-    ...optionalEditingRows.value,
-    optionalConditions.value[optionalConditions.value.length - 1],
-  ];
 };
 
 const addAssignedCondition = () => {
-  console.log('Before adding condition', toRaw(assignedConditions.value))
-  // Check if we need the id
   assignedConditions.value.push({ id: assignedConditions.value.length, field: '', op: '', value: '' });
-  // assignedEditingRows.value = [
-  //   ...assignedEditingRows.value,
-  //   assignedConditions.value[assignedConditions.value.length - 1],
-  // ];
-  console.log('After Assigned Conditions', toRaw(assignedConditions.value));
 };
 
 const optionalForAllFlag = ref(false);
@@ -478,50 +426,6 @@ const handleSave = () => {
   return;
 };
 
-const removeRowById = (type, index) => {
-  if (type === 'assigned') {
-    // Get the current data of the row to match later for deletion
-    const currentData = assignedConditions.value[index];
-
-    // Remove the row from the editing rows array by matching the id
-    const editingRowIndex = assignedEditingRows.value.findIndex((item) => item.id === currentData.id);
-    if (editingRowIndex > -1) {
-      assignedEditingRows.value.splice(editingRowIndex, 1);
-    }
-  } else if (type === 'optional') {
-    // Get the current data of the row to match later for deletion
-    const currentData = optionalConditions.value[index];
-
-    // Remove the row from the editing rows array by matching the id
-    const editingRowIndex = optionalEditingRows.value.findIndex((item) => item.id === currentData.id);
-    if (editingRowIndex > -1) {
-      optionalEditingRows.value.splice(editingRowIndex, 1);
-    }
-  } else {
-    console.error('Invalid type, choose one of "optional" or "assigned"');
-  }
-};
-
-const removeAssignedRow = (index) => {
-  removeRowById('assigned', index);
-
-  assignedConditions.value.splice(index, 1);
-  // Update the id of each condition after removing a row to maintain proper indexing
-  for (let i = 0; i < assignedConditions.value.length; i++) {
-    assignedConditions.value[i].id = i;
-  }
-};
-const removeOptionalRow = (index) => {
-  removeRowById('optional', index);
-
-  // Remove the row from the conditions array
-  optionalConditions.value.splice(index, 1);
-
-  // Update the id of each condition after removing a row to maintain proper indexing
-  for (let i = 0; i < optionalConditions.value.length; i++) {
-    optionalConditions.value[i].id = i;
-  }
-};
 
 const optionalConditions = ref([]);
 // const assignedConditions = ref([]);
@@ -555,19 +459,4 @@ const computedFieldOptions = computed(() => {
     return fieldOptions.filter((option) => option.project === 'ROAR' || option.project === 'ALL');
   }
 });
-
-
-const onAssignedRowEditSave = (event) => {
-  let { newData, index } = event;
-  // Update the specific row in the conditions array
-  assignedConditions.value[index] = newData;
-  removeRowById('assigned', index);
-};
-
-const onOptionalRowEditSave = (event) => {
-  let { newData, index } = event;
-  // Update the specific row in the conditions array
-  optionalConditions.value[index] = newData;
-  removeRowById('optional', index);
-};
 </script>
