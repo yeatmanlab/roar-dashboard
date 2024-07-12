@@ -103,11 +103,11 @@ isVisible.value = props.isAdobe;
 async function createConsent() {
   agreementId.value = null;
   docCreated.value = true;
-  let docType = props.isAdult ? 'Assent' : 'Consent';
+  let docType = props.isAdult ? 'Consent' : 'Assent';
 
   agreementId.value = await authStore.createAdobeSignAgreement(signerEmail.value, docType);
 
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 
   if (agreementId.value) {
     adobeUrl.value = await authStore.getAdobeSignSigningUrl(agreementId.value, signerEmail.value);
@@ -116,17 +116,20 @@ async function createConsent() {
 
   let tries = 0;
 
-  while (tries < 20) {
+  while (tries < 30) {
     docStatus.value = await authStore.getAdobeSignAgreementStatus(agreementId.value);
     if (docStatus.value !== 'SIGNED') {
       tries += 1;
       await new Promise((resolve) => setTimeout(resolve, 5000));
+    } else {
+      tries = 30;
     }
   }
 
   if (docStatus.value === 'SIGNED') {
     props.isAdobe = false;
     isVisible.value = false;
+    toast.add({ severity: 'success', summary: 'Success', detail: 'Document has been signed!', life: 3000 });
     emit('consent-signed', docStatus.value);
   } else {
     docCreated.value = false;
