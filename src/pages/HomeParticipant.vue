@@ -206,12 +206,8 @@ async function checkConsent() {
   const isSeniorGrade = grade >= 12;
   const isOlder = isAdult.value || isSeniorGrade;
 
-  if (isLevante) {
+  if (isLevante || legal?.consent === 'no consent') {
     return;
-  } else {
-    if (legal?.consent === 'no consent') {
-      return;
-    }
   }
 
   let docType;
