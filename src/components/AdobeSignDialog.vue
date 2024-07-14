@@ -47,8 +47,7 @@
             </h3>
             <h3>Alternatively, you can click the link below to go directly to the signing page:</h3>
             <h4>
-              Sign the {{ isAdult ? 'Consent' : 'Assent' }} form now
-              <a :href="adobeUrl" target="blank"> Link to document </a>
+              <a :href="adobeUrl" target="blank"> Sign the form now </a>
             </h4>
           </div>
         </div>
