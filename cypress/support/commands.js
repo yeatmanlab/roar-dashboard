@@ -99,7 +99,6 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     cy.log('Retries exceeded, administration not found, exiting test...');
     return;
   }
-
   cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
   cy.get('body', { timeout: 2 * Cypress.env('timeout') })
     .invoke('text')

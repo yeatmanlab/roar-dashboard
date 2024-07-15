@@ -1,4 +1,5 @@
 import { languageOptions } from './languageOptions';
+import { signInWithClever } from '../participant/participant-helpers';
 
 const timeout = Cypress.env('timeout');
 
@@ -36,14 +37,21 @@ function selectAlienAvatar() {
     .click();
 }
 
-function startGame(administration, language, optional) {
+function startGame(administration, language, optional, auth) {
   cy.wait(0.1 * timeout);
   Cypress.on('uncaught:exception', () => {
     return false;
   });
-  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
 
   cy.visit('/', { timeout: 2 * timeout });
+  if (auth === 'username') {
+    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/', { timeout: 2 * timeout });
+  }
+  if (auth === 'clever') {
+    signInWithClever();
+  }
+
   cy.selectAdministration(administration);
 
   if (optional) {
@@ -65,8 +73,9 @@ export function playVocabulary({
   language = 'en',
   gameCompleteText = 'We’ve all learned so much!',
   optional = false,
+  auth = 'username',
 } = {}) {
-  startGame(administration, language, optional);
+  startGame(administration, language, optional, auth);
 
   makeChoiceOrContinue(gameCompleteText);
 
