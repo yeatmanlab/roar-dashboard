@@ -47,5 +47,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/participant/default-tests/**/*'
+          spec: |
+            'cypress/e2e/participant/default-tests/**/*'
+            'cypress/e2e/participant/network-tests/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
