@@ -1,16 +1,16 @@
-import { playFluencyARF } from '../../../../support/helper-functions/roam-fluency/fluencyHelpers';
+import { playLetter } from '../../../../support/helper-functions/roar-letter/letterHelpers';
 import { isCurrentVersion } from '../../../../support/utils';
 
-const app = '@bdelab/roam-fluency';
+const app = '@bdelab/roar-letter';
 
-describe('Test playthrough of Fluency as a participant in a simulated 3G network', () => {
-  it('Fluency Playthrough Test', () => {
+describe('ROAR - Letter Play Through using username authentication', () => {
+  it('Plays Letter with username authentication in a simulated high latency network', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playFluencyARF();
+        playLetter({ auth: 'username' });
       }
     });
   });

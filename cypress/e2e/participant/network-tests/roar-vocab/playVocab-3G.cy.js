@@ -1,16 +1,15 @@
-import { playFluencyARF } from '../../../../support/helper-functions/roam-fluency/fluencyHelpers';
+import { playVocabulary } from '../../../../support/helper-functions/roar-vocab/vocabHelpers';
 import { isCurrentVersion } from '../../../../support/utils';
 
-const app = '@bdelab/roam-fluency';
-
-describe('Test playthrough of Fluency as a participant in a simulated 3G network', () => {
-  it('Fluency Playthrough Test', () => {
+const app = '@bdelab/roar-vocab';
+describe('ROAR - Vocabulary Play Through', () => {
+  it('Plays Vocabulary with a simulated 3g connection', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (!isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playFluencyARF();
+        playVocabulary({ auth: 'username' });
       }
     });
   });
