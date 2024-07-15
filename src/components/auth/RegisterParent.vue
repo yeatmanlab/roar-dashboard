@@ -45,6 +45,7 @@
             v-model="v$.ParentEmail.$model"
             name="ParentEmail"
             type="email"
+            @input="validateRoarEmail"
             :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
             aria-describedby="username-or-email-error"
           />
@@ -255,6 +256,9 @@ const handleFormSubmit = (isFormValid) => {
     return;
   }
   validateRoarEmail();
+  if (submitted.value) {
+    emit('submit', state);
+  }
 };
 
 const validateRoarEmail = async () => {
@@ -264,8 +268,6 @@ const validateRoarEmail = async () => {
     showErrorDialog();
     submitted.value = false;
     return;
-  } else {
-    emit('submit', state);
   }
 };
 
@@ -284,7 +286,7 @@ async function getConsent() {
   if (props.isAdobeSign === true) {
     isAdobe.value = props.isAdobeSign;
   } else {
-    const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
+    const consentDoc = await authStore.getLegalDoc('consent-video-audio-eye-tracking');
     consentText.value = consentDoc.text;
     // consentVersion = consentDoc.version;
     showConsent.value = true;

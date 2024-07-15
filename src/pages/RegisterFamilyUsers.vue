@@ -164,6 +164,16 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
         first: rawParentInfo.firstName,
         last: rawParentInfo.lastName,
       },
+      legal: {
+        consentType: props.isAdobeSign ? 'consent-clinic-adobe' : 'consent-video-audio-eye-tracking',
+        consentVersion: props.isAdobeSign
+          ? 'da2d1f2e6f8e454260795ce6f72b9f882198c1ac'
+          : 'cfe82b7747a9f0f8c408f211503d9f3e5a3f2b75',
+        amount: props.isAdobeSign ? '15' : '',
+        expectedTime: props.isAdobeSign ? '< 1 hour' : '',
+        isSignedWithAdobe: props.isAdobeSign,
+        dateSigned: new Date(),
+      },
     };
     const studentSendObject = rawStudentInfo.map((student) => {
       return {
