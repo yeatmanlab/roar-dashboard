@@ -79,7 +79,7 @@
       {{ displaySignInMethods.slice(0, -1).join(', ') + ' or ' + displaySignInMethods.slice(-1) }}. If this is you,
       click to sign in below.
       <div class="flex align-items-center flex-column gap-2 my-2">
-        <div v-if="signInMethods.includes('google.com')" class="flex">
+        <div v-if="signInMethods.includes('google')" class="flex">
           <PvButton
             label="Sign in with Google"
             class="flex surface-0 p-1 mr-1 border-black-alpha-10 text-center justify-content-center hover:border-primary hover:surface-ground"
@@ -90,7 +90,7 @@
             <span>Google</span>
           </PvButton>
         </div>
-        <div v-if="signInMethods.includes('oidc.clever')">
+        <div v-if="signInMethods.includes('clever')">
           <PvButton
             v-if="!isLevante"
             class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
@@ -101,7 +101,7 @@
             <span>Clever</span>
           </PvButton>
         </div>
-        <div v-if="signInMethods.includes('oidc.classlink')">
+        <div v-if="signInMethods.includes('classlink')">
           <PvButton
             v-if="!isLevante"
             class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
@@ -291,9 +291,9 @@ const openWarningModal = async () => {
 const displaySignInMethods = computed(() => {
   return signInMethods.value.map((method) => {
     if (method === 'password') return 'Password';
-    if (method === 'google.com') return 'Google';
-    if (method === 'oidc.clever') return 'Clever';
-    if (method === 'oidc.classlink') return 'ClassLink';
+    if (method === 'google') return 'Google';
+    if (method === 'clever') return 'Clever';
+    if (method === 'classlink') return 'ClassLink';
   });
 });
 

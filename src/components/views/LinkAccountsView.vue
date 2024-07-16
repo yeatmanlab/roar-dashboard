@@ -187,9 +187,7 @@ const unlinkAccount = async (providerId) => {
 // +-----------------+
 const confirm = useConfirm();
 const canDeletePassword = computed(() => {
-  // Users can not delete their passwords until I overload the unlinkAuthProvider method.
-  return false;
-  // return providerIds.value.includes('password') && providerIds.value.length > 1;
+  return providerIds.value.includes('password') && providerIds.value.length > 1;
 });
 const deletePassword = async () => {
   confirm.require({
