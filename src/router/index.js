@@ -363,7 +363,7 @@ const routes = [
       { path: 'password', component: () => import('../components/views/PasswordView.vue') },
       { path: 'accounts', component: () => import('../components/views/LinkAccountsView.vue') },
     ],
-    meta: { pageTitle: 'Profile' },
+    meta: { pageTitle: 'Profile', requireAdmin: true },
   },
   {
     path: '/enable-cookies',

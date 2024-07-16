@@ -22,12 +22,10 @@
             </template>
             <template #end>
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
-                <!-- <router-link :to="{ name: 'Profile' }"><PvButton>Profile</PvButton></router-link> -->
-                <!-- <router-link :to="{ name: 'Profile'}" -->
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
                   <div class="text-lg font-bold text-gray-600">
                     {{ userDisplayName }}
-                    <router-link :to="{ name: 'Profile' }"
+                    <router-link v-if="isAdmin" :to="{ name: 'Profile' }"
                       ><button
                         class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
                       >
