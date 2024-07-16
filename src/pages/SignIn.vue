@@ -25,15 +25,6 @@
           </h4>
           <div class="flex">
             <PvButton
-              label="Test Open Modal"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
-              @click="openWarningModal"
-            >
-              <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
-              <span>Test Open Modal</span>
-            </PvButton>
-            <PvButton
               label="Sign in with Google"
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem"
@@ -85,9 +76,9 @@
   >
     <template #default>
       The email <span class="font-bold">{{ email }}</span> is already in use using
-      {{ signInMethods.slice(0, -1).join(', ') + ' or ' + signInMethods.slice(-1) }}. If this is you, click to sign in
-      below.
-      <div class="flex align-items-center flex-column gap-2 mb-2">
+      {{ displaySignInMethods.slice(0, -1).join(', ') + ' or ' + displaySignInMethods.slice(-1) }}. If this is you,
+      click to sign in below.
+      <div class="flex align-items-center flex-column gap-2 my-2">
         <div v-if="signInMethods.includes('google.com')" class="flex">
           <PvButton
             label="Sign in with Google"
@@ -146,7 +137,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw, onBeforeUnmount } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import SignIn from '@/components/auth/SignIn.vue';
@@ -207,7 +198,7 @@ const authWithGoogle = () => {
         const errorCode = e.code;
         if (errorCode === 'auth/email-already-in-use') {
           // User tried to register with an email that is already linked to a firebase account.
-          warningModalOpen.value = true;
+          openWarningModal();
           spinner.value = false;
         } else {
           console.log('caught error', e);
@@ -296,6 +287,15 @@ const openWarningModal = async () => {
   signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
   warningModalOpen.value = true;
 };
+
+const displaySignInMethods = computed(() => {
+  return signInMethods.value.map((method) => {
+    if (method === 'password') return 'Password';
+    if (method === 'google.com') return 'Google';
+    if (method === 'oidc.clever') return 'Clever';
+    if (method === 'oidc.classlink') return 'ClassLink';
+  });
+});
 
 onMounted(() => {
   document.body.classList.add('page-signin');
