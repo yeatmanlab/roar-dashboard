@@ -48,7 +48,9 @@
           :draggable="false"
         >
           <p>{{ dialogMessage }}</p>
-          <PvButton @click="closeDialog">Close</PvButton>
+          <PvButton @click="closeDialog" class="bg-primary p-2 text-white border-none border-round hover:bg-red-900"
+            >Close</PvButton
+          >
         </PvDialog>
       </div>
     </section>
