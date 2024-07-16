@@ -706,6 +706,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].tagColor = supportLevelColors.Assessed;
           scoreFilterTags += ' Assessed ';
         }
 
@@ -986,6 +987,24 @@ function getScoreKeysByRow(row, grade) {
 
 const refreshing = ref(false);
 
+const getTaskStyle = (taskId, backgroundColor, tasks) => {
+  const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
+  let borderStyle = '';
+
+  // Determine if taskId is one of the Spanish tasks and find the first missing task
+  const isSpanishTask = spanishTasks.includes(taskId);
+  const firstMissingTask = spanishTasks.find((task) => tasks.includes(task));
+
+  if (taskId === 'sre-es' && firstMissingTask !== 'sre-es') {
+    borderStyle = 'border-right: 5px solid var(--primary-color);';
+  } else if (isSpanishTask && firstMissingTask && taskId === firstMissingTask && firstMissingTask !== 'sre-es') {
+    borderStyle = 'border-left: 5px solid var(--primary-color);';
+  } else if (firstMissingTask === 'sre-es') {
+    borderStyle = 'border-right: 5px solid var(--primary-color); border-left: 5px solid var(--primary-color);';
+  }
+  return `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; ${borderStyle}`;
+};
+
 // compute and store schoolid -> school name map for schools. store adminId,
 // orgType, orgId for individual score report link
 const scoreReportColumns = computed(() => {
@@ -1067,7 +1086,8 @@ const scoreReportColumns = computed(() => {
     }
   });
 
-  const priorityTasks = ['swr', 'sre', 'pa'];
+  const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
+  const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
   const orderedTasks = [];
 
   for (const task of priorityTasks) {
@@ -1099,11 +1119,14 @@ const scoreReportColumns = computed(() => {
 
     let backgroundColor = '';
 
-    if (priorityTasks.includes(taskId)) {
+    if (priorityTasks.includes(taskId) && !priorityTasks.includes(spanishTasks)) {
       backgroundColor = 'transparent';
     } else {
       backgroundColor = '#E6E6E6';
     }
+
+    console.log('colField ', colField);
+    // LOOK AT COL FIELD
 
     tableColumns.push({
       field: colField,
@@ -1120,7 +1143,9 @@ const scoreReportColumns = computed(() => {
         !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
         (viewMode.value === 'color' || isOptional),
       tagColor: `scores.${taskId}.tagColor`,
-      style: `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; `,
+      style: (() => {
+        return getTaskStyle(taskId, backgroundColor, allTasks.value);
+      })(),
     });
   }
   return tableColumns;
