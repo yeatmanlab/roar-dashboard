@@ -24,7 +24,7 @@
             }}</label>
           </div>
           <div
-            v-if="adminInfo?.length > 0"
+            v-if="adminInfo?.length > 1"
             class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
@@ -83,9 +83,12 @@
   <ConsentModal
     v-if="showConsent && !isLevante"
     :consent-text="confirmText"
-    :consent-type="consentType"
+    :consent-type="!isAdult ? 'assent' : 'consent'"
     @accepted="updateConsent"
   />
+  <div v-if="isAdobe && !isLevante">
+    <AdobeSignDialog :is-adobe="isAdobe" :is-adult="isAdult" @consent-signed="updateAdobe" />
+  </div>
 </template>
 
 <script setup>
@@ -105,15 +108,20 @@ import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import AdobeSignDialog from '../components/AdobeSignDialog.vue';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
+const isAdobe = ref(false);
+const isAssentAdobe = ref(false);
+const isAdult = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
+let isSignedWithAdobe = false;
 const initialized = ref(false);
 const init = () => {
   if (unsubscribe) unsubscribe();
@@ -186,24 +194,33 @@ const {
 
 async function checkConsent() {
   showConsent.value = false;
+  isAssentAdobe.value = false;
+  isSignedWithAdobe = false;
   const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
-  if (!legal?.consent) {
+  isAdult.value = age >= 18;
+  const isSeniorGrade = grade >= 12;
+  const isOlder = isAdult.value || isSeniorGrade;
+
+  if (isLevante || legal?.consent === 'no consent') {
     return;
   }
 
-  const isAdult = age >= 18;
-  const isSeniorGrade = grade >= 12;
-  const isOlder = isAdult || isSeniorGrade;
+  let docType;
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
-  let docType = legal[docTypeKey][0]?.type.toLowerCase();
-  let docAmount = legal?.amount;
-  let docExpectedTime = legal?.expectedTime;
+  let docAmount = legal?.amount || '';
+  let docExpectedTime = legal?.expectedTime || '';
+
+  if (legal?.consent) {
+    docType = legal[docTypeKey][0]?.type.toLowerCase();
+  } else {
+    docType = isAdult ? 'consent' : 'assent';
+  }
 
   consentType.value = docType;
 
@@ -221,15 +238,29 @@ async function checkConsent() {
     });
 
     if (!found) {
-      if (docAmount !== '' || docExpectedTime !== '') {
+      if (legal?.isAdobeSign) {
+        if (!isAdult.value) {
+          isAssentAdobe.value = true;
+        }
+        isAdobe.value = true;
+        return;
+      } else if (docAmount !== '' || docExpectedTime !== '') {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
         return;
       }
     }
   } else if (age > 7 || grade > 1) {
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
+    if (legal?.isAdobeSign) {
+      if (!isAdult.value) {
+        isAssentAdobe.value = true;
+      }
+      isAdobe.value = true;
+      return;
+    } else {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
+    }
     return;
   }
 }
@@ -238,6 +269,7 @@ async function updateConsent() {
   consentParams.value = {
     amount: selectedAdmin.value?.legal.amount,
     expectedTime: selectedAdmin.value?.legal.expectedTime,
+    isSignedWithAdobe,
     dateSigned: new Date(),
   };
   try {
@@ -247,7 +279,11 @@ async function updateConsent() {
     console.log("Couldn't update consent value");
   }
 }
-
+function updateAdobe() {
+  isAdobe.value = false;
+  isSignedWithAdobe = true;
+  updateConsent();
+}
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
 
 const {

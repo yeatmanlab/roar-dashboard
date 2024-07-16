@@ -17,7 +17,7 @@
         </div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" @submit="handleSubmit($event)" :code="code" />
+            <component :is="activeComp()" :is-adobe-sign="isAdobeSign" @submit="handleSubmit($event)" :code="code" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -48,7 +48,9 @@
           :draggable="false"
         >
           <p>{{ dialogMessage }}</p>
-          <PvButton @click="closeDialog">Close</PvButton>
+          <PvButton @click="closeDialog" class="bg-primary p-2 text-white border-none border-round hover:bg-red-900"
+            >Close</PvButton
+          >
         </PvDialog>
       </div>
     </section>
@@ -73,6 +75,7 @@ const spinner = ref(false);
 let unsubscribe;
 
 const props = defineProps({
+  isAdobeSign: { type: Boolean, default: false },
   code: { type: String },
 });
 
@@ -162,6 +165,16 @@ watch([parentInfo, studentInfo], ([newParentInfo, newStudentInfo]) => {
       name: {
         first: rawParentInfo.firstName,
         last: rawParentInfo.lastName,
+      },
+      legal: {
+        consentType: props.isAdobeSign ? 'consent-clinic-adobe' : 'consent-video-audio-eye-tracking',
+        consentVersion: props.isAdobeSign
+          ? 'da2d1f2e6f8e454260795ce6f72b9f882198c1ac'
+          : 'cfe82b7747a9f0f8c408f211503d9f3e5a3f2b75',
+        amount: props.isAdobeSign ? '15' : '',
+        expectedTime: props.isAdobeSign ? '< 1 hour' : '',
+        isSignedWithAdobe: props.isAdobeSign,
+        dateSigned: new Date(),
       },
     };
     const studentSendObject = rawStudentInfo.map((student) => {
