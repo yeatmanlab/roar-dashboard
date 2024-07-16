@@ -17,12 +17,10 @@ const urlsToCache = [...swrAudioURLs, ...swrImageUrls, ...swrLookupTableUrl];
 
 const precacheController = new PrecacheController();
 precacheController.addToCacheList(urlsToCache);
-precacheController.addToCacheList([
-  {
-    url: 'src/**/*',
-    revision: null,
-  },
-]);
+// only add cache list if prod
+if (process.env.NODE_ENV === 'production') {
+  precacheController.addToCacheList(self.__WB_MANIFEST);
+}
 
 precacheController.addToCacheList([
   {
@@ -30,12 +28,10 @@ precacheController.addToCacheList([
     revision: null,
   },
 ]);
-// console.log('wbmanifest', self.__WB_MANIFEST);
-// precacheAndRoute(self.__WB_MANIFEST ?? []);
 
-// precacheAndRoute([{ url: '/index.html', revision: '383676' }], {
-//   directoryIndex: null,
-// });
+precacheAndRoute([{ url: '/index.html', revision: '383676' }], {
+  directoryIndex: null,
+});
 
 self.addEventListener('install', (event) => {
   // Passing in event is required in Workbox v6+
@@ -47,10 +43,10 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(precacheController.activate(event));
 });
 
-self.addEventListener('fetch', (event) => {
-  const cacheKey = precacheController.getCacheKeyForURL(event.request.url);
-  //   event.respondWith(caches.match(cacheKey).then(...));
-  event.respondWith(caches.match(cacheKey));
-});
+// self.addEventListener('fetch', (event) => {
+//   const cacheKey = precacheController.getCacheKeyForURL(event.request.url);
+//   //   event.respondWith(caches.match(cacheKey).then(...));
+//   event.respondWith(caches.match(cacheKey));
+// });
 
 cleanupOutdatedCaches();

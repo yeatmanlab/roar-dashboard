@@ -204,7 +204,6 @@ const routes = [
     path: '/register',
     name: 'Register',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
-    props: (route) => ({ code: route.query.code }),
     children: [
       {
         name: 'Register',
@@ -224,6 +223,19 @@ const routes = [
     name: 'RegisterStudents',
     component: () => import('../pages/RegisterStudents.vue'),
     meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
+  },
+  {
+    path: '/settings',
+    name: 'UserSettings',
+    component: () => import('../pages/UserSettings.vue'),
+    meta: {
+      pageTitle: {
+        'en-US': pageTitlesUS['UserSettings'],
+        en: pageTitlesEN['UserSettings'],
+        es: pageTitlesES['UserSettings'],
+        'es-CO': pageTitlesCO['UserSettings'],
+      },
+    },
   },
   {
     path: '/signin',

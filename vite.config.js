@@ -15,11 +15,12 @@ export default defineConfig({
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
-      filename: 'sw.js',
+      filename: 'sw.ts',
       injectManifest: {
         injectionPoint: undefined,
         rollupFormat: 'iife',
-        globPatterns: ['**/*.{html}'],
+        // globPatterns: ['**/*'],
+        globPatterns: [/\.vue$/, /\.md$/],
       },
       manifest: {
         // Modify manifest options here...

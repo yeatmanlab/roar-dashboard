@@ -22,27 +22,51 @@
             </template>
             <template #end>
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
-                <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
+                <div
+                  v-if="isWideScreen"
+                  class="nav-user-wrapper flex align-items-center justify-content-center gap-2 bg-gray-100"
+                >
                   <div class="text-lg font-bold text-gray-600">
                     {{ userDisplayName }}
                   </div>
-                  <router-link :to="{ name: 'SignOut' }" class="signout-button">
+                  <PvButton
+                    type="button"
+                    icon="pi pi-cog"
+                    @click="toggleSettingsMenu"
+                    aria-haspopup="true"
+                    aria-controls="overlay_menu"
+                    class="m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
+                  />
+                  <PvMenu ref="settingsMenu" id="settings-menu" :model="settingItems" :popup="true" />
+                  <!-- <PvSplitButton icon="pi pi-cog" dropdownIcon="pi pi-cog" :model="settingItems"
+                    class="no-underline h-2 p-1 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
+                    /> -->
+                  <!-- <router-link :to="{ name: 'SignOut' }" class="signout-button">
                     <PvButton
                       text
                       data-cy="button-sign-out"
                       class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
                       >{{ $t('navBar.signOut') }}
                     </PvButton>
-                  </router-link>
+                  </router-link> -->
                 </div>
                 <div v-else>
-                  <router-link :to="{ name: 'SignOut' }" class="signout-button">
+                  <PvButton
+                    type="button"
+                    icon="pi pi-cog"
+                    @click="toggleSettingsMenu"
+                    aria-haspopup="true"
+                    aria-controls="overlay_menu"
+                    class="m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
+                  />
+                  <PvMenu ref="settingsMenu" id="settings-menu" :model="settingItems" :popup="true" />
+                  <!-- <router-link :to="{ name: 'SignOut' }" class="signout-button">
                     <PvButton
                       data-cy="button-sign-out"
                       class="no-underline m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
                       >{{ $t('navBar.signOut') }}</PvButton
                     >
-                  </router-link>
+                  </router-link> -->
                 </div>
                 <div class="my-2">
                   <LanguageSelector />
@@ -110,6 +134,31 @@ const { data: userClaims, isLoading: userClaimsLoading } = useQuery({
 const isWideScreen = computed(() => {
   return screenWidth.value > 728;
 });
+
+const settingsMenu = ref();
+
+const toggleSettingsMenu = (event) => {
+  settingsMenu.value.toggle(event);
+};
+
+const settingItems = [
+  {
+    label: 'Update Settings',
+    icon: 'pi pi-cog',
+    command: () => {
+      // navigate to settings page
+      router.push({ name: 'UserSettings' });
+    },
+  },
+  {
+    label: 'Sign Out',
+    icon: 'pi pi-sign-out',
+    command: () => {
+      router.push({ name: 'SignOut' });
+      // toast.add({ severity: 'warn', summary: 'Delete', detail: 'Data Deleted', life: 3000 });
+    },
+  },
+];
 
 const computedItems = computed(() => {
   const items = [];
