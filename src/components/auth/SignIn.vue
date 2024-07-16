@@ -263,6 +263,7 @@ function sendResetEmail() {
 watch(
   () => state.email,
   async (email) => {
+    emit('update:email', email);
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;
       validateRoarEmail(email);

@@ -17,7 +17,7 @@
           <div id="languageSelect" class="m-4 flex justify-content-center">
             <LanguageSelector />
           </div>
-          <SignIn :invalid="incorrect" @submit="authWithEmail" />
+          <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
         <section class="flex flex-row align-content-center">
           <h4 class="flex m-0 align-content-center justify-content-center mr-3 flex-wrap-reverse">
@@ -28,7 +28,7 @@
               label="Test Open Modal"
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
               style="border-radius: 3rem; height: 3rem"
-              @click="warningModalOpen = true"
+              @click="openWarningModal"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
               <span>Test Open Modal</span>
@@ -84,8 +84,53 @@
     @modal-closed="handleWarningModalClose"
   >
     <template #default>
-      This email is already associated with an account on this platform. Please login using your existing credentials,
-      then you will be able to add this login method to your account.
+      The email <span class="font-bold">{{ email }}</span> is already in use using
+      {{ signInMethods.slice(0, -1).join(', ') + ' or ' + signInMethods.slice(-1) }}. If this is you, click to sign in
+      below.
+      <div class="flex align-items-center flex-column gap-2 mb-2">
+        <div v-if="signInMethods.includes('google.com')" class="flex">
+          <PvButton
+            label="Sign in with Google"
+            class="flex surface-0 p-1 mr-1 border-black-alpha-10 text-center justify-content-center hover:border-primary hover:surface-ground"
+            style="border-radius: 3rem; height: 3rem"
+            @click="authWithGoogle"
+          >
+            <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
+            <span>Google</span>
+          </PvButton>
+        </div>
+        <div v-if="signInMethods.includes('oidc.clever')">
+          <PvButton
+            v-if="!isLevante"
+            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+            style="border-radius: 3rem; height: 3rem"
+            @click="authWithClever"
+          >
+            <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
+            <span>Clever</span>
+          </PvButton>
+        </div>
+        <div v-if="signInMethods.includes('oidc.classlink')">
+          <PvButton
+            v-if="!isLevante"
+            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+            style="border-radius: 3rem; height: 3rem"
+            @click="authWithClassLink"
+          >
+            <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
+            <span>ClassLink</span>
+          </PvButton>
+        </div>
+        <div v-if="signInMethods.includes('password')" class="flex flex-row gap-2">
+          <PvPassword placeholder="Password" v-model="modalPassword" :feedback="false"></PvPassword>
+          <PvButton
+            @click="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
+            class="flex p-3 border-none border-round hover:bg-black-alpha-20"
+            :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
+          />
+        </div>
+      </div>
+      You will then be directed to your profile page where you can link different authentication providers.
     </template>
     <template #footer>
       <PvButton
@@ -116,7 +161,7 @@ const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { spinner, authFromClever, authFromClassLink, routeToProfile } = storeToRefs(authStore);
+const { spinner, authFromClever, authFromClassLink, routeToProfile, roarfirekit } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
@@ -174,6 +219,8 @@ const authWithGoogle = () => {
   }
 };
 
+const modalPassword = ref('');
+
 const authWithClever = () => {
   console.log('---> authWithClever');
   if (isMobileBrowser()) {
@@ -203,6 +250,7 @@ const authWithEmail = (state) => {
   // turn it into our internal auth email
   incorrect.value = false;
   let creds = toRaw(state);
+  console.log('creds', creds);
   if (creds.useLink && !creds.usePassword) {
     authStore.initiateLoginWithEmailLink({ email: creds.email }).then(() => {
       router.push({ name: 'AuthEmailSent' });
@@ -238,6 +286,15 @@ const authWithEmail = (state) => {
 const handleWarningModalClose = () => {
   authStore.routeToProfile = true;
   warningModalOpen.value = false;
+};
+
+const email = ref('');
+
+const signInMethods = ref([]);
+
+const openWarningModal = async () => {
+  signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
+  warningModalOpen.value = true;
 };
 
 onMounted(() => {
