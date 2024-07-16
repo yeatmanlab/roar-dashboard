@@ -4,28 +4,34 @@
       <div class="flex flex-column mb-5">
         <div class="flex align-items-center flex-wrap gap-3 mb-2">
           <i class="pi pi-pencil text-gray-400 rounded" style="font-size: 1.6rem" />
-          <div class="admin-page-header">Manage Tasks</div>
+          <div class="admin-page-header">Update Settings</div>
         </div>
-        <div class="text-md text-gray-500 ml-6">Manage tasks and variants.</div>
+        <div class="text-md text-gray-500 ml-6">Update user settings and configurations.</div>
       </div>
-      <div class="register-container mx-auto md:flex-none">
-        <PvTabView>
-          <PvTabPanel header="Tasks">
-            <ManageTasks />
-          </PvTabPanel>
-
-          <PvTabPanel header="Variants">
-            <ManageVariants />
-          </PvTabPanel>
-        </PvTabView>
+      <PvDivider />
+      <div class="flex flex-column justify-content-between mx-auto md:flex-none">
+        <div class="flex bg-gray-100 rounded p-4 flex-row justify-content-around">
+          <div class="">
+            <div class="text-lg font-bold text-gray-600">Offline Mode</div>
+            <div class="text-xs text-light text-gray-40">
+              Note: Offline Mode is currently under development and users may encounter a higher frequency of bugs or
+              irregular behavior.
+            </div>
+          </div>
+          <div>
+            <PvSelectButton v-model="offlineMode" :options="offlineOptions" class="p-2" />
+          </div>
+        </div>
       </div>
     </section>
   </main>
 </template>
 
 <script setup>
-import ManageTasks from '../components/tasks/ManageTasks.vue';
-import ManageVariants from '../components/tasks/ManageVariants.vue';
+import { ref } from 'vue';
+
+const offlineOptions = ref(['On', 'Off']);
+const offlineMode = ref('Off');
 </script>
 
 <style scoped>
