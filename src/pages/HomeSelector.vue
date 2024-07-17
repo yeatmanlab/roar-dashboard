@@ -182,17 +182,6 @@ watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
   }
 });
 
-watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
-  if (newUserData && newUserClaims) {
-    authStore.userData = newUserData;
-    authStore.userClaims = newUserClaims;
-
-    const userType = toRaw(newUserData)?.userType?.toLowerCase();
-    if (userType === 'parent' || userType === 'teacher') {
-      router.push({ name: 'Survey' });
-    }
-  }
-});
 
 const { idle } = useIdle(60 * 10 * 1000); // 10 min
 const confirm = useConfirm();

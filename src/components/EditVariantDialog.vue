@@ -59,17 +59,14 @@
         <div v-for="(condtion, index) in assignedConditions" :key="index">
             <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
                <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <!-- <label v-if="index === 0" for="Field" class="text-md font-semibold uppercase">Field</label> -->
                 <PvDropdown v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <!-- <label v-if="index === 0" for="Condition" class="text-md font-semibold uppercase">Condition</label> -->
                 <PvDropdown v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
               </div>
 
               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
-                <!-- <label v-if="index === 0" for="Value" class="text-md font-semibold uppercase">Value</label> -->
                 <PvDropdown v-model="condtion.value" :options="optionsForField(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
               </div>
 
@@ -95,7 +92,6 @@
         </div>
       </div>
       <!-- OPTIONAL CONDITIONS -->
-      <!-- v-if="!isLevante" -->
     <div >
       <div class="mt-2 flex flex-column gap-2">
         <div class="card p-fluid bg-gray-100 p-3">
@@ -110,7 +106,7 @@
             class="flex flex-column align-items-center justify-content-center py-2 gap-2"
           >
             <div class="text-xl uppercase font-bold">No Conditions Added</div>
-            <div v-if="optionalForAllFlag" class="text-sm uppercase text-gray-700">
+            <div v-if="isOptionalForAll" class="text-sm uppercase text-gray-700">
               Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all students in the
               administration.
             </div>
@@ -148,7 +144,7 @@
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
               <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
               <PvInputSwitch
-                v-model="optionalForAllFlag"
+                v-model="isOptionalForAll"
                 data-cy="switch-optional-for-everyone"
                 @update:model-value="handleOptionalForAllSwitch"
               />
@@ -158,7 +154,7 @@
                 label="AddCondition"
                 icon="pi pi-plus mr-2"
                 class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-                :disabled="optionalForAllFlag === true"
+                :disabled="isOptionalForAll === true"
                 @click="addOptionalCondition"
                 data-cy="button-optional-condition"
               />
@@ -169,7 +165,7 @@
     </div>
       <PvDivider />
       <div class="flex flex-column align-items-center gap-1 mx-2">
-        <div v-if="optionalAllFlagAndOptionalConditionsPresent" class="text-sm">
+        <div v-if="isOptionalForAllAndOptionalConditionsPresent" class="text-sm">
           <PvTag icon="pi pi-info-circle" severity="info">
             Making the assessment optional for all will override any optional conditions you have added.
           </PvTag>
@@ -205,15 +201,17 @@ import { ref, onMounted, computed, toRaw } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import { isLevante } from '@/helpers';
 
-const selectedField = ref();
-const selectedCondition = ref();
-const selectedValue = ref();
-
-
 const assignedConditions = ref([]);
+const optionalConditions = ref([]);
+// Store optional conditions in case the isOptionalForAll is toggled on and off again (prevents the form from resetting to the original state)
+const previousOptionalConditions = ref([]);
 
 const optionsForField = (field) => {
-  const selectedField = toRaw(field.label);
+  const processedField = toRaw(field);
+  console.log('processedField: ', processedField);
+  if (!processedField) return 
+
+  const selectedField = processedField.label;
   console.log('selectedField: ', selectedField);
 
   if (selectedField === 'Grade') {
@@ -254,7 +252,12 @@ const removeCondition = (condtions, index) => {
 };
 
 const computedConditionOptions = (field) => {
-  const selectedField = toRaw(field.label);
+  const processedField = toRaw(field);
+  console.log('processedField: ', processedField);
+  if (!processedField) return 
+
+  const selectedField = processedField.label;
+
   console.log('selectedField: ', selectedField);  
   
   if (selectedField === 'Grade') {
@@ -278,7 +281,6 @@ const computedConditionOptions = (field) => {
     ];
   }
 }
-
 
 
 
@@ -307,14 +309,18 @@ onMounted(() => {
 function getAllConditions(taskId) {
   const existingAssignedConditions = getAssignedConditions(taskId);
   const existingOptionalConditions = getOptionalConditions(taskId);
+
+  console.log('existingAssignedConditions: ', existingAssignedConditions);
+
   setAssignedConditions(existingAssignedConditions);
   setOptionalConditions(existingOptionalConditions);
 }
 
 // Get the assigned and optional conditions from the pre-existing admin info
 function getAssignedConditions(taskId) {
-  return props.preExistingAssessmentInfo.find((assessment) => assessment.taskId === taskId)?.conditions?.assigned
-    ?.conditions;
+  return props.preExistingAssessmentInfo
+          .find((assessment) => assessment.taskId === taskId)
+          ?.conditions?.assigned?.conditions;
 }
 
 function getOptionalConditions(taskId) {
@@ -322,10 +328,10 @@ function getOptionalConditions(taskId) {
   const hasOptionalConditions = task?.conditions?.optional?.conditions;
 
   if (hasOptionalConditions) {
-    optionalForAllFlag.value = false;
+    isOptionalForAll.value = false;
     return hasOptionalConditions;
   } else {
-    optionalForAllFlag.value = !!task?.conditions?.optional;
+    isOptionalForAll.value = !!task?.conditions?.optional;
     return [];
   }
 }
@@ -353,13 +359,13 @@ const addAssignedCondition = () => {
   assignedConditions.value.push({ id: assignedConditions.value.length, field: '', op: '', value: '' });
 };
 
-const optionalForAllFlag = ref(false);
+const isOptionalForAll = ref(false);
 
 const errorSubmitText = ref('');
 
 const handleOptionalForAllSwitch = () => {
-  if (optionalForAllFlag.value === true) {
-    // Store the optional conditions in case the optionalForAllFlag is toggled on and off again
+  if (isOptionalForAll.value === true) {
+    // Store the optional conditions in case the isOptionalForAll is toggled on and off again
     previousOptionalConditions.value = optionalConditions.value;
     optionalConditions.value = [];
   } else {
@@ -367,16 +373,14 @@ const handleOptionalForAllSwitch = () => {
   }
 };
 
-const optionalAllFlagAndOptionalConditionsPresent = computed(() => {
-  return optionalForAllFlag.value && computedConditions.value['optional']?.conditions?.length > 0;
+const isOptionalForAllAndOptionalConditionsPresent = computed(() => {
+  return isOptionalForAll.value && computedConditions.value['optional']?.conditions?.length > 0;
 });
 
 const handleReset = () => {
+  errorSubmitText.value = '';
   assignedConditions.value = [];
-  // assignedEditingRows.value = [];
-
   optionalConditions.value = [];
-  // optionalEditingRows.value = [];
 
   getAllConditions(props.assessment.task.id);
 };
@@ -384,15 +388,22 @@ const handleReset = () => {
 const handleSave = () => {
   let error = false;
 
+  console.log('assignedConditions: ', assignedConditions.value);
   // Check if any emppty fields in Assigned Conditions
   for (const condition of assignedConditions.value) {
     for (const [key, value] of Object.entries(condition)) {
       if (key != 'id' && value == '') {
-        errorSubmitText.value = 'Missing fields in Assigned Conditions';
-        error = true;
+          errorSubmitText.value = 'Missing fields in Assigned Conditions';
+          error = true;
+      }
+
+      if (key === 'field' || key === 'op' || key === 'value') {
+        condition[key] = condition[key] = value.value;
       }
     }
   }
+
+  console.log('assignedConditions after: ', assignedConditions.value);
 
   // Check if any emppty fields in Optional Conditions
   for (const condition of optionalConditions.value) {
@@ -400,6 +411,10 @@ const handleSave = () => {
       if (key != 'id' && value == '') {
         errorSubmitText.value = 'Missing fields in Optional Conditions';
         error = true;
+      }
+
+      if (key === 'field' || key === 'op' || key === 'value') {
+        condition[key] = condition[key] = value.value;
       }
     }
   }
@@ -409,15 +424,14 @@ const handleSave = () => {
 
   if (!error) {
     errorSubmitText.value = '';
-    // If optionalForAllFlag is true, then overwrite optional conditions by setting optional to true
+    // If isOptionalForAll is true, then overwrite optional conditions by setting optional to true
     let conditionsCopy = computedConditions.value;
     console.log('conditionsCopy: ', conditionsCopy);
-    console.log('conditionsCopy: ', conditionsCopy);
-    if (optionalForAllFlag.value === true) {
+    if (isOptionalForAll.value === true) {
       conditionsCopy['optional'] = true;
     }
-    // if optionalForAllFlag is false, and there are no optional conditions, then set optional to false
-    if (optionalForAllFlag.value === false && !_isEmpty(optionalConditions.value)) {
+    // if isOptionalForAll is false, and there are no optional conditions, then set optional to false
+    if (isOptionalForAll.value === false && !_isEmpty(optionalConditions.value)) {
       conditionsCopy['optional'] = { conditions: optionalConditions.value, op: 'AND' };
     }
     props.updateVariant(props.assessment.id, conditionsCopy);
@@ -425,12 +439,6 @@ const handleSave = () => {
   }
   return;
 };
-
-
-const optionalConditions = ref([]);
-// const assignedConditions = ref([]);
-// Store optional conditions in case the optionalForAllFlag is toggled on and off again (prevents the form from resetting to the original state)
-const previousOptionalConditions = ref([]);
 
 const computedConditions = computed(() => {
   return {
@@ -442,9 +450,6 @@ const computedConditions = computed(() => {
     }),
   };
 });
-
-const assignedEditingRows = ref([]);
-const optionalEditingRows = ref([]);
 
 const fieldOptions = [
   { label: 'Grade', value: 'studentData.grade', project: 'ROAR' },
