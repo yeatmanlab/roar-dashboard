@@ -9,6 +9,7 @@ concurrency:
 
 jobs:
   cypress-run:
+    if: github.repository == 'yeatmanlab/roar-dashboard'
     name: Run Cypress Partner Admin Tests
     runs-on: ubuntu-latest
     timeout-minutes: 90
