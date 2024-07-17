@@ -202,6 +202,18 @@ export const useAuthStore = () => {
         return this.roarfirekit.createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData);
       },
 
+      async createAdobeSignAgreement(email, agreementId) {
+        return this.roarfirekit.createAdobeSignAgreement(email, agreementId);
+      },
+
+      async getAdobeSignAgreementStatus(agreementId) {
+        return this.roarfirekit.getAdobeSignAgreementStatus(agreementId);
+      },
+
+      async getAdobeSignSigningUrl(email, agreementId) {
+        return this.roarfirekit.getAdobeSignSigningUrl(email, agreementId);
+      },
+
       // ------------------ LEVANTE ------------------
       async createLevanteUsers(userData) {
         return this.roarfirekit.createLevanteUsersWithEmailPassword(userData);

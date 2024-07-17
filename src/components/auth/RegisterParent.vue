@@ -45,6 +45,7 @@
             v-model="v$.ParentEmail.$model"
             name="ParentEmail"
             type="email"
+            @input="validateRoarEmail"
             :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
             aria-describedby="username-or-email-error"
           />
@@ -133,6 +134,14 @@
         consent-type="consent"
         @accepted="handleConsentAccept"
       />
+      <div v-if="isAdobe">
+        <AdobeSignDialog
+          :is-adobe="isAdobe"
+          :is-adult="true"
+          :parent-email="state.ParentEmail"
+          @consent-signed="updateAdobe"
+        />
+      </div>
       <div class="form-submit2">
         <PvButton
           type="submit"
@@ -167,12 +176,14 @@ import { useVuelidate } from '@vuelidate/core';
 import { useAuthStore } from '@/store/auth';
 import ConsentModal from '../ConsentModal.vue';
 import { ChallengeV3 } from 'vue-recaptcha';
+import AdobeSignDialog from '../AdobeSignDialog.vue';
 // import _debounce from 'lodash/debounce';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 const isCaptchaverified = ref(null);
 const dialogMessage = ref('');
+const isAdobe = ref(false);
 
 const isDialogVisible = ref(false);
 
@@ -184,8 +195,9 @@ const closeErrorDialog = () => {
   isDialogVisible.value = false;
 };
 
-defineProps({
+const props = defineProps({
   isRegistering: { type: Boolean, default: true },
+  isAdobeSign: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['submit']);
@@ -228,6 +240,10 @@ async function handleCheckCaptcha() {
   });
 }
 
+function updateAdobe() {
+  isAdobe.value = false;
+}
+
 const submitted = ref(false);
 
 const v$ = useVuelidate(rules, state);
@@ -240,6 +256,9 @@ const handleFormSubmit = (isFormValid) => {
     return;
   }
   validateRoarEmail();
+  if (submitted.value) {
+    emit('submit', state);
+  }
 };
 
 const validateRoarEmail = async () => {
@@ -249,8 +268,6 @@ const validateRoarEmail = async () => {
     showErrorDialog();
     submitted.value = false;
     return;
-  } else {
-    emit('submit', state);
   }
 };
 
@@ -266,15 +283,22 @@ async function handleConsentAccept() {
 }
 
 async function getConsent() {
-  const consentDoc = await authStore.getLegalDoc('consent-behavioral-eye-tracking');
-  consentText.value = consentDoc.text;
-  // consentVersion = consentDoc.version;
-  showConsent.value = true;
-  handleCheckCaptcha();
+  if (props.isAdobeSign === true) {
+    isAdobe.value = props.isAdobeSign;
+  } else {
+    const consentDoc = await authStore.getLegalDoc('consent-video-audio-eye-tracking');
+    consentText.value = consentDoc.text;
+    // consentVersion = consentDoc.version;
+    showConsent.value = true;
+    handleCheckCaptcha();
+  }
 }
 
 const isNextButtonDisabled = computed(() => {
   // Return true (button disabled) if isCaptchaverified is null or undefined
+  if (props.isAdobeSign === true) {
+    return false;
+  }
   return isCaptchaverified.value === null || isCaptchaverified.value === undefined;
 });
 </script>
