@@ -98,6 +98,90 @@
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
         >
+          <PvColumnGroup type="header" class="mt-2">
+            <PvRow v-if="groupheaders" class="flex mt-2">
+              <!-- Spacer Header -->
+              <!-- colspan = getSpacerHeaderWidth-->
+              <PvColumn
+                header="Spacer Header"
+                :colspan="getSpacerColumnWidth"
+                header-style="background-color: white; color:white; border:none; margin-top:1rem;"
+              />
+              <!-- Spanish -->
+              <!-- v-if="spanishColumns" :colspan="spanishColumns" -->
+              <PvColumn
+                v-if="spanishSpacerColumns"
+                header="Spanish"
+                :colspan="spanishSpacerColumns"
+                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
+              />
+              <!-- inDev -->
+              <!-- v-if="supplemenaryColumns" :colspan="supplementaryColumns" -->
+              <PvColumn
+                v-if="supplementarySpacerColumns"
+                :colspan="supplementarySpacerColumns"
+                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
+              >
+                <template v-slot:header> Supplementary<br />(In Development) </template>
+              </PvColumn>
+              <!-- inRoam -->
+              <!-- v-if="mathSpacerColumns" :colspan="supplementaryColumns" -->
+              <PvColumn
+                v-if="mathSpacerColumns"
+                :colspan="mathSpacerColumns"
+                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
+              >
+                <template v-slot:header> Math<br />(In Development) </template>
+              </PvColumn>
+              <!-- inRoav -->
+              <!-- v-if="visionSpacerColumns" :colspan="supplementaryColumns" -->
+              <PvColumn
+                v-if="visionSpacerColumns"
+                :colspan="visionSpacerColumns"
+                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
+              >
+                <template v-slot:header> Vision<br />(In Development) </template>
+              </PvColumn>
+            </PvRow>
+            <PvRow>
+              <PvColumn
+                selection-mode="multiple"
+                header-style="background-color: var(--primary-color); border:none;"
+                :reorderable-column="false"
+                frozen
+              />
+              <PvColumn
+                v-for="(col, index) of computedColumns"
+                :key="col.field + '_' + index"
+                :field="col.field"
+                :data-type="col.dataType"
+                :sortable="col.sort !== false"
+                :show-filter-match-modes="
+                  !col.useMultiSelect && col.dataType !== 'score' && col.dataType !== 'progress'
+                "
+                :show-filter-operator="col.allowMultipleFilters === true"
+                :filter-field="col?.filterField ? col.filterField : col.field"
+                :show-add-button="col.allowMultipleFilters === true"
+                :frozen="col.pinned"
+                :style="col.style"
+                align-frozen="left"
+                header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+              >
+                <template #header>
+                  <div
+                    v-tooltip.top="`${toolTipByHeader(col.header)}`"
+                    :style="[
+                      toolTipByHeader(col.header).length > 0
+                        ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
+                        : null,
+                    ]"
+                  >
+                    {{ col.header }}
+                  </div>
+                </template>
+              </PvColumn>
+            </PvRow>
+          </PvColumnGroup>
           <PvColumn
             selection-mode="multiple"
             header-style="background-color: var(--primary-color); border:none;"
@@ -119,18 +203,6 @@
             align-frozen="left"
             header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
           >
-            <template #header>
-              <div
-                v-tooltip.top="`${toolTipByHeader(col.header)}`"
-                :style="[
-                  toolTipByHeader(col.header).length > 0
-                    ? 'text-decoration: underline dotted #0000CD; text-underline-offset: 3px'
-                    : null,
-                ]"
-              >
-                {{ col.header }}
-              </div>
-            </template>
             <template #body="{ data: colData }">
               <!-- If column is a score field, use a dedicated component to render tags and scores -->
               <div v-if="col.field && col.field?.split('.')[0] === 'scores'">
@@ -407,6 +479,7 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  groupheaders: { type: Boolean, default: false },
 });
 
 const inputColumns = ref(props.columns);
@@ -568,6 +641,71 @@ function getUniqueOptions(column) {
   });
   return options;
 }
+
+const spanishTasks = [
+  'scores.letter-es.percentCorrect',
+  'scores.pa-es.percentCorrect',
+  'scores.swr-es.percentCorrect',
+  'scores.sre-es.correctIncorrectDifference',
+  'scores.fluency-arf-es.percentCorrect',
+  'scores.fluency-calf-es.percentCorrect',
+];
+
+const supplementaryTasks = [
+  'scores.morphology.percentCorrect',
+  'scores.cva.percentCorrect',
+  'scores.vocab.percentCorrect',
+  'scores.trog.percentCorrect',
+  'scores.phonics.percentCorrect',
+];
+
+const roamTasks = [
+  'scores.fluency-arf.percentile',
+  'scores.fluency-calf.percentile',
+  'scores.roam-alpaca.percentile',
+  'scores.egma-math.percentile',
+];
+
+const roavTasks = ['scores.ran.percentile', 'scores.crowding.percentile', 'scores.roav-mep.percentile'];
+const getSpacerColumnWidth = computed(() => {
+  // Look through computedColumns.value
+  // Find first instance of a Spanish or supplementary or math or vision column
+  // If found, return the index of that first column, return that as the length of the spacer row
+  const columns = computedColumns.value;
+  const allTasks = [...spanishTasks, ...supplementaryTasks, ...roamTasks, ...roavTasks];
+
+  for (let i = 0; i < columns.length; i++) {
+    if (allTasks.includes(columns[i].field)) {
+      return i + 1;
+    }
+  }
+  return columns.length;
+});
+
+const spanishSpacerColumns = computed(() => {
+  // Return the number of the spanish columns in computedColumns.value
+  // Return 0 if no Spanish columns
+  const columns = computedColumns.value;
+  return columns.filter((column) => spanishTasks.includes(column.field)).length;
+});
+
+const supplementarySpacerColumns = computed(() => {
+  // Return the number of supplementary columns in computedColumns.value
+  const columns = computedColumns.value;
+  return columns.filter((column) => supplementaryTasks.includes(column.field)).length;
+});
+
+const mathSpacerColumns = computed(() => {
+  // Return the number of math columns in computedColumns.value
+  const columns = computedColumns.value;
+  return columns.filter((column) => roamTasks.includes(column.field)).length;
+});
+
+const visionSpacerColumns = computed(() => {
+  // Return the number of vision columns in computedColumns.value
+  const columns = computedColumns.value;
+  return columns.filter((column) => roavTasks.includes(column.field)).length;
+});
 
 function getFormattedDate(date) {
   if (date && !isNaN(date)) {

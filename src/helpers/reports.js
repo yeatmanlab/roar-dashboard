@@ -255,8 +255,9 @@ export const supportLevelColors = {
   below: '#c93d82',
   Pink: '#c93d82',
   Optional: '#03befc',
-  Assessed: 'white',
+  Assessed: '#e1edf0',
   Unreliable: '#d6b8c7',
+  other: '#e1edf0',
 };
 
 export const progressTags = {
@@ -346,10 +347,14 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
       support_level: 'Optional',
       tag_color: supportLevelColors.optional,
     };
-  } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
+  }
+  if (
+    (tasksToDisplayPercentCorrect.includes(taskId) || tasksToDisplayCorrectIncorrectDifference.includes(taskId)) &&
+    !optional
+  ) {
     return {
       support_level: 'Raw Score',
-      tag_color: 'white',
+      tag_color: supportLevelColors.other,
     };
   }
   if (percentile !== undefined && getGrade(grade) < 6) {

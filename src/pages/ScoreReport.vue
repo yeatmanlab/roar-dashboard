@@ -124,6 +124,7 @@
             :total-records="filteredTableData?.length"
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
+            :groupheaders="true"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
             @export-all="exportAll"
@@ -204,9 +205,9 @@
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.other}`" />
             <div>
-              <div>Assessed</div>
+              <div>Assesed</div>
             </div>
           </div>
         </div>
@@ -535,6 +536,11 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       return '#e8dbb5';
     } else if (support_level === 'Achieved Skill') {
       return '#c0d9bd';
+    } else if (
+      tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
+      tasksToDisplayPercentCorrect.includes(assessment.taskId)
+    ) {
+      return '#e1edf0';
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
     } else {
@@ -696,8 +702,8 @@ const computeAssignmentAndRunData = computed(() => {
             numCorrect != null && numIncorrect != null ? numCorrect - numIncorrect : null;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
-          currRowScores[taskId].tagColor = supportLevelColors.Assessed;
-          scoreFilterTags += ' Assessed ';
+          currRowScores[taskId].tagColor = tagColor;
+          scoreFilterTags += ' Other ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
@@ -706,8 +712,8 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].tagColor = supportLevelColors.Assessed;
-          scoreFilterTags += ' Assessed ';
+          currRowScores[taskId].tagColor = tagColor;
+          scoreFilterTags += ' Other ';
         }
 
         if (taskId === 'letter' && assessment.scores) {
@@ -988,18 +994,39 @@ function getScoreKeysByRow(row, grade) {
 const refreshing = ref(false);
 
 const getTaskStyle = (taskId, backgroundColor, tasks) => {
-  const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
+  const taskGroups = {
+    spanish: ['letter-es', 'pa-es', 'swr-es', 'sre-es', 'fluency-arf-es', 'fluency-calf-es'],
+    supplementary: ['morphology', 'cva', 'vocab', 'trog', 'phonics'],
+    roam: ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'],
+    roav: ['ran', 'crowding', 'roav-mep'],
+  };
+
+  let taskGroup = null;
+  for (const group in taskGroups) {
+    if (taskGroups[group].includes(taskId)) {
+      taskGroup = group;
+      break;
+    }
+  }
+
+  if (!taskGroup) return ''; // taskId not found in any group
+
+  const tasksList = taskGroups[taskGroup];
   let borderStyle = '';
 
-  // Determine if taskId is one of the Spanish tasks and find the first missing task
-  const isSpanishTask = spanishTasks.includes(taskId);
-  const firstMissingTask = spanishTasks.find((task) => tasks.includes(task));
+  const isCurrentTask = tasksList.includes(taskId);
+  const firstMissingTask = tasksList.find((task) => tasks.includes(task));
 
-  if (taskId === 'sre-es' && firstMissingTask !== 'sre-es') {
+  if (taskId === tasksList[tasksList.length - 1] && firstMissingTask !== taskId) {
     borderStyle = 'border-right: 5px solid var(--primary-color);';
-  } else if (isSpanishTask && firstMissingTask && taskId === firstMissingTask && firstMissingTask !== 'sre-es') {
+  } else if (
+    isCurrentTask &&
+    firstMissingTask &&
+    taskId === firstMissingTask &&
+    firstMissingTask !== tasksList[tasksList.length - 1]
+  ) {
     borderStyle = 'border-left: 5px solid var(--primary-color);';
-  } else if (firstMissingTask === 'sre-es') {
+  } else if (firstMissingTask === tasksList[tasksList.length - 1]) {
     borderStyle = 'border-right: 5px solid var(--primary-color); border-left: 5px solid var(--primary-color);';
   }
   return `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; ${borderStyle}`;
@@ -1087,7 +1114,10 @@ const scoreReportColumns = computed(() => {
   });
 
   const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
-  const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
+  const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es', 'fluency-arf-es', 'fluency-calf-es'];
+  const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics'];
+  const roamTasks = ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'];
+  const roavTasks = ['ran', 'crowding', 'roav-mep'];
   const orderedTasks = [];
 
   for (const task of priorityTasks) {
@@ -1105,6 +1135,7 @@ const scoreReportColumns = computed(() => {
   for (const taskId of orderedTasks) {
     let colField;
     const isOptional = `scores.${taskId}.optional`;
+
     // Color needs to include a field to allow sorting.
     if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
     if (viewMode.value === 'standard') colField = `scores.${taskId}.standardScore`;
@@ -1119,14 +1150,17 @@ const scoreReportColumns = computed(() => {
 
     let backgroundColor = '';
 
-    if (priorityTasks.includes(taskId) && !priorityTasks.includes(spanishTasks)) {
+    if (
+      priorityTasks.includes(taskId) &&
+      !priorityTasks.includes(spanishTasks) &&
+      !priorityTasks.includes(supplementaryTasks) &&
+      !priorityTasks.includes(roamTasks) &&
+      !priorityTasks.includes(roavTasks)
+    ) {
       backgroundColor = 'transparent';
     } else {
       backgroundColor = '#E6E6E6';
     }
-
-    console.log('colField ', colField);
-    // LOOK AT COL FIELD
 
     tableColumns.push({
       field: colField,
@@ -1137,13 +1171,12 @@ const scoreReportColumns = computed(() => {
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag:
-        !rawOnlyTasks.includes(taskId) &&
-        !tasksToDisplayPercentCorrect.includes(taskId) &&
-        !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-        (viewMode.value === 'color' || isOptional),
+      emptyTag: viewMode.value === 'color' || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
+        if (taskId === allTasks.value[0]) {
+          return `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; border-left: 5px solid var(--primary-color);`;
+        }
         return getTaskStyle(taskId, backgroundColor, allTasks.value);
       })(),
     });
@@ -1354,5 +1387,12 @@ onMounted(async () => {
   border-bottom-left-radius: 25rem;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+}
+
+.p-datatable .p-column-header-content {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
 }
 </style>
