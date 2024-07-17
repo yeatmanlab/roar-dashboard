@@ -2,7 +2,7 @@
   <div class="flex flex-row" style="max-height: 100vh">
     <!-- Sidebar -->
     <div v-if="sidebarOpen" class="sidebar-container justify-content-between">
-      <div class="flex flex-column gap-3">
+      <div class="flex flex-column">
         <router-link to="/profile">
           <div class="sidebar-button"><i class="pi pi-user" /><span>Your Info</span></div></router-link
         >
@@ -21,7 +21,7 @@
     </div>
     <!-- Collapsed Sidebar -->
     <div v-else class="sidebar-container-collapsed justify-content-between">
-      <div class="flex flex-column gap-3">
+      <div class="flex flex-column">
         <router-link to="/profile">
           <div class="sidebar-button"><i class="pi pi-user" /></div
         ></router-link>

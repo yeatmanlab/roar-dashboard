@@ -241,7 +241,6 @@ const authWithEmail = (state) => {
   // turn it into our internal auth email
   incorrect.value = false;
   let creds = toRaw(state);
-  console.log('creds', creds);
   if (creds.useLink && !creds.usePassword) {
     authStore.initiateLoginWithEmailLink({ email: creds.email }).then(() => {
       router.push({ name: 'AuthEmailSent' });

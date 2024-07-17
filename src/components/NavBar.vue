@@ -25,12 +25,6 @@
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
                   <div class="text-lg font-bold text-gray-600">
                     {{ userDisplayName }}
-                    <router-link v-if="isAdmin" :to="{ name: 'Profile' }"
-                      ><button
-                        class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
-                      >
-                        <i class="pi pi-cog"></i></button
-                    ></router-link>
                   </div>
                   <router-link :to="{ name: 'SignOut' }" class="signout-button">
                     <PvButton
@@ -49,6 +43,14 @@
                       >{{ $t('navBar.signOut') }}</PvButton
                     >
                   </router-link>
+                </div>
+                <div class="nav-user-wrapper bg-gray-100">
+                  <router-link v-if="isAdmin" :to="{ name: 'Profile' }"
+                    ><button
+                      class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
+                    >
+                      <i class="pi pi-cog"></i></button
+                  ></router-link>
                 </div>
                 <div class="my-2">
                   <LanguageSelector />

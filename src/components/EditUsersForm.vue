@@ -107,39 +107,45 @@
   <div v-else-if="localUserType === 'admin'" class="form-container">
     <div class="form-column">
       <div class="form-field">
-        <label :class="{ 'font-bold': !editMode }">First Name</label>
-        <div v-if="!editMode">{{ userData?.name?.first ?? 'None' }}</div>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.first ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.name.first" />
       </div>
       <div class="form-field">
-        <label :class="{ 'font-bold': !editMode }">Middle Name</label>
-        <div v-if="!editMode">{{ userData?.name?.middle ?? 'None' }}</div>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Middle Name</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.middle ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.name.middle" />
       </div>
       <div class="form-field">
-        <label :class="{ 'font-bold': !editMode }">Last Name</label>
-        <div v-if="!editMode">{{ userData?.name?.last ?? 'None' }}</div>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Last Name</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.last ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.name.last" />
       </div>
 
       <div v-if="isSuperAdmin">
         <div>
-          <PvCheckbox :disabled="!editMode" v-model="localUserData.testData" binary />
-          <label class="ml-2">Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
+          <PvCheckbox v-if="editMode" v-model="localUserData.testData" binary class="mr-2" />
+          <label :class="{ 'font-light uppercase text-sm': !editMode }"
+            >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+          >
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.testData ? 'Yes' : 'No' }}</div>
         </div>
         <div>
-          <PvCheckbox :disabled="!editMode" v-model="localUserData.demoData" binary />
-          <label class="ml-2">Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label>
+          <PvCheckbox v-if="editMode" v-model="localUserData.demoData" binary class="mr-2" />
+          <label :class="{ 'font-light uppercase text-sm': !editMode }"
+            >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+          >
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.demoData ? 'Yes' : 'No' }}</div>
         </div>
       </div>
     </div>
     <div class="form-column">
       <div class="form-field">
-        <label :class="{ 'font-bold': !editMode }"
+        <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >Date of Birth
           <span v-if="editMode" class="optional">(optional)</span>
         </label>
-        <div v-if="!editMode">{{ userData?.studentData?.dob ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.dob ?? 'None' }}</div>
         <PvCalendar
           v-else
           v-model="localUserData.studentData.dob"
@@ -150,18 +156,18 @@
         >
       </div>
       <div class="form-field">
-        <label :class="{ 'font-bold': !editMode }"
+        <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >Gender <span v-if="editMode" class="optional">(optional)</span></label
         >
-        <div v-if="!editMode">{{ userData?.studentData?.grade ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.grade ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.studentData.gender" />
       </div>
 
       <div class="form-field">
-        <label :class="{ 'font-bold': !editMode }"
+        <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >English as a Second Language <span v-if="editMode" class="optional">(optional)</span></label
         >
-        <div v-if="!editMode">{{ userData?.studentData?.ell_status ?? false }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.ell_status ?? false }}</div>
         <PvDropdown
           v-else
           v-model="localUserData.studentData.ell_status"
