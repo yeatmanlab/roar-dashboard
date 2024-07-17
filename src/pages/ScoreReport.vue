@@ -1120,14 +1120,25 @@ const scoreReportColumns = computed(() => {
   const roavTasks = ['ran', 'crowding', 'roav-mep'];
   const orderedTasks = [];
 
-  for (const task of priorityTasks) {
-    if (sortedTasks.includes(task)) {
-      orderedTasks.push(task);
+  // Helper function to add tasks in a specific order
+  const addTasksInOrder = (tasks) => {
+    for (const task of tasks) {
+      if (sortedTasks.includes(task)) {
+        orderedTasks.push(task);
+      }
     }
-  }
+  };
 
+  // Add tasks based on the defined order
+  addTasksInOrder(priorityTasks);
+  addTasksInOrder(spanishTasks);
+  addTasksInOrder(supplementaryTasks);
+  addTasksInOrder(roamTasks);
+  addTasksInOrder(roavTasks);
+
+  // Add any remaining tasks that were not included in the predefined lists
   for (const task of sortedTasks) {
-    if (!priorityTasks.includes(task)) {
+    if (!orderedTasks.includes(task)) {
       orderedTasks.push(task);
     }
   }
