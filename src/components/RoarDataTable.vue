@@ -111,10 +111,20 @@
               <!-- v-if="spanishColumns" :colspan="spanishColumns" -->
               <PvColumn
                 v-if="spanishSpacerColumns"
-                header="Spanish"
                 :colspan="spanishSpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
-              />
+              >
+                <template v-slot:header>
+                  <div class="flex flex-row">
+                    <div>Spanish</div>
+                    <div>
+                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'spanish')"
+                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
+                      ></PvButton>
+                    </div>
+                  </div>
+                </template>
+              </PvColumn>
               <!-- inDev -->
               <!-- v-if="supplemenaryColumns" :colspan="supplementaryColumns" -->
               <PvColumn
@@ -122,7 +132,18 @@
                 :colspan="supplementarySpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header> Supplementary<br />(In Development) </template>
+                <template v-slot:header>
+                  <div class="flex flex-row">
+                    <div>Supplementary<br />(In Development)</div>
+                    <div class="mt-1">
+                      <PvButton
+                        class="p-0 border-none border-circle bg-primary"
+                        @click="toggle($event, 'supplementary')"
+                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
+                      ></PvButton>
+                    </div>
+                  </div>
+                </template>
               </PvColumn>
               <!-- inRoam -->
               <!-- v-if="mathSpacerColumns" :colspan="supplementaryColumns" -->
@@ -131,7 +152,16 @@
                 :colspan="mathSpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header> Math<br />(In Development) </template>
+                <template v-slot:header>
+                  <div class="flex flex-row">
+                    <div>Math<br />(In Development)</div>
+                    <div class="mt-1">
+                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'math')"
+                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
+                      ></PvButton>
+                    </div>
+                  </div>
+                </template>
               </PvColumn>
               <!-- inRoav -->
               <!-- v-if="visionSpacerColumns" :colspan="supplementaryColumns" -->
@@ -140,7 +170,16 @@
                 :colspan="visionSpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header> Vision<br />(In Development) </template>
+                <template v-slot:header>
+                  <div class="flex flex-row">
+                    <div>Vision<br />(In Development)</div>
+                    <div class="mt-1">
+                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'vision')"
+                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
+                      ></PvButton>
+                    </div>
+                  </div>
+                </template>
               </PvColumn>
             </PvRow>
             <PvRow>
@@ -182,6 +221,48 @@
               </PvColumn>
             </PvRow>
           </PvColumnGroup>
+          <PvOverlayPanel ref="op" append-to="body" style="width: 40vh">
+            <template v-if="selectedColumn === 'spanish'">
+              <h3 class="font-bold">Spanish</h3>
+              <div>
+                Spanish-language versions of the assessments provide additional information for Spanish-speaking
+                students. <br />
+                <br />
+                Spanish assessments are undergoing validation, and raw scores are provided. <br /><br />
+                These scores will be included in the development of national norms and support categories.
+              </div>
+            </template>
+            <template v-else-if="selectedColumn === 'supplementary'">
+              <h3 class="font-bold">Supplementary</h3>
+              <div>
+                Supplementary assessments provide additional insight into areas such as morphology, syntax, language
+                comprehension, and rapid automatized naming. <br />
+                <br />
+                Supplementary assessments are undergoing validation, and raw scores are provided. <br /><br />
+                These scores will be included in the development of national norms and support categories.
+              </div>
+            </template>
+            <template v-else-if="selectedColumn === 'math'">
+              <h3 class="font-bold">Math</h3>
+              <div>
+                Mathematics assessments provide additional insight into areas such as mathematics fluency and Common
+                Core standards. <br />
+                <br />
+                Mathematics assessments are undergoing validation, and raw scores are provided. <br /><br />
+                These scores will be included in the development of national norms and support categories.
+              </div>
+            </template>
+            <template v-else-if="selectedColumn === 'vision'">
+              <h3 class="font-bold">Vision</h3>
+              <div>
+                Vision assessments provide additional insight into areas such as visual acuity and visual crowding.
+                <br />
+                <br />
+                Vision assessments are undergoing validation, and raw scores are provided. <br /><br />
+                These scores will be included in the development of national norms and support categories.
+              </div>
+            </template>
+          </PvOverlayPanel>
           <PvColumn
             selection-mode="multiple"
             header-style="background-color: var(--primary-color); border:none;"
@@ -726,6 +807,13 @@ const onFreezeToggle = (selected) => {
   });
 };
 
+const op = ref();
+const selectedColumn = ref(null);
+
+const toggle = (event, column) => {
+  selectedColumn.value = column;
+  op.value.toggle(event);
+};
 // Pass through data table events
 const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected']);
 </script>
