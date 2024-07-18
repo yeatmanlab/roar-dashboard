@@ -16,15 +16,16 @@
       />
       <div v-else class="ml-auto">
         <PvButton
-          @click="submitUserData"
-          label="Update"
-          class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
-        />
-        <PvButton
           @click="isEditMode = false"
           label="Cancel"
           class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-2"
         />
+        <PvButton
+          @click="submitUserData"
+          :label="isSubmitting ? '' : 'Update'"
+          class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
+          ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"
+        /></PvButton>
       </div>
     </div>
   </section>
@@ -46,6 +47,7 @@ const toast = useToast();
 const { roarfirekit, uid } = storeToRefs(authStore);
 const localUserData = ref({});
 const isEditMode = ref(false);
+const isSubmitting = ref(false);
 
 // +-------------------------+
 // | Firekit Inititalization |
@@ -81,5 +83,23 @@ const { data: userData } = useQuery({
 // +------------+
 async function submitUserData() {
   console.log('Submitting user data', localUserData.value);
+  isSubmitting.value = true;
+
+  await roarfirekit.value
+    .updateUserData(uid.value, localUserData.value)
+    .then((res) => {
+      isEditMode.value = false;
+      isSubmitting.value = false;
+      toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
+    })
+    .catch((error) => {
+      console.log('Error updating user data', error);
+      toast.add({
+        severity: 'error',
+        summary: 'Unexpected Error',
+        detail: 'An unexpected error has occurred.',
+        life: 3000,
+      });
+    });
 }
 </script>

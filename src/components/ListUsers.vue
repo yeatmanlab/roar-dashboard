@@ -74,6 +74,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
 import _isEmpty from 'lodash/isEmpty';
 import { useQuery } from '@tanstack/vue-query';
 import AppSpinner from './AppSpinner.vue';
@@ -82,12 +83,12 @@ import { fetchUsersByOrg } from '@/helpers/query/users';
 import { singularizeFirestoreCollection } from '@/helpers';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
-import EditUsers from './modals/EditUsers.vue';
 
 const authStore = useAuthStore();
 
 const { roarfirekit, uid } = storeToRefs(authStore);
 const initialized = ref(false);
+const toast = useToast();
 
 const page = ref(0);
 const orderBy = ref(null);
@@ -191,7 +192,24 @@ const onEditButtonClick = (event) => {
   console.log(event);
 };
 
-const updateUserData = async () => {};
+const isSubmitting = ref(false);
+
+const updateUserData = async () => {
+  if (!localUserData.value) return;
+  isSubmitting.value = true;
+
+  await roarfirekit.value
+    .updateUserData(currentEditUser.value.id, localUserData.value)
+    .then((res) => {
+      isSubmitting.value = false;
+      closeModal();
+      toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
+    })
+    .catch((error) => {
+      console.log('Error occurred during submission:', error);
+      isSubmitting.value = false;
+    });
+};
 
 const closeModal = () => {
   isModalEnabled.value = false;
