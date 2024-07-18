@@ -103,9 +103,9 @@
               <!-- Spacer Header -->
               <!-- colspan = getSpacerHeaderWidth-->
               <PvColumn
-                header="Spacer Header"
+                header="Student Information"
                 :colspan="getSpacerColumnWidth"
-                header-style="background-color: white; color:white; border:none; margin-top:1rem;"
+                header-style="background-color: var(--primary-color); color:white; border:1px border-left-none solid white; justify-content:center; margin-top:1rem; text-align: center;"
               />
               <!-- Foundations -->
               <!-- v-if="primarySpacerColumns" :colspan="primarySpacerColumns" -->
@@ -117,7 +117,7 @@
                 <template v-slot:header>
                   <div class="flex flex-row">
                     <div>Foundational</div>
-                    <div>
+                    <div class="ml-2">
                       <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'primary')"
                         ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
                       ></PvButton>
@@ -135,7 +135,7 @@
                 <template v-slot:header>
                   <div class="flex flex-row">
                     <div>Spanish</div>
-                    <div>
+                    <div class="ml-2">
                       <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'spanish')"
                         ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
                       ></PvButton>
@@ -153,7 +153,7 @@
                 <template v-slot:header>
                   <div class="flex flex-row">
                     <div>Supplementary<br />(In Development)</div>
-                    <div class="mt-1">
+                    <div class="mt-1 ml-2">
                       <PvButton
                         class="p-0 border-none border-circle bg-primary"
                         @click="toggle($event, 'supplementary')"
@@ -173,7 +173,7 @@
                 <template v-slot:header>
                   <div class="flex flex-row">
                     <div>Math<br />(In Development)</div>
-                    <div class="mt-1">
+                    <div class="mt-1 ml-2">
                       <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'math')"
                         ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
                       ></PvButton>
@@ -358,7 +358,7 @@
               </PvColumn>
             </PvRow>
           </PvColumnGroup>
-          <PvOverlayPanel ref="op" append-to="body" style="width: 40vh">
+          <PvOverlayPanel ref="op" append-to="body" class="overflow-y-scroll" style="width: 60vh; max-height: 30vh">
             <template v-if="selectedColumn === 'primary'">
               <h3 class="font-bold">Foundational</h3>
               <div>
@@ -403,8 +403,8 @@
             <template v-else-if="selectedColumn === 'math'">
               <h3 class="font-bold">Math</h3>
               <div>
-                Mathematics assessments provide additional insight into areas such as mathematics fluency and Common
-                Core standards. <br />
+                Mathematics assessments provide additional insight into areas such as arithmetic fluency, calculation
+                ability, and mathematical procedures based on common core standards<br />
                 <br />
                 Mathematics assessments are undergoing validation, and raw scores are provided. <br /><br />
                 These scores will be included in the development of national norms and support categories.

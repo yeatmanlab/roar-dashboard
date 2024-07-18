@@ -198,12 +198,12 @@
               <div>Achieved Skill</div>
             </div>
           </div>
-          <div class="legend-entry">
+          <!-- <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Optional};`" />
             <div>
               <div>Optional</div>
             </div>
-          </div>
+          </div> -->
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.other}`" />
             <div>
