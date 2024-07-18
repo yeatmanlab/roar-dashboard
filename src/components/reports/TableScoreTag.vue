@@ -124,8 +124,11 @@ function getFlags(colData, taskId) {
       const reliabilityFlags = Object.keys(flags).map((flag) => {
         return flagMessages[flag] || _lowerCase(flag);
       });
-      // Join the returned flags with a newline character, then add two newlines for spacing
-      return 'Unreliable Score: ' + '\n' + reliabilityFlags.join('\n') + '\n\n';
+      if (reliabilityFlags.length > 0) {
+        // Join the returned flags with a newline character, then add two newlines for spacing
+        return 'Unreliable Score: ' + '\n' + reliabilityFlags.join('\n') + '\n\n';
+      }
+      return '';
     }
   } else {
     return '';
