@@ -201,7 +201,7 @@
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
             <div>
-              <div>Assesed</div>
+              <div>Assessed</div>
             </div>
           </div>
         </div>
