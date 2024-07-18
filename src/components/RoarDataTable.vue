@@ -143,6 +143,24 @@
                   </div>
                 </template>
               </PvColumn>
+              <!-- Spanish  Math-->
+              <!-- v-if="spanishMathColumns" :colspan="spanishMathColumns" -->
+              <PvColumn
+                v-if="spanishMathSpacerColumns"
+                :colspan="spanishMathSpacerColumns"
+                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
+              >
+                <template v-slot:header>
+                  <div class="flex flex-row">
+                    <div>Spanish Math</div>
+                    <div class="ml-2">
+                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'spanishmath')"
+                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
+                      ></PvButton>
+                    </div>
+                  </div>
+                </template>
+              </PvColumn>
               <!-- inDev -->
               <!-- v-if="supplemenaryColumns" :colspan="supplementaryColumns" -->
               <PvColumn
@@ -387,6 +405,16 @@
                 students. <br />
                 <br />
                 Spanish assessments are undergoing validation, and raw scores are provided. <br /><br />
+                These scores will be included in the development of national norms and support categories.
+              </div>
+            </template>
+            <template v-if="selectedColumn === 'spanishmath'">
+              <h3 class="font-bold">Spanish Math</h3>
+              <div>
+                Spanish-language mathematics assessments provide additional insight into areas such as arithmetic
+                fluency, calculation ability, and mathematical procedures based on common core standards <br />
+                <br />
+                Mathematics assessments are undergoing validation, and raw scores are provided. <br /><br />
                 These scores will be included in the development of national norms and support categories.
               </div>
             </template>
@@ -763,9 +791,9 @@ const spanishTasks = [
   'scores.pa-es.percentCorrect',
   'scores.swr-es.percentCorrect',
   'scores.sre-es.correctIncorrectDifference',
-  'scores.fluency-arf-es.percentCorrect',
-  'scores.fluency-calf-es.percentCorrect',
 ];
+
+const spanishMathTasks = ['scores.fluency-arf-es.percentCorrect', 'scores.fluency-calf-es.percentCorrect'];
 
 const supplementaryTasks = [
   'scores.morphology.percentCorrect',
@@ -788,7 +816,14 @@ const getSpacerColumnWidth = computed(() => {
   // Find first instance of a Spanish or supplementary or math or vision column
   // If found, return the index of that first column, return that as the length of the spacer row
   const columns = computedColumns.value;
-  const allTasks = [...primaryTasks, ...spanishTasks, ...supplementaryTasks, ...roamTasks, ...roavTasks];
+  const allTasks = [
+    ...primaryTasks,
+    ...spanishTasks,
+    ...spanishMathTasks,
+    ...supplementaryTasks,
+    ...roamTasks,
+    ...roavTasks,
+  ];
 
   for (let i = 0; i < columns.length; i++) {
     if (allTasks.includes(columns[i].field)) {
@@ -810,6 +845,13 @@ const spanishSpacerColumns = computed(() => {
   // Return 0 if no Spanish columns
   const columns = computedColumns.value;
   return columns.filter((column) => spanishTasks.includes(column.field)).length;
+});
+
+const spanishMathSpacerColumns = computed(() => {
+  // Return the number of the spanish columns in computedColumns.value
+  // Return 0 if no Spanish columns
+  const columns = computedColumns.value;
+  return columns.filter((column) => spanishMathTasks.includes(column.field)).length;
 });
 
 const supplementarySpacerColumns = computed(() => {

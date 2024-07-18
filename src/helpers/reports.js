@@ -255,9 +255,8 @@ export const supportLevelColors = {
   below: '#c93d82',
   Pink: '#c93d82',
   Optional: '#03befc',
-  Assessed: '#e1edf0',
+  Assessed: '#A4DDED',
   Unreliable: '#d6b8c7',
-  other: '#e1edf0',
 };
 
 export const progressTags = {
@@ -354,7 +353,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   ) {
     return {
       support_level: 'Raw Score',
-      tag_color: supportLevelColors.other,
+      tag_color: supportLevelColors.Assessed,
     };
   }
   if (percentile !== undefined && getGrade(grade) < 6) {

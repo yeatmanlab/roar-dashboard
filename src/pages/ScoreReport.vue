@@ -198,14 +198,8 @@
               <div>Achieved Skill</div>
             </div>
           </div>
-          <!-- <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Optional};`" />
-            <div>
-              <div>Optional</div>
-            </div>
-          </div> -->
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.other}`" />
+            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
             <div>
               <div>Assesed</div>
             </div>
@@ -540,7 +534,7 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
-      return '#e1edf0';
+      return '#A4DDED';
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
     } else {
@@ -703,7 +697,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].tagColor = tagColor;
-          scoreFilterTags += ' Other ';
+          scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
@@ -713,7 +707,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].tagColor = tagColor;
-          scoreFilterTags += ' Other ';
+          scoreFilterTags += ' Assessed ';
         }
 
         if (taskId === 'letter' && assessment.scores) {
@@ -995,7 +989,8 @@ const refreshing = ref(false);
 
 const getTaskStyle = (taskId, backgroundColor, tasks) => {
   const taskGroups = {
-    spanish: ['letter-es', 'pa-es', 'swr-es', 'sre-es', 'fluency-arf-es', 'fluency-calf-es'],
+    spanish: ['letter-es', 'pa-es', 'swr-es', 'sre-es'],
+    spanishmath: ['fluency-arf-es', 'fluency-calf-es'],
     supplementary: ['morphology', 'cva', 'vocab', 'trog', 'phonics'],
     roam: ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'],
     roav: ['ran', 'crowding', 'roav-mep'],
@@ -1114,7 +1109,8 @@ const scoreReportColumns = computed(() => {
   });
 
   const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
-  const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es', 'fluency-arf-es', 'fluency-calf-es'];
+  const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
+  const spanishMathTasks = ['fluency-arf-es', 'fluency-calf-es'];
   const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics'];
   const roamTasks = ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'];
   const roavTasks = ['ran', 'crowding', 'roav-mep'];
@@ -1132,6 +1128,7 @@ const scoreReportColumns = computed(() => {
   // Add tasks based on the defined order
   addTasksInOrder(priorityTasks);
   addTasksInOrder(spanishTasks);
+  addTasksInOrder(spanishMathTasks);
   addTasksInOrder(supplementaryTasks);
   addTasksInOrder(roamTasks);
   addTasksInOrder(roavTasks);
@@ -1170,7 +1167,7 @@ const scoreReportColumns = computed(() => {
     ) {
       backgroundColor = 'transparent';
     } else {
-      backgroundColor = '#E6E6E6';
+      backgroundColor = '#EEEEF0';
     }
 
     tableColumns.push({
