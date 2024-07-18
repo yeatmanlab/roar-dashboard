@@ -172,7 +172,7 @@ authStore.$subscribe(() => {
     } else if (authFromClassLink.value) {
       router.push({ name: 'ClassLinkLanding' });
     } else if (routeToProfile.value) {
-      router.push({ path: '/profile/accounts' });
+      router.push({ name: 'ProfileAccounts' });
     } else {
       router.push({ name: 'Home' });
     }

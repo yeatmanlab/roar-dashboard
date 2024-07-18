@@ -359,9 +359,13 @@ const routes = [
     name: 'Profile',
     component: () => import('../pages/AdminProfile.vue'),
     children: [
-      { path: '', component: () => import('../components/views/UserInfoView.vue') },
-      { path: 'password', component: () => import('../components/views/PasswordView.vue') },
-      { path: 'accounts', component: () => import('../components/views/LinkAccountsView.vue') },
+      { path: '', name: 'ProfileInfo', component: () => import('../components/views/UserInfoView.vue') },
+      { path: 'password', name: 'ProfilePassword', component: () => import('../components/views/PasswordView.vue') },
+      {
+        path: 'accounts',
+        name: 'ProfileAccounts',
+        component: () => import('../components/views/LinkAccountsView.vue'),
+      },
     ],
     meta: { pageTitle: 'Profile', requireAdmin: true },
   },
