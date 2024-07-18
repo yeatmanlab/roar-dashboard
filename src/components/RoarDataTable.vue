@@ -218,6 +218,125 @@
                     {{ col.header }}
                   </div>
                 </template>
+                <template v-if="col.dataType" #filter="{ filterModel }">
+                  <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
+                    <PvInputText
+                      v-model="filterModel.value"
+                      type="text"
+                      class="p-column-filter p-3"
+                      placeholder="Filter"
+                    />
+                  </div>
+                  <PvInputNumber
+                    v-if="col.dataType === 'number' && !col.useMultiSelect"
+                    v-model="filterModel.value"
+                    type="text"
+                    class="p-column-filter"
+                    placeholder="Search"
+                  />
+                  <PvMultiSelect
+                    v-if="col.useMultiSelect"
+                    v-model="filterModel.value"
+                    :options="_get(refOptions, col.field)"
+                    placeholder="Any"
+                    :show-toggle-all="false"
+                    class="p-column-filter"
+                  />
+                  <PvCalendar
+                    v-if="col.dataType === 'date' && !col.useMultiSelect"
+                    v-model="filterModel.value"
+                    date-format="mm/dd/yy"
+                    placeholder="mm/dd/yyyy"
+                  />
+                  <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
+                    <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
+                    <label for="booleanFilter">{{ col.header + '?' }}</label>
+                  </div>
+                  <div v-if="col.dataType === 'score'">
+                    <PvDropdown
+                      v-model="filterModel.value"
+                      option-label="label"
+                      option-group-label="label"
+                      option-group-children="items"
+                      :options="taskFilterOptions"
+                      data-cy="score-filter-dropdown"
+                      style="margin-bottom: 0.5rem"
+                    >
+                      <template #option="{ option }">
+                        <div class="flex align-items-center">
+                          <div v-if="supportLevelColors[option]" class="flex gap-2">
+                            <div
+                              class="small-circle tooltip"
+                              :style="`background-color: ${supportLevelColors[option]};`"
+                            />
+                            <span class="tooltiptext">{{ option }}</span>
+                          </div>
+                          <div v-else-if="progressTags[option]">
+                            <PvTag
+                              :severity="progressTags[option]?.severity"
+                              :value="progressTags[option]?.value"
+                              :icon="progressTags[option]?.icon"
+                              class="p-0.5 m-0 font-bold"
+                            />
+                          </div>
+                          <div v-else>
+                            <span class="tooltiptext">{{ option }}</span>
+                          </div>
+                        </div>
+                      </template>
+                      <template #value="{ value }">
+                        <div v-if="supportLevelColors[value]" class="flex gap-2">
+                          <div
+                            class="small-circle tooltip"
+                            :style="`background-color: ${supportLevelColors[value]};`"
+                          />
+                          <span class="tooltiptext">{{ value }}</span>
+                        </div>
+                        <div v-else-if="progressTags[value]">
+                          <PvTag
+                            :severity="progressTags[value]?.severity"
+                            :value="progressTags[value]?.value"
+                            :icon="progressTags[value]?.icon"
+                            class="p-0.5 m-0 font-bold"
+                          />
+                        </div>
+                        <div v-else>
+                          <span class="tooltiptext">{{ value }}</span>
+                        </div>
+                      </template>
+                    </PvDropdown>
+                  </div>
+                  <div v-if="col.dataType === 'progress'">
+                    <PvDropdown
+                      v-model="filterModel.value"
+                      :options="['Assigned', 'Started', 'Completed', 'Optional']"
+                      style="margin-bottom: 0.5rem"
+                      data-cy="progress-filter-dropdown"
+                    >
+                      <template #option="{ option }">
+                        <div v-if="progressTags[option]" class="flex align-items-center">
+                          <PvTag
+                            :severity="progressTags[option]?.severity"
+                            :value="progressTags[option]?.value"
+                            :icon="progressTags[option]?.icon"
+                            :style="`min-width: 2rem; font-weight: bold`"
+                            rounded
+                          />
+                        </div>
+                      </template>
+                      <template #value="{ value }">
+                        <PvTag
+                          v-if="progressTags[value]"
+                          :severity="progressTags[value]?.severity"
+                          :value="progressTags[value]?.value"
+                          :icon="progressTags[value]?.icon"
+                          :style="`min-width: 2rem; font-weight: bold`"
+                          rounded
+                        />
+                      </template>
+                    </PvDropdown>
+                  </div>
+                </template>
               </PvColumn>
             </PvRow>
           </PvColumnGroup>
@@ -353,137 +472,6 @@
               <i v-if="sorted && sortOrder === 1" class="pi pi-sort-amount-down-alt ml-2" />
               <i v-else-if="sorted && sortOrder === -1" class="pi pi-sort-amount-up-alt ml-2" />
             </template>
-            <template v-if="col.dataType" #filter="{ filterModel }">
-              <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
-                <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
-              </div>
-              <PvInputNumber
-                v-if="col.dataType === 'number' && !col.useMultiSelect"
-                v-model="filterModel.value"
-                type="text"
-                class="p-column-filter"
-                placeholder="Search"
-              />
-              <PvMultiSelect
-                v-if="col.useMultiSelect"
-                v-model="filterModel.value"
-                :options="_get(refOptions, col.field)"
-                placeholder="Any"
-                :show-toggle-all="false"
-                class="p-column-filter"
-              />
-              <PvCalendar
-                v-if="col.dataType === 'date' && !col.useMultiSelect"
-                v-model="filterModel.value"
-                date-format="mm/dd/yy"
-                placeholder="mm/dd/yyyy"
-              />
-              <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
-                <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
-                <label for="booleanFilter">{{ col.header + '?' }}</label>
-              </div>
-              <div v-if="col.dataType === 'score'">
-                <PvDropdown
-                  v-model="filterModel.value"
-                  option-label="label"
-                  option-group-label="label"
-                  option-group-children="items"
-                  :options="taskFilterOptions"
-                  data-cy="score-filter-dropdown"
-                  style="margin-bottom: 0.5rem"
-                >
-                  <template #option="{ option }">
-                    <div class="flex align-items-center">
-                      <div v-if="supportLevelColors[option]" class="flex gap-2">
-                        <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[option]};`" />
-                        <span class="tooltiptext">{{ option }}</span>
-                      </div>
-                      <div v-else-if="progressTags[option]">
-                        <PvTag
-                          :severity="progressTags[option]?.severity"
-                          :value="progressTags[option]?.value"
-                          :icon="progressTags[option]?.icon"
-                          class="p-0.5 m-0 font-bold"
-                        />
-                      </div>
-                      <div v-else>
-                        <span class="tooltiptext">{{ option }}</span>
-                      </div>
-                    </div>
-                  </template>
-                  <template #value="{ value }">
-                    <div v-if="supportLevelColors[value]" class="flex gap-2">
-                      <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[value]};`" />
-                      <span class="tooltiptext">{{ value }}</span>
-                    </div>
-                    <div v-else-if="progressTags[value]">
-                      <PvTag
-                        :severity="progressTags[value]?.severity"
-                        :value="progressTags[value]?.value"
-                        :icon="progressTags[value]?.icon"
-                        class="p-0.5 m-0 font-bold"
-                      />
-                    </div>
-                    <div v-else>
-                      <span class="tooltiptext">{{ value }}</span>
-                    </div>
-                  </template>
-                </PvDropdown>
-              </div>
-              <div v-if="col.dataType === 'progress'">
-                <PvDropdown
-                  v-model="filterModel.value"
-                  :options="['Assigned', 'Started', 'Completed', 'Optional']"
-                  style="margin-bottom: 0.5rem"
-                  data-cy="progress-filter-dropdown"
-                >
-                  <template #option="{ option }">
-                    <div v-if="progressTags[option]" class="flex align-items-center">
-                      <PvTag
-                        :severity="progressTags[option]?.severity"
-                        :value="progressTags[option]?.value"
-                        :icon="progressTags[option]?.icon"
-                        :style="`min-width: 2rem; font-weight: bold`"
-                        rounded
-                      />
-                    </div>
-                  </template>
-                  <template #value="{ value }">
-                    <PvTag
-                      v-if="progressTags[value]"
-                      :severity="progressTags[value]?.severity"
-                      :value="progressTags[value]?.value"
-                      :icon="progressTags[value]?.icon"
-                      :style="`min-width: 2rem; font-weight: bold`"
-                      rounded
-                    />
-                  </template>
-                </PvDropdown>
-              </div>
-            </template>
-            <template #filterclear="{ filterCallback }">
-              <div class="flex flex-row-reverse">
-                <PvButton
-                  type="button"
-                  text
-                  icon="pi pi-times"
-                  class="p-2 bg-primary text-white border-round border-none hover:bg-red-900"
-                  severity="primary"
-                  @click="filterCallback()"
-                  >Clear</PvButton
-                >
-              </div>
-            </template>
-            <template #filterapply="{ filterCallback }">
-              <PvButton
-                type="button"
-                icon="pi pi-times"
-                class="px-2 p-2 bg-primary text-white border-round border-none hover:bg-red-900"
-                severity="primary"
-                @click="filterCallback()"
-                >Apply
-              </PvButton>
-            </template>
           </PvColumn>
           <template #empty>
             <div class="flex flex-column align-items-center align-text-left my-8">
@@ -502,6 +490,7 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
@@ -868,9 +857,20 @@ button.p-button.p-component.softer {
   color: black;
 }
 
+button.p-button.p-component.p-button-outlined.p-button-sm.p-button-outlined.p-button-sm,
+button.p-button.p-component.p-button-sm.p-button-sm {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  margin: 0.5rem;
+  border-radius: 0.35rem;
+}
+
 button.p-column-filter-menu-button.p-link,
 g {
   color: white;
+  padding: 5px;
   margin-left: 10px;
 }
 
