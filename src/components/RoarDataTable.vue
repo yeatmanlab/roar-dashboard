@@ -617,7 +617,7 @@ const exportCSV = (exportSelected) => {
 };
 
 const compressedRows = ref(false);
-const padding = '1rem 1.5rem';
+const padding = '1rem 1rem';
 
 function increasePadding() {
   if (!countForVisualize.value) {
