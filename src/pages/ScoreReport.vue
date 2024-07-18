@@ -1185,10 +1185,10 @@ const scoreReportColumns = computed(() => {
       emptyTag: viewMode.value === 'color' || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
       style: (() => {
-        if (taskId === allTasks.value[0]) {
+        if (taskId === orderedTasks[0]) {
           return `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; border-left: 5px solid var(--primary-color);`;
         }
-        return getTaskStyle(taskId, backgroundColor, allTasks.value);
+        return getTaskStyle(taskId, backgroundColor, orderedTasks);
       })(),
     });
   }

@@ -107,6 +107,24 @@
                 :colspan="getSpacerColumnWidth"
                 header-style="background-color: white; color:white; border:none; margin-top:1rem;"
               />
+              <!-- Foundations -->
+              <!-- v-if="primarySpacerColumns" :colspan="primarySpacerColumns" -->
+              <PvColumn
+                v-if="primarySpacerColumns"
+                :colspan="primarySpacerColumns"
+                header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
+              >
+                <template v-slot:header>
+                  <div class="flex flex-row">
+                    <div>Foundational</div>
+                    <div>
+                      <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'primary')"
+                        ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
+                      ></PvButton>
+                    </div>
+                  </div>
+                </template>
+              </PvColumn>
               <!-- Spanish -->
               <!-- v-if="spanishColumns" :colspan="spanishColumns" -->
               <PvColumn
@@ -341,6 +359,27 @@
             </PvRow>
           </PvColumnGroup>
           <PvOverlayPanel ref="op" append-to="body" style="width: 40vh">
+            <template v-if="selectedColumn === 'primary'">
+              <h3 class="font-bold">Foundational</h3>
+              <div>
+                <h4 class="font-bold">Word</h4>
+                Word indicates which students are in need of support in word-level decoding and automaticity <br />
+                Word has been validated, and national norms are provided.<br /><br />
+                <h4 class="font-bold">Sentence</h4>
+                Sentence indicates which students are in need of support in sentence-level fluency<br />
+                Sentence has been validated, and national norms are provided.<br /><br />
+                <h4 class="font-bold">Phoneme</h4>
+                Phoneme indicates which students are in need of support in phonological awareness. Below this student
+                table, in the Phoneme tab, you will find scores for subdomains of phonological awareness skills that can
+                guide instruction.<br />
+                Phoneme has been validated, and national norms are provided. <br /><br />
+                <h4 class="font-bold">Letter</h4>
+                Letter indicates which students are in need of support in letter names and sounds. Below this student
+                table, in the Letter tab, you will find scores for subdomains of letter skills that can guide
+                instruction.<br />
+                Letter has been validated, and raw scores are provided.
+              </div>
+            </template>
             <template v-if="selectedColumn === 'spanish'">
               <h3 class="font-bold">Spanish</h3>
               <div>
@@ -712,6 +751,13 @@ function getUniqueOptions(column) {
   return options;
 }
 
+const primaryTasks = [
+  'scores.letter.percentCorrect',
+  'scores.pa.percentile',
+  'scores.swr.percentile',
+  'scores.sre.percentile',
+];
+
 const spanishTasks = [
   'scores.letter-es.percentCorrect',
   'scores.pa-es.percentCorrect',
@@ -742,7 +788,7 @@ const getSpacerColumnWidth = computed(() => {
   // Find first instance of a Spanish or supplementary or math or vision column
   // If found, return the index of that first column, return that as the length of the spacer row
   const columns = computedColumns.value;
-  const allTasks = [...spanishTasks, ...supplementaryTasks, ...roamTasks, ...roavTasks];
+  const allTasks = [...primaryTasks, ...spanishTasks, ...supplementaryTasks, ...roamTasks, ...roavTasks];
 
   for (let i = 0; i < columns.length; i++) {
     if (allTasks.includes(columns[i].field)) {
@@ -750,6 +796,13 @@ const getSpacerColumnWidth = computed(() => {
     }
   }
   return columns.length;
+});
+
+const primarySpacerColumns = computed(() => {
+  // Return the number of the primary columns in computedColumns.value
+  // Return 0 if no Spanish columns
+  const columns = computedColumns.value;
+  return columns.filter((column) => primaryTasks.includes(column.field)).length;
 });
 
 const spanishSpacerColumns = computed(() => {
