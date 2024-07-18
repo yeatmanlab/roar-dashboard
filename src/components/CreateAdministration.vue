@@ -122,11 +122,19 @@
             <div class="flex">
               <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
               <span class="flex gap-2">
-                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
+                <PvRadioButton
+                  v-model="state.sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
+                  input-id="Yes"
+                  :value="true"
+                />
                 <label for="Yes">Yes</label>
                 <PvRadioButton
                   v-model="state.sequential"
                   data-cy="radio-button-not-sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
                   input-id="No"
                   :value="false"
                 />
@@ -755,5 +763,25 @@ function findVariantWithParams(variants, params) {
   .hide {
     display: none;
   }
+}
+.p-radiobutton.p-component.p-radiobutton-checked {
+  position: relative;
+  width: 20px; /* adjust as needed */
+  height: 20px; /* adjust as needed */
+  background-color: var(--primary-color);
+  border-color: var(--primary-color) !important;
+  border-radius: 50%; /* make the element itself circular */
+}
+
+.p-radiobutton.p-component.p-radiobutton-checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px; /* adjust size of the inner circle as needed */
+  height: 5px; /* adjust size of the inner circle as needed */
+  background-color: white; /* color of the inner circle */
+  border-radius: 50%; /* make the inner element circular */
+  transform: translate(-50%, -50%); /* center the inner circle */
 }
 </style>
