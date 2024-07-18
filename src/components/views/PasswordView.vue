@@ -74,6 +74,9 @@ async function updatePassword() {
     await roarfirekit.value
       .updateUserData(uid.value, { password: state.password })
       .then(() => {
+        submitted.value = false;
+        state.password = '';
+        state.confirmPassword = '';
         toast.add({ severity: 'success', summary: 'Updated', detail: 'Password Updated!', life: 3000 });
       })
       .catch((error) => {

@@ -1,40 +1,30 @@
 <template>
   <div class="flex flex-row" style="max-height: 100vh">
     <!-- Sidebar -->
-    <div v-if="sidebarOpen" class="sidebar-container justify-content-between">
+    <div class="justify-content-between" :class="sidebarOpen ? 'sidebar-container' : 'sidebar-container-collapsed'">
       <div class="flex flex-column">
         <router-link to="/profile">
-          <div class="sidebar-button"><i class="pi pi-user" /><span>Your Info</span></div></router-link
+          <div class="sidebar-button">
+            <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
+          </div></router-link
         >
         <router-link to="/profile/password"
           ><div class="sidebar-button">
-            <i class="pi pi-key" /><span v-if="hasPassword">Change Password</span><span v-else>Add Password</span>
+            <i class="pi pi-key" /><span v-if="sidebarOpen">{{
+              hasPassword ? 'Change Password' : 'Add Password'
+            }}</span>
           </div></router-link
         >
         <router-link to="/profile/accounts"
-          ><div class="sidebar-button"><i class="pi pi-users" /><span>Link Accounts</span></div></router-link
+          ><div class="sidebar-button">
+            <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
+          </div></router-link
         >
       </div>
       <button @click="sidebarOpen = !sidebarOpen" class="border-none bg-primary text-white p-2 hover:surface-400">
-        <div class="flex justify-content-center"><i class="pi pi-angle-double-left mr-2"></i> Collapse</div>
-      </button>
-    </div>
-    <!-- Collapsed Sidebar -->
-    <div v-else class="sidebar-container-collapsed justify-content-between">
-      <div class="flex flex-column">
-        <router-link to="/profile">
-          <div class="sidebar-button"><i class="pi pi-user" /></div
-        ></router-link>
-        <router-link to="/profile/password"
-          ><div class="sidebar-button"><i class="pi pi-key" /></div
-        ></router-link>
-        <router-link to="/profile/accounts"
-          ><div class="sidebar-button"><i class="pi pi-users" /></div
-        ></router-link>
-      </div>
-      <button @click="sidebarOpen = !sidebarOpen" class="border-none bg-primary text-white p-2 hover:surface-400">
         <div class="flex justify-content-center">
-          <i class="pi pi-angle-double-right"></i>
+          <i v-if="!sidebarOpen" class="pi pi-angle-double-right"></i>
+          <span v-if="sidebarOpen"><i class="pi pi-angle-double-left mr-2"></i>Collapse</span>
         </div>
       </button>
     </div>
