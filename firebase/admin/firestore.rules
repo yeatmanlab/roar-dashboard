@@ -59,6 +59,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Allow all users to get the activationCodes
+    // Allow no users to write the activationCodes
+    match /activationCodes/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if false;
+    }
+
     // Allow users to read their own data
     // Also allow admins to read and write data for their users
     match /users/{uid} {

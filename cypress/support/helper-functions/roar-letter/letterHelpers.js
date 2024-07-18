@@ -1,4 +1,5 @@
 import { languageOptions } from './languageOptions';
+import { signInWithClever } from '../participant/participant-helpers';
 
 const timeout = Cypress.env('timeout');
 
@@ -35,11 +36,17 @@ function makeChoiceOrContinue(gameCompleteText) {
   });
 }
 
-export function startGame(administration, language, optional) {
+export function startGame(administration, language, optional, auth) {
   Cypress.on('uncaught:exception', () => false);
-  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
-
   cy.visit('/', { timeout: 2 * timeout });
+  if (auth === 'username') {
+    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/', { timeout: 2 * timeout });
+  }
+  if (auth === 'clever') {
+    signInWithClever();
+  }
+
   cy.selectAdministration(administration);
 
   if (optional) {
@@ -66,8 +73,9 @@ export function playLetter({
   language = 'en',
   gameCompleteText = 'Congratulations',
   optional = false,
+  auth = 'username',
 } = {}) {
-  startGame(administration, language, optional);
+  startGame(administration, language, optional, auth);
 
   makeChoiceOrContinue(gameCompleteText);
   cy.log('Game finished successfully.');

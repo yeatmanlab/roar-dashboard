@@ -205,6 +205,7 @@ const routes = [
     path: '/register',
     name: 'Register',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
+    props: (route) => ({ code: route.query.code }),
     children: [
       {
         name: 'Register',
