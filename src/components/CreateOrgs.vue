@@ -161,7 +161,7 @@
                 :options="allTags"
                 :suggestions="tagSuggestions"
                 name="tags"
-                class="w-full card"
+                class="w-full"
                 data-cy="input-autocomplete"
                 @complete="searchTags"
               />
@@ -571,6 +571,23 @@ button.p-autocomplete-dropdown {
   .hide {
     display: none;
   }
+}
+
+.p-autocomplete-token {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  background: var(--primary-color);
+  padding: 0.25rem;
+  border-radius: 0.35rem;
+  color: white;
+  margin: 0.05rem;
+}
+
+.p-autocomplete-token-icon,
+g {
+  margin-left: 0.5rem;
+  color: white;
 }
 
 #required-asterisk {

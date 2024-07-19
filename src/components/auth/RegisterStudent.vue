@@ -687,10 +687,6 @@ const validateRoarUsername = async () => {
   margin: 2rem 0rem;
 }
 
-button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
-  background: blue;
-}
-
 .p-fluid .p-button {
   width: 50%;
   align-items: center;

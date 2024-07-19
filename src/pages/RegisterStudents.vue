@@ -586,4 +586,8 @@ function downloadErrorTable() {
   margin-right: 3rem;
   margin-top: 2rem;
 }
+g {
+  margin-left: 0.5rem;
+  color: white;
+}
 </style>

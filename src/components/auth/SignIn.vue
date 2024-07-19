@@ -46,6 +46,9 @@
               "
               >{{ $t('authSignIn.signInWithEmailLinkInstead') }}</small
             >
+            <small class="text-link sign-in-method-link" data-cy="sign-in-with-password" @click="handleForgotPassword"
+              >Forgot password?</small
+            >
           </div>
           <!-- Username is entered, Password is desired -->
           <PvPassword
@@ -113,6 +116,36 @@
       <hr class="opacity-20 mt-5" />
     </form>
   </div>
+  <RoarModal
+    :is-enabled="forgotPasswordModalOpen"
+    title="Forgot Password"
+    subtitle="Enter your email to reset your password"
+    small
+    @modal-closed="forgotPasswordModalOpen = false"
+  >
+    <template #default>
+      <div class="flex flex-column">
+        <label>Email</label>
+        <PvInputText v-model="forgotEmail" />
+      </div>
+    </template>
+    <template #footer>
+      <PvButton
+        tabindex="0"
+        class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+        text
+        label="Cancel"
+        outlined
+        @click="closeForgotPasswordModal"
+      ></PvButton>
+      <PvButton
+        tabindex="0"
+        class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+        label="Send Reset Email"
+        @click="sendResetEmail"
+      ></PvButton>
+    </template>
+  </RoarModal>
 </template>
 
 <script setup>
@@ -122,6 +155,7 @@ import { required, requiredUnless } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import _debounce from 'lodash/debounce';
 import { useAuthStore } from '@/store/auth';
+import RoarModal from '../modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -148,6 +182,7 @@ const rules = {
 const submitted = ref(false);
 const v$ = useVuelidate(rules, state);
 const capsLockEnabled = ref(false);
+const forgotPasswordModalOpen = ref(false);
 
 const handleFormSubmit = (isFormValid) => {
   submitted.value = true;
@@ -209,9 +244,26 @@ function checkForCapsLock(e) {
   }
 }
 
+const forgotEmail = ref('');
+function handleForgotPassword(e) {
+  console.log('Opening modal for forgot password');
+  forgotPasswordModalOpen.value = true;
+  // e.preventDefault();
+}
+function closeForgotPasswordModal() {
+  forgotPasswordModalOpen.value = false;
+  forgotEmail.value = '';
+}
+function sendResetEmail() {
+  console.log('Submitting forgot password with email', forgotEmail.value);
+  // roarfirekit.value.forgotPassword(forgotEmail.value);
+  closeForgotPasswordModal();
+}
+
 watch(
   () => state.email,
   async (email) => {
+    emit('update:email', email);
     if (isValidEmail(email)) {
       evaluatingEmail.value = true;
       validateRoarEmail(email);

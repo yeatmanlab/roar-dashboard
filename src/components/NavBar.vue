@@ -44,6 +44,14 @@
                     >
                   </router-link>
                 </div>
+                <div class="nav-user-wrapper bg-gray-100">
+                  <router-link :to="{ name: 'ProfileInfo' }"
+                    ><button
+                      class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
+                    >
+                      <i class="pi pi-cog"></i></button
+                  ></router-link>
+                </div>
                 <div class="my-2">
                   <LanguageSelector />
                 </div>
