@@ -1113,7 +1113,7 @@ const scoreReportColumns = computed(() => {
   const spanishMathTasks = ['fluency-arf-es', 'fluency-calf-es'];
   const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics'];
   const roamTasks = ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'];
-  const roavTasks = ['ran', 'crowding', 'roav-mep'];
+  const roavTasks = ['ran', 'crowding', 'roav-mep', 'mep', 'mep-pseudo'];
   const orderedTasks = [];
 
   // Helper function to add tasks in a specific order
@@ -1145,17 +1145,30 @@ const scoreReportColumns = computed(() => {
     const isOptional = `scores.${taskId}.optional`;
 
     // Color needs to include a field to allow sorting.
-    if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
-    if (viewMode.value === 'standard') colField = `scores.${taskId}.standardScore`;
-    if (viewMode.value === 'raw') colField = `scores.${taskId}.rawScore`;
-    if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
-      colField = `scores.${taskId}.correctIncorrectDifference`;
-    } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
-      colField = `scores.${taskId}.percentCorrect`;
-    } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
+    if (viewMode.value === 'percentile' || viewMode.value === 'color') {
+      colField = `scores.${taskId}.percentile`;
+    } else if (
+      viewMode.value === 'standard' &&
+      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+      !tasksToDisplayPercentCorrect.includes(taskId)
+    ) {
+      colField = `scores.${taskId}.standardScore`;
+    } else if (
+      viewMode.value === 'raw' &&
+      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+      !tasksToDisplayPercentCorrect.includes(taskId)
+    ) {
       colField = `scores.${taskId}.rawScore`;
     } else {
-      colField = `scores.${taskId}.percentile`;
+      if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.correctIncorrectDifference`;
+      } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.percentCorrect`;
+      } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.rawScore`;
+      } else {
+        colField = `scores.${taskId}.percentile`;
+      }
     }
 
     let backgroundColor = '';

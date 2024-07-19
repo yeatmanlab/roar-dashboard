@@ -381,21 +381,19 @@
               <h3 class="font-bold">Foundational</h3>
               <div>
                 <h4 class="font-bold">Word</h4>
-                Word indicates which students are in need of support in word-level decoding and automaticity <br />
-                Word has been validated, and national norms are provided.<br /><br />
+                Word indicates which students are in need of support in word-level decoding and automaticity. Word has
+                been validated, and national norms are provided.<br />
                 <h4 class="font-bold">Sentence</h4>
-                Sentence indicates which students are in need of support in sentence-level fluency<br />
-                Sentence has been validated, and national norms are provided.<br /><br />
+                Sentence indicates which students are in need of support in sentence-level fluency. Sentence has been
+                validated, and national norms are provided.<br />
                 <h4 class="font-bold">Phoneme</h4>
                 Phoneme indicates which students are in need of support in phonological awareness. Below this student
                 table, in the Phoneme tab, you will find scores for subdomains of phonological awareness skills that can
-                guide instruction.<br />
-                Phoneme has been validated, and national norms are provided. <br /><br />
+                guide instruction. Phoneme has been validated, and national norms are provided. <br />
                 <h4 class="font-bold">Letter</h4>
                 Letter indicates which students are in need of support in letter names and sounds. Below this student
                 table, in the Letter tab, you will find scores for subdomains of letter skills that can guide
-                instruction.<br />
-                Letter has been validated, and raw scores are provided.
+                instruction. Letter has been validated, and raw scores are provided.
               </div>
             </template>
             <template v-if="selectedColumn === 'spanish'">
@@ -785,6 +783,13 @@ const primaryTasks = [
   'scores.pa.percentile',
   'scores.swr.percentile',
   'scores.sre.percentile',
+  'scores.pa.standardScore',
+  'scores.swr.standardScore',
+  'scores.sre.standardScore',
+  'scores.sre.rawScore',
+  'scores.pa.rawScore',
+  'scores.swr.rawScore',
+  'scores.sre.rawScore',
 ];
 
 const spanishTasks = [
@@ -796,6 +801,10 @@ const spanishTasks = [
   'scores.pa-es.percentile',
   'scores.swr-es.percentile',
   'scores.sre-es.percentile',
+  'scores.letter-es.rawScore',
+  'scores.pa-es.rawScore',
+  'scores.swr-es.rawScore',
+  'scores.sre-es.rawScore',
 ];
 
 const spanishMathTasks = [
@@ -823,6 +832,10 @@ const roamTasks = [
   'scores.fluency-calf.percentile',
   'scores.roam-alpaca.percentile',
   'scores.egma-math.percentile',
+  'scores.fluency-arf.percentCorrect',
+  'scores.fluency-calf.percentCorrect',
+  'scores.roam-alpaca.percentCorrect',
+  'scores.egma-math.percentCorrect',
 ];
 
 const roavTasks = [
@@ -831,6 +844,11 @@ const roavTasks = [
   'scores.roav-mep.percentile',
   'scores.mep.percentile',
   'scores.mep-pseudo.percentile',
+  'scores.ran.percentCorrect',
+  'scores.crowding.percentCorrect',
+  'scores.roav-mep.percentCorrect',
+  'scores.mep.percentCorrect',
+  'scores.mep-pseudo.percentCorrect',
 ];
 const getSpacerColumnWidth = computed(() => {
   // Look through computedColumns.value

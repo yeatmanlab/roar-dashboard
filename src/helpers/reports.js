@@ -229,7 +229,13 @@ export const tasksToDisplayPercentCorrect = [
   'morphology',
   'vocab',
   'fluency',
+  'fluency-arf',
+  'fluency-calf',
   'trog',
+  'crowding',
+  'mep',
+  'roav-mep',
+  'mep-pseudo',
 ];
 
 /*
