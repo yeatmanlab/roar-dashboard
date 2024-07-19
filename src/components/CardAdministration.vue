@@ -301,8 +301,21 @@ const fetchTreeOrgs = async () => {
 
   const dsgfOrgs = _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
     const { classes, schools, collection, ...nodeData } = orgDoc;
+    console.log('Org stats', nodeData, stats);
+    // Rather than setting the key as the index, we set the key to be the number of students who have
+    // not started the assignment. This allows us to reverse-sort by this value to have the most complete orgs listed first.
+    let indexNumber;
+    if (stats) {
+      console.log('stats assignment assigned', stats?.assignment?.assigned ?? 0);
+      console.log('stats assignment started', stats?.assignment?.started ?? 0);
+      indexNumber = (stats?.assignment?.assigned ?? 0) - (stats?.assignment?.started ?? 0);
+    } else {
+      console.log('defaulting to index for', nodeData.name);
+      indexNumber = index;
+    }
+    console.log(`Index number for ${nodeData.name}`, indexNumber);
     const node = {
-      key: String(index),
+      key: String(indexNumber),
       data: {
         orgType: singularOrgTypes[collection],
         schools,
@@ -395,6 +408,8 @@ const fetchTreeOrgs = async () => {
   treeTableOrgs.push(...(independentClasses ?? []));
   treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'group'));
   treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'family'));
+
+  console.log('Tree table orgs', treeTableOrgs);
 
   return treeTableOrgs;
 };
