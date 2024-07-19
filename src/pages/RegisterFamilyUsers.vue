@@ -17,7 +17,7 @@
         </div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" @submit="handleSubmit($event)" :code="code" />
+            <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -67,19 +67,14 @@ import { fetchDocById } from '@/helpers/query/utils';
 import router from '../router';
 
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const spinner = ref(false);
-let unsubscribe;
 
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
-  code: { type: String },
+  code: { type: String, default: null },
 });
-
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
 
 const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid],

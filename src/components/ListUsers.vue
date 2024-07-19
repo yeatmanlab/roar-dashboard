@@ -46,7 +46,7 @@
         :is-enabled="isModalEnabled"
         @modal-closed="isModalEnabled = false"
       >
-        <EditUsersForm :user-data="currentEditUser" @update:userData="localUserData = $event" />
+        <EditUsersForm :user-data="currentEditUser" @update:user-data="localUserData = $event" />
         <template #footer>
           <div class="flex gap-2">
             <PvButton
@@ -200,7 +200,7 @@ const updateUserData = async () => {
 
   await roarfirekit.value
     .updateUserData(currentEditUser.value.id, localUserData.value)
-    .then((res) => {
+    .then(() => {
       isSubmitting.value = false;
       closeModal();
       toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });

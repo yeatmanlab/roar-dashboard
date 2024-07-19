@@ -2,28 +2,28 @@
   <section id="your-information" class="form-section">
     <h2>Your Information</h2>
     <EditUsersForm
-      :user-data="userData"
       v-model="userDataModel"
-      @update:userData="localUserData = $event"
+      :user-data="userData"
       :edit-mode="isEditMode"
+      @update:user-data="localUserData = $event"
     />
     <div v-if="userType === 'admin'" class="flex">
       <PvButton
         v-if="!isEditMode"
-        @click="isEditMode = true"
         label="Edit"
         class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
+        @click="isEditMode = true"
       />
       <div v-else class="ml-auto">
         <PvButton
-          @click="isEditMode = false"
           label="Cancel"
           class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-2"
+          @click="isEditMode = false"
         />
         <PvButton
-          @click="submitUserData"
           :label="isSubmitting ? '' : 'Update'"
           class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
+          @click="submitUserData"
           ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"
         /></PvButton>
       </div>
@@ -91,7 +91,7 @@ async function submitUserData() {
 
   await roarfirekit.value
     .updateUserData(uid.value, localUserData.value)
-    .then((res) => {
+    .then(() => {
       isEditMode.value = false;
       isSubmitting.value = false;
       toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
