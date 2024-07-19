@@ -40,25 +40,55 @@
         />
       </div>
       <AppSpinner v-else />
-      <EditUsers :user-data="currentEditUser" :is-enabled="isModalEnabled" @modal-closed="isModalEnabled = false" />
+      <RoarModal
+        title="Edit User Information"
+        subtitle="Modify, add, or remove user information"
+        :is-enabled="isModalEnabled"
+        @modal-closed="isModalEnabled = false"
+      >
+        <EditUsersForm :user-data="currentEditUser" @update:userData="localUserData = $event" />
+        <template #footer>
+          <div class="flex gap-2">
+            <PvButton
+              tabindex="0"
+              class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+              text
+              label="Cancel"
+              outlined
+              @click="closeModal"
+            ></PvButton>
+            <PvButton
+              tabindex="0"
+              class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+              label="Save"
+              @click="updateUserData"
+              ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+            ></PvButton>
+          </div>
+        </template>
+      </RoarModal>
+      <!-- <EditUsers :user-data="currentEditUser" :is-enabled="isModalEnabled" @modal-closed="isModalEnabled = false" /> -->
     </section>
   </main>
 </template>
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
 import _isEmpty from 'lodash/isEmpty';
 import { useQuery } from '@tanstack/vue-query';
 import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
 import { fetchUsersByOrg } from '@/helpers/query/users';
 import { singularizeFirestoreCollection } from '@/helpers';
-import EditUsers from './modals/EditUsers.vue';
+import EditUsersForm from './EditUsersForm.vue';
+import RoarModal from './modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 
 const { roarfirekit, uid } = storeToRefs(authStore);
 const initialized = ref(false);
+const toast = useToast();
 
 const page = ref(0);
 const orderBy = ref(null);
@@ -151,10 +181,39 @@ const columns = ref([
 const currentEditUser = ref(null);
 const isModalEnabled = ref(false);
 
+// +-----------------+
+// | Edit User Modal |
+// +-----------------+
+const localUserData = ref(null);
+
 const onEditButtonClick = (event) => {
   currentEditUser.value = event;
   isModalEnabled.value = true;
   console.log(event);
+};
+
+const isSubmitting = ref(false);
+
+const updateUserData = async () => {
+  if (!localUserData.value) return;
+  isSubmitting.value = true;
+
+  await roarfirekit.value
+    .updateUserData(currentEditUser.value.id, localUserData.value)
+    .then((res) => {
+      isSubmitting.value = false;
+      closeModal();
+      toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
+    })
+    .catch((error) => {
+      console.log('Error occurred during submission:', error);
+      isSubmitting.value = false;
+    });
+};
+
+const closeModal = () => {
+  isModalEnabled.value = false;
+  localUserData.value = null;
 };
 
 const onSort = (event) => {

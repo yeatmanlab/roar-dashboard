@@ -17,7 +17,7 @@
           <div id="languageSelect" class="m-4 flex justify-content-center">
             <LanguageSelector />
           </div>
-          <SignIn :invalid="incorrect" @submit="authWithEmail" />
+          <SignIn :invalid="incorrect" @submit="authWithEmail" @update:email="email = $event" />
         </section>
         <section class="flex flex-row align-content-center">
           <h4 class="flex m-0 align-content-center justify-content-center mr-3 flex-wrap-reverse">
@@ -66,10 +66,78 @@
       </footer>
     </section>
   </div>
+  <RoarModal
+    :is-enabled="warningModalOpen"
+    title="Email is already associated with an account"
+    subtitle=""
+    icon="pi-exclamation-triangle"
+    small
+    @modal-closed="handleWarningModalClose"
+  >
+    <template #default>
+      The email <span class="font-bold">{{ email }}</span> is already in use using
+      {{ displaySignInMethods.slice(0, -1).join(', ') + ' or ' + displaySignInMethods.slice(-1) }}. If this is you,
+      click to sign in below.
+      <div class="flex align-items-center flex-column gap-2 my-2">
+        <div v-if="signInMethods.includes('google')" class="flex">
+          <PvButton
+            label="Sign in with Google"
+            class="flex surface-0 p-1 mr-1 border-black-alpha-10 text-center justify-content-center hover:border-primary hover:surface-ground"
+            style="border-radius: 3rem; height: 3rem"
+            @click="authWithGoogle"
+          >
+            <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
+            <span>Google</span>
+          </PvButton>
+        </div>
+        <div v-if="signInMethods.includes('clever')">
+          <PvButton
+            v-if="!isLevante"
+            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+            style="border-radius: 3rem; height: 3rem"
+            @click="authWithClever"
+          >
+            <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
+            <span>Clever</span>
+          </PvButton>
+        </div>
+        <div v-if="signInMethods.includes('classlink')">
+          <PvButton
+            v-if="!isLevante"
+            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+            style="border-radius: 3rem; height: 3rem"
+            @click="authWithClassLink"
+          >
+            <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
+            <span>ClassLink</span>
+          </PvButton>
+        </div>
+        <div v-if="signInMethods.includes('password')" class="flex flex-row gap-2">
+          <PvPassword placeholder="Password" v-model="modalPassword" :feedback="false"></PvPassword>
+          <PvButton
+            @click="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
+            class="flex p-3 border-none border-round hover:bg-black-alpha-20"
+            :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
+          />
+        </div>
+      </div>
+      You will then be directed to your profile page where you can link different authentication providers.
+    </template>
+    <template #footer>
+      <PvButton
+        tabindex="0"
+        class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+        text
+        label="Back to Sign In"
+        outlined
+        @click="handleWarningModalClose"
+      ></PvButton>
+    </template>
+  </RoarModal>
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw, onBeforeUnmount } from 'vue';
+import { onMounted, ref, toRaw, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import SignIn from '@/components/auth/SignIn.vue';
@@ -77,13 +145,15 @@ import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { fetchDocById } from '../helpers/query/utils';
+import RoarModal from '../components/modals/RoarModal.vue';
 
 const incorrect = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { spinner, authFromClever, authFromClassLink } = storeToRefs(authStore);
+const { spinner, authFromClever, authFromClassLink, routeToProfile, roarfirekit } = storeToRefs(authStore);
+const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
   if (authStore.uid) {
@@ -101,6 +171,8 @@ authStore.$subscribe(() => {
       router.push({ name: 'CleverLanding' });
     } else if (authFromClassLink.value) {
       router.push({ name: 'ClassLinkLanding' });
+    } else if (routeToProfile.value) {
+      router.push({ name: 'ProfileAccounts' });
     } else {
       router.push({ name: 'Home' });
     }
@@ -122,13 +194,22 @@ const authWithGoogle = () => {
         }
       })
       .catch((e) => {
-        console.log('caught error', e);
-        spinner.value = false;
+        const errorCode = e.code;
+        if (errorCode === 'auth/email-already-in-use') {
+          // User tried to register with an email that is already linked to a firebase account.
+          openWarningModal();
+          spinner.value = false;
+        } else {
+          console.log('caught error', e);
+          spinner.value = false;
+        }
       });
 
     spinner.value = true;
   }
 };
+
+const modalPassword = ref('');
 
 const authWithClever = () => {
   console.log('---> authWithClever');
@@ -191,6 +272,29 @@ const authWithEmail = (state) => {
       });
   }
 };
+
+const handleWarningModalClose = () => {
+  authStore.routeToProfile = true;
+  warningModalOpen.value = false;
+};
+
+const email = ref('');
+
+const signInMethods = ref([]);
+
+const openWarningModal = async () => {
+  signInMethods.value = await roarfirekit.value.fetchEmailAuthMethods(email.value);
+  warningModalOpen.value = true;
+};
+
+const displaySignInMethods = computed(() => {
+  return signInMethods.value.map((method) => {
+    if (method === 'password') return 'Password';
+    if (method === 'google') return 'Google';
+    if (method === 'clever') return 'Clever';
+    if (method === 'classlink') return 'ClassLink';
+  });
+});
 
 onMounted(() => {
   document.body.classList.add('page-signin');
