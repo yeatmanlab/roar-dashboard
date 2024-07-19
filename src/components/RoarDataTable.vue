@@ -781,6 +781,7 @@ function getUniqueOptions(column) {
 
 const primaryTasks = [
   'scores.letter.percentCorrect',
+  'scores.letter.percentile',
   'scores.pa.percentile',
   'scores.swr.percentile',
   'scores.sre.percentile',
@@ -788,12 +789,21 @@ const primaryTasks = [
 
 const spanishTasks = [
   'scores.letter-es.percentCorrect',
+  'scores.letter-es.percentile',
   'scores.pa-es.percentCorrect',
   'scores.swr-es.percentCorrect',
   'scores.sre-es.correctIncorrectDifference',
+  'scores.pa-es.percentile',
+  'scores.swr-es.percentile',
+  'scores.sre-es.percentile',
 ];
 
-const spanishMathTasks = ['scores.fluency-arf-es.percentCorrect', 'scores.fluency-calf-es.percentCorrect'];
+const spanishMathTasks = [
+  'scores.fluency-arf-es.percentCorrect',
+  'scores.fluency-calf-es.percentCorrect',
+  'scores.fluency-arf-es.percentile',
+  'scores.fluency-calf-es.percentile',
+];
 
 const supplementaryTasks = [
   'scores.morphology.percentCorrect',
@@ -801,6 +811,11 @@ const supplementaryTasks = [
   'scores.vocab.percentCorrect',
   'scores.trog.percentCorrect',
   'scores.phonics.percentCorrect',
+  'scores.morphology.percentile',
+  'scores.cva.percentile',
+  'scores.vocab.percentile',
+  'scores.trog.percentile',
+  'scores.phonics.percentile',
 ];
 
 const roamTasks = [
@@ -810,7 +825,13 @@ const roamTasks = [
   'scores.egma-math.percentile',
 ];
 
-const roavTasks = ['scores.ran.percentile', 'scores.crowding.percentile', 'scores.roav-mep.percentile'];
+const roavTasks = [
+  'scores.ran.percentile',
+  'scores.crowding.percentile',
+  'scores.roav-mep.percentile',
+  'scores.mep.percentile',
+  'scores.mep-pseudo.percentile',
+];
 const getSpacerColumnWidth = computed(() => {
   // Look through computedColumns.value
   // Find first instance of a Spanish or supplementary or math or vision column
@@ -824,7 +845,6 @@ const getSpacerColumnWidth = computed(() => {
     ...roamTasks,
     ...roavTasks,
   ];
-
   for (let i = 0; i < columns.length; i++) {
     if (allTasks.includes(columns[i].field)) {
       return i + 1;
