@@ -3,11 +3,27 @@
     <div class="card flex justify-content-center">
       <div class="flex flex-wrap gap-3">
         <div class="flex align-items-center">
-          <PvRadioButton v-model="decision" input-id="helpChoose" name="help" value="help" @change="whatDecision" />
+          <PvRadioButton
+            v-model="decision"
+            input-id="helpChoose"
+            class="border-2 border-circle border-300"
+            style="width: 15px; height: 15px"
+            name="help"
+            value="help"
+            @change="whatDecision"
+          />
           <label for="helpChoose" class="ml-2">Help me choose</label>
         </div>
         <div class="flex align-items-center">
-          <PvRadioButton v-model="decision" input-id="iKnow" name="know" value="know" @change="whatDecision" />
+          <PvRadioButton
+            v-model="decision"
+            input-id="iKnow"
+            class="border-2 border-circle border-300"
+            style="width: 15px; height: 15px"
+            name="know"
+            value="know"
+            @change="whatDecision"
+          />
           <label for="iKnow" class="ml-2">I know what to select</label>
         </div>
       </div>
@@ -15,7 +31,7 @@
     <div class="flex justify-content-center mt-2">
       <PvCheckbox v-model="noConsent" input-id="no-consent" class="flex" value="noConsent" />
       <label class="ml-2 flex text-center" for="no-consent"
-        >This Administration does not require a consent/assent</label
+        >This administration does not require consent or assent forms</label
       >
     </div>
     <div class="flex flex-row">
@@ -153,6 +169,7 @@
           :options="listOfDocs.consent"
           option-label="fileName"
           style="width: 70%"
+          :placeholder="props.legal?.consent[0]?.fileName || 'Select a Consent Form'"
           @change="updateConsent"
         />
         <h3 class="pt-3">Select an Assent Form</h3>
@@ -161,6 +178,7 @@
           :options="listOfDocs.assent"
           option-label="fileName"
           style="width: 70%"
+          :placeholder="props.legal?.assent[0]?.fileName || 'Select an Assent Form'"
           @change="updateAssent"
         />
         <div div class="hidden">
@@ -352,6 +370,13 @@ onMounted(() => {
   if (!props.legal || Object.keys(props.legal).length === 0) {
     decision.value = 'know';
     knowWhatIWant.value = true;
+  } else {
+    result.consent[0] = props.legal.consent[0];
+    result.assent[0] = props.legal.assent[0];
+    result.amount = props.legal.amount;
+    result.expectedTime = props.legal.expectedTime;
+    selectedConsent.value = props.legal.consent[0];
+    selectedAssent.value = props.legal.assent[0];
   }
 });
 
@@ -556,10 +581,30 @@ watch(noConsent, () => {
   }
 });
 </script>
-<style>
+<style scoped>
 .p-checkbox-box.p-highlight {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: white;
+}
+.p-radiobutton.p-component.p-radiobutton-checked {
+  position: relative;
+  width: 20px; /* adjust as needed */
+  height: 20px; /* adjust as needed */
+  background-color: var(--primary-color);
+  border-color: var(--primary-color) !important;
+  border-radius: 50%; /* make the element itself circular */
+}
+
+.p-radiobutton.p-component.p-radiobutton-checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px; /* adjust size of the inner circle as needed */
+  height: 5px; /* adjust size of the inner circle as needed */
+  background-color: white; /* color of the inner circle */
+  border-radius: 50%; /* make the inner element circular */
+  transform: translate(-50%, -50%); /* center the inner circle */
 }
 </style>

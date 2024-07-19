@@ -195,15 +195,16 @@ const routes = [
   },
 
   {
-    path: '/register-game',
-    name: 'RegisterGame',
-    component: () => import('../pages/RegisterGame.vue'),
-    meta: { pageTitle: 'Register Game', requireAdmin: true, requireSuperAdmin: true },
+    path: '/manage-tasks-variants',
+    name: 'ManageTasksVariants',
+    component: () => import('../pages/ManageTasksVariants.vue'),
+    meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/register',
     name: 'Register',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
+    props: (route) => ({ code: route.query.code }),
     children: [
       {
         name: 'Register',
@@ -403,7 +404,7 @@ const routes = [
   {
     path: '/maintenance',
     name: 'Maintenance',
-    component: () => import('../pages/Maintenance.vue'),
+    component: () => import('../pages/MaintenancePage.vue'),
     meta: { pageTitle: 'Down for Maintenance' },
   },
 ];

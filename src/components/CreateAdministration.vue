@@ -55,11 +55,10 @@
                 v-model="state.dateStarted"
                 class="w-full"
                 :min-date="minStartDate"
-                input-id="start-date"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
                 icon="pi pi-calendar text-white p-1"
+                input-id="start-date"
                 show-button-bar
                 data-cy="input-start-date"
               />
@@ -78,7 +77,6 @@
                 input-id="end-date"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
                 icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-end-date"
@@ -124,11 +122,19 @@
             <div class="flex">
               <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
               <span class="flex gap-2">
-                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
+                <PvRadioButton
+                  v-model="state.sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
+                  input-id="Yes"
+                  :value="true"
+                />
                 <label for="Yes">Yes</label>
                 <PvRadioButton
                   v-model="state.sequential"
                   data-cy="radio-button-not-sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
                   input-id="No"
                   :value="false"
                 />
@@ -677,17 +683,6 @@ function findVariantWithParams(variants, params) {
   background-color: var(--surface-100);
 }
 
-button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
-  border: none;
-  background-color: var(--primary-color);
-  margin-left: -0.5rem;
-  width: 3rem;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-top-right-radius: 20%;
-  border-bottom-right-radius: 20%;
-}
-
 .divider {
   min-height: 100%;
   max-width: 0;
@@ -768,5 +763,25 @@ button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
   .hide {
     display: none;
   }
+}
+.p-radiobutton.p-component.p-radiobutton-checked {
+  position: relative;
+  width: 20px; /* adjust as needed */
+  height: 20px; /* adjust as needed */
+  background-color: var(--primary-color);
+  border-color: var(--primary-color) !important;
+  border-radius: 50%; /* make the element itself circular */
+}
+
+.p-radiobutton.p-component.p-radiobutton-checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px; /* adjust size of the inner circle as needed */
+  height: 5px; /* adjust size of the inner circle as needed */
+  background-color: white; /* color of the inner circle */
+  border-radius: 50%; /* make the inner element circular */
+  transform: translate(-50%, -50%); /* center the inner circle */
 }
 </style>

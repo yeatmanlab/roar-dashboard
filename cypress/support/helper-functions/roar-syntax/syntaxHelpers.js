@@ -1,4 +1,5 @@
 import { languageOptions } from './languageOptions';
+import { signInWithClever } from '../participant/participant-helpers';
 
 const timeout = Cypress.env('timeout');
 
@@ -35,11 +36,17 @@ function makeChoiceOrContinue(gameCompleteText) {
   });
 }
 
-function startGame(administration, language, optional, task) {
+function startGame(administration, language, optional, task, auth) {
   Cypress.on('uncaught:exception', () => false);
-  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
 
   cy.visit('/', { timeout: 2 * timeout });
+  if (auth === 'username') {
+    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/', { timeout: 2 * timeout });
+  }
+  if (auth === 'clever') {
+    signInWithClever();
+  }
   cy.selectAdministration(administration);
 
   if (optional) {
@@ -80,8 +87,9 @@ export function playSyntax({
   optional = false,
   task = 'syntax',
   gameCompleteText = "You've completed the game",
+  auth = 'username',
 } = {}) {
-  startGame(administration, language, optional, task);
+  startGame(administration, language, optional, task, auth);
 
   playIntro();
 

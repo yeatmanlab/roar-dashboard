@@ -93,18 +93,12 @@ Cypress.Commands.add(
   },
 );
 
-Cypress.Commands.add('activateAdminSidebar', () => {
-  cy.get('[data-cy="button-admin-sidebar"]').click();
-  cy.wait(1000);
-});
-
 Cypress.Commands.add('selectAdministration', function selectAdministration(testAdministration, retries = 0) {
   cy.log(`'Selecting administration: ${testAdministration}, attempt: ${retries + 1}`);
   if (retries > 3) {
     cy.log('Retries exceeded, administration not found, exiting test...');
     return;
   }
-
   cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
   cy.get('body', { timeout: 2 * Cypress.env('timeout') })
     .invoke('text')

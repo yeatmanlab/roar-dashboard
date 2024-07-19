@@ -17,7 +17,7 @@
         </div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" @submit="handleSubmit($event)" />
+            <component :is="activeComp()" @submit="handleSubmit($event)" :code="code" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -44,7 +44,6 @@
           v-model:visible="isDialogVisible"
           :header="dialogHeader"
           :style="{ width: '25rem' }"
-          :position="position"
           :modal="true"
           :draggable="false"
         >
@@ -73,20 +72,14 @@ const initialized = ref(false);
 const spinner = ref(false);
 let unsubscribe;
 
+const props = defineProps({
+  code: { type: String },
+});
+
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
-});
-
-// const claimsLoaded = computed(() => !isLoadingClaims.value);
 
 const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid],
