@@ -2,24 +2,29 @@
   <div v-if="localUserType === 'student'" class="form-container">
     <div class="form-column">
       <div class="form-field">
-        <label>First Name</label>
-        <PvInputText v-model="localUserData.name.first" />
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.first ?? 'None' }}</div>
+        <PvInputText v-else v-model="localUserData.name.first" />
       </div>
       <div class="form-field">
-        <label>Middle Name</label>
-        <PvInputText v-model="localUserData.name.middle" />
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Middle Name</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.middle ?? 'None' }}</div>
+        <PvInputText v-else v-model="localUserData.name.middle" />
       </div>
       <div class="form-field">
-        <label>Last Name</label>
-        <PvInputText v-model="localUserData.name.last" />
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Last Name</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.last ?? 'None' }}</div>
+        <PvInputText v-else v-model="localUserData.name.last" />
       </div>
 
       <div class="form-field">
-        <label
+        <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >Date of Birth
           <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
         >
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.dob ?? 'None' }}</div>
         <PvCalendar
+          v-else
           v-model="localUserData.studentData.dob"
           :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
         />
@@ -29,10 +34,12 @@
       </div>
 
       <div class="form-field">
-        <label
+        <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >Grade <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
         >
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.grade ?? 'None' }}</div>
         <PvInputText
+          v-else
           v-model="localUserData.studentData.grade"
           :class="{ 'p-invalid': errorMessage.includes('Grade') }"
         />
@@ -51,13 +58,16 @@
     </div>
     <div class="form-column">
       <div class="form-field">
-        <label>Gender</label>
-        <PvInputText v-model="localUserData.studentData.gender" />
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Gender</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.gender ?? 'None' }}</div>
+        <PvInputText v-else v-model="localUserData.studentData.gender" />
       </div>
 
       <div class="form-field">
-        <label>English as a Second Language</label>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">English as a Second Language</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.ell_status ?? false }}</div>
         <PvDropdown
+          v-else
           v-model="localUserData.studentData.ell_status"
           option-label="label"
           option-value="value"
@@ -65,8 +75,10 @@
         />
       </div>
       <div class="form-field">
-        <label>IEP Status</label>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">IEP Status</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.iep_status ?? false }}</div>
         <PvDropdown
+          v-else
           v-model="localUserData.studentData.iep_status"
           option-label="label"
           option-value="value"
@@ -74,8 +86,10 @@
         />
       </div>
       <div class="form-field">
-        <label>Free-Reduced Lunch</label>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Free-Reduced Lunch</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.frl_status ?? false }}</div>
         <PvDropdown
+          v-else
           v-model="localUserData.studentData.frl_status"
           option-label="label"
           option-value="value"
@@ -84,8 +98,12 @@
       </div>
 
       <div class="form-field">
-        <label for="race">Race </label>
+        <label for="race" :class="{ 'font-light uppercase text-sm': !editMode }">Race </label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ userData?.studentData?.race?.join(', ') ?? 'None' }}
+        </div>
         <PvAutoComplete
+          v-else
           v-model="localUserData.studentData.race"
           multiple
           :suggestions="raceOptions"
@@ -94,8 +112,12 @@
         />
       </div>
       <div class="form-field">
-        <label>Hispanic or Latino Ethnicity</label>
+        <label :class="{ 'font-light uppercase text-sm': !editMode }">Hispanic or Latino Ethnicity</label>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ userData?.studentData?.hispanic_ethnicity ?? false }}
+        </div>
         <PvDropdown
+          v-else
           v-model="localUserData.studentData.hispanic_ethnicity"
           option-label="label"
           option-value="value"
