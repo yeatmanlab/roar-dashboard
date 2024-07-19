@@ -44,8 +44,8 @@
                     >
                   </router-link>
                 </div>
-                <div v-if="isAdmin" class="nav-user-wrapper bg-gray-100">
-                  <router-link v-if="isAdmin" :to="{ name: 'ProfileInfo' }"
+                <div class="nav-user-wrapper bg-gray-100">
+                  <router-link :to="{ name: 'ProfileInfo' }"
                     ><button
                       class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
                     >

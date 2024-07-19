@@ -360,14 +360,20 @@ const routes = [
     component: () => import('../pages/AdminProfile.vue'),
     children: [
       { path: '', name: 'ProfileInfo', component: () => import('../components/views/UserInfoView.vue') },
-      { path: 'password', name: 'ProfilePassword', component: () => import('../components/views/PasswordView.vue') },
+      {
+        path: 'password',
+        name: 'ProfilePassword',
+        component: () => import('../components/views/PasswordView.vue'),
+        meta: { requireAdmin: true },
+      },
       {
         path: 'accounts',
         name: 'ProfileAccounts',
         component: () => import('../components/views/LinkAccountsView.vue'),
+        meta: { requireAdmin: true },
       },
     ],
-    meta: { pageTitle: 'Profile', requireAdmin: true },
+    meta: { pageTitle: 'Profile' },
   },
   {
     path: '/enable-cookies',

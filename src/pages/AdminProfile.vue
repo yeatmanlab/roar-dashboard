@@ -8,14 +8,14 @@
             <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
           </div></router-link
         >
-        <router-link to="/profile/password"
+        <router-link to="/profile/password" v-if="isAdmin"
           ><div class="sidebar-button">
             <i class="pi pi-key" /><span v-if="sidebarOpen">{{
               hasPassword ? 'Change Password' : 'Add Password'
             }}</span>
           </div></router-link
         >
-        <router-link to="/profile/accounts"
+        <router-link to="/profile/accounts" v-if="isAdmin"
           ><div class="sidebar-button">
             <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
           </div></router-link
@@ -38,9 +38,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
+import { useQuery } from '@tanstack/vue-query';
+import { fetchDocById } from '@/helpers/query/utils';
+import _get from 'lodash/get';
+import _isEmpty from 'lodash/isEmpty';
+import _union from 'lodash/union';
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const sidebarOpen = ref(true);
 
 const providerIds = computed(() => {
@@ -71,6 +76,23 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
+
+const { data: userClaims, isLoading: userClaimsLoading } = useQuery({
+  queryKey: ['userClaims', uid],
+  queryFn: () => fetchDocById('userClaims', uid.value),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// Keep track of the user's type
+const isAdmin = computed(() => {
+  if (userClaims.value?.claims?.super_admin) return true;
+  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
+  return true;
+});
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 </script>
 <style lang="scss" scoped>
 .sidebar-container {

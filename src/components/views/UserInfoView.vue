@@ -7,7 +7,7 @@
       @update:userData="localUserData = $event"
       :edit-mode="isEditMode"
     />
-    <div class="flex">
+    <div v-if="userType === 'admin'" class="flex">
       <PvButton
         v-if="!isEditMode"
         @click="isEditMode = true"
@@ -35,9 +35,10 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { useQuery } from '@tanstack/vue-query';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import EditUsersForm from '../EditUsersForm.vue';
 import { fetchDocById } from '@/helpers/query/utils';
+import _get from 'lodash/get';
 
 // +----------------+
 // | Initialization |
@@ -48,6 +49,9 @@ const { roarfirekit, uid } = storeToRefs(authStore);
 const localUserData = ref({});
 const isEditMode = ref(false);
 const isSubmitting = ref(false);
+const userType = computed(() => {
+  return _get(userData.value, 'userType', 'student');
+});
 
 // +-------------------------+
 // | Firekit Inititalization |
