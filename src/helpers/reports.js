@@ -347,6 +347,12 @@ export const gradeOptions = [
 export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
   let support_level = null;
   let tag_color = null;
+  if (rawScore === undefined) {
+    return {
+      support_level,
+      tag_color,
+    };
+  }
   if (optional) {
     return {
       support_level: 'Optional',
@@ -355,7 +361,7 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
   }
   if (
     (tasksToDisplayPercentCorrect.includes(taskId) || tasksToDisplayCorrectIncorrectDifference.includes(taskId)) &&
-    !optional
+    rawScore !== undefined
   ) {
     return {
       support_level: 'Raw Score',

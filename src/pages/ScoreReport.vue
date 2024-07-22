@@ -537,8 +537,6 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       return '#A4DDED';
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
-    } else {
-      return '#d3d3d3';
     }
   }
   return tag_color;
@@ -554,12 +552,28 @@ const getScoresAndSupportFromAssessment = ({
   taskId,
   optional,
 }) => {
+  let support_level;
+  let tag_color;
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
   let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
   let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
 
-  const { support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional);
+  if (
+    tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
+    tasksToDisplayPercentCorrect.includes(assessment.taskId)
+  ) {
+    if (assessment.scores === undefined) {
+      support_level = null;
+      tag_color = null;
+    } else {
+      support_level = '';
+      tag_color = '#A4DDED';
+    }
+  } else {
+    ({ support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional));
+  }
+
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
@@ -693,7 +707,7 @@ const computeAssignmentAndRunData = computed(() => {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
           currRowScores[taskId].correctIncorrectDifference =
-            numCorrect != null && numIncorrect != null ? numCorrect - numIncorrect : null;
+            numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
           currRowScores[taskId].tagColor = tagColor;
