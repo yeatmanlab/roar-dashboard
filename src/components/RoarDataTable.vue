@@ -225,9 +225,9 @@
                 date-format="mm/dd/yy"
                 placeholder="mm/dd/yyyy"
               />
-              <div v-if="col.dataType === 'boolean' && !col.useMultiSelect" class="flex flex-row gap-2">
-                <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
-                <label for="booleanFilter">{{ col.header + '?' }}</label>
+              <!--  TODO CHECK IF THIS IS WORKING> -->
+              <div v-if="col.dataType === 'boolean'" class="flex flex-row gap-2">
+                <PvDropdown v-model="filterModel.value" :options="['True', 'False']" style="margin-bottom: 0.5rem" />
               </div>
               <div v-if="col.dataType === 'score'">
                 <PvDropdown
@@ -352,7 +352,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { FilterMatchMode, FilterOperator } from 'primevue/api';
+import { FilterMatchMode, FilterOperator } from 'primevue/core/api';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import _get from 'lodash/get';
 import _map from 'lodash/map';

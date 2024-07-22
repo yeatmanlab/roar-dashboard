@@ -63,7 +63,7 @@ import PvTabView from 'primevue/tabview';
 import PvTag from 'primevue/tag';
 import PvToast from 'primevue/toast';
 import PvTreeTable from 'primevue/treetable';
-import PvTriStateCheckbox from 'primevue/tristatecheckbox';
+// import PvTriStateCheckbox from 'primevue/tristatecheckbox';
 import PvFieldset from 'primevue/fieldset';
 
 // PrimeVue directive imports
@@ -81,9 +81,9 @@ import RoarDataTable from '@/components/RoarDataTable.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 
 // Style assets
-import 'primevue/resources/primevue.css'; // primevue css
-import 'primeicons/primeicons.css'; // icons
-import 'primeflex/primeflex.scss'; // primeflex
+// import 'primevue/resources/primevue.css'; // primevue css
+// import 'primeicons/primeicons.css'; // icons
+// import 'primeflex/primeflex.scss'; // primeflex
 
 import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import './assets/styles/theme.scss'; // ROAR theme
@@ -173,7 +173,7 @@ app.component('PvTabView', PvTabView);
 app.component('PvTag', PvTag);
 app.component('PvToast', PvToast);
 app.component('PvTreeTable', PvTreeTable);
-app.component('PvTriStateCheckbox', PvTriStateCheckbox);
+// app.component('PvTriStateCheckbox', PvTriStateCheckbox);
 
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
