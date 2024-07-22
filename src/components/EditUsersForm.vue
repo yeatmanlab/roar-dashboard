@@ -206,10 +206,9 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById } from '@/helpers/query/utils';
-import { watch, ref, onMounted, computed, defineModel } from 'vue';
+import { watch, ref, onMounted, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
-import { _getDefaults } from 'defaults';
 const props = defineProps({
   userData: {
     type: Object,
