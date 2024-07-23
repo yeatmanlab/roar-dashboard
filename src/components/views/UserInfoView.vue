@@ -18,7 +18,7 @@
         <PvButton
           @click="isEditMode = false"
           label="Cancel"
-          class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-2"
+          class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-2"
         />
         <PvButton
           @click="submitUserData"

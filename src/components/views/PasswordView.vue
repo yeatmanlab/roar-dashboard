@@ -19,7 +19,8 @@
       @click="updatePassword"
       :label="hasPassword ? 'Update Password' : 'Submit Password'"
       class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
-    />
+      ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"
+    /></PvButton>
   </div>
 </template>
 <script setup>
@@ -49,6 +50,7 @@ const state = reactive({
 });
 const v$ = useVuelidate(rules, state);
 const submitted = ref(false);
+const isSubmitting = ref(false);
 
 // +----------------------+
 // | Submitting functions |
@@ -71,10 +73,12 @@ const hasPassword = computed(() => {
 async function updatePassword() {
   submitted.value = true;
   if (!v$.value.$invalid) {
+    isSubmitting.value = true;
     await roarfirekit.value
       .updateUserData(uid.value, { password: state.password })
       .then(() => {
         submitted.value = false;
+        isSubmitting.value = false;
         state.password = '';
         state.confirmPassword = '';
         toast.add({ severity: 'success', summary: 'Updated', detail: 'Password Updated!', life: 3000 });
