@@ -616,6 +616,8 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   height: 16px;
   color: var(--text-color);
   border-radius: var(--border-radius);
+  display: flex;
+  justify-content: center;
   transition: none;
 }
 

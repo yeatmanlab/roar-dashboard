@@ -11,69 +11,76 @@
       <form class="p-fluid" @submit.prevent="handleVariantSubmit(!v$.$invalid)">
         <h1 class="text-center font-bold">Create a New Variant</h1>
 
-        <div class="flex flex-column row-gap-3">
-          <section class="form-section">
-            <div class="flex justify-content-between align-items-center">
-              <label for="variant-fields">
-                <small class="text-gray-400 font-bold">Select an Existing Task </small>
-                <span class="required">*</span></label
-              >
-              <div class="flex flex-column gap-2 align-items-end">
-                <div class="flex flex-row align-items-center justify-content-end gap-2 flex-order-1">
-                  <!--                    This does not seemt to function properly, comming it out for now.-->
-                  <!--                    <label class="ml-7" for="chbx-registeredTask">Search registered tasks only?</label>-->
-                  <!--                    <PvCheckbox v-model="registeredTasksOnly" input-id="chbx-registeredTask" :binary="true" />-->
+        <div class="flex justify-content-center align-items-center vh-100">
+          <div class="flex flex-column align-items-center gap-3 w-50">
+            <!-- Select an Existing Task -->
+            <section class="flex flex-column w-full">
+              <div class="grid grid-nogutter align-items-center">
+                <div class="col-fixed">
+                  <label for="variant-fields">
+                    <small class="text-gray-400 font-bold">Select an Existing Task </small>
+                    <span class="required">*</span>
+                  </label>
+                </div>
+                <div class="col">
+                  <PvDropdown
+                    v-model="v$.selectedGame.$model"
+                    :options="formattedTasks"
+                    option-label="name"
+                    placeholder="Select a Game"
+                    style="width: 60vh"
+                    :loading="isFetchingTasks"
+                    :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
+                    name="variant-fields"
+                    @click="clearFieldParamArrays()"
+                  ></PvDropdown>
                 </div>
               </div>
-            </div>
-            <PvDropdown
-              v-model="v$.selectedGame.$model"
-              :options="formattedTasks"
-              option-label="name"
-              placeholder="Select a Game"
-              :loading="isFetchingTasks"
-              :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
-              name="variant-fields"
-              @click="clearFieldParamArrays()"
-            ></PvDropdown>
-            <span v-if="v$.selectedGame.$error && submitted">
-              <span v-for="(error, index) of v$.selectedGame.$errors" :key="index">
-                <small class="p-error">{{ error.$message }}</small>
+              <span v-if="v$.selectedGame.$error && submitted">
+                <span v-for="(error, index) of v$.selectedGame.$errors" :key="index">
+                  <small class="p-error">{{ error.$message }}</small>
+                </span>
               </span>
-            </span>
-            <small
-              v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$response"
-              class="p-error"
-            >
-              {{ v$.selectedGame.id.required.$message.replace('Value', 'Task selection') }}
-            </small>
-          </section>
-
-          <section class="form-section">
-            <div class="p-input-icon-right">
-              <label for="variantName">
-                <small class="text-gray-400 font-bold">Variant Name </small>
-                <span class="required">*</span></label
+              <small
+                v-else-if="(v$.selectedGame.$invalid && submitted) || v$.selectedGame.$pending.$response"
+                class="p-error"
               >
-              <PvInputText
-                v-model="v$.variantName.$model"
-                name="variantName"
-                :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
-                aria-describedby="activation-code-error"
-              />
-            </div>
-            <span v-if="v$.variantName.$error && submitted">
-              <span v-for="(error, index) of v$.variantName.$errors" :key="index">
-                <small class="p-error">{{ error.$message }}</small>
+                {{ v$.selectedGame.id.required.$message.replace('Value', 'Task selection') }}
+              </small>
+            </section>
+
+            <!-- Variant Name -->
+            <section class="flex flex-column w-full">
+              <div class="grid grid-nogutter align-items-center">
+                <div class="col-fixed">
+                  <label for="variantName">
+                    <small class="text-gray-400 font-bold">Variant Name </small>
+                    <span class="required">*</span>
+                  </label>
+                </div>
+                <div class="col">
+                  <PvInputText
+                    v-model="v$.variantName.$model"
+                    name="variantName"
+                    style="width: 60vh"
+                    :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
+                    aria-describedby="activation-code-error"
+                  />
+                </div>
+              </div>
+              <span v-if="v$.variantName.$error && submitted">
+                <span v-for="(error, index) of v$.variantName.$errors" :key="index">
+                  <small class="p-error">{{ error.$message }}</small>
+                </span>
               </span>
-            </span>
-            <small
-              v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$response"
-              class="p-error"
-            >
-              {{ v$.variantName.required.$message.replace('Value', 'Variant Name') }}
-            </small>
-          </section>
+              <small
+                v-else-if="(v$.variantName.$invalid && submitted) || v$.variantName.$pending.$response"
+                class="p-error"
+              >
+                {{ v$.variantName.required.$message.replace('Value', 'Variant Name') }}
+              </small>
+            </section>
+          </div>
         </div>
 
         <div class="flex flex-column align-items-center">
@@ -150,25 +157,26 @@
 
             <div v-if="newParams.length > 0" class="w-full">
               <div v-for="(field, index) in newParams" :key="index" class="flex align-items-center column-gap-2 mb-1">
-                <PvInputText v-model="field.name" placeholder="Field Name" />
+                <PvInputText v-model="field.name" style="width: 30vh" placeholder="Field Name" />
                 <PvDropdown
                   v-model="field.type"
                   :options="['string', 'number', 'boolean']"
                   placeholder="Field Type"
+                  style="width: 20vh"
                   class="w-fit"
                 />
 
                 <PvInputText
                   v-if="field.type === 'string'"
                   v-model="field.value"
+                  style="width: 30vh"
                   placeholder="Field Value"
-                  class="w-full"
                 />
                 <PvInputNumber
                   v-if="field.type === 'number'"
                   v-model="field.value"
                   placeholder="Field Value"
-                  class="w-full"
+                  style="width: 30vh"
                 />
                 <PvDropdown
                   v-if="field.type === 'boolean'"
@@ -177,7 +185,7 @@
                   :options="booleanDropDownOptions"
                   option-label="label"
                   option-value="value"
-                  class="w-full"
+                  style="width: 30vh"
                 />
                 <PvButton
                   type="button"
@@ -228,11 +236,11 @@
             </div>
           </div>
         </div>
-        <div class="form-submit">
+        <div class="form-submit flex justify-content-center align-content-center">
           <PvButton
             type="submit"
             label="Submit"
-            class="submit-button w-2 my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+            class="submit-button w-2 my-4 h-3rem bg-primary text-white border-none border-round p-2 hover:bg-red-900"
             severity="primary"
           />
         </div>
@@ -271,9 +279,9 @@
       </section>
 
       <section v-if="selectedVariant" class="flex flex-column align-items-start mt-4 p-4">
-        <div class="flex flex-column w-full">
+        <div class="flex flex-column w-full justify-content-center align-items-center">
           <label for="fieldsOutput">
-            <strong>Fields</strong>
+            <strong class="text-xl">Fields</strong>
           </label>
           <div v-for="(value, key) in selectedVariant" id="fieldsOutput" :key="key">
             <div v-if="!ignoreFields.includes(key)">
@@ -284,7 +292,7 @@
                 <label :for="key" class="w-1">
                   <em>{{ key }}</em>
                 </label>
-                <PvInputText id="inputEditVariantType" :placeholder="typeof value" disabled class="w-2 text-center" />
+                <PvInputText id="inputEditVariantType" class="w-2 text-center" :placeholder="typeof value" disabled />
                 <PvInputText
                   v-if="typeof value === 'string'"
                   v-model="updatedVariantData[key]"
@@ -316,21 +324,30 @@
           </div>
 
           <div v-if="addedFields.length > 0" class="w-full">
-            <div v-for="(field, index) in addedFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
-              <PvInputText v-model="field.name" placeholder="Field Name" />
-              <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+            <div
+              v-for="(field, index) in addedFields"
+              :key="index"
+              class="flex align-items-center justify-content-center column-gap-2 mb-1"
+            >
+              <PvInputText v-model="field.name" style="width: 30vh" placeholder="Field Name" />
+              <PvDropdown
+                v-model="field.type"
+                style="width: 20vh"
+                :options="['string', 'number', 'boolean']"
+                placeholder="Field Type"
+              />
 
               <PvInputText
                 v-if="field.type === 'string'"
                 v-model="field.value"
                 placeholder="Field Value"
-                class="flex-grow-1"
+                style="width: 30vh"
               />
               <PvInputNumber
                 v-if="field.type === 'number'"
                 v-model="field.value"
                 placeholder="Field Value"
-                class="flex-grow-1"
+                style="width: 30vh"
               />
               <PvDropdown
                 v-if="field.type === 'boolean'"
@@ -339,7 +356,7 @@
                 :options="booleanDropDownOptions"
                 option-label="label"
                 option-value="value"
-                class="flex-grow-1"
+                style="width: 30vh"
               />
               <PvButton
                 type="button"
@@ -350,13 +367,15 @@
             </div>
           </div>
         </div>
-        <PvButton
-          label="Add Field"
-          text
-          icon="pi pi-plus"
-          class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-          @click="addField"
-        />
+        <div class="w-full flex justify-content-center">
+          <PvButton
+            label="Add Field"
+            text
+            icon="pi pi-plus"
+            class="my-4 bg-primary w-2 text-white border-none border-round p-2 hover:bg-red-900"
+            @click="addField"
+          />
+        </div>
 
         <!--          **** Disabling the function to edit game params for now ****-->
 
@@ -426,10 +445,13 @@
         <!--          </div>-->
         <!--          <PvButton label="Add Param" text icon="pi pi-plus" class="my-4" @click="addParam" />-->
       </section>
-
-      <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-        >Update Variant</PvButton
-      >
+      <div class="w-full flex justify-content-center">
+        <PvButton
+          type="submit"
+          class="my-4 bg-primary h-3rem w-3 text-white border-none border-round p-2 hover:bg-red-900"
+          >Update Variant</PvButton
+        >
+      </div>
     </form>
   </div>
 </template>
@@ -838,6 +860,10 @@ const clearFieldParamArrays = () => {
   border-bottom-left-radius: 0;
   border-top-right-radius: 25rem;
   border-bottom-right-radius: 25rem;
+}
+.col-fixed {
+  flex: 0 0 auto;
+  width: 20vh; /* Adjust this value as needed */
 }
 
 .select-button .p-button:first-of-type:not(:only-of-type) {

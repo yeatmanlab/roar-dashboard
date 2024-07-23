@@ -348,7 +348,9 @@
 .p-togglebutton.p-togglebutton-checked::before {
   background: var(--primary-color) !important;
 }
-
+input.p-inputtext.p-component.p-password-input {
+  width: 31.4rem !important;
+}
 .p-togglebutton.p-togglebutton-checked > .p-togglebutton-content {
   color: white !important;
 }

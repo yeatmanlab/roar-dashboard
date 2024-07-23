@@ -26,8 +26,8 @@
           <div class="flex">
             <PvButton
               label="Sign in with Google"
-              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
+              class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full text-center text-black justify-content-center hover:border-primary hover:surface-ground"
+              style="border-radius: 3rem; height: 3rem; color: black !important"
               @click="authWithGoogle"
             >
               <img src="../assets/provider-google-logo.svg" alt="The Google Logo" class="flex mr-2 w-2" />
@@ -36,7 +36,7 @@
             <PvButton
               v-if="!isLevante"
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
+              style="border-radius: 3rem; height: 3rem; color: black !important"
               @click="authWithClever"
             >
               <img src="../assets/provider-clever-logo.svg" alt="The Clever Logo" class="flex mr-2 w-2" />
@@ -45,7 +45,7 @@
             <PvButton
               v-if="!isLevante"
               class="flex surface-0 p-1 mr-1 border-black-alpha-10 w-full justify-content-center hover:border-primary hover:surface-ground"
-              style="border-radius: 3rem; height: 3rem"
+              style="border-radius: 3rem; height: 3rem; color: black !important"
               @click="authWithClassLink"
             >
               <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
@@ -115,7 +115,6 @@
         <div v-if="signInMethods.includes('password')" class="flex flex-row gap-2">
           <PvPassword v-model="modalPassword" placeholder="Password" :feedback="false"></PvPassword>
           <PvButton
-            class="flex p-3 border-none border-round bg-primary hover:bg-black-alpha-20"
             :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
             @click="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
           />
