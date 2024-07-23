@@ -6,7 +6,7 @@
         root: { class: 'px-5' },
         content: { style: 'max-width: 48rem' },
         closeButton: { class: 'hidden' },
-        rejectButton: { style: 'display: none' },
+        rejectButton: { root: { class: 'hidden' } },
       }"
     >
       <template #message>
