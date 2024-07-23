@@ -63,8 +63,10 @@ import PvTabView from 'primevue/tabview';
 import PvTag from 'primevue/tag';
 import PvToast from 'primevue/toast';
 import PvTreeTable from 'primevue/treetable';
-// import PvTriStateCheckbox from 'primevue/tristatecheckbox';
+import PvFloatLabel from 'primevue/floatlabel';
 import PvFieldset from 'primevue/fieldset';
+import PvIconField from 'primevue/iconfield';
+import PvInputIcon from 'primevue/inputicon';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -81,15 +83,16 @@ import RoarDataTable from '@/components/RoarDataTable.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
 
 // Style assets
-// import 'primevue/resources/primevue.css'; // primevue css
-// import 'primeicons/primeicons.css'; // icons
-// import 'primeflex/primeflex.scss'; // primeflex
-
+// import '@primevue/resources/primevue.css'; // primevue css
+import Aura from '@primevue/themes/aura';
+import 'primeicons/primeicons.css'; // icons
+import 'primeflex/primeflex.scss'; // primeflex
 import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import './assets/styles/theme.scss'; // ROAR theme
 
 // translations
 import { i18n } from '@/translations/i18n.js';
+import { definePreset } from '@primevue/themes';
 // https://www.npmjs.com/package/vue-country-flag-next
 
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
@@ -105,7 +108,34 @@ app.use(VueRecaptchaPlugin, {
 
 initSentry(app);
 
-app.use(PrimeVue, { ripple: true });
+const MyPreset = definePreset(Aura, {
+  primitive: {
+    red: { 500: '#8c1515', 700: '#5b0c0f', 400: '#5b0c0f', 600: '#5b0c0f' },
+    surface: { 100: '#adb5bd', 500: '#8c1515' },
+  },
+  semantic: {
+    primary: {
+      50: '{surface.200}',
+      100: '{surface.300}',
+      200: '{red.200}',
+      300: '{red.300}',
+      400: '{red.400}',
+      500: '{red.500}',
+      600: '{red.600}',
+      700: '{red.700}',
+      800: '{red.800}',
+      900: '{red.900}',
+      950: '{red.950}',
+    },
+  },
+});
+
+app.use(PrimeVue, {
+  theme: {
+    preset: MyPreset,
+  },
+  ripple: true,
+});
 app.use(ToastService);
 app.use(ConfirmationService);
 app.use(pinia);
@@ -116,6 +146,7 @@ app.use(VueGoogleMaps, {
     libraries: 'places',
   },
 });
+
 app.use(createHead());
 app.use(TextClamp);
 app.use(VueQueryPlugin);
@@ -173,8 +204,9 @@ app.component('PvTabView', PvTabView);
 app.component('PvTag', PvTag);
 app.component('PvToast', PvToast);
 app.component('PvTreeTable', PvTreeTable);
-// app.component('PvTriStateCheckbox', PvTriStateCheckbox);
-
+app.component('PvFloatLabel', PvFloatLabel);
+app.component('PvIconField', PvIconField);
+app.component('PvInputIcon', PvInputIcon);
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
 app.component('PvFieldset', PvFieldset);

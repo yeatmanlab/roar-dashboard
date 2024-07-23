@@ -18,7 +18,7 @@
               v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
               class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
             >
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvDropdown
                   v-model="selectedDistrict"
                   input-id="district"
@@ -31,10 +31,10 @@
                   data-cy="dropdown-parent-district"
                 />
                 <label for="district">District</label>
-              </span>
+              </PvFloatLabel>
             </div>
             <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvDropdown
                   v-model="selectedSchool"
                   input-id="school"
@@ -47,7 +47,7 @@
                   data-cy="dropdown-parent-school"
                 />
                 <label for="school">School</label>
-              </span>
+              </PvFloatLabel>
             </div>
           </div>
           <RoarDataTable

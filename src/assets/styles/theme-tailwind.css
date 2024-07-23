@@ -269,15 +269,6 @@
   box-shadow: 0 0 0 1px var(--indigo-500);
 }
 
-.p-paginator {
-  background: var(--surface-a);
-  color: var(--text-color-secondary);
-  border: solid var(--surface-c);
-  border-width: 0;
-  padding: var(--inline-spacing-larger) 1.5rem;
-  border-radius: var(--border-radius);
-  width: 80%;
-}
 .p-paginator .p-paginator-first,
 .p-paginator .p-paginator-prev,
 .p-paginator .p-paginator-next,
@@ -319,9 +310,7 @@
   margin-left: var(--inline-spacing);
   margin-right: var(--inline-spacing);
 }
-.p-paginator .p-paginator-page-input .p-inputtext {
-  max-width: 3rem;
-}
+
 .p-paginator .p-paginator-current {
   background-color: transparent;
   border: 1px solid var(--surface-300);
@@ -350,6 +339,18 @@
   background: var(--surface-c);
   border-color: var(--surface-300);
   color: var(--text-color);
+}
+
+.p-datatable-gridlines .p-datatable-paginator-top {
+  border-width: 1px 0px 0px 0px !important;
+}
+
+.p-togglebutton.p-togglebutton-checked::before {
+  background: var(--primary-color) !important;
+}
+
+.p-togglebutton.p-togglebutton-checked > .p-togglebutton-content {
+  color: white !important;
 }
 
 .p-picklist .p-picklist-header {
@@ -503,10 +504,6 @@
   font-size: 2rem;
 }
 
-.p-treetable .p-paginator-top {
-  border-width: 0 0 1px 0;
-  border-radius: 0;
-}
 .p-treetable .p-paginator-bottom {
   border-width: 0 0 1px 0;
   border-radius: 0;
@@ -639,7 +636,7 @@
   font-size: 2rem;
 }
 .p-treetable.p-treetable-gridlines .p-datatable-header {
-  border-width: 1px 1px 0 1px;
+  border-width: 1px 0 0 0;
 }
 .p-treetable.p-treetable-gridlines .p-treetable-footer {
   border-width: 0 1px 1px 1px;
@@ -1007,7 +1004,6 @@
 .p-tabview .p-tabview-panels {
   background: var(--surface-a);
   padding: 1.25rem 0rem;
-  border: 1px solid var(--surface-d);
   color: var(--text-color);
   border-bottom-right-radius: var(--border-radius);
   border-bottom-left-radius: var(--border-radius);

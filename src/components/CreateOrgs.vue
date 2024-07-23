@@ -15,7 +15,7 @@
       <div class="bg-gray-100 rounded p-4">
         <div class="grid column-gap-3 mt-5 rounded">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvDropdown
                 v-model="orgType"
                 input-id="org-type"
@@ -27,13 +27,13 @@
                 data-cy="dropdown-org-type"
               />
               <label for="org-type">Org Type<span id="required-asterisk">*</span></label>
-            </span>
+            </PvFloatLabel>
           </div>
         </div>
 
         <div v-if="parentOrgRequired" class="grid mt-4">
           <div class="col-12 md:col-6 lg:col-4">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvDropdown
                 v-model="state.parentDistrict"
                 input-id="parent-district"
@@ -47,11 +47,11 @@
               />
               <label for="parent-district">District<span id="required-asterisk">*</span></label>
               <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a district. </small>
-            </span>
+            </PvFloatLabel>
           </div>
 
           <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvDropdown
                 v-model="state.parentSchool"
                 input-id="parent-school"
@@ -65,29 +65,29 @@
               />
               <label for="parent-school">School<span id="required-asterisk">*</span></label>
               <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a district. </small>
-            </span>
+            </PvFloatLabel>
           </div>
         </div>
 
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name" />
               <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
-            </span>
+            </PvFloatLabel>
           </div>
 
           <div class="col-12 md:col-6 lg:col-4 mt-3">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
-            </span>
+            </PvFloatLabel>
           </div>
 
           <div v-if="orgType?.singular === 'class'" class="col-12 md:col-6 lg:col-4 mt-3">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvDropdown
                 v-model="state.grade"
                 input-id="grade"
@@ -100,7 +100,7 @@
               />
               <label for="grade">Grade<span id="required-asterisk">*</span></label>
               <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
-            </span>
+            </PvFloatLabel>
           </div>
         </div>
 
@@ -109,7 +109,7 @@
         <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
           <div class="grid column-gap-3">
             <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText
                   v-model="state.ncesId"
                   v-tooltip="ncesTooltip"
@@ -118,7 +118,7 @@
                   data-cy="input-nces-id"
                 />
                 <label for="nces-id">NCES ID</label>
-              </span>
+              </PvFloatLabel>
             </div>
           </div>
           <div class="grid mt-3">
@@ -153,7 +153,7 @@
 
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3" data-cy="div-auto-complete">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvAutoComplete
                 v-model="state.tags"
                 multiple
@@ -166,7 +166,7 @@
                 @complete="searchTags"
               />
               <label for="tags">Tags</label>
-            </span>
+            </PvFloatLabel>
           </div>
         </div>
         <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">

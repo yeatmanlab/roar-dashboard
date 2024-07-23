@@ -119,7 +119,7 @@
         >
           <template #filterbar>
             <div v-if="schoolsInfo" class="flex flex-row gap-2">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvMultiSelect
                   id="ms-school-filter"
                   v-model="filterSchools"
@@ -132,10 +132,10 @@
                   data-cy="filter-by-school"
                 />
                 <label for="ms-school-filter">Filter by School</label>
-              </span>
+              </PvFloatLabel>
             </div>
             <div class="flex flex-row gap-2">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvMultiSelect
                   id="ms-grade-filter"
                   v-model="filterGrades"
@@ -148,7 +148,7 @@
                   data-cy="filter-by-grade"
                 />
                 <label for="ms-school-filter">Filter by Grade</label>
-              </span>
+              </PvFloatLabel>
             </div>
           </template>
         </RoarDataTable>

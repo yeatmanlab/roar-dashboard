@@ -5,7 +5,7 @@
   <div v-else>
     <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
-      <span class="p-float-label my-3">
+      <PvFloatLabel>
         <PvMultiSelect
           id="ms-columns"
           v-tooltip.top="'Show and hide columns'"
@@ -18,8 +18,8 @@
           @update:model-value="onColumnToggle"
         />
         <label for="ms-columns" class="view-label2">Select Columns</label>
-      </span>
-      <span class="p-float-label my-3">
+      </PvFloatLabel>
+      <PvFloatLabel>
         <PvMultiSelect
           id="ms-freeze"
           :model-value="frozenColumns"
@@ -32,7 +32,7 @@
           @update:model-value="onFreezeToggle"
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
-      </span>
+      </PvFloatLabel>
       <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
         <PvButton
           v-tooltip.bottom="'Expand or Compress table rows'"
@@ -202,7 +202,12 @@
             </template>
             <template v-if="col.dataType" #filter="{ filterModel }">
               <div v-if="col.dataType === 'text' && !col.useMultiSelect" class="filter-content">
-                <PvInputText v-model="filterModel.value" type="text" class="p-column-filter" placeholder="Filter" />
+                <PvInputText
+                  v-model="filterModel.value"
+                  type="text"
+                  class="p-column-filter w-full"
+                  placeholder="Filter"
+                />
               </div>
               <PvInputNumber
                 v-if="col.dataType === 'number' && !col.useMultiSelect"
@@ -309,23 +314,21 @@
               </div>
             </template>
             <template #filterclear="{ filterCallback }">
-              <div class="flex flex-row-reverse">
-                <PvButton
-                  type="button"
-                  text
-                  icon="pi pi-times"
-                  class="p-2 bg-primary text-white border-round border-none hover:bg-red-900"
-                  severity="primary"
-                  @click="filterCallback()"
-                  >Clear</PvButton
-                >
-              </div>
+              <PvButton
+                type="button"
+                text
+                icon="pi pi-times"
+                class="bg-primary w-4 text-white border-round border-none hover:bg-red-900"
+                severity="primary"
+                @click="filterCallback()"
+                >Clear
+              </PvButton>
             </template>
             <template #filterapply="{ filterCallback }">
               <PvButton
                 type="button"
                 icon="pi pi-times"
-                class="px-2 p-2 bg-primary text-white border-round border-none hover:bg-red-900"
+                class="bg-primary w-4 text-white border-round border-none hover:bg-red-900"
                 severity="primary"
                 @click="filterCallback()"
                 >Apply
@@ -352,7 +355,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
-import { FilterMatchMode, FilterOperator } from 'primevue/core/api';
+import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
 import SkeletonTable from '@/components/SkeletonTable.vue';
 import _get from 'lodash/get';
 import _map from 'lodash/map';
@@ -642,10 +645,12 @@ button.p-button.p-component.softer {
   color: black;
 }
 
-button.p-column-filter-menu-button.p-link,
-g {
+svg.p-icon.p-button-icon {
   color: white;
-  margin-left: 10px;
+}
+
+svg.p-icon.p-button-icon:hover {
+  color: gray;
 }
 
 .p-datatable .p-datatable-tbody > tr > td {

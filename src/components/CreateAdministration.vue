@@ -15,7 +15,7 @@
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
           <div class="field col-12 xl:col-6 mb-5">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
@@ -28,11 +28,11 @@
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your administration</small
               >
-            </span>
+            </PvFloatLabel>
           </div>
 
           <div class="field col-12 xl:col-6 mb-5">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvInputText
                 id="administration-public-name"
                 v-model="state.administrationPublicName"
@@ -45,19 +45,20 @@
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please provide a public-facing name for this administration</small
               >
-            </span>
+            </PvFloatLabel>
           </div>
         </div>
         <div class="formgrid grid">
           <div class="field col-12 md:col-6 mb-5">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvCalendar
                 v-model="state.dateStarted"
-                class="w-full"
+                class="w-full p-0"
                 :min-date="minStartDate"
                 :number-of-months="1"
                 :manual-input="false"
-                icon="pi pi-calendar text-white p-1"
+                show-icon
+                icon="pi pi-calendar text-primary"
                 input-id="start-date"
                 show-button-bar
                 data-cy="input-start-date"
@@ -66,18 +67,19 @@
               <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
                 >Please select a start date.</small
               >
-            </span>
+            </PvFloatLabel>
           </div>
           <div class="field col-12 md:col-6">
-            <span class="p-float-label">
+            <PvFloatLabel>
               <PvCalendar
                 v-model="state.dateClosed"
-                class="w-full"
+                class="w-full p-0"
                 :min-date="minEndDate"
                 input-id="end-date"
                 :number-of-months="1"
                 :manual-input="false"
-                icon="pi pi-calendar text-white p-1"
+                show-icon
+                icon="pi pi-calendar text-primary"
                 show-button-bar
                 data-cy="input-end-date"
               />
@@ -85,7 +87,7 @@
               <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
                 >Please select an end date.</small
               >
-            </span>
+            </PvFloatLabel>
           </div>
         </div>
 
@@ -122,19 +124,11 @@
             <div class="flex">
               <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
               <span class="flex gap-2">
-                <PvRadioButton
-                  v-model="state.sequential"
-                  class="border-2 border-circle border-300"
-                  style="width: 15px; height: 15px"
-                  input-id="Yes"
-                  :value="true"
-                />
+                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
                 <label for="Yes">Yes</label>
                 <PvRadioButton
                   v-model="state.sequential"
                   data-cy="radio-button-not-sequential"
-                  class="border-2 border-circle border-300"
-                  style="width: 15px; height: 15px"
                   input-id="No"
                   :value="false"
                 />
@@ -763,25 +757,5 @@ function findVariantWithParams(variants, params) {
   .hide {
     display: none;
   }
-}
-.p-radiobutton.p-component.p-radiobutton-checked {
-  position: relative;
-  width: 20px; /* adjust as needed */
-  height: 20px; /* adjust as needed */
-  background-color: var(--primary-color);
-  border-color: var(--primary-color) !important;
-  border-radius: 50%; /* make the element itself circular */
-}
-
-.p-radiobutton.p-component.p-radiobutton-checked::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 5px; /* adjust size of the inner circle as needed */
-  height: 5px; /* adjust size of the inner circle as needed */
-  background-color: white; /* color of the inner circle */
-  border-radius: 50%; /* make the inner element circular */
-  transform: translate(-50%, -50%); /* center the inner circle */
 }
 </style>

@@ -104,18 +104,18 @@
         <div v-if="signInMethods.includes('classlink')">
           <PvButton
             v-if="!isLevante"
-            class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
+            class="flex surface-0 p-1 mr-1 border-black-alpha-10 text-black justify-content-center hover:border-primary hover:surface-ground"
             style="border-radius: 3rem; height: 3rem"
             @click="authWithClassLink"
           >
             <img src="../assets/provider-classlink-logo.png" alt="The ClassLink Logo" class="flex mr-2 w-2" />
-            <span>ClassLink</span>
+            <span class="text-black">ClassLink</span>
           </PvButton>
         </div>
         <div v-if="signInMethods.includes('password')" class="flex flex-row gap-2">
           <PvPassword v-model="modalPassword" placeholder="Password" :feedback="false"></PvPassword>
           <PvButton
-            class="flex p-3 border-none border-round hover:bg-black-alpha-20"
+            class="flex p-3 border-none border-round bg-primary hover:bg-black-alpha-20"
             :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
             @click="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
           />

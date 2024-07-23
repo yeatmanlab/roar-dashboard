@@ -9,7 +9,7 @@
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
                 class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
               >
-                <span class="p-float-label">
+                <PvFloatLabel>
                   <PvDropdown
                     id="district"
                     v-model="selectedDistrict"
@@ -23,10 +23,10 @@
                     data-cy="dropdown-selected-district"
                   />
                   <label for="district">Select from district</label>
-                </span>
+                </PvFloatLabel>
               </div>
               <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
-                <span class="p-float-label">
+                <PvFloatLabel>
                   <PvDropdown
                     id="school"
                     v-model="selectedSchool"
@@ -40,7 +40,7 @@
                     data-cy="dropdown-selected-school"
                   />
                   <label for="school">Select from school</label>
-                </span>
+                </PvFloatLabel>
               </div>
             </div>
             <div class="card flex justify-content-center">
