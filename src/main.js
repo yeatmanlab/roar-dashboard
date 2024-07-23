@@ -67,6 +67,8 @@ import PvFloatLabel from 'primevue/floatlabel';
 import PvFieldset from 'primevue/fieldset';
 import PvIconField from 'primevue/iconfield';
 import PvInputIcon from 'primevue/inputicon';
+import PvColumnGroup from 'primevue/columngroup';
+import PvRow from 'primevue/row';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -207,6 +209,10 @@ app.component('PvTreeTable', PvTreeTable);
 app.component('PvFloatLabel', PvFloatLabel);
 app.component('PvIconField', PvIconField);
 app.component('PvInputIcon', PvInputIcon);
+app.component('PvTriStateCheckbox', PvTriStateCheckbox);
+app.component('PvColumnGroup', PvColumnGroup);
+app.component('PvRow', PvRow);
+
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
 app.component('PvFieldset', PvFieldset);
