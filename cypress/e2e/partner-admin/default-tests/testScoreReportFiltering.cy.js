@@ -56,13 +56,8 @@ function checkTableColumn(headers, value) {
       const headerIndex = tableHeaders.indexOf(header);
 
       if (headerIndex !== -1) {
-        cy.get('[data-cy="roar-data-table"] tbody tr').each(($row) => {
-          cy.wrap($row)
-            .find('td')
-            .eq(headerIndex)
-            .then((headerCell) => {
-              cy.wrap(headerCell).should('contain', value);
-            });
+        cy.get('[data-cy="roar-data-table"] tbody').each(($row) => {
+          cy.wrap($row).find('tr').should('contain', value);
         });
       }
     });

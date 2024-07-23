@@ -113,11 +113,11 @@
           </PvButton>
         </div>
         <div v-if="signInMethods.includes('password')" class="flex flex-row gap-2">
-          <PvPassword placeholder="Password" v-model="modalPassword" :feedback="false"></PvPassword>
+          <PvPassword v-model="modalPassword" placeholder="Password" :feedback="false"></PvPassword>
           <PvButton
-            @click="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
             class="flex p-3 border-none border-round hover:bg-black-alpha-20"
             :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
+            @click="authWithEmail({ email, password: modalPassword, useLink: false, usePassword: true })"
           />
         </div>
       </div>
@@ -213,12 +213,6 @@ const modalPassword = ref('');
 
 const authWithClever = () => {
   console.log('---> authWithClever');
-  const isLocalHost = import.meta.env.DEV;
-  // // if localhost or not testing, use popup
-  // if (isLocalHost) {
-  //   authStore.signInWithCleverPopup();
-  //   spinner.value = true;
-  // } else {
   authStore.signInWithCleverRedirect();
   spinner.value = true;
   // }

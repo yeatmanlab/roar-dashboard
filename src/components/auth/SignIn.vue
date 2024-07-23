@@ -160,7 +160,7 @@ import RoarModal from '../modals/RoarModal.vue';
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const emit = defineEmits(['submit']);
+const emit = defineEmits(['submit', 'update:email']);
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({
   invalid: { type: Boolean, required: false, default: false },
@@ -245,7 +245,7 @@ function checkForCapsLock(e) {
 }
 
 const forgotEmail = ref('');
-function handleForgotPassword(e) {
+function handleForgotPassword() {
   console.log('Opening modal for forgot password');
   forgotPasswordModalOpen.value = true;
   // e.preventDefault();

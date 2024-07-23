@@ -8,20 +8,20 @@
             <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
           </div></router-link
         >
-        <router-link to="/profile/password" v-if="isAdmin"
+        <router-link v-if="isAdmin" to="/profile/password"
           ><div class="sidebar-button">
             <i class="pi pi-key" /><span v-if="sidebarOpen">{{
               hasPassword ? 'Change Password' : 'Add Password'
             }}</span>
           </div></router-link
         >
-        <router-link to="/profile/accounts" v-if="isAdmin"
+        <router-link v-if="isAdmin" to="/profile/accounts"
           ><div class="sidebar-button">
             <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
           </div></router-link
         >
       </div>
-      <button @click="sidebarOpen = !sidebarOpen" class="border-none bg-primary text-white p-2 hover:surface-400">
+      <button class="border-none bg-primary text-white p-2 hover:surface-400" @click="sidebarOpen = !sidebarOpen">
         <div class="flex justify-content-center">
           <i v-if="!sidebarOpen" class="pi pi-angle-double-right"></i>
           <span v-if="sidebarOpen"><i class="pi pi-angle-double-left mr-2"></i>Collapse</span>
@@ -40,7 +40,6 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById } from '@/helpers/query/utils';
-import _get from 'lodash/get';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 
@@ -77,7 +76,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { data: userClaims, isLoading: userClaimsLoading } = useQuery({
+const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid],
   queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
@@ -91,9 +90,8 @@ const isAdmin = computed(() => {
   if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
   return true;
 });
-
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 </script>
+
 <style lang="scss" scoped>
 .sidebar-container {
   background-color: var(--surface-b);

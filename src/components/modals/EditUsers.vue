@@ -34,7 +34,7 @@
             <div class="form-field">
               <label
                 >Date of Birth
-                <span v-if="localUserType === 'student'" class="required" v-tooltip.top="'Required'">*</span></label
+                <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
               >
               <PvCalendar
                 v-model="localUserData.studentData.dob"
@@ -48,7 +48,7 @@
             <div class="form-field">
               <label
                 >Grade
-                <span v-if="localUserType === 'student'" class="required" v-tooltip.top="'Required'">*</span></label
+                <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
               >
               <PvInputText
                 v-model="localUserData.studentData.grade"
@@ -60,15 +60,15 @@
             </div>
             <div v-if="isSuperAdmin">
               <div>
-                <PvCheckbox binary v-model="localUserData.testData" />
+                <PvCheckbox v-model="localUserData.testData" binary />
                 <label class="ml-2"
-                  >Test Data? <span class="admin-only" v-tooltip.top="'Super Admin Only'">*</span></label
+                  >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
                 >
               </div>
               <div>
-                <PvCheckbox binary v-model="localUserData.demoData" />
+                <PvCheckbox v-model="localUserData.demoData" binary />
                 <label class="ml-2"
-                  >Demo Data? <span class="admin-only" v-tooltip.top="'Super Admin Only'">*</span></label
+                  >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
                 >
               </div>
             </div>
@@ -83,8 +83,8 @@
               <label>English as a Second Language</label>
               <PvDropdown
                 v-model="localUserData.studentData.ell_status"
-                optionLabel="label"
-                optionValue="value"
+                option-label="label"
+                option-value="value"
                 :options="binaryDropdownOptions"
               />
             </div>
@@ -92,8 +92,8 @@
               <label>IEP Status</label>
               <PvDropdown
                 v-model="localUserData.studentData.iep_status"
-                optionLabel="label"
-                optionValue="value"
+                option-label="label"
+                option-value="value"
                 :options="binaryDropdownOptions"
               />
             </div>
@@ -101,8 +101,8 @@
               <label>Free-Reduced Lunch</label>
               <PvDropdown
                 v-model="localUserData.studentData.frl_status"
-                optionLabel="label"
-                optionValue="value"
+                option-label="label"
+                option-value="value"
                 :options="binaryDropdownOptions"
               />
             </div>
@@ -121,8 +121,8 @@
               <label>Hispanic or Latino Ethnicity</label>
               <PvDropdown
                 v-model="localUserData.studentData.hispanic_ethnicity"
-                optionLabel="label"
-                optionValue="value"
+                option-label="label"
+                option-value="value"
                 :options="binaryDropdownOptions"
               />
             </div>
@@ -131,8 +131,8 @@
         <!-- Bottom of form-->
         <PvButton
           v-if="!showPassword"
-          @click="showPassword = true"
           class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
+          @click="showPassword = true"
           >Change Password</PvButton
         >
         <!-- Show password view -->
@@ -257,7 +257,7 @@ const onAccept = async () => {
   isSubmitting.value = true;
   await roarfirekit.value
     .updateUserData(props.userData.id, { ...localUserData.value })
-    .then((res) => {
+    .then(() => {
       isSubmitting.value = false;
       closeModal();
       toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
@@ -282,7 +282,7 @@ const updatePassword = async () => {
 
   await roarfirekit.value
     .updateUserData(props.userData.id, { password: newPassword.value })
-    .then((res) => {
+    .then(() => {
       isSubmitting.value = false;
       showPassword.value = false;
       toast.add({ severity: 'success', summary: 'Updated', detail: 'Password has been updated', life: 3000 });

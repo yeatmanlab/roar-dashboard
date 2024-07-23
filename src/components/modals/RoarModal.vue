@@ -1,40 +1,36 @@
 <template>
-  <template>
-    <PvDialog :visible="isOpen" modal @update:visible="emit('modalClosed')" style="width: 66vw">
-      <template #header>
-        <div v-if="!small" class="modal-header gap-2">
-          <i class="pi text-gray-400 modal-icon" :class="icon"></i>
+  <PvDialog :visible="isOpen" modal style="width: 66vw" @update:visible="emit('modalClosed')">
+    <template #header>
+      <div v-if="!small" class="modal-header gap-2">
+        <i class="pi text-gray-400 modal-icon" :class="icon"></i>
+        <div class="flex flex-column">
+          <h1 class="modal-title admin-page-header">{{ title }}</h1>
+          <span class="text-md text-gray-500">{{ subtitle }}</span>
+        </div>
+      </div>
+      <div v-else-if="small">
+        <div class="modal-header">
+          <i class="pi text-gray-400 modal-icon-small" :class="icon"></i>
           <div class="flex flex-column">
-            <h1 class="modal-title admin-page-header">{{ title }}</h1>
-            <span class="text-md text-gray-500">{{ subtitle }}</span>
+            <span class="text-lg font-bold text-gray-500">{{ title }}</span>
+            <span class="text-sm text-gray-500">{{ subtitle }}</span>
           </div>
         </div>
-        <div v-else-if="small">
-          <div class="modal-header">
-            <i class="pi text-gray-400 modal-icon-small" :class="icon"></i>
-            <div class="flex flex-column">
-              <span class="text-lg font-bold text-gray-500">{{ title }}</span>
-              <span class="text-sm text-gray-500">{{ subtitle }}</span>
-            </div>
-          </div>
-        </div>
-      </template>
-      <slot></slot>
-      <template #footer>
-        <div class="modal-footer">
-          <slot name="footer"></slot>
-        </div>
-      </template>
-      <!-- </template> -->
-    </PvDialog>
-  </template>
+      </div>
+    </template>
+    <slot></slot>
+    <template #footer>
+      <div class="modal-footer">
+        <slot name="footer"></slot>
+      </div>
+    </template>
+    <!-- </template> -->
+  </PvDialog>
 </template>
 <script setup>
-import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
-import { watch, ref, onMounted, computed } from 'vue';
+import { watch, ref, onMounted } from 'vue';
 const props = defineProps({
   isEnabled: {
     type: Boolean,
@@ -67,7 +63,7 @@ const props = defineProps({
 const emit = defineEmits(['modalClosed']);
 
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
 watch(
@@ -82,14 +78,7 @@ watch(
   },
 );
 
-const closeModal = () => {
-  errorMessage.value = '';
-  isOpen.value = false;
-  emit('modalClosed');
-};
-
 const isOpen = ref(false);
-const isSubmitting = ref(false);
 
 let unsubscribe;
 const init = () => {

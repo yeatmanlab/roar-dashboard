@@ -16,9 +16,9 @@
   </div>
   <div class="flex mt-3">
     <PvButton
-      @click="updatePassword"
       :label="hasPassword ? 'Update Password' : 'Submit Password'"
       class="border-none border-round bg-primary text-white p-2 hover:surface-400 ml-auto"
+      @click="updatePassword"
       ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"
     /></PvButton>
   </div>
@@ -83,7 +83,7 @@ async function updatePassword() {
         state.confirmPassword = '';
         toast.add({ severity: 'success', summary: 'Updated', detail: 'Password Updated!', life: 3000 });
       })
-      .catch((error) => {
+      .catch(() => {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Unable to update password' });
       });
   }
