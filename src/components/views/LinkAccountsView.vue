@@ -1,7 +1,6 @@
 <template>
   <h2>Link Accounts</h2>
   <span>Make logging in easy by linking your accounts.</span>
-  <PvChip label="Test" />
   <div class="table-container">
     <!-- Google -->
     <div class="flex flex-row justify-content-between w-full" style="background-color: var(--surface-d)">
