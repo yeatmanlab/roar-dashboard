@@ -209,7 +209,7 @@ app.component('PvTreeTable', PvTreeTable);
 app.component('PvFloatLabel', PvFloatLabel);
 app.component('PvIconField', PvIconField);
 app.component('PvInputIcon', PvInputIcon);
-app.component('PvTriStateCheckbox', PvTriStateCheckbox);
+
 app.component('PvColumnGroup', PvColumnGroup);
 app.component('PvRow', PvRow);
 
