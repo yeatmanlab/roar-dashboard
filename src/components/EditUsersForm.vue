@@ -22,7 +22,7 @@
           >Date of Birth
           <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
         >
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.dob ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userDobString }}</div>
         <PvCalendar
           v-else
           v-model="localUserData.studentData.dob"
@@ -167,7 +167,9 @@
           >Date of Birth
           <span v-if="editMode" class="optional">(optional)</span>
         </label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.dob ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ userDobString }}
+        </div>
         <PvCalendar
           v-else
           v-model="localUserData.studentData.dob"
@@ -295,6 +297,12 @@ const localUserType = computed(() => {
   if (props.userData?.userType) return props.userData.userType;
   if (props.userType) return props.userType;
   return null;
+});
+
+const userDobString = computed(() => {
+  if (localUserData.value?.studentData?.dob instanceof Date) {
+    return localUserData.value?.studentData?.dob.toDateString('MM/DD/YYYY');
+  } else return 'None';
 });
 
 const races = [
