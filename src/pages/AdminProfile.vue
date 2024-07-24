@@ -20,6 +20,11 @@
             <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
           </div></router-link
         >
+        <router-link v-if="isAdmin" to="/profile/offline"
+          ><div class="sidebar-button">
+            <i class="pi pi-network" /><span v-if="sidebarOpen">Offline Settings</span>
+          </div></router-link
+        >
       </div>
       <button class="border-none bg-primary text-white p-2 hover:surface-400" @click="sidebarOpen = !sidebarOpen">
         <div class="flex justify-content-center">
