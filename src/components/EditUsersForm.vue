@@ -181,7 +181,7 @@
         <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >Gender <span v-if="editMode" class="optional">(optional)</span></label
         >
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.grade ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.gender ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.studentData.gender" />
       </div>
 
