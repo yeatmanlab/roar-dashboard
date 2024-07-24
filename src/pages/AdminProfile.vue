@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-row" style="max-height: 100vh">
     <!-- Sidebar -->
-    <div class="justify-content-between" :class="sidebarOpen ? 'sidebar-container' : 'sidebar-container-collapsed'">
+    <div :class="sidebarOpen ? 'sidebar-container-open' : 'sidebar-container-collapsed'">
       <div class="flex flex-column">
         <router-link to="/profile">
           <div class="sidebar-button">
@@ -21,11 +21,18 @@
           </div></router-link
         >
       </div>
-      <button class="border-none bg-primary text-white p-2 hover:surface-400" @click="sidebarOpen = !sidebarOpen">
-        <div class="flex justify-content-center">
-          <i v-if="!sidebarOpen" class="pi pi-angle-double-right"></i>
-          <span v-if="sidebarOpen"><i class="pi pi-angle-double-left mr-2"></i>Collapse</span>
-        </div>
+      <button
+        class="w-full border-none cursor-pointer h-3rem flex align-items-center"
+        :class="sidebarOpen ? 'justify-content-end' : 'justify-content-center'"
+        style="background-color: var(--surface-b)"
+        @click="sidebarOpen = !sidebarOpen"
+      >
+        <i
+          v-if="!sidebarOpen"
+          class="pi text-2xl pi-angle-double-right text-grey-600"
+          style="color: var(--surface-400)"
+        ></i>
+        <i v-else class="pi text-2xl pi-angle-double-left mr-2 text-grey-600" style="color: var(--surface-400)"></i>
       </button>
     </div>
     <!-- Main Page Content-->
@@ -93,10 +100,10 @@ const isAdmin = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-.sidebar-container {
+.sidebar-container-open {
   background-color: var(--surface-b);
   flex-basis: 25%;
-  gap: 1rem;
+  width: 100%;
   height: calc(100vh - 119px);
   border-right: 2px solid var(--surface-d);
   a {
@@ -131,7 +138,6 @@ const isAdmin = computed(() => {
   flex-direction: column;
   background-color: var(--surface-b);
   flex-basis: 2rem;
-  gap: 1rem;
   height: calc(100vh - 119px);
   border-right: 2px solid var(--surface-d);
 }
