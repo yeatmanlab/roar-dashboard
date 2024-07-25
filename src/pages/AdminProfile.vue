@@ -22,7 +22,7 @@
         >
         <router-link v-if="isAdmin" to="/profile/offline"
           ><div class="sidebar-button">
-            <i class="pi pi-network" /><span v-if="sidebarOpen">Offline Settings</span>
+            <i class="pi pi-wifi" /><span v-if="sidebarOpen">Offline Settings</span>
           </div></router-link
         >
       </div>
