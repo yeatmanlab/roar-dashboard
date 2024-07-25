@@ -29,14 +29,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Cache Node modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
       - name: Delete generated-tests directory if it exists
         run: |
           if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
@@ -64,6 +56,7 @@ jobs:
           echo "Contents of cypress/e2e/pre-release-tests/generated-tests before upload:"
           ls -R cypress/e2e/pre-release-tests/generated-tests || echo "Directory does not exist or is empty"
 
+      # Filesystem does not persist between jobs, so we need to upload the artifacts
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -93,14 +86,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Cache Node modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
+      # Filesystem does not persist between jobs, so we need to download the artifacts from the previous job
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
