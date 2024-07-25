@@ -37,14 +37,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Delete generated-tests directory if it exists
-        run: |
-          if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
-            rm -rf cypress/e2e/pre-release-tests/generated-tests
-            echo "Directory cypress/e2e/pre-release-tests/generated-tests was deleted."
-          else
-            echo "Directory cypress/e2e/pre-release-tests/generated-tests does not exist."
-          fi
+      #      - name: Delete generated-tests directory if it exists
+      #        run: |
+      #          if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
+      #            rm -rf cypress/e2e/pre-release-tests/generated-tests
+      #            echo "Directory cypress/e2e/pre-release-tests/generated-tests was deleted."
+      #          else
+      #            echo "Directory cypress/e2e/pre-release-tests/generated-tests does not exist."
+      #          fi
 
       - name: Generate Cypress Pre-Release Tests
         uses: cypress-io/github-action@v6
