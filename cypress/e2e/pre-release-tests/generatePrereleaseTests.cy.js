@@ -50,6 +50,8 @@ describe('Generating administration spec files', () => {
       const currentPath = __dirname;
       const dirPath = path.join(currentPath, 'generated-tests');
 
+      cy.log('Checking for existing test spec files...');
+
       if (cy.fsDirExists(dirPath)) {
         cy.log('Deleting existing test spec files...');
         cy.fsDeleteDirectory(dirPath, { recursive: true });
