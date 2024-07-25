@@ -1,5 +1,4 @@
 # https://github.com/firebase/firebase-tools
-
 name: Deploy to Firebase Hosting (production) with Pre-Release Tests
 
 on:
@@ -30,6 +29,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Cache Node modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
       - name: Delete generated-tests directory if it exists
         run: |
           if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
@@ -51,6 +58,11 @@ jobs:
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+
+      - name: List contents of generated-tests directory before upload
+        run: |
+          echo "Contents of cypress/e2e/pre-release-tests/generated-tests before upload:"
+          ls -R cypress/e2e/pre-release-tests/generated-tests || echo "Directory does not exist or is empty"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
@@ -81,11 +93,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Cache Node modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           name: generated-tests
           path: cypress/e2e/pre-release-tests/generated-tests
+
+      - name: List contents of generated-tests directory after download
+        run: |
+          echo "Contents of cypress/e2e/pre-release-tests/generated-tests after download:"
+          ls -R cypress/e2e/pre-release-tests/generated-tests || echo "Directory does not exist or is empty"
 
       - name: Run Generated Cypress Tests
         uses: cypress-io/github-action@v6
@@ -99,46 +124,47 @@ jobs:
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generated-tests/**.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+#current working directory "/home/runner/work/roar-dashboard/roar-dashboard"
 
-  # build-and-deploy:
-  #   name: Deploy to Firebase Production Hosting Channel
-  #   needs: [pre-release-tests]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 'lts/*'
-  #     - name: 'vite production build'
-  #       env:
-  #         NODE_OPTIONS: '--max_old_space_size=8192'
-  #       run: npm ci && npm run build
-  #     - uses: FirebaseExtended/action-hosting-deploy@v0
-  #       with:
-  #         repoToken: '${{ secrets.GITHUB_TOKEN }}'
-  #         firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
-  #         channelId: live
-  #         projectId: gse-roar-admin
-  #         target: production
-  #     - name: Create Sentry release and upload source maps
-  #       uses: getsentry/action-release@v1.7.0
-  #       env:
-  #         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-  #         SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-  #         SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-  #       with:
-  #         environment: production
-  #         sourcemaps: ./dist/assets/*.js.map
-  #         version: ${{ github.ref }}
-  #     - name: Notify on failure
-  #       if: failure()
-  #       uses: actions/github-script@v5
-  #       with:
-  #         script: |
-  #           const issue = {
-  #             owner: context.repo.owner,
-  #             repo: context.repo.repo,
-  #             title: "Combined workflow failed",
-  #             body: The workflow failed on [${context.sha.substring(0, 7)}](${context.payload.repository.html_url}/commit/${context.sha}). Please check it.,
-  #           };
-  #           github.rest.issues.create(issue);
+# build-and-deploy:
+#   name: Deploy to Firebase Production Hosting Channel
+#   needs: [pre-release-tests]
+#   runs-on: ubuntu-latest
+#   steps:
+#     - uses: actions/checkout@v3
+#     - uses: actions/setup-node@v4
+#       with:
+#         node-version: 'lts/*'
+#     - name: 'vite production build'
+#       env:
+#         NODE_OPTIONS: '--max_old_space_size=8192'
+#       run: npm ci && npm run build
+#     - uses: FirebaseExtended/action-hosting-deploy@v0
+#       with:
+#         repoToken: '${{ secrets.GITHUB_TOKEN }}'
+#         firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
+#         channelId: live
+#         projectId: gse-roar-admin
+#         target: production
+#     - name: Create Sentry release and upload source maps
+#       uses: getsentry/action-release@v1.7.0
+#       env:
+#         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+#         SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+#         SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+#       with:
+#         environment: production
+#         sourcemaps: ./dist/assets/*.js.map
+#         version: ${{ github.ref }}
+#     - name: Notify on failure
+#       if: failure()
+#       uses: actions/github-script@v5
+#       with:
+#         script: |
+#           const issue = {
+#             owner: context.repo.owner,
+#             repo: context.repo.repo,
+#             title: "Combined workflow failed",
+#             body: The workflow failed on [${context.sha.substring(0, 7)}](${context.payload.repository.html_url}/commit/${context.sha}). Please check it.,
+#           };
+#           github.rest.issues.create(issue);
