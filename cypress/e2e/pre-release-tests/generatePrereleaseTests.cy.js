@@ -58,18 +58,17 @@ describe('Generating administration spec files', () => {
       cy.log(`Current working directory: ${dirPath}`);
       cy.log('Checking for existing test spec files...');
 
-      if (cy.fsDirExists(dirPath)) {
-        // Delete when running locally; use step in GitHub Actions when running in CI
-        cy.log('Deleting existing test spec directory...');
-        cy.fsDeleteDirectory(dirPath, { recursive: true });
-      }
-
-      try {
-        cy.log('Creating test spec directory...');
-        cy.fsCreateDirectory(dirPath);
-      } catch (error) {
-        cy.log(`Error creating test spec directory: ${error}`);
-      }
+      cy.fsDirExists(dirPath).then((directoryExists) => {
+        if (directoryExists) {
+          cy.log('Deleting existing test spec directory...');
+          cy.fsDeleteDirectory(dirPath, { recursive: true }).then(() => {
+            cy.fsCreateDirectory(dirPath);
+          });
+        } else {
+          cy.log('Creating test spec directory...');
+          cy.fsCreateDirectory(dirPath);
+        }
+      });
       openAdmins.forEach((admin) => {
         // Creating a test spec file for the current administration
         createAdminTestSpec(admin);
