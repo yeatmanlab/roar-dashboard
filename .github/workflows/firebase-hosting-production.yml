@@ -50,8 +50,7 @@ jobs:
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
-          parallel: true
-          tag: ${{ github.event.pull_request.head.sha }}
+          parallel: false
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}-${{ github.run_id }}-${{ github.ref }}
 
@@ -75,13 +74,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, edge]
-        containers: [1, 2, 3, 4, 5]
+        browser: [chromium]
+        containers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-      COMMIT_INFO_MESSAGE: Generating pre-release tests for ROAR Dashboard ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
+      COMMIT_INFO_MESSAGE: Running pre-release tests for ROAR Dashboard ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
       PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
@@ -112,7 +111,6 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          tag: ${{ github.event.pull_request.head.sha }}
           spec: 'cypress/e2e/pre-release-tests/generated-tests/**.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}-${{ github.run_id }}-${{ github.ref }}
 #current working directory "/home/runner/work/roar-dashboard/roar-dashboard"
