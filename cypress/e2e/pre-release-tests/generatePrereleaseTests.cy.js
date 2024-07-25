@@ -49,6 +49,13 @@ describe('Generating administration spec files', () => {
     cy.get('@openAdmins').then((openAdmins) => {
       const currentPath = __dirname;
       const dirPath = path.join(currentPath, 'generated-tests');
+
+      if (cy.fsDirExists(dirPath)) {
+        cy.log('Deleting existing test spec files...');
+        cy.fsDeleteDirectory(dirPath, { recursive: true });
+      }
+
+      cy.log('Creating test spec files...');
       cy.fsCreateDirectory(dirPath);
       openAdmins.forEach((admin) => {
         // Creating a test spec file for the current administration
