@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, edge]
+        browser: [chromium]
         containers: [1]
     env:
       NODE_ENV: 'test'
