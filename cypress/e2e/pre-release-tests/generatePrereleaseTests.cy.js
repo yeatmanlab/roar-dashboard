@@ -17,8 +17,9 @@ function createAdminTestSpec(adminName) {
   const currentPath = __dirname;
   const testSpecPath = path.join(currentPath, 'generated-tests', `${adminName.replaceAll(' ', '_')}.cy.js`);
   cy.log(`Test spec path: ${testSpecPath}`);
-  cy.fsWriteFile(testSpecPath, generatedSpecTemplate(adminName));
-  cy.log('Successfully created test spec:', adminName);
+  cy.fsWriteFile(testSpecPath, generatedSpecTemplate(adminName)).then(() => {
+    cy.log('Successfully created test spec:', adminName);
+  });
 }
 
 describe('Generating administration spec files', () => {
@@ -52,27 +53,32 @@ describe('Generating administration spec files', () => {
     cy.get('@openAdmins').then((openAdmins) => {
       cy.log('Inside get open admins...');
       const currentPath = __dirname;
-      cy.log(`Current path: ${currentPath}`);
       const dirPath = path.join(currentPath, 'generated-tests');
 
       cy.log(`Current working directory: ${dirPath}`);
       cy.log('Checking for existing test spec files...');
 
-      cy.fsDirExists(dirPath).then((directoryExists) => {
-        if (directoryExists) {
-          cy.log('Deleting existing test spec directory...');
-          cy.fsDeleteDirectory(dirPath, { recursive: true }).then(() => {
+      cy.fsDirExists(dirPath)
+        .then((directoryExists) => {
+          cy.log('Directory exists:', directoryExists);
+          if (directoryExists === true) {
+            cy.log('Deleting existing test spec directory...');
+            cy.fsDeleteDirectory(dirPath, { recursive: true }).then(() => {
+              cy.fsCreateDirectory(dirPath).then(() => {
+                cy.log(`Created test spec directory: ${dirPath}`);
+              });
+            });
+          } else {
+            cy.log('Creating new test spec directory...');
             cy.fsCreateDirectory(dirPath);
+          }
+        })
+        .then(() => {
+          openAdmins.forEach((admin) => {
+            // Creating a test spec file for the current administration
+            createAdminTestSpec(admin);
           });
-        } else {
-          cy.log('Creating test spec directory...');
-          cy.fsCreateDirectory(dirPath);
-        }
-      });
-      openAdmins.forEach((admin) => {
-        // Creating a test spec file for the current administration
-        createAdminTestSpec(admin);
-      });
+        });
     });
     cy.log('Successfully generated test spec files for all open administrations.');
   });
