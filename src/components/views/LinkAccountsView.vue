@@ -233,6 +233,9 @@ const deletePassword = async () => {
   background-color: var(--green-400);
   color: var(--green-800);
   border: solid 1px var(--green-800);
+  border-radius: 20px;
+  padding-left: 10px;
+  gap: 5px;
   width: 100%;
   height: 100%;
 }
@@ -240,11 +243,14 @@ const deletePassword = async () => {
   background-color: var(--red-400);
   color: var(--red-800);
   border: solid 1px var(--red-800);
+  border-radius: 20px;
+  padding-left: 10px;
+  gap: 5px;
   width: 100%;
   height: 100%;
 }
 .chip-container {
-  width: 108px;
+  width: 100px;
   height: 24px;
   margin-top: auto;
   margin-bottom: auto;
