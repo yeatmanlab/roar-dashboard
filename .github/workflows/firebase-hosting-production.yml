@@ -5,6 +5,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+concurrency:
+  group: ci-preview-tests-${{ github.ref }}-0
+  cancel-in-progress: true
+
 jobs:
   build-cypress-pre-release-tests:
     name: Build Cypress Pre-Release Tests
@@ -49,7 +53,7 @@ jobs:
           parallel: true
           tag: ${{ github.event.pull_request.head.sha }}
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
-          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}-${{ github.run_id }}-${{ github.ref }}
 
       - name: List contents of generated-tests directory before upload
         run: |
@@ -110,7 +114,7 @@ jobs:
           parallel: true
           tag: ${{ github.event.pull_request.head.sha }}
           spec: 'cypress/e2e/pre-release-tests/generated-tests/**.cy.js'
-          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}-${{ github.run_id }}-${{ github.ref }}
 #current working directory "/home/runner/work/roar-dashboard/roar-dashboard"
 
 # build-and-deploy:
