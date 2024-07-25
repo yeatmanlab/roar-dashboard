@@ -39,7 +39,7 @@ function testGame(spec, admin) {
     });
 }
 
-describe('Testing individual synced administration', () => {
+describe('Testing synced administration: Synced Administration 1836350798', () => {
   it('Tests a synced administration', () => {
     cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
     cy.visit('/', { timeout: 2 * timeout });

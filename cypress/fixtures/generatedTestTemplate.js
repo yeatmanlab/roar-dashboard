@@ -41,7 +41,7 @@ export const generatedSpecTemplate = (adminName) => {
       });
   }
 
-  describe('Testing individual synced administration', () => {
+  describe('Testing synced administration: ${adminName}', () => {
     it('Tests a synced administration', () => {
       cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
       cy.visit('/', { timeout: 2 * timeout });

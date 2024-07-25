@@ -6,48 +6,22 @@ name: Deploy to Firebase Hosting (production) with Pre-Release Tests
     branches:
       - 'enh/seperate-test-all-admins'
 jobs:
-  #  build-pre-release-tests:
-  #    name: Build Cypress Pre-Release Tests
-  #    runs-on: ubuntu-latest
-  #    timeout-minutes: 180
-  #    strategy:
-  #      fail-fast: false
-  #      matrix:
-  #        browser: [chromium, edge]
-  #        containers: [1, 2]
-  #    env:
-  #      NODE_ENV: 'test'
-  #      CYPRESS_BASE_URL: 'http://localhost:5173'
-  #      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-  #      COMMIT_INFO_MESSAGE: Pre release tests for ROAR Dashboard release ${{ github.event.release.tag_name }} "${{ github.event.release.name }}"
-  #      COMMIT_INFO_SHA: ${{ github.event.release.release_id }}
-  #      PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
-  #      PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
-  #      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #    steps:
-  #      - name: Checkout
-  #        uses: actions/checkout@v4
-  #      - name: Cypress run
-  #        uses: cypress-io/github-action@v6
-  #        with:
-  #          browser: ${{ matrix.browser }}
-  #          build: npm ci && npm run build
-  #          start: npm run dev
-  #          wait-on: ${{ env.CYPRESS_BASE_URL }}
-  #          wait-on-timeout: 120
-  #          record: true
-  #          parallel: true
-  #          spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
-  #          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
-  #
-  #      - name: Upload Artifact
-  #        uses: actions/upload-artifact@v2
-  #        with:
-  #          name: generated-tests
-  #          path: cypress/e2e/pre-release-tests
+  delete-generated-tests:
+    name: Delete Generated Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Delete generated-tests directory if it exists
+        run: |
+          if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
+            rm -rf cypress/e2e/pre-release-tests/generated-tests
+          fi
 
   build-cypress-pre-release-tests:
     name: Build Cypress Pre-Release Tests
+    needs: [delete-generated-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
@@ -65,8 +39,8 @@ jobs:
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Generate Cypress Pre-Release Tests
         uses: cypress-io/github-action@v6
@@ -81,29 +55,6 @@ jobs:
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
 
-      #      - name: Download Artifact
-      #        uses: actions/download-artifact@v2
-      #        with:
-      #          name: generated-tests
-      #          path: cypress/e2e/pre-release-tests/generated-tests
-
-      #      - name: List contents of the folder
-      #        run: ls cypress/e2e/pre-release-tests/generated-tests/
-
-      #      - name: Generate Cypress Tests
-      #        uses: cypress-io/github-action@v6
-      #        with:
-      #          browser: ${{ matrix.browser }}
-      #          # build: npm ci && npm run build
-      #          start: npm run dev
-      #          wait-on: ${{ env.CYPRESS_BASE_URL }}
-      #          wait-on-timeout: 120
-      #          record: true
-      #          # parallel: true
-      #          spec: 'cypress/e2e/pre-release-tests/generated-tests/generatePrereleaseTests.cy.js'
-
-      #      - name: List contents of the folder after generate Tests
-      #        run: ls cypress/e2e/pre-release-tests/generated-tests/generated-tests/
   run-cypress-pre-release-tests:
     name: Run Cypress Pre-Release Tests
     needs: [build-cypress-pre-release-tests]
