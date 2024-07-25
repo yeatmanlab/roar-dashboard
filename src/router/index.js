@@ -195,15 +195,16 @@ const routes = [
   },
 
   {
-    path: '/register-game',
-    name: 'RegisterGame',
-    component: () => import('../pages/RegisterGame.vue'),
-    meta: { pageTitle: 'Register Game', requireAdmin: true, requireSuperAdmin: true },
+    path: '/manage-tasks-variants',
+    name: 'ManageTasksVariants',
+    component: () => import('../pages/ManageTasksVariants.vue'),
+    meta: { pageTitle: 'Manage Tasks', requireAdmin: true, requireSuperAdmin: true },
   },
   {
     path: '/register',
     name: 'Register',
     component: () => import('../pages/RegisterFamilyUsers.vue'),
+    props: (route) => ({ code: route.query.code }),
     children: [
       {
         name: 'Register',
@@ -353,6 +354,27 @@ const routes = [
     props: true,
     component: () => import('../pages/IndividualReport.vue'),
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../pages/AdminProfile.vue'),
+    children: [
+      { path: '', name: 'ProfileInfo', component: () => import('../components/views/UserInfoView.vue') },
+      {
+        path: 'password',
+        name: 'ProfilePassword',
+        component: () => import('../components/views/PasswordView.vue'),
+        meta: { requireAdmin: true },
+      },
+      {
+        path: 'accounts',
+        name: 'ProfileAccounts',
+        component: () => import('../components/views/LinkAccountsView.vue'),
+        meta: { requireAdmin: true },
+      },
+    ],
+    meta: { pageTitle: 'Profile' },
   },
   {
     path: '/enable-cookies',

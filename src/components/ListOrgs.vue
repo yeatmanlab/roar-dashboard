@@ -1,4 +1,5 @@
 <template>
+  <PvToast />
   <main class="container main">
     <section class="main-body">
       <div class="flex flex-column mb-5">
@@ -58,11 +59,56 @@
             :loading="isLoading || isFetching"
             :allow-filtering="false"
             @export-all="exportAll"
+            @selected-org-id="showCode"
           />
           <AppSpinner v-else />
         </PvTabPanel>
       </PvTabView>
       <AppSpinner v-else />
+    </section>
+    <section class="flex mt-8 justify-content-end">
+      <PvDialog
+        v-model:visible="isDialogVisible"
+        dialog-title="text-primary"
+        :style="{ width: '50rem' }"
+        :draggable="false"
+      >
+        <template #header>
+          <h1 class="text-primary font-bold m-0">Invitation</h1>
+        </template>
+        <p class="font-bold text-lg">Link:</p>
+        <PvInputGroup>
+          <PvInputText
+            style="width: 70%"
+            :value="`https://roar.education/register/?code=${activationCode}`"
+            autocomplete="off"
+            readonly
+          />
+          <PvButton
+            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            @click="copyToClipboard(`https://roar.education/register/?code=${activationCode}`)"
+          >
+            <i class="pi pi-copy p-2"></i>
+          </PvButton>
+        </PvInputGroup>
+        <p class="font-bold text-lg">Code:</p>
+        <PvInputGroup class="mt-3">
+          <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" readonly />
+          <PvButton
+            class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            @click="copyToClipboard(activationCode)"
+          >
+            <i class="pi pi-copy p-2"></i>
+          </PvButton>
+        </PvInputGroup>
+        <div class="flex justify-content-end">
+          <PvButton
+            class="mt-3 bg-primary border-none border-round p-3 text-white hover:bg-red-900"
+            @click="closeDialog"
+            >Close</PvButton
+          >
+        </div>
+      </PvDialog>
     </section>
   </main>
 </template>
@@ -73,15 +119,18 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
-
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 const orderBy = ref(orderByDefault);
+let activationCode = ref(null);
+const isDialogVisible = ref(false);
+const toast = useToast();
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -156,6 +205,27 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+function copyToClipboard(text) {
+  navigator.clipboard
+    .writeText(text)
+    .then(function () {
+      toast.add({
+        severity: 'success',
+        summary: 'Hoorah!',
+        detail: 'Your code has been successfully copied to clipboard!',
+        life: 3000,
+      });
+    })
+    .catch(function () {
+      toast.add({
+        severity: 'error',
+        summary: 'Error!',
+        detail: 'Your code has not been copied to clipboard! \n Please try again',
+        life: 3000,
+      });
+    });
+}
+
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
@@ -199,7 +269,6 @@ const exportAll = async () => {
     isSuperAdmin,
     adminOrgs,
   );
-  console.log('Exporting all:', exportData);
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
@@ -223,14 +292,24 @@ const tableColumns = computed(() => {
     columns.push({ field: 'classlink', header: 'ClassLink', dataType: 'boolean', sort: false });
   }
 
-  columns.push({
-    link: true,
-    routeName: 'ListUsers',
-    routeTooltip: 'View users',
-    routeLabel: 'Users',
-    routeIcon: 'pi pi-user',
-    sort: false,
-  });
+  columns.push(
+    {
+      link: true,
+      routeName: 'ListUsers',
+      routeTooltip: 'View users',
+      routeLabel: 'Users',
+      routeIcon: 'pi pi-user',
+      sort: false,
+    },
+    {
+      header: 'SignUp Code',
+      buttonLabel: 'Invite Users',
+      button: true,
+      eventName: 'selected-org-id',
+      buttonIcon: 'pi pi-send mr-2',
+      sort: false,
+    },
+  );
 
   return columns;
 });
@@ -249,6 +328,18 @@ const tableData = computed(() => {
     };
   });
 });
+
+const showCode = async (selectedOrg) => {
+  const orgInfo = await fetchDocById(activeOrgType.value, selectedOrg.id);
+  if (orgInfo?.currentActivationCode) {
+    activationCode.value = orgInfo.currentActivationCode;
+    isDialogVisible.value = true;
+  }
+};
+
+const closeDialog = () => {
+  isDialogVisible.value = false;
+};
 
 let unsubscribe;
 const initTable = () => {

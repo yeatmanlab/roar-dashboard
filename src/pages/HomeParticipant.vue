@@ -24,7 +24,7 @@
             }}</label>
           </div>
           <div
-            v-if="adminInfo?.length > 1"
+            v-if="adminInfo?.length > 0"
             class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">

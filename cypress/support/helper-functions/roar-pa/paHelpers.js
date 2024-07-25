@@ -1,3 +1,5 @@
+import { signInWithClever } from '../participant/participant-helpers';
+
 export const timeout = Cypress.env('timeout');
 
 function handleFullScreenError() {
@@ -124,9 +126,16 @@ export function playPA({
     endText2: 'I have been swimming so much',
     endText3: 'You have helped me and all my friends!',
   },
+  auth = 'username',
 } = {}) {
-  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
   cy.visit('/');
+  if (auth === 'clever') {
+    signInWithClever();
+  }
+  if (auth === 'username') {
+    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/');
+  }
 
   cy.selectAdministration(administration);
 

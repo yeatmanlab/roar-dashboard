@@ -17,7 +17,7 @@
         </div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" @submit="handleSubmit($event)" />
+            <component :is="activeComp()" :code="code" @submit="handleSubmit($event)" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -44,7 +44,6 @@
           v-model:visible="isDialogVisible"
           :header="dialogHeader"
           :style="{ width: '25rem' }"
-          :position="position"
           :modal="true"
           :draggable="false"
         >
@@ -68,25 +67,14 @@ import { fetchDocById } from '@/helpers/query/utils';
 import router from '../router';
 
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const spinner = ref(false);
-let unsubscribe;
 
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
-
-unsubscribe = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
+// eslint-disable-next-line no-unused-vars
+const props = defineProps({
+  code: { type: String, default: null },
 });
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
-});
-
-// const claimsLoaded = computed(() => !isLoadingClaims.value);
 
 const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid],

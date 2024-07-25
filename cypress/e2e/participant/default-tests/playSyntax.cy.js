@@ -5,13 +5,13 @@ const app = 'core-tasks';
 const administration = 'Cypress Test Roar Syntax';
 
 describe('ROAR - Syntax Play Through', () => {
-  it('Plays the Roar Syntax/Core Tasks Game', () => {
+  it('Plays the Roar Syntax/Core Tasks Game with username auth', () => {
     cy.wrap(isCurrentVersion(app)).then((isCurrentVersion) => {
       if (isCurrentVersion) {
         cy.log(`Did not detect a new version of ${app}, skipping test.`);
       } else {
         cy.log(`Detected a new version of ${app}, running test.`);
-        playSyntax({ administration: administration });
+        playSyntax({ administration: administration, auth: 'username' });
       }
     });
   });

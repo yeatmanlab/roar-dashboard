@@ -1,4 +1,5 @@
 import { languageOptions } from './languageOptions';
+import { signInWithClever } from '../participant/participant-helpers';
 
 const timeout = Cypress.env('timeout');
 
@@ -6,11 +7,18 @@ export const playSWR = ({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',
   optional = false,
+  auth = 'username',
 } = {}) => {
   // Log in once at the beginning of the test case that calls playSWR
-  cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+  if (auth === 'username') {
+    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.visit('/', { timeout: 2 * timeout });
+  }
+  if (auth === 'clever') {
+    cy.visit('/', { timeout: 2 * timeout });
+    signInWithClever();
+  }
 
-  cy.visit('/', { timeout: 2 * timeout });
   cy.selectAdministration(administration);
 
   if (optional) {

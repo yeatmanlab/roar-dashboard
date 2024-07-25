@@ -1,3 +1,5 @@
+export const timeout = Cypress.env('timeout');
+
 describe('Test to maintain that assent form shows in when signing in with an un-assented user', () => {
   it('passes', () => {
     // this is a user that has an assignment of roarVocab -- how can we create a user that can
@@ -8,7 +10,7 @@ describe('Test to maintain that assent form shows in when signing in with an un-
     cy.login(test_login, test_pw);
     cy.visit('/');
     cy.wait(1000);
-    cy.get('.p-dialog-title').contains('CONSENT FORM').should('be.visible');
+    cy.get('.p-dialog-title', { timeout: timeout }).contains('CONSENT FORM').should('be.visible');
     cy.get('.p-confirm-dialog-accept').contains('Continue').should('be.visible');
   });
 });

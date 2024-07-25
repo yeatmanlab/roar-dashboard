@@ -224,8 +224,8 @@
                 icon="pi pi-plus mr-2"
                 class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
                 :disabled="optionalForAllFlag === true"
-                @click="addOptionalCondition"
                 data-cy="button-optional-condition"
+                @click="addOptionalCondition"
               />
             </div>
           </div>
