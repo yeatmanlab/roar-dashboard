@@ -2,9 +2,8 @@
 name: Deploy to Firebase Hosting (production) with Pre-Release Tests
 
 on:
-  push:
-    branches:
-      - 'test-all-open-admins'
+  pull_request:
+    types: [opened, reopened, synchronize]
 
 jobs:
   build-cypress-pre-release-tests:
