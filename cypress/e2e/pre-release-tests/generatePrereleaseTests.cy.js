@@ -1,6 +1,6 @@
-import { generatedSpecTemplate } from '../../../fixtures/generatedTestTemplate';
-import { getDevFirebase } from '../../../support/devFirebase';
-import { getOpenAdministrations } from '../../../support/query';
+import { generatedSpecTemplate } from '../../fixtures/generatedTestTemplate';
+import { getDevFirebase } from '../../support/devFirebase';
+import { getOpenAdministrations } from '../../support/query';
 import * as path from 'path';
 
 const timeout = Cypress.env('timeout');

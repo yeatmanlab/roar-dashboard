@@ -1,6 +1,6 @@
 export const generatedSpecTemplate = (adminName) => {
   return `
-  import { testSpecs } from "../../../../fixtures/taskTestSpecs.js";
+  import { testSpecs } from "../../../fixtures/taskTestSpecs.js";
   const timeout = Cypress.env('timeout');
 
   function checkOptionalGame(spec, admin, text) {

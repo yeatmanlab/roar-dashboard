@@ -1,8 +1,8 @@
-import { playSWR } from '../../../../../support/helper-functions/roar-swr/swrHelpers';
-import { playSRE } from '../../../../../support/helper-functions/roar-sre/sreHelpers';
-import { playLetter } from '../../../../../support/helper-functions/roar-letter/letterHelpers';
-import { playPA } from '../../../../../support/helper-functions/roar-pa/paHelpers';
-import { playFluencyARF, playFluencyCALF } from '../../../../../support/helper-functions/roam-fluency/fluencyHelpers';
+import { playSWR } from '../../support/helper-functions/roar-swr/swrHelpers';
+import { playSRE } from '../../support/helper-functions/roar-sre/sreHelpers';
+import { playLetter } from '../../support/helper-functions/roar-letter/letterHelpers';
+import { playPA } from '../../support/helper-functions/roar-pa/paHelpers';
+import { playFluencyARF, playFluencyCALF } from '../../support/helper-functions/roam-fluency/fluencyHelpers';
 import {
   playMorphology,
   playWrittenVocabulary,
