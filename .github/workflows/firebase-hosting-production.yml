@@ -4,7 +4,7 @@ name: Deploy to Firebase Hosting (production) with Pre-Release Tests
 on:
   push:
     branches:
-      - 'enh/test-all-open-admins'
+      - 'test-all-open-admins'
 
 jobs:
   build-cypress-pre-release-tests:
@@ -20,7 +20,7 @@ jobs:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-      COMMIT_INFO_MESSAGE: Generating pre-release tests for ROAR Dashboard
+      COMMIT_INFO_MESSAGE: Generating pre-release tests for ROAR Dashboard ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
       PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
@@ -78,7 +78,7 @@ jobs:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-      COMMIT_INFO_MESSAGE: Pre-release tests for ROAR Dashboard
+      COMMIT_INFO_MESSAGE: Generating pre-release tests for ROAR Dashboard ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
       PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
