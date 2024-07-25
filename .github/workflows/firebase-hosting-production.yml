@@ -1,27 +1,15 @@
 # https://github.com/firebase/firebase-tools
 
 name: Deploy to Firebase Hosting (production) with Pre-Release Tests
-'on':
+
+on:
   push:
     branches:
       - 'enh/seperate-test-all-admins'
+
 jobs:
-  delete-generated-tests:
-    name: Delete Generated Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Delete generated-tests directory if it exists
-        run: |
-          if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
-            rm -rf cypress/e2e/pre-release-tests/generated-tests
-          fi
-
   build-cypress-pre-release-tests:
     name: Build Cypress Pre-Release Tests
-    needs: [delete-generated-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
@@ -42,6 +30,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Delete generated-tests directory if it exists
+        run: |
+          if [ -d "cypress/e2e/pre-release-tests/generated-tests" ]; then
+            rm -rf cypress/e2e/pre-release-tests/generated-tests
+            echo "Directory cypress/e2e/pre-release-tests/generated-tests was deleted."
+          else
+            echo "Directory cypress/e2e/pre-release-tests/generated-tests does not exist."
+          fi
+
       - name: Generate Cypress Pre-Release Tests
         uses: cypress-io/github-action@v6
         with:
@@ -54,6 +51,12 @@ jobs:
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generatePrereleaseTests.cy.js'
           ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated-tests
+          path: cypress/e2e/pre-release-tests/generated-tests
 
   run-cypress-pre-release-tests:
     name: Run Cypress Pre-Release Tests
@@ -75,8 +78,14 @@ jobs:
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: generated-tests
+          path: cypress/e2e/pre-release-tests/generated-tests
 
       - name: Run Generated Cypress Tests
         uses: cypress-io/github-action@v6
