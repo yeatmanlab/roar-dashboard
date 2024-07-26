@@ -94,7 +94,7 @@ Cypress.Commands.add(
 );
 
 Cypress.Commands.add('agreeToConsent', (text) => {
-  const consents = ['CONSENT VIDEO AUDIO RECORDING FORM'];
+  const consents = ['CONSENT VIDEO AUDIO RECORDING FORM', 'FORMULARIO DE CONSENT BEHAIVORAL EYE TRACKING ES'];
 
   for (const consent of consents) {
     if (text.includes(consent)) {
