@@ -61,13 +61,14 @@
         </section>
         <section class="form-section">
           <div class="p-input-icon-right">
-            <label for="studentUsername">Student Username <span class="required">*</span></label>
+            <label for="studentUsername">Student Username <span class="required mr-2">*</span></label>
             <PvInputText
               v-model="student.studentUsername"
               name="studentUsername"
               :class="{
                 'p-invalid': v$.students.$each.$response.$data[outerIndex].studentUsername.$invalid && submitted,
               }"
+              style="width: 50vh"
               aria-describedby="username-error"
             />
           </div>
@@ -139,6 +140,7 @@
                 view="date"
                 date-format="mm/dd/yy"
                 icon="pi pi-calendar text-white p-1"
+                class="w-full"
               />
             </div>
             <div v-else>
@@ -148,6 +150,7 @@
                 view="year"
                 date-format="yy"
                 icon="pi pi-calendar text-white p-1"
+                class="w-full"
               />
             </div>
             <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
@@ -164,11 +167,12 @@
               :options="gradeOptions"
               option-label="label"
               option-value="value"
+              style="width: 50vh"
               name="grade"
             />
           </div>
         </section>
-        <PvAccordion>
+        <PvAccordion expandIcon="pi pi-plus" collapseIcon="pi pi-minus">
           <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
@@ -199,12 +203,13 @@
                     'p-invalid': v$.students.$each.$response.$data[outerIndex]?.lastName.$invalid,
                   }"
                   aria-describedby="first-name-error"
+                  style="width: 46vh"
                 />
               </div>
             </section>
-            <section class="form-section">
+            <section class="form-section flex flex-column">
               <!--English Language Level-->
-              <div class="mt-4 mb-5">
+              <div class="w-full">
                 <label for="ell">English as a Second Language</label>
                 <PvDropdown
                   v-model="student.ell"
@@ -212,10 +217,11 @@
                   option-label="label"
                   option-value="value"
                   name="ell"
+                  class="w-full"
                 />
               </div>
               <!--Sex-->
-              <div class="mt-4 mb-5">
+              <div class="w-full">
                 <label for="sex">Gender </label>
                 <PvDropdown
                   v-model="student.gender"
@@ -223,12 +229,13 @@
                   option-label="label"
                   option-value="value"
                   name="gender"
+                  class="w-full"
                 />
               </div>
             </section>
-            <section class="form-section">
+            <section class="form-section flex flex-column">
               <!-- Free-Reduced Lunch -->
-              <div class="mt-4 mb-5">
+              <div class="w-full">
                 <label for="stateId">Free-Reduced Lunch </label>
                 <PvDropdown
                   v-model="student.freeReducedLunch"
@@ -236,10 +243,11 @@
                   option-label="label"
                   option-value="value"
                   name="freeReducedLunch"
+                  class="w-full"
                 />
               </div>
               <!-- IEP Status -->
-              <div class="mt-4 mb-5">
+              <div class="w-full">
                 <label for="stateId">IEP Status</label>
                 <PvDropdown
                   v-model="student.IEPStatus"
@@ -247,12 +255,13 @@
                   option-label="label"
                   option-value="value"
                   name="IEPStatus"
+                  class="w-full"
                 />
               </div>
             </section>
-            <section class="form-section">
+            <section class="form-section flex flex-column">
               <!-- Race -->
-              <div class="mt-4 mb-5">
+              <div class="w-full">
                 <label for="race">Race </label>
                 <PvAutoComplete
                   v-model="student.race"
@@ -260,10 +269,11 @@
                   :suggestions="raceOptions"
                   name="race"
                   @complete="searchRaces"
+                  class="w-full"
                 />
               </div>
               <!-- Hispanic Ethinicity -->
-              <div class="mt-4 mb-5">
+              <div class="w-full">
                 <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
                 <PvDropdown
                   v-model="student.hispanicEthnicity"
@@ -271,12 +281,13 @@
                   option-label="label"
                   option-value="value"
                   name="hispanicEthinicity"
+                  class="w-full"
                 />
               </div>
             </section>
             <section class="form-section">
               <!-- Home Language -->
-              <div class="mt-4 mb-5">
+              <div class="w-full">
                 <label for="stateId">Home Language </label>
                 <PvAutoComplete
                   v-model="student.homeLanguage"
@@ -284,6 +295,7 @@
                   :suggestions="languageOptions"
                   name="homeLanguage"
                   @complete="searchLanguages"
+                  class="w-full"
                 />
               </div>
             </section>
@@ -702,7 +714,7 @@ const validateRoarUsername = async () => {
   color: white;
 }
 .required {
-  color: var(--bright-red);
+  color: var(--primary-color);
 }
 .login-title {
   font-size: 26px;

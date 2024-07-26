@@ -91,7 +91,7 @@
                 :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
-              <i class="pi pi-phone" style="font-size: 1rem; width: 8%"></i>
+              <i class="pi pi-microphone" style="font-size: 1rem; width: 8%"></i>
               <label
                 :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 style="width: 80%"
@@ -201,7 +201,7 @@
               </div>
               <div class="flex align-items-center justify-content-center">
                 <PvButton
-                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
+                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-white hover:bg-primary"
                   style="height: 6rem; width: 6rem"
                   label="Show Consent"
                   @click="seeConsent(result.consent[0])"
@@ -229,7 +229,7 @@
               </div>
               <div class="flex align-items-center justify-content-center">
                 <PvButton
-                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
+                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-white hover:bg-primary"
                   label="Show Assent"
                   @click="seeConsent(result.assent[0])"
                 />

@@ -40,7 +40,7 @@
                 </div>
                 <div v-if="!isLoadingScores">
                   <PvButton
-                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                    class="flex flex-row p-4 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -1402,6 +1402,11 @@ onMounted(async () => {
     display: flex;
     align-items: center;
   }
+}
+
+.p-datatable-gridlines .p-datatable-tbody > tr > td {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
 }
 
 .confirm .p-confirm-dialog-reject {

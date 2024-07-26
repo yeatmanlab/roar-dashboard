@@ -586,10 +586,10 @@ onMounted(() => {
   display: flex;
   flex-direction: row;
   gap: 2rem;
-  padding: 1rem;
+  padding: 0.5rem;
 
   .card-admin-chart {
-    width: 12ch;
+    width: 11ch;
   }
 
   .card-admin-body {

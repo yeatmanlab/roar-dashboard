@@ -65,7 +65,7 @@
     </div>
     <div class="flex flex-column">
       <span style="height: 10px">
-        <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 80%">
+        <div class="relative flex justify-content-end mt-0 mr-2 z-1" style="top: 25px; width: 20%; left: 79%">
           <slot />
         </div>
       </span>
@@ -162,7 +162,7 @@
                     v-tooltip.right="colData.tooltip"
                     severity="secondary"
                     text
-                    class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                    class="border-none border-round bg-white pl-2 text-primary p-2 hover:surface-200"
                     :label="colData.routeParams.buttonLabel"
                     :aria-label="col.routeTooltip"
                     :icon="col.routeIcon"
@@ -236,11 +236,11 @@
                   option-group-children="items"
                   :options="taskFilterOptions"
                   data-cy="score-filter-dropdown"
-                  style="margin-bottom: 0.5rem"
+                  style="margin-bottom: 0.5rem; width: 17vh; height: 4vh"
                 >
                   <template #option="{ option }">
-                    <div class="flex align-items-center">
-                      <div v-if="supportLevelColors[option]" class="flex gap-2">
+                    <div class="flex align-items-center p-0">
+                      <div v-if="supportLevelColors[option]" class="flex gap-2 p-0">
                         <div class="small-circle tooltip" :style="`background-color: ${supportLevelColors[option]};`" />
                         <span class="tooltiptext">{{ option }}</span>
                       </div>
@@ -313,7 +313,7 @@
                   type="button"
                   text
                   icon="pi pi-times"
-                  class="p-2 bg-primary text-white border-round border-none hover:bg-red-900"
+                  class="pl-5 pr-5 bg-primary text-white border-round border-none hover:bg-red-900"
                   severity="primary"
                   @click="filterCallback()"
                   >Clear</PvButton
@@ -324,7 +324,7 @@
               <PvButton
                 type="button"
                 icon="pi pi-times"
-                class="px-2 p-2 bg-primary text-white border-round border-none hover:bg-red-900"
+                class="pl-5 pr-5 bg-primary text-white border-round border-none hover:bg-red-900"
                 severity="primary"
                 @click="filterCallback()"
                 >Apply
@@ -473,7 +473,7 @@ const exportCSV = (exportSelected) => {
 };
 
 const compressedRows = ref(false);
-const padding = '1rem 1.5rem';
+const padding = '0rem 0.5rem 0rem 0.5rem';
 
 function increasePadding() {
   if (!countForVisualize.value) {
@@ -481,7 +481,7 @@ function increasePadding() {
     rowViewMode.value = 'Compact View';
   } else {
     rowViewMode.value = 'Expand View';
-    document.documentElement?.style.setProperty('--padding-value', '0 1.5rem 0 1.5rem');
+    document.documentElement?.style.setProperty('--padding-value', '0.5rem 1.5rem 0.5rem 1.5rem');
   }
   countForVisualize.value = !countForVisualize.value;
 }
@@ -651,7 +651,7 @@ g {
   text-align: left;
   border: 1px solid var(--surface-c);
   border-width: 0 0 1px 0;
-  padding: var(--padding-value, '1px 1.5rem 2px 1.5rem');
+  padding: var(--padding-value, '1px 1.5rem 2px 1.5rem') !important;
   margin-top: 5px;
   margin-bottom: 5px;
 }
@@ -681,15 +681,8 @@ button.p-column-filter-menu-button.p-link:hover {
   background: var(--surface-500);
 }
 
-.compressed .p-datatable .p-datatable-tbody > tr > td {
-  text-align: left;
-  border: 1px solid var(--surface-c);
-  border-width: 0 0 3px 0;
-  padding: 1px 1.5rem 2px 1.5rem;
-}
-
 .filter-content {
-  width: 12rem;
+  width: 1rem;
 }
 
 .filter-button-override .p-column-filter-menu-button:not(.p-column-filter-menu-button-active) {
@@ -725,5 +718,11 @@ svg.p-icon.p-button-icon:hover {
 
 .scrollable-container {
   scrollbar-color: var(--primary-color) white;
+}
+.filter-content {
+  width: 13rem !important;
+}
+.p-datatable-gridlines .p-datatable-tbody > tr > td {
+  padding: 0rem 0.5rem 0rem 0.5rem;
 }
 </style>

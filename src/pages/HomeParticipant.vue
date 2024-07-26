@@ -6,9 +6,11 @@
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
       <div v-else>
-        <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
-          {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
-        </h2>
+        <PvFloatLabel>
+          <h2 v-if="adminInfo?.length == 1" class="dropdown-container">
+            {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
+          </h2>
+        </PvFloatLabel>
         <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
           <div
             v-if="optionalAssessments.length !== 0"
@@ -25,29 +27,31 @@
           </div>
           <div
             v-if="adminInfo?.length > 0"
-            class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
+            class="flex flex-row justify-center align-items-center dropdown-container gap-4 w-full"
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
-                <PvDropdown
-                  v-if="adminInfo.every((admin) => admin.publicName)"
-                  v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
-                  option-label="publicName"
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <PvDropdown
-                  v-else
-                  v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
-                  option-label="name"
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+                <PvFloatLabel>
+                  <PvDropdown
+                    v-if="adminInfo.every((admin) => admin.publicName)"
+                    v-model="selectedAdmin"
+                    :options="adminInfo ?? []"
+                    option-label="publicName"
+                    input-id="dd-assignment"
+                    data-cy="dropdown-select-administration"
+                    @change="toggleShowOptionalAssessments"
+                  />
+                  <PvDropdown
+                    v-else
+                    v-model="selectedAdmin"
+                    :options="adminInfo ?? []"
+                    option-label="name"
+                    input-id="dd-assignment"
+                    data-cy="dropdown-select-administration"
+                    @change="toggleShowOptionalAssessments"
+                  />
+                  <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+                </PvFloatLabel>
               </div>
             </div>
           </div>

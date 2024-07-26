@@ -661,4 +661,10 @@ onMounted(async () => {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
+.p-datatable-gridlines .p-datatable-tbody > tr > td {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+}
 </style>

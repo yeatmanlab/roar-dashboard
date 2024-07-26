@@ -123,15 +123,15 @@
           </div>
           <div class="grid mt-3">
             <div class="col-12">Search for a {{ orgType.singular }} address:</div>
-            <div class="col-12 md:col-6 lg:col-6 xl:col-6 p-inputgroup">
+            <div class="w-9">
               <span class="p-inputgroup-addon">
-                <i class="pi pi-map"></i>
+                <i class="pi pi-map mr-3 ml-5 text-primary"></i>
               </span>
               <GMapAutocomplete
                 :options="{
                   fields: ['address_components', 'formatted_address', 'place_id', 'url'],
                 }"
-                class="p-inputtext p-component w-full"
+                class="p-inputtext p-component w-8"
                 data-cy="input-address"
                 @place_changed="setAddress"
               >
@@ -161,7 +161,7 @@
                 :options="allTags"
                 :suggestions="tagSuggestions"
                 name="tags"
-                class="w-full"
+                class="w-full card"
                 data-cy="input-autocomplete"
                 @complete="searchTags"
               />
@@ -567,23 +567,6 @@ button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
   .hide {
     display: none;
   }
-}
-
-.p-autocomplete-token {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  background: var(--primary-color);
-  padding: 0.25rem;
-  border-radius: 0.35rem;
-  color: white;
-  margin: 0.05rem;
-}
-
-.p-autocomplete-token-icon,
-g {
-  margin-left: 0.5rem;
-  color: white;
 }
 
 #required-asterisk {

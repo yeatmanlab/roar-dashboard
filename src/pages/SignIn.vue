@@ -306,7 +306,7 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped>
+<style>
 .loading-blur {
   position: fixed;
   top: 0;
@@ -316,5 +316,8 @@ onBeforeUnmount(() => {
   z-index: 10;
   background-color: rgba(255, 255, 255, 0.7);
   padding-top: 21vh;
+}
+input.p-inputtext.p-component.p-password-input {
+  width: 50vh !important;
 }
 </style>

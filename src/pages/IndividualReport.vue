@@ -81,7 +81,12 @@
       />
     </div>
     <div id="support-graphic" class="support-wrapper">
-      <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+      <PvAccordion
+        class="my-2 w-full"
+        :active-index="expanded ? 0 : null"
+        expandIcon="pi pi-plus"
+        collapseIcon="pi pi-minus"
+      >
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
             <img v-if="!(studentData?.studentData?.grade >= 6)" src="../assets/support-distribution.png" width="650" />

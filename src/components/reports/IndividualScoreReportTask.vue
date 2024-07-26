@@ -60,7 +60,12 @@
         {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
-        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+        <PvAccordion
+          class="my-2 w-full"
+          :active-index="expanded ? 0 : null"
+          expandIcon="pi pi-plus"
+          collapseIcon="pi pi-minus"
+        >
           <PvAccordionTab header="Score Breakdown">
             <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
               <div class="flex justify-content-between score-table">
