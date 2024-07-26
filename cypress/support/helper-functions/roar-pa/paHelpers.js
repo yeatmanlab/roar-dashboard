@@ -139,6 +139,11 @@ export function playPA({
 
   cy.selectAdministration(administration);
 
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
+    cy.switchToOptionalAssessments();
+  }
+
   cy.visit('/game/pa');
 
   playIntro(startText);
@@ -174,6 +179,12 @@ export function playPA({
   cy.visit('/');
   cy.wait(0.2 * timeout);
   cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
+
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
+    cy.switchToOptionalAssessments();
+  }
+
   cy.get('.tabview-nav-link-label', { timeout: 3 * timeout })
     .contains('ROAR - Phoneme')
     .should('exist');

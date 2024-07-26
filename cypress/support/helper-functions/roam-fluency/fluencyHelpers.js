@@ -216,6 +216,11 @@ export function playFluencyCALF({
 
   cy.selectAdministration(administration);
 
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
+    cy.switchToOptionalAssessments();
+  }
+
   cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
   cy.visit(`/game/${task}`);
 
@@ -231,5 +236,11 @@ export function playFluencyCALF({
   cy.visit('/');
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
+
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
+    cy.switchToOptionalAssessments();
+  }
+
   cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
