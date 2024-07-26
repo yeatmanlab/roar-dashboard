@@ -36,7 +36,10 @@
             option-value="id"
             placeholder="Select a Task"
           />
-          <PvButton class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900">
+          <PvButton
+            class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900"
+            :onClick="addOfflineTask"
+          >
             Add Task
           </PvButton>
         </div>
@@ -46,8 +49,9 @@
           <PvTag severity="info"> No tasks added </PvTag>
         </div>
         <div v-else>
-          <!-- <PvDataTable :value="selectedTasks">
-      </PvDataTable>  -->
+          <!-- {{ selectedTasks.map(({name}) => {
+            {{ name }}
+          }) }} -->
         </div>
       </div>
       <PvDivider />
@@ -61,24 +65,26 @@
         </div>
         <div class="flex gap-1">
           <PvDropdown
-            v-model="selectedTask"
-            :options="formattedTasks"
+            v-model="selectedAdmin"
+            :options="administrations"
             option-label="name"
             option-value="id"
             placeholder="Select a Task"
           />
-          <PvButton class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900">
+          <PvButton
+            class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900"
+            :onClick="addOfflineAdmin"
+          >
             Add Administration
           </PvButton>
         </div>
       </div>
       <div class="flex flex-column">
-        <div v-if="selectedTasks.length === 0">
+        <div v-if="selectedAdmins.length === 0">
           <PvTag severity="info"> No administrations added </PvTag>
         </div>
         <div v-else>
-          <!-- <PvDataTable :value="selectedTasks">
-      </PvDataTable>  -->
+          <PvDataTable :value="selectedTasks"> </PvDataTable>
         </div>
       </div>
     </div>
@@ -113,14 +119,16 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
+import { orderByDefault } from '@/helpers/query/utils';
 import { taskFetcher } from '@/helpers/query/tasks';
+import { administrationPageFetcher } from '@/helpers/query/administrations';
 
 // +----------------+
 // | Initialization |
 // +----------------+
 const authStore = useAuthStore();
 const toast = useToast();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
 
 // +-------------------------+
 // | Firekit Inititalization |
@@ -131,9 +139,6 @@ const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
-
-const selectedTasks = ref([]);
-const isSubmitting = ref(false);
 
 // +---------+
 // | Queries |
@@ -147,6 +152,14 @@ const { data: tasks } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+  queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
 const { data: userData, isLoading: isLoadingUserData } = useQuery({
   queryKey: ['userData', uid],
   queryFn: () => fetchDocById('users', uid.value),
@@ -154,7 +167,40 @@ const { data: userData, isLoading: isLoadingUserData } = useQuery({
   enabled: initialized,
   staleTime: 1000 * 60 * 5, // 5 minutes
   onSuccess: (data) => {
-    offlineEnabled.value = data.offlineEnabled ?? false;
+    offlineEnabled.value = data?.offlineEnabled ?? false;
+  },
+});
+
+const orderBy = ref(orderByDefault);
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const canQueryAdministrations = computed(() => {
+  return initialized.value && !isLoadingClaims.value;
+});
+const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
+const {
+  isLoading: isLoadingAdministrations,
+  isFetching: isFetchingAdministrations,
+  data: administrations,
+} = useQuery({
+  queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
+  queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  keepPreviousData: true,
+  enabled: canQueryAdministrations,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  onSuccess: (data) => {
+    for (const admin of data) {
+      adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));
+    }
+    // remove duplicates from array
+    adminSearchTokens.value = [...new Set(adminSearchTokens.value)];
+    if (!search.value) filteredAdministrations.value = data;
+    else {
+      console.log('tdata', data);
+      filteredAdministrations.value = data?.filter((item) =>
+        item.name.toLowerCase().includes(search.value.toLowerCase()),
+      );
+    }
   },
 });
 
@@ -169,6 +215,20 @@ const formattedTasks = computed(() => {
 });
 
 const offlineEnabled = ref(userData?.offlineEnabled ?? false);
+const selectedTask = ref('');
+const selectedAdmin = ref('');
+const selectedTasks = ref([]);
+const selectedAdmins = ref([]);
+const isSubmitting = ref(false);
+
+const addOfflineAdmin = () => {
+  selectedAdmins.value.push(selectedAdmin.value);
+};
+
+const addOfflineTask = () => {
+  selectedTasks.value.push(selectedTask.value);
+};
+
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
