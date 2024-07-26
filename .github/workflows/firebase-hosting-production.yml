@@ -4,6 +4,8 @@ name: Deploy to Firebase Hosting (production) with Pre-Release Tests
 on:
   push:
     branches:
+      # Change to 'main' when ready to merge
+      #      - 'main'
       - 'test-all-open-admins'
 
 concurrency:
@@ -115,11 +117,9 @@ jobs:
           parallel: true
           spec: 'cypress/e2e/pre-release-tests/generated-tests/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
-#current working directory "/home/runner/work/roar-dashboard/roar-dashboard"
-
 # build-and-deploy:
 #   name: Deploy to Firebase Production Hosting Channel
-#   needs: [pre-release-tests]
+#   needs: [build-cypress-pre-release-tests, run-cypress-pre-release-tests]
 #   runs-on: ubuntu-latest
 #   steps:
 #     - uses: actions/checkout@v3
