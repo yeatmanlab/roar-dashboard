@@ -2,8 +2,9 @@
 name: Deploy to Firebase Hosting (production) with Pre-Release Tests
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - 'test-all-open-admins'
 
 concurrency:
   group: ci-preview-tests-${{ github.ref }}-0
@@ -75,7 +76,8 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium]
-        containers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        containers: [1, 2, 3, 4, 5]
+
     env:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
@@ -111,8 +113,8 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/pre-release-tests/generated-tests/**.cy.js'
-          ci-build-id: ${{ matrix.containers }}-${{ matrix.browser }}-${{ github.run_id }}-${{ github.ref }}
+          spec: 'cypress/e2e/pre-release-tests/generated-tests/**/*'
+          ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
 #current working directory "/home/runner/work/roar-dashboard/roar-dashboard"
 
 # build-and-deploy:

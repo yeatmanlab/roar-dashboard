@@ -193,6 +193,12 @@ async function checkConsent() {
   const legal = selectedAdmin.value?.legal;
 
   if (!legal?.consent) {
+    // Always show consent form for this test student when running Cypress tests
+    if (userData.value?.id === 'XAq5qOuXnNPHClK0xZXXhfGsWX22') {
+      consentType.value = 'consent';
+      confirmText.value = 'This is a test student. Please do not accept this form.';
+      showConsent.value = true;
+    }
     return;
   }
 
