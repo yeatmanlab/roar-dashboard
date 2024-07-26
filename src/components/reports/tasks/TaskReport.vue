@@ -4,8 +4,8 @@
       v-if="taskInfoById[taskId]"
       class="mb-5 w-full"
       :active-index="0"
-      expandIcon="pi pi-plus"
-      collapseIcon="pi pi-minus"
+      expand-icon="pi pi-plus"
+      collapse-icon="pi pi-minus"
     >
       <PvAccordionTab :header="('About ' + taskInfoById[taskId]?.subheader).toUpperCase()">
         <div>
@@ -83,8 +83,6 @@
 <script setup>
 import DistributionChartFacet from '@/components/reports/DistributionChartFacet.vue';
 import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
-import Accordion from 'primevue/accordion';
-import AccordionTab from 'primevue/accordiontab';
 import { taskDisplayNames, tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 import { ref, computed } from 'vue';

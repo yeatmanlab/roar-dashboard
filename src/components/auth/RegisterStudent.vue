@@ -172,7 +172,7 @@
             />
           </div>
         </section>
-        <PvAccordion expandIcon="pi pi-plus" collapseIcon="pi pi-minus">
+        <PvAccordion expand-icon="pi pi-plus" collapse-icon="pi pi-minus">
           <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
@@ -268,8 +268,8 @@
                   multiple
                   :suggestions="raceOptions"
                   name="race"
-                  @complete="searchRaces"
                   class="w-full"
+                  @complete="searchRaces"
                 />
               </div>
               <!-- Hispanic Ethinicity -->
@@ -294,8 +294,8 @@
                   multiple
                   :suggestions="languageOptions"
                   name="homeLanguage"
-                  @complete="searchLanguages"
                   class="w-full"
+                  @complete="searchLanguages"
                 />
               </div>
             </section>

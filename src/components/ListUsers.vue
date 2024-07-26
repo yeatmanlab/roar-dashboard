@@ -49,8 +49,8 @@
         <EditUsersForm
           v-if="!showPassword"
           :user-data="currentEditUser"
-          @update:user-data="localUserData = $event"
           :edit-mode="true"
+          @update:user-data="localUserData = $event"
         />
         <div v-if="showPassword">
           <div class="flex" style="gap: 1rem">

@@ -84,8 +84,8 @@
       <PvAccordion
         class="my-2 w-full"
         :active-index="expanded ? 0 : null"
-        expandIcon="pi pi-plus"
-        collapseIcon="pi pi-minus"
+        expand-icon="pi pi-plus"
+        collapse-icon="pi pi-minus"
       >
         <PvAccordionTab header="Understanding the Scores">
           <div class="flex flex-column align-items-center text-lg">
