@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
-      <div class="field mt-2">
+      <div class="field">
         <div class="p-input-icon-right">
           <PvInputText
             :id="$t('authSignIn.emailId')"

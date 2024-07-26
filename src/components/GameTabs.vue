@@ -1,5 +1,5 @@
 <template>
-  <div id="games" class="game-tab-container">
+  <div id="games" class="game-tab-container w-full">
     <PvTabView v-model:activeIndex="displayGameIndex" :scrollable="true" class="flex flex-column">
       <PvTabPanel
         v-for="(game, index) in games"
@@ -9,6 +9,7 @@
           ((index > 0 && !games[index - 1].completedOn) ||
             (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
         "
+        class="p-0"
       >
         <template #header>
           <!--Complete Game-->
@@ -25,35 +26,50 @@
             getTaskName(game.taskId, game.taskData.name)
           }}</span>
         </template>
-        <div class="roar-tabview-game pointer flex">
-          <div class="roar-game-content" @click="routeExternalTask(game)">
-            <div class="roar-game-title">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
+        <div class="roar-tabview-game pointer flex flex-row p-5 surface-100">
+          <div class="roar-game-content flex flex-column" style="width: 70%" @click="routeExternalTask(game)">
+            <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
             <div class="roar-game-description">
               <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
             </div>
-            <div class="roar-game-meta">
-              <PvTag
-                v-for="(items, metaIndex) in game.taskData.meta"
-                :key="metaIndex"
-                :value="metaIndex + ': ' + items"
-              />
-            </div>
-            <div class="roar-game-footer">
-              <i v-if="!allGamesComplete" class="pi"
-                ><svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="42" height="42" rx="21" fill="#A80532" />
-                  <path
-                    d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
-                    fill="white"
-                  />
-                </svg>
-              </i>
-              <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-              <span v-else>{{ taskCompletedMessage }}</span>
-              <router-link
-                v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
-                :to="{ path: getRoutePath(game.taskId) }"
-              ></router-link>
+            <div class="flex flex-column">
+              <div class="roar-game-meta">
+                <PvTag
+                  v-for="(items, metaIndex) in game.taskData.meta"
+                  :key="metaIndex"
+                  :value="metaIndex + ': ' + items"
+                />
+              </div>
+              <div class="roar-game-footer p-3 mr-5 hover:surface-200">
+                <div class="flex align-items-center justify-content-center">
+                  <i v-if="!allGamesComplete" class="pi"
+                    ><svg
+                      width="100"
+                      height="100"
+                      viewBox="0 0 42 42"
+                      fill="none"
+                      class="mr-3"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect width="42" height="42" rx="21" fill="#A80532" />
+                      <path
+                        d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
+                        fill="white"
+                      />
+                    </svg>
+                  </i>
+                </div>
+                <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
+                  <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
+                  <span v-else>{{ taskCompletedMessage }}</span>
+                  <router-link
+                    v-if="
+                      !allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL
+                    "
+                    :to="{ path: getRoutePath(game.taskId) }"
+                  ></router-link>
+                </div>
+              </div>
             </div>
           </div>
           <div class="roar-game-image">
@@ -63,12 +79,17 @@
                 :on-video-end="updateVideoCompleted"
                 :on-video-start="updateVideoStarted"
                 :task-id="game.taskId"
+                style="width: 40vh"
               />
             </div>
             <div v-else>
-              <img v-if="game.taskData.image" :src="game.taskData.image" />
+              <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 40vh" />
               <!-- TODO: Get real backup image -->
-              <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
+              <img
+                v-else
+                src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
+                style="width: 40vh"
+              />
             </div>
           </div>
         </div>
@@ -240,7 +261,7 @@ const returnVideoOptions = (videoURL) => {
 };
 </script>
 
-<style scoped lang="scss">
+<style>
 .game-tab-container {
   max-width: 75vw;
 }
@@ -258,5 +279,8 @@ const returnVideoOptions = (videoURL) => {
   .video-player-wrapper {
     min-width: 250px;
   }
+}
+.p-tabview-panels {
+  padding: 0 !important;
 }
 </style>

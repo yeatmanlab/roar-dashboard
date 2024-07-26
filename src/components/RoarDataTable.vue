@@ -615,6 +615,11 @@ const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-se
   transition: none;
 }
 
+.p-datatable-column-header-content {
+  padding: 0 !important;
+  margin-left: -6px !important;
+}
+
 .p-checkbox-box.p-component.p-highlight {
   background-color: var(--primary-color);
   color: white;

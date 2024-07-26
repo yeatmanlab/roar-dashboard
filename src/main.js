@@ -69,6 +69,7 @@ import PvIconField from 'primevue/iconfield';
 import PvInputIcon from 'primevue/inputicon';
 import PvColumnGroup from 'primevue/columngroup';
 import PvRow from 'primevue/row';
+import PvCarousel from 'primevue/carousel';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -216,6 +217,7 @@ app.component('PvRow', PvRow);
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
 app.component('PvFieldset', PvFieldset);
+app.component('PvCarousel', PvCarousel);
 
 app.directive('tooltip', PvTooltip);
 
