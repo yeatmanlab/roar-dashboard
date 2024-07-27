@@ -10,8 +10,8 @@
   <div v-else>
     <div class="flex flex-row justify-content-between bg-gray-100 px-4 py-4">
       <div class="flex flex-column gap-2">
-        <div class="text-gray-600 text-lg font-bold">Offline Mode Enabled</div>
-        <div class="text-sm">
+        <div class="text-gray-700 text-lg font-bold">Offline Mode Enabled</div>
+        <div class="text-sm text-gray-500">
           Offline mode is currently under development. By enrolling, you may experience a heightened level of bugs or
           undefined behavior.
         </div>
@@ -23,68 +23,96 @@
     <div v-if="offlineEnabled" class="flex flex-column bg-gray-100 my-2 p-4 rounded gap-4">
       <div class="flex justify-content-between">
         <div class="flex flex-column gap-2">
-          <div class="text-lg text-gray-600 font-bold">Tasks available offline</div>
-          <div class="text-sm">
+          <div class="text-lg text-gray-700 font-bold">Tasks available offline</div>
+          <div class="text-sm text-gray-500">
             Administrations added to this list have their corresponding data cached onto your device
           </div>
         </div>
         <div class="flex gap-1">
           <PvDropdown
-            v-model="selectedTask"
+            v-model="selectedOfflineTask"
             :options="formattedTasks"
+            class="h-3rem"
             option-label="name"
-            option-value="id"
+            option-value="name"
             placeholder="Select a Task"
           />
           <PvButton
             class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900"
             :onClick="addOfflineTask"
+            :disabled="!selectedOfflineTask"
           >
-            Add Task
+            Add
           </PvButton>
         </div>
       </div>
       <div class="flex flex-column">
-        <div v-if="selectedTasks.length === 0">
+        <div v-if="selectedOfflineTasks.length === 0">
           <PvTag severity="info"> No tasks added </PvTag>
         </div>
-        <div v-else>
-          <!-- {{ selectedTasks.map(({name}) => {
-            {{ name }}
-          }) }} -->
+        <div v-else class="flex flex-column gap-2">
+          <div
+            v-for="name in selectedOfflineTasks"
+            class="flex justify-content-end font-bold gap-2 p-1 bg-gray-200 rounded"
+          >
+            <PvTag> {{ name }}</PvTag>
+            <div>
+              <PvButton
+                class="text-red-900 border-none h-2rem text-sm hover:bg-red-900 hover:text-white"
+                :onClick="(name) => removeOfflineTask(name)"
+              >
+                <i class="pi pi-trash"></i>
+              </PvButton>
+            </div>
+          </div>
         </div>
       </div>
       <PvDivider />
 
       <div class="flex justify-content-between">
         <div class="flex flex-column gap-2">
-          <div class="text-lg text-gray-600 font-bold">Administrations available offline</div>
-          <div class="text-sm">
+          <div class="text-lg text-gray-700 font-bold">Administrations available offline</div>
+          <div class="text-sm text-gray-500">
             Administrations added to this list have their corresponding data cached onto your device
           </div>
         </div>
         <div class="flex gap-1">
           <PvDropdown
-            v-model="selectedAdmin"
+            v-model="selectedOfflineAdministration"
             :options="administrations"
             option-label="name"
-            option-value="id"
-            placeholder="Select a Task"
+            class="h-3rem"
+            option-value="name"
+            placeholder="Select an Administration"
           />
           <PvButton
             class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900"
-            :onClick="addOfflineAdmin"
+            :onClick="addOfflineAdministration"
+            :disabled="!selectedOfflineAdministration"
           >
-            Add Administration
+            Add
           </PvButton>
         </div>
       </div>
       <div class="flex flex-column">
-        <div v-if="selectedAdmins.length === 0">
+        <div v-if="selectedOfflineAdministrations.length === 0">
           <PvTag severity="info"> No administrations added </PvTag>
         </div>
-        <div v-else>
-          <PvDataTable :value="selectedTasks"> </PvDataTable>
+        <div v-else class="flex flex-column gap-2">
+          <div
+            v-for="name in selectedOfflineAdministrations"
+            class="flex justify-content-end font-bold gap-2 p-1 bg-gray-200 rounded"
+          >
+            <PvTag> {{ name }}</PvTag>
+            <div>
+              <PvButton
+                class="text-red-900 border-none h-2rem text-sm hover:bg-red-900 hover:text-white"
+                :onClick="(name) => removeOfflineAdministration(name)"
+              >
+                <i class="pi pi-trash"></i>
+              </PvButton>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -93,7 +121,7 @@
         <PvButton
           disabled
           class="m-0 bg-primary text-white border-none border-round h-2rem text-md hover:bg-red-900"
-          :onClick="saveSettings"
+          :onClick="saveOfflineSettings"
         >
           <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2" />
           Save Settings
@@ -102,7 +130,7 @@
       <div v-else>
         <PvButton
           class="m-0 bg-primary text-white border-none border-round h-2rem text-md hover:bg-red-900"
-          :onClick="saveSettings"
+          :onClick="saveOfflineSettings"
         >
           <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2" />
           Save Settings
@@ -188,20 +216,6 @@ const {
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
-  onSuccess: (data) => {
-    for (const admin of data) {
-      adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));
-    }
-    // remove duplicates from array
-    adminSearchTokens.value = [...new Set(adminSearchTokens.value)];
-    if (!search.value) filteredAdministrations.value = data;
-    else {
-      console.log('tdata', data);
-      filteredAdministrations.value = data?.filter((item) =>
-        item.name.toLowerCase().includes(search.value.toLowerCase()),
-      );
-    }
-  },
 });
 
 const formattedTasks = computed(() => {
@@ -215,18 +229,37 @@ const formattedTasks = computed(() => {
 });
 
 const offlineEnabled = ref(userData?.offlineEnabled ?? false);
-const selectedTask = ref('');
-const selectedAdmin = ref('');
-const selectedTasks = ref([]);
-const selectedAdmins = ref([]);
+const selectedOfflineTask = ref('');
+const selectedOfflineAdministration = ref('');
+const selectedOfflineTasks = ref([]);
+const selectedOfflineAdministrations = ref([]);
 const isSubmitting = ref(false);
 
-const addOfflineAdmin = () => {
-  selectedAdmins.value.push(selectedAdmin.value);
+const addOfflineAdministration = () => {
+  selectedOfflineAdministrations.value.push(selectedOfflineAdministration.value);
+};
+
+const removeOfflineAdministration = (name) => {
+  selectedOfflineTasks.value = selectedOfflineTasks.value.filter((task) => task !== name);
+};
+
+const removeOfflineTask = (name) => {
+  selectedOfflineTasks.value = selectedOfflineTasks.value.filter((task) => task !== name);
 };
 
 const addOfflineTask = () => {
-  selectedTasks.value.push(selectedTask.value);
+  if (selectedOfflineTasks.value.includes(selectedOfflineTask.value)) {
+    toast.add({
+      severity: 'info',
+      summary: 'Task already added',
+      detail: 'This task has already been added',
+      life: 3000,
+    });
+    return;
+  } else {
+    selectedOfflineTasks.value.push(selectedOfflineTask.value);
+    return;
+  }
 };
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
@@ -237,10 +270,14 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const saveSettings = async () => {
+const saveOfflineSettings = async () => {
   isSubmitting.value = true;
   await roarfirekit.value
-    .updateUserData(uid.value, { offlineEnabled: offlineEnabled.value })
+    .updateUserData(uid.value, {
+      offlineEnabled: offlineEnabled.value,
+      offlineTasks: selectedOfflineTasks.value,
+      OfflineAdministrationistrations: selectedOfflineAdministration.value,
+    })
     .then(() => {
       isSubmitting.value = false;
       toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
