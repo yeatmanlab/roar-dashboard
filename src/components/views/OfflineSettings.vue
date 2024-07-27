@@ -76,7 +76,11 @@
             Administrations added to this list have their corresponding data cached onto your device
           </div>
         </div>
-        <div class="flex gap-1">
+        <div v-if="isLoadingAdministrations === true" class="flex text-gray-600 font-light uppercase font-xs">
+          <i class="pi pi-spinner pi-spin mr-2" />
+          <div>Loading Adminstrations</div>
+        </div>
+        <div v-else class="flex gap-1">
           <PvDropdown
             v-model="selectedOfflineAdministration"
             :options="administrations"
@@ -141,7 +145,7 @@
   <PvConfirmDialog />
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -167,6 +171,16 @@ const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
+
+// Query Init
+
+const orderBy = ref(orderByDefault);
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const canQueryAdministrations = computed(() => {
+  return initialized.value && !isLoadingClaims.value;
+});
+const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
 // +---------+
 // | Queries |
@@ -194,23 +208,9 @@ const { data: userData, isLoading: isLoadingUserData } = useQuery({
   keepPrevousData: true,
   enabled: initialized,
   staleTime: 1000 * 60 * 5, // 5 minutes
-  onSuccess: (data) => {
-    offlineEnabled.value = data?.offlineEnabled ?? false;
-  },
 });
 
-const orderBy = ref(orderByDefault);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const canQueryAdministrations = computed(() => {
-  return initialized.value && !isLoadingClaims.value;
-});
-const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-const {
-  isLoading: isLoadingAdministrations,
-  isFetching: isFetchingAdministrations,
-  data: administrations,
-} = useQuery({
+const { isLoading: isLoadingAdministrations, data: administrations } = useQuery({
   queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
   queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
   keepPreviousData: true,
@@ -228,23 +228,32 @@ const formattedTasks = computed(() => {
   });
 });
 
-const offlineEnabled = ref(userData?.offlineEnabled ?? false);
-const selectedOfflineTask = ref('');
-const selectedOfflineAdministration = ref('');
+watch(userData, (newUserData) => {
+  offlineEnabled.value = newUserData?.offlineEnabled ?? false;
+  selectedOfflineAdministrations.value = [...newUserData?.offlineAdministrations] ?? [];
+  selectedOfflineTasks.value = [...newUserData?.offlineTasks] ?? [];
+});
+
+const offlineEnabled = ref(false);
 const selectedOfflineTasks = ref([]);
 const selectedOfflineAdministrations = ref([]);
+const selectedOfflineTask = ref('');
+const selectedOfflineAdministration = ref('');
 const isSubmitting = ref(false);
 
 const addOfflineAdministration = () => {
-  selectedOfflineAdministrations.value.push(selectedOfflineAdministration.value);
-};
-
-const removeOfflineAdministration = (name) => {
-  selectedOfflineTasks.value = selectedOfflineTasks.value.filter((task) => task !== name);
-};
-
-const removeOfflineTask = (name) => {
-  selectedOfflineTasks.value = selectedOfflineTasks.value.filter((task) => task !== name);
+  if (selectedOfflineAdministrations.value.includes(selectedOfflineAdministration.value)) {
+    toast.add({
+      severity: 'info',
+      summary: 'Task already added',
+      detail: 'This task has already been added',
+      life: 3000,
+    });
+    return;
+  } else {
+    selectedOfflineAdministrations.value.push(selectedOfflineAdministration.value);
+    return;
+  }
 };
 
 const addOfflineTask = () => {
@@ -262,6 +271,14 @@ const addOfflineTask = () => {
   }
 };
 
+const removeOfflineAdministration = (name) => {
+  selectedOfflineAdministrations.value = selectedOfflineAdministrations.value.filter((task) => task !== name);
+};
+
+const removeOfflineTask = (name) => {
+  selectedOfflineTasks.value = selectedOfflineTasks.value.filter((task) => task !== name);
+};
+
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
@@ -276,14 +293,14 @@ const saveOfflineSettings = async () => {
     .updateUserData(uid.value, {
       offlineEnabled: offlineEnabled.value,
       offlineTasks: selectedOfflineTasks.value,
-      OfflineAdministrationistrations: selectedOfflineAdministration.value,
+      offlineAdministrations: selectedOfflineAdministrations.value,
     })
     .then(() => {
       isSubmitting.value = false;
       toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
     })
     .catch((error) => {
-      console.log('Error updating user data', error);
+      console.error('Error updating user data', error);
       toast.add({
         severity: 'error',
         summary: 'Unexpected Error',
