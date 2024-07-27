@@ -26,7 +26,7 @@
             getTaskName(game.taskId, game.taskData.name)
           }}</span>
         </template>
-        <div class="roar-tabview-game pointer flex flex-row p-5 surface-100" style="margin-top: -3vh">
+        <div class="roar-tabview-game pointer flex flex-row p-5 surface-100">
           <div class="roar-game-content flex flex-column" style="width: 70%" @click="routeExternalTask(game)">
             <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
             <div class="roar-game-description">
