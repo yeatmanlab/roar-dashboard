@@ -758,4 +758,7 @@ function findVariantWithParams(variants, params) {
     display: none;
   }
 }
+.p-tabview-panels {
+  padding-top: 2vh !important;
+}
 </style>
