@@ -534,6 +534,13 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
+      const test = assessment.scores?.raw?.composite?.test;
+      if (
+        (test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
+        (test?.numAttempted === 0 && test?.numCorrect === 0)
+      ) {
+        return '#EEEEF0';
+      }
       return '#A4DDED';
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
@@ -716,11 +723,17 @@ const computeAssignmentAndRunData = computed(() => {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const percentCorrect =
-            numAttempted > 0 ? Math.round((numCorrect * 100) / numAttempted).toString() + '%' : null;
+            numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
+              ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
+              : null;
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].tagColor = tagColor;
+          if (percentCorrect === null) {
+            currRowScores[taskId].tagColor = '#EEEEF0';
+          } else {
+            currRowScores[taskId].tagColor = tagColor;
+          }
           scoreFilterTags += ' Assessed ';
         }
 
