@@ -6,14 +6,14 @@ function checkOptionalGame(spec, admin) {
     if ($body.find('[data-cy="switch-show-optional-assessments"]').length > 0) {
       cy.log('Optional assessments button found, switching to optional assessments');
       cy.switchToOptionalAssessments();
-      cy.wait(0.3 * timeout);
+      cy.wait(0.1 * timeout);
 
       cy.get('.p-tabview')
         .invoke('text')
         .then((text) => {
           if (text.includes(spec.name)) {
             cy.log(`Initializing test for optional game: ${spec.name}`);
-            cy.wait(0.3 * timeout);
+            cy.wait(0.1 * timeout);
             spec.spec({
               administration: admin,
               language: spec.language,
@@ -21,14 +21,13 @@ function checkOptionalGame(spec, admin) {
             });
           } else {
             cy.log('No optional game found for game:', spec.name, 'switching back to assessments.');
-            cy.wait(0.3 * timeout);
+            cy.wait(0.1 * timeout);
             cy.switchToOptionalAssessments();
           }
         });
     } else {
-      cy.log('No optional assessments button found, switching back to assessments.');
-      cy.wait(0.3 * timeout);
-      cy.switchToOptionalAssessments();
+      cy.log('No optional assessments button found.');
+      cy.wait(0.1 * timeout);
     }
   });
 }
@@ -40,7 +39,6 @@ function testGame(spec, admin) {
     .then((text) => {
       if (text.includes(spec.name)) {
         cy.log(`Initializing test for game: ${spec.name}`);
-
         spec.spec({
           administration: admin,
           language: spec.language,

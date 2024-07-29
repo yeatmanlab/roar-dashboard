@@ -1,40 +1,51 @@
 import { testSpecs } from '../../../fixtures/taskTestSpecs.js';
 const timeout = Cypress.env('timeout');
 
-function checkOptionalGame(spec, admin, text) {
+function checkOptionalGame(spec, admin) {
   cy.get('body').then(($body) => {
     if ($body.find('[data-cy="switch-show-optional-assessments"]').length > 0) {
+      cy.log('Optional assessments button found, switching to optional assessments');
       cy.switchToOptionalAssessments();
-      if (text.includes(spec.name)) {
-        cy.log(`Initializing test for optional game: ${spec.name}`);
+      cy.wait(0.1 * timeout);
 
-        spec.spec({
-          administration: admin,
-          language: spec.language,
+      cy.get('.p-tabview')
+        .invoke('text')
+        .then((text) => {
+          if (text.includes(spec.name)) {
+            cy.log(`Initializing test for optional game: ${spec.name}`);
+            cy.wait(0.1 * timeout);
+            spec.spec({
+              administration: admin,
+              language: spec.language,
+              optional: true,
+            });
+          } else {
+            cy.log('No optional game found for game:', spec.name, 'switching back to assessments.');
+            cy.wait(0.1 * timeout);
+            cy.switchToOptionalAssessments();
+          }
         });
-      } else {
-        cy.log('No optional game found for game:', spec.name);
-      }
     } else {
-      cy.log('No game found for game:', spec.name);
+      cy.log('No optional assessments button found.');
+      cy.wait(0.1 * timeout);
     }
   });
 }
 
 function testGame(spec, admin) {
-  cy.wait(0.1 * timeout);
+  cy.wait(0.3 * timeout);
   cy.get('.p-tabview')
     .invoke('text')
     .then((text) => {
       if (text.includes(spec.name)) {
         cy.log(`Initializing test for game: ${spec.name}`);
-
         spec.spec({
           administration: admin,
           language: spec.language,
         });
       } else {
-        checkOptionalGame(spec, admin, text);
+        cy.log('No game found for game:', spec.name, 'checking for optional assessments.');
+        checkOptionalGame(spec, admin);
       }
     });
 }

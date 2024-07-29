@@ -26,15 +26,14 @@ export const generatedSpecTemplate = (adminName) => {
             }
         })
       } else {
-        cy.log('No optional assessments button found, switching back to assessments.');
+        cy.log('No optional assessments button found.');
         cy.wait(0.1 * timeout);
-        cy.switchToOptionalAssessments();
       }
     });
   }
 
   function testGame(spec, admin) {
-    cy.wait(0.3 * timeout);
+    cy.wait(0.1 * timeout);
     cy.get('.p-tabview')
       .invoke('text')
       .then((text) => {
