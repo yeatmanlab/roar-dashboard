@@ -14,15 +14,15 @@
       </div>
       <button
         v-if="providerIds.includes('google.com')"
-        @click="unlinkAccount('google')"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
+        @click="unlinkAccount('google')"
       >
         Unlink
       </button>
       <button
         v-else
-        @click="linkAccount('google')"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
+        @click="linkAccount('google')"
       >
         Link
       </button>
@@ -39,15 +39,15 @@
       </div>
       <button
         v-if="providerIds.includes('oidc.clever')"
-        @click="unlinkAccount('clever')"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
+        @click="unlinkAccount('clever')"
       >
         Unlink
       </button>
       <button
         v-else
-        @click="linkAccount('clever')"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
+        @click="linkAccount('clever')"
       >
         Link
       </button>
@@ -64,15 +64,15 @@
       </div>
       <button
         v-if="providerIds.includes('oidc.classlink')"
-        @click="unlinkAccount('classlink')"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
+        @click="unlinkAccount('classlink')"
       >
         Unlink
       </button>
       <button
         v-else
-        @click="linkAccount('classlink')"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
+        @click="linkAccount('classlink')"
       >
         Link
       </button>
@@ -86,9 +86,9 @@
     >
     <div class="flex justify-content-end">
       <button
-        @click="deletePassword"
         :disabled="!canDeletePassword"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400"
+        @click="deletePassword"
       >
         Delete Password
       </button>
@@ -207,7 +207,7 @@ const deletePassword = async () => {
             life: 3000,
           });
         })
-        .catch((error) => {
+        .catch(() => {
           toast.add({
             severity: 'error',
             summary: 'Error occurred',
@@ -233,6 +233,9 @@ const deletePassword = async () => {
   background-color: var(--green-400);
   color: var(--green-800);
   border: solid 1px var(--green-800);
+  border-radius: 20px;
+  padding-left: 10px;
+  gap: 5px;
   width: 100%;
   height: 100%;
 }
@@ -240,11 +243,14 @@ const deletePassword = async () => {
   background-color: var(--red-400);
   color: var(--red-800);
   border: solid 1px var(--red-800);
+  border-radius: 20px;
+  padding-left: 10px;
+  gap: 5px;
   width: 100%;
   height: 100%;
 }
 .chip-container {
-  width: 108px;
+  width: 100px;
   height: 24px;
   margin-top: auto;
   margin-bottom: auto;

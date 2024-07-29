@@ -1,31 +1,38 @@
 <template>
   <div class="flex flex-row" style="max-height: 100vh">
     <!-- Sidebar -->
-    <div class="justify-content-between" :class="sidebarOpen ? 'sidebar-container' : 'sidebar-container-collapsed'">
+    <div :class="sidebarOpen ? 'sidebar-container-open' : 'sidebar-container-collapsed'">
       <div class="flex flex-column">
         <router-link to="/profile">
           <div class="sidebar-button">
             <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
           </div></router-link
         >
-        <router-link to="/profile/password" v-if="isAdmin"
+        <router-link v-if="isAdmin" to="/profile/password"
           ><div class="sidebar-button">
             <i class="pi pi-key" /><span v-if="sidebarOpen">{{
               hasPassword ? 'Change Password' : 'Add Password'
             }}</span>
           </div></router-link
         >
-        <router-link to="/profile/accounts" v-if="isAdmin"
+        <router-link v-if="isAdmin" to="/profile/accounts"
           ><div class="sidebar-button">
             <i class="pi pi-users" /><span v-if="sidebarOpen">Link Accounts</span>
           </div></router-link
         >
       </div>
-      <button @click="sidebarOpen = !sidebarOpen" class="border-none bg-primary text-white p-2 hover:surface-400">
-        <div class="flex justify-content-center">
-          <i v-if="!sidebarOpen" class="pi pi-angle-double-right"></i>
-          <span v-if="sidebarOpen"><i class="pi pi-angle-double-left mr-2"></i>Collapse</span>
-        </div>
+      <button
+        class="w-full border-none cursor-pointer h-3rem flex align-items-center"
+        :class="sidebarOpen ? 'justify-content-end' : 'justify-content-center'"
+        style="background-color: var(--surface-b)"
+        @click="sidebarOpen = !sidebarOpen"
+      >
+        <i
+          v-if="!sidebarOpen"
+          class="pi text-2xl pi-angle-double-right text-grey-600"
+          style="color: var(--surface-400)"
+        ></i>
+        <i v-else class="pi text-2xl pi-angle-double-left mr-2 text-grey-600" style="color: var(--surface-400)"></i>
       </button>
     </div>
     <!-- Main Page Content-->
@@ -40,7 +47,6 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById } from '@/helpers/query/utils';
-import _get from 'lodash/get';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 
@@ -77,7 +83,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { data: userClaims, isLoading: userClaimsLoading } = useQuery({
+const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid],
   queryFn: () => fetchDocById('userClaims', uid.value),
   keepPreviousData: true,
@@ -91,14 +97,13 @@ const isAdmin = computed(() => {
   if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
   return true;
 });
-
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 </script>
+
 <style lang="scss" scoped>
-.sidebar-container {
+.sidebar-container-open {
   background-color: var(--surface-b);
   flex-basis: 25%;
-  gap: 1rem;
+  width: 100%;
   height: calc(100vh - 119px);
   border-right: 2px solid var(--surface-d);
   a {
@@ -133,7 +138,6 @@ const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admi
   flex-direction: column;
   background-color: var(--surface-b);
   flex-basis: 2rem;
-  gap: 1rem;
   height: calc(100vh - 119px);
   border-right: 2px solid var(--surface-d);
 }
