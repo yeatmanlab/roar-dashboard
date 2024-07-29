@@ -171,7 +171,7 @@ Cypress.Commands.add(
 Cypress.Commands.add('checkUserList', (userList) => {
   cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
     cy.wrap(row)
-      .find('td.p-frozen-column')
+      .find('td.p-datatable-frozen-column')
       .then((cell) => {
         // The following cleans the non-breaking space character and any whitespace from the cell text
         const cellText = cell
