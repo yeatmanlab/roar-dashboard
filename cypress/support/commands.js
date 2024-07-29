@@ -143,6 +143,7 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
 });
 
 Cypress.Commands.add('switchToOptionalAssessments', () => {
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.get("[data-cy='switch-show-optional-assessments']").click();
 });
 
