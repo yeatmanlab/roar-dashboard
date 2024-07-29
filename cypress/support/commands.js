@@ -104,7 +104,7 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     .invoke('text')
     .then((text) => {
       if (text.includes(testAdministration)) {
-        cy.get('li#pv_id_5_12', { timeout: 2 * Cypress.env('timeout') })
+        cy.get('.p-select-list-container', { timeout: 2 * Cypress.env('timeout') })
           .contains(testAdministration)
           .click();
         cy.log('Selected administration:', testAdministration);
