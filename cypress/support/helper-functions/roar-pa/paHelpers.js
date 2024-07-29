@@ -1,3 +1,4 @@
+import { languageOptions } from './languageOptions';
 import { signInWithClever } from '../participant/participant-helpers';
 
 export const timeout = Cypress.env('timeout');
@@ -6,6 +7,10 @@ function handleFullScreenError() {
   Cypress.on('uncaught:exception', () => {
     return false;
   });
+}
+
+function checkGameTab(language) {
+  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
 }
 
 const playTrial = (targetText) => {
@@ -144,7 +149,8 @@ export function playPA({
     cy.switchToOptionalAssessments();
   }
 
-  cy.visit('/game/pa');
+  checkGameTab(language);
+  cy.visit(languageOptions[language].url);
 
   playIntro(startText);
 
