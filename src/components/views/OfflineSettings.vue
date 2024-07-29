@@ -20,7 +20,7 @@
         <PvToggleButton v-model="offlineEnabled" onLabel="On" offLabel="Off" class="p-2 rounded" />
       </div>
     </div>
-    <div v-if="offlineEnabled" class="flex flex-column bg-gray-100 my-2 p-4 rounded gap-4">
+    <div v-if="userData?.offlineEnabled" class="flex flex-column bg-gray-100 my-2 p-4 rounded gap-4">
       <div class="flex justify-content-between">
         <div class="flex flex-column gap-2">
           <div class="text-lg text-gray-700 font-bold">Tasks available offline</div>
@@ -77,8 +77,8 @@
           </div>
         </div>
         <div v-if="isLoadingAdministrations === true" class="flex text-gray-600 font-light uppercase font-xs">
-          <i class="pi pi-spinner pi-spin mr-2" />
-          <div>Loading Adminstrations</div>
+          <i class="pi pi-spinner pi-spin"></i>
+          <div class="text-xs">Loading Adminstrations</div>
         </div>
         <div v-else class="flex gap-1">
           <PvDropdown
@@ -228,18 +228,23 @@ const formattedTasks = computed(() => {
   });
 });
 
-watch(userData, (newUserData) => {
-  offlineEnabled.value = newUserData?.offlineEnabled ?? false;
-  selectedOfflineAdministrations.value = [...newUserData?.offlineAdministrations] ?? [];
-  selectedOfflineTasks.value = [...newUserData?.offlineTasks] ?? [];
-});
-
-const offlineEnabled = ref(false);
+const offlineEnabled = ref(userData?.offlineEnabled ?? false);
 const selectedOfflineTasks = ref([]);
 const selectedOfflineAdministrations = ref([]);
 const selectedOfflineTask = ref('');
 const selectedOfflineAdministration = ref('');
 const isSubmitting = ref(false);
+
+const updateRefsFromUserData = (newUserData) => {
+  offlineEnabled.value = newUserData?.offlineEnabled ?? false;
+  selectedOfflineAdministrations.value =
+    newUserData?.offlineAdministrations?.length > 0 ? [...newUserData?.offlineAdministrations] : [];
+  selectedOfflineTasks.value = newUserData?.offlineTasks?.length > 0 ? [...newUserData?.offlineTasks] : [];
+};
+
+watch(userData, (newUserData) => {
+  updateRefsFromUserData(newUserData);
+});
 
 const addOfflineAdministration = () => {
   if (selectedOfflineAdministrations.value.includes(selectedOfflineAdministration.value)) {
@@ -285,6 +290,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
+  updateRefsFromUserData(userData.value);
 });
 
 const saveOfflineSettings = async () => {
