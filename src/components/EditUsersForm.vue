@@ -203,7 +203,7 @@
         </div>
       </div>
     </div>
-    <OrgPicker @selection="selection($event)" :orgs="orgsList" />
+    <OrgPicker @selection="selection($event)" :orgs="orgsList" class="mt-3" :edit-mode="editMode" />
   </div>
 </template>
 <script setup>
