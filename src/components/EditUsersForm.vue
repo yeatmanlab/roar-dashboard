@@ -126,91 +126,95 @@
       </div>
     </div>
   </div>
-  <div v-else-if="localUserType === 'admin'" class="form-container">
-    <div class="form-column">
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.first ?? 'None' }}</div>
-        <PvInputText v-else v-model="localUserData.name.first" />
-      </div>
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }">Middle Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.middle ?? 'None' }}</div>
-        <PvInputText v-else v-model="localUserData.name.middle" />
-      </div>
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }">Last Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.last ?? 'None' }}</div>
-        <PvInputText v-else v-model="localUserData.name.last" />
-      </div>
-
-      <div v-if="isSuperAdmin">
-        <div>
-          <PvCheckbox v-if="editMode" v-model="localUserData.testData" binary class="mr-2" />
-          <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
-          >
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.testData ? 'Yes' : 'No' }}</div>
+  <div v-else-if="localUserType === 'admin'">
+    <div class="form-container">
+      <div class="form-column">
+        <div class="form-field">
+          <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.first ?? 'None' }}</div>
+          <PvInputText v-else v-model="localUserData.name.first" />
         </div>
-        <div>
-          <PvCheckbox v-if="editMode" v-model="localUserData.demoData" binary class="mr-2" />
+        <div class="form-field">
+          <label :class="{ 'font-light uppercase text-sm': !editMode }">Middle Name</label>
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.middle ?? 'None' }}</div>
+          <PvInputText v-else v-model="localUserData.name.middle" />
+        </div>
+        <div class="form-field">
+          <label :class="{ 'font-light uppercase text-sm': !editMode }">Last Name</label>
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.last ?? 'None' }}</div>
+          <PvInputText v-else v-model="localUserData.name.last" />
+        </div>
+
+        <div v-if="isSuperAdmin">
+          <div>
+            <PvCheckbox v-if="editMode" v-model="localUserData.testData" binary class="mr-2" />
+            <label :class="{ 'font-light uppercase text-sm': !editMode }"
+              >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+            >
+            <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.testData ? 'Yes' : 'No' }}</div>
+          </div>
+          <div>
+            <PvCheckbox v-if="editMode" v-model="localUserData.demoData" binary class="mr-2" />
+            <label :class="{ 'font-light uppercase text-sm': !editMode }"
+              >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+            >
+            <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.demoData ? 'Yes' : 'No' }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-column">
+        <div class="form-field">
           <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
+            >Date of Birth
+            <span v-if="editMode" class="optional">(optional)</span>
+          </label>
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+            {{ userDobString }}
+          </div>
+          <PvCalendar
+            v-else
+            v-model="localUserData.studentData.dob"
+            :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
+          />
+          <small v-if="errorMessage.includes('Date of birth')" class="p-error"
+            >Date of Birth can not be in the future.</small
           >
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.demoData ? 'Yes' : 'No' }}</div>
+        </div>
+        <div class="form-field">
+          <label :class="{ 'font-light uppercase text-sm': !editMode }"
+            >Gender <span v-if="editMode" class="optional">(optional)</span></label
+          >
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.gender ?? 'None' }}</div>
+          <PvInputText v-else v-model="localUserData.studentData.gender" />
+        </div>
+
+        <div class="form-field">
+          <label :class="{ 'font-light uppercase text-sm': !editMode }"
+            >English as a Second Language <span v-if="editMode" class="optional">(optional)</span></label
+          >
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.ell_status ?? false }}</div>
+          <PvDropdown
+            v-else
+            v-model="localUserData.studentData.ell_status"
+            option-label="label"
+            option-value="value"
+            :options="binaryDropdownOptions"
+          />
         </div>
       </div>
     </div>
-    <div class="form-column">
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Date of Birth
-          <span v-if="editMode" class="optional">(optional)</span>
-        </label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userDobString }}
-        </div>
-        <PvCalendar
-          v-else
-          v-model="localUserData.studentData.dob"
-          :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
-        />
-        <small v-if="errorMessage.includes('Date of birth')" class="p-error"
-          >Date of Birth can not be in the future.</small
-        >
-      </div>
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >Gender <span v-if="editMode" class="optional">(optional)</span></label
-        >
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.gender ?? 'None' }}</div>
-        <PvInputText v-else v-model="localUserData.studentData.gender" />
-      </div>
-
-      <div class="form-field">
-        <label :class="{ 'font-light uppercase text-sm': !editMode }"
-          >English as a Second Language <span v-if="editMode" class="optional">(optional)</span></label
-        >
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.ell_status ?? false }}</div>
-        <PvDropdown
-          v-else
-          v-model="localUserData.studentData.ell_status"
-          option-label="label"
-          option-value="value"
-          :options="binaryDropdownOptions"
-        />
-      </div>
-    </div>
+    <OrgPicker @selection="selection($event)" :orgs="orgsList" />
   </div>
 </template>
 <script setup>
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById } from '@/helpers/query/utils';
+import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
 import { watch, ref, onMounted, computed } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
+import OrgPicker from '@/components/OrgPicker.vue';
 const props = defineProps({
   userData: {
     type: Object,
@@ -226,13 +230,18 @@ const props = defineProps({
   },
 });
 
-// Handle modal opening / closing
+// +----------------+
+// | Initialization |
+// +----------------+
 const emit = defineEmits(['modalClosed', 'update:userData']);
 
 const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
 const initialized = ref(false);
 
+// +---------------------------+
+// | Handle Setup of User Data |
+// +---------------------------+
 watch(
   () => props.userData,
   (userData) => {
@@ -243,7 +252,6 @@ watch(
   },
 );
 
-// Utility functions
 const localUserData = ref({
   name: {
     first: null,
@@ -292,7 +300,9 @@ const setupUserData = () => {
   localUserData.value = user;
 };
 
-// Keep track of the user's type
+// +---------------------+
+// | Computed Properties |
+// +---------------------+
 const localUserType = computed(() => {
   if (props.userData?.userType) return props.userData.userType;
   if (props.userType) return props.userType;
@@ -305,6 +315,9 @@ const userDobString = computed(() => {
   } else return 'None';
 });
 
+// +----------------+
+// | Form Utilities |
+// +----------------+
 const races = [
   'american Indian or alaska Native',
   'asian',
@@ -333,6 +346,9 @@ const searchRaces = (event) => {
   raceOptions.value = filteredOptions;
 };
 
+// +------------------------+
+// | Firekit Initialization |
+// +------------------------+
 let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
@@ -349,6 +365,10 @@ onMounted(() => {
   if (props.userData) setupUserData();
 });
 
+// +----------------------+
+// | Handle Update Events |
+// +----------------------+
+
 // Automatically emit events when the local userData changes
 // TODO: This functionality is a substitute for the v-model directive in Vue.js
 //   this can be replaced when we update to Vue 3.3+
@@ -360,7 +380,11 @@ watch(
   { deep: true, immediate: false },
 );
 
-// Determine if the user is an admin
+// +--------------------+
+// | Query for UserType |
+// +--------------------+
+
+// Get userclaims to determine if the user is an admin
 const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('userClaims', uid.value),
@@ -368,11 +392,146 @@ const { data: userClaims } = useQuery({
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
-
 const isSuperAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;
   return false;
 });
+
+// +----------------------------+
+// | Queries for OrgPicker Data |
+// +----------------------------+
+// User data fresh from the database
+const { data: serverUserData } = useQuery({
+  queryKey: ['userData', uid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', uid.value),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const districtsToGrab = computed(() => {
+  const districtIds = _get(serverUserData.value, 'districts.all', []);
+  return districtIds.map((districtId) => {
+    return {
+      collection: 'districts',
+      docId: districtId,
+      select: ['name'],
+    };
+  });
+});
+const shouldGrabDistricts = computed(() => {
+  return initialized.value && districtsToGrab.value.length > 0;
+});
+const schoolsToGrab = computed(() => {
+  const schoolIds = _get(serverUserData.value, 'schools.all', []);
+  return schoolIds.map((schoolId) => {
+    return {
+      collection: 'schools',
+      docId: schoolId,
+      select: ['name'],
+    };
+  });
+});
+const shouldGrabSchools = computed(() => {
+  return initialized.value && schoolsToGrab.value.length > 0;
+});
+const classesToGrab = computed(() => {
+  const classIds = _get(serverUserData.value, 'classes.all', []);
+  return classIds.map((classId) => {
+    return {
+      collection: 'classes',
+      docId: classId,
+      select: ['name'],
+    };
+  });
+});
+const shouldGrabClasses = computed(() => {
+  return initialized.value && classesToGrab.value.length > 0;
+});
+
+const groupsToGrab = computed(() => {
+  const groupIds = _get(serverUserData.value, 'groups.all', []);
+  return groupIds.map((id) => {
+    return {
+      collection: 'groups',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabGroups = computed(() => {
+  return initialized.value && groupsToGrab.value.length > 0;
+});
+
+const familiesToGrab = computed(() => {
+  const familyIds = _get(serverUserData.value, 'families.all', []);
+  return familyIds.map((id) => {
+    return {
+      collection: 'families',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabFamilies = computed(() => {
+  return initialized.value && familiesToGrab.value.length > 0;
+});
+
+const { data: userDistricts } = useQuery({
+  queryKey: ['user', 'districts', uid],
+  queryFn: () => fetchDocsById(districtsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabDistricts,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+const { data: userSchools } = useQuery({
+  queryKey: ['user', 'schools', uid],
+  queryFn: () => fetchDocsById(schoolsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabSchools,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+const { data: userClasses } = useQuery({
+  queryKey: ['user', 'classes', uid],
+  queryFn: () => fetchDocsById(classesToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabClasses,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+const { data: userGroups } = useQuery({
+  queryKey: ['user', 'groups', uid],
+  queryFn: () => fetchDocsById(groupsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabGroups,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+const { data: userFamilies } = useQuery({
+  queryKey: ['user', 'families', uid],
+  queryFn: () => fetchDocsById(familiesToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabFamilies,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const orgsList = computed(() => {
+  return {
+    districts: userDistricts.value,
+    schools: userSchools.value,
+    classes: userClasses.value,
+    groups: userGroups.value,
+    families: userFamilies.value,
+  };
+});
+// +---------------------+
+// | OrgPicker Utilities |
+// +---------------------+
+const selectedOrgs = ref();
+
+const selection = (selected) => {
+  selectedOrgs.value = selected;
+};
 </script>
 <style lang="scss">
 .form-container {
