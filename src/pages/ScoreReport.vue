@@ -729,11 +729,7 @@ const computeAssignmentAndRunData = computed(() => {
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
-          if (percentCorrect === null) {
-            currRowScores[taskId].tagColor = '#EEEEF0';
-          } else {
-            currRowScores[taskId].tagColor = tagColor;
-          }
+          currRowScores[taskId].tagColor = percentCorrect === null ? '#EEEEF0' : tagColor;
           scoreFilterTags += ' Assessed ';
         }
 
