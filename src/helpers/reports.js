@@ -223,19 +223,25 @@ export const tasksToDisplayPercentCorrect = [
   'letter-es',
   'cva',
   'swr-es',
-  'fluency-arf-es',
-  'fluency-calf-es',
   'pa-es',
   'morphology',
   'vocab',
-  'fluency',
-  'fluency-arf',
-  'fluency-calf',
   'trog',
   'crowding',
   'mep',
   'roav-mep',
   'mep-pseudo',
+];
+
+/*
+ *  Tasks to Display total numCorrect
+ */
+export const tasksToDisplayTotalCorrect = [
+  'fluency',
+  'fluency-arf',
+  'fluency-calf',
+  'fluency-arf-es',
+  'fluency-calf-es',
 ];
 
 /*
@@ -360,7 +366,9 @@ export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = 
     };
   }
   if (
-    (tasksToDisplayPercentCorrect.includes(taskId) || tasksToDisplayCorrectIncorrectDifference.includes(taskId)) &&
+    (tasksToDisplayPercentCorrect.includes(taskId) ||
+      tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
+      tasksToDisplayTotalCorrect.includes(taskId)) &&
     rawScore !== undefined
   ) {
     return {

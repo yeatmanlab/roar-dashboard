@@ -808,8 +808,8 @@ const spanishTasks = [
 ];
 
 const spanishMathTasks = [
-  'scores.fluency-arf-es.percentCorrect',
-  'scores.fluency-calf-es.percentCorrect',
+  'scores.fluency-arf-es.numCorrect',
+  'scores.fluency-calf-es.numCorrect',
   'scores.fluency-arf-es.percentile',
   'scores.fluency-calf-es.percentile',
 ];
@@ -828,12 +828,12 @@ const supplementaryTasks = [
 ];
 
 const roamTasks = [
-  'scores.fluency-arf.percentile',
-  'scores.fluency-calf.percentile',
+  'scores.fluency-arf.numCorrect',
+  'scores.fluency-calf.numCorrect',
   'scores.roam-alpaca.percentile',
   'scores.egma-math.percentile',
-  'scores.fluency-arf.percentCorrect',
-  'scores.fluency-calf.percentCorrect',
+  'scores.fluency-arf.numCorrect',
+  'scores.fluency-calf.numCorrect',
   'scores.roam-alpaca.percentCorrect',
   'scores.egma-math.percentCorrect',
 ];
