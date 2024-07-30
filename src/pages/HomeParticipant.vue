@@ -1,11 +1,12 @@
 <template>
   <div>
     <div v-if="!noGamesAvailable || consentSpinner">
-      <div v-if="isFetching" class="loading-container">
+      <!-- <WE ARE USING V-SHOW INSTEAD OF V-IF BECAUSE OTHERWISE THE STYLE WILL BREAK> -->
+      <div v-show="isFetching" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
-      <div v-else>
+      <div v-show="!isFetching">
         <PvFloatLabel>
           <h2 v-if="adminInfo?.length == 1" class="dropdown-container">
             {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
@@ -31,7 +32,7 @@
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
-                <PvFloatLabel>
+                <PvFloatLabel class="mt-5 ml-5">
                   <PvSelect
                     v-if="adminInfo.every((admin) => admin.publicName)"
                     v-model="selectedAdmin"
@@ -58,15 +59,13 @@
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <Transition name="fade" mode="out-in">
-            <GameTabs
-              v-if="showOptionalAssessments"
-              :games="optionalAssessments"
-              :sequential="isSequential"
-              :user-data="userData"
-            />
-            <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
-          </Transition>
+          <GameTabs
+            v-if="showOptionalAssessments"
+            :games="optionalAssessments"
+            :sequential="isSequential"
+            :user-data="userData"
+          />
+          <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
         </div>
       </div>
     </div>
@@ -109,6 +108,7 @@ import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import AppSpinner from '../components/AppSpinner.vue';
 
 const showConsent = ref(false);
 const consentVersion = ref('');

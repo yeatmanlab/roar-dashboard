@@ -15,7 +15,7 @@
           >{{ getTaskName(game.taskId, game.taskData.name) }}
         </PvTab>
       </PvTabList>
-      <PvTabPanels>
+      <PvTabPanels style="width: 120vh">
         <PvTabPanel
           v-for="(game, index) in games"
           :key="game.taskId"
