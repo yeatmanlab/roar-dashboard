@@ -254,10 +254,14 @@ const selectedOfflineAdministration = ref('');
 const isSubmitting = ref(false);
 
 const updateRefsFromUserData = (newUserData) => {
+  // Ensure newUserData and its properties are defined
+  const offlineAdministrations = newUserData?.offlineAdministrations ?? [];
+  const offlineTasks = newUserData?.offlineTasks ?? [];
+
+  // Assign values to selectedOfflineAdministrations and selectedOfflineTasks
+  selectedOfflineAdministrations.value = offlineAdministrations.length > 0 ? [...offlineAdministrations] : [];
+  selectedOfflineTasks.value = offlineTasks.length > 0 ? [...offlineTasks] : [];
   offlineEnabled.value = newUserData?.offlineEnabled ?? false;
-  selectedOfflineAdministrations.value =
-    newUserData?.offlineAdministrations?.length > 0 ? [...newUserData?.offlineAdministrations] : [];
-  selectedOfflineTasks.value = newUserData?.offlineTasks?.length > 0 ? [...newUserData?.offlineTasks] : [];
 };
 
 watch(userData, (newUserData) => {
