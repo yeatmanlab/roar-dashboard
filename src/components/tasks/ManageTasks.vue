@@ -135,7 +135,7 @@
             <div class="flex gap-2 justify-content-center align-content-center flex-grow-0 params-container mt-2">
               <PvInputText v-model="param.name" style="width: 30vh" placeholder="Name" />
 
-              <PvDropdown v-model="param.type" style="width: 20vh" :options="typeOptions" />
+              <PvSelect v-model="param.type" style="width: 20vh" :options="typeOptions" />
 
               <PvInputText
                 v-if="param.type === 'string'"
@@ -144,7 +144,7 @@
                 placeholder="Value"
               />
 
-              <PvDropdown
+              <PvSelect
                 v-else-if="param.type === 'boolean'"
                 v-model="param.value"
                 style="width: 30vh"
@@ -172,11 +172,11 @@
             <div class="flex gap-2 align-content-start flex-grow-0 params-container">
               <PvInputText v-model="param.name" placeholder="Name" />
 
-              <PvDropdown v-model="param.type" :options="typeOptions" />
+              <PvSelect v-model="param.type" :options="typeOptions" />
 
               <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
 
-              <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
+              <PvSelect v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
 
               <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
 
@@ -261,7 +261,7 @@
           <small class="text-gray-400 font-bold">Select an Existing Task </small>
           <span class="required">*</span></label
         >
-        <PvDropdown
+        <PvSelect
           v-model="selectedTask"
           :options="formattedTasks"
           style="width: 50vh"
@@ -298,7 +298,7 @@
                   v-model="updatedTaskData[key]"
                   class="flex-grow-1"
                 />
-                <PvDropdown
+                <PvSelect
                   v-else-if="typeof value === 'boolean'"
                   v-model="updatedTaskData[key]"
                   :options="booleanDropDownOptions"
@@ -321,7 +321,7 @@
         <div v-if="newFields.length > 0" class="w-full">
           <div v-for="(field, index) in newFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
             <PvInputText v-model="field.name" placeholder="Field Name" />
-            <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+            <PvSelect v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
 
             <PvInputText
               v-if="field.type === 'string'"
@@ -335,7 +335,7 @@
               placeholder="Field Value"
               class="flex-grow-1"
             />
-            <PvDropdown
+            <PvSelect
               v-if="field.type === 'boolean'"
               v-model="field.value"
               placeholder="Field Value"
@@ -386,7 +386,7 @@
                 v-model="updatedTaskData.gameConfig[paramName]"
                 class="flex-grow-1"
               />
-              <PvDropdown
+              <PvSelect
                 v-else-if="typeof param === 'boolean'"
                 v-model="updatedTaskData.gameConfig[paramName]"
                 :options="booleanDropDownOptions"
@@ -410,7 +410,7 @@
               class="flex align-items-center column-gap-2 mb-1"
             >
               <PvInputText v-model="field.name" placeholder="Field Name" />
-              <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+              <PvSelect v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
               <PvInputText
                 v-if="field.type === 'string'"
                 v-model="field.value"
@@ -423,7 +423,7 @@
                 placeholder="Field Value"
                 class="flex-grow-1"
               />
-              <PvDropdown
+              <PvSelect
                 v-if="field.type === 'boolean'"
                 v-model="field.value"
                 placeholder="Field Value"

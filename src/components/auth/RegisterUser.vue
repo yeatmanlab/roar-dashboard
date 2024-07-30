@@ -69,7 +69,7 @@
       <!--Grade-->
       <div class="mt-4 mb-5">
         <label for="grade">Grade <span class="required">*</span></label>
-        <PvDropdown
+        <PvSelect
           v-model="v$.grade.$model"
           :options="gradeOptions"
           option-label="label"
@@ -84,24 +84,12 @@
       <!--English Language Level-->
       <div class="mt-4 mb-5">
         <label for="ell">English Language Level</label>
-        <PvDropdown
-          v-model="v$.ell.$model"
-          :options="eLLOptions"
-          option-label="label"
-          option-value="value"
-          name="ell"
-        />
+        <PvSelect v-model="v$.ell.$model" :options="eLLOptions" option-label="label" option-value="value" name="ell" />
       </div>
       <!--Sex-->
       <div class="mt-4 mb-5">
         <label for="sex">Gender</label>
-        <PvDropdown
-          v-model="v$.sex.$model"
-          :options="sexOptions"
-          option-label="label"
-          option-value="value"
-          name="sex"
-        />
+        <PvSelect v-model="v$.sex.$model" :options="sexOptions" option-label="label" option-value="value" name="sex" />
       </div>
       <!--Password-->
       <div class="field mt-4 mb-5">

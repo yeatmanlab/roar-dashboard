@@ -30,7 +30,6 @@ import PvDataTable from 'primevue/datatable';
 import PvDataView from 'primevue/dataview';
 import PvDialog from 'primevue/dialog';
 import PvDivider from 'primevue/divider';
-import PvDropdown from 'primevue/dropdown';
 import PvFileUpload from 'primevue/fileupload';
 import PvImage from 'primevue/image';
 import PvInlineMessage from 'primevue/inlinemessage';
@@ -70,6 +69,11 @@ import PvInputIcon from 'primevue/inputicon';
 import PvColumnGroup from 'primevue/columngroup';
 import PvRow from 'primevue/row';
 import PvCarousel from 'primevue/carousel';
+import PvTabs from 'primevue/tabs';
+import PvTabList from 'primevue/tablist';
+import PvTab from 'primevue/tab';
+import PvTabPanels from 'primevue/tabpanels';
+import PvSelect from 'primevue/select';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -174,7 +178,6 @@ app.component('PvDataTable', PvDataTable);
 app.component('PvDataView', PvDataView);
 app.component('PvDialog', PvDialog);
 app.component('PvDivider', PvDivider);
-app.component('PvDropdown', PvDropdown);
 app.component('PvFileUpload', PvFileUpload);
 app.component('PvImage', PvImage);
 app.component('PvInlineMessage', PvInlineMessage);
@@ -218,6 +221,11 @@ app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);
 app.component('PvFieldset', PvFieldset);
 app.component('PvCarousel', PvCarousel);
+app.component('PvTabs', PvTabs);
+app.component('PvTabList', PvTabList);
+app.component('PvTab', PvTab);
+app.component('PvTabPanels', PvTabPanels);
+app.component('PvSelect', PvSelect);
 
 app.directive('tooltip', PvTooltip);
 

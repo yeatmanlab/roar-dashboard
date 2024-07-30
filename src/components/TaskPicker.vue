@@ -59,7 +59,7 @@
           </PvScrollPanel>
         </div>
         <div v-if="searchTerm.length < 3">
-          <PvDropdown
+          <PvSelect
             v-model="currentTask"
             :options="taskOptions"
             option-label="label"

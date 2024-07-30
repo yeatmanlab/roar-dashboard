@@ -168,7 +168,7 @@
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
-              <PvDropdown
+              <PvSelect
                 id="view-columns"
                 v-model="viewMode"
                 :options="viewOptions"

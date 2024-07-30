@@ -148,7 +148,7 @@
       </div>
       <div v-if="knowWhatIWant && !noConsent" class="flex flex-column pl-3" style="width: 50%">
         <h3>Select a Consent Form</h3>
-        <PvDropdown
+        <PvSelect
           v-model="selectedConsent"
           :options="listOfDocs.consent"
           option-label="fileName"
@@ -157,7 +157,7 @@
           @change="updateConsent"
         />
         <h3 class="pt-3">Select an Assent Form</h3>
-        <PvDropdown
+        <PvSelect
           v-model="selectedAssent"
           :options="listOfDocs.assent"
           option-label="fileName"

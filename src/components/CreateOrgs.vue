@@ -16,7 +16,7 @@
         <div class="grid column-gap-3 mt-5 rounded">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
             <PvFloatLabel>
-              <PvDropdown
+              <PvSelect
                 v-model="orgType"
                 input-id="org-type"
                 :options="isLevante ? levanteOrgTypes : orgTypes"
@@ -34,7 +34,7 @@
         <div v-if="parentOrgRequired" class="grid mt-4">
           <div class="col-12 md:col-6 lg:col-4">
             <PvFloatLabel>
-              <PvDropdown
+              <PvSelect
                 v-model="state.parentDistrict"
                 input-id="parent-district"
                 :options="districts"
@@ -52,7 +52,7 @@
 
           <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
             <PvFloatLabel>
-              <PvDropdown
+              <PvSelect
                 v-model="state.parentSchool"
                 input-id="parent-school"
                 :options="schools"
@@ -88,7 +88,7 @@
 
           <div v-if="orgType?.singular === 'class'" class="col-12 md:col-6 lg:col-4 mt-3">
             <PvFloatLabel>
-              <PvDropdown
+              <PvSelect
                 v-model="state.grade"
                 input-id="grade"
                 :options="grades"

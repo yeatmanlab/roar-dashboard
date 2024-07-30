@@ -32,7 +32,7 @@
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
                 <PvFloatLabel>
-                  <PvDropdown
+                  <PvSelect
                     v-if="adminInfo.every((admin) => admin.publicName)"
                     v-model="selectedAdmin"
                     :options="adminInfo ?? []"
@@ -41,7 +41,7 @@
                     data-cy="dropdown-select-administration"
                     @change="toggleShowOptionalAssessments"
                   />
-                  <PvDropdown
+                  <PvSelect
                     v-else
                     v-model="selectedAdmin"
                     :options="adminInfo ?? []"
@@ -404,7 +404,7 @@ watch(
   { immediate: true },
 );
 </script>
-<style scoped>
+<style>
 .tabs-container {
   display: flex;
   flex-direction: row;
@@ -421,11 +421,6 @@ watch(
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.dropdown-container {
-  margin-top: 2rem;
-  margin-left: 2rem;
 }
 
 .assignment-select-container {

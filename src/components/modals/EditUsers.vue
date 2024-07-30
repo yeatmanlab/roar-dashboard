@@ -81,7 +81,7 @@
 
             <div class="form-field">
               <label>English as a Second Language</label>
-              <PvDropdown
+              <PvSelect
                 v-model="localUserData.studentData.ell_status"
                 option-label="label"
                 option-value="value"
@@ -90,7 +90,7 @@
             </div>
             <div class="form-field">
               <label>IEP Status</label>
-              <PvDropdown
+              <PvSelect
                 v-model="localUserData.studentData.iep_status"
                 option-label="label"
                 option-value="value"
@@ -99,7 +99,7 @@
             </div>
             <div class="form-field">
               <label>Free-Reduced Lunch</label>
-              <PvDropdown
+              <PvSelect
                 v-model="localUserData.studentData.frl_status"
                 option-label="label"
                 option-value="value"
@@ -119,7 +119,7 @@
             </div>
             <div class="form-field">
               <label>Hispanic or Latino Ethnicity</label>
-              <PvDropdown
+              <PvSelect
                 v-model="localUserData.studentData.hispanic_ethnicity"
                 option-label="label"
                 option-value="value"

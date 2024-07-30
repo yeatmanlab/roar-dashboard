@@ -162,7 +162,7 @@
           <!--Grade-->
           <div>
             <label for="grade">Grade <span class="required">*</span></label>
-            <PvDropdown
+            <PvSelect
               v-model="student.grade"
               :options="gradeOptions"
               option-label="label"
@@ -211,7 +211,7 @@
               <!--English Language Level-->
               <div class="w-full">
                 <label for="ell">English as a Second Language</label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.ell"
                   :options="ellOptions"
                   option-label="label"
@@ -223,7 +223,7 @@
               <!--Sex-->
               <div class="w-full">
                 <label for="sex">Gender </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.gender"
                   :options="genderOptions"
                   option-label="label"
@@ -237,7 +237,7 @@
               <!-- Free-Reduced Lunch -->
               <div class="w-full">
                 <label for="stateId">Free-Reduced Lunch </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.freeReducedLunch"
                   :options="frlOptions"
                   option-label="label"
@@ -249,7 +249,7 @@
               <!-- IEP Status -->
               <div class="w-full">
                 <label for="stateId">IEP Status</label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.IEPStatus"
                   :options="IEPOptions"
                   option-label="label"
@@ -275,7 +275,7 @@
               <!-- Hispanic Ethinicity -->
               <div class="w-full">
                 <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
-                <PvDropdown
+                <PvSelect
                   v-model="student.hispanicEthnicity"
                   :options="ethnicityOptions"
                   option-label="label"

@@ -79,7 +79,7 @@
           <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <PvDropdown
+                <PvSelect
                   v-model="dropdown_model[col.field]"
                   :options="dropdown_options"
                   option-label="label"

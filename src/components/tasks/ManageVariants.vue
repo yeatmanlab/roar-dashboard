@@ -23,7 +23,7 @@
                   </label>
                 </div>
                 <div class="col">
-                  <PvDropdown
+                  <PvSelect
                     v-model="v$.selectedGame.$model"
                     :options="formattedTasks"
                     option-label="name"
@@ -33,7 +33,7 @@
                     :class="{ 'p-invalid': v$.variantName.$invalid && submitted }"
                     name="variant-fields"
                     @click="clearFieldParamArrays()"
-                  ></PvDropdown>
+                  ></PvSelect>
                 </div>
               </div>
               <span v-if="v$.selectedGame.$error && submitted">
@@ -125,7 +125,7 @@
                   placeholder="Set game parameter to desired value"
                   class="flex-grow-1"
                 />
-                <PvDropdown
+                <PvSelect
                   v-else-if="param.type === 'boolean'"
                   id="inputParamValue"
                   v-model="variantParams[param.name]"
@@ -158,7 +158,7 @@
             <div v-if="newParams.length > 0" class="w-full">
               <div v-for="(field, index) in newParams" :key="index" class="flex align-items-center column-gap-2 mb-1">
                 <PvInputText v-model="field.name" style="width: 30vh" placeholder="Field Name" />
-                <PvDropdown
+                <PvSelect
                   v-model="field.type"
                   :options="['string', 'number', 'boolean']"
                   placeholder="Field Type"
@@ -178,7 +178,7 @@
                   placeholder="Field Value"
                   style="width: 30vh"
                 />
-                <PvDropdown
+                <PvSelect
                   v-if="field.type === 'boolean'"
                   v-model="field.value"
                   placeholder="Field Value"
@@ -256,7 +256,7 @@
           <small class="text-gray-400 font-bold">Select an Existing Task </small>
           <span class="required">*</span></label
         >
-        <PvDropdown
+        <PvSelect
           v-model="selectedTask"
           :options="formattedTasks"
           option-label="name"
@@ -268,7 +268,7 @@
           <small class="text-gray-400 font-bold">Select an Existing Variant </small>
           <span class="required">*</span></label
         >
-        <PvDropdown
+        <PvSelect
           v-model="selectedVariant"
           :options="filteredVariants"
           :option-label="(data) => (data.variant.name ? data.variant.name : data.variant.id)"
@@ -304,7 +304,7 @@
                   v-model="updatedVariantData[key]"
                   class="flex-grow-1"
                 />
-                <PvDropdown
+                <PvSelect
                   v-else-if="typeof value === 'boolean'"
                   v-model="updatedVariantData[key]"
                   :options="booleanDropDownOptions"
@@ -330,7 +330,7 @@
               class="flex align-items-center justify-content-center column-gap-2 mb-1"
             >
               <PvInputText v-model="field.name" style="width: 30vh" placeholder="Field Name" />
-              <PvDropdown
+              <PvSelect
                 v-model="field.type"
                 style="width: 20vh"
                 :options="['string', 'number', 'boolean']"
@@ -349,7 +349,7 @@
                 placeholder="Field Value"
                 style="width: 30vh"
               />
-              <PvDropdown
+              <PvSelect
                 v-if="field.type === 'boolean'"
                 v-model="field.value"
                 placeholder="Field Value"
@@ -403,7 +403,7 @@
         <!--                  v-model="updatedVariantData.params[paramName]"-->
         <!--                  class="flex-grow-1"-->
         <!--                />-->
-        <!--                <PvDropdown-->
+        <!--                <PvSelect-->
         <!--                  v-else-if="typeof param === 'boolean'"-->
         <!--                  v-model="updatedVariantData.params[paramName]"-->
         <!--                  :options="booleanDropDownOptions"-->
@@ -417,7 +417,7 @@
         <!--            <div v-if="addedParams.length > 0">-->
         <!--              <div v-for="(field, index) in addedParams" :key="index" class="flex align-items-center column-gap-2 mb-1">-->
         <!--                <PvInputText v-model="field.name" placeholder="Field Name" />-->
-        <!--                <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />-->
+        <!--                <PvSelect v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />-->
         <!--                <PvInputText-->
         <!--                  v-if="field.type === 'string'"-->
         <!--                  v-model="field.value"-->
@@ -430,7 +430,7 @@
         <!--                  placeholder="Field Value"-->
         <!--                  class="flex-grow-1"-->
         <!--                />-->
-        <!--                <PvDropdown-->
+        <!--                <PvSelect-->
         <!--                  v-if="field.type === 'boolean'"-->
         <!--                  v-model="field.value"-->
         <!--                  placeholder="Field Value"-->

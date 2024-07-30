@@ -19,7 +19,7 @@
               class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
             >
               <PvFloatLabel>
-                <PvDropdown
+                <PvSelect
                   v-model="selectedDistrict"
                   input-id="district"
                   :options="allDistricts"
@@ -35,7 +35,7 @@
             </div>
             <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
               <PvFloatLabel>
-                <PvDropdown
+                <PvSelect
                   v-model="selectedSchool"
                   input-id="school"
                   :options="allSchools"

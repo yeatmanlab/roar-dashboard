@@ -226,10 +226,10 @@
                 placeholder="mm/dd/yyyy"
               />
               <div v-if="col.dataType === 'boolean'" class="flex flex-row gap-2">
-                <PvDropdown v-model="filterModel.value" :options="['True', 'False']" style="margin-bottom: 0.5rem" />
+                <PvSelect v-model="filterModel.value" :options="['True', 'False']" style="margin-bottom: 0.5rem" />
               </div>
               <div v-if="col.dataType === 'score'">
-                <PvDropdown
+                <PvSelect
                   v-model="filterModel.value"
                   option-label="label"
                   option-group-label="label"
@@ -274,10 +274,10 @@
                       <span class="tooltiptext">{{ value }}</span>
                     </div>
                   </template>
-                </PvDropdown>
+                </PvSelect>
               </div>
               <div v-if="col.dataType === 'progress'">
-                <PvDropdown
+                <PvSelect
                   v-model="filterModel.value"
                   :options="['Assigned', 'Started', 'Completed', 'Optional']"
                   style="margin-bottom: 0.5rem"
@@ -304,7 +304,7 @@
                       rounded
                     />
                   </template>
-                </PvDropdown>
+                </PvSelect>
               </div>
             </template>
             <template #filterclear="{ filterCallback }">
