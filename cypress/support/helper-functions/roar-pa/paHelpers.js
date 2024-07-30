@@ -39,10 +39,17 @@ const playTrial = (targetText) => {
 
             cy.log('Game in progress; selecting correct answer.');
             // eslint-disable-next-line cypress/unsafe-to-chain-command
-            cy.get(`img[src*="${correctAnswer}.webp"]`, { timeout: timeout })
-              .first()
-              .click()
-              .wait(0.05 * timeout);
+            cy.get(`img[src*="${correctAnswer}.webp"]`, { timeout: timeout }).then((exists) => {
+              if (exists) {
+                cy.get(`img[src*="${correctAnswer}.webp"]`, { timeout: timeout }).first().click();
+                cy.wait(0.05 * timeout);
+              } else {
+                cy.log('Game complete.');
+              }
+            });
+            // .first()
+            // .click()
+            // cy.wait(0.05 * timeout);
 
             // Check progress bar status
             cy.get('#jspsych-progressbar-inner', { timeout: timeout })
@@ -86,9 +93,9 @@ function playIntro(startText) {
 
 function playFirstTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
-  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
+  cy.get(`img[src="${imageOne}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
+  cy.get(`img[src="${imageTwo}"]`, { timeout: timeout }).click();
   cy.wait(timeout);
   cy.get('.continue').click();
 }
@@ -97,9 +104,9 @@ function playSecondTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
+  cy.get(`img[src="${imageOne}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
+  cy.get(`img[src="${imageTwo}"]`, { timeout: timeout }).click();
   cy.wait(timeout);
   cy.get('.continue').click();
 }
@@ -108,9 +115,9 @@ function playThirdTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
+  cy.get(`img[src="${imageOne}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
+  cy.get(`img[src="${imageTwo}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
   cy.get('.continue').click();
 }
@@ -206,7 +213,7 @@ export function playPA({
   cy.log('Routing to dashboard.');
   cy.visit('/');
   cy.wait(0.2 * timeout);
-  cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
+  cy.selectAdministration(administration);
 
   if (optional === true) {
     cy.log('Switching to optional assessments.');
