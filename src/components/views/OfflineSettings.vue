@@ -8,12 +8,15 @@
     <div>Loading User Data</div>
   </div>
   <div v-else>
-    <div class="flex flex-row justify-content-between bg-gray-100 px-4 py-4">
+    <div class="flex flex-row flex-wrap justify-content-between bg-gray-100 px-4 py-4">
       <div class="flex flex-column gap-2">
         <div class="text-gray-700 text-lg font-bold">Offline Mode Enabled</div>
-        <div class="text-sm text-gray-500">
-          Offline mode is currently under development. By enrolling, you may experience a heightened level of bugs or
-          undefined behavior.
+        <div class="text-xs text-gray-500">
+          <div>
+            Offline mode is currently under development. Features are limited and being rolled out in an experimental
+            basis.
+          </div>
+          <div>Please note that you may experience more bugs by toggling this feature.</div>
         </div>
       </div>
       <div>
@@ -21,11 +24,11 @@
       </div>
     </div>
     <div v-if="userData?.offlineEnabled" class="flex flex-column bg-gray-100 my-2 p-4 rounded gap-4">
-      <div class="flex justify-content-between">
+      <div class="flex flex-wrap justify-content-between gap-3">
         <div class="flex flex-column gap-2">
-          <div class="text-lg text-gray-700 font-bold">Tasks available offline</div>
+          <div class="text-lg text-gray-700 font-bold">Offline Tasks</div>
           <div class="text-sm text-gray-500">
-            Administrations added to this list have their corresponding data cached onto your device
+            Add tasks to this list to maintain access to them while you are offline.
           </div>
         </div>
         <div class="flex gap-1">
@@ -47,19 +50,22 @@
         </div>
       </div>
       <div class="flex flex-column">
-        <div v-if="selectedOfflineTasks.length === 0">
-          <PvTag severity="info"> No tasks added </PvTag>
+        <div
+          v-if="selectedOfflineTasks.length === 0"
+          class="px-2 py-4 rounded bg-gray-200 flex align-items-center justify-content-center text-gray-400"
+        >
+          No tasks added.
         </div>
         <div v-else class="flex flex-column gap-2">
           <div
             v-for="name in selectedOfflineTasks"
-            class="flex justify-content-end font-bold gap-2 p-1 bg-gray-200 rounded"
+            class="flex justify-content-end font-bold gap-2 p-3 bg-gray-200 rounded"
           >
             <PvTag> {{ name }}</PvTag>
             <div>
               <PvButton
-                class="text-red-900 border-none h-2rem text-sm hover:bg-red-900 hover:text-white"
-                :onClick="(name) => removeOfflineTask(name)"
+                class="text-red-900 border-none bg-gray-100 rounded h-2rem text-sm hover:bg-red-900 hover:text-white"
+                :onClick="() => removeOfflineTask(name)"
               >
                 <i class="pi pi-trash"></i>
               </PvButton>
@@ -69,11 +75,11 @@
       </div>
       <PvDivider />
 
-      <div class="flex justify-content-between">
+      <div class="flex justify-content-between flex-wrap gap-3">
         <div class="flex flex-column gap-2">
-          <div class="text-lg text-gray-700 font-bold">Administrations available offline</div>
+          <div class="text-lg text-gray-700 font-bold">Offline Administrations</div>
           <div class="text-sm text-gray-500">
-            Administrations added to this list have their corresponding data cached onto your device
+            Add administrations to this list to maintain access to them while you are offline.
           </div>
         </div>
         <div v-if="isLoadingAdministrations === true" class="flex text-gray-600 font-light uppercase font-xs">
@@ -99,19 +105,22 @@
         </div>
       </div>
       <div class="flex flex-column">
-        <div v-if="selectedOfflineAdministrations.length === 0">
-          <PvTag severity="info"> No administrations added </PvTag>
+        <div
+          v-if="selectedOfflineAdministrations.length === 0"
+          class="px-2 py-4 rounded bg-gray-200 flex align-items-center justify-content-center text-gray-400"
+        >
+          No administrations added
         </div>
         <div v-else class="flex flex-column gap-2">
           <div
             v-for="name in selectedOfflineAdministrations"
-            class="flex justify-content-end font-bold gap-2 p-1 bg-gray-200 rounded"
+            class="flex justify-content-end font-bold gap-2 p-3 bg-gray-200 rounded"
           >
             <PvTag> {{ name }}</PvTag>
             <div>
               <PvButton
-                class="text-red-900 border-none h-2rem text-sm hover:bg-red-900 hover:text-white"
-                :onClick="(name) => removeOfflineAdministration(name)"
+                class="text-red-900 bg-gray-100 rounded border-none h-2rem text-sm hover:bg-red-900 hover:text-white"
+                :onClick="() => removeOfflineAdministration(name)"
               >
                 <i class="pi pi-trash"></i>
               </PvButton>
@@ -119,6 +128,14 @@
           </div>
         </div>
       </div>
+    </div>
+    <div v-if="unsavedChanges === true">
+      <PvAlert severity="warning" class="my-2">
+        <div class="flex flex-column gap-2">
+          <div class="text-lg font-bold">Unsaved Changes</div>
+          <div class="text-sm">You have unsaved changes.</div>
+        </div>
+      </PvAlert>
     </div>
     <div class="flex align-items-center justify-content-center mt-2">
       <div v-if="isSubmitting" class="mr-2">
@@ -150,7 +167,7 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { fetchDocById } from '@/helpers/query/utils';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, QueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
 import { taskFetcher } from '@/helpers/query/tasks';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
@@ -161,6 +178,7 @@ import { administrationPageFetcher } from '@/helpers/query/administrations';
 const authStore = useAuthStore();
 const toast = useToast();
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
+const queryClient = new QueryClient();
 
 // +-------------------------+
 // | Firekit Inititalization |
@@ -277,10 +295,12 @@ const addOfflineTask = () => {
 };
 
 const removeOfflineAdministration = (name) => {
+  console.log('called offline administrations');
   selectedOfflineAdministrations.value = selectedOfflineAdministrations.value.filter((task) => task !== name);
 };
 
 const removeOfflineTask = (name) => {
+  console.log('called delete offline on:', name);
   selectedOfflineTasks.value = selectedOfflineTasks.value.filter((task) => task !== name);
 };
 
@@ -314,6 +334,9 @@ const saveOfflineSettings = async () => {
         life: 3000,
       });
     });
+  // invalidate tanstack queries
+
+  queryClient.invalidateQueries(['userData', uid]);
 };
 </script>
 <style scoped>
