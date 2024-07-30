@@ -29,6 +29,7 @@ import _lowerCase from 'lodash/lowerCase';
 import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayCorrectIncorrectDifference,
+  tasksToDisplayTotalCorrect,
   rawOnlyTasks,
   scoredTasks,
 } from '@/helpers/reports.js';
@@ -73,12 +74,21 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   if (
     _colData.scores?.[_taskId]?.rawScore != undefined ||
     _colData.scores?.[_taskId]?.percentCorrect ||
-    _colData.scores?.[_taskId]?.correctIncorrectDifference
+    _colData.scores?.[_taskId]?.correctIncorrectDifference ||
+    _colData.scores?.[_taskId]?.numAttempted
   ) {
     if (tasksToDisplayCorrectIncorrectDifference.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
+    } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
+      if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
+        _toolTip += 'Num Correct: ' + 0 + '\n';
+        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      } else {
+        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
+        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      }
     } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';

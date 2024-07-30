@@ -313,6 +313,7 @@ import {
   tasksToDisplayGraphs,
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
+  tasksToDisplayTotalCorrect,
   addElementToPdf,
   getScoreKeys,
   gradeOptions,
@@ -534,7 +535,21 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
       tasksToDisplayPercentCorrect.includes(assessment.taskId)
     ) {
+      const test = assessment.scores?.raw?.composite?.test;
+      if (
+        (test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
+        (test?.numAttempted === 0 && test?.numCorrect === 0)
+      ) {
+        return '#EEEEF0';
+      }
       return '#A4DDED';
+    } else if (tasksToDisplayTotalCorrect.includes(assessment.taskId)) {
+      const test = assessment.scores?.raw?.composite?.test;
+      if (test?.numAttempted === 0 || test?.numAttempted === undefined) {
+        return '#EEEEF0';
+      } else {
+        return '#A4DDED';
+      }
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
     }
@@ -561,7 +576,8 @@ const getScoresAndSupportFromAssessment = ({
 
   if (
     tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
-    tasksToDisplayPercentCorrect.includes(assessment.taskId)
+    tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
+    tasksToDisplayTotalCorrect.includes(taskId)
   ) {
     if (assessment.scores === undefined) {
       support_level = null;
@@ -716,14 +732,28 @@ const computeAssignmentAndRunData = computed(() => {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const percentCorrect =
-            numAttempted > 0 ? Math.round((numCorrect * 100) / numAttempted).toString() + '%' : null;
+            numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
+              ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
+              : null;
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
-          currRowScores[taskId].tagColor = tagColor;
+          currRowScores[taskId].tagColor = percentCorrect === null ? '#EEEEF0' : tagColor;
+          scoreFilterTags += ' Assessed ';
+        } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+          const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
+          const numCorrect =
+            numAttempted === undefined || numAttempted === 0
+              ? ''
+              : numAttempted !== 0 && assessment.scores?.raw?.composite?.test?.numCorrect !== undefined
+              ? assessment.scores?.raw?.composite?.test?.numCorrect
+              : 0;
+          currRowScores[taskId].numAttempted = numAttempted;
+          currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].tagColor =
+            numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           scoreFilterTags += ' Assessed ';
         }
-
         if (taskId === 'letter' && assessment.scores) {
           currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
@@ -879,6 +909,9 @@ const exportSelected = (selectedRows) => {
           score.correctIncorrectDifference;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       } else {
@@ -949,6 +982,9 @@ const exportAll = async () => {
           score.correctIncorrectDifference;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Incorrect`] = score.numIncorrect;
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
       } else {
@@ -1164,18 +1200,22 @@ const scoreReportColumns = computed(() => {
     } else if (
       viewMode.value === 'standard' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      !tasksToDisplayPercentCorrect.includes(taskId)
+      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      !tasksToDisplayTotalCorrect.includes(taskId)
     ) {
       colField = `scores.${taskId}.standardScore`;
     } else if (
       viewMode.value === 'raw' &&
       !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-      !tasksToDisplayPercentCorrect.includes(taskId)
+      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      !tasksToDisplayTotalCorrect.includes(taskId)
     ) {
       colField = `scores.${taskId}.rawScore`;
     } else {
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.correctIncorrectDifference`;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.numCorrect`;
       } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
         colField = `scores.${taskId}.percentCorrect`;
       } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
