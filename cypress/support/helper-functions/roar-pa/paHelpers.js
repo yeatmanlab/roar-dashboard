@@ -84,33 +84,33 @@ function playIntro(startText) {
     .click();
 }
 
-function playFirstTutorial() {
+function playFirstTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
-  cy.get('img[src*="map.webp"]', { timeout: timeout }).click();
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
-  cy.get('img[src*="rope.webp"]', { timeout: timeout }).click();
-  cy.wait(timeout);
-  cy.get('.continue').click();
-}
-
-function playSecondTutorial() {
-  cy.wait(timeout);
-  cy.get('.continue', { timeout: 2 * timeout }).click();
-  cy.wait(2 * timeout);
-  cy.get('img[src*="nut.webp"]', { timeout: timeout }).click();
-  cy.wait(2 * timeout);
-  cy.get('img[src*="wash.webp"]', { timeout: timeout }).click();
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
   cy.wait(timeout);
   cy.get('.continue').click();
 }
 
-function playThirdTutorial() {
+function playSecondTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get('img[src*="/ball.webp"]', { timeout: timeout }).click();
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
-  cy.get('img[src*="/rain.webp"]', { timeout: timeout }).click();
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
+  cy.wait(timeout);
+  cy.get('.continue').click();
+}
+
+function playThirdTutorial(imageOne, imageTwo) {
+  cy.wait(timeout);
+  cy.get('.continue', { timeout: 2 * timeout }).click();
+  cy.wait(2 * timeout);
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
+  cy.wait(2 * timeout);
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
   cy.get('.continue').click();
 }
@@ -119,17 +119,17 @@ export function playPA({
   administration = Cypress.env('testRoarAppsAdministration'),
   language = 'en',
   optional = false,
-  startText = 'In this game we are going to look for words that BEGIN with the same sound.',
-  breakText = 'Take a break if needed',
+  startText = languageOptions[language].startText,
+  breakText = languageOptions[language].breakText,
   breakText2 = {
-    break1: 'Great job',
-    break2: 'Look at all those carrots',
-    break3: 'You are doing great',
+    break1: languageOptions[language].breakText2.break1,
+    break2: languageOptions[language].breakText2.break2,
+    break3: languageOptions[language].breakText2.break3,
   },
   endText = {
-    endText1: 'Take a break if needed',
-    endText2: 'I have been swimming so much',
-    endText3: 'You have helped me and all my friends!',
+    endText1: languageOptions[language].endText.endText1,
+    endText2: languageOptions[language].endText.endText2,
+    endText3: languageOptions[language].endText.endText3,
   },
   auth = 'username',
 } = {}) {
@@ -154,7 +154,16 @@ export function playPA({
 
   playIntro(startText);
 
-  playFirstTutorial();
+  const tutorialImages = [
+    languageOptions[language].tutorialImage0,
+    languageOptions[language].tutorialImage1,
+    languageOptions[language].tutorialImage2,
+    languageOptions[language].tutorialImage3,
+    languageOptions[language].tutorialImage4,
+    languageOptions[language].tutorialImage5,
+  ];
+
+  playFirstTutorial(tutorialImages[0], tutorialImages[1]);
   //  fsmBreak
   cy.log('break 1');
   playTrial(breakText2.break1);
@@ -163,25 +172,38 @@ export function playPA({
 
   cy.wait(3 * timeout);
   cy.get('.continue', { timeout: 4 * timeout }).click();
-  playSecondTutorial('default');
+  playSecondTutorial(tutorialImages[2], tutorialImages[3]);
   playTrial(breakText2.break2);
   cy.get('.continue', { timeout: 2 * timeout }).click();
-  playTrial(breakText);
-  //  lsmBreak
-  cy.wait(3 * timeout);
-  cy.log('break 2');
-  cy.get('.continue', { timeout: 2 * timeout }).click();
-  playTrial(endText.endText2);
 
-  cy.wait(3 * timeout);
-  cy.get('.continue', { timeout: 4 * timeout }).click();
-  playThirdTutorial('default');
-  //  delBreak
-  cy.log('break 3');
-  playTrial(breakText2.break3);
-  cy.get('.continue', { timeout: 2 * timeout }).click();
-  playTrial(endText.endText3);
+  if (language === 'en') {
+    playTrial(breakText);
+  }
+  if (language === 'es') {
+    cy.log('In conditional es block');
+    playTrial(endText.endText1);
+    cy.log('Ending game.');
+  }
 
+  if (language === 'en') {
+    //  lsmBreak, English only
+    cy.wait(3 * timeout);
+    cy.log('break 2');
+    cy.get('.continue', { timeout: 2 * timeout }).click();
+    playTrial(endText.endText2);
+
+    cy.wait(3 * timeout);
+    // Only run the third tutorial if the language is English
+    cy.get('.continue', { timeout: 4 * timeout }).click();
+    playThirdTutorial(tutorialImages[4], tutorialImages[5]);
+    //  delBreak
+    cy.log('break 3');
+    playTrial(breakText2.break3);
+    cy.get('.continue', { timeout: 2 * timeout }).click();
+    playTrial(endText.endText3);
+  }
+
+  cy.log('Routing to dashboard.');
   cy.visit('/');
   cy.wait(0.2 * timeout);
   cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
@@ -192,6 +214,6 @@ export function playPA({
   }
 
   cy.get('.tabview-nav-link-label', { timeout: 3 * timeout })
-    .contains('ROAR - Phoneme')
+    .contains(languageOptions[language].gameTab)
     .should('exist');
 }

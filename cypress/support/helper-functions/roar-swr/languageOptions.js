@@ -9,7 +9,7 @@ export const languageOptions = {
     blockTerminationPhraseThree: 'You are halfway through the second block',
     blockTerminationPhraseFour: 'You have completed the second block',
     blockTerminationPhraseFive: 'You are halfway through the third block',
-    blockTerminationPhraseSix: 'Press ANY KEY to continue',
+    blockTerminationPhraseSix: 'Press ANY KEY',
   },
   es: {
     gameTab: 'ROAR - Palabra',
