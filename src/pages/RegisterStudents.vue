@@ -6,7 +6,7 @@
           <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem" />
           <div class="admin-page-header">Add Participants</div>
         </div>
-        <div class="flex flex-column text-md text-gray-500 ml-6 gap-2">
+        <div class="flex flex-column text-md text-gray-500 ml-6 gap-2 mb-4">
           <div>Add participants by uploading a CSV.</div>
           <div>
             The following fields are required for registering a student:

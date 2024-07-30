@@ -320,6 +320,6 @@ onBeforeUnmount(() => {
   padding-top: 21vh;
 }
 input.p-inputtext.p-component.p-password-input {
-  width: 50vh !important;
+  width: 51vh !important;
 }
 </style>

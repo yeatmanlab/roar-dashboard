@@ -11,59 +11,66 @@
         </div>
         <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
-      <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy class="mb-7">
-        <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
-          <div class="grid column-gap-3 mt-2">
-            <div
-              v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
-              class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
-            >
-              <PvFloatLabel>
-                <PvSelect
-                  v-model="selectedDistrict"
-                  input-id="district"
-                  :options="allDistricts"
-                  option-label="name"
-                  option-value="id"
-                  :placeholder="districtPlaceholder"
-                  :loading="isLoadingDistricts"
-                  class="w-full"
-                  data-cy="dropdown-parent-district"
-                />
-                <label for="district">District</label>
-              </PvFloatLabel>
+      <PvTabs v-if="claimsLoaded" class="mb-7" value="districts">
+        <PvTabList>
+          <PvTab v-for="(orgType, index) in orgHeaders" :key="orgType" :value="String(index)" class="text-lg">
+            {{ orgType.header }}
+          </PvTab>
+        </PvTabList>
+        <PvTabPanels>
+          <PvTabPanel v-for="(orgType, index) in orgHeaders" :key="orgType" :value="String(index)">
+            <div class="grid column-gap-3 mt-2">
+              <div
+                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
+              >
+                <PvFloatLabel>
+                  <PvSelect
+                    v-model="selectedDistrict"
+                    input-id="district"
+                    :options="allDistricts"
+                    option-label="name"
+                    option-value="id"
+                    :placeholder="districtPlaceholder"
+                    :loading="isLoadingDistricts"
+                    class="w-full"
+                    data-cy="dropdown-parent-district"
+                  />
+                  <label for="district">District</label>
+                </PvFloatLabel>
+              </div>
+              <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+                <PvFloatLabel>
+                  <PvSelect
+                    v-model="selectedSchool"
+                    input-id="school"
+                    :options="allSchools"
+                    option-label="name"
+                    option-value="id"
+                    :placeholder="schoolPlaceholder"
+                    :loading="isLoadingSchools"
+                    class="w-full"
+                    data-cy="dropdown-parent-school"
+                  />
+                  <label for="school">School</label>
+                </PvFloatLabel>
+              </div>
             </div>
-            <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-              <PvFloatLabel>
-                <PvSelect
-                  v-model="selectedSchool"
-                  input-id="school"
-                  :options="allSchools"
-                  option-label="name"
-                  option-value="id"
-                  :placeholder="schoolPlaceholder"
-                  :loading="isLoadingSchools"
-                  class="w-full"
-                  data-cy="dropdown-parent-school"
-                />
-                <label for="school">School</label>
-              </PvFloatLabel>
-            </div>
-          </div>
-          <RoarDataTable
-            v-if="tableData"
-            :key="tableKey"
-            :columns="tableColumns"
-            :data="tableData"
-            sortable
-            :loading="isLoading || isFetching"
-            :allow-filtering="false"
-            @export-all="exportAll"
-            @selected-org-id="showCode"
-          />
-          <AppSpinner v-else />
-        </PvTabPanel>
-      </PvTabView>
+            <RoarDataTable
+              v-if="tableData"
+              :key="tableKey"
+              :columns="tableColumns"
+              :data="tableData"
+              sortable
+              :loading="isLoading || isFetching"
+              :allow-filtering="false"
+              @export-all="exportAll"
+              @selected-org-id="showCode"
+            />
+            <AppSpinner v-else />
+          </PvTabPanel>
+        </PvTabPanels>
+      </PvTabs>
       <AppSpinner v-else />
     </section>
     <section class="flex mt-8 justify-content-end">

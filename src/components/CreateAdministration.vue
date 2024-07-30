@@ -51,7 +51,7 @@
         <div class="formgrid grid">
           <div class="field col-12 md:col-6 mb-5">
             <PvFloatLabel>
-              <PvCalendar
+              <PvDatePicker
                 v-model="state.dateStarted"
                 class="w-full p-0"
                 :min-date="minStartDate"
@@ -71,7 +71,7 @@
           </div>
           <div class="field col-12 md:col-6">
             <PvFloatLabel>
-              <PvCalendar
+              <PvDatePicker
                 v-model="state.dateClosed"
                 class="w-full p-0"
                 :min-date="minEndDate"

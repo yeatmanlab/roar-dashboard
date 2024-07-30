@@ -17,7 +17,7 @@
             v-if="optionalAssessments.length !== 0"
             class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
           >
-            <PvInputSwitch
+            <PvToggleSwitch
               v-model="showOptionalAssessments"
               input-id="switch-optional"
               data-cy="switch-show-optional-assessments"

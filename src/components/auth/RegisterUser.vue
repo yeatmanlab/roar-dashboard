@@ -43,7 +43,7 @@
           </div>
         </div>
         <div v-if="!yearOnlyCheck">
-          <PvCalendar
+          <PvDatePicker
             v-model="v$.dob.$model"
             view="date"
             date-format="mm/dd/yy"
@@ -53,7 +53,7 @@
           />
         </div>
         <div v-else>
-          <PvCalendar
+          <PvDatePicker
             v-model="v$.dob.$model"
             view="year"
             date-format="yy"

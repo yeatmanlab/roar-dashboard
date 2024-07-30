@@ -219,7 +219,7 @@
                 :show-toggle-all="false"
                 class="p-column-filter"
               />
-              <PvCalendar
+              <PvDatePicker
                 v-if="col.dataType === 'date' && !col.useMultiSelect"
                 v-model="filterModel.value"
                 date-format="mm/dd/yy"

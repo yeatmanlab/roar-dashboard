@@ -3,7 +3,7 @@
     <template #icons>
       <div class="flex flex-row">
         <span>Show only named variants</span>
-        <PvInputSwitch v-model="namedOnly" class="ml-2" />
+        <PvToggleSwitch v-model="namedOnly" class="ml-2" />
         <!-- <button @click="tasksPaneOpen = !tasksPaneOpen">toggle pane</button> -->
       </div>
     </template>

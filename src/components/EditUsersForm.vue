@@ -23,7 +23,7 @@
           <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
         >
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userDobString }}</div>
-        <PvCalendar
+        <PvDatePicker
           v-else
           v-model="localUserData.studentData.dob"
           :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
@@ -170,7 +170,7 @@
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
           {{ userDobString }}
         </div>
-        <PvCalendar
+        <PvDatePicker
           v-else
           v-model="localUserData.studentData.dob"
           :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"

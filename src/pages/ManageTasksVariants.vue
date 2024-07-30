@@ -9,15 +9,20 @@
         <div class="text-md text-gray-500 ml-6">Manage tasks and variants.</div>
       </div>
       <div class="register-container mx-auto md:flex-none">
-        <PvTabView>
-          <PvTabPanel header="Tasks">
-            <ManageTasks />
-          </PvTabPanel>
-
-          <PvTabPanel header="Variants">
-            <ManageVariants />
-          </PvTabPanel>
-        </PvTabView>
+        <PvTabs value="0">
+          <PvTabList>
+            <PvTab value="0" class="text-lg"> Tasks </PvTab>
+            <PvTab value="1" class="text-lg"> Variants </PvTab>
+          </PvTabList>
+          <PvTabPanels>
+            <PvTabPanel value="0">
+              <ManageTasks />
+            </PvTabPanel>
+            <PvTabPanel value="1">
+              <ManageVariants />
+            </PvTabPanel>
+          </PvTabPanels>
+        </PvTabs>
       </div>
     </section>
   </main>

@@ -36,7 +36,7 @@
                 >Date of Birth
                 <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
               >
-              <PvCalendar
+              <PvDatePicker
                 v-model="localUserData.studentData.dob"
                 :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
               />

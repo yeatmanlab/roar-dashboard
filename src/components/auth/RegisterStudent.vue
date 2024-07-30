@@ -134,7 +134,7 @@
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
-              <PvCalendar
+              <PvDatePicker
                 v-model="student.dob"
                 :max-date="maxDoB"
                 view="date"
@@ -144,7 +144,7 @@
               />
             </div>
             <div v-else>
-              <PvCalendar
+              <PvDatePicker
                 v-model="student.dob"
                 :max-date="maxDoB"
                 view="year"

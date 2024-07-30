@@ -5,7 +5,8 @@ button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-round
 }
 button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-rounded.p-button-text.p-datatable-row-editor-save,
 button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-rounded.p-button-text.p-datatable-row-editor-cancel,
-button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-rounded.p-button-sm {
+button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-rounded.p-button-sm,
+button.p-button.p-component.p-button-icon-only.p-button-secondary.p-button-rounded.p-button-text.p-dialog-close-button {
   background: var(--primary-color) !important;
   color: white;
   margin-left: 3px !important;
