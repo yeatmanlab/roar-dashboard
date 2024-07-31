@@ -44,12 +44,10 @@ const playTrial = (targetText) => {
                 cy.get(`img[src*="${correctAnswer}.webp"]`, { timeout: timeout }).first().click();
                 cy.wait(0.05 * timeout);
               } else {
-                cy.log('Game complete.');
+                // If the correct answer is not found, assume the game is complete (white screen)
+                cy.log('No correct answer found; game complete..');
               }
             });
-            // .first()
-            // .click()
-            // cy.wait(0.05 * timeout);
 
             // Check progress bar status
             cy.get('#jspsych-progressbar-inner', { timeout: timeout })
@@ -93,9 +91,9 @@ function playIntro(startText) {
 
 function playFirstTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
-  cy.get(`img[src="${imageOne}"]`, { timeout: timeout }).click();
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).first().click();
   cy.wait(2 * timeout);
-  cy.get(`img[src="${imageTwo}"]`, { timeout: timeout }).click();
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).first().click();
   cy.wait(timeout);
   cy.get('.continue').click();
 }
@@ -104,9 +102,9 @@ function playSecondTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src="${imageOne}"]`, { timeout: timeout }).click();
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).first().click();
   cy.wait(2 * timeout);
-  cy.get(`img[src="${imageTwo}"]`, { timeout: timeout }).click();
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).first().click();
   cy.wait(timeout);
   cy.get('.continue').click();
 }
@@ -115,9 +113,9 @@ function playThirdTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src="${imageOne}"]`, { timeout: timeout }).click();
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).first().click();
   cy.wait(2 * timeout);
-  cy.get(`img[src="${imageTwo}"]`, { timeout: timeout }).click();
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).first().click();
   cy.wait(2 * timeout);
   cy.get('.continue').click();
 }
