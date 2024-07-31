@@ -91,9 +91,9 @@ function playIntro(startText) {
 
 function playFirstTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
-  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).first().click();
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).first().click();
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
   cy.wait(timeout);
   cy.get('.continue').click();
 }
@@ -102,9 +102,9 @@ function playSecondTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).first().click();
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).first().click();
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
   cy.wait(timeout);
   cy.get('.continue').click();
 }
@@ -113,9 +113,9 @@ function playThirdTutorial(imageOne, imageTwo) {
   cy.wait(timeout);
   cy.get('.continue', { timeout: 2 * timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).first().click();
+  cy.get(`img[src*="${imageOne}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
-  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).first().click();
+  cy.get(`img[src*="${imageTwo}"]`, { timeout: timeout }).click();
   cy.wait(2 * timeout);
   cy.get('.continue').click();
 }
