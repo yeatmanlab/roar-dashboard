@@ -9,16 +9,16 @@
             <div class="admin-page-header">List Organizations</div>
           </div>
         </div>
-        <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
+        <div class="text-md text-gray-500 ml-6">View organizations assigned to your account.</div>
       </div>
-      <PvTabs v-if="claimsLoaded" class="mb-7" value="districts">
+      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgType" class="mb-7">
         <PvTabList>
-          <PvTab v-for="(orgType, index) in orgHeaders" :key="orgType" :value="String(index)" class="text-lg">
+          <PvTab v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id" class="text-lg">
             {{ orgType.header }}
           </PvTab>
         </PvTabList>
         <PvTabPanels>
-          <PvTabPanel v-for="(orgType, index) in orgHeaders" :key="orgType" :value="String(index)">
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
             <div class="grid column-gap-3 mt-2">
               <div
                 v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
@@ -56,17 +56,18 @@
                 </PvFloatLabel>
               </div>
             </div>
-            <RoarDataTable
-              v-if="tableData"
-              :key="tableKey"
-              :columns="tableColumns"
-              :data="tableData"
-              sortable
-              :loading="isLoading || isFetching"
-              :allow-filtering="false"
-              @export-all="exportAll"
-              @selected-org-id="showCode"
-            />
+            <div v-if="tableData.length > 0">
+              <RoarDataTable
+                :key="tableKey"
+                :columns="tableColumns"
+                :data="tableData"
+                sortable
+                :loading="isLoading || isFetching"
+                :allow-filtering="false"
+                @export-all="exportAll"
+                @selected-org-id="showCode"
+              />
+            </div>
             <AppSpinner v-else />
           </PvTabPanel>
         </PvTabPanels>
@@ -119,6 +120,7 @@
     </section>
   </main>
 </template>
+
 <script setup>
 import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
@@ -197,10 +199,7 @@ const orgHeaders = computed(() => {
   return result;
 });
 
-const activeIndex = ref(0);
-const activeOrgType = computed(() => {
-  return Object.keys(orgHeaders.value)[activeIndex.value];
-});
+const activeOrgType = ref('districts');
 
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 
@@ -317,7 +316,6 @@ const tableColumns = computed(() => {
       sort: false,
     },
   );
-
   return columns;
 });
 
@@ -371,10 +369,11 @@ watch(allSchools, (newValue) => {
 });
 
 const tableKey = ref(0);
-watch([selectedDistrict, selectedSchool], () => {
+watch([selectedDistrict, selectedSchool, activeOrgType], () => {
   tableKey.value += 1;
 });
 </script>
+
 <style>
 .p-datatable-gridlines .p-datatable-tbody > tr > td {
   padding-left: 0.5rem !important;
