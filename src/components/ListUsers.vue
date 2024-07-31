@@ -49,6 +49,7 @@
         <EditUsersForm
           v-if="!showPassword"
           :user-data="currentEditUser"
+          :user-id="currentEditUser.id"
           @update:user-data="localUserData = $event"
           :edit-mode="true"
         />

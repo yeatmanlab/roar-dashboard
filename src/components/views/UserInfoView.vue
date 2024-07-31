@@ -3,11 +3,11 @@
     <h2>Your Information</h2>
     <EditUsersForm
       v-model="userDataModel"
-      :user-data="userData"
+      :user-id="uid"
       :edit-mode="isEditMode"
       @update:user-data="localUserData = $event"
     />
-    <div v-if="userType === 'admin'" class="flex">
+    <div v-if="isAdmin" class="flex">
       <PvButton
         v-if="!isEditMode"
         label="Edit"
@@ -39,6 +39,8 @@ import { ref, onMounted, computed } from 'vue';
 import EditUsersForm from '../EditUsersForm.vue';
 import { fetchDocById } from '@/helpers/query/utils';
 import _get from 'lodash/get';
+import _isEmpty from 'lodash/isEmpty';
+import _union from 'lodash/union';
 
 // +----------------+
 // | Initialization |
@@ -49,9 +51,6 @@ const { roarfirekit, uid } = storeToRefs(authStore);
 const localUserData = ref({});
 const isEditMode = ref(false);
 const isSubmitting = ref(false);
-const userType = computed(() => {
-  return _get(userData.value, 'userType', 'student');
-});
 
 // +-------------------------+
 // | Firekit Inititalization |
@@ -74,12 +73,19 @@ onMounted(() => {
 // +---------+
 // | Queries |
 // +---------+
-const { data: userData } = useQuery({
-  queryKey: ['userData', uid],
-  queryFn: () => fetchDocById('users', uid.value),
-  keepPrevousData: true,
+const { data: userClaims } = useQuery({
+  queryKey: ['userClaims', uid],
+  queryFn: () => fetchDocById('userClaims', uid.value),
+  keepPreviousData: true,
   enabled: initialized,
-  staleTime: 1000 * 60 * 5, // 5 minutes
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+// Keep track of the user's type
+const isAdmin = computed(() => {
+  if (userClaims.value?.claims?.super_admin) return true;
+  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
+  return true;
 });
 
 // +------------+
@@ -104,6 +110,8 @@ async function submitUserData() {
         detail: 'An unexpected error has occurred.',
         life: 3000,
       });
+      isEditMode.value = false;
+      isSubmitting.value = false;
     });
 }
 </script>

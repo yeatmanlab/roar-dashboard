@@ -3,17 +3,17 @@
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.first ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.name?.first ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.name.first" />
       </div>
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Middle Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.middle ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.name?.middle ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.name.middle" />
       </div>
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Last Name</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.last ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.name?.last ?? 'None' }}</div>
         <PvInputText v-else v-model="localUserData.name.last" />
       </div>
 
@@ -37,7 +37,7 @@
         <label :class="{ 'font-light uppercase text-sm': !editMode }"
           >Grade <span v-if="localUserType === 'student'" v-tooltip.top="'Required'" class="required">*</span></label
         >
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.grade ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.studentData?.grade ?? 'None' }}</div>
         <PvInputText
           v-else
           v-model="localUserData.studentData.grade"
@@ -59,13 +59,17 @@
     <div class="form-column">
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Gender</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.gender ?? 'None' }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ serverUserData?.studentData?.gender ?? 'None' }}
+        </div>
         <PvInputText v-else v-model="localUserData.studentData.gender" />
       </div>
 
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">English as a Second Language</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.ell_status ?? false }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ serverUserData?.studentData?.ell_status ?? false }}
+        </div>
         <PvDropdown
           v-else
           v-model="localUserData.studentData.ell_status"
@@ -76,7 +80,9 @@
       </div>
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">IEP Status</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.iep_status ?? false }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ serverUserData?.studentData?.iep_status ?? false }}
+        </div>
         <PvDropdown
           v-else
           v-model="localUserData.studentData.iep_status"
@@ -87,7 +93,9 @@
       </div>
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Free-Reduced Lunch</label>
-        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.frl_status ?? false }}</div>
+        <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+          {{ serverUserData?.studentData?.frl_status ?? false }}
+        </div>
         <PvDropdown
           v-else
           v-model="localUserData.studentData.frl_status"
@@ -100,7 +108,7 @@
       <div class="form-field">
         <label for="race" :class="{ 'font-light uppercase text-sm': !editMode }">Race </label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.studentData?.race?.join(', ') ?? 'None' }}
+          {{ serverUserData?.studentData?.race?.join(', ') ?? 'None' }}
         </div>
         <PvAutoComplete
           v-else
@@ -114,7 +122,7 @@
       <div class="form-field">
         <label :class="{ 'font-light uppercase text-sm': !editMode }">Hispanic or Latino Ethnicity</label>
         <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-          {{ userData?.studentData?.hispanic_ethnicity ?? false }}
+          {{ serverUserData?.studentData?.hispanic_ethnicity ?? false }}
         </div>
         <PvDropdown
           v-else
@@ -127,21 +135,22 @@
     </div>
   </div>
   <div v-else-if="localUserType === 'admin'">
+    {{ editingSelf }}
     <div class="form-container">
       <div class="form-column">
         <div class="form-field">
           <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.first ?? 'None' }}</div>
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.name?.first ?? 'None' }}</div>
           <PvInputText v-else v-model="localUserData.name.first" />
         </div>
         <div class="form-field">
           <label :class="{ 'font-light uppercase text-sm': !editMode }">Middle Name</label>
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.middle ?? 'None' }}</div>
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.name?.middle ?? 'None' }}</div>
           <PvInputText v-else v-model="localUserData.name.middle" />
         </div>
         <div class="form-field">
           <label :class="{ 'font-light uppercase text-sm': !editMode }">Last Name</label>
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.name?.last ?? 'None' }}</div>
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.name?.last ?? 'None' }}</div>
           <PvInputText v-else v-model="localUserData.name.last" />
         </div>
 
@@ -151,55 +160,30 @@
             <label :class="{ 'font-light uppercase text-sm': !editMode }"
               >Test Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
             >
-            <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.testData ? 'Yes' : 'No' }}</div>
+            <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData.testData ? 'Yes' : 'No' }}</div>
           </div>
           <div>
             <PvCheckbox v-if="editMode" v-model="localUserData.demoData" binary class="mr-2" />
             <label :class="{ 'font-light uppercase text-sm': !editMode }"
               >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
             >
-            <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ localUserData.demoData ? 'Yes' : 'No' }}</div>
+            <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData.demoData ? 'Yes' : 'No' }}</div>
           </div>
         </div>
       </div>
       <div class="form-column">
         <div class="form-field">
-          <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Date of Birth
-            <span v-if="editMode" class="optional">(optional)</span>
-          </label>
+          <label :class="{ 'font-light uppercase text-sm': !editMode }">Email</label>
           <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-            {{ userDobString }}
+            {{ serverUserData?.email ?? 'None' }}
           </div>
-          <PvCalendar
-            v-else
-            v-model="localUserData.studentData.dob"
-            :class="{ 'p-invalid': errorMessage.includes('Date of birth') }"
-          />
-          <small v-if="errorMessage.includes('Date of birth')" class="p-error"
-            >Date of Birth can not be in the future.</small
-          >
-        </div>
-        <div class="form-field">
-          <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >Gender <span v-if="editMode" class="optional">(optional)</span></label
-          >
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.gender ?? 'None' }}</div>
-          <PvInputText v-else v-model="localUserData.studentData.gender" />
-        </div>
-
-        <div class="form-field">
-          <label :class="{ 'font-light uppercase text-sm': !editMode }"
-            >English as a Second Language <span v-if="editMode" class="optional">(optional)</span></label
-          >
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ userData?.studentData?.ell_status ?? false }}</div>
-          <PvDropdown
-            v-else
-            v-model="localUserData.studentData.ell_status"
-            option-label="label"
-            option-value="value"
-            :options="binaryDropdownOptions"
-          />
+          <div v-else>
+            <PvInputText v-model="localUserData.email" class="w-full" />
+            <div v-if="editingSelf" class="text-md text-gray-500 mt-3">
+              <i class="pi pi-exclamation-triangle mr-2 text-yellow-500 vertical-align-middle" />After changing your
+              email, you will be signed out and must sign in again with your new email.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -211,13 +195,14 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
-import { watch, ref, onMounted, computed } from 'vue';
+import { watch, ref, onMounted, computed, toRaw } from 'vue';
+import { useRoute } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import OrgPicker from '@/components/OrgPicker.vue';
 const props = defineProps({
-  userData: {
-    type: Object,
+  userId: {
+    type: String,
     required: true,
   },
   userType: {
@@ -235,6 +220,7 @@ const props = defineProps({
 // +----------------+
 const emit = defineEmits(['modalClosed', 'update:userData']);
 
+const route = useRoute();
 const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
 const initialized = ref(false);
@@ -242,13 +228,23 @@ const initialized = ref(false);
 // +---------------------------+
 // | Handle Setup of User Data |
 // +---------------------------+
+const { data: serverUserData } = useQuery({
+  queryKey: ['userData', props.userId, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', props.userId),
+  keepPreviousData: false,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+onMounted(() => {
+  if (roarfirekit.value?.restConfig) init();
+  if (!_isEmpty(serverUserData.value)) setupUserData(serverUserData.value);
+});
+
 watch(
-  () => props.userData,
+  () => serverUserData.value,
   (userData) => {
-    // Set up localUserData object if it has not been initialized
-    if (!_isEmpty(userData) && _get(localUserData, 'dataInitialized', false) === false) {
-      setupUserData();
-    }
+    if (!_isEmpty(serverUserData.value)) setupUserData(serverUserData.value);
   },
 );
 
@@ -258,6 +254,7 @@ const localUserData = ref({
     middle: null,
     last: null,
   },
+  email: null,
   studentData: {
     dob: null,
     grade: '',
@@ -275,25 +272,26 @@ const localUserData = ref({
 const errorMessage = ref('');
 
 // Create a local version of the userData to perform updates on
-const setupUserData = () => {
+const setupUserData = (userObject) => {
   let user = {
     name: {
-      first: props.userData?.name?.first || null,
-      middle: props.userData?.name?.middle || null,
-      last: props.userData?.name?.last || null,
+      first: userObject?.name?.first || null,
+      middle: userObject?.name?.middle || null,
+      last: userObject?.name?.last || null,
     },
+    email: userObject?.email || null,
     studentData: {
-      dob: !isNaN(new Date(props.userData?.studentData?.dob)) ? new Date(props.userData?.studentData?.dob) : null,
-      grade: props.userData?.studentData?.grade || '',
-      gender: props.userData?.studentData?.gender || '',
-      race: props.userData?.studentData?.race || [],
-      hispanic_ethnicity: props.userData?.studentData?.hispanic_ethnicity || false,
-      ell_status: props.userData?.studentData?.ell_status || false,
-      frl_status: props.userData?.studentData?.frl_status || false,
-      iep_status: props.userData?.studentData?.iep_status || false,
+      dob: !isNaN(new Date(userObject?.studentData?.dob)) ? new Date(userObject?.studentData?.dob) : null,
+      grade: userObject?.studentData?.grade || '',
+      gender: userObject?.studentData?.gender || '',
+      race: userObject?.studentData?.race || [],
+      hispanic_ethnicity: userObject?.studentData?.hispanic_ethnicity || false,
+      ell_status: userObject?.studentData?.ell_status || false,
+      frl_status: userObject?.studentData?.frl_status || false,
+      iep_status: userObject?.studentData?.iep_status || false,
     },
-    testData: props.userData?.testData || false,
-    demoData: props.userData?.demoData || false,
+    testData: userObject?.testData || false,
+    demoData: userObject?.demoData || false,
     userType: localUserType.value,
     dataInitialized: true,
   };
@@ -304,7 +302,7 @@ const setupUserData = () => {
 // | Computed Properties |
 // +---------------------+
 const localUserType = computed(() => {
-  if (props.userData?.userType) return props.userData.userType;
+  if (serverUserData.value?.userType) return serverUserData.value.userType;
   if (props.userType) return props.userType;
   return null;
 });
@@ -346,6 +344,12 @@ const searchRaces = (event) => {
   raceOptions.value = filteredOptions;
 };
 
+const editingSelf = computed(() => {
+  if (_get(route, 'name', null) === 'ProfileInfo') return true;
+  else if (props.userId === uid.value) return true;
+  else return false;
+});
+
 // +------------------------+
 // | Firekit Initialization |
 // +------------------------+
@@ -359,12 +363,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit?.restConfig) init();
 });
 
-onMounted(() => {
-  console.log('onMounted hook called');
-  if (roarfirekit.value?.restConfig) init();
-  if (props.userData) setupUserData();
-});
-
 // +----------------------+
 // | Handle Update Events |
 // +----------------------+
@@ -375,7 +373,7 @@ onMounted(() => {
 watch(
   () => localUserData.value,
   (userData) => {
-    emit('update:userData', userData);
+    emit('update:userData', { ...userData, orgs: selectedOrgs.value ?? null });
   },
   { deep: true, immediate: false },
 );
@@ -400,15 +398,6 @@ const isSuperAdmin = computed(() => {
 // +----------------------------+
 // | Queries for OrgPicker Data |
 // +----------------------------+
-// User data fresh from the database
-const { data: serverUserData } = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', uid.value),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
 const districtsToGrab = computed(() => {
   const districtIds = _get(serverUserData.value, 'districts.all', []);
   return districtIds.map((districtId) => {
