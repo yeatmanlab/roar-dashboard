@@ -7,36 +7,7 @@
 // Defaults
 @import 'components/defaults';
 
-// Components
-
-@import 'components/dataview';
-@import 'components/datatable';
-@import 'components/datepicker';
-@import 'components/dropdown';
-
-@import 'components/editor';
-
-@import 'components/input-group';
-@import 'components/input-switch';
-@import 'components/input-text';
-
-@import 'components/listbox';
-
-@import 'components/multiselect';
-
-@import 'components/passwordpanel';
-
-@import 'components/selectbutton';
-@import 'components/splitbutton';
-@import 'components/speeddial';
-
-@import 'components/tabview';
-@import 'components/togglebutton';
-
-// Custom components
-@import 'components/tabview-games';
 @import 'components/navbar';
-@import 'components/sidebar';
 
 // Routes
 @import 'routes/signin';

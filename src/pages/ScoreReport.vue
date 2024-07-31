@@ -40,7 +40,7 @@
                 </div>
                 <div v-if="!isLoadingScores">
                   <PvButton
-                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                    class="flex flex-row p-4 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -133,7 +133,7 @@
             <template #filterbar>
               <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">
                 <div v-if="schoolsInfo" class="flex flex-row my-3">
-                  <span class="p-float-label">
+                  <PvFloatLabel>
                     <PvMultiSelect
                       id="ms-school-filter"
                       v-model="filterSchools"
@@ -146,10 +146,10 @@
                       data-cy="filter-by-school"
                     />
                     <label for="ms-school-filter">Filter by School</label>
-                  </span>
+                  </PvFloatLabel>
                 </div>
                 <div class="flex flex-row gap-2 my-3">
-                  <span class="p-float-label">
+                  <PvFloatLabel>
                     <PvMultiSelect
                       id="ms-grade-filter"
                       v-model="filterGrades"
@@ -162,13 +162,13 @@
                       data-cy="filter-by-grade"
                     />
                     <label for="ms-school-filter">Filter by Grade</label>
-                  </span>
+                  </PvFloatLabel>
                 </div>
               </div>
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
-              <PvDropdown
+              <PvSelect
                 id="view-columns"
                 v-model="viewMode"
                 :options="viewOptions"
@@ -1442,6 +1442,11 @@ onMounted(async () => {
     display: flex;
     align-items: center;
   }
+}
+
+.p-datatable-gridlines .p-datatable-tbody > tr > td {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
 }
 
 .confirm .p-confirm-dialog-reject {

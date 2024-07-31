@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar-container">
+  <div class="sidebar-container flex flex-column">
     <div class="sidebar-progress">
       <PvChart type="doughnut" :data="chartData" :options="chartOptions" />
       <div>
@@ -7,14 +7,16 @@
         <p>{{ $t('participantSidebar.tasksCompleted') }}</p>
       </div>
     </div>
-    <ul v-if="!!studentInfo" class="sidebar-info">
-      <li class="sidebar-title">
-        <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
-      </li>
-      <li>
-        {{ $t('participantSidebar.grade') }}: <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
-      </li>
-    </ul>
+    <div class="flex flex-row">
+      <ul v-if="!!studentInfo" class="sidebar-info">
+        <li class="sidebar-title">
+          <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
+        </li>
+        <li>
+          {{ $t('participantSidebar.grade') }}: <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 <script setup>

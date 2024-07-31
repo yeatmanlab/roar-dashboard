@@ -8,6 +8,7 @@
             v-model="v$.firstName.$model"
             name="firstName"
             :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
+            style="width: 25vh"
             aria-describedby="first-name-error"
           />
           <span v-if="v$.firstName.$error && submitted">
@@ -25,6 +26,7 @@
             v-model="v$.lastName.$model"
             name="lastName"
             :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
+            style="width: 25vh"
             aria-describedby="first-name-error"
           />
           <span v-if="v$.lastName.$error && submitted">
@@ -47,6 +49,7 @@
             type="email"
             :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
             aria-describedby="username-or-email-error"
+            style="width: 55vh"
           />
         </div>
         <span v-if="v$.ParentEmail.$error && submitted">
@@ -306,7 +309,7 @@ const isNextButtonDisabled = computed(() => {
   margin-bottom: 0.75rem;
 }
 .required {
-  color: var(--bright-red);
+  color: var(--primary-color);
 }
 label {
   width: 100%;

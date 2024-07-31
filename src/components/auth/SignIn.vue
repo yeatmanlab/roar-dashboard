@@ -1,12 +1,12 @@
 <template>
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
-      <div class="field mt-2">
+      <div class="field">
         <div class="p-input-icon-right">
           <PvInputText
             :id="$t('authSignIn.emailId')"
             v-model="v$.email.$model"
-            :class="{ 'p-invalid': invalid }"
+            :class="[{ 'p-invalid': invalid }, 'w-full']"
             aria-describedby="email-error"
             :placeholder="$t('authSignIn.emailPlaceholder')"
             data-cy="input-username-email"
@@ -29,8 +29,6 @@
               v-model="v$.password.$model"
               :class="{ 'p-invalid': invalid }"
               toggle-mask
-              show-icon="pi pi-eye-slash"
-              hide-icon="pi pi-eye"
               :feedback="false"
               :placeholder="$t('authSignIn.passwordPlaceholder')"
               data-cy="input-password"
@@ -57,8 +55,6 @@
             v-model="v$.password.$model"
             :class="{ 'p-invalid': invalid }"
             toggle-mask
-            show-icon="pi pi-eye-slash"
-            hide-icon="pi pi-eye"
             :feedback="false"
             :placeholder="$t('authSignIn.passwordPlaceholder')"
             data-cy="input-password"
@@ -110,7 +106,7 @@
       </div>
       <PvButton
         type="submit"
-        class="mt-5 flex w-5 p-3 border-none border-round hover:bg-black-alpha-20"
+        class="mt-5 flex w-5 p-3 surface-200 text-black-alpha-90 border-none border-round hover:bg-primary hover:text-white"
         :label="$t('authSignIn.buttonLabel') + ' &rarr;'"
       />
       <hr class="opacity-20 mt-5" />

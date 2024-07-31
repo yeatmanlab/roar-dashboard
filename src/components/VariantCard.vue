@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!hasControls"
-    class="flex-1 flex h-6rem flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover"
+    class="flex-1 flex flex-row gap-2 border-1 border-round surface-border bg-white-alpha-90 mb-2 hover:surface-hover"
   >
     <div class="w-11 mt-3 flex flex-row p-0 mb-2">
       <div>
@@ -29,7 +29,7 @@
             <span class="font-bold">Variant id: </span>{{ variant.id }}
           </p>
         </div>
-        <PvOverlayPanel ref="op" append-to="body" style="width: 40vh">
+        <PvPopover ref="op" append-to="body" style="width: 40vh">
           <div class="flex justify-content-end mt-0 mb-2">
             <PvButton
               class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
@@ -62,7 +62,7 @@
               </PvColumn>
             </PvDataTable>
           </div>
-        </PvOverlayPanel>
+        </PvPopover>
       </div>
     </div>
     <div class="mr-0 pl-0 flex flex-column">
@@ -76,7 +76,7 @@
     </div>
   </div>
   <!---------- end card without buttons ----- >-->
-  <div v-else :id="variant.id" class="h-6rem" :class="isActive()">
+  <div v-else :id="variant.id" :class="isActive()">
     <div class="ml-0 pl-0 flex flex-column">
       <PvButton
         class="surface-hover border-y-1 border-200 border-noround m-0 hover:bg-primary p-0"
@@ -117,7 +117,7 @@
           </p>
         </div>
       </div>
-      <PvOverlayPanel ref="op" append-to="body" class="border-1 surface-border" style="width: 40vh">
+      <PvPopover ref="op" class="border-1 surface-border" style="width: 40vh">
         <div class="flex justify-content-end mt-0 mb-2">
           <PvButton
             class="p-0 surface-hover border-none border-circle -rotate-45 hover:text-100 hover:bg-primary"
@@ -150,7 +150,7 @@
             </PvColumn>
           </PvDataTable>
         </div>
-      </PvOverlayPanel>
+      </PvPopover>
     </div>
     <div class="mr-0 pl-0 flex flex-column">
       <EditVariantDialog
