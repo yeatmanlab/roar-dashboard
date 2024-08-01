@@ -198,6 +198,8 @@ import { watch, ref, onMounted, computed, toRaw } from 'vue';
 import { useRoute } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
+import _cloneDeep from 'lodash/cloneDeep';
+import _isEqual from 'lodash/isEqual';
 import OrgPicker from '@/components/OrgPicker.vue';
 const props = defineProps({
   userId: {
@@ -365,7 +367,14 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 // +----------------------+
 // | Handle Update Events |
 // +----------------------+
-
+const compareOrgs = (orgs, selectedOrgs) => {
+  for (const orgType of Object.keys(orgs)) {
+    if (!_isEqual(selectedOrgs[orgType], orgs[orgType])) {
+      return true;
+    }
+  }
+  return false;
+};
 // Automatically emit events when the local userData changes
 // TODO: This functionality is a substitute for the v-model directive in Vue.js
 //   this can be replaced when we update to Vue 3.3+
@@ -380,7 +389,14 @@ watch(
       delete userDataCopy['email'];
     }
 
-    emit('update:userData', { ...userDataCopy, orgs: selectedOrgs.value ?? null });
+    // If the orgs have changed, include it in the update event
+    if (!_isEmpty(orgsList.value) && !_isEmpty(selectedOrgs.value)) {
+      if (compareOrgs(_cloneDeep(orgsList.value), _cloneDeep(selectedOrgs.value))) {
+        userDataCopy['orgs'] = _cloneDeep(selectedOrgs.value);
+      }
+    }
+
+    emit('update:userData', userDataCopy);
   },
   { deep: true, immediate: false },
 );
@@ -513,17 +529,23 @@ const { data: userFamilies } = useQuery({
 
 const orgsList = computed(() => {
   return {
-    districts: userDistricts.value,
-    schools: userSchools.value,
-    classes: userClasses.value,
-    groups: userGroups.value,
-    families: userFamilies.value,
+    districts: userDistricts.value ?? [],
+    schools: userSchools.value ?? [],
+    classes: userClasses.value ?? [],
+    groups: userGroups.value ?? [],
+    families: userFamilies.value ?? [],
   };
 });
 // +---------------------+
 // | OrgPicker Utilities |
 // +---------------------+
-const selectedOrgs = ref();
+const selectedOrgs = ref({
+  districts: [],
+  schools: [],
+  classes: [],
+  groups: [],
+  families: [],
+});
 
 const selection = (selected) => {
   selectedOrgs.value = selected;
