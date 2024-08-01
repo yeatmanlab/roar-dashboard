@@ -186,7 +186,7 @@
         </div>
       </div>
     </div>
-    <OrgPicker @selection="selection($event)" :orgs="orgsList" class="mt-3" :edit-mode="editMode" />
+    <OrgPicker @selection="selection($event)" :orgs="orgsList" class="mt-3" :edit-mode="editMode && isSuperAdmin" />
   </div>
 </template>
 <script setup>
