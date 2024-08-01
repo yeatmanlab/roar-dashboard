@@ -1,10 +1,11 @@
 # https://github.com/firebase/firebase-tools
 name: Deploy to Firebase Hosting (production) with Pre-Release Tests
-
 on:
   push:
-    branches:
-      - 'main'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-alpha.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
 
 concurrency:
   group: ci-preview-tests-${{ github.ref }}-0
