@@ -135,8 +135,8 @@
     </div>
   </div>
   <div v-else-if="localUserType === 'admin'">
-    <div class="form-container">
-      <div class="form-column">
+    <div class="flex flex-column gap-3">
+      <div class="flex flex-row gap-3">
         <div class="form-field">
           <label :class="{ 'font-light uppercase text-sm': !editMode }">First Name</label>
           <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.name?.first ?? 'None' }}</div>
@@ -152,7 +152,23 @@
           <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData?.name?.last ?? 'None' }}</div>
           <PvInputText v-else v-model="localUserData.name.last" />
         </div>
-
+      </div>
+      <div class="form-column">
+        <div class="form-field">
+          <label :class="{ 'font-light uppercase text-sm': !editMode }">Email</label>
+          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
+            {{ serverUserData?.email ?? 'None' }}
+          </div>
+          <div v-else>
+            <PvInputText v-model="localUserData.email" class="w-full" />
+            <div v-if="editingSelf && localUserData.email !== serverUserData.email" class="text-md text-gray-500 mt-3">
+              <i class="pi pi-exclamation-triangle mr-2 text-yellow-500 vertical-align-middle" />After changing your
+              email, you will be signed out and must sign in again with your new email.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
         <div v-if="isSuperAdmin">
           <div>
             <PvCheckbox v-if="editMode" v-model="localUserData.testData" binary class="mr-2" />
@@ -167,21 +183,6 @@
               >Demo Data? <span v-tooltip.top="'Super Admin Only'" class="admin-only">*</span></label
             >
             <div v-if="!editMode" :class="{ 'text-xl': !editMode }">{{ serverUserData.demoData ? 'Yes' : 'No' }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="form-column">
-        <div class="form-field">
-          <label :class="{ 'font-light uppercase text-sm': !editMode }">Email</label>
-          <div v-if="!editMode" :class="{ 'text-xl': !editMode }">
-            {{ serverUserData?.email ?? 'None' }}
-          </div>
-          <div v-else>
-            <PvInputText v-model="localUserData.email" class="w-full" />
-            <div v-if="editingSelf && localUserData.email !== serverUserData.email" class="text-md text-gray-500 mt-3">
-              <i class="pi pi-exclamation-triangle mr-2 text-yellow-500 vertical-align-middle" />After changing your
-              email, you will be signed out and must sign in again with your new email.
-            </div>
           </div>
         </div>
       </div>
@@ -567,6 +568,7 @@ const selection = (selected) => {
 .form-field {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 .modal-header {
   margin-right: auto;
