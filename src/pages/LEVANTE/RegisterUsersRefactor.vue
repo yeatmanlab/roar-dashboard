@@ -94,6 +94,7 @@
   import _forEach from 'lodash/forEach';
   import _isEmpty from 'lodash/isEmpty';
   import _startCase from 'lodash/startCase';
+  import _chunk from 'lodash/chunk';
   import { useToast } from 'primevue/usetoast';
   import RegisterUsersInfo from '@/components/LEVANTE/RegisterUsersInfo.vue';
   import { useAuthStore } from '@/store/auth';
@@ -185,8 +186,7 @@
     rawUserFile.value = await csvFileToJson(event.files[0]);
   
     // Check uploaded CSV has required columns
-    // eslint-disable-next-line no-prototype-builtins
-    const missingColumns = requiredFields.filter((col) => !rawUserFile.value[0].hasOwnProperty(col));
+    const missingColumns = requiredFields.filter((col) => !(col in toRaw(rawUserFile.value[0])));
     if (missingColumns.length > 0) {
       toast.add({
         severity: 'error',
@@ -208,9 +208,13 @@
           addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
         }
       } else {
-        const missingFields = requiredFields.filter((field) => !user[field]);
-        if (missingFields.length > 0) {
-          addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
+        // Must have either group or district, school, and class
+        if (!user.group) {
+          const requiredFieldsNoGroup = ['district', 'school', 'class'];
+          const missingFields = requiredFieldsNoGroup.filter((field) => !user[field]);
+          if (missingFields.length > 0) {
+            addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
+          }
         }
       }
     });
@@ -264,39 +268,50 @@
 
     // Check orgs exist
     for (const user of usersToBeRegistered) {
-      const { district, school, _class, group, } = user;
+      const { district, school, _class, group: groups, } = user;
 
       const orgNameMap = {
         district: district,
         school: school,
-        class: _class.split(','),
-        group: group.split(','),
+        class: _class?.split(','),
+        group: groups?.split(','),
       };
+
+      console.log('orgNameMap', orgNameMap);
 
       // If orgType is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
       //   the sendObject. If not, reject user
       for (const [orgType, orgName] of Object.entries(orgNameMap)) {
         if (orgName) {
-          let orgInfo;
+          let orgInfo = {
+            district: [],
+            school: [],
+            class: [],
+            group: [],
+          };
 
           if (orgType === 'school') {
             const { id: districtId } = await getOrgId('districts', district);
-            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
+            const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined))
+            orgInfo['school'].push(...orgIds);
           } else if (orgType === 'class') {
-            for (const aClass of _class) {
+            for (const aClass of orgNameMap.class) {
               const { id: districtId } = await getOrgId('districts', district);
               const { id: schoolId } = await getOrgId('schools', school);
-              const orgId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
-              orgInfo.class.push(orgId);
+              const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
+              orgInfo.class.push(...orgIds);
             }
           } else if (orgType === 'group') {
-            for (const group of group) {
-              const orgId = orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
-              orgInfo.group.push(orgId);
+            for (const group of orgNameMap.group) {
+              console.log('group i:', group);
+              const orgId = await getOrgId(pluralizeFirestoreCollection(orgType), group, ref(undefined), ref(undefined));
+              console.log('orgInfo', orgInfo);
+              orgInfo.group.push(...orgId);
             }
           } else {
-            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
+            const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
+            orgInfo['district'].push(...orgIds);
           }
 
           if (!_isEmpty(orgInfo)) {
@@ -320,13 +335,16 @@
     for (const users of chunkedUsersToBeRegistered) {
       try {
         const res = await authStore.createUsers(users);
+
+        console.log('created users result:', res);
     
         const currentRegisteredUsers = res.data.data
     
         // add the account info to the existing csv data
         rawUserFile.value.forEach((user, index) => {
-          user.email = currentRegisteredUsers[index].user.email;
-          user.password = currentRegisteredUsers[index].user.password;
+          user.email = currentRegisteredUsers[index].email;
+          // Need to return password not passwordHash
+          user.password = currentRegisteredUsers[index].password;
           user.uid = currentRegisteredUsers[index].uid;
         });
 
@@ -459,6 +477,7 @@
     // Currently we don't supply selectedDistrict or selectedSchool
     // Array of objects. Ex: [{abbreviation: 'LVT', id: 'lut54353jkler'}]
     const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
+    const orgsWithIds = orgs.map((org) => org.id);
   
     if (orgs.length === 0) {
       throw new Error(`No organizations found for ${orgType} '${orgName}'`);
@@ -468,7 +487,7 @@
   
     console.log('orgs: ', orgs);
   
-    return orgs;
+    return orgsWithIds;
   };
 
   </script>

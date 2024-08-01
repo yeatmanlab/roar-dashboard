@@ -227,6 +227,9 @@ export const useAuthStore = () => {
       async createLevanteUsers(userData) {
         return this.roarfirekit.createLevanteUsersWithEmailPassword(userData);
       },
+      async createUsers(userData) {
+        return this.roarfirekit.createUsersRefactor(userData);
+      },
     },
     // persist: true
     persist: {
