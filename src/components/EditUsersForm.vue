@@ -135,7 +135,6 @@
     </div>
   </div>
   <div v-else-if="localUserType === 'admin'">
-    {{ editingSelf }}
     <div class="form-container">
       <div class="form-column">
         <div class="form-field">
@@ -179,7 +178,7 @@
           </div>
           <div v-else>
             <PvInputText v-model="localUserData.email" class="w-full" />
-            <div v-if="editingSelf" class="text-md text-gray-500 mt-3">
+            <div v-if="editingSelf && localUserData.email !== serverUserData.email" class="text-md text-gray-500 mt-3">
               <i class="pi pi-exclamation-triangle mr-2 text-yellow-500 vertical-align-middle" />After changing your
               email, you will be signed out and must sign in again with your new email.
             </div>
@@ -373,7 +372,15 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 watch(
   () => localUserData.value,
   (userData) => {
-    emit('update:userData', { ...userData, orgs: selectedOrgs.value ?? null });
+    // Make a copy of the userData to prevent mutation
+    let userDataCopy = { ...toRaw(userData) };
+
+    // If the email hasn't changed, don't include it in the update event
+    if (localUserData.value.email === serverUserData.value?.email) {
+      delete userDataCopy['email'];
+    }
+
+    emit('update:userData', { ...userDataCopy, orgs: selectedOrgs.value ?? null });
   },
   { deep: true, immediate: false },
 );
