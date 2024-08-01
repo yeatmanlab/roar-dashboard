@@ -15,18 +15,29 @@ function makeChoiceOrContinue(gameCompleteText) {
       cy.get('body')
         .invoke('text')
         .then((text) => {
+          // Check for the game completion text
           if (text.includes(gameCompleteText)) {
             cy.log('Game completed.');
             cy.get('.continue').click();
           } else {
+            // If the game is not complete, click the continue button
             cy.log('Game not completed.');
             cy.get('.continue').click();
             makeChoiceOrContinue(gameCompleteText);
           }
         });
     } else {
-      cy.get('img.vocab_img').first().click();
-      makeChoiceOrContinue(gameCompleteText);
+      // If no continue button is found, check for choices to make
+      cy.get('img.vocab_img').then((exists) => {
+        if (exists) {
+          // If choices are found, click the first choice and return to playMultichoice loop
+          cy.get('img.vocab_img').first().click();
+          makeChoiceOrContinue(gameCompleteText);
+        } else {
+          // If no choices are found, the game is complete
+          cy.log('No more choices to make, game completed.');
+        }
+      });
     }
   });
 }
