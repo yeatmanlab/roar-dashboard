@@ -201,6 +201,8 @@ import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import _cloneDeep from 'lodash/cloneDeep';
 import _isEqual from 'lodash/isEqual';
+import _find from 'lodash/find';
+import _set from 'lodash/set';
 import OrgPicker from '@/components/OrgPicker.vue';
 const props = defineProps({
   userId: {
@@ -365,43 +367,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit?.restConfig) init();
 });
 
-// +----------------------+
-// | Handle Update Events |
-// +----------------------+
-const compareOrgs = (orgs, selectedOrgs) => {
-  for (const orgType of Object.keys(orgs)) {
-    if (!_isEqual(selectedOrgs[orgType], orgs[orgType])) {
-      return true;
-    }
-  }
-  return false;
-};
-// Automatically emit events when the local userData changes
-// TODO: This functionality is a substitute for the v-model directive in Vue.js
-//   this can be replaced when we update to Vue 3.3+
-watch(
-  () => localUserData.value,
-  (userData) => {
-    // Make a copy of the userData to prevent mutation
-    let userDataCopy = { ...toRaw(userData) };
-
-    // If the email hasn't changed, don't include it in the update event
-    if (localUserData.value.email === serverUserData.value?.email) {
-      delete userDataCopy['email'];
-    }
-
-    // If the orgs have changed, include it in the update event
-    if (!_isEmpty(orgsList.value) && !_isEmpty(selectedOrgs.value)) {
-      if (compareOrgs(_cloneDeep(orgsList.value), _cloneDeep(selectedOrgs.value))) {
-        userDataCopy['orgs'] = _cloneDeep(selectedOrgs.value);
-      }
-    }
-
-    emit('update:userData', userDataCopy);
-  },
-  { deep: true, immediate: false },
-);
-
 // +--------------------+
 // | Query for UserType |
 // +--------------------+
@@ -551,6 +516,68 @@ const selectedOrgs = ref({
 const selection = (selected) => {
   selectedOrgs.value = selected;
 };
+
+const orgsToAdd = computed(() => {
+  // Return the orgs that are in selectedOrgs but not in orgsList
+  const userOrgs = _cloneDeep(orgsList.value);
+  const newOrgs = _cloneDeep(selectedOrgs.value);
+  const toAdd = {};
+  for (const orgType of Object.keys(userOrgs)) {
+    const added = newOrgs[orgType].filter((org) => {
+      return !_find(userOrgs[orgType], (o) => o.id === org.id);
+    });
+    const addIds = added.map((org) => org.id);
+    _set(toAdd, orgType, addIds);
+  }
+  return toAdd;
+});
+const orgsToRemove = computed(() => {
+  // Return the orgs that are in orgsList but not in selectedOrgs
+  const userOrgs = _cloneDeep(orgsList.value);
+  const newOrgs = _cloneDeep(selectedOrgs.value);
+  const toRemove = {};
+  for (const orgType of Object.keys(userOrgs)) {
+    const removed = userOrgs[orgType].filter((org) => {
+      return !_find(newOrgs[orgType], (o) => o.id === org.id);
+    });
+    const removeIds = removed.map((org) => org.id);
+    _set(toRemove, orgType, removeIds);
+  }
+  return toRemove;
+});
+
+// +----------------------+
+// | Handle Update Events |
+// +----------------------+
+
+// Automatically emit events when the local userData changes
+// TODO: This functionality is a substitute for the v-model directive in Vue.js
+//   this can be replaced when we update to Vue 3.3+
+watch(
+  () => [localUserData.value, orgsToAdd.value, orgsToRemove.value],
+  ([userData, addOrgs, removeOrgs], [oldUserData, oldAddOrgs, oldRemoveOrgs]) => {
+    // Make a copy of the userData to prevent mutation
+    let userDataCopy = { ...toRaw(userData) };
+
+    // If the email hasn't changed, don't include it in the update event
+    if (localUserData.value.email === serverUserData.value?.email) {
+      delete userDataCopy['email'];
+    }
+
+    // If orgs have been added or removed, include the respective array in the update event
+    for (const orgType of Object.keys(orgsToAdd.value)) {
+      if (orgsToAdd.value[orgType].length > 0) {
+        _set(userDataCopy, 'addOrgs', orgsToAdd.value);
+      }
+      if (orgsToRemove.value[orgType].length > 0) {
+        _set(userDataCopy, 'removeOrgs', orgsToRemove.value);
+      }
+    }
+
+    emit('update:userData', userDataCopy);
+  },
+  { deep: true, immediate: false },
+);
 </script>
 <style lang="scss">
 .form-container {
