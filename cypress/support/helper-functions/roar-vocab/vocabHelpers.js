@@ -28,8 +28,8 @@ function makeChoiceOrContinue(gameCompleteText) {
         });
     } else {
       // If no continue button is found, check for choices to make
-      cy.get('img.vocab_img').then((exists) => {
-        if (exists) {
+      cy.get(body).then(($el) => {
+        if ($el.find('img.vocab_img').length > 0) {
           // If choices are found, click the first choice and return to playMultichoice loop
           cy.get('img.vocab_img').first().click();
           makeChoiceOrContinue(gameCompleteText);
