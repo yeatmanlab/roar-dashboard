@@ -110,7 +110,7 @@
   // Primary Table & Dropdown refs
   const dataTable = ref();
   
-  const requiredFields = ['userType', 'month', 'year', 'group', 'district', 'school', 'class'];
+  const requiredColumns = ['userType', 'month', 'year', 'group', 'district', 'school', 'class'];
   const allFields = [
     {
       field: 'userType',
@@ -186,7 +186,7 @@
     rawUserFile.value = await csvFileToJson(event.files[0]);
   
     // Check uploaded CSV has required columns
-    const missingColumns = requiredFields.filter((col) => !(col in toRaw(rawUserFile.value[0])));
+    const missingColumns = requiredColumns.filter((col) => !(col in toRaw(rawUserFile.value[0])));
     if (missingColumns.length > 0) {
       toast.add({
         severity: 'error',
@@ -196,26 +196,29 @@
       errorMissingColumns.value = true;
       return;
     }
-  
-    const careGiverRequiredFields = ['userType',];
-  
-    // check each user's required fields are not empty
+
+    const requiredFields = ['userType'];
+
     rawUserFile.value.forEach((user) => {
-      // If user is not a child we dont need to check for month and year
-      if (user.userType?.toLowerCase() === 'parent' || user.userType?.toLowerCase() === 'teacher') {
-        const missingFields = careGiverRequiredFields.filter((field) => !user[field]);
-        if (missingFields.length > 0) {
-          addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
+      const missingFields = [];
+
+      // Check for required fields
+      requiredFields.forEach((field) => {
+        if (!user[field]) {
+          missingFields.push(field);
         }
-      } else {
-        // Must have either group or district, school, and class
-        if (!user.group) {
-          const requiredFieldsNoGroup = ['district', 'school', 'class'];
-          const missingFields = requiredFieldsNoGroup.filter((field) => !user[field]);
-          if (missingFields.length > 0) {
-            addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
-          }
+      });
+
+      // Check for group or district and school
+      if (!user.group) {
+        if (!user.district || !user.school) {
+          missingFields.push('group or district and school');
         }
+      }
+
+      // Add error if any required fields are missing
+      if (missingFields.length > 0) {
+        addErrorUser(user, `Missing Field(s): ${missingFields.join(', ')}`);
       }
     });
   
@@ -277,7 +280,7 @@
         group: groups?.split(','),
       };
 
-      console.log('orgNameMap', orgNameMap);
+      // console.log('orgNameMap', orgNameMap);
 
       // If orgType is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
@@ -294,24 +297,23 @@
           if (orgType === 'school') {
             const { id: districtId } = await getOrgId('districts', district);
             const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined))
-            orgInfo['school'].push(...orgIds);
+            // Need to Raw it because a large amount of users causes this to become a proxy object
+            orgInfo['school'] = orgIds.map(orgData => toRaw(orgData).id);
           } else if (orgType === 'class') {
             for (const aClass of orgNameMap.class) {
               const { id: districtId } = await getOrgId('districts', district);
               const { id: schoolId } = await getOrgId('schools', school);
-              const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
-              orgInfo.class.push(...orgIds);
+              const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), aClass, ref(districtId), ref(schoolId));
+              orgInfo.class.push(...orgIds.map(orgData => toRaw(orgData).id));
             }
           } else if (orgType === 'group') {
             for (const group of orgNameMap.group) {
-              console.log('group i:', group);
               const orgId = await getOrgId(pluralizeFirestoreCollection(orgType), group, ref(undefined), ref(undefined));
-              console.log('orgInfo', orgInfo);
-              orgInfo.group.push(...orgId);
+              orgInfo.group.push(...orgId.map(orgData => toRaw(orgData).id));
             }
           } else {
             const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
-            orgInfo['district'].push(...orgIds);
+            orgInfo['district'] = orgIds.map(orgData => toRaw(orgData).id);
           }
 
           if (!_isEmpty(orgInfo)) {
@@ -325,30 +327,40 @@
           }
         }
       }
+
+      console.log('org ids:', user.orgIds)
     }
 
+
+    // TODO: Figure out deadline-exceeded error with 700+ users. (Registration works fine, creates all documents but the client recieves the error)
     // Spit users into chunks of 1000
-    const chunkedUsersToBeRegistered = _chunk(usersToBeRegistered, 1000);
+    const chunkedUsersToBeRegistered = _chunk(usersToBeRegistered, 700);
+
+    console.log('chunkedUsersToBeRegistered', chunkedUsersToBeRegistered);
   
     // Begin submit process
     // Org must be created before users can be created
+    let processedUserCount = 0;
     for (const users of chunkedUsersToBeRegistered) {
       try {
         const res = await authStore.createUsers(users);
-
-        console.log('created users result:', res);
-    
-        const currentRegisteredUsers = res.data.data
-    
-        // add the account info to the existing csv data
-        rawUserFile.value.forEach((user, index) => {
-          user.email = currentRegisteredUsers[index].email;
-          // Need to return password not passwordHash
-          user.password = currentRegisteredUsers[index].password;
-          user.uid = currentRegisteredUsers[index].uid;
+        const currentRegisteredUsers = res.data.data;
+        
+        // Update only the newly registered users
+        currentRegisteredUsers.forEach((registeredUser, index) => {
+          const rawUserIndex = processedUserCount + index;
+          if (rawUserIndex < rawUserFile.value.length) {
+            rawUserFile.value[rawUserIndex].email = registeredUser.email;
+            rawUserFile.value[rawUserIndex].password = registeredUser.password;
+            rawUserFile.value[rawUserIndex].uid = registeredUser.uid;
+          }
         });
 
         registeredUsers.value.push(...currentRegisteredUsers);
+        
+        // Update the count of processed users
+        processedUserCount += currentRegisteredUsers.length;
+
       } catch (error) {
         // TODO: Show users that failed to register
         console.error(error);
@@ -485,7 +497,7 @@
   
     orgIds.value[orgType][orgName] = orgs;
   
-    console.log('orgs: ', orgs);
+    // console.log('orgs: ', orgs);
   
     return orgsWithIds;
   };
