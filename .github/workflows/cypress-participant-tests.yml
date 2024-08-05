@@ -1,7 +1,13 @@
 name: Run Cypress Participant Tests
+
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr_branch:
+        description: 'Branch to checkout and run tests against originating from the PR'
+        required: true
 
 concurrency:
   group: ci-preview-tests-${{ github.ref }}-3
@@ -37,6 +43,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Use the branch from the PR if workflow is triggered manually, otherwise use the PR branch from the event
+          ref: ${{ github.event.inputs.pr_branch || github.event.pull_request.head.ref }}
+
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
