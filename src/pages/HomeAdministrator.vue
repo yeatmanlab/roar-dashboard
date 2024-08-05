@@ -146,6 +146,7 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: Infinity,
 });
 
 let unsubscribeInitializer;
@@ -180,6 +181,7 @@ const {
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: Infinity,
   onSuccess: (data) => {
     for (const admin of data) {
       adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));
