@@ -125,7 +125,7 @@ import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
+import { QueryClient, useQuery } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const page = ref(0);
@@ -137,8 +137,18 @@ const pageLimit = ref(10);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
+const queryClient = new QueryClient();
 
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
+
+const { data: userData, isLoading: isLoadingUserData } = useQuery({
+  queryKey: ['userData', uid],
+  queryFn: () => fetchDocById('users', uid.value),
+  keepPrevousData: true,
+  enabled: initialized,
+  cacheTime: Infinity,
+  staleTime: 1000 * 60 * 5, // 5 minutes
+});
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
@@ -146,6 +156,8 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: Infinity,
+  networkMode: 'offlineFirst',
 });
 
 let unsubscribeInitializer;
@@ -180,6 +192,8 @@ const {
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
+  networkMode: 'offlineFirst',
+  cacheTime: Infinity,
   onSuccess: (data) => {
     for (const admin of data) {
       adminSearchTokens.value.push(...admin.name.toLowerCase().split(' '));

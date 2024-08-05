@@ -20,7 +20,7 @@
         </div>
       </div>
       <div>
-        <PvToggleButton v-model="offlineEnabled" onLabel="On" offLabel="Off" class="p-2 rounded" />
+        <PvToggleButton v-model="offlineEnabled" on-label="On" off-label="Off" class="p-2 rounded" />
       </div>
     </div>
     <div v-if="userData?.offlineEnabled" class="flex flex-column bg-gray-100 my-2 p-4 rounded gap-4">
@@ -42,7 +42,7 @@
           />
           <PvButton
             class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900"
-            :onClick="addOfflineTask"
+            @click="addOfflineTask"
             :disabled="!selectedOfflineTask"
           >
             Add
@@ -65,7 +65,7 @@
             <div>
               <PvButton
                 class="text-red-900 border-none bg-gray-100 rounded h-2rem text-sm hover:bg-red-900 hover:text-white"
-                :onClick="() => removeOfflineTask(name)"
+                @click="() => removeOfflineTask(name)"
               >
                 <i class="pi pi-trash"></i>
               </PvButton>
@@ -97,7 +97,7 @@
           />
           <PvButton
             class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900"
-            :onClick="addOfflineAdministration"
+            @click="addOfflineAdministration"
             :disabled="!selectedOfflineAdministration"
           >
             Add
@@ -114,13 +114,14 @@
         <div v-else class="flex flex-column gap-2">
           <div
             v-for="name in selectedOfflineAdministrations"
+            :key="name"
             class="flex justify-content-end font-bold gap-2 p-3 bg-gray-200 rounded"
           >
             <PvTag> {{ name }}</PvTag>
             <div>
               <PvButton
                 class="text-red-900 bg-gray-100 rounded border-none h-2rem text-sm hover:bg-red-900 hover:text-white"
-                :onClick="() => removeOfflineAdministration(name)"
+                @click="() => removeOfflineAdministration(name)"
               >
                 <i class="pi pi-trash"></i>
               </PvButton>
@@ -142,7 +143,7 @@
         <PvButton
           disabled
           class="m-0 bg-primary text-white border-none border-round h-2rem text-md hover:bg-red-900"
-          :onClick="saveOfflineSettings"
+          @click="saveOfflineSettings"
         >
           <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2" />
           Save Settings
@@ -151,7 +152,7 @@
       <div v-else>
         <PvButton
           class="m-0 bg-primary text-white border-none border-round h-2rem text-md hover:bg-red-900"
-          :onClick="saveOfflineSettings"
+          @click="saveOfflineSettings"
         >
           <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2" />
           Save Settings
@@ -167,7 +168,7 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { fetchDocById } from '@/helpers/query/utils';
-import { useQuery, QueryClient } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
 import { taskFetcher } from '@/helpers/query/tasks';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
@@ -178,7 +179,7 @@ import { administrationPageFetcher } from '@/helpers/query/administrations';
 const authStore = useAuthStore();
 const toast = useToast();
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
-const queryClient = new QueryClient();
+const queryClient = useQueryClient();
 
 // +-------------------------+
 // | Firekit Inititalization |
@@ -340,7 +341,7 @@ const saveOfflineSettings = async () => {
     });
   // invalidate tanstack queries
 
-  queryClient.invalidateQueries(['userData', uid]);
+  await queryClient.invalidateQueries(['userData', uid]);
 };
 </script>
 <style scoped>
