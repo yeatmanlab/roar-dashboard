@@ -1,15 +1,15 @@
 <template>
   <div class="flex flex-column mb-3 gap-2">
-    <div class="font-bold text-2xl">ROAR Offline</div>
-    <div class="text-sm font-light">ROAR Offline allows for offline administration of tasks.</div>
+    <div class="font-bold text-2xl">Offline Mode</div>
+    <div class="text-sm font-light">Offline Mode caches data on your device and stores run data locally.</div>
   </div>
   <div v-if="isLoadingUserData" class="flex flex-column align-items-center justify-content-center">
     <AppSpinner />
     <div>Loading User Data</div>
   </div>
   <div v-else>
-    <div class="flex flex-row flex-wrap justify-content-between bg-gray-100 px-4 py-4">
-      <div class="flex flex-column gap-2">
+    <div class="flex flex-row flex-wrap justify-content-between bg-gray-100 px-4 py-4 gap-3">
+      <div class="flex flex-column gap-3">
         <div class="text-gray-700 text-lg font-bold">Offline Mode Enabled</div>
         <div class="text-xs text-gray-500">
           <div>
