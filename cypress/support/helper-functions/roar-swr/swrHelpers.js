@@ -21,7 +21,8 @@ export const playSWR = ({
 
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 
@@ -68,10 +69,10 @@ function playSWRGame(administration, language, optional = false) {
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
-
   cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language].gameTab).should('exist');
 }
 

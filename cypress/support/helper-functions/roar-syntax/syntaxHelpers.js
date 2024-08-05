@@ -49,10 +49,10 @@ function startGame(administration, language, optional, task, auth) {
   }
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
-
   checkGameTab(language, task);
   cy.visit(languageOptions[language][task].url);
 
@@ -101,7 +101,8 @@ export function playSyntax({
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 

@@ -8,13 +8,8 @@ module.exports = defineConfig({
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
     retries: 2,
-    setupNodeEvents(on) {
-      on('task', {
-        log(message) {
-          console.log(message);
-          return null;
-        },
-      });
+    setupNodeEvents(on, config) {
+      return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
     },
   },
   env: {
