@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_branch:
-        description: 'Branch to checkout and run tests against originating from the PR'
+        description: 'Checkout this branch from the PR and execute CI/CD tests on it.'
         required: true
 
 concurrency:
