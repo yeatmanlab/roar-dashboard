@@ -114,7 +114,7 @@
                 :colspan="primarySpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header>
+                <template #header>
                   <div class="flex flex-row">
                     <div>Foundational</div>
                     <div class="ml-2">
@@ -132,7 +132,7 @@
                 :colspan="spanishSpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header>
+                <template #header>
                   <div class="flex flex-row">
                     <div>Spanish</div>
                     <div class="ml-2">
@@ -150,7 +150,7 @@
                 :colspan="spanishMathSpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header>
+                <template #header>
                   <div class="flex flex-row">
                     <div>Spanish Math</div>
                     <div class="ml-2">
@@ -168,7 +168,7 @@
                 :colspan="supplementarySpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header>
+                <template #header>
                   <div class="flex flex-row">
                     <div>Supplementary<br />(In Development)</div>
                     <div class="mt-1 ml-2">
@@ -188,7 +188,7 @@
                 :colspan="mathSpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header>
+                <template #header>
                   <div class="flex flex-row">
                     <div>Math<br />(In Development)</div>
                     <div class="mt-1 ml-2">
@@ -206,7 +206,7 @@
                 :colspan="visionSpacerColumns"
                 header-style="background-color: var(--primary-color); color:white; border:1px solid white; justify-content:center; margin-top:1rem; text-align: center;"
               >
-                <template v-slot:header>
+                <template #header>
                   <div class="flex flex-row">
                     <div>Vision<br />(In Development)</div>
                     <div class="mt-1">

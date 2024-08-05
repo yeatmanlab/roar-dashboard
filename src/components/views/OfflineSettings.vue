@@ -42,8 +42,8 @@
           />
           <PvButton
             class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900"
-            @click="addOfflineTask"
             :disabled="!selectedOfflineTask"
+            @click="addOfflineTask"
           >
             Add
           </PvButton>
@@ -59,6 +59,7 @@
         <div v-else class="flex flex-column gap-2">
           <div
             v-for="name in selectedOfflineTasks"
+            :key="name"
             class="flex justify-content-end font-bold gap-2 p-3 bg-gray-200 rounded"
           >
             <PvTag> {{ name }}</PvTag>
@@ -97,8 +98,8 @@
           />
           <PvButton
             class="m-0 bg-primary text-white border-none border-round h-3rem text-sm hover:bg-red-900"
-            @click="addOfflineAdministration"
             :disabled="!selectedOfflineAdministration"
+            @click="addOfflineAdministration"
           >
             Add
           </PvButton>
