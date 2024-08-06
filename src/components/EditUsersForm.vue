@@ -388,7 +388,7 @@ const isSuperAdmin = computed(() => {
 // | Queries for OrgPicker Data |
 // +----------------------------+
 const districtsToGrab = computed(() => {
-  const districtIds = _get(serverUserData.value, 'districts.all', []);
+  const districtIds = _get(userClaims.value, 'claims.adminOrgs.districts', []);
   return districtIds.map((districtId) => {
     return {
       collection: 'districts',
@@ -401,7 +401,7 @@ const shouldGrabDistricts = computed(() => {
   return initialized.value && districtsToGrab.value.length > 0;
 });
 const schoolsToGrab = computed(() => {
-  const schoolIds = _get(serverUserData.value, 'schools.all', []);
+  const schoolIds = _get(userClaims.value, 'claims.adminOrgs.schools', []);
   return schoolIds.map((schoolId) => {
     return {
       collection: 'schools',
@@ -414,7 +414,7 @@ const shouldGrabSchools = computed(() => {
   return initialized.value && schoolsToGrab.value.length > 0;
 });
 const classesToGrab = computed(() => {
-  const classIds = _get(serverUserData.value, 'classes.all', []);
+  const classIds = _get(userClaims.value, 'claims.adminOrgs.classes', []);
   return classIds.map((classId) => {
     return {
       collection: 'classes',
@@ -428,7 +428,7 @@ const shouldGrabClasses = computed(() => {
 });
 
 const groupsToGrab = computed(() => {
-  const groupIds = _get(serverUserData.value, 'groups.all', []);
+  const groupIds = _get(userClaims.value, 'claims.adminOrgs.groups', []);
   return groupIds.map((id) => {
     return {
       collection: 'groups',
@@ -443,7 +443,7 @@ const shouldGrabGroups = computed(() => {
 });
 
 const familiesToGrab = computed(() => {
-  const familyIds = _get(serverUserData.value, 'families.all', []);
+  const familyIds = _get(userClaims.value, 'claims.adminOrgs.families', []);
   return familyIds.map((id) => {
     return {
       collection: 'families',
