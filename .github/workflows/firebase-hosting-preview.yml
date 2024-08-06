@@ -2,6 +2,11 @@ name: Build and Deploy
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr_branch:
+        description: 'Checkout this branch from the PR and execute CI/CD tests on it.'
+        required: true
 
 concurrency:
   group: ci-preview-tests-${{ github.ref }}-1
@@ -17,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+          # Use the branch from the PR if workflow is triggered manually, otherwise use the PR branch from the event
+          ref: ${{ github.event.inputs.pr_branch || github.event.pull_request.head.ref }}
       - name: 'vite build'
         run: npm ci && npm run build
       - name: Deploy to Firebase Hosting Channel

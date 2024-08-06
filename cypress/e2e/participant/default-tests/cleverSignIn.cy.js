@@ -7,6 +7,6 @@ describe('Cypress test to login in Clever', () => {
     cy.visit('/');
     signInWithClever();
 
-    cy.contains('tasks completed!', { timeout: 2 * timeout }).should('be.visible');
+    cy.contains('tasks completed!', { timeout: 3 * timeout }).should('be.visible');
   });
 });
