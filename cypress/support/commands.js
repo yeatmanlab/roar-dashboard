@@ -93,6 +93,17 @@ Cypress.Commands.add(
   },
 );
 
+Cypress.Commands.add('agreeToConsent', (text) => {
+  const consents = ['CONSENT VIDEO AUDIO RECORDING FORM', 'FORMULARIO DE CONSENT BEHAIVORAL EYE TRACKING ES'];
+
+  for (const consent of consents) {
+    if (text.includes(consent)) {
+      cy.log('Consent form found, accepting...');
+      cy.get('.p-confirm-dialog-accept').contains('Continue').click();
+    }
+  }
+});
+
 Cypress.Commands.add('selectAdministration', function selectAdministration(testAdministration, retries = 0) {
   cy.log(`'Selecting administration: ${testAdministration}, attempt: ${retries + 1}`);
   if (retries > 3) {
@@ -103,6 +114,8 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
   cy.get('body', { timeout: 2 * Cypress.env('timeout') })
     .invoke('text')
     .then((text) => {
+      cy.agreeToConsent(text);
+
       if (text.includes(testAdministration)) {
         cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
           .contains(testAdministration)
@@ -130,6 +143,7 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
 });
 
 Cypress.Commands.add('switchToOptionalAssessments', () => {
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.get("[data-cy='switch-show-optional-assessments']").click();
 });
 

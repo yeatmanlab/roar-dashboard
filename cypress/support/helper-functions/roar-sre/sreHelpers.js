@@ -22,7 +22,8 @@ export const playSRE = ({
   }
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 
@@ -50,7 +51,8 @@ export const playSRE = ({
   cy.wait(0.3 * timeout);
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 
