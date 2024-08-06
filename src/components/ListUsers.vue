@@ -49,6 +49,7 @@
         <EditUsersForm
           v-if="!showPassword"
           :user-data="currentEditUser"
+          :user-id="currentEditUser.id"
           :edit-mode="true"
           @update:user-data="localUserData = $event"
         />
@@ -252,7 +253,7 @@ const updateUserData = async () => {
   isSubmitting.value = true;
 
   await roarfirekit.value
-    .updateUserData(currentEditUser.value.id, localUserData.value)
+    .updateUserData(uid.value, currentEditUser.value.id, localUserData.value)
     .then(() => {
       isSubmitting.value = false;
       closeModal();
@@ -305,7 +306,7 @@ async function updatePassword() {
   if (!v$.value.$invalid) {
     isSubmitting.value = true;
     await roarfirekit.value
-      .updateUserData(uid.value, { password: state.password })
+      .updateUserData(uid.value, uid.value, { password: state.password })
       .then(() => {
         submitted.value = false;
         isSubmitting.value = false;

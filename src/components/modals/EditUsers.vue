@@ -256,7 +256,7 @@ const onAccept = async () => {
   errorMessage.value = '';
   isSubmitting.value = true;
   await roarfirekit.value
-    .updateUserData(props.userData.id, { ...localUserData.value })
+    .updateUserData(uid.value, props.userData.id, { ...localUserData.value })
     .then(() => {
       isSubmitting.value = false;
       closeModal();
@@ -281,7 +281,7 @@ const updatePassword = async () => {
   isSubmitting.value = true;
 
   await roarfirekit.value
-    .updateUserData(props.userData.id, { password: newPassword.value })
+    .updateUserData(uid.value, props.userData.id, { password: newPassword.value })
     .then(() => {
       isSubmitting.value = false;
       showPassword.value = false;
