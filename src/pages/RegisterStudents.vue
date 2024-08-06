@@ -472,6 +472,7 @@ async function submitStudents() {
           rawStudentFile.value[rawUserIndex].email = registeredUser.email;
           rawStudentFile.value[rawUserIndex].password = registeredUser.password;
           rawStudentFile.value[rawUserIndex].uid = registeredUser.uid;
+          rawStudentFile.value[rawUserIndex].username = registeredUser.username
         }
       });
 
