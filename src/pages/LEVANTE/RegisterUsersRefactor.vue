@@ -190,7 +190,7 @@
     if (missingColumns.length > 0) {
       toast.add({
         severity: 'error',
-        summary: 'Error: Missing Columns: ' + missingColumns.join(', '),
+        summary: 'ERROR: Missing Columns: ' + missingColumns.join(', '),
         life: 5000,
       });
       errorMissingColumns.value = true;
@@ -225,7 +225,7 @@
     if (errorUsers.value.length) {
       toast.add({
         severity: 'error',
-        summary: 'Error: Missing Fields. See below for details.',
+        summary: 'ERROR: Missing Fields. See below for details.',
         life: 5000,
       });
     }
