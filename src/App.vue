@@ -17,7 +17,7 @@
     <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
 
-    <SessionTimeout v-if="loadTimeoutHandler" />
+    <SessionTimer v-if="loadSessionTimeoutHandler" />
   </div>
 </template>
 
@@ -29,7 +29,7 @@ import { useRecaptchaProvider } from 'vue-recaptcha';
 import AppHead from '@/components/AppHead.vue';
 import NavBar from '@/components/NavBar.vue';
 
-const SessionTimeout = defineAsyncComponent(() => import('@/components/SessionTimeout/SessionTimeout.vue'));
+const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
 
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
@@ -47,7 +47,7 @@ const pageTitle = computed(() => {
   return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
 });
 
-const loadTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
+const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
 
 useRecaptchaProvider();
 
