@@ -73,6 +73,7 @@ const openDialog = () => {
       },
       accept: () => {
         resetCountdown();
+        resetStoredLastActive();
         lastActive.value = now.value;
         isDialogVisible.value = false;
       },
@@ -92,6 +93,7 @@ const closeDialog = () => {
 
 /**
  * Sign out the user after a period of inactivity.
+ *
  * @returns {Promise<void>}
  */
 const signOutAfterInactivity = async () => {
@@ -101,7 +103,19 @@ const signOutAfterInactivity = async () => {
 };
 
 /**
- * Set the session storage.
+ * Get the stored lastActive state from sessionStorage.
+ *
+ * @returns {Number} The stored lastActive timestamp.
+ */
+const getStoredLastActive = () => {
+  const storedDataStr = sessionStorage.getItem(SESSION_STORAGE_SESSION_TIMEOUT_KEY);
+  const storedData = storedDataStr ? JSON.parse(storedDataStr) : null;
+
+  return storedData?.lastActive;
+};
+
+/**
+ * Updates the stored lastActive state.
  *
  * Store the last active timestamp in sessionStorage to persist the last active timestamp when the user switches tabs.
  * Important: we use sessionStorage as the application uses this type of storage to persist auth state as one of the
@@ -109,7 +123,7 @@ const signOutAfterInactivity = async () => {
  *
  * @returns {void}
  */
-const updateSessionStorage = () => {
+const updateStoredLastActive = () => {
   const data = { lastActive: lastActive.value };
   sessionStorage.setItem(SESSION_STORAGE_SESSION_TIMEOUT_KEY, JSON.stringify(data));
 };
@@ -122,7 +136,7 @@ const updateSessionStorage = () => {
  *
  * @returns {void}
  */
-const resetSessionStorage = () => {
+const resetStoredLastActive = () => {
   sessionStorage.removeItem(SESSION_STORAGE_SESSION_TIMEOUT_KEY);
 };
 
@@ -143,23 +157,17 @@ const resetSessionStorage = () => {
  */
 const handleVisibilityChange = () => {
   if (document.hidden) {
-    // When the user leave the tab, store the lastActive time and reset the countdown.
-    // Important: if the countdown dialog is visible, skip storing the lastActive time to prevent the countdown being
-    // reset as we want to keep the countdown running when the user returns to the tab after being away.
-    if (!isDialogVisible.value) {
-      updateSessionStorage();
-    }
-
+    // // When the user leave the tab, store the lastActive time and reset the countdown.
+    updateStoredLastActive();
     resetCountdown();
   } else {
     // When the user returns, retrieve the data from sessionStorage.
-    const storedDataStr = sessionStorage.getItem(SESSION_STORAGE_SESSION_TIMEOUT_KEY);
-    const storedData = storedDataStr ? JSON.parse(storedDataStr) : null;
+    const storedLastActive = getStoredLastActive();
 
-    // If there is no stored data, abort as there is nothing to do.
-    if (!storedData) return;
+    // If, for some reason, there is no stored last active timestamp, abort as there is nothing we can do.
+    if (!storedLastActive) return;
 
-    const { lastActive: storedLastActive } = storedData;
+    // Calculate the elapsed based on the last active timestamp that was stored when the user left the tab.
     const elapsedTime = Date.now() - storedLastActive;
 
     // If the user was away for longer than the threshold for signing out, sign them out immediately.
@@ -172,7 +180,6 @@ const handleVisibilityChange = () => {
     // determine the remaining time left for the countdown, start it and open the confirmation dialog.
     if (elapsedTime >= AUTH_SESSION_TIMEOUT_LIMIT) {
       const remainingTimerValue = AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION - (elapsedTime - AUTH_SESSION_TIMEOUT_LIMIT);
-
       signOutTimer.value = Math.floor(remainingTimerValue / 1000);
 
       openDialog();
@@ -236,7 +243,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange);
-  resetSessionStorage();
+  resetStoredLastActive();
   resetCountdown();
 });
 </script>
