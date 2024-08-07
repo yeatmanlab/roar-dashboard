@@ -148,14 +148,14 @@ const handleVisibilityChange = () => {
     // When the user leave the tab, store the lastActive time and reset the countdown.
     // Important: if the countdown dialog is visible, skip storing the lastActive time to prevent the countdown being
     // reset as we want to keep the countdown running when the user returns to the tab after being away.
-    if (!isDialogVisible) {
+    if (!isDialogVisible.value) {
       updateSessionStorage();
     }
 
     resetCountdown();
   } else {
-    // When the user returns, retrieve the data from localStorage.
-    const storedDataStr = localStorage.getItem(LOCALSTORAGE_SESSION_TIMEOUT_KEY);
+    // When the user returns, retrieve the data from sessionStorage.
+    const storedDataStr = sessionStorage.getItem(SESSION_STORAGE_SESSION_TIMEOUT_KEY);
     const storedData = storedDataStr ? JSON.parse(storedDataStr) : null;
 
     // If there is no stored data, abort as there is nothing to do.
