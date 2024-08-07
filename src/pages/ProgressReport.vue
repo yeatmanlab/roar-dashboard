@@ -52,7 +52,7 @@
               <div v-if="taskDisplayNames[taskId]" class="text-lg font-bold text-gray-600 w-full">
                 {{ taskDisplayNames[taskId].extendedName }}
                 <span v-if="taskDisplayNames[taskId].name" class="font-light uppercase text-sm">
-                  ({{ taskDisplayNames[taskId].name }})
+                  ({{ taskDisplayNames[taskId].publicName }})
                 </span>
               </div>
               <div v-else class="text-lg font-bold text-gray-600 w-full">
