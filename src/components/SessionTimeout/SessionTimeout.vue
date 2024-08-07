@@ -24,20 +24,20 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/store/auth';
 
-import { LOCALSTORAGE_SESSION_TIMEOUT_KEY } from '@/constants/localStorage';
+import { SESSION_STORAGE_SESSION_TIMEOUT_KEY } from '@/constants/sessionStorage';
 import {
   AUTH_SESSION_TIMEOUT_LIMIT,
   AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION,
   AUTH_SESSION_SIGNOUT_THRESHOLD,
 } from '@/constants/auth';
 
-const signOutTimer = ref(AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION / 1000);
+const signOutTimer = ref(Math.floor(AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION / 1000));
 const isSignOutTimerActive = ref(false);
 const isDialogVisible = ref(false);
 
+const authStore = useAuthStore();
 const confirm = useConfirm();
 const router = useRouter();
-const authStore = useAuthStore();
 const i18n = useI18n();
 
 // Use the useIdle composable to determine the idle state of the user.
@@ -103,12 +103,38 @@ const signOutAfterInactivity = async () => {
 };
 
 /**
+ * Set the session storage.
+ *
+ * Store the last active timestamp in sessionStorage to persist the last active timestamp when the user switches tabs.
+ * Important: we use sessionStorage as the application uses this type of storage to persist auth state as one of the
+ * requirements is to keep tabs as separate sessions.
+ *
+ * @returns {void}
+ */
+const updateSessionStorage = () => {
+  const data = { lastActive: lastActive.value };
+  sessionStorage.setItem(SESSION_STORAGE_SESSION_TIMEOUT_KEY, JSON.stringify(data));
+};
+
+/**
+ * Reset the session storage.
+ *
+ * Ensure we reset the session when the component is unmounted in order to prevent the having an outdated lastActive
+ * value when the user returns to the site after being away for a period of time.
+ *
+ * @returns {void}
+ */
+const resetSessionStorage = () => {
+  sessionStorage.removeItem(SESSION_STORAGE_SESSION_TIMEOUT_KEY);
+};
+
+/**
  * Handle the document visibility change event.
  *
  * When users switch tabs or minimize the window, the document visibility change event is triggered. We use this event
  * as browsers tend to both throttle and/or pause JavaScript execution when the tab is not in focus. This event allows
- * us to store the last active timestamp and the current timestamp in localStorage, in order to determine the true idle
- * time when the user returns to the tab.
+ * us to store the last active timestamp and the current timestamp in sessionStroage, in order to determine the true
+ * idle time when the user returns to the tab.
  *
  * Whilst the useIdle composable technically handles this, it does not work as expected as when the user returns to the
  * tab, the idle timer is immediately reset, making it impossible to determine the true idle time. That's why we
@@ -123,8 +149,7 @@ const handleVisibilityChange = () => {
     // Important: if the countdown dialog is visible, skip storing the lastActive time to prevent the countdown being
     // reset as we want to keep the countdown running when the user returns to the tab after being away.
     if (!isDialogVisible) {
-      const data = { lastActive: lastActive.value };
-      localStorage.setItem(LOCALSTORAGE_SESSION_TIMEOUT_KEY, JSON.stringify(data));
+      updateSessionStorage();
     }
 
     resetCountdown();
@@ -198,7 +223,7 @@ const resetCountdown = (resetToOriginalValue = true) => {
   clearInterval(countdownTimer);
   countdownTimer = null;
   isSignOutTimerActive.value = false;
-  signOutTimer.value = resetToOriginalValue ? AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION / 1000 : 0;
+  signOutTimer.value = resetToOriginalValue ? Math.floor(AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION / 1000) : 0;
 };
 
 watch(idle, (isIdle) => {
@@ -213,6 +238,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange);
+  resetSessionStorage();
   resetCountdown();
 });
 </script>
