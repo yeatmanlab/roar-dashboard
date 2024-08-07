@@ -29,6 +29,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
+import { useI18n } from 'vue-i18n';
 
 let HomeParticipant, HomeAdministrator, ConsentModal;
 const isLevante = import.meta.env.MODE === 'LEVANTE';
@@ -36,6 +37,8 @@ const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 const router = useRouter();
+const i18n = useI18n();
+
 if (authFromClever.value) {
   console.log('Detected Clever authentication, routing to CleverLanding page');
   router.push({ name: 'CleverLanding' });
