@@ -16,29 +16,38 @@
     <PvToast />
     <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
-    <SessionTimeout v-if="isAuthStoreReady" />
+
+    <SessionTimeout v-if="loadTimeoutHandler" />
   </div>
 </template>
 
 <script setup>
-import { computed, onBeforeMount, ref } from 'vue';
-import NavBar from '@/components/NavBar.vue';
-import { useAuthStore } from '@/store/auth';
-import { fetchDocById } from '@/helpers/query/utils';
-import AppHead from '@/components/AppHead.vue';
-import { i18n } from '@/translations/i18n';
+import { computed, onBeforeMount, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
-import SessionTimeout from './components/SessionTimeout/SessionTimeout.vue';
+
+import AppHead from '@/components/AppHead.vue';
+import NavBar from '@/components/NavBar.vue';
+
+const SessionTimeout = defineAsyncComponent(() => import('@/components/SessionTimeout/SessionTimeout.vue'));
+
+import { useAuthStore } from '@/store/auth';
+import { fetchDocById } from '@/helpers/query/utils';
+import { i18n } from '@/translations/i18n';
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
+const isAuthStoreReady = ref(false);
+
+const authStore = useAuthStore();
 const route = useRoute();
+
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
   const fallbackLocale = i18n.global.fallbackLocale.value;
   return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
 });
-const isAuthStoreReady = ref(false);
+
+const loadTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
 
 useRecaptchaProvider();
 
@@ -71,7 +80,6 @@ const navbarBlacklist = ref([
 ]);
 
 onBeforeMount(async () => {
-  const authStore = useAuthStore();
   await authStore.initFirekit();
   authStore.setUser();
   await authStore.initStateFromRedirect().then(async () => {
