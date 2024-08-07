@@ -24,22 +24,28 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/store/auth';
 
-// Constants
-// @TODO: Move these to a configuration file
-const SESSION_TIMEOUT_STORAGE_KEY = 'sessionTimeoutData';
-const SESSION_TIMEOUT_LIMIT = 5 * 1000;
-const SESSION_TIMEOUT_SIGNOUT_COUNTDOWN = 600;
-const SIGNOUT_THRESHOLD = SESSION_TIMEOUT_LIMIT + SESSION_TIMEOUT_SIGNOUT_COUNTDOWN * 1000;
+import { LOCALSTORAGE_SESSION_TIMEOUT_KEY } from '@/constants/localStorage';
+import {
+  AUTH_SESSION_TIMEOUT_LIMIT,
+  AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION,
+  AUTH_SESSION_SIGNOUT_THRESHOLD,
+} from '@/constants/auth';
 
-const signOutTimer = ref(SESSION_TIMEOUT_SIGNOUT_COUNTDOWN);
+const signOutTimer = ref(AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION / 1000);
 const isSignOutTimerActive = ref(false);
 const isDialogVisible = ref(false);
 
-const { idle, lastActive } = useIdle(SESSION_TIMEOUT_LIMIT, { listenForVisibilityChange: false });
 const confirm = useConfirm();
 const router = useRouter();
 const authStore = useAuthStore();
 const i18n = useI18n();
+
+// Use the useIdle composable to determine the idle state of the user.
+// Important: listenForVisibilityChange is set to false to handle the visibility change event manually. This is
+// necessary as useIdle resets the idle timer when the user returns to the tab, making it impossible to determine the
+// true idle time when the user returns. We handle the visibility change event manually in the handleVisibilityChange
+// function, allowing us to store and evaluate the true idle time.
+const { idle, lastActive } = useIdle(AUTH_SESSION_TIMEOUT_LIMIT, { listenForVisibilityChange: false });
 const now = useTimestamp({ interval: 1000 });
 
 let countdownTimer = null;
@@ -113,47 +119,48 @@ const signOutAfterInactivity = async () => {
  */
 const handleVisibilityChange = () => {
   if (document.hidden) {
-    // When the user leave the tab, store the last active time and current timestamp in localStorage.
-    const data = {
-      lastActive: lastActive.value,
-      timestamp: Date.now(),
-      signOutTimer: signOutTimer.value,
-    };
-
-    localStorage.setItem(SESSION_TIMEOUT_STORAGE_KEY, JSON.stringify(data));
+    // When the user leave the tab, store the lastActive time and reset the countdown.
+    // Important: if the countdown dialog is visible, skip storing the lastActive time to prevent the countdown being
+    // reset as we want to keep the countdown running when the user returns to the tab after being away.
+    if (!isDialogVisible) {
+      const data = { lastActive: lastActive.value };
+      localStorage.setItem(LOCALSTORAGE_SESSION_TIMEOUT_KEY, JSON.stringify(data));
+    }
 
     resetCountdown();
   } else {
     // When the user returns, retrieve the data from localStorage.
-    const storedDataStr = localStorage.getItem(SESSION_TIMEOUT_STORAGE_KEY);
+    const storedDataStr = localStorage.getItem(LOCALSTORAGE_SESSION_TIMEOUT_KEY);
     const storedData = storedDataStr ? JSON.parse(storedDataStr) : null;
 
-    if (storedData) {
-      const { lastActive: storedLastActive, timestamp: storedTimestamp, signOutTimer: storedSignOutTimer } = storedData;
-      const elapsedTime = Date.now() - storedLastActive;
+    // If there is no stored data, abort as there is nothing to do.
+    if (!storedData) return;
 
-      // If the user was away for longer than the threshold for signing out, sign them out immediately.
-      if (elapsedTime >= SIGNOUT_THRESHOLD) {
-        signOutAfterInactivity();
-        return;
-      }
+    const { lastActive: storedLastActive } = storedData;
+    const elapsedTime = Date.now() - storedLastActive;
 
-      // If the user was away for longer than the session timeout limit but less than the threshold for signing out,
-      // determine the remaining time left for the countdown, start it and open the confirmation dialog.
-      if (elapsedTime >= SESSION_TIMEOUT_LIMIT) {
-        const remainingTimerValue = SESSION_TIMEOUT_SIGNOUT_COUNTDOWN * 1000 - (elapsedTime - SESSION_TIMEOUT_LIMIT);
-        signOutTimer.value = Math.floor(remainingTimerValue / 1000);
-
-        openDialog();
-        startCountdown();
-        return;
-      }
-
-      // If the user was away for less than the session timeout limit, set the idle state and last active timestamp
-      // accordingly to resume the idle timer based on the actual idle time.
-      lastActive.value = storedLastActive;
-      idle.value = false;
+    // If the user was away for longer than the threshold for signing out, sign them out immediately.
+    if (elapsedTime >= AUTH_SESSION_SIGNOUT_THRESHOLD) {
+      signOutAfterInactivity();
+      return;
     }
+
+    // If the user was away for longer than the session timeout limit but less than the threshold for signing out,
+    // determine the remaining time left for the countdown, start it and open the confirmation dialog.
+    if (elapsedTime >= AUTH_SESSION_TIMEOUT_LIMIT) {
+      const remainingTimerValue =
+        AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION * 1000 - (elapsedTime - AUTH_SESSION_TIMEOUT_LIMIT);
+      signOutTimer.value = Math.floor(remainingTimerValue / 1000);
+
+      openDialog();
+      startCountdown();
+      return;
+    }
+
+    // If the user was away for less than the session timeout limit, set the idle state and last active timestamp
+    // accordingly to resume the idle timer based on the actual idle time.
+    lastActive.value = storedLastActive;
+    idle.value = false;
   }
 };
 
@@ -191,7 +198,7 @@ const resetCountdown = (resetToOriginalValue = true) => {
   clearInterval(countdownTimer);
   countdownTimer = null;
   isSignOutTimerActive.value = false;
-  signOutTimer.value = resetToOriginalValue ? SESSION_TIMEOUT_SIGNOUT_COUNTDOWN : 0;
+  signOutTimer.value = resetToOriginalValue ? AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION / 1000 : 0;
 };
 
 watch(idle, (isIdle) => {
