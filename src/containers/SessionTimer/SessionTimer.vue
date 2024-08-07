@@ -1,19 +1,17 @@
 <template>
-  <div class="fixed p-4 bg-gray-400" style="bottom: 2rem; left: 2rem">
-    <PvConfirmDialog
-      group="inactivity-logout"
-      :pt="{
-        root: { class: 'px-5' },
-        content: { style: 'max-width: 48rem' },
-        closeButton: { class: 'hidden' },
-        rejectButton: { root: { class: 'hidden' } },
-      }"
-    >
-      <template #message>
-        {{ i18n.t('homeSelector.inactivityLogout', { timeLeft: signOutTimer }) }}
-      </template>
-    </PvConfirmDialog>
-  </div>
+  <PvConfirmDialog
+    group="inactivity-logout"
+    :pt="{
+      root: { class: 'px-5' },
+      content: { style: 'max-width: 48rem' },
+      closeButton: { class: 'hidden' },
+      rejectButton: { root: { class: 'hidden' } },
+    }"
+  >
+    <template #message>
+      {{ i18n.t('homeSelector.inactivityLogout', { timeLeft: signOutTimer }) }}
+    </template>
+  </PvConfirmDialog>
 </template>
 
 <script setup>
@@ -173,8 +171,8 @@ const handleVisibilityChange = () => {
     // If the user was away for longer than the session timeout limit but less than the threshold for signing out,
     // determine the remaining time left for the countdown, start it and open the confirmation dialog.
     if (elapsedTime >= AUTH_SESSION_TIMEOUT_LIMIT) {
-      const remainingTimerValue =
-        AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION * 1000 - (elapsedTime - AUTH_SESSION_TIMEOUT_LIMIT);
+      const remainingTimerValue = AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION - (elapsedTime - AUTH_SESSION_TIMEOUT_LIMIT);
+
       signOutTimer.value = Math.floor(remainingTimerValue / 1000);
 
       openDialog();
