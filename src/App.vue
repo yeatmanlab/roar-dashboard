@@ -77,6 +77,8 @@ onBeforeMount(async () => {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
       authStore.userData = userData;
       authStore.userClaims = userClaims;
+      console.log('update task dictionary called');
+      authStore.updateTasksDictionary();
     }
   });
   isAuthStoreReady.value = true;
