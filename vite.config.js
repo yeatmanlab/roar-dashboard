@@ -118,4 +118,8 @@ export default defineConfig({
   optimizeDeps: {
     include: ['@bdelab/roar-firekit', 'vue-google-maps-community-fork', 'fast-deep-equal'],
   },
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+  },
 });

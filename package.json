@@ -25,6 +25,7 @@
     "prepare": "husky install",
     "preversion": "npm run lint",
     "preview": "vite preview",
+    "test": "vitest",
     "version": "npm run format && git add -A"
   },
   "dependencies": {
@@ -83,6 +84,7 @@
     "zipson": "^0.2.12"
   },
   "devDependencies": {
+    "@testing-library/vue": "^8.1.0",
     "@types/lodash": "^4.14.196",
     "@vite-pwa/assets-generator": "^0.2.4",
     "@vitejs/plugin-basic-ssl": "^1.0.1",
@@ -94,6 +96,7 @@
     "eslint-plugin-cypress": "^2.15.1",
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-vue": "^9.18.1",
+    "happy-dom": "^14.12.3",
     "husky": "^8.0.3",
     "prettier": "3.0.3",
     "sass": "^1.50.1",
@@ -101,6 +104,7 @@
     "vite-plugin-favicons-inject": "^2.2.0",
     "vite-plugin-mkcert": "^1.17.5",
     "vite-plugin-pwa": "^0.20.0",
+    "vitest": "^2.0.5",
     "workbox-build": "^7.1.1",
     "workbox-core": "^7.1.0",
     "workbox-routing": "^7.1.0",
