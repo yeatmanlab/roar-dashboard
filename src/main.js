@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import { createHead } from '@vueuse/head';
+import { createHead } from '@unhead/vue';
 import { initSentry } from '@/sentry';
 import router from '@/router/index.js';
 import App from '@/App.vue';
@@ -100,6 +100,8 @@ import { VueRecaptchaPlugin } from 'vue-recaptcha';
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia();
+const head = createHead();
+
 pinia.use(piniaPluginPersistedState);
 
 app.use(VueRecaptchaPlugin, {
@@ -119,7 +121,7 @@ app.use(VueGoogleMaps, {
     libraries: 'places',
   },
 });
-app.use(createHead());
+app.use(head);
 app.use(TextClamp);
 app.use(VueQueryPlugin);
 app.use(i18n);
