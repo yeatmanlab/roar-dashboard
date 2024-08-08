@@ -27,6 +27,7 @@
     "preversion": "npm run lint",
     "preview": "vite preview",
     "test": "vitest",
+    "test:watch": "vitest --watch",
     "version": "npm run format && git add -A"
   },
   "dependencies": {
@@ -84,6 +85,7 @@
     "zipson": "^0.2.12"
   },
   "devDependencies": {
+    "@pinia/testing": "^0.1.5",
     "@testing-library/vue": "^8.1.0",
     "@types/lodash": "^4.14.196",
     "@vite-pwa/assets-generator": "^0.2.4",
