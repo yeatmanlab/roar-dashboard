@@ -5,7 +5,11 @@
 <script setup>
 import { computed, onMounted } from 'vue';
 import embed from 'vega-embed';
-import { taskDisplayNames } from '@/helpers/reports';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   initialized: {
@@ -70,7 +74,7 @@ const overviewDistributionChart = (taskId) => {
     spacing: 10,
     background: null,
     title: {
-      text: `ROAR-${taskDisplayNames[taskId].name}`,
+      text: `${tasksDictionary.value[taskId].publicName ?? taskId}`,
       subtitle: `Count by Support Level`,
       anchor: 'middle',
       fontSize: 20,

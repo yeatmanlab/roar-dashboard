@@ -1,5 +1,5 @@
 <template>
-  <h2 class="header-text">ROAR-{{ _toUpper(taskName) }} SCORE TABLE</h2>
+  <h2 class="header-text">{{ _toUpper(taskName) }} SCORE TABLE</h2>
   <RoarDataTable
     :columns="columns"
     :data="computedTableData"
