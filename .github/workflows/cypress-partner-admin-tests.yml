@@ -42,6 +42,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          # Checkout the PR branch from the PR repository if the PR is from a fork, otherwise checkout the PR branch from the main repository
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           # Use the branch from the PR if workflow is triggered manually, otherwise use the PR branch from the event
           ref: ${{ github.event.inputs.pr_branch || github.event.pull_request.head.ref }}
 
