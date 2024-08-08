@@ -166,7 +166,7 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 const router = useRouter();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex, uid } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex, uid, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },
