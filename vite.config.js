@@ -22,7 +22,6 @@ export default defineConfig({
         globPatterns: ['**/*'],
       },
       manifest: {
-        // Modify manifest options here...
         name: 'ROAR Dashboard',
         short_name: 'ROAD',
         start_url: '.',
@@ -55,7 +54,6 @@ export default defineConfig({
           },
         ],
       },
-      /* enable sw on development */
       devOptions: {
         enabled: true,
         type: 'module',
@@ -63,12 +61,12 @@ export default defineConfig({
         suppressWarnings: true,
       },
     }),
-    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     nodePolyfills({
       globals: {
         process: true,
       },
     }),
+    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     ...(process.env.NODE_ENV !== 'development'
       ? [
           sentryVitePlugin({
@@ -78,17 +76,19 @@ export default defineConfig({
         ]
       : []),
   ],
+
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
+
   server: {
     fs: {
       allow: ['..'],
     },
   },
+
   build: {
     cssCodeSplit: true,
     sourcemap: true,
@@ -117,9 +117,5 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['@bdelab/roar-firekit', 'vue-google-maps-community-fork', 'fast-deep-equal'],
-  },
-  test: {
-    globals: true,
-    environment: 'happy-dom',
   },
 });
