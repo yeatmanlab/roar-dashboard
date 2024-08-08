@@ -110,7 +110,6 @@ const computedRuns = computed(() => {
 });
 
 const distributionChartFacet = (taskId) => {
-  console.log('taskid', taskId);
   return {
     background: null,
     title: {

@@ -62,7 +62,6 @@ export const useAuthStore = () => {
     },
     actions: {
       async completeAssessment(adminId, taskId) {
-        console.log('inside authStore func');
         await this.roarfirekit.completeAssessment(adminId, taskId);
         this.assignmentQueryKeyIndex += 1;
       },
@@ -93,10 +92,8 @@ export const useAuthStore = () => {
         return await this.roarfirekit.getLegalDoc(docName);
       },
       async updateTasksDictionary() {
-        console.log('getting tasks dictionary');
         if (this.isFirekitInit) {
           const tasksDictionary = await this.roarfirekit.getTasksDictionary();
-          console.log('tasksDictinoary', tasksDictionary);
           this.tasksDictionary = tasksDictionary;
           return;
         }
