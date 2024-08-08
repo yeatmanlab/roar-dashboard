@@ -417,6 +417,7 @@ async function submitStudents() {
             for (const group of orgNameMap.group) {
               try {
                 const orgId = await getOrgId(pluralizeFirestoreCollection(orgType), group, ref(undefined), ref(undefined));
+                console.log('orgId for group: ', orgId);
                 orgInfo.group.push(...orgId.map(orgData => toRaw(orgData).id));
               } catch (error) {
                 orgErrors.push(error.message);
@@ -483,7 +484,7 @@ async function submitStudents() {
 
     } catch (error) {
       // TODO: Show users that failed to register
-      console.error(error);
+      console.error(error.message);
   
       toast.add({
         severity: 'error',
@@ -535,7 +536,7 @@ function convertUsersToCSV() {
 }
 
 function downloadCSV() {
-  const filename = 'registered-users.csv';
+  const filename = 'registered-students.csv';
 
   if (csvURL.value) {
     // Create Download Link
@@ -604,7 +605,7 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   }
 
   orgIds.value[orgType][orgName] = orgs[0];
-  return orgs[0];
+  return orgs;
 };
 
 // Functions supporting error table
