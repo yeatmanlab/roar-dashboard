@@ -196,7 +196,6 @@ async function checkConsent() {
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
-  const legal = selectedAdmin.value?.legal;
 
   if (!legal?.consent) {
     // Always show consent form for this test student when running Cypress tests
