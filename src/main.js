@@ -188,7 +188,7 @@ app.component('PvFieldset', PvFieldset);
 app.directive('tooltip', PvTooltip);
 
 // Register all components that begin with App
-const appComponentFiles = import.meta.globEager('./components/App*.vue');
+const appComponentFiles = import.meta.glob('./components/App*.vue', { eager: true });
 
 Object.entries(appComponentFiles).forEach(([path, m]) => {
   const componentName = path.split('/').pop().replace('.vue', '');
