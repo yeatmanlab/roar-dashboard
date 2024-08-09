@@ -61,6 +61,7 @@
             @export-all="exportAll"
             @selected-org-id="showCode"
             @export-org-users="(orgId) => exportOrgUsers(orgId)"
+            @edit-button="onEditButtonClick($event)"
           />
           <AppSpinner v-else />
         </PvTabPanel>
@@ -112,6 +113,35 @@
       </PvDialog>
     </section>
   </main>
+  <RoarModal
+    title="Edit Organization"
+    subtitle="Modify or add organization information"
+    :is-enabled="isEditModalEnabled"
+    @modal-closed="closeEditModal"
+  >
+    <EditOrgsForm :org-id="currentEditOrgId" :org-type="activeOrgType" @update:org-data="localOrgData = $event" />
+    <template #footer>
+      <div>
+        <div class="flex gap-2">
+          <PvButton
+            tabindex="0"
+            class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+            text
+            label="Cancel"
+            outlined
+            @click="closeEditModal"
+          ></PvButton>
+          <PvButton
+            tabindex="0"
+            class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+            label="Save"
+            @click="updateOrgData"
+            ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+          ></PvButton>
+        </div>
+      </div>
+    </template>
+  </RoarModal>
 </template>
 <script setup>
 import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
@@ -123,6 +153,8 @@ import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
+import EditOrgsForm from './EditOrgsForm.vue';
+import RoarModal from './modals/RoarModal.vue';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
@@ -136,6 +168,10 @@ const orderBy = ref(orderByDefault);
 let activationCode = ref(null);
 const isDialogVisible = ref(false);
 const toast = useToast();
+const isEditModalEnabled = ref(false);
+const currentEditOrgId = ref(null);
+const localOrgData = ref(null);
+const isSubmitting = ref(false);
 
 const districtPlaceholder = computed(() => {
   if (isLoadingDistricts.value) {
@@ -380,11 +416,19 @@ const tableColumns = computed(() => {
 
   columns.push(
     {
+      header: 'Users',
       link: true,
       routeName: 'ListUsers',
       routeTooltip: 'View users',
       routeLabel: 'Users',
       routeIcon: 'pi pi-user',
+      sort: false,
+    },
+    {
+      header: 'Edit',
+      button: true,
+      eventName: 'edit-button',
+      buttonIcon: 'pi pi-pencil',
       sort: false,
     },
     {
@@ -431,8 +475,50 @@ const showCode = async (selectedOrg) => {
   }
 };
 
+const onEditButtonClick = (event) => {
+  isEditModalEnabled.value = true;
+  currentEditOrgId.value = _get(event, 'id', null);
+};
+
+const closeEditModal = () => {
+  isEditModalEnabled.value = false;
+  currentEditOrgId.value = null;
+};
+
 const closeDialog = () => {
   isDialogVisible.value = false;
+};
+
+const updateOrgData = async () => {
+  isSubmitting.value = true;
+  console.log('Updating org data', localOrgData.value);
+  await roarfirekit.value
+    .createOrg(
+      activeOrgType.value,
+      localOrgData.value,
+      _get(localOrgData.value, 'testData', false),
+      _get(localOrgData.value, 'demoData', false),
+      currentEditOrgId.value,
+    )
+    .then(() => {
+      isSubmitting.value = false;
+      closeEditModal();
+      toast.add({
+        severity: 'success',
+        summary: 'Updated',
+        detail: 'Organization data updated successfully!',
+        life: 3000,
+      });
+    })
+    .catch((error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Unexpexcted error',
+        detail: `Unexpected error occurred: ${error.message}`,
+        life: 3000,
+      });
+      isSubmitting.value = false;
+    });
 };
 
 let unsubscribe;
