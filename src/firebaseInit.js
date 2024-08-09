@@ -1,8 +1,9 @@
 import { RoarFirekit } from '@bdelab/roar-firekit';
 import roarFirebaseConfig from './config/firebaseRoar';
 import levanteFirebaseConfig from './config/firebaseLevante';
+import { isLevante } from './helpers';
 
-const roarConfig = import.meta.env.MODE === 'LEVANTE' ? levanteFirebaseConfig : roarFirebaseConfig;
+const roarConfig = isLevante ? levanteFirebaseConfig : roarFirebaseConfig;
 
 export async function initNewFirekit() {
   const firekit = new RoarFirekit({
@@ -14,7 +15,7 @@ export async function initNewFirekit() {
       functions: false,
     },
 
-    verboseLogging: import.meta.env.MODE === 'LEVANTE' ? false : true,
+    verboseLogging: isLevante ? false : true,
   });
   return await firekit.init();
 }

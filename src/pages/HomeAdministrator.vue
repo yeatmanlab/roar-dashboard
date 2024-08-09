@@ -100,7 +100,7 @@
                   {{
                     isLevante
                       ? 'There are no administrations to display. You can create an administration by navigating to the' +
-                        'Create administration page from the dropdown menu.'
+                        ' Create administration page from the dropdown menu.'
                       : 'There are no administrations to display. Please contact a lab administrator to add you as an admin' +
                         ' to an administration.'
                   }}
@@ -126,6 +126,7 @@ import { administrationPageFetcher, getTitle } from '../helpers/query/administra
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
+import { isLevante } from '@/helpers';
 
 const initialized = ref(false);
 const page = ref(0);
@@ -134,7 +135,6 @@ const adminSearchTokens = ref([]);
 const searchInput = ref('');
 const search = ref('');
 const pageLimit = ref(10);
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
 

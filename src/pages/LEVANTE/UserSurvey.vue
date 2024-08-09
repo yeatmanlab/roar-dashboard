@@ -12,6 +12,8 @@ import { Converter } from 'showdown';
 import { useI18n } from 'vue-i18n';
 import { BufferLoader, AudioContext } from '@/helpers/audio';
 import { useToast } from 'primevue/usetoast';
+import { useQueryClient } from '@tanstack/vue-query';
+import _merge from 'lodash/merge';
 
 const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
@@ -32,7 +34,7 @@ const fetchAudioLinks = async (surveyType) => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 const fetchedSurvey = ref(null);
 const survey = ref(null);
 const isSavingResponses = ref(false);
@@ -45,6 +47,7 @@ const router = useRouter();
 const context = new AudioContext();
 const audioLinks = ref({});
 const toast = useToast();
+const queryClient = useQueryClient();
 
 let currentAudioSource = null;
 
@@ -90,15 +93,20 @@ async function getSurvey() {
 
   try {
     const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey.json`);
-    const audioLinkMap = await fetchAudioLinks('child-survey');
-    audioLinks.value = audioLinkMap;
+
+    if (userType === 'child') {
+      const audioLinkMap = await fetchAudioLinks('child-survey');
+      audioLinks.value = audioLinkMap;
+    }
     fetchedSurvey.value = response.data;
     // Create the survey model with the fetched data
     const surveyInstance = new Model(fetchedSurvey.value);
 
     surveyInstance.locale = locale.value;
 
-    fetchBuffer(getParsedLocale(locale.value));
+    if (userType === 'child') {
+      fetchBuffer(getParsedLocale(locale.value));
+    }
 
     survey.value = surveyInstance;
     survey.value.onTextMarkdown.add(function (survey, options) {
@@ -112,16 +120,18 @@ async function getSurvey() {
     });
 
     survey.value.onComplete.add(saveResults);
-    survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
-      const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
-      if (currentAudioSource) {
-        currentAudioSource.stop();
-      }
-      questionElements.forEach((el) => {
-        const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
-        showAndPlaceAudioButton(playAudioButton, el);
+    if (userType === 'child') {
+      survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
+        const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
+        if (currentAudioSource) {
+          currentAudioSource.stop();
+        }
+        questionElements.forEach((el) => {
+          const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
+          showAndPlaceAudioButton(playAudioButton, el);
+        });
       });
-    });
+    }
   } catch (error) {
     console.error(error);
   }
@@ -153,17 +163,13 @@ async function playAudio(name) {
 }
 
 async function saveResults(sender) {
-  console.log('sender.data: ', sender.data);
+  const allQuestions = sender.getAllQuestions();
+  const unansweredQuestions = {};
 
-  // If user did not fill out the survey, do not save the results
-  if (Object.keys(sender.data).length === 0) {
-    console.log('No data to save');
-    // update game store to let game tabs know
-    gameStore.requireHomeRefresh();
-    gameStore.setSurveyCompleted();
-    router.push({ name: 'Home' });
-    return;
-  }
+  allQuestions.forEach((question) => (unansweredQuestions[question.name] = null));
+
+  // Values from the second object overwrite values from the first
+  const responsesWithAllQuestions = _merge(unansweredQuestions, sender.data);
 
   // turn on loading state
   isSavingResponses.value = true;
@@ -171,11 +177,14 @@ async function saveResults(sender) {
   // call cloud function to save the survey results
   // TODO: Use tanstack-query mutation for automaitic retries.
   try {
-    const res = await roarfirekit.value.saveSurveyResponses(sender.data);
-    console.log('response: ', res);
+    await roarfirekit.value.saveSurveyResponses({
+      responses: responsesWithAllQuestions,
+      administrationId: gameStore.selectedAdmin.id,
+    });
 
     // update game store to let game tabs know
     gameStore.setSurveyCompleted();
+    queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
     // route back to game tabs (HomeParticipant)
     gameStore.requireHomeRefresh();
@@ -196,14 +205,16 @@ async function saveResults(sender) {
   <div v-if="survey && !isSavingResponses && !audioLoading">
     <SurveyComponent :model="survey" />
 
-    <div v-for="page in fetchedSurvey.pages" :key="page.name">
-      <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
-        <PvButton
-          :id="'audio-button-' + item.name"
-          icon="pi pi-volume-up text-white"
-          style="display: none"
-          @click="playAudio(item.name)"
-        />
+    <div v-if="authStore.userData.userType === 'student'">
+      <div v-for="page in fetchedSurvey.pages" :key="page.name">
+        <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
+          <PvButton
+            :id="'audio-button-' + item.name"
+            icon="pi pi-volume-up text-white"
+            style="display: none"
+            @click="playAudio(item.name)"
+          />
+        </div>
       </div>
     </div>
   </div>

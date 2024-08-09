@@ -1,6 +1,6 @@
 <template>
   <PvButton
-    class="surface-hover border-1 border-300 border-circle m-0 hover:bg-primary p-0 m-2"
+    class="surface-hover border-1 border-300 border-circle hover:bg-primary p-0 m-2"
     data-cy="button-edit-variant"
     @click="visible = true"
   >
@@ -58,36 +58,36 @@
             table: { style: 'min-width: 50rem' },
             column: {
               bodycell: ({ state }) => ({
-                style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem',
+                style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem; padding-left: 0.6rem',
               }),
             },
           }"
           data-cy="button-assigned-accept"
           @row-edit-save="onAssignedRowEditSave"
         >
-          <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
+          <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem">
             <template #editor="{ data, field }">
               <PvDropdown
                 v-model="data[field]"
-                :options="fieldExamples"
+                :options="isLevante ? levanteFields : fieldExamples"
                 option-label="label"
-                option-value="value"
-                editable
-                placeholder="Type or choose field"
+                option-value="label"
+                :editable="!isLevante"
+                :placeholder="isLevante ? 'Choose a field' : 'Type or choose field'"
                 data-cy="dropdown-assigned-field"
               >
               </PvDropdown>
             </template>
           </PvColumn>
-          <PvColumn field="op" header="Operator" style="width: 5%" body-style="text-align:center">
+          <PvColumn field="op" header="Condition" style="width: 5%">
             <template #editor="{ data, field }">
               <PvDropdown
                 v-model="data[field]"
-                :options="operators"
+                :options="isLevante ? levanteConditions : conditions"
                 option-label="label"
                 option-value="value"
-                placeholder="Select Operator"
-                data-cy="dropdown-assigned-operator"
+                placeholder="Select Condition"
+                data-cy="dropdown-assigned-condition"
               >
                 <template #option="slotProps">
                   <PvTag :value="slotProps.option.label" severity="warning" />
@@ -98,9 +98,18 @@
               <PvTag :value="slotProps.data.op" severity="warning" />
             </template>
           </PvColumn>
-          <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
+          <PvColumn field="value" header="Value" style="width: 10%">
             <template #editor="{ data, field }">
-              <PvInputText v-model="data[field]" data-cy="assigned-value-content" />
+              <PvDropdown
+                v-if="isLevante"
+                v-model="data[field]"
+                :options="levanteUserTypes"
+                option-label="label"
+                option-value="value"
+                placeholder="Choose a value"
+                data-cy="dropdown-assigned-field"
+              ></PvDropdown>
+              <PvInputText v-else v-model="data[field]" data-cy="assigned-value-content" />
             </template>
           </PvColumn>
           <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
@@ -127,106 +136,109 @@
           </div>
         </div>
       </div>
-      <div class="mt-2 flex flex-column gap-2">
-        <div class="card p-fluid bg-gray-100 p-3">
-          <div class="text-lg font-normal text-gray-500 uppercase mb-2">Optional Conditions</div>
-          <div
-            v-if="optionalConditions.length == 0"
-            class="flex flex-column align-items-center justify-content-center py-2 gap-2"
-          >
-            <div class="text-xl uppercase font-bold">No Conditions Added</div>
-            <div v-if="optionalForAllFlag" class="text-sm uppercase text-gray-700">
-              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all students in the
-              administration.
+      <!-- OPTIONAL CONDITIONS -->
+      <div v-if="!isLevante">
+        <div class="mt-2 flex flex-column gap-2">
+          <div class="card p-fluid bg-gray-100 p-3">
+            <div class="text-lg font-normal text-gray-500 uppercase mb-2">Optional Conditions</div>
+            <div
+              v-if="optionalConditions.length == 0"
+              class="flex flex-column align-items-center justify-content-center py-2 gap-2"
+            >
+              <div class="text-xl uppercase font-bold">No Conditions Added</div>
+              <div v-if="optionalForAllFlag" class="text-sm uppercase text-gray-700">
+                Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all students in the
+                administration.
+              </div>
+              <div v-else class="text-sm uppercase text-gray-700">
+                Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any students in the
+                administration.
+              </div>
             </div>
-            <div v-else class="text-sm uppercase text-gray-700">
-              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any students in the
-              administration.
-            </div>
-          </div>
-          <PvDataTable
-            v-if="optionalConditions.length > 0"
-            v-model:editingRows="optionalEditingRows"
-            :value="optionalConditions"
-            edit-mode="row"
-            data-key="id"
-            :pt="{
-              table: { style: 'min-width: 50rem' },
-              column: {
-                bodycell: ({ state }) => ({
-                  style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem',
-                }),
-              },
-            }"
-            @row-edit-save="onOptionalRowEditSave"
-          >
-            <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
-              <template #editor="{ data, field }">
-                <PvDropdown
-                  v-model="data[field]"
-                  :options="fieldExamples"
-                  option-label="label"
-                  option-value="value"
-                  editable
-                  placeholder="Type or choose field"
-                  data-cy="dropdown-optional-field"
-                >
-                </PvDropdown>
-              </template>
-            </PvColumn>
-            <PvColumn field="op" header="Operator" style="width: 5%" body-style="text-align:center">
-              <template #editor="{ data, field }">
-                <PvDropdown
-                  v-model="data[field]"
-                  :options="operators"
-                  option-label="label"
-                  option-value="value"
-                  placeholder="Select Operator"
-                  data-cy="dropdown-optional-operator"
-                >
-                  <template #option="slotProps">
-                    <PvTag :value="slotProps.option.label" severity="warning" />
-                  </template>
-                </PvDropdown>
-              </template>
-              <template #body="slotProps">
-                <PvTag :value="slotProps.data.op" severity="warning" />
-              </template>
-            </PvColumn>
-            <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
-              <template #editor="{ data, field }">
-                <PvInputText v-model="data[field]" data-cy="optional-value-content" />
-              </template>
-            </PvColumn>
-            <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
-            <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
-              <template #body="{ index }">
-                <PvButton
-                  icon="pi pi-trash"
-                  class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-                  @click="removeOptionalRow(index)"
+            <PvDataTable
+              v-if="optionalConditions.length > 0"
+              v-model:editingRows="optionalEditingRows"
+              :value="optionalConditions"
+              edit-mode="row"
+              data-key="id"
+              :pt="{
+                table: { style: 'min-width: 50rem' },
+                column: {
+                  bodycell: ({ state }) => ({
+                    style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem',
+                  }),
+                },
+              }"
+              @row-edit-save="onOptionalRowEditSave"
+            >
+              <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
+                <template #editor="{ data, field }">
+                  <PvDropdown
+                    v-model="data[field]"
+                    :options="fieldExamples"
+                    option-label="label"
+                    option-value="value"
+                    editable
+                    placeholder="Type or choose field"
+                    data-cy="dropdown-optional-field"
+                  >
+                  </PvDropdown>
+                </template>
+              </PvColumn>
+              <PvColumn field="op" header="Condition" style="width: 5%" body-style="text-align:center">
+                <template #editor="{ data, field }">
+                  <PvDropdown
+                    v-model="data[field]"
+                    :options="conditions"
+                    option-label="label"
+                    option-value="value"
+                    placeholder="Select Condition"
+                    data-cy="dropdown-optional-condition"
+                  >
+                    <template #option="slotProps">
+                      <PvTag :value="slotProps.option.label" severity="warning" />
+                    </template>
+                  </PvDropdown>
+                </template>
+                <template #body="slotProps">
+                  <PvTag :value="slotProps.data.op" severity="warning" />
+                </template>
+              </PvColumn>
+              <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
+                <template #editor="{ data, field }">
+                  <PvInputText v-model="data[field]" data-cy="optional-value-content" />
+                </template>
+              </PvColumn>
+              <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
+              <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
+                <template #body="{ index }">
+                  <PvButton
+                    icon="pi pi-trash"
+                    class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                    @click="removeOptionalRow(index)"
+                  />
+                </template>
+              </PvColumn>
+            </PvDataTable>
+            <div class="flex flex-row justify-content-between align-items-center">
+              <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
+                <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
+                <PvInputSwitch
+                  v-model="optionalForAllFlag"
+                  data-cy="switch-optional-for-everyone"
+                  @update:model-value="handleOptionalForAllSwitch"
                 />
-              </template>
-            </PvColumn>
-          </PvDataTable>
-          <div class="flex flex-row justify-content-between align-items-center">
-            <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
-              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
-              <PvInputSwitch
-                v-model="optionalForAllFlag"
-                data-cy="switch-optional-for-everyone"
-                @update:model-value="handleOptionalForAllSwitch"
-              />
-            </div>
-            <div class="mt-2 flex gap-2">
-              <PvButton
-                label="Add Optional Condition"
-                icon="pi pi-plus mr-2"
-                class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-                :disabled="optionalForAllFlag === true"
-                data-cy="button-optional-condition"
-                @click="addOptionalCondition"
-              />
+              </div>
+              <div class="mt-2 flex gap-2">
+                <PvButton
+                  label="Add Optional Condition"
+                  icon="pi pi-plus mr-2"
+                  class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                  :disabled="optionalForAllFlag === true"
+                  data-cy="button-optional-condition"
+                  @click="addOptionalCondition"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -239,7 +251,9 @@
           </PvTag>
         </div>
         <div v-if="errorSubmitText.length > 0" class="text-sm">
-          <PvTag icon="pi pi-exclamation-triangle" severity="error">{{ errorSubmitText }}</PvTag>
+          <PvTag icon="pi pi-exclamation-triangle" severity="error" class="bg-transparent text-red-600">{{
+            errorSubmitText
+          }}</PvTag>
         </div>
       </div>
       <div class="flex justify-content-center gap-2">
@@ -264,8 +278,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, toRaw } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
+import { isLevante } from '@/helpers';
 
 const visible = ref(false);
 const props = defineProps({
@@ -337,11 +352,14 @@ const addOptionalCondition = () => {
 };
 
 const addAssignedCondition = () => {
+  console.log('Before adding condition', toRaw(assignedConditions.value));
+  console.log('Editing rows before condition', toRaw(assignedEditingRows.value));
   assignedConditions.value.push({ id: assignedConditions.value.length, field: '', op: '', value: '' });
   assignedEditingRows.value = [
     ...assignedEditingRows.value,
     assignedConditions.value[assignedConditions.value.length - 1],
   ];
+  console.log('After Assigned Conditions', toRaw(assignedConditions.value));
 };
 
 const optionalForAllFlag = ref(false);
@@ -384,6 +402,9 @@ const handleSubmit = () => {
       }
     }
   }
+
+  console.log('conditional attribute is empty');
+
   for (const condition of optionalConditions.value) {
     for (const [key, value] of Object.entries(condition)) {
       if (key != 'id' && value == '') {
@@ -393,16 +414,21 @@ const handleSubmit = () => {
     }
   }
 
+  console.log('Empty condtional fields or rows');
+
   // Check for error where rows are still being edited
   if (optionalEditingRows.value.length > 0 || assignedEditingRows.value.length > 0) {
     error = true;
     errorSubmitText.value = 'Please save all rows before submitting.';
   }
 
+  console.log('Row still being edited');
+
   if (!error) {
     errorSubmitText.value = '';
     // If optionalForAllFlag is true, then overwrite optional conditions by setting optional to true
     let conditionsCopy = computedConditions.value;
+    console.log('conditionsCopy: ', conditionsCopy);
     if (optionalForAllFlag.value === true) {
       conditionsCopy['optional'] = true;
     }
@@ -485,13 +511,26 @@ const fieldExamples = ref([
   { label: 'studentData.schoolLevel', value: 'studentData.schoolLevel' },
 ]);
 
-const operators = ref([
-  { label: 'Less Than (<)', value: 'LESS_THAN' },
-  { label: 'Greater Than (>)', value: 'GREATER_THAN' },
-  { label: 'Less Than or Equal (<=)', value: 'LESS_THAN_OR_EQUAL' },
-  { label: 'Greater Than or Equal (>=)', value: 'GREATER_THAN_OR_EQUAL' },
-  { label: 'Equal (==)', value: 'EQUAL' },
-  { label: 'Not Equal (!=)', value: 'NOT_EQUAL' },
+const levanteFields = ref([{ label: 'User Type', value: 'userData.userType' }]);
+
+const levanteUserTypes = ref([
+  { label: 'Child', value: 'child' },
+  { label: 'Parent', value: 'parent' },
+  { label: 'Teacher', value: 'teacher' },
+]);
+
+const conditions = ref([
+  { label: 'Less Than', value: 'LESS_THAN' },
+  { label: 'Greater Than', value: 'GREATER_THAN' },
+  { label: 'Less Than or Equal', value: 'LESS_THAN_OR_EQUAL' },
+  { label: 'Greater Than or Equal', value: 'GREATER_THAN_OR_EQUAL' },
+  { label: 'Equal', value: 'EQUAL' },
+  { label: 'Not Equal', value: 'NOT_EQUAL' },
+]);
+
+const levanteConditions = ref([
+  { label: 'Equal', value: 'EQUAL' },
+  { label: 'Not Equal', value: 'NOT_EQUAL' },
 ]);
 
 const onAssignedRowEditSave = (event) => {

@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
+import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
+import { isLevante } from '@/helpers';
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -193,7 +195,6 @@ const routes = [
     props: { taskId: 'roav-mep', language: 'en' },
     meta: { pageTitle: 'MEP' },
   },
-
   {
     path: '/manage-tasks-variants',
     name: 'ManageTasksVariants',
@@ -243,13 +244,17 @@ const routes = [
     path: '/signout',
     name: 'SignOut',
     async beforeEnter() {
-      const store = useAuthStore();
-      if (store.isAuthenticated) {
-        await store.signOut();
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated) {
+        await authStore.signOut();
       }
       // Clear auth and game store so kids playing on the same device don't run into issues
       sessionStorage.removeItem('gameStore');
       sessionStorage.removeItem('authStore');
+
+      const gameStore = useGameStore();
+      gameStore.$reset();
+
       return { name: 'SignIn' };
     },
     meta: {
@@ -427,7 +432,6 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const isLevante = import.meta.env.MODE === 'LEVANTE';
   // Don't allow routing to LEVANTE pages if not in LEVANTE instance
   if (!isLevante && to.meta?.project === 'LEVANTE') {
     next({ name: 'Home' });

@@ -77,6 +77,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
 import ROARLogo from '@/assets/RoarLogo.vue';
 import LanguageSelector from './LanguageSelector.vue';
+import { isLevante } from '@/helpers';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -84,7 +85,6 @@ const { roarfirekit, uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 
 const init = () => {

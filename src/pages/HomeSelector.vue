@@ -37,9 +37,10 @@ import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
+import { isLevante } from '@/helpers';
 
 let HomeParticipant, HomeAdministrator, ConsentModal;
-const isLevante = import.meta.env.MODE === 'LEVANTE';
+
 const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
@@ -66,6 +67,24 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
+onMounted(async () => {
+  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+
+  if (requireRefresh.value) {
+    requireRefresh.value = false;
+    router.go(0);
+  }
+  if (roarfirekit.value.restConfig) init();
+  if (!isLoading.value) {
+    refreshDocs();
+    if (isAdmin.value) {
+      await checkConsent();
+    }
+  }
+});
+
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
   queryKey: ['userData', uid, userQueryKeyIndex],
   queryFn: () => fetchDocById('users', uid.value),
@@ -86,6 +105,7 @@ const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.valu
 
 const isAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;
+  if (userClaims.value?.claims?.admin) return true;
   if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
   return true;
 });
@@ -150,6 +170,30 @@ onMounted(async () => {
 watch(isLoading, async (newValue) => {
   if (!newValue && isAdmin.value) {
     await checkConsent();
+  }
+});
+
+watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
+  if (newUserData && newUserClaims) {
+    authStore.userData = newUserData;
+    authStore.userClaims = newUserClaims;
+
+    const userType = toRaw(newUserData)?.userType?.toLowerCase();
+    if (userType === 'parent' || userType === 'teacher') {
+      router.push({ name: 'Survey' });
+    }
+  }
+});
+
+watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
+  if (newUserData && newUserClaims) {
+    authStore.userData = newUserData;
+    authStore.userClaims = newUserClaims;
+
+    const userType = toRaw(newUserData)?.userType?.toLowerCase();
+    if (userType === 'parent' || userType === 'teacher') {
+      router.push({ name: 'Survey' });
+    }
   }
 });
 
