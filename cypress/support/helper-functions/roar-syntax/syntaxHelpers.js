@@ -15,6 +15,12 @@ function checkGameTab(language, task) {
   cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
 
+function clickThroughInstructions() {
+  clickButton('.primary');
+  clickButton('.primary');
+  clickButton('.primary');
+}
+
 function makeChoiceOrContinue(gameCompleteText) {
   cy.wait(0.2 * timeout);
   cy.get('body').then((body) => {
@@ -78,10 +84,7 @@ export function playSyntax({
 } = {}) {
   startGame(administration, language, optional, task, auth);
 
-  //  Click through the instructions
-  clickButton('.primary');
-  clickButton('.primary');
-  clickButton('.primary');
+  clickThroughInstructions();
 
   makeChoiceOrContinue(gameCompleteText);
 
