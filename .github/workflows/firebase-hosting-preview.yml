@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_branch:
-        description: 'Checkout this branch from the PR and execute CI/CD tests on it.'
+        description: 'Checkout this branch from the LEVANTE repository and execute CI/CD tests on it.'
         required: true
 
 concurrency:
@@ -21,11 +21,28 @@ permissions:
 jobs:
   build-and-preview:
     name: Deploy Preview
-    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # For workflows triggered by pull requests
+      - name: Checkout PR code
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      # For workflows triggered manually, targeting the LEVANTE dashboard repository specifically
+      - name: Checkout manual trigger code
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          repository: levante-framework/levante-dashboard
+          ref: ${{ github.event.inputs.pr_branch }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
           # Checkout the PR branch from the PR repository if the PR is from a fork, otherwise checkout the PR branch from the main repository
@@ -48,5 +65,6 @@ jobs:
           projectId: '${{ secrets.FIREBASE_PROJECT }}'
           target: ${{ contains(github.repository, 'levante') && 'production' || 'staging' }}
       - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
+
     outputs:
       deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
