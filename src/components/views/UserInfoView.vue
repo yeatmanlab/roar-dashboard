@@ -38,7 +38,6 @@ import { useQuery } from '@tanstack/vue-query';
 import { ref, onMounted, computed } from 'vue';
 import EditUsersForm from '../EditUsersForm.vue';
 import { fetchDocById } from '@/helpers/query/utils';
-import _get from 'lodash/get';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 

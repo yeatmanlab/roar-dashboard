@@ -200,7 +200,6 @@ import { useRoute } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _get from 'lodash/get';
 import _cloneDeep from 'lodash/cloneDeep';
-import _isEqual from 'lodash/isEqual';
 import _find from 'lodash/find';
 import _set from 'lodash/set';
 import OrgPicker from '@/components/OrgPicker.vue';
@@ -247,7 +246,7 @@ onMounted(() => {
 
 watch(
   () => serverUserData.value,
-  (userData) => {
+  () => {
     if (!_isEmpty(serverUserData.value)) setupUserData(serverUserData.value);
   },
 );
@@ -555,7 +554,7 @@ const orgsToRemove = computed(() => {
 //   this can be replaced when we update to Vue 3.3+
 watch(
   () => [localUserData.value, orgsToAdd.value, orgsToRemove.value],
-  ([userData, addOrgs, removeOrgs], [oldUserData, oldAddOrgs, oldRemoveOrgs]) => {
+  ([userData]) => {
     // Make a copy of the userData to prevent mutation
     let userDataCopy = { ...toRaw(userData) };
 
