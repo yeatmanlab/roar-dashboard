@@ -19,7 +19,7 @@
               <PvDropdown
                 v-model="orgType"
                 input-id="org-type"
-                :options="orgTypes"
+                :options="isLevante ? levanteOrgTypes : orgTypes"
                 show-clear
                 option-label="singular"
                 placeholder="Select an org type"
@@ -325,6 +325,8 @@ const orgTypes = [
   { firestoreCollection: 'groups', singular: 'group' },
 ];
 
+const levanteOrgTypes = [{ firestoreCollection: 'groups', singular: 'group' }];
+
 const orgType = ref();
 const orgTypeLabel = computed(() => {
   if (orgType.value) {
@@ -416,18 +418,33 @@ const submit = async () => {
       orgData.districtId = toRaw(state.parentDistrict).id;
     }
 
-    await roarfirekit.value
-      .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
-      .then(() => {
-        toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
-        submitted.value = false;
-        resetForm();
-      })
-      .catch((error) => {
-        toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-        console.error('Error creating org:', error);
-        submitted.value = false;
-      });
+    if (isLevante) {
+      await roarfirekit.value
+        .createLevanteGroup(orgData)
+        .then(() => {
+          toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
+          submitted.value = false;
+          resetForm();
+        })
+        .catch((error) => {
+          toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
+          console.error('Error creating org:', error);
+          submitted.value = false;
+        });
+    } else {
+      await roarfirekit.value
+        .createOrg(orgType.value.firestoreCollection, orgData, isTestData.value, isDemoData.value)
+        .then(() => {
+          toast.add({ severity: 'success', summary: 'Success', detail: 'Org created', life: 3000 });
+          submitted.value = false;
+          resetForm();
+        })
+        .catch((error) => {
+          toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
+          console.error('Error creating org:', error);
+          submitted.value = false;
+        });
+    }
   } else {
     console.error('Form is invalid');
   }
