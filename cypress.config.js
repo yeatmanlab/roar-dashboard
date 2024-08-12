@@ -53,7 +53,7 @@ module.exports = defineConfig({
       'ROAR - Letter',
       'ROAR - Picture Vocab',
       'ROAM - Math Facts Fluency',
-      'ROAR - Calculation Fluency',
+      'ROAM - Calculation Fluency',
       'ROAR - Syntax',
       'ROAR - Phoneme',
       'ROAR - Word',
