@@ -3,7 +3,7 @@
     <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
       <div class="flex flex-column md:flex-row align-items-center justify-content-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
-          <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
+          <div class="header-task-name">{{ tasksDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
           <div class="text-xs uppercase font-thin text-gray-400">
             {{ task[task.scoreToDisplay].name }}
           </div>
@@ -39,7 +39,7 @@
       <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
         {{ studentFirstName }} achieved a composite score of
         <strong>{{ task.rawScore.value }}</strong>
-        in {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
+        in {{ tasksDictionary[task.taskId]?.technicalName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
       <div v-else-if="grade >= 6" class="px-4 py-2 score-description">
         {{ studentFirstName }} scored a standard score of <strong>{{ Math.round(task.standardScore.value) }}</strong
@@ -47,7 +47,7 @@
         <strong>{{
           getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
         }}</strong>
-        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
+        {{ tasksDictionary[task.taskId]?.technicalName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
 
       <div v-else class="px-4 py-2 score-description">
@@ -57,7 +57,7 @@
         <strong>{{
           getSupportLevelLanguage(grade, task.percentileScore.value, task.rawScore.value, task.taskId)
         }}</strong>
-        {{ taskDisplayNames[task.taskId]?.extendedName }}. {{ extendedDescriptions[task.taskId] }}
+        {{ tasksDictionary[task.taskId]?.technicalName }}. {{ extendedDescriptions[task.taskId] }}
       </div>
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
         <PvAccordion
@@ -116,6 +116,11 @@ import {
   getRawScoreRange,
   getScoreKeys,
 } from '@/helpers/reports';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   studentData: {

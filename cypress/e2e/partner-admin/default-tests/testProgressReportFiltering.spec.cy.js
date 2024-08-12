@@ -131,7 +131,7 @@ describe('The partner admin can view progress reports for a given administration
     checkUrl();
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickProgressButton(roarTestAdministrationId);
-    setFilterByProgressCategory('Word', 'completed');
+    setFilterByProgressCategory('ROAR - Word', 'completed');
     checkTableColumn(['Username'], 'CypressTestStudent0');
   });
 });
@@ -142,7 +142,7 @@ describe('The partner admin can view progress reports for a given administration
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickProgressButton(roarTestAdministrationId);
     setFilterByGrade('1');
-    setFilterByProgressCategory('Word', 'completed');
+    setFilterByProgressCategory('ROAR - Word', 'completed');
     checkTableColumn(['Username'], 'CypressTestStudent0');
   });
 });

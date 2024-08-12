@@ -111,7 +111,7 @@ describe('The partner admin can view score reports for a given administration an
     checkUrl();
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickScoreButton(roarTestAdministrationId);
-    setFilterByScoreCategory('Word', 'Pink');
+    setFilterByScoreCategory('ROAR - Word', 'Pink');
     checkTableColumn(['Username'], 'CypressTestStudent0');
   });
 });
@@ -123,7 +123,7 @@ describe('The partner admin can view score reports for a given administration fi
     clickScoreButton(roarTestAdministrationId);
     setFilterByGrade('1');
     setFilterBySchool('Cypress Test School');
-    setFilterByProgressCategory('Morphology', 'completed');
+    setFilterByProgressCategory('ROAR - Morphology', 'completed');
     checkTableColumn(['Username'], 'CypressTestStudent0');
   });
 });
@@ -133,7 +133,7 @@ describe('The partner admin can view score reports for a given administration an
     checkUrl();
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickScoreButton(roarTestAdministrationId);
-    setFilterByScoreCategory('Morphology', 'Assessed');
+    setFilterByScoreCategory('ROAR - Morphology', 'Assessed');
     checkTableColumn(['Username'], 'CypressTestStudent0');
   });
 });

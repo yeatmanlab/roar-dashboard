@@ -170,7 +170,7 @@ import jsPDF from 'jspdf';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit, uid, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -326,7 +326,7 @@ const formattedTasks = computed(() => {
           return -1;
         }
       })
-      .map((task) => (taskDisplayNames[task] ? taskDisplayNames[task].extendedName : task))
+      .map((task) => tasksDictionary.value[task]?.technicalName ?? task)
       .join(', ') + '.'
   );
 });
