@@ -15,11 +15,17 @@ function checkGameTab(language, task) {
   cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
 }
 
+function clickThroughInstructions() {
+  clickButton('.primary');
+  clickButton('.primary');
+  clickButton('.primary');
+}
+
 function makeChoiceOrContinue(gameCompleteText) {
   cy.wait(0.2 * timeout);
   cy.get('body').then((body) => {
     const text = body.text().replace(/\s\s+/g, ' ').trim();
-    cy.log('Found text: ', text);
+    cy.log(`Found text: ${text}`);
     if (text.includes(gameCompleteText)) {
       cy.log('Game is complete.').then(() => true);
     } else {
@@ -28,7 +34,7 @@ function makeChoiceOrContinue(gameCompleteText) {
       } else if (body.find('.glowingButton').length > 0) {
         clickButton('.glowingButton');
       } else {
-        clickButton('button:first');
+        clickButton('button');
       }
       cy.log('Making choice or continuing.');
       makeChoiceOrContinue(gameCompleteText);
@@ -65,20 +71,7 @@ function startGame(administration, language, optional, task, auth) {
     return false;
   });
 
-  cy.get('#continue-btn', { timeout: timeout }).should('be.visible').click();
-}
-
-function playIntro() {
-  //  Click through the instructions
-  clickButton('#continue-btn');
-  clickButton('#continue-btn');
-  clickButton('#continue-btn');
-
-  //   Select the first tutorial image
-  cy.get('[alt="1-shoe"]', { timeout: timeout }).should('be.visible').click();
-
-  //  Select the second tutorial image
-  cy.get('[alt="2-bird"]', { timeout: timeout }).should('be.visible').click();
+  cy.get('.primary', { timeout: timeout }).should('be.visible').click();
 }
 
 export function playSyntax({
@@ -91,7 +84,7 @@ export function playSyntax({
 } = {}) {
   startGame(administration, language, optional, task, auth);
 
-  playIntro();
+  clickThroughInstructions();
 
   makeChoiceOrContinue(gameCompleteText);
 
