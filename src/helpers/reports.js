@@ -223,13 +223,25 @@ export const tasksToDisplayPercentCorrect = [
   'letter-es',
   'cva',
   'swr-es',
-  'fluency-arf-es',
-  'fluency-calf-es',
   'pa-es',
   'morphology',
   'vocab',
-  'fluency',
   'trog',
+  'crowding',
+  'mep',
+  'roav-mep',
+  'mep-pseudo',
+];
+
+/*
+ *  Tasks to Display total numCorrect
+ */
+export const tasksToDisplayTotalCorrect = [
+  'fluency',
+  'fluency-arf',
+  'fluency-calf',
+  'fluency-arf-es',
+  'fluency-calf-es',
 ];
 
 /*
@@ -255,7 +267,7 @@ export const supportLevelColors = {
   below: '#c93d82',
   Pink: '#c93d82',
   Optional: '#03befc',
-  Assessed: 'white',
+  Assessed: '#A4DDED',
   Unreliable: '#d6b8c7',
 };
 
@@ -341,15 +353,27 @@ export const gradeOptions = [
 export const getSupportLevel = (grade, percentile, rawScore, taskId, optional = null) => {
   let support_level = null;
   let tag_color = null;
+  if (rawScore === undefined) {
+    return {
+      support_level,
+      tag_color,
+    };
+  }
   if (optional) {
     return {
       support_level: 'Optional',
       tag_color: supportLevelColors.optional,
     };
-  } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
+  }
+  if (
+    (tasksToDisplayPercentCorrect.includes(taskId) ||
+      tasksToDisplayCorrectIncorrectDifference.includes(taskId) ||
+      tasksToDisplayTotalCorrect.includes(taskId)) &&
+    rawScore !== undefined
+  ) {
     return {
       support_level: 'Raw Score',
-      tag_color: 'white',
+      tag_color: supportLevelColors.Assessed,
     };
   }
   if (percentile !== undefined && getGrade(grade) < 6) {

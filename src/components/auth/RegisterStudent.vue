@@ -27,9 +27,9 @@
                 :disabled="student.noActivationCode"
               />
               <PvButton
-                @click="validateCode(student.activationCode, outerIndex)"
                 class="w-4 bg-primary text-white hover:bg-red-900"
                 label="Validate Code"
+                @click="validateCode(student.activationCode, outerIndex)"
               />
             </PvInputGroup>
           </div>
@@ -53,9 +53,9 @@
           <div class="flex">
             <h2 class="text-primary h-3 m-0 p-0" style="width: 70%">{{ student.orgName }}</h2>
             <PvButton
-              @click="codeNotRight(outerIndex)"
               class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
               label="Is this not right?"
+              @click="codeNotRight(outerIndex)"
             />
           </div>
         </section>
@@ -324,8 +324,8 @@
       >
         <p>{{ dialogMessage }}</p>
         <PvButton
-          @click="closeErrorDialog"
           class="bg-primary text-white border-none border-round p-2 h-3rem mr-3 hover:surface-300 hover:text-black-alpha-90"
+          @click="closeErrorDialog"
           >Close</PvButton
         >
       </PvDialog>
@@ -343,7 +343,7 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const dialogMessage = ref('');
 
 const today = new Date();
@@ -355,7 +355,7 @@ const errors = ref('');
 
 const props = defineProps({
   isRegistering: { type: Boolean, default: true },
-  code: { type: String },
+  code: { type: String, default: null },
 });
 
 const isDialogVisible = ref(false);
@@ -685,10 +685,6 @@ const validateRoarUsername = async () => {
 <style scoped>
 .stepper {
   margin: 2rem 0rem;
-}
-
-button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
-  background: blue;
 }
 
 .p-fluid .p-button {

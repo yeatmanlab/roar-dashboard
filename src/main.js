@@ -62,9 +62,12 @@ import PvTabPanel from 'primevue/tabpanel';
 import PvTabView from 'primevue/tabview';
 import PvTag from 'primevue/tag';
 import PvToast from 'primevue/toast';
+import PvToggleButton from 'primevue/togglebutton';
 import PvTreeTable from 'primevue/treetable';
 import PvTriStateCheckbox from 'primevue/tristatecheckbox';
 import PvFieldset from 'primevue/fieldset';
+import PvColumnGroup from 'primevue/columngroup';
+import PvRow from 'primevue/row';
 
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
@@ -172,8 +175,11 @@ app.component('PvTabPanel', PvTabPanel);
 app.component('PvTabView', PvTabView);
 app.component('PvTag', PvTag);
 app.component('PvToast', PvToast);
+app.component('PvToggleButton', PvToggleButton);
 app.component('PvTreeTable', PvTreeTable);
 app.component('PvTriStateCheckbox', PvTriStateCheckbox);
+app.component('PvColumnGroup', PvColumnGroup);
+app.component('PvRow', PvRow);
 
 app.component('RoarDataTable', RoarDataTable);
 app.component('LanguageSelector', LanguageSelector);

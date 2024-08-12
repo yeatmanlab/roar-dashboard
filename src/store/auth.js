@@ -24,6 +24,7 @@ export const useAuthStore = () => {
         userClaims: null,
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
+        routeToProfile: false,
         authFromClever: false,
         authFromClassLink: false,
         userQueryKeyIndex: 0,
@@ -196,6 +197,16 @@ export const useAuthStore = () => {
           });
         } else {
           console.log('Cant log out while not logged in');
+        }
+      },
+      async sendMyPasswordResetEmail() {
+        if (this.email) {
+          return await this.roarfirekit.sendPasswordResetEmail(this.email).then(() => {
+            return true;
+          });
+        } else {
+          console.warn('Logged in user does not have an associated email. Unable to send password reset email');
+          return false;
         }
       },
       async createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData = false) {
