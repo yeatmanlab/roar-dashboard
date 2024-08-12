@@ -52,7 +52,7 @@ module.exports = defineConfig({
     testAssignmentsList: [
       'ROAR - Letter',
       'ROAR - Picture Vocab',
-      'ROAR - Math Facts Fluency',
+      'ROAM - Math Facts Fluency',
       'ROAR - Calculation Fluency',
       'ROAR - Syntax',
       'ROAR - Phoneme',
