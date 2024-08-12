@@ -1,5 +1,4 @@
 import { defineStore, acceptHMRUpdate } from 'pinia';
-import { collection, getDocs, getFirestore } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
