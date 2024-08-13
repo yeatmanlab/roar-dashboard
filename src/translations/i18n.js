@@ -1,5 +1,12 @@
 import { createI18n } from 'vue-i18n';
-import { enTranslations, enUSTranslations, esTranslations, esCOTranslations } from './exports';
+import {
+  enTranslations,
+  enUSTranslations,
+  enIndividualScoreReport,
+  enUSIndividualScoreReport,
+  esTranslations,
+  esCOTranslations,
+} from './exports';
 
 export const languageOptions = {
   'en-US': { translations: enUSTranslations, language: 'English (United States)', code: 'usa' },
@@ -36,8 +43,8 @@ export const i18n = createI18n({
   locale: getLocale(browserLocale),
   fallbackLocale: getFallbackLocale(browserLocale),
   messages: {
-    en: enUSTranslations,
-    'en-US': enUSTranslations,
+    en: { ...enUSTranslations, ...enIndividualScoreReport },
+    'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
     es: esTranslations,
     'es-CO': esCOTranslations,
   },
