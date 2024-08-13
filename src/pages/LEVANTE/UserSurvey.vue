@@ -179,7 +179,7 @@ async function saveResults(sender) {
   try {
     await roarfirekit.value.saveSurveyResponses({
       responses: responsesWithAllQuestions,
-      administrationId: gameStore.selectedAdmin.id,
+      administrationId: gameStore?.selectedAdmin?.id ?? null,
     });
 
     // update game store to let game tabs know
