@@ -47,7 +47,7 @@
                 <div v-tooltip="'Click to see your Information'" class="nav-user-wrapper bg-gray-100 p-0">
                   <router-link :to="{ name: 'ProfileInfo' }"
                     ><button
-                      class="no-underline text-primary border-none border-round cursor-pointer m-0 text-sm hover:bg-red-900 hover:text-white"
+                      class="no-underline text-primary bg-white border-none border-round cursor-pointer m-0 text-sm hover:bg-red-900 hover:text-white"
                       style="padding: 0.9rem"
                     >
                       <i class="pi pi-cog m-0 p-0"></i></button

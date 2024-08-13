@@ -137,6 +137,8 @@ const isAdmin = computed(() => {
   overflow: scroll;
   padding: 1rem;
   scroll-behavior: smooth;
+  background: white;
+  color: var(--gray-600);
 }
 .sidebar-container-collapsed {
   display: flex;

@@ -1352,11 +1352,13 @@ onMounted(async () => {
   font-size: clamp(1.5rem, 2rem, 2.5rem);
   font-weight: bold;
   margin-top: 0;
+  color: black;
 }
 
 .administration-name {
   font-size: clamp(1.1rem, 1.3rem, 1.7rem);
-  font-weight: light;
+  margin-bottom: 0.5rem;
+  color: black;
 }
 
 .report-subheader {

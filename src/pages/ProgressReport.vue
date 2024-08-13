@@ -601,6 +601,7 @@ onMounted(async () => {
   font-size: 2.5rem;
   font-weight: bold;
   margin-top: 0;
+  color: black;
 }
 
 .no-scores-container {
@@ -621,6 +622,7 @@ onMounted(async () => {
 .administration-name {
   font-size: 1.8rem;
   font-weight: light;
+  color: black;
 }
 
 .report-subheader {
