@@ -94,19 +94,15 @@ async function getSurvey() {
   try {
     const response = await axios.get(`https://storage.googleapis.com/road-dashboard/${userType}_survey.json`);
 
-    if (userType === 'child') {
-      const audioLinkMap = await fetchAudioLinks('child-survey');
-      audioLinks.value = audioLinkMap;
-    }
+    const audioLinkMap = await fetchAudioLinks('child-survey');
+    audioLinks.value = audioLinkMap;
+
     fetchedSurvey.value = response.data;
     // Create the survey model with the fetched data
     const surveyInstance = new Model(fetchedSurvey.value);
 
     surveyInstance.locale = locale.value;
-
-    if (userType === 'child') {
-      fetchBuffer(getParsedLocale(locale.value));
-    }
+    fetchBuffer(getParsedLocale(locale.value));
 
     survey.value = surveyInstance;
     survey.value.onTextMarkdown.add(function (survey, options) {
@@ -119,19 +115,18 @@ async function getSurvey() {
       options.html = str;
     });
 
+
     survey.value.onComplete.add(saveResults);
-    if (userType === 'child') {
-      survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
-        const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
-        if (currentAudioSource) {
-          currentAudioSource.stop();
-        }
-        questionElements.forEach((el) => {
-          const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
-          showAndPlaceAudioButton(playAudioButton, el);
-        });
+    survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
+      const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
+      if (currentAudioSource) {
+        currentAudioSource.stop();
+      }
+      questionElements.forEach((el) => {
+        const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
+        showAndPlaceAudioButton(playAudioButton, el);
       });
-    }
+    });
   } catch (error) {
     console.error(error);
   }
