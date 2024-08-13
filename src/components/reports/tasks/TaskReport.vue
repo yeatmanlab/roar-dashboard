@@ -53,7 +53,7 @@
     <SubscoreTable
       v-if="taskId === 'letter'"
       task-id="letter"
-      :task-name="taskDisplayNames['letter'].name"
+      :task-name="tasksDictionary['letter'].publicName"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
@@ -64,7 +64,7 @@
     <SubscoreTable
       v-if="taskId === 'pa'"
       task-id="pa"
-      :task-name="taskDisplayNames['pa'].name"
+      :task-name="tasksDictionary['pa'].publicName"
       :administration-id="administrationId"
       :org-type="orgType"
       :org-id="orgId"
@@ -79,9 +79,14 @@ import DistributionChartFacet from '@/components/reports/DistributionChartFacet.
 import DistributionChartSupport from '@/components/reports/DistributionChartSupport.vue';
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
-import { taskDisplayNames, tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.js';
+import { tasksToDisplayGraphs, taskInfoById } from '@/helpers/reports.js';
 import SubscoreTable from '@/components/reports/SubscoreTable.vue';
 import { ref, computed } from 'vue';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { tasksDictionary } = storeToRefs(authStore);
 
 // eslint-disable-next-line no-unused-vars
 const props = defineProps({

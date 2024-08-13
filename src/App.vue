@@ -1,5 +1,5 @@
 <template>
-  <AppHead>
+  <Head>
     <title>{{ isLevante ? '' : 'ROAR:' }} {{ pageTitle }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!" />
 
@@ -10,7 +10,7 @@
     <!-- Twitter -->
     <meta name="twitter:title" content="ROAR Web Query" />
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!" />
-  </AppHead>
+  </Head>
 
   <div>
     <PvToast />
@@ -25,8 +25,12 @@
 import { computed, onBeforeMount, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
+import { Head } from '@unhead/vue/components';
+import NavBar from '@/components/NavBar.vue';
+import { useAuthStore } from '@/store/auth';
+import { fetchDocById } from '@/helpers/query/utils';
+import { i18n } from '@/translations/i18n';
 
-import AppHead from '@/components/AppHead.vue';
 import NavBar from '@/components/NavBar.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
@@ -88,6 +92,7 @@ onBeforeMount(async () => {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
       authStore.userData = userData;
       authStore.userClaims = userClaims;
+      authStore.updateTasksDictionary();
     }
   });
   isAuthStoreReady.value = true;
