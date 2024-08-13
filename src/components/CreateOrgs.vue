@@ -104,7 +104,7 @@
           </div>
         </div>
 
-        <div class="mt-5 mb-0 pb-0">Optional fields:</div>
+        <div class="mt-5 mb-0 pb-0 text-gray-600">Optional fields:</div>
 
         <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
           <div class="grid column-gap-3">
@@ -172,11 +172,11 @@
         <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
           <div class="flex flex-row align-items-center">
             <PvCheckbox v-model="isDemoData" input-id="chbx-demodata" :binary="true" />
-            <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
+            <label class="ml-1 mr-3 text-gray-600" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
           </div>
           <div class="flex flex-row align-items-center">
             <PvCheckbox v-model="isTestData" input-id="chbx-testdata" :binary="true" />
-            <label class="ml-1 mr-3" for="chbx-testdata">Mark as <b>Test Organization</b></label>
+            <label class="ml-1 mr-3 text-gray-600" for="chbx-testdata">Mark as <b>Test Organization</b></label>
           </div>
         </div>
 

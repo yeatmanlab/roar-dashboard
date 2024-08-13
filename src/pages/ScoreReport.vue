@@ -68,10 +68,10 @@
                         :administration-id="props.administrationId"
                       />
                       <div className="task-description mt-3">
-                        <span class="font-bold">
+                        <span class="font-bold text-gray-600">
                           {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
                         </span>
-                        <span class="font-light">
+                        <span class="font-light text-gray-600">
                           {{
                             descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : ''
                           }}
@@ -89,19 +89,19 @@
                   <div class="legend-entry">
                     <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
                     <div>
-                      <div>Needs Extra Support</div>
+                      <div class="text-gray-600">Needs Extra Support</div>
                     </div>
                   </div>
                   <div class="legend-entry">
                     <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
                     <div>
-                      <div>Developing Skill</div>
+                      <div class="text-gray-600">Developing Skill</div>
                     </div>
                   </div>
                   <div class="legend-entry">
                     <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
                     <div>
-                      <div>Achieved Skill</div>
+                      <div class="text-gray-600">Achieved Skill</div>
                     </div>
                   </div>
                 </div>
@@ -183,25 +183,25 @@
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
-              <div>Needs Extra Support</div>
+              <div class="text-gray-600">Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
             <div>
-              <div>Developing Skill</div>
+              <div class="text-gray-600">Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
             <div>
-              <div>Achieved Skill</div>
+              <div class="text-gray-600">Achieved Skill</div>
             </div>
           </div>
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
             <div>
-              <div>Assessed</div>
+              <div class="text-gray-600">Assessed</div>
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
-            :header="tasksDictionary.value[taskId]?.publicName ?? taskId"
+            :header="tasksDictionary[taskId]?.publicName ?? taskId"
           >
             <div :id="'tab-view-' + taskId">
               <TaskReport
@@ -238,7 +238,7 @@
             </div>
           </PvTabPanel>
         </PvTabView>
-        <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4">
+        <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4 text-gray-600">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -265,7 +265,7 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div class="bg-gray-200 px-4 py-2 mb-7">
+        <div class="bg-gray-200 px-4 py-2 mb-7 text-gray-600">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->

@@ -3,12 +3,12 @@
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
       <section class="form-section flex lg:flex-row">
         <div>
-          <label for="firstName">First Name <span class="required p-1">*</span></label>
+          <label for="firstName" class="text-gray-600">First Name <span class="required p-1">*</span></label>
           <PvInputText
             v-model="v$.firstName.$model"
             name="firstName"
             :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
-            style="width: 25vh"
+            style="width: 25vh; background: white"
             aria-describedby="first-name-error"
           />
           <span v-if="v$.firstName.$error && submitted">
@@ -21,7 +21,7 @@
           </small>
         </div>
         <div>
-          <label for="lastName">Last Name <span class="required p-1">*</span></label>
+          <label for="lastName" class="text-gray-600">Last Name <span class="required p-1">*</span></label>
           <PvInputText
             v-model="v$.lastName.$model"
             name="lastName"
@@ -42,7 +42,7 @@
       <!--Username / Email-->
       <section class="form-section flex lg:flex-row">
         <div class="p-input-icon-right">
-          <label for="ParentEmail">Email <span class="required p-1">*</span></label>
+          <label for="ParentEmail" class="text-gray-600">Email <span class="required p-1">*</span></label>
           <PvInputText
             v-model="v$.ParentEmail.$model"
             name="ParentEmail"
@@ -63,7 +63,7 @@
       <section class="form-section flex lg:flex-row">
         <div>
           <div>
-            <label for="password">Password <span class="required p-1">*</span></label>
+            <label for="password" class="text-gray-600">Password <span class="required p-1">*</span></label>
             <PvPassword
               v-model="v$.password.$model"
               name="password"
@@ -86,7 +86,9 @@
         <!--Confirm Password-->
         <div>
           <div>
-            <label for="confirmPassword">Confirm Password <span class="required p-1">*</span></label>
+            <label for="confirmPassword" class="text-gray-600"
+              >Confirm Password <span class="required p-1">*</span></label
+            >
             <PvPassword
               :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
               v-model="v$.confirmPassword.$model"
@@ -121,7 +123,7 @@
               :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
               @change="getConsent"
             />
-            <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
+            <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }" style="color: var(--gray-600)"
               >I agree to the terms and conditions<span class="required">*</span></label
             >
           </div>

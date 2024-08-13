@@ -85,19 +85,19 @@
               <div class="legend-entry">
                 <div class="circle" style="background-color: var(--bright-green)" />
                 <div>
-                  <div>Completed</div>
+                  <div class="text-gray-600">Completed</div>
                 </div>
               </div>
               <div class="legend-entry">
                 <div class="circle" style="background-color: var(--yellow-100)" />
                 <div>
-                  <div>Started</div>
+                  <div class="text-gray-600">Started</div>
                 </div>
               </div>
               <div class="legend-entry">
                 <div class="circle" style="background-color: var(--surface-d)" />
                 <div>
-                  <div>Assigned</div>
+                  <div class="text-gray-600">Assigned</div>
                 </div>
               </div>
             </div>

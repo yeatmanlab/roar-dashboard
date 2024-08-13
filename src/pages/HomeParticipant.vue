@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="!noGamesAvailable || consentSpinner">
+    <div v-if="!noGamesAvailable || consentSpinner" class="bg-white-alpha-90">
       <!-- <WE ARE USING V-SHOW INSTEAD OF V-IF BECAUSE OTHERWISE THE STYLE WILL BREAK> -->
       <div v-show="isFetching" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
@@ -69,10 +69,10 @@
         </div>
       </div>
     </div>
-    <div v-else>
+    <div v-else class="bg-white-alpha-90">
       <div class="col-full text-center">
-        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
+        <h1 class="text-gray-600">{{ $t('homeParticipant.noAssignments') }}</h1>
+        <p class="text-center text-gray-600">{{ $t('homeParticipant.contactAdministrator') }}</p>
         <router-link :to="{ name: 'SignOut' }">
           <PvButton
             :label="$t('navBar.signOut')"

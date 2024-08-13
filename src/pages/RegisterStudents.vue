@@ -95,7 +95,7 @@
         <div class="submit-container">
           <div class="m-2">
             <PvCheckbox v-model="isAllTestData" :binary="true" input-id="isTestData" />
-            <label for="isTestData" class="ml-2">All users are test accounts</label>
+            <label for="isTestData" class="ml-2 text-gray-600">All users are test accounts</label>
           </div>
           <PvButton
             label="Start Registration"

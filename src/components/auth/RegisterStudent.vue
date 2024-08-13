@@ -5,7 +5,7 @@
         <section v-if="!student.orgName" class="form-section">
           <div class="p-input-icon-right">
             <div class="flex justify-content-between">
-              <label for="activationCode">Activation code <span class="required">*</span></label>
+              <label for="activationCode" class="text-gray-600">Activation code <span class="required">*</span></label>
               <div class="flex align-items-center">
                 <PvCheckbox
                   v-model="student.noActivationCode"
@@ -13,7 +13,7 @@
                   name="noActivationCode"
                   @change="updateActivationCode"
                 />
-                <label for="noActivationCode" class="ml-2">I don't have code</label>
+                <label for="noActivationCode" class="ml-2 text-gray-600">I don't have code</label>
               </div>
             </div>
             <PvInputGroup v-if="!student.noActivationCode">
@@ -61,7 +61,9 @@
         </section>
         <section class="form-section">
           <div class="p-input-icon-right">
-            <label for="studentUsername">Student Username <span class="required mr-2">*</span></label>
+            <label for="studentUsername" class="text-gray-600"
+              >Student Username <span class="required mr-2">*</span></label
+            >
             <PvInputText
               v-model="student.studentUsername"
               name="studentUsername"
@@ -83,7 +85,7 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password">Password <span class="required">*</span></label>
+              <label for="password" class="text-gray-600">Password <span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"
@@ -108,7 +110,9 @@
           <!-- Confirm Password -->
           <div>
             <div>
-              <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+              <label for="confirmPassword" class="text-gray-600"
+                >Confirm Password <span class="required">*</span></label
+              >
               <PvPassword
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
@@ -127,10 +131,10 @@
           <div>
             <!-- Age / DOB -->
             <div class="flex justify-content-between">
-              <label>Date of Birth <span class="required">*</span></label>
+              <label class="text-gray-600">Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
                 <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
-                <label for="yearOnly" class="ml-2">Use Year Only</label>
+                <label for="yearOnly" class="ml-2 text-gray-600">Use Year Only</label>
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
@@ -161,7 +165,7 @@
         <section class="form-section">
           <!--Grade-->
           <div>
-            <label for="grade">Grade <span class="required">*</span></label>
+            <label for="grade" class="text-gray-600">Grade <span class="required">*</span></label>
             <PvSelect
               v-model="student.grade"
               :options="gradeOptions"
@@ -177,7 +181,7 @@
             <!--First / Last Name-->
             <section class="form-section">
               <div>
-                <label for="firstName">First Name </label>
+                <label for="firstName" class="text-gray-600">First Name </label>
                 <PvInputText
                   v-model="student.firstName"
                   name="firstName"
@@ -189,13 +193,13 @@
               </div>
               <!-- Middle Name -->
               <div>
-                <label for="middleName">Middle Name </label>
+                <label for="middleName" class="text-gray-600">Middle Name </label>
                 <PvInputText v-model="student.middleName" name="middleName" />
               </div>
             </section>
             <section class="form-section">
               <div>
-                <label for="lastName">Last Name </label>
+                <label for="lastName" class="text-gray-600">Last Name </label>
                 <PvInputText
                   v-model="student.lastName"
                   name="lastName"
@@ -210,7 +214,7 @@
             <section class="form-section flex flex-column">
               <!--English Language Level-->
               <div class="w-full">
-                <label for="ell">English as a Second Language</label>
+                <label for="ell" class="text-gray-600">English as a Second Language</label>
                 <PvSelect
                   v-model="student.ell"
                   :options="ellOptions"
@@ -222,7 +226,7 @@
               </div>
               <!--Sex-->
               <div class="w-full">
-                <label for="sex">Gender </label>
+                <label for="sex" class="text-gray-600">Gender </label>
                 <PvSelect
                   v-model="student.gender"
                   :options="genderOptions"
@@ -236,7 +240,7 @@
             <section class="form-section flex flex-column">
               <!-- Free-Reduced Lunch -->
               <div class="w-full">
-                <label for="stateId">Free-Reduced Lunch </label>
+                <label for="stateId" class="text-gray-600">Free-Reduced Lunch </label>
                 <PvSelect
                   v-model="student.freeReducedLunch"
                   :options="frlOptions"
@@ -248,7 +252,7 @@
               </div>
               <!-- IEP Status -->
               <div class="w-full">
-                <label for="stateId">IEP Status</label>
+                <label for="stateId" class="text-gray-600">IEP Status</label>
                 <PvSelect
                   v-model="student.IEPStatus"
                   :options="IEPOptions"
@@ -262,7 +266,7 @@
             <section class="form-section flex flex-column">
               <!-- Race -->
               <div class="w-full">
-                <label for="race">Race </label>
+                <label for="race" class="text-gray-600">Race </label>
                 <PvAutoComplete
                   v-model="student.race"
                   multiple
@@ -274,7 +278,7 @@
               </div>
               <!-- Hispanic Ethinicity -->
               <div class="w-full">
-                <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
+                <label for="hispanicEthnicity" class="text-gray-600">Hispanic or Latino Ethnicity </label>
                 <PvSelect
                   v-model="student.hispanicEthnicity"
                   :options="ethnicityOptions"
@@ -288,7 +292,7 @@
             <section class="form-section">
               <!-- Home Language -->
               <div class="w-full">
-                <label for="stateId">Home Language </label>
+                <label for="stateId" class="text-gray-600">Home Language </label>
                 <PvAutoComplete
                   v-model="student.homeLanguage"
                   multiple
