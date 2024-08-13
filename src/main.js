@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import { createHead } from '@vueuse/head';
+import { createHead } from '@unhead/vue';
 import { initSentry } from '@/sentry';
 import router from '@/router/index.js';
 import App from '@/App.vue';
@@ -108,6 +108,8 @@ import { VueRecaptchaPlugin } from 'vue-recaptcha';
 // Begin the app!
 const app = createApp(App);
 const pinia = createPinia();
+const head = createHead();
+
 pinia.use(piniaPluginPersistedState);
 
 app.use(VueRecaptchaPlugin, {
@@ -172,8 +174,7 @@ app.use(VueGoogleMaps, {
     libraries: 'places',
   },
 });
-
-app.use(createHead());
+app.use(head);
 app.use(TextClamp);
 app.use(VueQueryPlugin);
 app.use(i18n);
@@ -248,7 +249,7 @@ app.component('PvPopover', PvPopover);
 app.directive('tooltip', PvTooltip);
 
 // Register all components that begin with App
-const appComponentFiles = import.meta.globEager('./components/App*.vue');
+const appComponentFiles = import.meta.glob('./components/App*.vue', { eager: true });
 
 Object.entries(appComponentFiles).forEach(([path, m]) => {
   const componentName = path.split('/').pop().replace('.vue', '');
