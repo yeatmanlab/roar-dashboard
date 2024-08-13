@@ -149,6 +149,7 @@ import _omit from 'lodash/omit';
 import _set from 'lodash/set';
 import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase';
+import _sortBy from 'lodash/orderBy';
 import _find from 'lodash/find';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
@@ -173,7 +174,6 @@ const dropdownOptions = ref([
     label: 'Required',
     items: [
       // { label: 'Student Username', value: 'username' },
-      // { label: 'Student Email', value: 'email' },
       { label: 'Grade', value: 'grade' },
       // { label: 'Password', value: 'password' },
       { label: 'Student Date of Birth', value: 'dob' },
@@ -183,6 +183,7 @@ const dropdownOptions = ref([
     label: 'Optional',
     items: [
       { label: 'Ignore this column', value: 'ignore' },
+      { label: 'Student Email', value: 'email' },
       { label: 'TestData', value: 'testData' },
       { label: 'First Name', value: 'firstName' },
       { label: 'Middle Name', value: 'middleName' },
@@ -320,10 +321,6 @@ function getKeyByValue(object, value) {
   return Object.keys(object).find((key) => object[key] === value);
 }
 
-function checkUniqueStudents(students, field) {
-  const uniqueStudents = _uniqBy(students, (student) => student[field]);
-  return students.length === uniqueStudents.length;
-}
 
 async function submitStudents() {
   // Reset error users
@@ -334,8 +331,15 @@ async function submitStudents() {
   activeSubmit.value = true;
   const modelValues = _compact(Object.values(dropdownModel.value));
 
+  let usersWithEmailOffset = 0
 
-  const studentsToBeRegistered = _cloneDeep(toRaw(rawStudentFile.value));
+  // may need toRaw
+  const studentsToBeRegistered = _sortBy(_cloneDeep(rawStudentFile.value), (student) => {
+    if(student.email) usersWithEmailOffset += 1;
+    return student.email
+  });
+  console.log('studentsToBeRegistered: ', studentsToBeRegistered);
+  console.log('usersWithEmailOffset: ', usersWithEmailOffset);
   // Construct list of student objects, handle special columns
   for (const student of studentsToBeRegistered) {
     const { district, school, _class, group: groups, } = student;
@@ -468,7 +472,7 @@ async function submitStudents() {
       
       // Update only the newly registered users
       currentRegisteredUsers.forEach((registeredUser, index) => {
-        const rawUserIndex = processedUserCount + index;
+        const rawUserIndex = usersWithEmailOffset + processedUserCount + index;
         if (rawUserIndex < rawStudentFile.value.length) {
           rawStudentFile.value[rawUserIndex].email = registeredUser.email;
           rawStudentFile.value[rawUserIndex].password = registeredUser.password;
