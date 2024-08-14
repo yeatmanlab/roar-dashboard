@@ -56,6 +56,6 @@
     "unreliable": "No confiable",
     "reliableTagText": "El comportamiento del estudiante no generó ninguna señal y la carrera puede considerarse confiable.",
     "unreliableTagText": "La carrera fue marcada como poco confiable.",
-    "unreliableTagTextFlags": "La carrera se marcó como no confiable debido a las siguientes banderas"
+    "unreliableTagTextFlags": "La puntuación se marcó como no confiable debido a los siguientes factores"
   }
 }
