@@ -13,8 +13,12 @@ export async function initNewFirekit() {
       db: false,
       functions: false,
     },
-
     verboseLogging: import.meta.env.MODE === 'LEVANTE' ? false : true,
+
+    // The site key is used for app check token verification
+    // The debug token is used to bypass the app check token requirement for local development and for PR deployments
+    siteKey: roarConfig.siteKey,
+    debugToken: roarConfig.debugToken,
   });
   return await firekit.init();
 }
