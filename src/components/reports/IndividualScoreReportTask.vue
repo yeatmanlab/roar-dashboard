@@ -147,11 +147,22 @@ const computedTaskData = computed(() => {
 
   for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
     const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
+    console.log('rawScoreKey', rawScoreKey);
     const compositeScores = scores?.composite;
-    const rawScore =
-      !taskId.includes('vocab') && !taskId.includes('letter') && !taskId.includes('es')
-        ? _get(compositeScores, rawScoreKey)
-        : compositeScores;
+    // const rawScore =
+    //   !taskId.includes('vocab') && !taskId.includes('es') ? _get(compositeScores, rawScoreKey) : compositeScores;
+    let rawScore = null;
+    if (!taskId.includes('vocab') && !taskId.includes('es')) {
+      // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
+      if (taskId.includes('letter')) {
+        rawScore = _get(compositeScores, rawScoreKey) * 100;
+      } else {
+        rawScore = _get(compositeScores, rawScoreKey);
+      }
+    } else {
+      rawScore = compositeScores;
+    }
+    console.log('rawScore', rawScore);
     if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
       const percentileScore = _get(compositeScores, percentileScoreKey);
       const standardScore = _get(compositeScores, standardScoreKey);
@@ -257,6 +268,7 @@ const computedTaskData = computed(() => {
         formattedScoresArray.push(['Deletion (DEL)', deletion]);
         formattedScoresArray.push(['Skills to work on', skillsString]);
       } else if (taskId === 'letter') {
+        console.log('letter case triggered');
         formattedScoresArray;
         const incorrectLetters = [
           scores?.UppercaseNames?.upperIncorrect ?? ''.split(','),
