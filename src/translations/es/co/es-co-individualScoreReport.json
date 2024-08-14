@@ -25,7 +25,7 @@
     "roarDescription": "{roar} evalúa las habilidades fundamentales de lectura que idealmente están vigentes antes del quinto grado.",
     "extraSupportDescription": "En los grados 6 a 12, habilidades que {supportCategory} están en el nivel de tercer grado o por debajo de él. Los estudiantes con este nivel de apoyo probablemente necesiten instrucción adicional sistemática e intensiva sobre esta habilidad para poder acceder a la lectura de su grado.",
     "developingDescription": "Las habilidades que son {supportCategory} están entre el nivel de 3.º y 5.º grado. Los estudiantes con este nivel de apoyo pueden necesitar instrucción adicional sobre esta habilidad para poder acceder a la lectura de su nivel de grado.",
-    "achievedDescription": "Las habilidades que han sido {supportCategory} están por encima del nivel de quinto grado. Los estudiantes que han logrado esta habilidad probablemente no requieran intervención en esta habilidad para acceder a la lectura de nivel de grado.",
+    "achievedDescription": "Las habilidades que han sido {supportCategory} están por encima del nivel de quinto grado. Los estudiantes que han logrado esta habilidad probablemente no requieran intervención para acceder a la lectura de nivel de grado.",
     "extraSupport": "necesita apoyo adicional (rosa)",
     "developing": "En desarrollo (amarillo)",
     "achieved": "logrado (verde)",
