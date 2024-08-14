@@ -22,7 +22,7 @@ export default mergeConfig(
         exclude: ['**/test-support/**', ...coverageConfigDefaults.exclude],
         all: true,
         clean: true,
-        reporter: isCI ? ['json', 'json-summary', 'text-summary', 'github-actions'] : ['html', 'text'],
+        reporter: isCI ? ['json', 'json-summary', 'text-summary'] : ['html', 'text'],
       },
     },
   }),
