@@ -33,7 +33,7 @@
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Assessments</strong>:</span>
         <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-          <span>{{ taskDisplayNames[assessmentId]?.name ?? assessmentId }}</span>
+          <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
           <span
             v-if="showParams"
             v-tooltip.top="'Click to view params'"
@@ -166,7 +166,7 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 const router = useRouter();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex, uid } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex, uid, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },

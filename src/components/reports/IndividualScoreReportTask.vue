@@ -3,7 +3,7 @@
     <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
       <div class="flex flex-column md:flex-row align-items-center justify-content-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
-          <div class="header-task-name">{{ taskDisplayNames[task.taskId]?.extendedTitle }}</div>
+          <div class="header-task-name">{{ tasksDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
           <div class="text-xs uppercase font-thin text-gray-400">
             {{ task[task.scoreToDisplay].name }}
           </div>
@@ -149,6 +149,11 @@ import {
   getScoreKeys,
 } from '@/helpers/reports';
 import { useI18n } from 'vue-i18n';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   studentData: {
