@@ -143,7 +143,7 @@ describe('The partner admin can view score reports for a given administration an
     checkUrl();
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickScoreButton(roarTestAdministrationId);
-    setFilterByScoreCategory('Written-Vocab', 'Optional');
+    setFilterByScoreCategory('ROAR - Written Vocab', 'Optional');
     cy.get('.flex.flex-column.align-items-center.align-text-left.my-8').contains('No results found');
     cy.get('.flex.flex-column.align-items-center.align-text-left.my-8').contains('Reset Filters');
   });

@@ -152,7 +152,7 @@ describe('The partner admin can view progress reports for a given administration
     checkUrl();
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickProgressButton(roarTestAdministrationId);
-    setFilterByProgressCategory('Written-Vocab', 'started');
+    setFilterByProgressCategory('ROAR - Written Vocab', 'started');
     cy.get('.flex.flex-column.align-items-center.align-text-left.my-8').contains('No results found');
     cy.get('.flex.flex-column.align-items-center.align-text-left.my-8').contains('Reset Filters');
   });
