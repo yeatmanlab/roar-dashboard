@@ -11,7 +11,6 @@ import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { flattenObj } from '@/helpers';
-import { getToken } from 'firebase/app-check';
 
 export const convertValues = (value) => {
   const passThroughKeys = [
