@@ -80,7 +80,7 @@
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab header="Score Breakdown">
             <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
-              <div class="flex justify-content-between score-table">
+              <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
                 <div class="mr-2">
                   <b>{{ key }}</b
                   ><span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
@@ -155,7 +155,7 @@ const computedTaskData = computed(() => {
     if (!taskId.includes('vocab') && !taskId.includes('es')) {
       // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
       if (taskId.includes('letter')) {
-        rawScore = _get(compositeScores, rawScoreKey) * 100;
+        rawScore = _get(compositeScores, 'totalCorrect');
       } else {
         rawScore = _get(compositeScores, rawScoreKey);
       }
