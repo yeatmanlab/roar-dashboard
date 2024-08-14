@@ -53,7 +53,7 @@
     "optionalTagText": "Esta tarea era una tarea opcional.",
     "requiredTagText": "Esta tarea era una tarea requerida.",
     "reliable": "Confiable",
-    "unreliable": "Faltón",
+    "unreliable": "No confiable",
     "reliableTagText": "El comportamiento del estudiante no generó ninguna señal y la carrera puede considerarse confiable.",
     "unreliableTagText": "La carrera fue marcada como poco confiable.",
     "unreliableTagTextFlags": "La carrera se marcó como no confiable debido a las siguientes banderas"
