@@ -338,11 +338,11 @@ function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
   const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
   if (support_level) {
     if (support_level === 'Achieved Skill') {
-      return 'have achieved the skill of';
+      return t('scoreReports.achievedText');
     } else if (support_level === 'Developing Skill') {
-      return 'are developing the skill of';
+      return t('scoreReports.developingText');
     } else if (support_level === 'Needs Extra Support') {
-      return 'need extra support in';
+      return t('scoreReports.extraSupportText');
     }
   }
 }

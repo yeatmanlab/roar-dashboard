@@ -6,6 +6,8 @@ import {
   enUSIndividualScoreReport,
   esTranslations,
   esCOTranslations,
+  esIndividualScoreReport,
+  esCOIndividualScoreReport,
 } from './exports';
 
 export const languageOptions = {
@@ -45,8 +47,8 @@ export const i18n = createI18n({
   messages: {
     en: { ...enUSTranslations, ...enIndividualScoreReport },
     'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
-    es: esTranslations,
-    'es-CO': esCOTranslations,
+    es: { ...esTranslations, ...esIndividualScoreReport },
+    'es-CO': { ...esCOTranslations, ...esCOIndividualScoreReport },
   },
   legacy: false,
   globalInjection: true,
