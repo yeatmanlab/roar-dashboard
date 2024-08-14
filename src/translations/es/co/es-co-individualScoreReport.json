@@ -10,7 +10,7 @@
     "collapseSections": "Contraer todas las secciones",
     "exportPDF": "Exportar a PDF",
     "stillWorking": "¡Parece que {firstName} todavía está trabajando para completar los juegos asignados!",
-    "needOneComplete": "El informe de puntuación individual de {firstName} se creará cuando el estudiante haya completado al menos una evaluación.",
+    "needOneComplete": "El informe individual de notas de {firstName} se creará cuando el/la estudiante haya completado al menos una actividad.",
     "completedTasks": "{firstName} completó los siguientes juegos:",
     "roarSummery": "La Evaluación Rápida de Lectura en Línea (ROAR) evalúa a los estudiantes en una variedad de habilidades fundamentales de lectura.",
     "summery": "En este informe, encontrará la puntuación de {firstName} en el momento de la prueba, así como formas en que puede apoyar a {firstName} en su camino hacia la fluidez y comprensión lectora.",
