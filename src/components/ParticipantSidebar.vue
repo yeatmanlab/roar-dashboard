@@ -3,16 +3,16 @@
     <div class="sidebar-progress">
       <PvChart type="doughnut" :data="chartData" :options="chartOptions" />
       <div>
-        <p class="sidebar-progress-totals">{{ completedGames }}/{{ totalGames }}</p>
-        <p>{{ $t('participantSidebar.tasksCompleted') }}</p>
+        <p class="sidebar-progress-totals text-gray-600">{{ completedGames }}/{{ totalGames }}</p>
+        <p class="text-gray-600">{{ $t('participantSidebar.tasksCompleted') }}</p>
       </div>
     </div>
     <div class="flex flex-row">
       <ul v-if="!!studentInfo" class="sidebar-info">
-        <li class="sidebar-title">
+        <li class="sidebar-title text-gray-600">
           <strong>{{ $t('participantSidebar.studentInfo') }}</strong>
         </li>
-        <li>
+        <li class="text-gray-600">
           {{ $t('participantSidebar.grade') }}: <span class="sidebar-info-item">{{ studentInfo.grade }}</span>
         </li>
       </ul>

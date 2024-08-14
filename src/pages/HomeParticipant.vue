@@ -8,11 +8,11 @@
       </div>
       <div v-show="!isFetching">
         <PvFloatLabel>
-          <h2 v-if="adminInfo?.length == 1" class="dropdown-container">
+          <h2 v-if="adminInfo?.length == 1" class="dropdown-container text-gray-600 ml-5">
             {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
           </h2>
         </PvFloatLabel>
-        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
+        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between text-gray-600">
           <div
             v-if="optionalAssessments.length !== 0"
             class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
@@ -446,5 +446,8 @@ watch(
 .loading-container {
   width: 100%;
   text-align: center;
+}
+body {
+  background: white;
 }
 </style>
