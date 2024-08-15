@@ -13,8 +13,8 @@
         </div>
 
         <div v-if="initialized && !registering" class="w-full">
-          <div class="grid">
-            <div class="col-12 md:col-6 lg:col-3 my-3">
+          <div class="flex gap-3 flex-column md:flex-row my-3">
+            <div class="w-full">
               <span class="p-float-label">
                 <PvInputText
                   id="first-name"
@@ -25,8 +25,7 @@
                 <label for="first-name">First Name</label>
               </span>
             </div>
-
-            <div class="col-12 md:col-6 lg:col-3 my-3">
+            <div class="w-full">
               <span class="p-float-label">
                 <PvInputText
                   id="middle-name"
@@ -37,18 +36,24 @@
                 <label for="middle-name">Middle Name</label>
               </span>
             </div>
-
-            <div class="col-12 md:col-6 lg:col-3 my-3">
+            <div class="w-full">
               <span class="p-float-label">
                 <PvInputText id="last-name" v-model="lastName" class="w-full" data-cy="input-administrator-last-name" />
                 <label for="last-name">Last Name</label>
               </span>
             </div>
-
-            <div class="col-12 md:col-6 lg:col-3 my-3">
+          </div>
+          <div class="flex gap-3 flex-column sm:flex-row my-3">
+            <div class="w-full">
               <span class="p-float-label">
                 <PvInputText id="email" v-model="email" class="w-full" data-cy="input-administrator-email" />
                 <label for="email">Email</label>
+              </span>
+            </div>
+            <div class="w-full">
+              <span class="p-float-label">
+                <PvInputText id="password" v-model="password" class="w-full" data-cy="input-administrator-password" />
+                <label for="password">Password</label>
               </span>
             </div>
           </div>
@@ -104,6 +109,7 @@ const firstName = ref();
 const middleName = ref();
 const lastName = ref();
 const email = ref();
+const password = ref();
 const isTestData = ref(false);
 
 const authStore = useAuthStore();
@@ -170,7 +176,14 @@ const submit = async () => {
   }
 
   await roarfirekit.value
-    .createAdministrator(email.value, name, orgs, adminOrgs, isTestData)
+    .createAdministrator({
+      email: email.value,
+      password: password.value,
+      name: name,
+      targetOrgs: orgs,
+      targetAdminOrgs: adminOrgs,
+      isTestData,
+    })
     .then(() => {
       toast.add({ severity: 'success', summary: 'Success', detail: 'Administrator account created', life: 5000 });
       router.push({ name: 'Home' });
