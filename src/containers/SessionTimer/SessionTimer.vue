@@ -20,6 +20,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useInactivityTimeout } from '@/composables/useInactivityTimeout/useInactivityTimeout';
 import { useAuthStore } from '@/store/auth';
+import { APP_ROUTES } from '@/constants/routes';
 import { AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD, AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION } from '@/constants/auth';
 
 const authStore = useAuthStore();
@@ -42,7 +43,7 @@ const { countdownTimer, resetTimer } = useInactivityTimeout({
   },
   onTimeout: async () => {
     await authStore.signOut();
-    router.push({ path: '/' });
+    router.push({ path: APP_ROUTES.SIGN_IN });
   },
 });
 </script>
