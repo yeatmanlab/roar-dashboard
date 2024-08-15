@@ -447,7 +447,4 @@ watch(
   width: 100%;
   text-align: center;
 }
-body {
-  background: white;
-}
 </style>

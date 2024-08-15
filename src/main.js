@@ -137,30 +137,15 @@ const MyPreset = definePreset(Aura, {
       900: '{red.900}',
       950: '{red.950}',
     },
-    colorScheme: {
-      dark: {
-        surface: {
-          0: 'black',
-          50: '{surface.200}',
-          100: '{surface.300}',
-          200: '{red.800}',
-          300: '{red.800}',
-          400: '{red.400}',
-          500: '{red.500}',
-          600: '{surface.200}',
-          700: '{gray.200}',
-          800: 'white',
-          900: 'white',
-          950: 'white',
-        },
-      },
-    },
   },
 });
 
 app.use(PrimeVue, {
   theme: {
     preset: MyPreset,
+    options: {
+      darkModeSelector: 'dark-mode',
+    },
   },
   ripple: true,
 });

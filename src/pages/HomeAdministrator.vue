@@ -381,7 +381,4 @@ button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
   width: 100%;
   text-align: center;
 }
-body {
-  background: white;
-}
 </style>
