@@ -220,7 +220,7 @@
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
-            :header="tasksDictionary.value[taskId]?.publicName ?? taskId"
+            :header="tasksDictionary[taskId]?.publicName ?? taskId"
           >
             <div :id="'tab-view-' + taskId">
               <TaskReport
