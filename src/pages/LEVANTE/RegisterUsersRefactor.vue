@@ -110,7 +110,11 @@
   // Primary Table & Dropdown refs
   const dataTable = ref();
   
-  const requiredColumns = ['userType', 'month', 'year', 'group', 'district', 'school', 'class'];
+  // One or the other of the following columns is required:
+  // 'group', | 'district', 'school', 'class'
+
+  // Month and Year are required only for 'child' or 'student' users
+  const requiredColumns = ['userType', 'month', 'year'];
   const allFields = [
     {
       field: 'userType',
@@ -187,6 +191,15 @@
   
     // Check uploaded CSV has required columns
     const missingColumns = requiredColumns.filter((col) => !(col in toRaw(rawUserFile.value[0])));
+
+    const columns = toRaw(rawUserFile.value[0])
+    if (
+      !('group' in columns) && 
+      !('district' in columns && 'school' in columns)
+    ) {
+      missingColumns.push('group OR district and school');
+    }
+
     if (missingColumns.length > 0) {
       toast.add({
         severity: 'error',
@@ -212,7 +225,7 @@
       // Check for group or district and school
       if (!user.group) {
         if (!user.district || !user.school) {
-          missingFields.push('group or district and school');
+          missingFields.push('group OR district and school');
         }
       }
 
@@ -271,51 +284,57 @@
 
     // Check orgs exist
     for (const user of usersToBeRegistered) {
-      const { district, school, _class, group: groups, } = user;
+      const { district, school, class: _class, group: groups, } = user;
+      console.log('user: ', user);
 
       const orgNameMap = {
-        district: district,
-        school: school,
-        class: _class?.split(','),
-        group: groups?.split(','),
+        district: district ?? '',
+        school: school ?? '',
+        class: _class ?? '',
+        group: groups?.split(',') ?? [],
       };
 
+      console.log('orgNameMap: ', orgNameMap);
+
       // console.log('orgNameMap', orgNameMap);
+
+      let orgInfo = {
+            district: '',
+            school: '',
+            class: '',
+            group: [],
+      };
 
       // If orgType is a given column, check if the name is
       //   associated with a valid id. If so, add the id to
       //   the sendObject. If not, reject user
       for (const [orgType, orgName] of Object.entries(orgNameMap)) {
         if (orgName) {
-          let orgInfo = {
-            district: '',
-            school: '',
-            class: '',
-            group: [],
-          };
-
           if (orgType === 'school') {
-            const { id: districtId } = await getOrgId('districts', district);
-            const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined))
-            // Need to Raw it because a large amount of users causes this to become a proxy object
-            orgInfo['school'] = orgIds.map(orgData => toRaw(orgData).id);
+              const districtId = await getOrgId('districts', district);
+              console.log('districtId: ', districtId);
+              const schoolId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined))
+              console.log('schoolId: ', orgIds);
+              // Need to Raw it because a large amount of users causes this to become a proxy object
+              orgInfo.school = schoolId;
           } else if (orgType === 'class') {
-            for (const aClass of orgNameMap.class) {
-              const { id: districtId } = await getOrgId('districts', district);
-              const { id: schoolId } = await getOrgId('schools', school);
-              const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), aClass, ref(districtId), ref(schoolId));
-              orgInfo.class.push(...orgIds.map(orgData => toRaw(orgData).id));
-            }
+              const districtId = await getOrgId('districts', district);
+              const schoolId = await getOrgId('schools', school);
+              const classId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
+              console.log('classId: ', classId);
+              orgInfo.class = classId;
           } else if (orgType === 'group') {
             for (const group of orgNameMap.group) {
               console.log('Fetching orgId for', group);
-              const orgId = await getOrgId(pluralizeFirestoreCollection(orgType), group, ref(undefined), ref(undefined));
-              console.log('OrgIds fetched:', orgId);
-              orgInfo.group.push(...orgId);
+              const groupId = await getOrgId(pluralizeFirestoreCollection(orgType), group, ref(undefined), ref(undefined));
+              console.log('OrgIds fetched:', groupId);
+              orgInfo.group.push(groupId);
             }
           } else {
-            const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
-            orgInfo['district'] = orgIds.map(orgData => toRaw(orgData).id);
+            console.log('Fetching orgId for', orgType, orgName);
+            const districtId = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
+            console.log('District Id: ', districtId);
+            orgInfo.district = districtId;
           }
 
           if (!_isEmpty(orgInfo)) {
@@ -337,85 +356,85 @@
 
     // TODO: Figure out deadline-exceeded error with 700+ users. (Registration works fine, creates all documents but the client recieves the error)
     // Spit users into chunks of 1000
-    const chunkedUsersToBeRegistered = _chunk(usersToBeRegistered, 700);
+  //   const chunkedUsersToBeRegistered = _chunk(usersToBeRegistered, 700);
 
-    console.log('chunkedUsersToBeRegistered', chunkedUsersToBeRegistered);
+  //   console.log('chunkedUsersToBeRegistered', chunkedUsersToBeRegistered);
   
-    // Begin submit process
-    // Org must be created before users can be created
-    let processedUserCount = 0;
-    for (const users of chunkedUsersToBeRegistered) {
-      try {
-        const res = await authStore.createUsers(users);
-        const currentRegisteredUsers = res.data.data;
+  //   // Begin submit process
+  //   // Org must be created before users can be created
+  //   let processedUserCount = 0;
+  //   for (const users of chunkedUsersToBeRegistered) {
+  //     try {
+  //       const res = await authStore.createUsers(users);
+  //       const currentRegisteredUsers = res.data.data;
         
-        // Update only the newly registered users
-        currentRegisteredUsers.forEach((registeredUser, index) => {
-          const rawUserIndex = processedUserCount + index;
-          if (rawUserIndex < rawUserFile.value.length) {
-            rawUserFile.value[rawUserIndex].email = registeredUser.email;
-            rawUserFile.value[rawUserIndex].password = registeredUser.password;
-            rawUserFile.value[rawUserIndex].uid = registeredUser.uid;
-          }
-        });
+  //       // Update only the newly registered users
+  //       currentRegisteredUsers.forEach((registeredUser, index) => {
+  //         const rawUserIndex = processedUserCount + index;
+  //         if (rawUserIndex < rawUserFile.value.length) {
+  //           rawUserFile.value[rawUserIndex].email = registeredUser.email;
+  //           rawUserFile.value[rawUserIndex].password = registeredUser.password;
+  //           rawUserFile.value[rawUserIndex].uid = registeredUser.uid;
+  //         }
+  //       });
 
-        registeredUsers.value.push(...currentRegisteredUsers);
+  //       registeredUsers.value.push(...currentRegisteredUsers);
         
-        // Update the count of processed users
-        processedUserCount += currentRegisteredUsers.length;
+  //       // Update the count of processed users
+  //       processedUserCount += currentRegisteredUsers.length;
 
-      } catch (error) {
-        // TODO: Show users that failed to register
-        console.error(error);
+  //     } catch (error) {
+  //       // TODO: Show users that failed to register
+  //       console.error(error);
     
-        toast.add({
-          severity: 'error',
-          summary: 'Error registering users: ' + error.message,
-          life: 9000,
-        });
-      }
-    }
+  //       toast.add({
+  //         severity: 'error',
+  //         summary: 'Error registering users: ' + error.message,
+  //         life: 9000,
+  //       });
+  //     }
+  //   }
 
-    activeSubmit.value = false;
-    toast.add({
-      severity: 'success',
-      summary: 'User Creation Success',
-      life: 9000,
-    });
+  //   activeSubmit.value = false;
+  //   toast.add({
+  //     severity: 'success',
+  //     summary: 'User Creation Success',
+  //     life: 9000,
+  //   });
     
-    convertUsersToCSV();
-  }
+  //   convertUsersToCSV();
+  // }
 
 
-  const csvBlob = ref(null);
-  const csvURL = ref(null);
+  // const csvBlob = ref(null);
+  // const csvURL = ref(null);
   
-  function convertUsersToCSV() {
-    const headerObj = toRaw(rawUserFile.value[0]);
+  // function convertUsersToCSV() {
+  //   const headerObj = toRaw(rawUserFile.value[0]);
   
-    // Convert Objects to CSV String
-    const csvHeader = Object.keys(headerObj).join(',') + '\n';
-    const csvRows = rawUserFile.value
-      .map((obj) =>
-        Object.values(obj)
-          .map((value) => {
-            if (value === null || value === undefined) return '';
-            return `"${value.toString().replace(/"/g, '""')}"`;
-          })
-          .join(','),
-      )
-      .join('\n');
+  //   // Convert Objects to CSV String
+  //   const csvHeader = Object.keys(headerObj).join(',') + '\n';
+  //   const csvRows = rawUserFile.value
+  //     .map((obj) =>
+  //       Object.values(obj)
+  //         .map((value) => {
+  //           if (value === null || value === undefined) return '';
+  //           return `"${value.toString().replace(/"/g, '""')}"`;
+  //         })
+  //         .join(','),
+  //     )
+  //     .join('\n');
   
-    const csvString = csvHeader + csvRows;
+  //   const csvString = csvHeader + csvRows;
   
-    // Create Blob from CSV String
-    csvBlob.value = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  //   // Create Blob from CSV String
+  //   csvBlob.value = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
   
-    // Create URL from Blob
-    csvURL.value = URL.createObjectURL(csvBlob.value);
+  //   // Create URL from Blob
+  //   csvURL.value = URL.createObjectURL(csvBlob.value);
   
-    // Initiate download
-    downloadCSV();
+  //   // Initiate download
+  //   downloadCSV();
   }
   
   function downloadCSV() {
@@ -456,12 +475,12 @@
   }
   
   // TODO: Refactor this to be a single call
-  const orgIds = ref({
+  const orgIds = {
     districts: {},
     schools: {},
     classes: {},
     groups: {},
-  });
+  };
 
     /**
    * Retrieves the ID of an organization based on its type and name.
@@ -473,7 +492,7 @@
    * @param {string} orgName - The name of the organization.
    * @param {Object|undefined} parentDistrict - The parent district reference, if applicable.
    * @param {Object|undefined} parentSchool - The parent school reference, if applicable.
-   * @returns {Promise<Object>} A promise that resolves to an object containing organization details, including its ID.
+   * @returns {Promise<String>} A promise that resolves to a string representing the organization ID.
    * @throws {Error} Throws an error if no organizations are found for the given type and name.
    *
    * @example
@@ -487,22 +506,18 @@
    * If no organizations are found, it throws an error.
    */
   const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
-    if (orgIds.value[orgType][orgName]) return orgIds.value[orgType][orgName];
+    if (orgIds[orgType][orgName]) return orgIds[orgType][orgName];
   
-    // Currently we don't supply selectedDistrict or selectedSchool
     // Array of objects. Ex: [{abbreviation: 'LVT', id: 'lut54353jkler'}]
     const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
-    const orgsWithIds = orgs.map((org) => org.id);
   
     if (orgs.length === 0) {
       throw new Error(`No organizations found for ${orgType} '${orgName}'`);
     }
   
-    orgIds.value[orgType][orgName] = orgs[0];
+    orgIds[orgType][orgName] = orgs[0].id;
   
-    // console.log('orgs: ', orgs);
-  
-    return orgsWithIds;
+    return orgs[0].id;
   };
 
   </script>
