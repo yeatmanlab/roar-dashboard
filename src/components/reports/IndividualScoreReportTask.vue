@@ -148,8 +148,6 @@ const computedTaskData = computed(() => {
   for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
     const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
     const compositeScores = scores?.composite;
-    // const rawScore =
-    //   !taskId.includes('vocab') && !taskId.includes('es') ? _get(compositeScores, rawScoreKey) : compositeScores;
     let rawScore = null;
     if (!taskId.includes('vocab') && !taskId.includes('es')) {
       // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
