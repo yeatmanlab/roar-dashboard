@@ -117,7 +117,7 @@
               binary
               :disabled="showConsent"
               :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
-              @change="getConsent"
+              @change="getConsent(!v$.$invalid)"
             />
             <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
               >I agree to the terms and conditions<span class="required">*</span></label
@@ -282,7 +282,7 @@ async function handleConsentAccept() {
   state.accept = true;
 }
 
-async function getConsent() {
+async function getConsent(isFormValid) {
   if (props.isAdobeSign === true) {
     isAdobe.value = props.isAdobeSign;
   } else {
@@ -291,6 +291,9 @@ async function getConsent() {
     // consentVersion = consentDoc.version;
     showConsent.value = true;
     handleCheckCaptcha();
+  }
+  if (isFormValid) {
+    handleFormSubmit(isFormValid);
   }
 }
 
