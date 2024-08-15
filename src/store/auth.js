@@ -24,11 +24,13 @@ export const useAuthStore = () => {
         userClaims: null,
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
+        routeToProfile: false,
         authFromClever: false,
         authFromClassLink: false,
         userQueryKeyIndex: 0,
         assignmentQueryKeyIndex: 0,
         administrationQueryKeyIndex: 0,
+        tasksDictionary: {},
       };
     },
     getters: {
@@ -59,7 +61,6 @@ export const useAuthStore = () => {
     },
     actions: {
       async completeAssessment(adminId, taskId) {
-        console.log('inside authStore func');
         await this.roarfirekit.completeAssessment(adminId, taskId);
         this.assignmentQueryKeyIndex += 1;
       },
@@ -75,6 +76,7 @@ export const useAuthStore = () => {
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
+            this.updateTasksDictionary();
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
@@ -87,6 +89,14 @@ export const useAuthStore = () => {
       },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
+      },
+      async updateTasksDictionary() {
+        if (this.isFirekitInit) {
+          const tasksDictionary = await this.roarfirekit.getTasksDictionary();
+          this.tasksDictionary = tasksDictionary;
+          return;
+        }
+        return;
       },
       async updateConsentStatus(docName, consentVersion, params = {}) {
         this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
@@ -190,12 +200,23 @@ export const useAuthStore = () => {
             this.userQueryKeyIndex += 1;
             this.assignmentQueryKeyIndex += 1;
             this.administrationQueryKeyIndex += 1;
+            this.tasksDictionary = {};
 
             const gameStore = useGameStore();
             gameStore.selectedAdmin = undefined;
           });
         } else {
           console.log('Cant log out while not logged in');
+        }
+      },
+      async sendMyPasswordResetEmail() {
+        if (this.email) {
+          return await this.roarfirekit.sendPasswordResetEmail(this.email).then(() => {
+            return true;
+          });
+        } else {
+          console.warn('Logged in user does not have an associated email. Unable to send password reset email');
+          return false;
         }
       },
       async createNewFamily(careTakerEmail, careTakerPassword, careTakerData, students, isTestData = false) {

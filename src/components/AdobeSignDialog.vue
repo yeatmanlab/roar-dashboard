@@ -98,15 +98,14 @@ onMounted(() => {
 const signerEmail = ref('');
 const docCreated = ref(false);
 const isVisible = ref(false);
-const isAdult = ref(false);
-const emit = defineEmits(['consent-selected']);
+const emit = defineEmits(['consent-signed']);
 
 const toast = useToast();
 
 const props = defineProps({
   isAdobe: { type: Boolean, required: true, default: false },
   isAdult: { type: Boolean, required: true, default: false },
-  parentEmail: { type: String, required: false },
+  parentEmail: { type: String, required: false, default: null },
 });
 
 if (props.parentEmail) {
@@ -143,7 +142,7 @@ async function createConsent() {
   }
 
   if (docStatus.value === 'SIGNED') {
-    props.isAdobe = false;
+    // props.isAdobe = false;
     isVisible.value = false;
     toast.add({ severity: 'success', summary: 'Success', detail: 'Document has been signed!', life: 3000 });
     emit('consent-signed', docStatus.value);

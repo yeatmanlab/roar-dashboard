@@ -1,30 +1,24 @@
 <template>
   <div
     v-if="(_get(colData, col.field) != undefined || _get(colData, 'optional')) && col.emptyTag !== true"
-    v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`"
+    v-tooltip.right="`${returnScoreTooltip(colData, col.field)}`"
   >
     <PvTag
       :value="_get(colData, col.field)"
       :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; 
-      ${
-        returnScoreTooltip(col.header, colData, col.field)?.length > 0 &&
-        'outline: 1px dotted #0000CD; outline-offset: 3px'
-      };
+      ${returnScoreTooltip(colData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'};
       font-weight: bold;
       color: ${_get(colData, col.tagColor) === 'white' ? '#303030' : 'white'}
       `"
       rounded
     />
   </div>
-  <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(col.header, colData, col.field)}`">
+  <div v-else-if="col.emptyTag" v-tooltip.right="`${returnScoreTooltip(colData, col.field)}`">
     <div
       class="circle"
       :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
         _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
-      }; ${
-        returnScoreTooltip(col.header, colData, col.field)?.length > 0 &&
-        'outline: 1px dotted #0000CD; outline-offset: 3px'
-      }`"
+      }; ${returnScoreTooltip(colData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'}`"
     />
   </div>
 </template>
@@ -35,6 +29,7 @@ import _lowerCase from 'lodash/lowerCase';
 import {
   tasksToDisplayPercentCorrect,
   tasksToDisplayCorrectIncorrectDifference,
+  tasksToDisplayTotalCorrect,
   rawOnlyTasks,
   scoredTasks,
 } from '@/helpers/reports.js';
@@ -53,7 +48,7 @@ defineProps({
   },
 });
 
-let returnScoreTooltip = (colHeader, colData, fieldPath) => {
+let returnScoreTooltip = (colData, fieldPath) => {
   const taskId = fieldPath.split('.')[0] === 'scores' ? fieldPath.split('.')[1] : null;
   let toolTip = '';
 
@@ -79,17 +74,26 @@ function handleToolTip(_taskId, _toolTip, _colData) {
   if (
     _colData.scores?.[_taskId]?.rawScore != undefined ||
     _colData.scores?.[_taskId]?.percentCorrect ||
-    _colData.scores?.[_taskId]?.correctIncorrectDifference
+    _colData.scores?.[_taskId]?.correctIncorrectDifference ||
+    _colData.scores?.[_taskId]?.numAttempted
   ) {
     if (tasksToDisplayCorrectIncorrectDifference.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Incorrect: ' + _colData.scores?.[_taskId]?.numIncorrect + '\n';
       _toolTip += 'Correct - Incorrect: ' + _colData.scores?.[_taskId]?.correctIncorrectDifference + '\n';
+    } else if (tasksToDisplayTotalCorrect.includes(_taskId)) {
+      if (_colData.scores?.[_taskId]?.numCorrect === undefined) {
+        _toolTip += 'Num Correct: ' + 0 + '\n';
+        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      } else {
+        _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
+        _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
+      }
     } else if (tasksToDisplayPercentCorrect.includes(_taskId)) {
       _toolTip += 'Num Correct: ' + _colData.scores?.[_taskId]?.numCorrect + '\n';
       _toolTip += 'Num Attempted: ' + _colData.scores?.[_taskId]?.numAttempted + '\n';
       _toolTip += 'Percent Correct: ' + _colData.scores?.[_taskId]?.percentCorrect + '\n';
-    } else if (rawOnlyTasks.includes(_taskId)) {
+    } else if (rawOnlyTasks.includes(_taskId) && _colData.scores?.[_taskId]?.rawScore !== undefined) {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
     } else {
       _toolTip += 'Raw Score: ' + _colData.scores?.[_taskId]?.rawScore + '\n';
@@ -124,8 +128,11 @@ function getFlags(colData, taskId) {
       const reliabilityFlags = Object.keys(flags).map((flag) => {
         return flagMessages[flag] || _lowerCase(flag);
       });
-      // Join the returned flags with a newline character, then add two newlines for spacing
-      return 'Unreliable Score: ' + '\n' + reliabilityFlags.join('\n') + '\n\n';
+      if (reliabilityFlags.length > 0) {
+        // Join the returned flags with a newline character, then add two newlines for spacing
+        return 'Unreliable Score: ' + '\n' + reliabilityFlags.join('\n') + '\n\n';
+      }
+      return '';
     }
   } else {
     return '';

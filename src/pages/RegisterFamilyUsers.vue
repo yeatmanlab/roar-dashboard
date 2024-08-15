@@ -17,7 +17,7 @@
         </div>
         <div v-if="spinner === false">
           <KeepAlive>
-            <component :is="activeComp()" :is-adobe-sign="isAdobeSign" @submit="handleSubmit($event)" :code="code" />
+            <component :is="activeComp()" :is-adobe-sign="isAdobeSign" :code="code" @submit="handleSubmit($event)" />
           </KeepAlive>
           <div
             v-if="isSuperAdmin"
@@ -48,7 +48,7 @@
           :draggable="false"
         >
           <p>{{ dialogMessage }}</p>
-          <PvButton @click="closeDialog" class="bg-primary p-2 text-white border-none border-round hover:bg-red-900"
+          <PvButton class="bg-primary p-2 text-white border-none border-round hover:bg-red-900" @click="closeDialog"
             >Close</PvButton
           >
         </PvDialog>
@@ -69,20 +69,15 @@ import { fetchDocById } from '@/helpers/query/utils';
 import router from '../router';
 
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const spinner = ref(false);
-let unsubscribe;
 
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   isAdobeSign: { type: Boolean, default: false },
-  code: { type: String },
+  code: { type: String, default: null },
 });
-
-const init = () => {
-  if (unsubscribe) unsubscribe();
-  initialized.value = true;
-};
 
 const { data: userClaims } = useQuery({
   queryKey: ['userClaims', uid],

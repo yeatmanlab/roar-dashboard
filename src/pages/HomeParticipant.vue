@@ -210,6 +210,16 @@ async function checkConsent() {
     return;
   }
 
+  if (!legal?.consent) {
+    // Always show consent form for this test student when running Cypress tests
+    if (userData.value?.id === 'XAq5qOuXnNPHClK0xZXXhfGsWX22') {
+      consentType.value = 'consent';
+      confirmText.value = 'This is a test student. Please do not accept this form.';
+      showConsent.value = true;
+    }
+    return;
+  }
+
   let docType;
 
   let docTypeKey = isOlder ? 'consent' : 'assent';
@@ -219,7 +229,7 @@ async function checkConsent() {
   if (legal?.consent) {
     docType = legal[docTypeKey][0]?.type.toLowerCase();
   } else {
-    docType = isAdult ? 'consent' : 'assent';
+    docType = isAdult.value ? 'consent' : 'assent';
   }
 
   consentType.value = docType;

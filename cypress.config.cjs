@@ -8,13 +8,8 @@ module.exports = defineConfig({
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
     retries: 2,
-    setupNodeEvents(on) {
-      on('task', {
-        log(message) {
-          console.log(message);
-          return null;
-        },
-      });
+    setupNodeEvents(on, config) {
+      return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
     },
   },
   env: {
@@ -55,15 +50,15 @@ module.exports = defineConfig({
     testGroupName: 'Cypress Test Group',
     testGroupInitials: 'SATG',
     testAssignmentsList: [
-      'Letter',
-      'Picture-Vocab',
-      'Single Digit Fluency',
-      'Multi Digit Fluency',
-      'Syntax',
-      'Phoneme',
-      'Word',
-      'Sentence',
-      'Morphology',
+      'ROAR - Letter',
+      'ROAR - Picture Vocab',
+      'ROAM - Math Facts Fluency',
+      'ROAM - Calculation Fluency',
+      'ROAR - Syntax',
+      'ROAR - Phoneme',
+      'ROAR - Word',
+      'ROAR - Sentence',
+      'ROAR - Morphology',
     ],
     testPartnerAdministrationName: 'Partner Test Administration',
     testPartnerAdministrationId: 'kKUSypkMc36mPEzleDE6',

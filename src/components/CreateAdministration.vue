@@ -55,11 +55,10 @@
                 v-model="state.dateStarted"
                 class="w-full"
                 :min-date="minStartDate"
-                input-id="start-date"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
                 icon="pi pi-calendar text-white p-1"
+                input-id="start-date"
                 show-button-bar
                 data-cy="input-start-date"
               />
@@ -78,7 +77,6 @@
                 input-id="end-date"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
                 icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-end-date"
@@ -111,33 +109,40 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
-          :pre-existing-assessment-info="preExistingAdminInfo?.assessments"
           @variants-changed="handleVariantsChanged"
         />
-        <small v-if="(v$.assent.requiredIf.$invalid || v$.consent.requiredIf.$invalid) && submitted" class="p-error"
-          >Please select consent and assent forms.</small
-        >
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
+          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
+            >Please select a consent/assent form.</small
+          >
         </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
             <div class="flex">
               <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
               <span class="flex gap-2">
-                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
+                <PvRadioButton
+                  v-model="state.sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
+                  input-id="Yes"
+                  :value="true"
+                />
                 <label for="Yes">Yes</label>
                 <PvRadioButton
                   v-model="state.sequential"
                   data-cy="radio-button-not-sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
                   input-id="No"
                   :value="false"
                 />
                 <label for="No">No</label>
-                <small v-if="v$.sequential.$invalid && submitted" class="p-error mx-auto"
-                  >Please specify sequential behavior.</small
-                >
               </span>
+              <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
+                >Please specify sequential behavior.</small
+              >
             </div>
             <div class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
@@ -398,7 +403,7 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
-let noConsent = ref('');
+let noConsent = '';
 
 const rules = {
   administrationName: { required },
@@ -406,8 +411,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(() => !isLevante && noConsent.value !== 'No Consent') },
-  assent: { requiredIf: requiredIf(() => !isLevante && noConsent.value !== 'No Consent') },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -450,7 +455,7 @@ const handleVariantsChanged = (newVariants) => {
 
 const handleConsentSelected = (newConsentAssent) => {
   if (newConsentAssent !== 'No Consent') {
-    noConsent.value = '';
+    noConsent = '';
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
@@ -621,9 +626,7 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
         preSelectedVariants.value = _union(preSelectedVariants.value, [found]);
       }
     });
-    state.legal = adminInfo?.legal;
-    state.consent = adminInfo.legal?.consent;
-    state.assent = adminInfo.legal?.assent;
+    state.legal = adminInfo.legal;
   }
 });
 
@@ -685,17 +688,6 @@ function findVariantWithParams(variants, params) {
 }
 .p-datepicker .p-datepicker-buttonbar .p-button:hover {
   background-color: var(--surface-100);
-}
-
-button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
-  border: none;
-  background-color: var(--primary-color);
-  margin-left: -0.5rem;
-  width: 3rem;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  border-top-right-radius: 20%;
-  border-bottom-right-radius: 20%;
 }
 
 .divider {
@@ -778,5 +770,25 @@ button.p-button.p-component.p-button-icon-only.p-datepicker-trigger {
   .hide {
     display: none;
   }
+}
+.p-radiobutton.p-component.p-radiobutton-checked {
+  position: relative;
+  width: 20px; /* adjust as needed */
+  height: 20px; /* adjust as needed */
+  background-color: var(--primary-color);
+  border-color: var(--primary-color) !important;
+  border-radius: 50%; /* make the element itself circular */
+}
+
+.p-radiobutton.p-component.p-radiobutton-checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px; /* adjust size of the inner circle as needed */
+  height: 5px; /* adjust size of the inner circle as needed */
+  background-color: white; /* color of the inner circle */
+  border-radius: 50%; /* make the inner element circular */
+  transform: translate(-50%, -50%); /* center the inner circle */
 }
 </style>

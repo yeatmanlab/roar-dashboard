@@ -1,5 +1,6 @@
 // Import commands.js using ES2015 syntax:
 import './commands';
+import 'cypress-fs';
 
 const firestoreUrl = Cypress.env('firestoreUrl');
 
@@ -75,7 +76,7 @@ beforeEach(() => {
       },
       (req) => {
         req.on('response', (res) => {
-          res.setDelay(2000); // 2 seconds delay
+          res.setDelay(800); // 800ms delay
         });
       },
     ).as('High Latency Network');

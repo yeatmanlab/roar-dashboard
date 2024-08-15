@@ -49,7 +49,8 @@ export function startGame(administration, language, optional, auth) {
 
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 
@@ -84,7 +85,8 @@ export function playLetter({
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 

@@ -45,9 +45,9 @@
             v-model="v$.ParentEmail.$model"
             name="ParentEmail"
             type="email"
-            @input="validateRoarEmail"
             :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
             aria-describedby="username-or-email-error"
+            @input="validateRoarEmail"
           />
         </div>
         <span v-if="v$.ParentEmail.$error && submitted">
@@ -158,8 +158,8 @@
         >
           <p>{{ dialogMessage }}</p>
           <PvButton
-            @click="closeErrorDialog"
             class="bg-primary text-white p-3 border-none border-round z-5 hover:bg-red-900"
+            @click="closeErrorDialog"
             >Close</PvButton
           >
         </PvDialog>

@@ -216,7 +216,7 @@ function copyToClipboard(text) {
         life: 3000,
       });
     })
-    .catch(function (error) {
+    .catch(function () {
       toast.add({
         severity: 'error',
         summary: 'Error!',

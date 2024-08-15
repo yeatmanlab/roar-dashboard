@@ -16,7 +16,11 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import embed from 'vega-embed';
-import { taskDisplayNames } from '@/helpers/reports';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { tasksDictionary } = storeToRefs(authStore);
 
 const returnGradeCount = computed(() => {
   const gradeCount = [];
@@ -129,7 +133,7 @@ const distributionBySupport = computed(() => {
     width: 350,
     background: null,
     title: {
-      text: `ROAR-${taskDisplayNames[props.taskId].name}`,
+      text: `${tasksDictionary.value[props.taskId].publicName ?? props.taskId}`,
       subtitle: `Support Level Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,

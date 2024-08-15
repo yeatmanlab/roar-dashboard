@@ -48,7 +48,8 @@ export function startGame(administration, language, optional, task, auth) {
 
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 
@@ -84,7 +85,8 @@ export function playMorphology({
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 
@@ -109,7 +111,8 @@ export function playWrittenVocabulary({
   cy.wait(0.2 * timeout);
   cy.selectAdministration(administration);
 
-  if (optional) {
+  if (optional === true) {
+    cy.log('Switching to optional assessments.');
     cy.switchToOptionalAssessments();
   }
 

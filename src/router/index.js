@@ -376,6 +376,33 @@ const routes = [
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
   },
   {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('../pages/AdminProfile.vue'),
+    children: [
+      { path: '', name: 'ProfileInfo', component: () => import('../components/views/UserInfoView.vue') },
+      {
+        path: 'password',
+        name: 'ProfilePassword',
+        component: () => import('../components/views/PasswordView.vue'),
+        meta: { requireAdmin: true },
+      },
+      {
+        path: 'accounts',
+        name: 'ProfileAccounts',
+        component: () => import('../components/views/LinkAccountsView.vue'),
+        meta: { requireAdmin: true },
+      },
+      {
+        path: 'offline',
+        name: 'OfflineSettings',
+        component: () => import('../components/views/OfflineSettings.vue'),
+        meta: { requireAdmin: true },
+      },
+    ],
+    meta: { pageTitle: 'Profile' },
+  },
+  {
     path: '/enable-cookies',
     name: 'EnableCookies',
     component: () => import('../pages/EnableCookies.vue'),

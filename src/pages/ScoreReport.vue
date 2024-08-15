@@ -124,6 +124,7 @@
             :total-records="filteredTableData?.length"
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
+            :groupheaders="true"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
             @export-all="exportAll"
@@ -198,12 +199,6 @@
             </div>
           </div>
           <div class="legend-entry">
-            <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Optional};`" />
-            <div>
-              <div>Optional</div>
-            </div>
-          </div>
-          <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
             <div>
               <div>Assessed</div>
@@ -225,7 +220,7 @@
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
-            :header="taskDisplayNames[taskId]?.name ? ('ROAR-' + taskDisplayNames[taskId]?.name).toUpperCase() : ''"
+            :header="tasksDictionary.value[taskId]?.publicName ?? taskId"
           >
             <div :id="'tab-view-' + taskId">
               <TaskReport
@@ -318,6 +313,7 @@ import {
   tasksToDisplayGraphs,
   rawOnlyTasks,
   tasksToDisplayPercentCorrect,
+  tasksToDisplayTotalCorrect,
   addElementToPdf,
   getScoreKeys,
   gradeOptions,
@@ -329,7 +325,7 @@ let TaskReport, DistributionChartOverview, NextSteps;
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -535,10 +531,27 @@ function returnColorByReliability(assessment, rawScore, support_level, tag_color
       return '#e8dbb5';
     } else if (support_level === 'Achieved Skill') {
       return '#c0d9bd';
+    } else if (
+      tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
+      tasksToDisplayPercentCorrect.includes(assessment.taskId)
+    ) {
+      const test = assessment.scores?.raw?.composite?.test;
+      if (
+        (test?.numCorrect === undefined && test?.percentCorrect === undefined) ||
+        (test?.numAttempted === 0 && test?.numCorrect === 0)
+      ) {
+        return '#EEEEF0';
+      }
+      return '#A4DDED';
+    } else if (tasksToDisplayTotalCorrect.includes(assessment.taskId)) {
+      const test = assessment.scores?.raw?.composite?.test;
+      if (test?.numAttempted === 0 || test?.numAttempted === undefined) {
+        return '#EEEEF0';
+      } else {
+        return '#A4DDED';
+      }
     } else if (rawOnlyTasks.includes(assessment.taskId) && rawScore) {
       return 'white';
-    } else {
-      return '#d3d3d3';
     }
   }
   return tag_color;
@@ -554,12 +567,29 @@ const getScoresAndSupportFromAssessment = ({
   taskId,
   optional,
 }) => {
+  let support_level;
+  let tag_color;
   let percentile = _get(assessment, `scores.computed.composite.${percentileScoreKey}`);
   let percentileString = _get(assessment, `scores.computed.composite.${percentileScoreDisplayKey}`);
   let standardScore = _get(assessment, `scores.computed.composite.${standardScoreDisplayKey}`);
   let rawScore = _get(assessment, `scores.computed.composite.${rawScoreKey}`);
 
-  const { support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional);
+  if (
+    tasksToDisplayCorrectIncorrectDifference.includes(assessment.taskId) ||
+    tasksToDisplayPercentCorrect.includes(assessment.taskId) ||
+    tasksToDisplayTotalCorrect.includes(taskId)
+  ) {
+    if (assessment.scores === undefined) {
+      support_level = null;
+      tag_color = null;
+    } else {
+      support_level = '';
+      tag_color = '#A4DDED';
+    }
+  } else {
+    ({ support_level, tag_color } = getSupportLevel(grade, percentile, rawScore, taskId, optional));
+  }
+
   if (percentile) percentile = _round(percentile);
   if (percentileString && !isNaN(_round(percentileString))) percentileString = _round(percentileString);
 
@@ -693,22 +723,37 @@ const computeAssignmentAndRunData = computed(() => {
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const numIncorrect = assessment.scores?.raw?.composite?.test?.numAttempted - numCorrect;
           currRowScores[taskId].correctIncorrectDifference =
-            numCorrect != null && numIncorrect != null ? numCorrect - numIncorrect : null;
+            numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
           currRowScores[taskId].numCorrect = numCorrect;
           currRowScores[taskId].numIncorrect = numIncorrect;
-          currRowScores[taskId].tagColor = supportLevelColors.Assessed;
+          currRowScores[taskId].tagColor = tagColor;
           scoreFilterTags += ' Assessed ';
         } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
           const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
           const numCorrect = assessment.scores?.raw?.composite?.test?.numCorrect;
           const percentCorrect =
-            numAttempted > 0 ? Math.round((numCorrect * 100) / numAttempted).toString() + '%' : null;
+            numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
+              ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
+              : null;
           currRowScores[taskId].percentCorrect = percentCorrect;
           currRowScores[taskId].numAttempted = numAttempted;
           currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].tagColor = percentCorrect === null ? '#EEEEF0' : tagColor;
+          scoreFilterTags += ' Assessed ';
+        } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+          const numAttempted = assessment.scores?.raw?.composite?.test?.numAttempted;
+          const numCorrect =
+            numAttempted === undefined || numAttempted === 0
+              ? ''
+              : numAttempted !== 0 && assessment.scores?.raw?.composite?.test?.numCorrect !== undefined
+              ? assessment.scores?.raw?.composite?.test?.numCorrect
+              : 0;
+          currRowScores[taskId].numAttempted = numAttempted;
+          currRowScores[taskId].numCorrect = numCorrect;
+          currRowScores[taskId].tagColor =
+            numAttempted === undefined || numAttempted === 0 ? '#EEEEF0' : numAttempted !== 0 ? tagColor : '#EEEEF0';
           scoreFilterTags += ' Assessed ';
         }
-
         if (taskId === 'letter' && assessment.scores) {
           currRowScores[taskId].lowerCaseScore = assessment.scores.computed.LowercaseNames?.subScore;
           currRowScores[taskId].upperCaseScore = assessment.scores.computed.UppercaseNames?.subScore;
@@ -856,22 +901,25 @@ const exportSelected = (selectedRows) => {
     for (const taskId in scores) {
       const score = scores[taskId];
       if (tasksToDisplayPercentCorrect.includes(taskId)) {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Percent Correct`] = score.percentCorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Attempted`] = score.numAttempted;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Correct/Incorrect Difference`] =
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Correct/Incorrect Difference`] =
           score.correctIncorrectDifference;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Attempted`] = score.numAttempted;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = score.numCorrect;
       } else if (rawOnlyTasks.includes(taskId)) {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Raw`] = score.rawScore;
       } else {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = score.percentileString;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = score.standardScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Percentile`] = score.percentileString;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Standard`] = score.standardScore;
 
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Raw`] = score.rawScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Support Level`] = score.supportLevel;
       }
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
         const engagementFlags = Object.keys(score.engagementFlags);
@@ -881,20 +929,20 @@ const exportSelected = (selectedRows) => {
               includedValidityFlags[taskId].includes(flag),
             );
             if (filteredFlags.length === 0) {
-              tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Unreliable';
+              tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = 'Unreliable';
             } else {
               const engagementFlagString = 'Unreliable: ' + filteredFlags.map((key) => _lowerCase(key)).join(', ');
-              tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
+              tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = engagementFlagString;
             }
           } else {
             const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
-            tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
+            tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = engagementFlagString;
           }
         } else {
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
+          tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = 'Assessment Incomplete';
         }
       } else {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = 'Reliable';
       }
     }
     return tableRow;
@@ -926,22 +974,25 @@ const exportAll = async () => {
     for (const taskId in scores) {
       const score = scores[taskId];
       if (tasksToDisplayPercentCorrect.includes(taskId)) {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percent Correct`] = score.percentCorrect;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Attempted`] = score.numAttempted;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Percent Correct`] = score.percentCorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Attempted`] = score.numAttempted;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = score.numCorrect;
       } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Correct/Incorrect Difference`] =
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Correct/Incorrect Difference`] =
           score.correctIncorrectDifference;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Num Correct`] = score.numCorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = score.numCorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Attempted`] = score.numAttempted;
       } else if (rawOnlyTasks.includes(taskId)) {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Raw`] = score.rawScore;
       } else {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Percentile`] = score.percentileString;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Standard`] = score.standardScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Percentile`] = score.percentileString;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Standard`] = score.standardScore;
 
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Raw`] = score.rawScore;
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Support Level`] = score.supportLevel;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Raw`] = score.rawScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Support Level`] = score.supportLevel;
       }
 
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
@@ -952,20 +1003,20 @@ const exportAll = async () => {
               includedValidityFlags[taskId].includes(flag),
             );
             if (filteredFlags.length === 0) {
-              tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Unreliable';
+              tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = 'Unreliable';
             } else {
               const engagementFlagString = 'Unreliable: ' + filteredFlags.map((key) => _lowerCase(key)).join(', ');
-              tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
+              tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = engagementFlagString;
             }
           } else {
             const engagementFlagString = 'Unreliable: ' + engagementFlags.map((key) => _lowerCase(key)).join(', ');
-            tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = engagementFlagString;
+            tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = engagementFlagString;
           }
         } else {
-          tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Assessment Incomplete';
+          tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = 'Assessment Incomplete';
         }
       } else {
-        tableRow[`${taskDisplayNames[taskId]?.name ?? taskId} - Reliability`] = 'Reliable';
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Reliability`] = 'Reliable';
       }
     }
     return tableRow;
@@ -985,6 +1036,46 @@ function getScoreKeysByRow(row, grade) {
 }
 
 const refreshing = ref(false);
+
+const getTaskStyle = (taskId, backgroundColor, tasks) => {
+  const taskGroups = {
+    spanish: ['letter-es', 'pa-es', 'swr-es', 'sre-es'],
+    spanishmath: ['fluency-arf-es', 'fluency-calf-es'],
+    supplementary: ['morphology', 'cva', 'vocab', 'trog', 'phonics'],
+    roam: ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'],
+    roav: ['ran', 'crowding', 'roav-mep', 'mep', 'mep-pseudo'],
+  };
+
+  let taskGroup = null;
+  for (const group in taskGroups) {
+    if (taskGroups[group].includes(taskId)) {
+      taskGroup = group;
+      break;
+    }
+  }
+
+  if (!taskGroup) return ''; // taskId not found in any group
+
+  const tasksList = taskGroups[taskGroup];
+  let borderStyle = '';
+
+  const isCurrentTask = tasksList.includes(taskId);
+  const firstMissingTask = tasksList.find((task) => tasks.includes(task));
+
+  if (taskId === tasksList[tasksList.length - 1] && firstMissingTask !== taskId) {
+    borderStyle = 'border-right: 5px solid var(--primary-color);';
+  } else if (
+    isCurrentTask &&
+    firstMissingTask &&
+    taskId === firstMissingTask &&
+    firstMissingTask !== tasksList[tasksList.length - 1]
+  ) {
+    borderStyle = 'border-left: 5px solid var(--primary-color);';
+  } else if (firstMissingTask === tasksList[tasksList.length - 1]) {
+    borderStyle = 'border-right: 5px solid var(--primary-color); border-left: 5px solid var(--primary-color);';
+  }
+  return `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; ${borderStyle}`;
+};
 
 // compute and store schoolid -> school name map for schools. store adminId,
 // orgType, orgId for individual score report link
@@ -1067,17 +1158,34 @@ const scoreReportColumns = computed(() => {
     }
   });
 
-  const priorityTasks = ['swr', 'sre', 'pa'];
+  const priorityTasks = ['swr', 'sre', 'pa', 'letter'];
+  const spanishTasks = ['letter-es', 'pa-es', 'swr-es', 'sre-es'];
+  const spanishMathTasks = ['fluency-arf-es', 'fluency-calf-es'];
+  const supplementaryTasks = ['morphology', 'cva', 'vocab', 'trog', 'phonics'];
+  const roamTasks = ['fluency-arf', 'fluency-calf', 'roam-alpaca', 'egma-math'];
+  const roavTasks = ['ran', 'crowding', 'roav-mep', 'mep', 'mep-pseudo'];
   const orderedTasks = [];
 
-  for (const task of priorityTasks) {
-    if (sortedTasks.includes(task)) {
-      orderedTasks.push(task);
+  // Helper function to add tasks in a specific order
+  const addTasksInOrder = (tasks) => {
+    for (const task of tasks) {
+      if (sortedTasks.includes(task)) {
+        orderedTasks.push(task);
+      }
     }
-  }
+  };
 
+  // Add tasks based on the defined order
+  addTasksInOrder(priorityTasks);
+  addTasksInOrder(spanishTasks);
+  addTasksInOrder(spanishMathTasks);
+  addTasksInOrder(supplementaryTasks);
+  addTasksInOrder(roamTasks);
+  addTasksInOrder(roavTasks);
+
+  // Add any remaining tasks that were not included in the predefined lists
   for (const task of sortedTasks) {
-    if (!priorityTasks.includes(task)) {
+    if (!orderedTasks.includes(task)) {
       orderedTasks.push(task);
     }
   }
@@ -1085,42 +1193,69 @@ const scoreReportColumns = computed(() => {
   for (const taskId of orderedTasks) {
     let colField;
     const isOptional = `scores.${taskId}.optional`;
+
     // Color needs to include a field to allow sorting.
-    if (viewMode.value === 'percentile' || viewMode.value === 'color') colField = `scores.${taskId}.percentile`;
-    if (viewMode.value === 'standard') colField = `scores.${taskId}.standardScore`;
-    if (viewMode.value === 'raw') colField = `scores.${taskId}.rawScore`;
-    if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-      colField = `scores.${taskId}.correctIncorrectDifference`;
-    } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
-      colField = `scores.${taskId}.percentCorrect`;
-    } else if (rawOnlyTasks.includes(taskId)) {
+    if (viewMode.value === 'percentile' || viewMode.value === 'color') {
+      colField = `scores.${taskId}.percentile`;
+    } else if (
+      viewMode.value === 'standard' &&
+      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      !tasksToDisplayTotalCorrect.includes(taskId)
+    ) {
+      colField = `scores.${taskId}.standardScore`;
+    } else if (
+      viewMode.value === 'raw' &&
+      !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
+      !tasksToDisplayPercentCorrect.includes(taskId) &&
+      !tasksToDisplayTotalCorrect.includes(taskId)
+    ) {
       colField = `scores.${taskId}.rawScore`;
+    } else {
+      if (tasksToDisplayCorrectIncorrectDifference.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.correctIncorrectDifference`;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.numCorrect`;
+      } else if (tasksToDisplayPercentCorrect.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.percentCorrect`;
+      } else if (rawOnlyTasks.includes(taskId) && viewMode.value === 'raw') {
+        colField = `scores.${taskId}.rawScore`;
+      } else {
+        colField = `scores.${taskId}.percentile`;
+      }
     }
 
     let backgroundColor = '';
 
-    if (priorityTasks.includes(taskId)) {
+    if (
+      priorityTasks.includes(taskId) &&
+      !priorityTasks.includes(spanishTasks) &&
+      !priorityTasks.includes(supplementaryTasks) &&
+      !priorityTasks.includes(roamTasks) &&
+      !priorityTasks.includes(roavTasks)
+    ) {
       backgroundColor = 'transparent';
     } else {
-      backgroundColor = '#E6E6E6';
+      backgroundColor = '#EEEEF0';
     }
 
     tableColumns.push({
       field: colField,
-      header: taskDisplayNames[taskId]?.name ?? taskId,
+      header: tasksDictionary.value[taskId]?.publicName ?? taskId,
       filterField: `scores.${taskId}.tags`,
       dataType: 'score',
       sort: true,
       filter: true,
       sortField: colField ? colField : `scores.${taskId}.percentile`,
       tag: viewMode.value !== 'color',
-      emptyTag:
-        !rawOnlyTasks.includes(taskId) &&
-        !tasksToDisplayPercentCorrect.includes(taskId) &&
-        !tasksToDisplayCorrectIncorrectDifference.includes(taskId) &&
-        (viewMode.value === 'color' || isOptional),
+      emptyTag: viewMode.value === 'color' || isOptional,
       tagColor: `scores.${taskId}.tagColor`,
-      style: `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; `,
+      style: (() => {
+        if (taskId === orderedTasks[0]) {
+          return `background-color: ${backgroundColor}; justify-content: center; margin: 0; text-align: center; border-left: 5px solid var(--primary-color);`;
+        }
+        return `text-align: center; ${getTaskStyle(taskId, backgroundColor, orderedTasks)}`;
+      })(),
     });
   }
   return tableColumns;
@@ -1329,5 +1464,12 @@ onMounted(async () => {
   border-bottom-left-radius: 25rem;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+}
+
+.p-datatable .p-column-header-content {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
 }
 </style>

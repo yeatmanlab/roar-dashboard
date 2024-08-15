@@ -33,7 +33,7 @@
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Assessments</strong>:</span>
         <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-          <span>{{ taskDisplayNames[assessmentId]?.name ?? assessmentId }}</span>
+          <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
           <span
             v-if="showParams"
             v-tooltip.top="'Click to view params'"
@@ -166,7 +166,7 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 const router = useRouter();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex, uid } = storeToRefs(authStore);
+const { roarfirekit, administrationQueryKeyIndex, uid, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -396,6 +396,17 @@ const fetchTreeOrgs = async () => {
   treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'group'));
   treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'family'));
 
+  treeTableOrgs.forEach((node) => {
+    // Sort the schools by existance of stats then alphabetically
+    if (node.children) {
+      node.children.sort((a, b) => {
+        if (!a.data.stats) return 1;
+        if (!b.data.stats) return -1;
+        return a.data.name.localeCompare(b.data.name);
+      });
+    }
+  });
+
   return treeTableOrgs;
 };
 
@@ -485,6 +496,19 @@ const onExpand = async (node) => {
       }
 
       return n;
+    });
+
+    // Sort the classes by existance of stats then alphabetically
+    newNodes.forEach((districtNode) => {
+      districtNode.children.forEach((schoolNode) => {
+        if (schoolNode.children) {
+          schoolNode.children.sort((a, b) => {
+            if (!a.data.stats) return 1;
+            if (!b.data.stats) return -1;
+            return a.data.name.localeCompare(b.data.name);
+          });
+        }
+      });
     });
 
     treeTableOrgs.value = newNodes;

@@ -40,25 +40,108 @@
         />
       </div>
       <AppSpinner v-else />
-      <EditUsers :user-data="currentEditUser" :is-enabled="isModalEnabled" @modal-closed="isModalEnabled = false" />
+      <RoarModal
+        title="Edit User Information"
+        subtitle="Modify, add, or remove user information"
+        :is-enabled="isModalEnabled"
+        @modal-closed="isModalEnabled = false"
+      >
+        <EditUsersForm
+          v-if="!showPassword"
+          :user-data="currentEditUser"
+          :edit-mode="true"
+          @update:user-data="localUserData = $event"
+        />
+        <div v-if="showPassword">
+          <div class="flex" style="gap: 1rem">
+            <div class="form-field" style="width: 100%">
+              <label>New Password</label>
+              <PvInputText v-model="v$.password.$model" :class="{ 'p-invalid': v$.password.$invalid && submitted }" />
+              <small v-if="v$.password.$invalid && submitted" class="p-error"
+                >Password must be at least 6 characters long.</small
+              >
+            </div>
+            <div class="form-field" style="width: 100%">
+              <label>Confirm New Password</label>
+              <PvInputText
+                v-model="v$.confirmPassword.$model"
+                :class="{ 'p-invalid': v$.confirmPassword.$invalid && submitted }"
+              />
+              <small v-if="v$.confirmPassword.$invalid && submitted" class="p-error">Passwords do not match.</small>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-content-center mt-3 w-full">
+          <PvButton
+            v-if="!showPassword"
+            class="border-none border-round bg-primary text-white p-2 hover:surface-400 mr-auto ml-auto"
+            @click="showPassword = true"
+            >Change Password</PvButton
+          >
+        </div>
+
+        <template #footer>
+          <div>
+            <div v-if="!showPassword" class="flex gap-2">
+              <PvButton
+                tabindex="0"
+                class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                text
+                label="Cancel"
+                outlined
+                @click="closeModal"
+              ></PvButton>
+              <PvButton
+                tabindex="0"
+                class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+                label="Save"
+                @click="updateUserData"
+                ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+              ></PvButton>
+            </div>
+            <div v-else-if="showPassword" class="flex gap-2">
+              <PvButton
+                tabindex="0"
+                class="border-none border-round bg-white text-primary p-2 hover:surface-200"
+                text
+                label="Back to User Information"
+                outlined
+                @click="showPassword = false"
+              ></PvButton>
+              <PvButton
+                tabindex="0"
+                class="border-none border-round bg-primary text-white p-2 hover:surface-400"
+                label="Save Password"
+                @click="updatePassword"
+                ><i v-if="isSubmitting" class="pi pi-spinner pi-spin"></i
+              ></PvButton>
+            </div>
+          </div>
+        </template>
+      </RoarModal>
     </section>
   </main>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
+import { useToast } from 'primevue/usetoast';
 import _isEmpty from 'lodash/isEmpty';
 import { useQuery } from '@tanstack/vue-query';
 import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
 import { fetchUsersByOrg } from '@/helpers/query/users';
 import { singularizeFirestoreCollection } from '@/helpers';
-import EditUsers from './modals/EditUsers.vue';
+import { useVuelidate } from '@vuelidate/core';
+import { required, sameAs, minLength } from '@vuelidate/validators';
+import EditUsersForm from './EditUsersForm.vue';
+import RoarModal from './modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 
 const { roarfirekit, uid } = storeToRefs(authStore);
 const initialized = ref(false);
+const toast = useToast();
 
 const page = ref(0);
 const orderBy = ref(null);
@@ -151,10 +234,39 @@ const columns = ref([
 const currentEditUser = ref(null);
 const isModalEnabled = ref(false);
 
+// +-----------------+
+// | Edit User Modal |
+// +-----------------+
+const localUserData = ref(null);
+
 const onEditButtonClick = (event) => {
   currentEditUser.value = event;
   isModalEnabled.value = true;
   console.log(event);
+};
+
+const isSubmitting = ref(false);
+
+const updateUserData = async () => {
+  if (!localUserData.value) return;
+  isSubmitting.value = true;
+
+  await roarfirekit.value
+    .updateUserData(currentEditUser.value.id, localUserData.value)
+    .then(() => {
+      isSubmitting.value = false;
+      closeModal();
+      toast.add({ severity: 'success', summary: 'Updated', detail: 'User has been updated', life: 3000 });
+    })
+    .catch((error) => {
+      console.log('Error occurred during submission:', error);
+      isSubmitting.value = false;
+    });
+};
+
+const closeModal = () => {
+  isModalEnabled.value = false;
+  localUserData.value = null;
 };
 
 const onSort = (event) => {
@@ -164,6 +276,49 @@ const onSort = (event) => {
   }));
   orderBy.value = !_isEmpty(_orderBy) ? _orderBy : null;
 };
+
+// +-----------------+
+// | Update Password |
+// +-----------------+
+const submitted = ref(false);
+const showPassword = ref(false);
+const passwordRef = computed(() => state.password);
+const rules = {
+  password: {
+    required,
+    minLength: minLength(6),
+  },
+  confirmPassword: {
+    required,
+    minLength: minLength(6),
+    sameAsPassword: sameAs(passwordRef),
+  },
+};
+const state = reactive({
+  password: '',
+  confirmPassword: '',
+});
+const v$ = useVuelidate(rules, state);
+
+async function updatePassword() {
+  submitted.value = true;
+  if (!v$.value.$invalid) {
+    isSubmitting.value = true;
+    await roarfirekit.value
+      .updateUserData(uid.value, { password: state.password })
+      .then(() => {
+        submitted.value = false;
+        isSubmitting.value = false;
+        state.password = '';
+        state.confirmPassword = '';
+        showPassword.value = false;
+        toast.add({ severity: 'success', summary: 'Updated', detail: 'Password Updated!', life: 3000 });
+      })
+      .catch(() => {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Unable to update password' });
+      });
+  }
+}
 
 let unsubscribe;
 const init = () => {
