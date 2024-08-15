@@ -162,6 +162,7 @@ const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 const isAllTestData = ref(false);
+const registeredUsers = ref([]);
 
 const { roarfirekit } = storeToRefs(authStore);
 
@@ -457,6 +458,7 @@ async function submitStudents() {
       summary: 'ERROR: There was a problem validating your organizations. See below for details.',
       life: 5000,
     });
+    return;
   }
 
   // Begin submit process
@@ -481,6 +483,7 @@ async function submitStudents() {
         }
       });
 
+      // Check if were gonna use this
       registeredUsers.value.push(...currentRegisteredUsers);
       
       // Update the count of processed users
@@ -600,6 +603,7 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
 
   // Currently we don't supply selectedDistrict or selectedSchool
   const orgs = await fetchOrgByName(orgType, orgName, parentDistrict, parentSchool);
+  const orgsWithIds = orgs.map((org) => org.id);
   // TODO: If multiple orgs are returned display an org selection modal to the user.
   if (orgs.length > 1) {
     throw new Error(`Multiple organizations found for ${orgType} '${orgName}'`);
@@ -609,7 +613,7 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
   }
 
   orgIds.value[orgType][orgName] = orgs[0];
-  return orgs;
+  return orgsWithIds;
 };
 
 // Functions supporting error table

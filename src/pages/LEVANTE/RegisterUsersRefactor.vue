@@ -288,9 +288,9 @@
       for (const [orgType, orgName] of Object.entries(orgNameMap)) {
         if (orgName) {
           let orgInfo = {
-            district: [],
-            school: [],
-            class: [],
+            district: '',
+            school: '',
+            class: '',
             group: [],
           };
 
@@ -308,8 +308,10 @@
             }
           } else if (orgType === 'group') {
             for (const group of orgNameMap.group) {
+              console.log('Fetching orgId for', group);
               const orgId = await getOrgId(pluralizeFirestoreCollection(orgType), group, ref(undefined), ref(undefined));
-              orgInfo.group.push(...orgId.map(orgData => toRaw(orgData).id));
+              console.log('OrgIds fetched:', orgId);
+              orgInfo.group.push(...orgId);
             }
           } else {
             const orgIds = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
@@ -329,6 +331,7 @@
       }
 
       console.log('org ids:', user.orgIds)
+      console.log('user after orgIds: ', user);
     }
 
 
@@ -495,7 +498,7 @@
       throw new Error(`No organizations found for ${orgType} '${orgName}'`);
     }
   
-    orgIds.value[orgType][orgName] = orgs;
+    orgIds.value[orgType][orgName] = orgs[0];
   
     // console.log('orgs: ', orgs);
   
