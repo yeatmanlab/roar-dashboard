@@ -121,7 +121,7 @@
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
           <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
             <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
-              <div class="flex justify-content-between score-table">
+              <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
                 <div class="mr-2">
                   <b>{{ key }}</b
                   ><span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
@@ -193,10 +193,17 @@ const computedTaskData = computed(() => {
   for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
     const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
     const compositeScores = scores?.composite;
-    const rawScore =
-      !taskId.includes('vocab') && !taskId.includes('letter') && !taskId.includes('es')
-        ? _get(compositeScores, rawScoreKey)
-        : compositeScores;
+    let rawScore = null;
+    if (!taskId.includes('vocab') && !taskId.includes('es')) {
+      // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
+      if (taskId.includes('letter')) {
+        rawScore = _get(compositeScores, 'totalCorrect');
+      } else {
+        rawScore = _get(compositeScores, rawScoreKey);
+      }
+    } else {
+      rawScore = compositeScores;
+    }
     if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
       const percentileScore = _get(compositeScores, percentileScoreKey);
       const standardScore = _get(compositeScores, standardScoreKey);
