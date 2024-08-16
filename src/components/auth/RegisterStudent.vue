@@ -59,7 +59,7 @@
             />
           </div>
         </section>
-        <section class="form-section">
+        <section class="form-section" style="width: 100%">
           <div class="p-input-icon-right">
             <label for="studentUsername" class="text-gray-600"
               >Student Username <span class="required mr-2">*</span></label
@@ -70,7 +70,7 @@
               :class="{
                 'p-invalid': v$.students.$each.$response.$data[outerIndex].studentUsername.$invalid && submitted,
               }"
-              style="width: 50vh"
+              style="width: 100%"
               aria-describedby="username-error"
             />
           </div>
@@ -162,7 +162,7 @@
             }}</small>
           </div>
         </section>
-        <section class="form-section">
+        <section class="form-section" style="width: 100%">
           <!--Grade-->
           <div>
             <label for="grade" class="text-gray-600">Grade <span class="required">*</span></label>
@@ -171,7 +171,7 @@
               :options="gradeOptions"
               option-label="label"
               option-value="value"
-              style="width: 50vh"
+              style="width: 100%"
               name="grade"
             />
           </div>
@@ -197,7 +197,7 @@
                 <PvInputText v-model="student.middleName" name="middleName" />
               </div>
             </section>
-            <section class="form-section">
+            <section class="form-section" style="width: 100%">
               <div>
                 <label for="lastName" class="text-gray-600">Last Name </label>
                 <PvInputText
@@ -207,7 +207,7 @@
                     'p-invalid': v$.students.$each.$response.$data[outerIndex]?.lastName.$invalid,
                   }"
                   aria-describedby="first-name-error"
-                  style="width: 46vh"
+                  style="width: 100%"
                 />
               </div>
             </section>

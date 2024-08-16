@@ -1,14 +1,14 @@
 <template>
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
-      <section class="form-section flex lg:flex-row">
+      <section class="form-section flex lg:flex-row" style="width: 100%">
         <div>
           <label for="firstName" class="text-gray-600">First Name <span class="required p-1">*</span></label>
           <PvInputText
             v-model="v$.firstName.$model"
             name="firstName"
             :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
-            style="width: 25vh; background: white"
+            style="width: 100%; background: white"
             aria-describedby="first-name-error"
           />
           <span v-if="v$.firstName.$error && submitted">
@@ -26,7 +26,7 @@
             v-model="v$.lastName.$model"
             name="lastName"
             :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
-            style="width: 25vh"
+            style="width: 100%"
             aria-describedby="first-name-error"
           />
           <span v-if="v$.lastName.$error && submitted">
@@ -40,7 +40,7 @@
         </div>
       </section>
       <!--Username / Email-->
-      <section class="form-section flex lg:flex-row">
+      <section class="form-section flex lg:flex-row" style="width: 100%">
         <div class="p-input-icon-right">
           <label for="ParentEmail" class="text-gray-600">Email <span class="required p-1">*</span></label>
           <PvInputText
@@ -49,7 +49,7 @@
             type="email"
             :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
             aria-describedby="username-or-email-error"
-            style="width: 55vh"
+            style="width: 100%"
           />
         </div>
         <span v-if="v$.ParentEmail.$error && submitted">

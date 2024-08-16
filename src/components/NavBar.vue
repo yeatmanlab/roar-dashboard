@@ -15,15 +15,16 @@
             <template #menubuttonicon>
               <PvButton
                 icon="pi pi-bars mr-2"
-                class="bg-primary text-white p-2 mr-2 border-none border-round hover:bg-red-900"
+                class="bg-primary text-white flex border-none border-round w-full hover:bg-red-900"
                 label="Menu"
+                style="min-width: 10vh; margin-left: 3vh"
                 @click="toggleMenu"
               />
             </template>
             <template #end>
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 p-2 bg-gray-100">
-                  <div class="text-lg font-bold text-gray-600">
+                  <div class="text-lg font-bold text-gray-600 display-name">
                     {{ userDisplayName }}
                   </div>
                   <router-link :to="{ name: 'SignOut' }" class="signout-button">
@@ -255,5 +256,23 @@ nav {
   outline: 1.2px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.3rem;
   padding: 0.5rem 0.8rem;
+}
+
+@media only screen and (max-width: 800px) {
+  .display-name {
+    max-width: 10vh;
+  }
+}
+
+@media only screen and (max-width: 820px) {
+  .display-name {
+    max-width: 13vh;
+  }
+}
+
+@media only screen and (max-width: 960px) {
+  .display-name {
+    max-width: 20vh;
+  }
 }
 </style>
