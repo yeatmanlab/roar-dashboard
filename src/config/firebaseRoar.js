@@ -37,7 +37,7 @@ if (isEmulated) {
     storageBucket: 'gse-roar-assessment-dev.appspot.com',
     messagingSenderId: '26086061121',
     appId: '1:26086061121:web:262163d6c145b7a80bc2c0',
-    siteKey: import.meta.env.VITE_GSE_ROAR_ASSESSMENT_DEV_APPCHECK_SITE_KEY,
+    siteKey: '6Ldq2SEqAAAAAKXTxXs9GnykkEZLYeVijzAKzqfQ',
     debugToken: import.meta.env.VITE_APPCHECK_DEBUG_TOKEN,
   };
   adminConfig = {
@@ -47,7 +47,7 @@ if (isEmulated) {
     storageBucket: 'gse-roar-admin-dev.appspot.com',
     messagingSenderId: '401455396681',
     appId: '1:401455396681:web:859ea073a116d0aececc98',
-    siteKey: import.meta.env.VITE_GSE_ROAR_ADMIN_DEV_APPCHECK_SITE_KEY,
+    siteKey: '6LeTgCEqAAAAAPVXEVtWoinVf_CLYF30PaETyyiT',
     debugToken: import.meta.env.VITE_APPCHECK_DEBUG_TOKEN,
   };
 } else {
@@ -58,7 +58,7 @@ if (isEmulated) {
     storageBucket: 'gse-roar-assessment.appspot.com',
     messagingSenderId: '757277423033',
     appId: '1:757277423033:web:d6e204ee2dd1047cb77268',
-    siteKey: import.meta.env.VITE_GSE_ROAR_ASSESSMENT_APPCHECK_SITE_KEY,
+    siteKey: '6Lc54SEqAAAAAKJF8QNpEzU6wHtXGAteVvrdB8XK',
     debugToken: import.meta.env.VITE_APPCHECK_DEBUG_TOKEN,
   };
 
@@ -70,7 +70,7 @@ if (isEmulated) {
     messagingSenderId: '1062489366521',
     appId: '1:1062489366521:web:d0b8b5371a67332d1d2728',
     measurementId: 'G-YYE3YN0S99',
-    siteKey: import.meta.env.VITE_GSE_ROAR_ADMIN_APPCHECK_SITE_KEY,
+    siteKey: '6Ler4SEqAAAAAJSAaJAwEAegdQAzioF3xVtm68v0',
     debugToken: import.meta.env.VITE_APPCHECK_DEBUG_TOKEN,
   };
 }
