@@ -424,7 +424,7 @@ const routes = [
   {
     path: '/register-users',
     name: 'Register Users',
-    component: () => import('../pages/LEVANTE/RegisterUsersRefactor.vue'),
+    component: () => import('../pages/LEVANTE/RegisterUsers.vue'),
     meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {

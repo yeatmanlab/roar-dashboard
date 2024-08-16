@@ -8,25 +8,23 @@
 
     <ul>
       <!-- <li><b>id</b> - The unique identifier for the user. Start from 1.</li> -->
-      <li><b>userType</b> - The type of user. Must be one of the following: child, parent, teacher.</li>
-      <li><b>month</b> - The month of the year the user was born.</li>
-      <li><b>year</b> - The year the user was born.</li>
-      <li><b>group</b> - The name of the group.</li>
+      <li><b>userType</b> - The type of user. Must be one of the following: child, parent, or teacher.</li>
+      <li><b>month</b> - The month of the year the user was born.<span class="required">*</span></li>
+      <li><b>year</b> - The year the user was born.<span class="required">*</span></li>
+      <li><b>group OR district AND school</b> - The name of the group or district and school.</li>
     </ul>
 
-    <p>Teachers need to have the same organizations as their students.</p>
-
-    <!-- These fields are optional, <b>HOWEVER</b>, you <i>must</i> use them if you want to link children with thier parents
-    and teachers:
+    These fields are optional:
 
     <ul class="optional-fields">
-      <li><b>childId</b> - The unique identifier for the child. Start from 1.</li>
-      <li><b>parentId</b> - The unique identifier for the parent. Start from 1.</li>
-      <li><b>teacherId</b> - The unique identifier for the teacher. Start from 1.</li>
-    </ul> -->
+      <li><b>Class</b> - The name of the class.</li>
+    </ul>
 
-    <p>Below is an example of what your CSV/spreadsheet could look like. Note that you may upload a CSV with any columns
-    you need and only the required columns will be processed.</p>
+    <p>Parents and Teachers need to have the same organizations as their children / students.</p>
+
+    <p class="mb-6"><span class="required">*</span> = Required only for child users</p>
+
+    <p>Below is an example of what your CSV/spreadsheet could look like. Only the necessary columns will be processed.</p>
 
     <img
       id="example-image"
@@ -58,5 +56,9 @@
 #example-image {
   width: 100%;
   border-radius: 0.5rem;
+}
+
+.required {
+  color: var(--bright-red);
 }
 </style>
