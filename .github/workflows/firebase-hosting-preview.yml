@@ -41,13 +41,14 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      - name: Install dependencies and build
-        run: |
-          npm ci
-          npm run build
+      - name: Install dependencies
+        run: npm ci
 
       - name: Create .env file with App Check Debug Token
         run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
+
+      - name: Build project
+        run: npm run build
 
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
