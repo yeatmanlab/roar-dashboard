@@ -216,28 +216,31 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm font-light text-gray-600">Loading Task Reports</div>
         </div>
-        <PvTabView :active-index="activeTabIndex">
-          <PvTabPanel
-            v-for="taskId of sortedTaskIds"
-            :key="taskId"
-            :header="tasksDictionary[taskId]?.publicName ?? taskId"
-          >
-            <div :id="'tab-view-' + taskId">
-              <TaskReport
-                v-if="taskId"
-                :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
-                :task-id="taskId"
-                :initialized="initialized"
-                :administration-id="administrationId"
-                :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
-                :org-type="orgType"
-                :org-id="orgId"
-                :org-info="orgInfo"
-                :administration-info="administrationInfo"
-              />
-            </div>
-          </PvTabPanel>
-        </PvTabView>
+        <PvTabs :value="sortedTaskIds[0]">
+          <PvTabList>
+            <PvTab v-for="taskId of sortedTaskIds" :key="taskId" :value="taskId">
+              {{ tasksDictionary[taskId]?.publicName ?? taskId }}
+            </PvTab>
+          </PvTabList>
+          <PvTabPanels>
+            <PvTabPanel v-for="taskId of sortedTaskIds" :key="taskId" :value="taskId">
+              <div :id="'tab-view-' + taskId">
+                <TaskReport
+                  v-if="taskId"
+                  :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                  :task-id="taskId"
+                  :initialized="initialized"
+                  :administration-id="administrationId"
+                  :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                  :org-type="orgType"
+                  :org-id="orgId"
+                  :org-info="orgInfo"
+                  :administration-info="administrationInfo"
+                />
+              </div>
+            </PvTabPanel>
+          </PvTabPanels>
+        </PvTabs>
         <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4 text-gray-600">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
