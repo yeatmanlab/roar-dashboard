@@ -9,7 +9,6 @@ const useSandbox = import.meta.env.VITE_FIREBASE_DATA_SOURCE === 'sandbox';
 const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
 
 if (isEmulated) {
-  console.log('Using firebase emulators in development mode.');
   appConfig = {
     projectId: 'demo-gse-roar-assessment',
     apiKey: 'any-string-value',
@@ -29,7 +28,6 @@ if (isEmulated) {
     },
   };
 } else if (useSandbox) {
-  console.log('Using sandbox data from the dev Firebase projects.');
   appConfig = {
     apiKey: 'AIzaSyCEUxEgYMp4fg2zORT0lsgn4Q6CCoMVzjU',
     authDomain: 'gse-roar-assessment-dev.firebaseapp.com',
