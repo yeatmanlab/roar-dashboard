@@ -47,7 +47,7 @@ jobs:
           npm run build
 
       - name: Create .env file with App Check Debug Token
-        run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.APPCHECK_DEBUG_TOKEN }}" >> .env
+        run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
 
       - name: Deploy to Firebase Hosting Channel
         id: firebase-deploy
