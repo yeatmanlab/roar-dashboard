@@ -15,7 +15,7 @@
         <div v-if="initialized && !registering" class="w-full">
           <div class="grid">
             <div class="col-12 md:col-6 lg:col-3 my-3">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText
                   id="first-name"
                   v-model="firstName"
@@ -23,11 +23,11 @@
                   data-cy="input-administrator-first-name"
                 />
                 <label for="first-name">First Name</label>
-              </span>
+              </PvFloatLabel>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText
                   id="middle-name"
                   v-model="middleName"
@@ -35,21 +35,21 @@
                   data-cy="input-administrator-middle-name"
                 />
                 <label for="middle-name">Middle Name</label>
-              </span>
+              </PvFloatLabel>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText id="last-name" v-model="lastName" class="w-full" data-cy="input-administrator-last-name" />
                 <label for="last-name">Last Name</label>
-              </span>
+              </PvFloatLabel>
             </div>
 
             <div class="col-12 md:col-6 lg:col-3 my-3">
-              <span class="p-float-label">
+              <PvFloatLabel>
                 <PvInputText id="email" v-model="email" class="w-full" data-cy="input-administrator-email" />
                 <label for="email">Email</label>
-              </span>
+              </PvFloatLabel>
             </div>
           </div>
 
@@ -57,7 +57,7 @@
           <div class="flex flex-row align-items-center justify-content-center gap-2 flex-order-0 my-3">
             <div class="flex flex-row align-items-center">
               <PvCheckbox v-model="isTestData" input-id="chbx-externalTask" :binary="true" />
-              <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Test Administrator</b></label>
+              <label class="ml-1 mr-3 text-gray-600" for="chbx-externalTask">Mark as <b>Test Administrator</b></label>
             </div>
           </div>
 

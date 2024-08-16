@@ -12,83 +12,108 @@
       <!-- <p class="login-title" align="left">Register for ROAR</p> -->
       <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!t$.$invalid)">
         <!-- Task name -->
-        <div class="flex flex-column row-gap-3">
-          <section class="form-section">
-            <div class="p-input-icon-right">
-              <label for="taskName">
-                <small class="text-gray-400 font-bold">Task Name </small>
-                <span class="required">*</span></label
-              >
-              <PvInputText
-                v-model="t$.taskName.$model"
-                name="taskName"
-                :class="{ 'p-invalid': t$.taskName.$invalid && submitted }"
-                aria-describedby="activation-code-error"
-              />
-            </div>
-            <span v-if="t$.taskName.$error && submitted">
-              <span v-for="(error, index) of t$.taskName.$errors" :key="index">
-                <small class="p-error">{{ error.$message }}</small>
+        <div class="flex justify-content-center align-items-center">
+          <div class="flex flex-column align-items-center gap-3 w-50">
+            <section class="flex flex-column w-full">
+              <div class="grid grid-nogutter align-items-center">
+                <div class="col-fixed">
+                  <label for="taskName">
+                    <small class="text-gray-400 font-bold">Task Name </small>
+                    <span class="required text-primary">*</span>
+                  </label>
+                </div>
+                <div class="col">
+                  <PvInputText
+                    v-model="t$.taskName.$model"
+                    name="taskName"
+                    :class="{ 'p-invalid': t$.taskName.$invalid && submitted }"
+                    style="width: 60vh"
+                    aria-describedby="activation-code-error"
+                  />
+                </div>
+              </div>
+              <span v-if="t$.taskName.$error && submitted">
+                <span v-for="(error, index) of t$.taskName.$errors" :key="index">
+                  <small class="p-error">{{ error.$message }}</small>
+                </span>
               </span>
-            </span>
-            <small v-if="(t$.taskName.$invalid && submitted) || t$.taskName.$pending.$response" class="p-error">
-              {{ t$.taskName.required.$message.replace('Value', 'Task Name') }}
-            </small>
-          </section>
-          <!-- Task ID -->
-          <section class="form-section">
-            <div class="p-input-icon-right">
-              <label for="taskId">
-                <small class="text-gray-400 font-bold">Task ID </small>
-                <span class="required">*</span></label
-              >
-              <PvInputText
-                v-model="t$.taskId.$model"
-                name="taskId"
-                :class="{ 'p-invalid': t$.taskId.$invalid && submitted }"
-                aria-describedby="activation-code-error"
-              />
-            </div>
-            <span v-if="t$.taskId.$error && submitted">
-              <span v-for="(error, index) of t$.taskId.$errors" :key="index">
-                <small class="p-error">{{ error.$message }}</small>
+              <small v-if="(t$.taskName.$invalid && submitted) || t$.taskName.$pending.$response" class="p-error">
+                {{ t$.taskName.required.$message.replace('Value', 'Task Name') }}
+              </small>
+            </section>
+            <!-- Task ID -->
+            <section class="flex flex-column w-full">
+              <div class="grid grid-nogutter align-items-center">
+                <div class="col-fixed">
+                  <label for="taskId">
+                    <small class="text-gray-400 font-bold">Task ID </small>
+                    <span class="required text-primary">*</span>
+                  </label>
+                </div>
+                <div class="col">
+                  <PvInputText
+                    v-model="t$.taskId.$model"
+                    name="taskId"
+                    :class="{ 'p-invalid': t$.taskId.$invalid && submitted }"
+                    style="width: 60vh"
+                    aria-describedby="activation-code-error"
+                  />
+                </div>
+              </div>
+              <span v-if="t$.taskId.$error && submitted">
+                <span v-for="(error, index) of t$.taskId.$errors" :key="index">
+                  <small class="p-error">{{ error.$message }}</small>
+                </span>
               </span>
-            </span>
-            <small v-else-if="(t$.taskId.$invalid && submitted) || t$.taskId.$pending.$response" class="p-error">
-              {{ t$.taskId.required.$message.replace('Value', 'Task ID') }}
-            </small>
-          </section>
-          <!-- Cover Image -->
-          <section class="form-section">
-            <div>
-              <label for="coverImage">
-                <small class="text-gray-400 font-bold">Cover Image (URL)</small>
-              </label>
-              <PvInputText v-model="taskFields.coverImage" name="coverImage" />
-            </div>
-          </section>
-          <!--Description-->
-          <section class="form-section">
-            <div class="p-input-icon-right">
-              <label for="description">
-                <small class="text-gray-400 font-bold">Description</small>
-              </label>
-              <PvInputText v-model="taskFields.description" name="description" />
-            </div>
-          </section>
-          <!--Task URL-->
-          <section class="form-section">
-            <div v-if="isExternalTask">
-              <label for="taskURL">
-                <small class="text-gray-400 font-bold">Task URL </small>
-                <span class="required">*</span></label
-              >
-              <PvInputText
-                v-model="t$.taskURL.$model"
-                name="taskURL"
-                :class="{ 'p-invalid': t$.taskURL.$invalid && submitted }"
-                aria-describedby="first-name-error"
-              />
+              <small v-else-if="(t$.taskId.$invalid && submitted) || t$.taskId.$pending.$response" class="p-error">
+                {{ t$.taskId.required.$message.replace('Value', 'Task ID') }}
+              </small>
+            </section>
+            <!-- Cover Image -->
+            <section class="flex flex-column w-full">
+              <div class="grid grid-nogutter align-items-center">
+                <div class="col-fixed">
+                  <label for="coverImage">
+                    <small class="text-gray-400 font-bold">Cover Image (URL)</small>
+                  </label>
+                </div>
+                <div class="col">
+                  <PvInputText v-model="taskFields.coverImage" style="width: 60vh" name="coverImage" />
+                </div>
+              </div>
+            </section>
+            <!--Description-->
+            <section class="flex flex-column w-full">
+              <div class="grid grid-nogutter align-items-center">
+                <div class="col-fixed">
+                  <label for="description">
+                    <small class="text-gray-400 font-bold">Description</small>
+                  </label>
+                </div>
+                <div class="col">
+                  <PvInputText v-model="taskFields.description" style="width: 60vh" name="description" />
+                </div>
+              </div>
+            </section>
+            <!--Task URL-->
+            <section v-if="isExternalTask" class="flex flex-column w-full">
+              <div class="grid grid-nogutter align-items-center">
+                <div class="col-fixed">
+                  <label for="taskURL">
+                    <small class="text-gray-400 font-bold">Task URL </small>
+                    <span class="required">*</span>
+                  </label>
+                </div>
+                <div class="col">
+                  <PvInputText
+                    v-model="t$.taskURL.$model"
+                    name="taskURL"
+                    :class="{ 'p-invalid': t$.taskURL.$invalid && submitted }"
+                    style="width: 60vh"
+                    aria-describedby="first-name-error"
+                  />
+                </div>
+              </div>
               <span v-if="t$.taskURL.$error && submitted">
                 <span v-for="(error, index) of t$.taskURL.$errors" :key="index">
                   <small class="p-error">{{ error.$message }}</small>
@@ -97,8 +122,8 @@
               <small v-else-if="(t$.taskURL.$invalid && submitted) || t$.taskURL.$pending.$response" class="p-error">
                 {{ t$.taskURL.required.$message.replace('Value', 'Task URL') }}
               </small>
-            </div>
-          </section>
+            </section>
+          </div>
         </div>
 
         <div v-if="!isExternalTask">
@@ -107,16 +132,26 @@
           </h3>
           <h4 class="text-center">Create the configurable game parameters for variants of this task.</h4>
           <div v-for="(param, index) in gameConfig" :key="index">
-            <div class="flex gap-2 align-content-start flex-grow-0 params-container">
-              <PvInputText v-model="param.name" placeholder="Name" />
+            <div class="flex gap-2 justify-content-center align-content-center flex-grow-0 params-container mt-2">
+              <PvInputText v-model="param.name" style="width: 30vh" placeholder="Name" />
 
-              <PvDropdown v-model="param.type" :options="typeOptions" />
+              <PvSelect v-model="param.type" style="width: 20vh" :options="typeOptions" />
 
-              <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
+              <PvInputText
+                v-if="param.type === 'string'"
+                v-model="param.value"
+                style="width: 30vh"
+                placeholder="Value"
+              />
 
-              <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
+              <PvSelect
+                v-else-if="param.type === 'boolean'"
+                v-model="param.value"
+                style="width: 30vh"
+                :options="[true, false]"
+              />
 
-              <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
+              <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" style="width: 30vh" />
 
               <PvButton
                 icon="pi pi-trash"
@@ -137,11 +172,11 @@
             <div class="flex gap-2 align-content-start flex-grow-0 params-container">
               <PvInputText v-model="param.name" placeholder="Name" />
 
-              <PvDropdown v-model="param.type" :options="typeOptions" />
+              <PvSelect v-model="param.type" :options="typeOptions" />
 
               <PvInputText v-if="param.type === 'string'" v-model="param.value" placeholder="Value" />
 
-              <PvDropdown v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
+              <PvSelect v-else-if="param.type === 'boolean'" v-model="param.value" :options="[true, false]" />
 
               <PvInputNumber v-else-if="param.type === 'number'" v-model="param.value" />
 
@@ -155,8 +190,8 @@
           </div>
         </div>
 
-        <div class="w-full flex justify-content-center">
-          <div v-if="!isExternalTask" class="w-2">
+        <div class="w-full flex justify-content-center align-content-center">
+          <div v-if="!isExternalTask">
             <PvButton
               label="Add Field"
               text
@@ -165,7 +200,7 @@
               @click="addField(gameConfig)"
             />
           </div>
-          <div v-else class="w-2">
+          <div v-else>
             <PvButton
               label="Add Field"
               text
@@ -193,11 +228,11 @@
             <label class="ml-1 mr-3" for="chbx-externalTask">Mark as <b>Registered Task</b> </label>
           </div>
         </div>
-        <div class="form-submit">
+        <div class="form-submit flex justify-content-center align-content-center">
           <PvButton
             type="submit"
             label="Submit"
-            class="submit-button bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+            class="submit-button bg-primary h-3rem text-white border-none border-round p-2 hover:bg-red-900"
             severity="primary"
           />
         </div>
@@ -212,7 +247,7 @@
       <p>roar.education/?participantId=[$PARTICIPANT_ID]&completed=[$BOOLEAN]</p>
       <PvButton
         label="Create Another Task"
-        class="submit-button bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+        class="submit-button bg-primary h-3rem text-white border-none border-round p-2 hover:bg-red-900"
         @click="created = false"
       />
     </div>
@@ -221,14 +256,15 @@
   <div v-show="viewModel === 'Update Task'">
     <h1 class="text-center font-bold">Update a Task</h1>
     <form @submit.prevent="handleUpdateTask()">
-      <section class="flex flex-column gap-2 mb-4 p-4">
+      <section class="flex flex-row justify-content-center align-items-center gap-2 mb-4 p-4">
         <label for="variant-fields" class="my-2">
           <small class="text-gray-400 font-bold">Select an Existing Task </small>
           <span class="required">*</span></label
         >
-        <PvDropdown
+        <PvSelect
           v-model="selectedTask"
           :options="formattedTasks"
+          style="width: 50vh"
           option-label="name"
           option-value="id"
           placeholder="Select a Task"
@@ -262,7 +298,7 @@
                   v-model="updatedTaskData[key]"
                   class="flex-grow-1"
                 />
-                <PvDropdown
+                <PvSelect
                   v-else-if="typeof value === 'boolean'"
                   v-model="updatedTaskData[key]"
                   :options="booleanDropDownOptions"
@@ -285,7 +321,7 @@
         <div v-if="newFields.length > 0" class="w-full">
           <div v-for="(field, index) in newFields" :key="index" class="flex align-items-center column-gap-2 mb-1">
             <PvInputText v-model="field.name" placeholder="Field Name" />
-            <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+            <PvSelect v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
 
             <PvInputText
               v-if="field.type === 'string'"
@@ -299,7 +335,7 @@
               placeholder="Field Value"
               class="flex-grow-1"
             />
-            <PvDropdown
+            <PvSelect
               v-if="field.type === 'boolean'"
               v-model="field.value"
               placeholder="Field Value"
@@ -317,14 +353,15 @@
             />
           </div>
         </div>
-        <PvButton
-          label="Add Field"
-          text
-          icon="pi pi-plus"
-          class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-          @click="newField"
-        />
-
+        <div class="w-full flex justify-content-start">
+          <PvButton
+            label="Add Field"
+            text
+            icon="pi pi-plus"
+            class="my-4 bg-primary text-white w-2 border-none border-round p-2 hover:bg-red-900"
+            @click="newField"
+          />
+        </div>
         <div class="flex flex-column w-full">
           <label for="gameConfigOutput">
             <strong>Game Parameters</strong>
@@ -349,7 +386,7 @@
                 v-model="updatedTaskData.gameConfig[paramName]"
                 class="flex-grow-1"
               />
-              <PvDropdown
+              <PvSelect
                 v-else-if="typeof param === 'boolean'"
                 v-model="updatedTaskData.gameConfig[paramName]"
                 :options="booleanDropDownOptions"
@@ -373,7 +410,7 @@
               class="flex align-items-center column-gap-2 mb-1"
             >
               <PvInputText v-model="field.name" placeholder="Field Name" />
-              <PvDropdown v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
+              <PvSelect v-model="field.type" :options="['string', 'number', 'boolean']" placeholder="Field Type" />
               <PvInputText
                 v-if="field.type === 'string'"
                 v-model="field.value"
@@ -386,7 +423,7 @@
                 placeholder="Field Value"
                 class="flex-grow-1"
               />
-              <PvDropdown
+              <PvSelect
                 v-if="field.type === 'boolean'"
                 v-model="field.value"
                 placeholder="Field Value"
@@ -405,18 +442,23 @@
             </div>
           </div>
         </div>
-        <PvButton
-          label="Add Parameter"
-          text
-          icon="pi pi-plus"
-          class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-          @click="addGameConfig"
-        />
+        <div class="w-full flex justify-content-start">
+          <PvButton
+            label="Add Parameter"
+            text
+            icon="pi pi-plus"
+            class="my-4 bg-primary text-white w-2 border-none border-round p-2 hover:bg-red-900"
+            @click="addGameConfig"
+          />
+        </div>
       </section>
-
-      <PvButton type="submit" class="my-4 bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-        >Update Task</PvButton
-      >
+      <div class="w-full flex justify-content-center">
+        <PvButton
+          type="submit"
+          class="my-4 bg-primary text-white w-3 h-3rem border-none border-round p-2 hover:bg-red-900"
+          >Update Task</PvButton
+        >
+      </div>
     </form>
   </div>
 </template>
@@ -786,6 +828,10 @@ const clearFieldConfigArrays = () => {
   border-bottom-left-radius: 0;
   border-top-right-radius: 25rem;
   border-bottom-right-radius: 25rem;
+}
+.col-fixed {
+  flex: 0 0 auto;
+  width: 15vh; /* Adjust this value as needed */
 }
 
 .select-button .p-button:first-of-type:not(:only-of-type) {

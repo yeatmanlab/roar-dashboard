@@ -31,7 +31,10 @@ import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
 
-let HomeParticipant, HomeAdministrator, ConsentModal;
+const HomeParticipant = ref(null);
+const HomeAdministrator = ref(null);
+const ConsentModal = ref(null);
+
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
@@ -125,9 +128,9 @@ async function checkConsent() {
 }
 
 onMounted(async () => {
-  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+  HomeParticipant.value = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator.value = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal.value = (await import('@/components/ConsentModal.vue')).default;
 
   if (requireRefresh.value) {
     requireRefresh.value = false;

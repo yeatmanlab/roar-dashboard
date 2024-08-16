@@ -1,20 +1,23 @@
 <template>
   <div>
-    <div v-if="!noGamesAvailable || consentSpinner">
-      <div v-if="isFetching" class="loading-container">
+    <div v-if="!noGamesAvailable || consentSpinner" class="bg-white-alpha-90">
+      <!-- <WE ARE USING V-SHOW INSTEAD OF V-IF BECAUSE OTHERWISE THE STYLE WILL BREAK> -->
+      <div v-show="isFetching" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
-      <div v-else>
-        <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
-          {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
-        </h2>
-        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
+      <div v-show="!isFetching">
+        <PvFloatLabel>
+          <h2 v-if="adminInfo?.length == 1" class="dropdown-container text-gray-600 ml-5">
+            {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
+          </h2>
+        </PvFloatLabel>
+        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between text-gray-600">
           <div
             v-if="optionalAssessments.length !== 0"
             class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
           >
-            <PvInputSwitch
+            <PvToggleSwitch
               v-model="showOptionalAssessments"
               input-id="switch-optional"
               data-cy="switch-show-optional-assessments"
@@ -25,51 +28,51 @@
           </div>
           <div
             v-if="adminInfo?.length > 0"
-            class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
+            class="flex flex-row justify-center align-items-center dropdown-container gap-4 w-full"
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
-                <PvDropdown
-                  v-if="adminInfo.every((admin) => admin.publicName)"
-                  v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
-                  option-label="publicName"
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <PvDropdown
-                  v-else
-                  v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
-                  option-label="name"
-                  input-id="dd-assignment"
-                  data-cy="dropdown-select-administration"
-                  @change="toggleShowOptionalAssessments"
-                />
-                <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+                <PvFloatLabel class="mt-5 ml-5">
+                  <PvSelect
+                    v-if="adminInfo.every((admin) => admin.publicName)"
+                    v-model="selectedAdmin"
+                    :options="adminInfo ?? []"
+                    option-label="publicName"
+                    input-id="dd-assignment"
+                    data-cy="dropdown-select-administration"
+                    @change="toggleShowOptionalAssessments"
+                  />
+                  <PvSelect
+                    v-else
+                    v-model="selectedAdmin"
+                    :options="adminInfo ?? []"
+                    option-label="name"
+                    input-id="dd-assignment"
+                    data-cy="dropdown-select-administration"
+                    @change="toggleShowOptionalAssessments"
+                  />
+                  <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
+                </PvFloatLabel>
               </div>
             </div>
           </div>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <Transition name="fade" mode="out-in">
-            <GameTabs
-              v-if="showOptionalAssessments"
-              :games="optionalAssessments"
-              :sequential="isSequential"
-              :user-data="userData"
-            />
-            <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
-          </Transition>
+          <GameTabs
+            v-if="showOptionalAssessments"
+            :games="optionalAssessments"
+            :sequential="isSequential"
+            :user-data="userData"
+          />
+          <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
         </div>
       </div>
     </div>
-    <div v-else>
+    <div v-else class="bg-white-alpha-90">
       <div class="col-full text-center">
-        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
+        <h1 class="text-gray-600">{{ $t('homeParticipant.noAssignments') }}</h1>
+        <p class="text-center text-gray-600">{{ $t('homeParticipant.contactAdministrator') }}</p>
         <router-link :to="{ name: 'SignOut' }">
           <PvButton
             :label="$t('navBar.signOut')"
@@ -105,6 +108,7 @@ import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import AppSpinner from '../components/AppSpinner.vue';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -406,7 +410,7 @@ watch(
   { immediate: true },
 );
 </script>
-<style scoped>
+<style>
 .tabs-container {
   display: flex;
   flex-direction: row;
@@ -423,11 +427,6 @@ watch(
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.dropdown-container {
-  margin-top: 2rem;
-  margin-left: 2rem;
 }
 
 .assignment-select-container {
