@@ -31,6 +31,9 @@ import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
 
+import useUserDataQuery from '@/queries/useUserDataQuery';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+
 const HomeParticipant = ref(null);
 const HomeAdministrator = ref(null);
 const ConsentModal = ref(null);
@@ -64,20 +67,12 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(uid.value, userQueryKeyIndex, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userQueryKeyIndex, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
