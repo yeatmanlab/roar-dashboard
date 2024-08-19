@@ -1,6 +1,6 @@
 <template>
   <div v-if="isLoading">
-    <div class="col-full text-center">
+    <div class="text-center col-full">
       <AppSpinner />
       <p class="text-center">{{ $t('homeSelector.loading') }}</p>
     </div>
@@ -16,18 +16,11 @@
     @accepted="updateConsent"
     @delayed="refreshDocs"
   />
-  <PvConfirmDialog group="inactivity-logout" class="confirm">
-    <template #message>
-      {{ $t('homeSelector.inactivityLogout', { timeLeft: timeLeft }) }}
-    </template>
-  </PvConfirmDialog>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, toRaw, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { useIdle } from '@vueuse/core';
-import { useConfirm } from 'primevue/useconfirm';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -38,12 +31,17 @@ import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
 
-let HomeParticipant, HomeAdministrator, ConsentModal;
+const HomeParticipant = ref(null);
+const HomeAdministrator = ref(null);
+const ConsentModal = ref(null);
+
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 const router = useRouter();
+const i18n = useI18n();
+
 if (authFromClever.value) {
   console.log('Detected Clever authentication, routing to CleverLanding page');
   router.push({ name: 'CleverLanding' });
@@ -130,9 +128,9 @@ async function checkConsent() {
 }
 
 onMounted(async () => {
-  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+  HomeParticipant.value = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator.value = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal.value = (await import('@/components/ConsentModal.vue')).default;
 
   if (requireRefresh.value) {
     requireRefresh.value = false;
@@ -152,53 +150,4 @@ watch(isLoading, async (newValue) => {
     await checkConsent();
   }
 });
-
-const { idle } = useIdle(60 * 10 * 1000); // 10 min
-const confirm = useConfirm();
-const timeLeft = ref(60);
-const i18n = useI18n();
-const t = i18n.t;
-
-watch(idle, (idleValue) => {
-  if (idleValue) {
-    const timer = setInterval(async () => {
-      timeLeft.value -= 1;
-
-      if (timeLeft.value <= 0) {
-        clearInterval(timer);
-        const authStore = useAuthStore();
-        await authStore.signOut();
-        router.replace({ name: 'SignIn' });
-      }
-    }, 1000);
-    confirm.require({
-      group: 'inactivity-logout',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: t('homeSelector.inactivityLogoutAcceptLabel'),
-      acceptIcon: 'pi pi-check mr-2',
-      accept: () => {
-        clearInterval(timer);
-        timeLeft.value = 60;
-      },
-    });
-  }
-});
 </script>
-
-<style>
-button.p-button.p-component.p-confirm-dialog-accept {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-}
-
-.confirm .p-confirm-dialog-reject {
-  display: none !important;
-}
-
-.confirm .p-dialog-header-close {
-  display: none !important;
-}
-</style>

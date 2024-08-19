@@ -37,31 +37,72 @@
       </div>
 
       <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
-        {{ studentFirstName }} achieved a composite score of
-        <strong>{{ task.rawScore.value }}</strong>
-        in {{ tasksDictionary[task.taskId]?.technicalName }}. {{ extendedDescriptions[task.taskId] }}
+        <i18n-t keypath="scoreReports.rawTaskDescription" tag="span">
+          <template #firstName>
+            {{ studentFirstName }}
+          </template>
+          <template #rawScore>
+            <strong>{{ task.rawScore.value }}</strong>
+          </template>
+          <template #taskName>
+            {{ taskDisplayNames[task.taskId]?.extendedName }}
+          </template>
+          <template #taskDescription>
+            {{ extendedDescriptions[task.taskId] }}
+          </template>
+        </i18n-t>
       </div>
       <div v-else-if="grade >= 6" class="px-4 py-2 score-description">
-        {{ studentFirstName }} scored a standard score of <strong>{{ Math.round(task.standardScore.value) }}</strong
-        >, which indicates they
-        <strong>{{
-          getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
-        }}</strong>
-        {{ tasksDictionary[task.taskId]?.technicalName }}. {{ extendedDescriptions[task.taskId] }}
+        <i18n-t keypath="scoreReports.standardTaskDescription" tag="span">
+          <template #firstName>
+            {{ studentFirstName }}
+          </template>
+          <template #standardScore>
+            <strong>{{ Math.round(task.standardScore.value) }}</strong>
+          </template>
+          <template #supportCategory>
+            <strong>{{
+              getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+            }}</strong>
+          </template>
+          <template #taskName>
+            {{ taskDisplayNames[task.taskId]?.extendedName }}
+          </template>
+          <template #taskDescription>
+            {{ extendedDescriptions[task.taskId] }}
+          </template>
+        </i18n-t>
       </div>
 
       <div v-else class="px-4 py-2 score-description">
-        {{ studentFirstName }} scored in the
-        <strong>{{ getPercentileWithSuffix(Math.round(task?.percentileScore.value)) }} percentile</strong>, which
-        indicates they
-        <strong>{{
-          getSupportLevelLanguage(grade, task.percentileScore.value, task.rawScore.value, task.taskId)
-        }}</strong>
-        {{ tasksDictionary[task.taskId]?.technicalName }}. {{ extendedDescriptions[task.taskId] }}
+        <i18n-t keypath="scoreReports.percentileTaskDescription" tag="span">
+          <template #firstName>
+            {{ studentFirstName }}
+          </template>
+          <template #percentile>
+            <strong>{{ getPercentileWithSuffix(Math.round(task?.percentileScore.value)) }} percentile</strong>
+          </template>
+          <template #supportCategory>
+            <strong>{{
+              getSupportLevelLanguage(grade, task.percentileScore.value, task.rawScore.value, task.taskId)
+            }}</strong>
+          </template>
+          <template #taskName>
+            {{ taskDisplayNames[task.taskId]?.extendedName }}
+          </template>
+          <template #taskDescription>
+            {{ extendedDescriptions[task.taskId] }}
+          </template>
+        </i18n-t>
       </div>
       <div v-if="!rawOnlyTasks.includes(task.taskId)">
-        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
-          <PvAccordionTab header="Score Breakdown">
+        <PvAccordion
+          class="my-2 w-full"
+          :active-index="expanded ? 0 : null"
+          expand-icon="pi pi-plus"
+          collapse-icon="pi pi-minus"
+        >
+          <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
             <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
               <div class="flex justify-content-between score-table">
                 <div class="mr-2">
@@ -78,9 +119,9 @@
       </div>
       <div v-if="task.taskId === 'letter'">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
-          <PvAccordionTab header="Score Breakdown">
+          <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
             <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
-              <div class="flex justify-content-between score-table">
+              <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
                 <div class="mr-2">
                   <b>{{ key }}</b
                   ><span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
@@ -100,6 +141,7 @@
 <script setup>
 import { computed } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
+import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
 import _get from 'lodash/get';
 import { getGrade } from '@bdelab/roar-utils';
@@ -111,6 +153,7 @@ import {
   getRawScoreRange,
   getScoreKeys,
 } from '@/helpers/reports';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 
@@ -132,6 +175,8 @@ const props = defineProps({
   },
 });
 
+const { t } = useI18n();
+
 const studentFirstName = computed(() => {
   if (props.studentData?.name && props.studentData?.name?.first) return props.studentData.name.first;
   if (props.studentData.username) return props.studentData.username;
@@ -148,10 +193,17 @@ const computedTaskData = computed(() => {
   for (const { taskId, scores, reliable, optional, engagementFlags } of props.taskData) {
     const { percentileScoreKey, standardScoreKey, rawScoreKey } = getScoreKeys(taskId, grade.value);
     const compositeScores = scores?.composite;
-    const rawScore =
-      !taskId.includes('vocab') && !taskId.includes('letter') && !taskId.includes('es')
-        ? _get(compositeScores, rawScoreKey)
-        : compositeScores;
+    let rawScore = null;
+    if (!taskId.includes('vocab') && !taskId.includes('es')) {
+      // letter's raw score is a percentage expressed as a float, so we need to multiply by 100.
+      if (taskId.includes('letter')) {
+        rawScore = _get(compositeScores, 'totalCorrect');
+      } else {
+        rawScore = _get(compositeScores, rawScoreKey);
+      }
+    } else {
+      rawScore = compositeScores;
+    }
     if (!isNaN(rawScore) && !tasksBlacklist.includes(taskId)) {
       const percentileScore = _get(compositeScores, percentileScoreKey);
       const standardScore = _get(compositeScores, standardScoreKey);
@@ -160,21 +212,21 @@ const computedTaskData = computed(() => {
 
       const scoresForTask = {
         standardScore: {
-          name: 'Standard Score',
+          name: _startCase(t('scoreReports.standardScore')),
           value: Math.round(standardScore),
           min: 0,
           max: 180,
           supportColor: supportColor,
         },
         rawScore: {
-          name: 'Raw Score',
+          name: _startCase(t('scoreReports.rawScore')),
           value: Math.round(rawScore),
           min: rawScoreRange?.min,
           max: rawScoreRange?.max,
           supportColor: 'gray',
         },
         percentileScore: {
-          name: 'Percentile Score',
+          name: _startCase(t('scoreReports.percentileScore')),
           value: Math.round(percentileScore),
           min: 0,
           max: 99,
@@ -187,35 +239,35 @@ const computedTaskData = computed(() => {
       if (optional === true) {
         tags.push({
           icon: '',
-          value: 'Optional',
+          value: t('scoreReports.optional'),
           severity: 'secondary',
-          tooltip: 'This task was a optional assignment.',
+          tooltip: t('scoreReports.optionalTagText'),
         });
       } else {
         tags.push({
           icon: '',
-          value: 'Required',
+          value: t('scoreReports.required'),
           severity: 'secondary',
-          tooltip: 'This task was a required assignment.',
+          tooltip: t('scoreReports.requiredTagText'),
         });
       }
       if (reliable === false) {
         tags.push({
-          value: 'Unreliable',
+          value: t('scoreReports.unreliable'),
           icon: 'pi pi-times',
           severity: 'warning',
           tooltip: engagementFlags
-            ? `The run was marked unreliable because of the following flags: \n \n ${Object.keys(engagementFlags)
+            ? `${t('scoreReports.unreliableTagTextFlags')}: \n \n ${Object.keys(engagementFlags)
                 .map((flag) => _lowerCase(flag))
                 .join(', ')}`
-            : 'The run was marked as unreliable.',
+            : t('scoreReports.unreliableTagText'),
         });
       } else {
         tags.push({
-          value: 'Reliable',
+          value: t('scoreReports.reliable'),
           severity: 'success',
           icon: 'pi pi-check',
-          tooltip: `The student's behavior did not trigger any flags and the run can be considered reliable`,
+          tooltip: t('scoreReports.reliableTagText'),
         });
       }
 
@@ -252,10 +304,10 @@ const computedTaskData = computed(() => {
 
         const skillsString = skills.length >= 0 ? skills.join(', ') : 'None';
 
-        formattedScoresArray.push(['First Sound Matching (FSM)', first]);
-        formattedScoresArray.push(['Last Sound Matching (LSM)', last]);
-        formattedScoresArray.push(['Deletion (DEL)', deletion]);
-        formattedScoresArray.push(['Skills to work on', skillsString]);
+        formattedScoresArray.push([t('scoreReports.firstSoundMatching'), first]);
+        formattedScoresArray.push([t('scoreReports.lastSoundMatching'), last]);
+        formattedScoresArray.push([t('scoreReports.deletion'), deletion]);
+        formattedScoresArray.push([t('scoreReports.skillsToWorkOn'), skillsString]);
       } else if (taskId === 'letter') {
         formattedScoresArray;
         const incorrectLetters = [
@@ -271,11 +323,11 @@ const computedTaskData = computed(() => {
         const lowerCaseScore = scores?.LowercaseNames?.subScore;
         const upperCaseScore = scores?.UppercaseNames?.subScore;
         const letterSoundsScore = scores?.Phonemes?.subScore;
-        formattedScoresArray.push(['Lower Case Letters', lowerCaseScore, 0, 26]);
-        formattedScoresArray.push(['Upper Case Letters', upperCaseScore, 0, 26]);
-        formattedScoresArray.push(['Letter Sounds', letterSoundsScore, 0, 38]);
-        formattedScoresArray.push(['Letters to work on', incorrectLetters]);
-        formattedScoresArray.push(['Sounds to work on', incorrectPhonemes]);
+        formattedScoresArray.push([t('lowerCase'), lowerCaseScore, 0, 26]);
+        formattedScoresArray.push([t('upperCase'), upperCaseScore, 0, 26]);
+        formattedScoresArray.push([t('letterSounds'), letterSoundsScore, 0, 38]);
+        formattedScoresArray.push([t('letterToWorkOn'), incorrectLetters]);
+        formattedScoresArray.push([t('letterSoundsToWorkOn'), incorrectPhonemes]);
       }
 
       // Ensure scores are in consistent order
@@ -303,11 +355,11 @@ function getSupportLevelLanguage(grade, percentile, rawScore, taskId) {
   const { support_level } = getSupportLevel(grade, percentile, rawScore, taskId);
   if (support_level) {
     if (support_level === 'Achieved Skill') {
-      return 'have achieved the skill of';
+      return t('scoreReports.achievedText');
     } else if (support_level === 'Developing Skill') {
-      return 'are developing the skill of';
+      return t('scoreReports.developingText');
     } else if (support_level === 'Needs Extra Support') {
-      return 'need extra support in';
+      return t('scoreReports.extraSupportText');
     }
   }
 }

@@ -3,17 +3,22 @@
     <template #icons>
       <div class="flex flex-row">
         <span>Show only named variants</span>
-        <PvInputSwitch v-model="namedOnly" class="ml-2" />
+        <PvToggleSwitch v-model="namedOnly" class="ml-2" />
         <!-- <button @click="tasksPaneOpen = !tasksPaneOpen">toggle pane</button> -->
       </div>
     </template>
     <div class="w-full flex flex-column lg:flex-row gap-2">
       <div v-if="tasksPaneOpen" class="w-full lg:w-6">
         <div class="flex flex-row mb-2">
-          <div class="flex flex-column flex-grow-1 p-input-icon-left">
-            <i class="pi pi-search" />
-            <PvInputText v-model="searchTerm" placeholder="Variant name, ID, or Task ID" data-cy="input-variant-name" />
-          </div>
+          <PvIconField class="w-full">
+            <PvInputIcon class="pi pi-search" />
+            <PvInputText
+              v-model="searchTerm"
+              class="w-full"
+              placeholder="Variant name, ID, or Task ID"
+              data-cy="input-variant-name"
+            />
+          </PvIconField>
           <PvButton
             v-if="searchTerm"
             class="bg-primary text-white border-none border-round pl-3 pr-3 hover:bg-red-900"
@@ -54,7 +59,7 @@
           </PvScrollPanel>
         </div>
         <div v-if="searchTerm.length < 3">
-          <PvDropdown
+          <PvSelect
             v-model="currentTask"
             :options="taskOptions"
             option-label="label"
