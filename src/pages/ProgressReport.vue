@@ -172,6 +172,7 @@ import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
 
@@ -240,13 +241,10 @@ const filterGrades = ref([]);
 const pageLimit = ref(10);
 
 // User Claims
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userQueryKeyIndex, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);

@@ -75,8 +75,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import _get from 'lodash/get';
 import { getSidebarActions } from '@/router/sidebarActions';
-import { fetchDocById } from '@/helpers/query/utils';
-import { useQuery } from '@tanstack/vue-query';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 import ROARLogo from '@/assets/RoarLogo.vue';
 import LanguageSelector from './LanguageSelector.vue';
 
@@ -107,14 +106,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-// ---------------------------------------------------------------
-
-const { data: userClaims, isLoading: userClaimsLoading } = useQuery({
-  queryKey: ['userClaims', uid],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isWideScreen = computed(() => {
@@ -152,7 +145,7 @@ const handleResize = () => {
 };
 
 const userDisplayName = computed(() => {
-  if (!userClaimsLoading) {
+  if (!isLoadingClaims) {
     return '';
   } else {
     let email = authStore?.userData?.email;

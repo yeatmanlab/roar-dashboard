@@ -173,6 +173,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
 import { taskFetcher } from '@/helpers/query/tasks';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 // +----------------+
 // | Initialization |
@@ -214,12 +215,8 @@ const { data: tasks } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userClaimsQueryKeyIndex, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const { data: userData, isLoading: isLoadingUserData } = useQuery({

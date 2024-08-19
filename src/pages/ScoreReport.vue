@@ -306,7 +306,8 @@ import { fetchDocById, exportCsv } from '@/helpers/query/utils';
 import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { getTitle } from '../helpers/query/administrations';
+import { getTitle } from '@/helpers/query/administrations';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -450,12 +451,8 @@ const filterGrades = ref([]);
 const pageLimit = ref(10);
 
 // User Claims
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userQueryKeyIndex, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));

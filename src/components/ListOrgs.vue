@@ -122,15 +122,16 @@
 </template>
 
 <script setup>
-import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
-import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
-import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import { useAuthStore } from '@/store/auth';
+import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
+import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
@@ -159,12 +160,8 @@ const schoolPlaceholder = computed(() => {
 const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userQueryKeyIndex, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));

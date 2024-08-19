@@ -210,8 +210,8 @@ import { useQuery } from '@tanstack/vue-query';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
-import { fetchDocById } from '@/helpers/query/utils';
 import { orgFetcher } from '@/helpers/query/orgs';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 const initialized = ref(false);
 const isTestData = ref(false);
@@ -246,12 +246,8 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));

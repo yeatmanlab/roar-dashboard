@@ -104,7 +104,8 @@ import _head from 'lodash/head';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
-import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
+import { orderByDefault } from '@/helpers/query/utils';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
@@ -148,12 +149,8 @@ watch(
   },
 );
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));

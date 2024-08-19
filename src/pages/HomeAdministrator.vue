@@ -121,11 +121,12 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
+import { useQuery } from '@tanstack/vue-query';
+import { orderByDefault } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
+import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const page = ref(0);
@@ -140,13 +141,8 @@ const authStore = useAuthStore();
 
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userClaimsQueryKeyIndex, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  cacheTime: Infinity,
 });
 
 let unsubscribeInitializer;
