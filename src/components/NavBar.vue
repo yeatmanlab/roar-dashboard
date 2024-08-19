@@ -81,7 +81,7 @@ import LanguageSelector from './LanguageSelector.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const menu = ref();
 const screenWidth = ref(window.innerWidth);
@@ -106,7 +106,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, {
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

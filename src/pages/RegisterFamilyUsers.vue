@@ -61,12 +61,10 @@ import RegisterStudent from '../components/auth/RegisterStudent.vue';
 import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { ref, onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import router from '../router';
 import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
-const { uid } = storeToRefs(authStore);
 const initialized = ref(false);
 const spinner = ref(false);
 
@@ -75,7 +73,7 @@ const props = defineProps({
   code: { type: String, default: null },
 });
 
-const { data: userClaims } = useUserClaimsQuery(uid.value, {
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

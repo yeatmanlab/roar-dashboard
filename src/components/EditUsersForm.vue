@@ -230,7 +230,7 @@ const props = defineProps({
 const emit = defineEmits(['modalClosed', 'update:userData']);
 
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 
 watch(
@@ -361,7 +361,7 @@ watch(
 );
 
 // Determine if the user is an admin
-const { data: userClaims } = useUserClaimsQuery(uid.value, userQueryKeyIndex, {
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

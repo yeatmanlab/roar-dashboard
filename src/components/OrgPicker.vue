@@ -109,7 +109,7 @@ import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
@@ -149,7 +149,7 @@ watch(
   },
 );
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, {
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

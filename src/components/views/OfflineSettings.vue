@@ -180,7 +180,7 @@ import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 // +----------------+
 const authStore = useAuthStore();
 const toast = useToast();
-const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, administrationQueryKeyIndex } = storeToRefs(authStore);
 const queryClient = useQueryClient();
 
 // +-------------------------+
@@ -215,7 +215,7 @@ const { data: tasks } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userClaimsQueryKeyIndex, {
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

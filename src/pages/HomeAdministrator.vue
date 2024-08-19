@@ -139,9 +139,9 @@ const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, administrationQueryKeyIndex } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userClaimsQueryKeyIndex, {
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

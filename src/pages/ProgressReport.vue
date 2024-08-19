@@ -176,7 +176,7 @@ import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, userQueryKeyIndex, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit, uid, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -241,7 +241,7 @@ const filterGrades = ref([]);
 const pageLimit = ref(10);
 
 // User Claims
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userQueryKeyIndex, {
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

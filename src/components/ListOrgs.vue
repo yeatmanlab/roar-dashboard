@@ -158,9 +158,9 @@ const schoolPlaceholder = computed(() => {
 
 // Authstore and Sidebar
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userQueryKeyIndex, {
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

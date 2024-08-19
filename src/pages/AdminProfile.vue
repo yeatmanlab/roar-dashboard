@@ -55,7 +55,7 @@ import { useAuthStore } from '@/store/auth';
 import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const sidebarOpen = ref(true);
 
 const providerIds = computed(() => {
@@ -87,7 +87,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { data: userClaims } = useUserClaimsQuery(uid.value, {
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

@@ -69,7 +69,7 @@ const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(uid.va
   enabled: initialized,
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, userQueryKeyIndex, {
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 

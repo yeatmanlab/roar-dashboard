@@ -218,7 +218,7 @@ const isTestData = ref(false);
 const isDemoData = ref(false);
 const toast = useToast();
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const state = reactive({
@@ -246,7 +246,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery(uid.value, {
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
