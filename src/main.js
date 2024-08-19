@@ -161,7 +161,16 @@ app.use(VueGoogleMaps, {
 });
 app.use(head);
 app.use(TextClamp);
-app.use(VueQueryPlugin);
+app.use(VueQueryPlugin, {
+  queryClientConfig: {
+    defaultOptions: {
+      queries: {
+        staleTime: window.Cypress ? 0 : 10 * 60 * 1000,
+        gcTime: window.Cypress ? 0 : 15 * 60 * 1000,
+      },
+    },
+  },
+});
 app.use(i18n);
 app.use(surveyPlugin);
 
