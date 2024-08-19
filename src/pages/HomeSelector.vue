@@ -20,7 +20,6 @@
 
 <script setup>
 import { computed, onMounted, ref, toRaw, watch } from 'vue';
-import { useQuery } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -28,7 +27,6 @@ import _get from 'lodash/get';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
 
 import useUserDataQuery from '@/queries/useUserDataQuery';
