@@ -10,8 +10,10 @@
     <!-- Twitter -->
     <meta name="twitter:title" content="ROAR Web Query" />
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!" />
-  </Head>
 
+    <!-- Dynamic Favicon -->
+    <link rel="icon" :href="`/favicon-${project}.ico`" />
+  </AppHead>
   <div>
     <PvToast />
     <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
@@ -49,6 +51,7 @@ const pageTitle = computed(() => {
 });
 
 const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
+const project = computed(() => isLevante ? 'levante' : 'roar');
 
 useRecaptchaProvider();
 
