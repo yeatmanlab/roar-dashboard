@@ -52,6 +52,7 @@
     "@sentry/vue": "^7.114.0",
     "@sentry/wasm": "^8.0.0",
     "@tanstack/vue-query": "^5.51.24",
+    "@tanstack/vue-query-devtools": "^5.51.24",
     "@unhead/vue": "^1.9.16",
     "@vuelidate/core": "^2.0.0-alpha.40",
     "@vuelidate/validators": "^2.0.0-alpha.28",

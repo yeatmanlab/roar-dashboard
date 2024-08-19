@@ -19,9 +19,14 @@
 
     <SessionTimer v-if="loadSessionTimeoutHandler" />
   </div>
+
+  <VueQueryDevtools />
 </template>
 
 <script setup>
+// @TODO: Make conditional import for local dev environment only.
+import { VueQueryDevtools } from '@tanstack/vue-query-devtools';
+
 import { computed, onBeforeMount, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
