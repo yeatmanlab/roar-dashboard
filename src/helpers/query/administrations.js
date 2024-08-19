@@ -72,6 +72,7 @@ const getAdministrationsRequestBody = ({
   const filters = [];
 
   // If we're fetching test data, we don't need to filter by assigningOrgs as a super admin
+  // This assumes that the document has a testData field that is a boolean
   if (testData === true) {
     filters.push({
       fieldFilter: {
@@ -81,6 +82,8 @@ const getAdministrationsRequestBody = ({
       },
     });
   } else {
+    // Else only fetch data not marked as test data
+    // This assumes that the document has a testData field that is a boolean
     filters.push({
       fieldFilter: {
         field: { fieldPath: 'testData' },
@@ -90,6 +93,7 @@ const getAdministrationsRequestBody = ({
     });
 
     // If we're not a super admin, we need to filter by assigningOrgs
+    // Non-super admin users do not have access to test data
     if (assigningOrgCollection && assigningOrgIds) {
       filters.push({
         fieldFilter: {
@@ -232,6 +236,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
       },
       assessments: a.assessments,
       assignedOrgs,
+      // If testData is not defined, default to false when mapping
       testData: a.testData ?? false,
     };
   });
