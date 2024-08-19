@@ -12,7 +12,11 @@
               <div class="text-md text-gray-500 ml-6">Lists administrations assigned to your account</div>
             </div>
             <div class="flex align-items-center gap-2">
-              <div class="flex gap-3 align-items-center justify-content-start">
+              <div class="flex gap-3 align-items-stretch justify-content-start">
+                <div v-if="isSuperAdmin" class="flex flex-column gap-1">
+                  <small class="text-gray-400">Show test administrations</small>
+                  <PvToggleSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
+                </div>
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by administration name</small>
                   <div class="flex align-items-center">
@@ -119,13 +123,13 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 
 const initialized = ref(false);
 const page = ref(0);
@@ -134,8 +138,10 @@ const adminSearchTokens = ref([]);
 const searchInput = ref('');
 const search = ref('');
 const pageLimit = ref(10);
+const fetchTestAdministrations = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
+const queryClient = useQueryClient();
 const authStore = useAuthStore();
 
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
@@ -171,13 +177,22 @@ const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
 
-const {
+let {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
   queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  queryFn: () =>
+    administrationPageFetcher(
+      orderBy,
+      ref(10000),
+      ref(0),
+      isSuperAdmin,
+      adminOrgs,
+      exhaustiveAdminOrgs,
+      fetchTestAdministrations,
+    ),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -195,6 +210,58 @@ const {
       );
     }
   },
+});
+
+watch(fetchTestAdministrations, async (newState) => {
+  if (newState === false) {
+    // Use previous administration data
+    administrations = await queryClient.getQueryData([
+      'administrations',
+      uid,
+      orderBy,
+      ref(0),
+      ref(10000),
+      isSuperAdmin,
+      administrationQueryKeyIndex,
+    ]);
+    filteredAdministrations.value = administrations;
+  } else {
+    // Attempt to get the cached test administrations
+    const testAdministrations = await queryClient.getQueryData([
+      'testAdministrations',
+      uid,
+      orderBy,
+      ref(0),
+      ref(10000),
+      isSuperAdmin,
+      administrationQueryKeyIndex,
+    ]);
+
+    if (testAdministrations) {
+      // Use cached test administrations, if they exist
+      filteredAdministrations.value = testAdministrations;
+    } else {
+      // Fetch test administrations if not already fetched
+      administrations = await queryClient.fetchQuery({
+        queryKey: ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
+        queryFn: () =>
+          administrationPageFetcher(
+            orderBy,
+            ref(10000),
+            ref(0),
+            isSuperAdmin,
+            adminOrgs,
+            exhaustiveAdminOrgs,
+            fetchTestAdministrations.value,
+          ),
+        keepPreviousData: true,
+        enabled: canQueryAdministrations,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      });
+      // Set the test administrations
+      filteredAdministrations.value = administrations;
+    }
+  }
 });
 
 const filteredAdministrations = ref(administrations.value);
