@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById } from '@/helpers/query/utils';
 import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 /**
  * User profile data query.
@@ -13,7 +14,7 @@ import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
 const useUserDataQuery = (userId, userQueryKeyIndex, queryOptions = undefined) => {
   return useQuery({
     queryKey: [USER_DATA_QUERY_KEY, userId, userQueryKeyIndex],
-    queryFn: () => fetchDocById('users', userId),
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, userId),
     ...queryOptions,
   });
 };
