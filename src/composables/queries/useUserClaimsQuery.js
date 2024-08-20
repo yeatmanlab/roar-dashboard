@@ -7,8 +7,6 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 /**
  * User claims data query.
  *
- * @param {String} userId – The user ID.
- * @param {Integer} userQueryKeyIndex – The index of the query key.
  * @param {QueryOptions|undefined} queryParams – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
