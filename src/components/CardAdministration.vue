@@ -39,11 +39,11 @@
             v-tooltip.top="'Click to view params'"
             class="pi pi-info-circle cursor-pointer ml-1"
             style="font-size: 1rem"
-            @click="toggle($event, assessmentId)"
+            @click="toggleParams($event, assessmentId)"
           />
         </span>
         <div v-if="showParams">
-          <PvPopover v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
+          <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
             <div v-if="getAssessment(assessmentId).variantId">
               Variant ID: {{ getAssessment(assessmentId).variantId }}
             </div>
@@ -59,7 +59,7 @@
               <PvColumn field="key" header="Parameter" style="width: 50%"></PvColumn>
               <PvColumn field="value" header="Value" style="width: 50%"></PvColumn>
             </PvDataTable>
-          </PvPopover>
+          </PvOverlayPanel>
         </div>
       </div>
       <div v-if="isAssigned">
@@ -88,7 +88,7 @@
               type="bar"
               :data="setBarChartData(node.data.stats?.assignment)"
               :options="setBarChartOptions(node.data.stats?.assignment)"
-              class="h-3rem w-full"
+              class="h-3rem"
             />
           </template>
         </PvColumn>
@@ -192,8 +192,6 @@ const speedDialItems = ref([
         target: event.originalEvent.currentTarget,
         message: 'Are you sure you want to delete this administration?',
         icon: 'pi pi-exclamation-triangle',
-        acceptLabel: 'Yes',
-        rejectLabel: 'No',
         accept: async () => {
           await roarfirekit.value.deleteAdministration(props.id).then(() => {
             toast.add({
@@ -239,7 +237,7 @@ const toEntryObjects = (inputObj) => {
   return _toPairs(inputObj).map(([key, value]) => ({ key, value }));
 };
 
-const toggle = (event, id) => {
+const toggleParams = (event, id) => {
   paramPanelRefs[id].value[0].toggle(event);
 };
 
@@ -588,10 +586,10 @@ onMounted(() => {
   display: flex;
   flex-direction: row;
   gap: 2rem;
-  padding: 0.5rem;
+  padding: 1rem;
 
   .card-admin-chart {
-    width: 11ch;
+    width: 12ch;
   }
 
   .card-admin-body {

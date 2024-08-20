@@ -2,74 +2,67 @@
   <div class="grid">
     <div class="col-12 md:col-6">
       <PvPanel class="m-0 p-0" header="Select organizations here">
-        <PvTabs v-if="claimsLoaded" value="districts">
-          <PvTabList>
-            <PvTab v-for="(orgType, index) in orgHeaders" :key="orgType" :value="String(index)">
-              {{ orgType.header }}
-            </PvTab>
-          </PvTabList>
-          <PvTabPanels>
-            <PvTabPanel v-for="(orgType, index) in orgHeaders" :key="orgType" :value="String(index)">
-              <div class="grid column-gap-3">
-                <div
-                  v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
-                  class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
-                >
-                  <PvFloatLabel>
-                    <PvSelect
-                      id="district"
-                      v-model="selectedDistrict"
-                      input-id="district"
-                      :options="allDistricts"
-                      option-label="name"
-                      option-value="id"
-                      :placeholder="districtPlaceholder"
-                      :loading="isLoadingDistricts"
-                      class="w-full"
-                      data-cy="dropdown-selected-district"
-                    />
-                    <label for="district">Select from district</label>
-                  </PvFloatLabel>
-                </div>
-                <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
-                  <PvFloatLabel>
-                    <PvSelect
-                      id="school"
-                      v-model="selectedSchool"
-                      input-id="school"
-                      :options="allSchools"
-                      option-label="name"
-                      option-value="id"
-                      :placeholder="schoolPlaceholder"
-                      :loading="isLoadingSchools"
-                      class="w-full"
-                      data-cy="dropdown-selected-school"
-                    />
-                    <label for="school">Select from school</label>
-                  </PvFloatLabel>
-                </div>
+        <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" class="m-0 p-0" lazy>
+          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+            <div class="grid column-gap-3">
+              <div
+                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+                class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3"
+              >
+                <span class="p-float-label">
+                  <PvDropdown
+                    id="district"
+                    v-model="selectedDistrict"
+                    input-id="district"
+                    :options="allDistricts"
+                    option-label="name"
+                    option-value="id"
+                    :placeholder="districtPlaceholder"
+                    :loading="isLoadingDistricts"
+                    class="w-full"
+                    data-cy="dropdown-selected-district"
+                  />
+                  <label for="district">Select from district</label>
+                </span>
               </div>
-              <div class="card flex justify-content-center">
-                <PvListbox
-                  v-model="selectedOrgs[activeOrgType]"
-                  :options="orgData"
-                  multiple
-                  :meta-key-selection="false"
-                  option-label="name"
-                  class="w-full"
-                  list-style="max-height:20rem"
-                >
-                  <template #option="slotProps">
-                    <div class="flex align-items-center">
-                      <PvCheckbox :binary="true" :model-value="isSelected(activeOrgType, slotProps.option.id)" />
-                      <div class="ml-2">{{ slotProps.option.name }}</div>
-                    </div>
-                  </template>
-                </PvListbox>
+              <div v-if="orgType.id === 'classes'" class="col-6 md:col-5 lg:col-5 xl:col-5 mt-3">
+                <span class="p-float-label">
+                  <PvDropdown
+                    id="school"
+                    v-model="selectedSchool"
+                    input-id="school"
+                    :options="allSchools"
+                    option-label="name"
+                    option-value="id"
+                    :placeholder="schoolPlaceholder"
+                    :loading="isLoadingSchools"
+                    class="w-full"
+                    data-cy="dropdown-selected-school"
+                  />
+                  <label for="school">Select from school</label>
+                </span>
               </div>
-            </PvTabPanel>
-          </PvTabPanels>
-        </PvTabs>
+            </div>
+            <div class="card flex justify-content-center">
+              <PvListbox
+                v-model="selectedOrgs[activeOrgType]"
+                :options="orgData"
+                multiple
+                :meta-key-selection="false"
+                option-label="name"
+                class="w-full"
+                list-style="max-height:20rem"
+              >
+                <template #option="slotProps">
+                  <div class="flex align-items-center">
+                    <PvCheckbox :binary="true" :model-value="isSelected(activeOrgType, slotProps.option.id)" />
+                    <div class="ml-2">{{ slotProps.option.name }}</div>
+                  </div>
+                </template>
+              </PvListbox>
+            </div>
+          </PvTabPanel>
+        </PvTabView>
       </PvPanel>
     </div>
     <div class="col-12 md:col-6">

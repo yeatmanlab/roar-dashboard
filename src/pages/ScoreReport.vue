@@ -40,7 +40,7 @@
                 </div>
                 <div v-if="!isLoadingScores">
                   <PvButton
-                    class="flex flex-row p-4 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -68,10 +68,10 @@
                         :administration-id="props.administrationId"
                       />
                       <div className="task-description mt-3">
-                        <span class="font-bold text-gray-600">
+                        <span class="font-bold">
                           {{ descriptionsByTaskId[taskId]?.header ? descriptionsByTaskId[taskId].header : '' }}
                         </span>
-                        <span class="font-light text-gray-600">
+                        <span class="font-light">
                           {{
                             descriptionsByTaskId[taskId]?.description ? descriptionsByTaskId[taskId].description : ''
                           }}
@@ -89,19 +89,19 @@
                   <div class="legend-entry">
                     <div class="circle" :style="`background-color: ${supportLevelColors.below};`" />
                     <div>
-                      <div class="text-gray-600">Needs Extra Support</div>
+                      <div>Needs Extra Support</div>
                     </div>
                   </div>
                   <div class="legend-entry">
                     <div class="circle" :style="`background-color: ${supportLevelColors.some};`" />
                     <div>
-                      <div class="text-gray-600">Developing Skill</div>
+                      <div>Developing Skill</div>
                     </div>
                   </div>
                   <div class="legend-entry">
                     <div class="circle" :style="`background-color: ${supportLevelColors.above};`" />
                     <div>
-                      <div class="text-gray-600">Achieved Skill</div>
+                      <div>Achieved Skill</div>
                     </div>
                   </div>
                 </div>
@@ -133,7 +133,7 @@
             <template #filterbar>
               <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">
                 <div v-if="schoolsInfo" class="flex flex-row my-3">
-                  <PvFloatLabel>
+                  <span class="p-float-label">
                     <PvMultiSelect
                       id="ms-school-filter"
                       v-model="filterSchools"
@@ -146,10 +146,10 @@
                       data-cy="filter-by-school"
                     />
                     <label for="ms-school-filter">Filter by School</label>
-                  </PvFloatLabel>
+                  </span>
                 </div>
                 <div class="flex flex-row gap-2 my-3">
-                  <PvFloatLabel>
+                  <span class="p-float-label">
                     <PvMultiSelect
                       id="ms-grade-filter"
                       v-model="filterGrades"
@@ -162,13 +162,13 @@
                       data-cy="filter-by-grade"
                     />
                     <label for="ms-school-filter">Filter by Grade</label>
-                  </PvFloatLabel>
+                  </span>
                 </div>
               </div>
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
-              <PvSelect
+              <PvDropdown
                 id="view-columns"
                 v-model="viewMode"
                 :options="viewOptions"
@@ -183,25 +183,25 @@
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
-              <div class="text-gray-600">Needs Extra Support</div>
+              <div>Needs Extra Support</div>
             </div>
           </div>
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.some};`" />
             <div>
-              <div class="text-gray-600">Developing Skill</div>
+              <div>Developing Skill</div>
             </div>
           </div>
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.above};`" />
             <div>
-              <div class="text-gray-600">Achieved Skill</div>
+              <div>Achieved Skill</div>
             </div>
           </div>
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.Assessed}`" />
             <div>
-              <div class="text-gray-600">Assessed</div>
+              <div>Assessed</div>
             </div>
           </div>
         </div>
@@ -216,32 +216,29 @@
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm font-light text-gray-600">Loading Task Reports</div>
         </div>
-        <PvTabs :value="sortedTaskIds[0]">
-          <PvTabList>
-            <PvTab v-for="taskId of sortedTaskIds" :key="taskId" :value="taskId">
-              {{ tasksDictionary[taskId]?.publicName ?? taskId }}
-            </PvTab>
-          </PvTabList>
-          <PvTabPanels>
-            <PvTabPanel v-for="taskId of sortedTaskIds" :key="taskId" :value="taskId">
-              <div :id="'tab-view-' + taskId">
-                <TaskReport
-                  v-if="taskId"
-                  :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
-                  :task-id="taskId"
-                  :initialized="initialized"
-                  :administration-id="administrationId"
-                  :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
-                  :org-type="orgType"
-                  :org-id="orgId"
-                  :org-info="orgInfo"
-                  :administration-info="administrationInfo"
-                />
-              </div>
-            </PvTabPanel>
-          </PvTabPanels>
-        </PvTabs>
-        <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4 text-gray-600">
+        <PvTabView :active-index="activeTabIndex">
+          <PvTabPanel
+            v-for="taskId of sortedTaskIds"
+            :key="taskId"
+            :header="tasksDictionary[taskId]?.publicName ?? taskId"
+          >
+            <div :id="'tab-view-' + taskId">
+              <TaskReport
+                v-if="taskId"
+                :computed-table-data="computeAssignmentAndRunData.assignmentTableData"
+                :task-id="taskId"
+                :initialized="initialized"
+                :administration-id="administrationId"
+                :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
+                :org-type="orgType"
+                :org-id="orgId"
+                :org-info="orgInfo"
+                :administration-info="administrationInfo"
+              />
+            </div>
+          </PvTabPanel>
+        </PvTabView>
+        <div id="score-report-closing" class="bg-gray-200 px-4 py-2 mt-4">
           <h2 class="extra-info-title">HOW ROAR SCORES INFORM PLANNING TO PROVIDE SUPPORT</h2>
           <p>
             Each foundational reading skill is a building block of the subsequent skill. Phonological awareness supports
@@ -268,7 +265,7 @@
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <a href="google.com">Click here</a> for more guidance on steps you can take in planning to support your students. -->
         </div>
-        <div class="bg-gray-200 px-4 py-2 mb-7 text-gray-600">
+        <div class="bg-gray-200 px-4 py-2 mb-7">
           <h2 class="extra-info-title">NEXT STEPS</h2>
           <!-- Reintroduce when we have somewhere for this link to go. -->
           <!-- <p>This score report has provided a snapshot of your school's reading performance at the time of administration. By providing classifications for students based on national norms for scoring, you are able to see which students can benefit from varying levels of support. To read more about what to do to support your students, <a href="google.com">read here.</a></p> -->
@@ -1355,13 +1352,11 @@ onMounted(async () => {
   font-size: clamp(1.5rem, 2rem, 2.5rem);
   font-weight: bold;
   margin-top: 0;
-  color: black;
 }
 
 .administration-name {
   font-size: clamp(1.1rem, 1.3rem, 1.7rem);
-  margin-bottom: 0.5rem;
-  color: black;
+  font-weight: light;
 }
 
 .report-subheader {
@@ -1447,11 +1442,6 @@ onMounted(async () => {
     display: flex;
     align-items: center;
   }
-}
-
-.p-datatable-gridlines .p-datatable-tbody > tr > td {
-  padding-left: 0.5rem !important;
-  padding-right: 0.5rem !important;
 }
 
 .confirm .p-confirm-dialog-reject {

@@ -5,7 +5,7 @@
         <section v-if="!student.orgName" class="form-section">
           <div class="p-input-icon-right">
             <div class="flex justify-content-between">
-              <label for="activationCode" class="text-gray-600">Activation code <span class="required">*</span></label>
+              <label for="activationCode">Activation code <span class="required">*</span></label>
               <div class="flex align-items-center">
                 <PvCheckbox
                   v-model="student.noActivationCode"
@@ -13,7 +13,7 @@
                   name="noActivationCode"
                   @change="updateActivationCode"
                 />
-                <label for="noActivationCode" class="ml-2 text-gray-600">I don't have code</label>
+                <label for="noActivationCode" class="ml-2">I don't have code</label>
               </div>
             </div>
             <PvInputGroup v-if="!student.noActivationCode">
@@ -59,18 +59,15 @@
             />
           </div>
         </section>
-        <section class="form-section" style="width: 100%">
+        <section class="form-section">
           <div class="p-input-icon-right">
-            <label for="studentUsername" class="text-gray-600"
-              >Student Username <span class="required mr-2">*</span></label
-            >
+            <label for="studentUsername">Student Username <span class="required">*</span></label>
             <PvInputText
               v-model="student.studentUsername"
               name="studentUsername"
               :class="{
                 'p-invalid': v$.students.$each.$response.$data[outerIndex].studentUsername.$invalid && submitted,
               }"
-              style="width: 100%"
               aria-describedby="username-error"
             />
           </div>
@@ -85,7 +82,7 @@
         <section class="form-section flex lg:flex-row">
           <div>
             <div>
-              <label for="password" class="text-gray-600">Password <span class="required">*</span></label>
+              <label for="password">Password <span class="required">*</span></label>
               <PvPassword
                 v-model="student.password"
                 name="password"
@@ -110,9 +107,7 @@
           <!-- Confirm Password -->
           <div>
             <div>
-              <label for="confirmPassword" class="text-gray-600"
-                >Confirm Password <span class="required">*</span></label
-              >
+              <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
               <PvPassword
                 :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
                 v-model="student.confirmPassword"
@@ -131,30 +126,28 @@
           <div>
             <!-- Age / DOB -->
             <div class="flex justify-content-between">
-              <label class="text-gray-600">Date of Birth <span class="required">*</span></label>
+              <label>Date of Birth <span class="required">*</span></label>
               <div class="flex align-items-center">
                 <PvCheckbox v-model="student.yearOnlyCheckRef" :binary="true" name="yearOnly" />
-                <label for="yearOnly" class="ml-2 text-gray-600">Use Year Only</label>
+                <label for="yearOnly" class="ml-2">Use Year Only</label>
               </div>
             </div>
             <div v-if="!student.yearOnlyCheckRef">
-              <PvDatePicker
+              <PvCalendar
                 v-model="student.dob"
                 :max-date="maxDoB"
                 view="date"
                 date-format="mm/dd/yy"
                 icon="pi pi-calendar text-white p-1"
-                class="w-full"
               />
             </div>
             <div v-else>
-              <PvDatePicker
+              <PvCalendar
                 v-model="student.dob"
                 :max-date="maxDoB"
                 view="year"
                 date-format="yy"
                 icon="pi pi-calendar text-white p-1"
-                class="w-full"
               />
             </div>
             <small v-if="v$.students.$each.$response.$data[outerIndex].dob.$invalid && submitted" class="p-error">{{
@@ -162,26 +155,25 @@
             }}</small>
           </div>
         </section>
-        <section class="form-section" style="width: 100%">
+        <section class="form-section">
           <!--Grade-->
           <div>
-            <label for="grade" class="text-gray-600">Grade <span class="required">*</span></label>
-            <PvSelect
+            <label for="grade">Grade <span class="required">*</span></label>
+            <PvDropdown
               v-model="student.grade"
               :options="gradeOptions"
               option-label="label"
               option-value="value"
-              style="width: 100%"
               name="grade"
             />
           </div>
         </section>
-        <PvAccordion expand-icon="pi pi-plus" collapse-icon="pi pi-minus">
+        <PvAccordion>
           <PvAccordionTab header="Optional Info">
             <!--First / Last Name-->
             <section class="form-section">
               <div>
-                <label for="firstName" class="text-gray-600">First Name </label>
+                <label for="firstName">First Name </label>
                 <PvInputText
                   v-model="student.firstName"
                   name="firstName"
@@ -193,13 +185,13 @@
               </div>
               <!-- Middle Name -->
               <div>
-                <label for="middleName" class="text-gray-600">Middle Name </label>
+                <label for="middleName">Middle Name </label>
                 <PvInputText v-model="student.middleName" name="middleName" />
               </div>
             </section>
-            <section class="form-section" style="width: 100%">
+            <section class="form-section">
               <div>
-                <label for="lastName" class="text-gray-600">Last Name </label>
+                <label for="lastName">Last Name </label>
                 <PvInputText
                   v-model="student.lastName"
                   name="lastName"
@@ -207,98 +199,90 @@
                     'p-invalid': v$.students.$each.$response.$data[outerIndex]?.lastName.$invalid,
                   }"
                   aria-describedby="first-name-error"
-                  style="width: 100%"
                 />
               </div>
             </section>
-            <section class="form-section flex flex-column">
+            <section class="form-section">
               <!--English Language Level-->
-              <div class="w-full">
-                <label for="ell" class="text-gray-600">English as a Second Language</label>
-                <PvSelect
+              <div class="mt-4 mb-5">
+                <label for="ell">English as a Second Language</label>
+                <PvDropdown
                   v-model="student.ell"
                   :options="ellOptions"
                   option-label="label"
                   option-value="value"
                   name="ell"
-                  class="w-full"
                 />
               </div>
               <!--Sex-->
-              <div class="w-full">
-                <label for="sex" class="text-gray-600">Gender </label>
-                <PvSelect
+              <div class="mt-4 mb-5">
+                <label for="sex">Gender </label>
+                <PvDropdown
                   v-model="student.gender"
                   :options="genderOptions"
                   option-label="label"
                   option-value="value"
                   name="gender"
-                  class="w-full"
                 />
               </div>
             </section>
-            <section class="form-section flex flex-column">
+            <section class="form-section">
               <!-- Free-Reduced Lunch -->
-              <div class="w-full">
-                <label for="stateId" class="text-gray-600">Free-Reduced Lunch </label>
-                <PvSelect
+              <div class="mt-4 mb-5">
+                <label for="stateId">Free-Reduced Lunch </label>
+                <PvDropdown
                   v-model="student.freeReducedLunch"
                   :options="frlOptions"
                   option-label="label"
                   option-value="value"
                   name="freeReducedLunch"
-                  class="w-full"
                 />
               </div>
               <!-- IEP Status -->
-              <div class="w-full">
-                <label for="stateId" class="text-gray-600">IEP Status</label>
-                <PvSelect
+              <div class="mt-4 mb-5">
+                <label for="stateId">IEP Status</label>
+                <PvDropdown
                   v-model="student.IEPStatus"
                   :options="IEPOptions"
                   option-label="label"
                   option-value="value"
                   name="IEPStatus"
-                  class="w-full"
                 />
               </div>
             </section>
-            <section class="form-section flex flex-column">
+            <section class="form-section">
               <!-- Race -->
-              <div class="w-full">
-                <label for="race" class="text-gray-600">Race </label>
+              <div class="mt-4 mb-5">
+                <label for="race">Race </label>
                 <PvAutoComplete
                   v-model="student.race"
                   multiple
                   :suggestions="raceOptions"
                   name="race"
-                  class="w-full"
                   @complete="searchRaces"
                 />
               </div>
               <!-- Hispanic Ethinicity -->
-              <div class="w-full">
-                <label for="hispanicEthnicity" class="text-gray-600">Hispanic or Latino Ethnicity </label>
-                <PvSelect
+              <div class="mt-4 mb-5">
+                <label for="hispanicEthnicity">Hispanic or Latino Ethnicity </label>
+                <PvDropdown
                   v-model="student.hispanicEthnicity"
                   :options="ethnicityOptions"
                   option-label="label"
                   option-value="value"
                   name="hispanicEthinicity"
-                  class="w-full"
                 />
               </div>
             </section>
             <section class="form-section">
               <!-- Home Language -->
-              <div class="w-full">
-                <label for="stateId" class="text-gray-600">Home Language </label>
+              <div class="mt-4 mb-5">
+                <label for="stateId">Home Language </label>
                 <PvAutoComplete
                   v-model="student.homeLanguage"
                   multiple
                   :suggestions="languageOptions"
                   name="homeLanguage"
-                  class="w-full"
                   @complete="searchLanguages"
                 />
               </div>
@@ -718,7 +702,7 @@ const validateRoarUsername = async () => {
   color: white;
 }
 .required {
-  color: var(--primary-color);
+  color: var(--bright-red);
 }
 .login-title {
   font-size: 26px;
