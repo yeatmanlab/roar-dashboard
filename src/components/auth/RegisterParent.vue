@@ -1,14 +1,13 @@
 <template>
   <div class="card">
     <form class="p-fluid" @submit.prevent="handleFormSubmit(!v$.$invalid)">
-      <section class="form-section flex lg:flex-row" style="width: 100%">
+      <section class="form-section flex lg:flex-row">
         <div>
-          <label for="firstName" class="text-gray-600">First Name <span class="required p-1">*</span></label>
+          <label for="firstName">First Name <span class="required p-1">*</span></label>
           <PvInputText
             v-model="v$.firstName.$model"
             name="firstName"
             :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
-            style="width: 100%; background: white"
             aria-describedby="first-name-error"
           />
           <span v-if="v$.firstName.$error && submitted">
@@ -21,12 +20,11 @@
           </small>
         </div>
         <div>
-          <label for="lastName" class="text-gray-600">Last Name <span class="required p-1">*</span></label>
+          <label for="lastName">Last Name <span class="required p-1">*</span></label>
           <PvInputText
             v-model="v$.lastName.$model"
             name="lastName"
             :class="{ 'p-invalid': v$.firstName.$invalid && submitted }"
-            style="width: 100%"
             aria-describedby="first-name-error"
           />
           <span v-if="v$.lastName.$error && submitted">
@@ -40,16 +38,15 @@
         </div>
       </section>
       <!--Username / Email-->
-      <section class="form-section flex lg:flex-row" style="width: 100%">
+      <section class="form-section flex lg:flex-row">
         <div class="p-input-icon-right">
-          <label for="ParentEmail" class="text-gray-600">Email <span class="required p-1">*</span></label>
+          <label for="ParentEmail">Email <span class="required p-1">*</span></label>
           <PvInputText
             v-model="v$.ParentEmail.$model"
             name="ParentEmail"
             type="email"
             :class="{ 'p-invalid': v$.ParentEmail.$invalid && submitted }"
             aria-describedby="username-or-email-error"
-            style="width: 100%"
           />
         </div>
         <span v-if="v$.ParentEmail.$error && submitted">
@@ -63,7 +60,7 @@
       <section class="form-section flex lg:flex-row">
         <div>
           <div>
-            <label for="password" class="text-gray-600">Password <span class="required p-1">*</span></label>
+            <label for="password">Password <span class="required p-1">*</span></label>
             <PvPassword
               v-model="v$.password.$model"
               name="password"
@@ -86,9 +83,7 @@
         <!--Confirm Password-->
         <div>
           <div>
-            <label for="confirmPassword" class="text-gray-600"
-              >Confirm Password <span class="required p-1">*</span></label
-            >
+            <label for="confirmPassword">Confirm Password <span class="required p-1">*</span></label>
             <PvPassword
               :id="`confirmPassword-${isRegistering ? 'register' : 'login'}`"
               v-model="v$.confirmPassword.$model"
@@ -123,7 +118,7 @@
               :class="[{ 'p-invalid': v$.accept.$invalid && submitted }]"
               @change="getConsent"
             />
-            <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }" style="color: var(--gray-600)"
+            <label for="accept" :class="{ 'p-error': v$.accept.$invalid && submitted }"
               >I agree to the terms and conditions<span class="required">*</span></label
             >
           </div>
@@ -311,7 +306,7 @@ const isNextButtonDisabled = computed(() => {
   margin-bottom: 0.75rem;
 }
 .required {
-  color: var(--primary-color);
+  color: var(--bright-red);
 }
 label {
   width: 100%;

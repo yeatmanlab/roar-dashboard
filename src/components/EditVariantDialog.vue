@@ -67,7 +67,7 @@
         >
           <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
             <template #editor="{ data, field }">
-              <PvSelect
+              <PvDropdown
                 v-model="data[field]"
                 :options="fieldExamples"
                 option-label="label"
@@ -76,12 +76,12 @@
                 placeholder="Type or choose field"
                 data-cy="dropdown-assigned-field"
               >
-              </PvSelect>
+              </PvDropdown>
             </template>
           </PvColumn>
           <PvColumn field="op" header="Operator" style="width: 5%" body-style="text-align:center">
             <template #editor="{ data, field }">
-              <PvSelect
+              <PvDropdown
                 v-model="data[field]"
                 :options="operators"
                 option-label="label"
@@ -92,7 +92,7 @@
                 <template #option="slotProps">
                   <PvTag :value="slotProps.option.label" severity="warning" />
                 </template>
-              </PvSelect>
+              </PvDropdown>
             </template>
             <template #body="slotProps">
               <PvTag :value="slotProps.data.op" severity="warning" />
@@ -162,7 +162,7 @@
           >
             <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
               <template #editor="{ data, field }">
-                <PvSelect
+                <PvDropdown
                   v-model="data[field]"
                   :options="fieldExamples"
                   option-label="label"
@@ -171,12 +171,12 @@
                   placeholder="Type or choose field"
                   data-cy="dropdown-optional-field"
                 >
-                </PvSelect>
+                </PvDropdown>
               </template>
             </PvColumn>
             <PvColumn field="op" header="Operator" style="width: 5%" body-style="text-align:center">
               <template #editor="{ data, field }">
-                <PvSelect
+                <PvDropdown
                   v-model="data[field]"
                   :options="operators"
                   option-label="label"
@@ -187,7 +187,7 @@
                   <template #option="slotProps">
                     <PvTag :value="slotProps.option.label" severity="warning" />
                   </template>
-                </PvSelect>
+                </PvDropdown>
               </template>
               <template #body="slotProps">
                 <PvTag :value="slotProps.data.op" severity="warning" />
@@ -212,7 +212,7 @@
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
               <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
-              <PvToggleSwitch
+              <PvInputSwitch
                 v-model="optionalForAllFlag"
                 data-cy="switch-optional-for-everyone"
                 @update:model-value="handleOptionalForAllSwitch"

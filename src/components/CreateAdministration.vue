@@ -15,7 +15,7 @@
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
           <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
+            <span class="p-float-label">
               <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
@@ -28,11 +28,11 @@
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your administration</small
               >
-            </PvFloatLabel>
+            </span>
           </div>
 
           <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
+            <span class="p-float-label">
               <PvInputText
                 id="administration-public-name"
                 v-model="state.administrationPublicName"
@@ -45,20 +45,19 @@
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please provide a public-facing name for this administration</small
               >
-            </PvFloatLabel>
+            </span>
           </div>
         </div>
         <div class="formgrid grid">
           <div class="field col-12 md:col-6 mb-5">
-            <PvFloatLabel>
-              <PvDatePicker
+            <span class="p-float-label">
+              <PvCalendar
                 v-model="state.dateStarted"
-                class="w-full p-0"
+                class="w-full"
                 :min-date="minStartDate"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
-                icon="pi pi-calendar text-primary"
+                icon="pi pi-calendar text-white p-1"
                 input-id="start-date"
                 show-button-bar
                 data-cy="input-start-date"
@@ -67,19 +66,18 @@
               <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
                 >Please select a start date.</small
               >
-            </PvFloatLabel>
+            </span>
           </div>
           <div class="field col-12 md:col-6">
-            <PvFloatLabel>
-              <PvDatePicker
+            <span class="p-float-label">
+              <PvCalendar
                 v-model="state.dateClosed"
-                class="w-full p-0"
+                class="w-full"
                 :min-date="minEndDate"
                 input-id="end-date"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
-                icon="pi pi-calendar text-primary"
+                icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-end-date"
               />
@@ -87,7 +85,7 @@
               <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
                 >Please select an end date.</small
               >
-            </PvFloatLabel>
+            </span>
           </div>
         </div>
 
@@ -122,17 +120,25 @@
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
             <div class="flex">
-              <label style="font-weight: bold" class="mb-2 mx-2 text-gray-600">Sequential?</label>
+              <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
               <span class="flex gap-2">
-                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
-                <label for="Yes" class="text-gray-600">Yes</label>
+                <PvRadioButton
+                  v-model="state.sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
+                  input-id="Yes"
+                  :value="true"
+                />
+                <label for="Yes">Yes</label>
                 <PvRadioButton
                   v-model="state.sequential"
                   data-cy="radio-button-not-sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
                   input-id="No"
                   :value="false"
                 />
-                <label for="No" class="text-gray-600">No</label>
+                <label for="No">No</label>
               </span>
               <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
                 >Please specify sequential behavior.</small
@@ -140,7 +146,7 @@
             </div>
             <div class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
-              <label for="isTestData" class="ml-2 text-gray-600">Mark As <b>Test Administration</b></label>
+              <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
             </div>
           </div>
           <div class="divider mx-2 my-3" />
@@ -758,7 +764,24 @@ function findVariantWithParams(variants, params) {
     display: none;
   }
 }
-.p-tabview-panels {
-  padding-top: 2vh !important;
+.p-radiobutton.p-component.p-radiobutton-checked {
+  position: relative;
+  width: 20px; /* adjust as needed */
+  height: 20px; /* adjust as needed */
+  background-color: var(--primary-color);
+  border-color: var(--primary-color) !important;
+  border-radius: 50%; /* make the element itself circular */
+}
+
+.p-radiobutton.p-component.p-radiobutton-checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px; /* adjust size of the inner circle as needed */
+  height: 5px; /* adjust size of the inner circle as needed */
+  background-color: white; /* color of the inner circle */
+  border-radius: 50%; /* make the inner element circular */
+  transform: translate(-50%, -50%); /* center the inner circle */
 }
 </style>

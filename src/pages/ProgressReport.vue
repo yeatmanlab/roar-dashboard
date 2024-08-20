@@ -85,19 +85,19 @@
               <div class="legend-entry">
                 <div class="circle" style="background-color: var(--bright-green)" />
                 <div>
-                  <div class="text-gray-600">Completed</div>
+                  <div>Completed</div>
                 </div>
               </div>
               <div class="legend-entry">
                 <div class="circle" style="background-color: var(--yellow-100)" />
                 <div>
-                  <div class="text-gray-600">Started</div>
+                  <div>Started</div>
                 </div>
               </div>
               <div class="legend-entry">
                 <div class="circle" style="background-color: var(--surface-d)" />
                 <div>
-                  <div class="text-gray-600">Assigned</div>
+                  <div>Assigned</div>
                 </div>
               </div>
             </div>
@@ -119,7 +119,7 @@
         >
           <template #filterbar>
             <div v-if="schoolsInfo" class="flex flex-row gap-2">
-              <PvFloatLabel>
+              <span class="p-float-label">
                 <PvMultiSelect
                   id="ms-school-filter"
                   v-model="filterSchools"
@@ -132,10 +132,10 @@
                   data-cy="filter-by-school"
                 />
                 <label for="ms-school-filter">Filter by School</label>
-              </PvFloatLabel>
+              </span>
             </div>
             <div class="flex flex-row gap-2">
-              <PvFloatLabel>
+              <span class="p-float-label">
                 <PvMultiSelect
                   id="ms-grade-filter"
                   v-model="filterGrades"
@@ -148,7 +148,7 @@
                   data-cy="filter-by-grade"
                 />
                 <label for="ms-school-filter">Filter by Grade</label>
-              </PvFloatLabel>
+              </span>
             </div>
           </template>
         </RoarDataTable>
@@ -601,7 +601,6 @@ onMounted(async () => {
   font-size: 2.5rem;
   font-weight: bold;
   margin-top: 0;
-  color: black;
 }
 
 .no-scores-container {
@@ -622,7 +621,6 @@ onMounted(async () => {
 .administration-name {
   font-size: 1.8rem;
   font-weight: light;
-  color: black;
 }
 
 .report-subheader {
@@ -662,11 +660,5 @@ onMounted(async () => {
   border-bottom-left-radius: 25rem;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-}
-.p-datatable-gridlines .p-datatable-tbody > tr > td {
-  padding-left: 0.5rem !important;
-  padding-right: 0.5rem !important;
-  padding-top: 0.3rem !important;
-  padding-bottom: 0.3rem !important;
 }
 </style>

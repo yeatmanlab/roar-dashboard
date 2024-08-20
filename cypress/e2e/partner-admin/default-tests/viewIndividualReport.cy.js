@@ -22,6 +22,16 @@ function clickScoreButton() {
   );
 }
 
+function checkAssignmentColumns(assignments) {
+  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+    const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
+
+    assignments.forEach((assignment) => {
+      expect(tableHeaders).to.include(assignment);
+    });
+  });
+}
+
 function checkIndividualScoreReport() {
   cy.get('[data-cy="route-button"]', { timeout: 3 * timeout })
     .first()
@@ -40,6 +50,7 @@ describe('The partner admin can view individual score reports for a given admini
     cy.getAdministrationCard(testPartnerAdministrationName);
     clickScoreButton();
     cy.checkUserList(testUserList);
+    checkAssignmentColumns(testAssignments);
     checkIndividualScoreReport();
   });
 });
