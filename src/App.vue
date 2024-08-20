@@ -54,6 +54,7 @@ useRecaptchaProvider();
 const navbarBlacklist = ref([
   'SignIn',
   'Register',
+  'RegisterClinic',
   'Maintenance',
   'PlayApp',
   'SWR',

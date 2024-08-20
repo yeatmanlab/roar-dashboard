@@ -380,6 +380,7 @@ const state = reactive({
   families: [],
   amount: '',
   expectedTime: '',
+  isAdobeSign: false,
 });
 
 const minStartDate = computed(() => {
@@ -453,8 +454,13 @@ const handleConsentSelected = (newConsentAssent) => {
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
     state.expectedTime = newConsentAssent.expectedTime;
-  } else {
-    noConsent = newConsentAssent;
+    state.isAdobeSign = newConsentAssent.isAdobeSign;
+  } else if (newConsentAssent === 'No Consent') {
+    state.consent = 'no consent';
+    state.assent = 'no assent';
+    state.amount = newConsentAssent.amount;
+    state.expectedTime = newConsentAssent.expectedTime;
+    state.isAdobeSign = newConsentAssent.isAdobeSign;
   }
 };
 
@@ -535,6 +541,7 @@ const submit = async () => {
             assent: toRaw(state).assent ?? null,
             amount: toRaw(state).amount ?? '',
             expectedTime: toRaw(state).expectedTime ?? '',
+            isAdobeSign: toRaw(state).isAdobeSign ?? false,
           },
         };
         if (isTestData.value) args.isTestData = true;
