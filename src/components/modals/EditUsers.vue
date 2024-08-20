@@ -203,7 +203,7 @@ import { watch, ref, onMounted, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const props = defineProps({
   userData: {

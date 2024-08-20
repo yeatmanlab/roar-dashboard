@@ -75,7 +75,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import _get from 'lodash/get';
 import { getSidebarActions } from '@/router/sidebarActions';
-import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import ROARLogo from '@/assets/RoarLogo.vue';
 import LanguageSelector from './LanguageSelector.vue';
 

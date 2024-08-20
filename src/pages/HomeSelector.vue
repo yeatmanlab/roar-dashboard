@@ -29,8 +29,8 @@ import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 
-import useUserDataQuery from '@/queries/useUserDataQuery';
-import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const HomeParticipant = ref(null);
 const HomeAdministrator = ref(null);

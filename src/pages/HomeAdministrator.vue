@@ -124,7 +124,7 @@ import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
-import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
 

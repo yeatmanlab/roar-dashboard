@@ -52,7 +52,7 @@ import { storeToRefs } from 'pinia';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
-import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);

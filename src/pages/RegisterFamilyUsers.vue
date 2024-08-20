@@ -62,7 +62,7 @@ import ROARLogoShort from '@/assets/RoarLogo-Short.vue';
 import { ref, onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import router from '../router';
-import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const authStore = useAuthStore();
 const initialized = ref(false);

@@ -131,7 +131,7 @@ import _head from 'lodash/head';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
-import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);

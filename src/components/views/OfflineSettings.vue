@@ -173,7 +173,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
 import { taskFetcher } from '@/helpers/query/tasks';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
-import useUserClaimsQuery from '@/queries/useUserClaimsQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 // +----------------+
 // | Initialization |
