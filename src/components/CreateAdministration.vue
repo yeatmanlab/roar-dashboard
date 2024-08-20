@@ -111,6 +111,7 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
+          :pre-existing-assessment-info="preExistingAssessmentInfo"
           @variants-changed="handleVariantsChanged"
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
@@ -164,7 +165,7 @@ import { onMounted, reactive, ref, toRaw, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import _filter from 'lodash/filter';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
@@ -192,6 +193,8 @@ const props = defineProps({
   adminId: { type: String, required: false, default: null },
 });
 
+const queryClient = useQueryClient();
+
 const header = computed(() => {
   if (props.adminId) {
     return 'Edit an administration';
@@ -213,6 +216,10 @@ const submitLabel = computed(() => {
   }
 
   return 'Create Administration';
+});
+
+const preExistingAssessmentInfo = computed(() => {
+  return _get(preExistingAdminInfo.value, 'assessments', []);
 });
 
 const router = useRouter();
@@ -552,7 +559,7 @@ const submit = async () => {
             administrationQueryKeyIndex.value += 1;
 
             // TODO: Invalidate for administrations query.
-            // This does not work in prod for some reason.
+            // This does not w`ork in prod for some reason.
             // queryClient.invalidateQueries({ queryKey: ['administrations'] })
 
             router.push({ name: 'Home' });
@@ -578,6 +585,9 @@ const submit = async () => {
   } else {
     console.log('form is invalid');
   }
+
+  // Invalidate and re-fetch the administration query with the new data
+  await queryClient.invalidateQueries(['administration', props.adminId]);
 };
 
 //      +-----------------------------------+
