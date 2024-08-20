@@ -8,7 +8,6 @@ import { useGameStore } from '@/store/game';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
-    // id is required so that Pinia can connect the store to the devtools
     id: 'authStore',
     state: () => {
       return {
@@ -179,6 +178,7 @@ export const useAuthStore = () => {
         await this.roarfirekit.forceIdTokenRefresh();
       },
       refreshQueryKeys() {
+        // @TODO: Check if this manual query invalidation is necessary as this appears to cause unecessary refetching.
         this.userQueryKeyIndex += 1;
         this.assignmentQueryKeyIndex += 1;
         this.administrationQueryKeyIndex += 1;

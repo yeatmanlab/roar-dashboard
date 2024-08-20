@@ -38,7 +38,7 @@ const ConsentModal = ref(null);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
+const { roarfirekit, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 const router = useRouter();
 const i18n = useI18n();
@@ -65,7 +65,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(uid.value, userQueryKeyIndex, {
+const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery({
   enabled: initialized,
 });
 
