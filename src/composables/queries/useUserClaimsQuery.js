@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, keepPreviousData } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
@@ -17,6 +17,7 @@ const useUserClaimsQuery = (queryParams = undefined) => {
   return useQuery({
     queryKey: [USER_CLAIMS_QUERY_KEY, uid.value, userQueryKeyIndex.value],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USER_CLAIMS, uid.value),
+    placeholderData: keepPreviousData,
     ...queryParams,
   });
 };

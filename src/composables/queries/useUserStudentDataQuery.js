@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, keepPreviousData } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
@@ -18,6 +18,7 @@ const useUserStudentDataQuery = (queryOptions = undefined) => {
   return useQuery({
     queryKey: [USER_STUDENT_DATA_QUERY_KEY, uid.value],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid.value, ['studentData']),
+    placeholderData: keepPreviousData,
     ...queryOptions,
   });
 };
