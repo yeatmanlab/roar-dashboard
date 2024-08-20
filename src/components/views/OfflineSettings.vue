@@ -168,11 +168,11 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
 import { taskFetcher } from '@/helpers/query/tasks';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
 // +----------------+
@@ -219,12 +219,8 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const { data: userData, isLoading: isLoadingUserData } = useQuery({
-  queryKey: ['userData', uid],
-  queryFn: () => fetchDocById('users', uid.value),
-  keepPrevousData: true,
+const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery({
   enabled: initialized,
-  staleTime: 1000 * 60 * 5, // 5 minutes
 });
 
 const { isLoading: isLoadingAdministrations, data: administrations } = useQuery({

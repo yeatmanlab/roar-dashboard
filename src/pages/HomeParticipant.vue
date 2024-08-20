@@ -103,9 +103,10 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
-import { getUserAssignments } from '../helpers/query/assignments';
-import ConsentModal from '../components/ConsentModal.vue';
+import { fetchDocsById, fetchSubcollection } from '@/helpers/query/utils';
+import { getUserAssignments } from '@/helpers/query/assignments';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import AppSpinner from '../components/AppSpinner.vue';
@@ -139,15 +140,11 @@ const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
 const {
+  data: userData,
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
-  data: userData,
-} = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', uid.value),
-  keepPreviousData: true,
+} = useUserDataQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const {
