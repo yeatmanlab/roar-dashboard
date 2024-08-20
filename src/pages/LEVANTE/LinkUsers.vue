@@ -84,7 +84,9 @@
 import { ref, toRaw } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import { useToast } from 'primevue/usetoast';
+import { useAuthStore } from '@/store/auth';
 
+const authStore = useAuthStore();
 const toast = useToast();
 const isFileUploaded = ref(false);
 const rawUserFile = ref([]);
@@ -206,8 +208,8 @@ const validateUsers = () => {
 const submitUsers = async () => {
   activeSubmit.value = true;
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const result = await authStore.roarfirekit.linkUsers(rawUserFile.value);
+    console.log('user link result:', result);
     
     toast.add({
       severity: 'success',
@@ -220,7 +222,7 @@ const submitUsers = async () => {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Failed to link users',
+      detail: `Failed to link users: ${error.message}`,
       life: 5000,
     });
   } finally {
