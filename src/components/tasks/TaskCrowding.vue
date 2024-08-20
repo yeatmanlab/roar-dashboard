@@ -9,11 +9,10 @@
 import { onMounted, watch, ref, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
+import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import _get from 'lodash/get';
-import { fetchDocById } from '@/helpers/query/utils';
+import useUserStudentDataQuery from '@/composables/queries/useUserStudentDataQuery';
 import packageLockJson from '../../../package-lock.json';
 
 const props = defineProps({
@@ -29,7 +28,7 @@ const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit, uid } = storeToRefs(authStore);
+const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -45,12 +44,8 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useQuery({
-  queryKey: ['userData', uid, 'studentData'],
-  queryFn: () => fetchDocById('users', uid.value, ['studentData']),
-  keepPreviousData: true,
+const { isLoading: isLoadingUserData, data: userData } = useUserStudentDataQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 // The following code intercepts the back button and instead forces a refresh.

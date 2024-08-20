@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
-import { USER_DATA_QUERY_KEY } from '@/constants/queryKeys';
+import { USER_STUDENT_DATA_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 /**
@@ -13,10 +13,10 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  */
 const useUserStudentDataQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
-  const { uid, userQueryKeyIndex } = storeToRefs(authStore);
+  const { uid } = storeToRefs(authStore);
 
   return useQuery({
-    queryKey: [USER_DATA_QUERY_KEY, uid.value, userQueryKeyIndex.value],
+    queryKey: [USER_STUDENT_DATA_QUERY_KEY, uid.value],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid.value, ['studentData']),
     ...queryOptions,
   });
