@@ -138,7 +138,7 @@
   </main>
 </template>
 <script setup>
-import { ref, toRaw } from 'vue';
+import { ref, toRaw, onMounted } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
 import _chunk from 'lodash/chunk';
@@ -151,6 +151,7 @@ import _set from 'lodash/set';
 import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase';
 import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { pluralizeFirestoreCollection } from '@/helpers';
@@ -162,6 +163,8 @@ const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 const isAllTestData = ref(false);
+
+const { roarfirekit } = storeToRefs(authStore);
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
@@ -343,105 +346,64 @@ async function submitStudents() {
     activeSubmit.value = false;
     return;
   }
-  // Begin submit process
-  const totalUsers = submitObject.length;
-  const chunkedSubmitObject = _chunk(submitObject, 10);
-  for (const chunk of chunkedSubmitObject) {
-    for (const user of chunk) {
-      // Handle Email Registration
-      const {
-        email,
-        username,
-        password,
-        firstName,
-        middleName,
-        lastName,
-        district,
-        school,
-        uClass,
-        group,
-        ...userData
-      } = user;
-      const computedEmail = email || `${username}@roar-auth.com`;
-      let sendObject = {
-        email: computedEmail,
-        password,
-        userData,
-      };
-      if (username) _set(sendObject, 'userData.username', username);
-      if (firstName) _set(sendObject, 'userData.name.first', firstName);
-      if (middleName) _set(sendObject, 'userData.name.middle', middleName);
-      if (lastName) _set(sendObject, 'userData.name.last', lastName);
 
-      const orgNameMap = {
-        district: district,
-        school: school,
-        class: uClass,
-        group: group,
-      };
+  // Send the bulk user data to sorting
+  const usersToSend = [];
+  for (const user of submitObject) {
+    // Handle Email Registration
+    const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } =
+      user;
+    const computedEmail = email || `${username}@roar-auth.com`;
+    let sendObject = {
+      email: computedEmail,
+      password,
+      userData,
+    };
+    if (username) _set(sendObject, 'userData.username', username);
+    if (firstName) _set(sendObject, 'userData.name.first', firstName);
+    if (middleName) _set(sendObject, 'userData.name.middle', middleName);
+    if (lastName) _set(sendObject, 'userData.name.last', lastName);
 
-      // If orgType is a given column, check if the name is
-      //   associated with a valid id. If so, add the id to
-      //   the sendObject. If not, reject user
-      for (const [orgType, orgName] of Object.entries(orgNameMap)) {
-        if (orgName) {
-          let orgInfo;
-          if (orgType === 'school') {
-            const { id: districtId } = await getOrgId('districts', district);
-            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
-          } else if (orgType === 'class') {
-            const { id: districtId } = await getOrgId('districts', district);
-            const { id: schoolId } = await getOrgId('schools', school);
-            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
-          } else {
-            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
+    const orgNameMap = {
+      district: district,
+      school: school,
+      class: uClass,
+      group: group,
+    };
+
+    // If orgType is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    for (const [orgType, orgName] of Object.entries(orgNameMap)) {
+      if (orgName) {
+        let orgInfo;
+        if (orgType === 'school') {
+          const { id: districtId } = await getOrgId('districts', district);
+          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
+        } else if (orgType === 'class') {
+          const { id: districtId } = await getOrgId('districts', district);
+          const { id: schoolId } = await getOrgId('schools', school);
+          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
+        } else {
+          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
+        }
+
+        if (!_isEmpty(orgInfo)) {
+          _set(sendObject, `userData.${orgType}`, orgInfo);
+        } else {
+          addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
+          if (processedUsers >= totalUsers) {
+            activeSubmit.value = false;
           }
-
-          if (!_isEmpty(orgInfo)) {
-            _set(sendObject, `userData.${orgType}`, orgInfo);
-          } else {
-            addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
-            if (processedUsers >= totalUsers) {
-              activeSubmit.value = false;
-            }
-            return;
-          }
+          return;
         }
       }
-
-      authStore
-        .registerWithEmailAndPassword(sendObject)
-        .then(() => {
-          toast.add({
-            severity: 'success',
-            summary: 'User Creation Success',
-            detail: `${sendObject.email} was sucessfully created.`,
-            life: 9000,
-          });
-          processedUsers = processedUsers + 1;
-          if (processedUsers >= totalUsers) {
-            activeSubmit.value = false;
-            if (errorUsers.value.length === 0) {
-              // Processing is finished, and there are no error users.
-              router.push({ name: 'Home' });
-            }
-          }
-        })
-        .catch((e) => {
-          toast.add({
-            severity: 'error',
-            summary: 'User Creation Failed',
-            detail: 'Please see error table below.',
-            life: 3000,
-          });
-          addErrorUser(user, e);
-          if (processedUsers >= totalUsers) {
-            activeSubmit.value = false;
-          }
-        });
     }
-    await delay(2250);
+
+    usersToSend.push(sendObject);
   }
+  console.log('Invoke firekit function:', usersToSend);
+  await roarfirekit.value.createUpdateUsers(usersToSend);
 }
 
 function delay(milliseconds) {
@@ -505,6 +467,31 @@ function downloadErrorTable() {
 //   console.log('handler for beforeunload')
 //   e.preventDefault();
 // });
+
+// +-----------------------------------+
+// | Handle roarfirekit initialization |
+// +-----------------------------------+
+
+const refreshing = ref(false);
+const initialized = ref(false);
+let unsubscribe;
+const refresh = () => {
+  refreshing.value = true;
+  if (unsubscribe) unsubscribe();
+
+  refreshing.value = false;
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.createUpdateUser) refresh();
+});
+
+onMounted(async () => {
+  if (roarfirekit.value.createUpdateUser) {
+    refresh();
+  }
+});
 </script>
 <style scoped>
 .extra-height {
