@@ -23,9 +23,8 @@ function clickProgressButton() {
 }
 
 function checkProgressTags(headers) {
-  cy.get('.p-datatable-column-header-content').then(($header) => {
-    const tableHeaders = Array.from($header).map((elem) => elem.innerText.trim());
-    cy.log('Table Headers:', tableHeaders);
+  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+    const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
     headers.forEach((header) => {
       const headerIndex = tableHeaders.indexOf(header);
@@ -39,8 +38,6 @@ function checkProgressTags(headers) {
               cy.wrap(headerCell).find('span.p-tag.p-component').should('exist');
             });
         });
-      } else {
-        cy.log(`Header "${header}" not found in table headers.`);
       }
     });
   });

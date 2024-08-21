@@ -114,7 +114,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
+import { FilterMatchMode, FilterOperator } from 'primevue/api';
 import { storeToRefs } from 'pinia';
 import Papa from 'papaparse';
 import { flattenObj } from '@/helpers';

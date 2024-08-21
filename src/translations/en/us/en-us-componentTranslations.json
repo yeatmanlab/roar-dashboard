@@ -85,7 +85,7 @@
   "pageSignIn": {
     "havingTrouble": "Having trouble?",
     "login": "Log in to access your dashboard",
-    "loginWith": "Or log in with: ",
+    "loginWith": "Log in with",
     "welcome": "Welcome to ROAR!"
   },
   "tasks": {
