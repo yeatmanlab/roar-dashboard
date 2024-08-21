@@ -684,6 +684,21 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
   return { isDuplicate: false, duplicateField: '' };
 };
 
+function checkVariantExists(value) {
+  allVariants.value.forEach((item) => {
+    if (value === item.variant?.name) {
+      toast.add({
+        severity: 'error',
+        summary: 'Oops!',
+        detail: `Variant with name '${value}' already exists. Please choose a different name.`,
+        life: 3000,
+      });
+      return true;
+    }
+    return false;
+  });
+}
+
 // Helper function to check for errors before updating a task
 // Returns true if there are errors, false if there are none
 const checkForErrors = () => {
@@ -762,6 +777,8 @@ const handleUpdateVariant = async () => {
 
 const handleVariantSubmit = async (isFormValid) => {
   if (checkForErrors()) return;
+
+  if (checkVariantExists(variantFields.variantName)) return;
 
   submitted.value = true;
   const isDemoData = !!variantCheckboxData.value?.find((item) => item === 'isDemoVariant');
