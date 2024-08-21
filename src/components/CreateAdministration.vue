@@ -116,7 +116,7 @@
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
+          <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
@@ -403,7 +403,7 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
-let noConsent = '';
+let noConsent = ref('');
 
 const rules = {
   administrationName: { required },
@@ -411,8 +411,8 @@ const rules = {
   dateStarted: { required },
   dateClosed: { required },
   sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
-  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
 };
 
 const v$ = useVuelidate(rules, state);
@@ -455,13 +455,16 @@ const handleVariantsChanged = (newVariants) => {
 
 const handleConsentSelected = (newConsentAssent) => {
   if (newConsentAssent !== 'No Consent') {
-    noConsent = '';
+    noConsent.value = '';
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
     state.expectedTime = newConsentAssent.expectedTime;
   } else {
-    noConsent = newConsentAssent;
+    // Set to "No Consent"
+    noConsent.value = newConsentAssent;
+    state.consent = newConsentAssent;
+    state.assent = newConsentAssent;
   }
 };
 
@@ -558,10 +561,6 @@ const submit = async () => {
             });
             administrationQueryKeyIndex.value += 1;
 
-            // TODO: Invalidate for administrations query.
-            // This does not w`ork in prod for some reason.
-            // queryClient.invalidateQueries({ queryKey: ['administrations'] })
-
             router.push({ name: 'Home' });
           })
           .catch((error) => {
@@ -585,9 +584,6 @@ const submit = async () => {
   } else {
     console.log('form is invalid');
   }
-
-  // Invalidate and re-fetch the administration query with the new data
-  await queryClient.invalidateQueries(['administration', props.adminId]);
 };
 
 //      +-----------------------------------+
@@ -605,6 +601,8 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
+  // Invalidate the query to allow a re-fetch of the data when editing an administration
+  await queryClient.invalidateQueries(['administration', props.adminId]);
 });
 
 watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
@@ -624,7 +622,51 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
       }
     });
     state.legal = adminInfo.legal;
+    state.consent = adminInfo?.legal?.consent ?? null;
+    state.assent = adminInfo?.legal?.assent ?? null;
+
+    if (state.consent === 'No Consent') {
+      noConsent.value = state.consent;
+    }
   }
+});
+
+// Set up watchers for changes to orgs as a result of editing an administration
+watch(districtsToGrab, async (updatedValue) => {
+  // Invalidate the districts query and re-fetch the data based on the updated value
+  await queryClient.invalidateQueries(['districts', props.adminId]);
+  preDistricts.value = queryClient.fetchQuery(['districts', props.adminId], () => fetchDocsById(updatedValue));
+  state.districts = (await preDistricts.value) ?? [];
+});
+
+watch(schoolsToGrab, async (updatedValue) => {
+  // Invalidate the schools query and re-fetch the data based on the updated value
+  await queryClient.invalidateQueries(['schools', 'minimalOrgs', props.adminId]);
+  preSchools.value = queryClient.fetchQuery(['schools', 'minimalOrgs', props.adminId], () =>
+    fetchDocsById(updatedValue),
+  );
+  state.schools = (await preSchools.value) ?? [];
+});
+
+watch(classesToGrab, async (updatedValue) => {
+  // Invalidate the classes query and re-fetch the data based on the updated value
+  await queryClient.invalidateQueries(['classes', 'minimal', props.adminId]);
+  preClasses.value = queryClient.fetchQuery(['classes', 'minimal', props.adminId], () => fetchDocsById(updatedValue));
+  state.classes = (await preClasses.value) ?? [];
+});
+
+watch(groupsToGrab, async (updatedValue) => {
+  // Invalidate the groups query and re-fetch the data based on the updated value
+  await queryClient.invalidateQueries(['groups', props.adminId]);
+  preGroups.value = queryClient.fetchQuery(['groups', props.adminId], () => fetchDocsById(updatedValue));
+  state.groups = (await preGroups.value) ?? [];
+});
+
+watch(familiesToGrab, async (updatedValue) => {
+  // Invalidate the families query and re-fetch the data based on the updated value
+  await queryClient.invalidateQueries(['families', props.adminId]);
+  preFamilies.value = queryClient.fetchQuery(['families', props.adminId], () => fetchDocsById(updatedValue));
+  state.families = (await preFamilies.value) ?? [];
 });
 
 function findVariantWithParams(variants, params) {
@@ -635,7 +677,6 @@ function findVariantWithParams(variants, params) {
     const cleanInputParams = removeNull(params);
     return _isEqual(cleanInputParams, cleanVariantParams);
   });
-
   if (found) {
     console.log('found', found);
   }

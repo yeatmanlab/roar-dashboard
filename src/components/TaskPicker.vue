@@ -143,7 +143,7 @@
   </PvPanel>
 </template>
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import _filter from 'lodash/filter';
 import _findIndex from 'lodash/findIndex';
 import _debounce from 'lodash/debounce';
@@ -188,6 +188,16 @@ watch(
   () => props.inputVariants,
   (newVariants) => {
     selectedVariants.value = _union(selectedVariants.value, newVariants);
+
+    // Update the conditions for the variants that were pre-existing
+    selectedVariants.value = selectedVariants.value.map((variant) => {
+      const preExistingInfo = props.preExistingAssessmentInfo.find((info) => info?.variantId === variant?.id);
+      if (preExistingInfo) {
+        console.log('preExistingInfoConditions', preExistingInfo.conditions);
+        return { ...variant, variant: { ...variant.variant, conditions: preExistingInfo.conditions } };
+      }
+      return variant;
+    });
   },
 );
 
