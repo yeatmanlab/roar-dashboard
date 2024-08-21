@@ -28,7 +28,7 @@ const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit, uid } = storeToRefs(authStore);
+const { isFirekitInit, roarfirekit } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
