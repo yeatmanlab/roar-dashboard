@@ -193,8 +193,7 @@ watch(
     selectedVariants.value = selectedVariants.value.map((variant) => {
       const preExistingInfo = props.preExistingAssessmentInfo.find((info) => info?.variantId === variant?.id);
       if (preExistingInfo) {
-        console.log('preExistingInfoConditions', preExistingInfo.conditions);
-        return { ...variant, variant: { ...variant.variant, conditions: preExistingInfo.conditions } };
+        return { ...variant, variant: { ...variant?.variant, conditions: preExistingInfo.conditions } };
       }
       return variant;
     });
