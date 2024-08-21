@@ -233,7 +233,7 @@ const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
 
-const { data: allSchools } = useQuery({
+const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
   queryKey: ['schools', uid, selectedDistrict, orgsQueryKeyIndex],
   queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
@@ -276,10 +276,8 @@ const exportAll = async () => {
 };
 
 const exportOrgUsers = async (orgId) => {
-  console.log('Exporting users for organization:', orgId.id, activeOrgType.value);
   try {
     const users = await fetchUsersByOrg(activeOrgType.value, orgId.id, ref(1000000), ref(0), orderBy);
-    console.log('Fetched users for export:', users);
 
     if (!users || users.length === 0) {
       throw new Error('No users found for the organization.');
@@ -304,7 +302,6 @@ const exportOrgUsers = async (orgId) => {
       life: 3000,
     });
   } catch (error) {
-    console.error('Error exporting users:', error);
     toast.add({
       severity: 'error',
       summary: 'Export Failed',
@@ -352,7 +349,7 @@ const tableColumns = computed(() => {
       sort: false,
     },
     {
-      header: '',
+      header: 'Export Users',
       buttonLabel: 'Export Users',
       button: true,
       eventName: 'export-org-users',
