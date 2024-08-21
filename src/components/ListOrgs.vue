@@ -60,6 +60,7 @@
             :allow-filtering="false"
             @export-all="exportAll"
             @selected-org-id="showCode"
+            @export-org-users="(orgId) => exportOrgUsers(orgId)"
           />
           <AppSpinner v-else />
         </PvTabPanel>
@@ -115,6 +116,7 @@
 <script setup>
 import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import { fetchUsersByOrg } from '@/helpers/query/users';
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
@@ -122,6 +124,7 @@ import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _kebabCase from 'lodash/kebabCase';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
@@ -230,7 +233,7 @@ const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
 });
 
-const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
+const { data: allSchools } = useQuery({
   queryKey: ['schools', uid, selectedDistrict, orgsQueryKeyIndex],
   queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
   keepPreviousData: true,
@@ -272,6 +275,45 @@ const exportAll = async () => {
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
+const exportOrgUsers = async (orgId) => {
+  console.log('Exporting users for organization:', orgId.id, activeOrgType.value);
+  try {
+    const users = await fetchUsersByOrg(activeOrgType.value, orgId.id, ref(1000000), ref(0), orderBy);
+    console.log('Fetched users for export:', users);
+
+    if (!users || users.length === 0) {
+      throw new Error('No users found for the organization.');
+    }
+    const computedExportData = users.map((user) => ({
+      Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
+      FirstName: _get(user, 'name.first'),
+      LastName: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+      Gender: _get(user, 'studentData.gender'),
+      DateOfBirth: _get(user, 'studentData.dob'),
+      UserType: _get(user, 'userType'),
+    }));
+
+    exportCsv(computedExportData, `organization-users-${_kebabCase(orgId)}.csv`);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Export Successful',
+      detail: 'Users have been exported successfully!',
+      life: 3000,
+    });
+  } catch (error) {
+    console.error('Error exporting users:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Export Failed',
+      detail: 'Failed to export users. Please try again.',
+      life: 3000,
+    });
+  }
+};
+
 const tableColumns = computed(() => {
   const columns = [
     { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
@@ -307,6 +349,14 @@ const tableColumns = computed(() => {
       button: true,
       eventName: 'selected-org-id',
       buttonIcon: 'pi pi-send mr-2',
+      sort: false,
+    },
+    {
+      header: '',
+      buttonLabel: 'Export Users',
+      button: true,
+      eventName: 'export-org-users',
+      buttonIcon: 'pi pi-download mr-2',
       sort: false,
     },
   );
