@@ -23,13 +23,11 @@
 <script setup>
 import { computed, defineAsyncComponent, onMounted, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import _get from 'lodash/get';
-import _isEmpty from 'lodash/isEmpty';
-import _union from 'lodash/union';
-import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
 
 import useUserType from '@/composables/useUserType';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
