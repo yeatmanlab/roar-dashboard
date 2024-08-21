@@ -8,6 +8,14 @@ const isEmulated = import.meta.env.VITE_FIREBASE_EMULATOR === 'true';
 const useSandbox = import.meta.env.VITE_FIREBASE_DATA_SOURCE === 'sandbox';
 const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
 
+function setDebugToken(config) {
+  const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+
+  if (debugToken) {
+    config.debugToken = debugToken;
+  }
+}
+
 if (isEmulated) {
   appConfig = {
     projectId: 'demo-gse-roar-assessment',
@@ -36,7 +44,6 @@ if (isEmulated) {
     messagingSenderId: '26086061121',
     appId: '1:26086061121:web:262163d6c145b7a80bc2c0',
     siteKey: '6Ldq2SEqAAAAAKXTxXs9GnykkEZLYeVijzAKzqfQ',
-    debugToken: import.meta.env.VITE_APPCHECK_DEBUG_TOKEN,
   };
   adminConfig = {
     apiKey: 'AIzaSyCl-JsYraUfofQZXpzshQ6s-E0nYzlCvvg',
@@ -46,7 +53,6 @@ if (isEmulated) {
     messagingSenderId: '401455396681',
     appId: '1:401455396681:web:859ea073a116d0aececc98',
     siteKey: '6LeTgCEqAAAAAPVXEVtWoinVf_CLYF30PaETyyiT',
-    debugToken: import.meta.env.VITE_APPCHECK_DEBUG_TOKEN,
   };
 } else {
   appConfig = {
@@ -57,7 +63,6 @@ if (isEmulated) {
     messagingSenderId: '757277423033',
     appId: '1:757277423033:web:d6e204ee2dd1047cb77268',
     siteKey: '6Lc54SEqAAAAAKJF8QNpEzU6wHtXGAteVvrdB8XK',
-    debugToken: import.meta.env.VITE_APPCHECK_DEBUG_TOKEN,
   };
 
   adminConfig = {
@@ -69,9 +74,11 @@ if (isEmulated) {
     appId: '1:1062489366521:web:d0b8b5371a67332d1d2728',
     measurementId: 'G-YYE3YN0S99',
     siteKey: '6Ler4SEqAAAAAJSAaJAwEAegdQAzioF3xVtm68v0',
-    debugToken: import.meta.env.VITE_APPCHECK_DEBUG_TOKEN,
   };
 }
+
+setDebugToken(appConfig);
+setDebugToken(adminConfig);
 
 export default {
   app: appConfig,
