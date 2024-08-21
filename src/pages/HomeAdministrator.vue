@@ -255,7 +255,7 @@ const onSearch = () => {
  * @returns {void}
  */
 const autocomplete = () => {
-  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
+  searchSuggestions.value = searchTokens.value.filter((item) =>
     item.toLowerCase().includes(searchInput.value.toLowerCase()),
   );
 };
