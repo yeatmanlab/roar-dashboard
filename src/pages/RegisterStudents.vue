@@ -403,7 +403,16 @@ async function submitStudents() {
     usersToSend.push(sendObject);
   }
   console.log('Invoke firekit function:', usersToSend);
-  await roarfirekit.value.createUpdateUsers(usersToSend);
+  await roarfirekit.value.createUpdateUsers(usersToSend).then((result) => {
+    console.log(result);
+    for (const item of result) {
+      if (item.status === 'rejected') {
+        // Parse information about the rejected user
+        const user = {}; // Grab user from the result object
+        addErrorUser(user, '');
+      }
+    }
+  });
 }
 
 function delay(milliseconds) {
