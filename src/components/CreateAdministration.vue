@@ -161,7 +161,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, toRaw, computed, watch } from 'vue';
+import { onMounted, reactive, ref, toRaw, computed, watch, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
@@ -229,6 +229,28 @@ const confirm = useConfirm();
 
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
+
+const queryKeys = [
+  ['administration', props.adminId],
+  ['variants', 'all'],
+  ['districts', props.adminId],
+  ['schools', 'minimalOrgs', props.adminId],
+  ['classes', 'minimal', props.adminId],
+  ['groups', props.adminId],
+  ['families', props.adminId],
+];
+
+const resetAllQueries = async () => {
+  for (const key of queryKeys) {
+    await queryClient.resetQueries(key);
+  }
+};
+
+const invalidateAllQueries = async () => {
+  for (const key of queryKeys) {
+    await queryClient.invalidateQueries(key);
+  }
+};
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
@@ -560,7 +582,6 @@ const submit = async () => {
               life: 3000,
             });
             administrationQueryKeyIndex.value += 1;
-
             router.push({ name: 'Home' });
           })
           .catch((error) => {
@@ -601,8 +622,15 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
-  // Invalidate the query to allow a re-fetch of the data when editing an administration
-  await queryClient.invalidateQueries(['administration', props.adminId]);
+  // Invalidate the query to allow a re-fetch of the data after editing an administration
+  await invalidateAllQueries();
+});
+
+onUnmounted(async () => {
+  if (!submitted.value) {
+    // Reset the query to allow a clean re-fetch of the data if exiting the page without submitting (editing)
+    await resetAllQueries();
+  }
 });
 
 watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
@@ -633,40 +661,56 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
 
 // Set up watchers for changes to orgs as a result of editing an administration
 watch(districtsToGrab, async (updatedValue) => {
-  // Invalidate the districts query and re-fetch the data based on the updated value
-  await queryClient.invalidateQueries(['districts', props.adminId]);
-  preDistricts.value = queryClient.fetchQuery(['districts', props.adminId], () => fetchDocsById(updatedValue));
-  state.districts = (await preDistricts.value) ?? [];
+  if (updatedValue.length !== 0) {
+    // Invalidate the districts query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['districts', props.adminId]);
+    const fetchedDistricts = await queryClient.fetchQuery(['districts', props.adminId], () =>
+      fetchDocsById(updatedValue),
+    );
+    state.districts = fetchedDistricts ?? [];
+  }
 });
 
 watch(schoolsToGrab, async (updatedValue) => {
-  // Invalidate the schools query and re-fetch the data based on the updated value
-  await queryClient.invalidateQueries(['schools', 'minimalOrgs', props.adminId]);
-  preSchools.value = queryClient.fetchQuery(['schools', 'minimalOrgs', props.adminId], () =>
-    fetchDocsById(updatedValue),
-  );
-  state.schools = (await preSchools.value) ?? [];
+  if (updatedValue.length !== 0) {
+    // Invalidate the schools query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['schools', 'minimalOrgs', props.adminId]);
+    const fetchedSchools = await queryClient.fetchQuery(['schools', 'minimalOrgs', props.adminId], () =>
+      fetchDocsById(updatedValue),
+    );
+    state.schools = fetchedSchools ?? [];
+  }
 });
 
 watch(classesToGrab, async (updatedValue) => {
-  // Invalidate the classes query and re-fetch the data based on the updated value
-  await queryClient.invalidateQueries(['classes', 'minimal', props.adminId]);
-  preClasses.value = queryClient.fetchQuery(['classes', 'minimal', props.adminId], () => fetchDocsById(updatedValue));
-  state.classes = (await preClasses.value) ?? [];
+  if (updatedValue.length !== 0) {
+    // Invalidate the classes query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['classes', 'minimal', props.adminId]);
+    const fetchedClasses = await queryClient.fetchQuery(['classes', 'minimal', props.adminId], () =>
+      fetchDocsById(updatedValue),
+    );
+    state.classes = fetchedClasses ?? [];
+  }
 });
 
 watch(groupsToGrab, async (updatedValue) => {
-  // Invalidate the groups query and re-fetch the data based on the updated value
-  await queryClient.invalidateQueries(['groups', props.adminId]);
-  preGroups.value = queryClient.fetchQuery(['groups', props.adminId], () => fetchDocsById(updatedValue));
-  state.groups = (await preGroups.value) ?? [];
+  if (updatedValue.length !== 0) {
+    // Invalidate the groups query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['groups', props.adminId]);
+    const fetchedGroups = await queryClient.fetchQuery(['groups', props.adminId], () => fetchDocsById(updatedValue));
+    state.groups = fetchedGroups ?? [];
+  }
 });
 
 watch(familiesToGrab, async (updatedValue) => {
-  // Invalidate the families query and re-fetch the data based on the updated value
-  await queryClient.invalidateQueries(['families', props.adminId]);
-  preFamilies.value = queryClient.fetchQuery(['families', props.adminId], () => fetchDocsById(updatedValue));
-  state.families = (await preFamilies.value) ?? [];
+  if (updatedValue.length !== 0) {
+    // Invalidate the families query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['families', props.adminId]);
+    const fetchedFamilies = await queryClient.fetchQuery(['families', props.adminId], () =>
+      fetchDocsById(updatedValue),
+    );
+    state.families = fetchedFamilies ?? [];
+  }
 });
 
 function findVariantWithParams(variants, params) {
