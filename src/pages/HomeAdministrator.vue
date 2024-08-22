@@ -15,7 +15,12 @@
               <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div v-if="isSuperAdmin" class="flex flex-column gap-1">
                   <small class="text-gray-400">Show test administrations</small>
-                  <PvToggleSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
+                  <PvToggleButton
+                    v-model="fetchTestAdministrations"
+                    on-label="Show"
+                    off-label="Hide"
+                    class="p-2 rounded align-self-center my-auto"
+                  />
                 </div>
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by administration name</small>
