@@ -101,7 +101,6 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
-import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
 import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
