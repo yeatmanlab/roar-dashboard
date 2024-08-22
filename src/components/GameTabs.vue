@@ -1,120 +1,79 @@
 <template>
-  <div id="games">
-    <PvTabs v-model:activeIndex="displayGameIndex" scrollable value="0">
-      <PvTabList>
-        <PvTab
-          v-for="(game, index) in games"
-          :key="game.taskId"
-          :disabled="
-            sequential &&
-            ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
-          "
-          :value="String(index)"
-          class="p-1 ml-2 mr-2 text-base"
-          >{{ getTaskName(game.taskId, game.taskData.name) }}
-        </PvTab>
-      </PvTabList>
-      <PvTabPanels style="width: 120vh">
-        <PvTabPanel
-          v-for="(game, index) in games"
-          :key="game.taskId"
-          :disabled="
-            sequential &&
-            ((index > 0 && !games[index - 1].completedOn) ||
-              (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
-          "
-          :value="String(index)"
-        >
-          <template #header>
-            <!--Complete Game-->
-            <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
-            <!--Current Game-->
-            <i
-              v-else-if="game.taskId == currentGameId || !sequential"
-              class="pi pi-circle mr-2"
-              data-game-status="current"
-            />
-            <!--Locked Game-->
-            <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
-            <span
-              class="tabview-nav-link-label"
-              :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`"
-              >{{ getTaskName(game.taskId, game.taskData.name) }}</span
-            >
-          </template>
-          <div class="roar-tabview-game pointer flex flex-row p-5 surface-100 w-full">
-            <div class="roar-game-content flex flex-column" style="width: 70%" @click="routeExternalTask(game)">
-              <div class="roar-game-title font-bold">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
-              <div class="roar-game-description mr-2">
-                <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
-              </div>
-              <div class="flex flex-column">
-                <div class="roar-game-meta">
-                  <PvTag
-                    v-for="(items, metaIndex) in game.taskData.meta"
-                    :key="metaIndex"
-                    :value="metaIndex + ': ' + items"
-                  />
-                </div>
-                <div class="roar-game-footer p-3 mr-5 hover:surface-200">
-                  <div class="flex align-items-center justify-content-center text-xl font-bold mt-2">
-                    <router-link
-                      v-if="
-                        !allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL
-                      "
-                      :to="{ path: getRoutePath(game.taskId) }"
-                      class="no-underline text-900"
-                    >
-                      <div class="flex align-items-center justify-content-center">
-                        <i v-if="!allGamesComplete" class="pi"
-                          ><svg
-                            width="100"
-                            height="100"
-                            viewBox="0 0 42 42"
-                            fill="none"
-                            class="mr-3"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <rect width="42" height="42" rx="21" fill="#A80532" />
-                            <path
-                              d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
-                              fill="white"
-                            />
-                          </svg>
-                        </i>
-                      </div>
-                      <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
-                      <span v-else>{{ taskCompletedMessage }} </span>
-                    </router-link>
-                  </div>
-                </div>
-              </div>
+  <div id="games" class="game-tab-container">
+    <PvTabView v-model:activeIndex="displayGameIndex" :scrollable="true" class="flex flex-column">
+      <PvTabPanel
+        v-for="(game, index) in games"
+        :key="game.taskId"
+        :disabled="
+          sequential &&
+          ((index > 0 && !games[index - 1].completedOn) ||
+            (allGamesComplete && currentGameId !== game.taskId && !game.completedOn))
+        "
+      >
+        <template #header>
+          <!--Complete Game-->
+          <i v-if="game.completedOn" class="pi pi-check-circle mr-2" data-game-status="complete" />
+          <!--Current Game-->
+          <i
+            v-else-if="game.taskId == currentGameId || !sequential"
+            class="pi pi-circle mr-2"
+            data-game-status="current"
+          />
+          <!--Locked Game-->
+          <i v-else-if="sequential" class="pi pi-lock mr-2" data-game-status="incomplete" />
+          <span class="tabview-nav-link-label" :data-game-status="`${game.completedOn ? 'complete' : 'incomplete'}`">{{
+            getTaskName(game.taskId, game.taskData.name)
+          }}</span>
+        </template>
+        <div class="roar-tabview-game pointer flex">
+          <div class="roar-game-content" @click="routeExternalTask(game)">
+            <div class="roar-game-title">{{ getTaskName(game.taskId, game.taskData.name) }}</div>
+            <div class="roar-game-description">
+              <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
             </div>
-            <div class="roar-game-image">
-              <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
-                <VideoPlayer
-                  :options="returnVideoOptions(game.taskData?.tutorialVideo)"
-                  :on-video-end="updateVideoCompleted"
-                  :on-video-start="updateVideoStarted"
-                  :task-id="game.taskId"
-                  style="width: 40vh"
-                />
-              </div>
-              <div v-else>
-                <img v-if="game.taskData.image" :src="game.taskData.image" style="width: 40vh" />
-                <!-- TODO: Get real backup image -->
-                <img
-                  v-else
-                  src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png"
-                  style="width: 40vh"
-                />
-              </div>
+            <div class="roar-game-meta">
+              <PvTag
+                v-for="(items, metaIndex) in game.taskData.meta"
+                :key="metaIndex"
+                :value="metaIndex + ': ' + items"
+              />
+            </div>
+            <div class="roar-game-footer">
+              <i v-if="!allGamesComplete" class="pi"
+                ><svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="42" height="42" rx="21" fill="#A80532" />
+                  <path
+                    d="M26.1858 19.6739L17.4823 14.1736C16.7751 13.7269 15.6921 14.1604 15.6921 15.2652V26.2632C15.6921 27.2544 16.6985 27.8518 17.4823 27.3549L26.1858 21.8572C26.9622 21.3682 26.9647 20.1629 26.1858 19.6739Z"
+                    fill="white"
+                  />
+                </svg>
+              </i>
+              <span v-if="!allGamesComplete && !game.completedOn">{{ $t('gameTabs.clickToStart') }}</span>
+              <span v-else>{{ taskCompletedMessage }}</span>
+              <router-link
+                v-if="!allGamesComplete && !game.completedOn && !game.taskData?.taskURL && !game.taskData?.variantURL"
+                :to="{ path: getRoutePath(game.taskId) }"
+              ></router-link>
             </div>
           </div>
-        </PvTabPanel>
-      </PvTabPanels>
-    </PvTabs>
+          <div class="roar-game-image">
+            <div v-if="game.taskData?.tutorialVideo" class="video-player-wrapper">
+              <VideoPlayer
+                :options="returnVideoOptions(game.taskData?.tutorialVideo)"
+                :on-video-end="updateVideoCompleted"
+                :on-video-start="updateVideoStarted"
+                :task-id="game.taskId"
+              />
+            </div>
+            <div v-else>
+              <img v-if="game.taskData.image" :src="game.taskData.image" />
+              <!-- TODO: Get real backup image -->
+              <img v-else src="https://reading.stanford.edu/wp-content/uploads/2021/10/PA-1024x512.png" />
+            </div>
+          </div>
+        </div>
+      </PvTabPanel>
+    </PvTabView>
   </div>
 </template>
 <script setup>
@@ -281,7 +240,7 @@ const returnVideoOptions = (videoURL) => {
 };
 </script>
 
-<style>
+<style scoped lang="scss">
 .game-tab-container {
   max-width: 75vw;
 }

@@ -1,0 +1,38 @@
+.p-dataview .p-paginator-top {
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+  display: flex;
+  justify-content: center;
+}
+.p-dataview .p-paginator-bottom {
+  border-width: 0 0 1px 0;
+  border-radius: 0;
+}
+.p-dataview .p-dataview-header {
+  background: var(--surface-b);
+  color: var(--text-color);
+  border: 1px solid var(--surface-c);
+  border-width: 1px 0 1px 0;
+  padding: 1.25rem 1.25rem;
+  font-weight: 600;
+}
+.p-dataview .p-dataview-content {
+  background: var(--surface-a);
+  color: var(--text-color);
+  border: 0 none;
+  padding: 0;
+}
+.p-dataview.p-dataview-list .p-dataview-content > .p-grid > div {
+  border: solid var(--surface-c);
+  border-width: 0 0 1px 0;
+}
+.p-dataview .p-dataview-footer {
+  background: var(--surface-b);
+  color: var(--text-color);
+  border: 1px solid var(--surface-c);
+  border-width: 0 0 1px 0;
+  padding: var(--inline-spacing-larger) 1.5rem;
+  font-weight: 600;
+  border-bottom-left-radius: var(--border-radius);
+  border-bottom-right-radius: var(--border-radius);
+}

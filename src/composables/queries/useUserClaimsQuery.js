@@ -7,10 +7,10 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 /**
  * User claims data query.
  *
- * @param {QueryOptions|undefined} queryParams – Optional TanStack query options.
+ * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useUserClaimsQuery = (queryParams = undefined) => {
+const useUserClaimsQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { uid, userQueryKeyIndex } = storeToRefs(authStore);
 
@@ -18,7 +18,7 @@ const useUserClaimsQuery = (queryParams = undefined) => {
     queryKey: [USER_CLAIMS_QUERY_KEY, uid.value, userQueryKeyIndex.value],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USER_CLAIMS, uid.value),
     placeholderData: keepPreviousData,
-    ...queryParams,
+    ...queryOptions,
   });
 };
 
