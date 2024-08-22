@@ -32,7 +32,7 @@
                 <PvDropdown
                   v-if="adminInfo.every((admin) => admin.publicName)"
                   v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
+                  :options="sortedAdminInfo ?? []"
                   option-label="publicName"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
@@ -41,7 +41,7 @@
                 <PvDropdown
                   v-else
                   v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
+                  :options="sortedAdminInfo ?? []"
                   option-label="name"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
@@ -181,6 +181,10 @@ const {
   keepPreviousData: true,
   enabled: administrationQueryEnabled,
   staleTime: 5 * 60 * 1000,
+});
+
+const sortedAdminInfo = computed(() => {
+  return [...(adminInfo.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 });
 
 async function checkConsent() {
@@ -399,11 +403,8 @@ watch(
     // If there is no selected admin or if the selected admin is not in the list
     // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-      // Sort adminInfo by name in ascending order
-      const sortedAdminInfo = [...adminInfo.value].sort((a, b) => a.name.localeCompare(b.name));
-
       // Choose the first sorted administration
-      selectedAdmin.value = sortedAdminInfo[0];
+      selectedAdmin.value = sortedAdminInfo.value[0];
     }
   },
   { immediate: true },
