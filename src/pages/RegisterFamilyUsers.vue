@@ -9,11 +9,11 @@
       <div>
         <div v-if="activeIndex === 0" class="register-title">
           <h1 align="center">Register for ROAR</h1>
-          <p align="center" class="text-gray-600">Enter your information to create an account.</p>
+          <p align="center">Enter your information to create an account.</p>
         </div>
         <div v-else class="register-title">
           <h1 align="center">Register your child</h1>
-          <p align="center" class="text-gray-600">Enter your child's information to create their ROAR account.</p>
+          <p align="center">Enter your child's information to create their ROAR account.</p>
         </div>
         <div v-if="spinner === false">
           <KeepAlive>

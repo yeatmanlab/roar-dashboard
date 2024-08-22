@@ -6,7 +6,7 @@
           <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem" />
           <div class="admin-page-header">Add Participants</div>
         </div>
-        <div class="flex flex-column text-md text-gray-500 ml-6 gap-2 mb-4">
+        <div class="flex flex-column text-md text-gray-500 ml-6 gap-2">
           <div>Add participants by uploading a CSV.</div>
           <div>
             The following fields are required for registering a student:
@@ -79,7 +79,7 @@
           <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <PvSelect
+                <PvDropdown
                   v-model="dropdown_model[col.field]"
                   :options="dropdown_options"
                   option-label="label"
@@ -95,7 +95,7 @@
         <div class="submit-container">
           <div class="m-2">
             <PvCheckbox v-model="isAllTestData" :binary="true" input-id="isTestData" />
-            <label for="isTestData" class="ml-2 text-gray-600">All users are test accounts</label>
+            <label for="isTestData" class="ml-2">All users are test accounts</label>
           </div>
           <PvButton
             label="Start Registration"

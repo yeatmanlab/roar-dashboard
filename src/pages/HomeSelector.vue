@@ -32,9 +32,7 @@ import { useI18n } from 'vue-i18n';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
-const HomeParticipant = ref(null);
-const HomeAdministrator = ref(null);
-const ConsentModal = ref(null);
+let HomeParticipant, HomeAdministrator, ConsentModal;
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
@@ -121,9 +119,9 @@ async function checkConsent() {
 }
 
 onMounted(async () => {
-  HomeParticipant.value = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator.value = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal.value = (await import('@/components/ConsentModal.vue')).default;
+  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
 
   if (requireRefresh.value) {
     requireRefresh.value = false;

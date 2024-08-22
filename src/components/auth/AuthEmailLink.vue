@@ -1,10 +1,10 @@
 <template>
   <AppSpinner v-if="localStorageEmail" />
   <div v-else class="field col">
-    <PvFloatLabel>
+    <span class="p-float-label">
       <PvInputText id="email" v-model="formEmail" />
       <label for="email">Email</label>
-    </PvFloatLabel>
+    </span>
     <div class="col-12 mb-3">
       <PvButton label="Finish signing in" @click="loginFromEmailLink(formEmail)" />
     </div>

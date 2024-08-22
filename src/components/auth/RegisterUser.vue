@@ -43,7 +43,7 @@
           </div>
         </div>
         <div v-if="!yearOnlyCheck">
-          <PvDatePicker
+          <PvCalendar
             v-model="v$.dob.$model"
             view="date"
             date-format="mm/dd/yy"
@@ -53,7 +53,7 @@
           />
         </div>
         <div v-else>
-          <PvDatePicker
+          <PvCalendar
             v-model="v$.dob.$model"
             view="year"
             date-format="yy"
@@ -69,7 +69,7 @@
       <!--Grade-->
       <div class="mt-4 mb-5">
         <label for="grade">Grade <span class="required">*</span></label>
-        <PvSelect
+        <PvDropdown
           v-model="v$.grade.$model"
           :options="gradeOptions"
           option-label="label"
@@ -84,12 +84,24 @@
       <!--English Language Level-->
       <div class="mt-4 mb-5">
         <label for="ell">English Language Level</label>
-        <PvSelect v-model="v$.ell.$model" :options="eLLOptions" option-label="label" option-value="value" name="ell" />
+        <PvDropdown
+          v-model="v$.ell.$model"
+          :options="eLLOptions"
+          option-label="label"
+          option-value="value"
+          name="ell"
+        />
       </div>
       <!--Sex-->
       <div class="mt-4 mb-5">
         <label for="sex">Gender</label>
-        <PvSelect v-model="v$.sex.$model" :options="sexOptions" option-label="label" option-value="value" name="sex" />
+        <PvDropdown
+          v-model="v$.sex.$model"
+          :options="sexOptions"
+          option-label="label"
+          option-value="value"
+          name="sex"
+        />
       </div>
       <!--Password-->
       <div class="field mt-4 mb-5">
