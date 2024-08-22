@@ -262,6 +262,7 @@ import { ref, onMounted, watch, computed } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { marked } from 'marked';
 import _forEach from 'lodash/forEach';
+import useLegalDocsQuery from '@/composables/queries/useLegalDocsQuery';
 
 const props = defineProps({
   legal: { type: Object, required: false, default: null },
