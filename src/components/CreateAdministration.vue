@@ -543,12 +543,6 @@ const submit = async () => {
             expectedTime: toRaw(state).expectedTime ?? '',
           },
         };
-        if (isTestData.value) {
-          args.isTestData = true;
-        } else {
-          // If not marked as test data, set to false by default.
-          args.isTestData = false;
-        }
         if (props.adminId) args.administrationId = props.adminId;
 
         await roarfirekit.value
