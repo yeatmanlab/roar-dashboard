@@ -170,6 +170,7 @@ import { onMounted, reactive, ref, toRaw, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
 import { useQuery } from '@tanstack/vue-query';
 import _filter from 'lodash/filter';
 import _isEmpty from 'lodash/isEmpty';
@@ -184,13 +185,12 @@ import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
-import { useAuthStore } from '@/store/auth';
-import OrgPicker from '@/components/OrgPicker.vue';
 import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
-import { variantsFetcher } from '@/helpers/query/tasks';
+import { useAuthStore } from '@/store/auth';
+import useAdministrationVariantsQuery from '@/composables/queries/useAdministrationVariantsQuery';
 import TaskPicker from './TaskPicker.vue';
-import { useConfirm } from 'primevue/useconfirm';
 import ConsentPicker from './ConsentPicker.vue';
+import OrgPicker from '@/components/OrgPicker.vue';
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
@@ -229,12 +229,8 @@ const confirm = useConfirm();
 const authStore = useAuthStore();
 const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
-const { data: allVariants } = useQuery({
-  queryKey: ['variants', 'all'],
-  queryFn: () => variantsFetcher(true),
-  keepPreviousData: true,
+const { data: allVariants } = useAdministrationVariantsQuery(true, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 //      +------------------------------------------+

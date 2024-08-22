@@ -438,13 +438,13 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
-import { useAuthStore } from '@/store/auth';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { taskFetcher } from '@/helpers/query/tasks';
-import { variantsFetcher } from '../../helpers/query/tasks';
 import { cloneDeep, camelCase } from 'lodash';
+import { useAuthStore } from '@/store/auth';
+import { taskFetcher } from '@/helpers/query/tasks';
+import useAdministrationVariantsQuery from '@/composables/queries/useAdministrationVariantsQuery';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -514,12 +514,8 @@ const { isFetching: isFetchingTasks, data: tasks } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: allVariants } = useQuery({
-  queryKey: ['variants', 'all'],
-  queryFn: () => variantsFetcher(),
-  keepPreviousData: true,
+const { data: allVariants } = useAdministrationVariantsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const formattedTasks = computed(() => {
