@@ -17,8 +17,8 @@
                   <small class="text-gray-400">Show test administrations</small>
                   <PvToggleButton
                     v-model="fetchTestAdministrations"
-                    on-label="Show"
-                    off-label="Hide"
+                    :on-label="showTestAdminsOnLabel"
+                    off-label="Hiding"
                     class="p-2 rounded align-self-center my-auto"
                   />
                 </div>
@@ -144,12 +144,17 @@ const searchInput = ref('');
 const search = ref('');
 const pageLimit = ref(10);
 const fetchTestAdministrations = ref(false);
+const testAdminsCached = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const queryClient = useQueryClient();
 const authStore = useAuthStore();
 
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
+
+const showTestAdminsOnLabel = computed(() => {
+  return testAdminsCached.value ? 'Showing' : 'Fetching...';
+});
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
@@ -245,6 +250,7 @@ watch(fetchTestAdministrations, async (newState) => {
     if (testAdministrations) {
       // Use cached test administrations, if they exist
       filteredAdministrations.value = testAdministrations;
+      testAdminsCached.value = true;
     } else {
       // Fetch test administrations if not already fetched
       administrations = await queryClient.fetchQuery({
@@ -265,6 +271,10 @@ watch(fetchTestAdministrations, async (newState) => {
       });
       // Set the test administrations
       filteredAdministrations.value = administrations;
+
+      if (administrations) {
+        testAdminsCached.value = true;
+      }
     }
   }
 });
