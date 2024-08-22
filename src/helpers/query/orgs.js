@@ -1,6 +1,18 @@
 import _intersection from 'lodash/intersection';
 import _uniq from 'lodash/uniq';
-import { convertValues, fetchDocById, getAxiosInstance, mapFields, orderByDefault } from './utils';
+import _flattenDeep from 'lodash/flattenDeep';
+import _isEmpty from 'lodash/isEmpty';
+import _without from 'lodash/without';
+import _zip from 'lodash/zip';
+import {
+  batchGetDocs,
+  convertValues,
+  fetchDocById,
+  getAxiosInstance,
+  mapFields,
+  orderByDefault,
+} from '@/helpers/query/utils';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 export const getOrgsRequestBody = ({
   orgType,
@@ -404,4 +416,139 @@ export const orgFetchAll = async (
       adminOrgs,
     );
   }
+};
+
+/**
+ * Fetches Districts Schools Groups Families (DSGF) Org data for a given administration.
+ *
+ * @param {String} administrationId – The ID of the administration to fetch DSGF orgs data for.
+ * @param {Object} assignedOrgs – The orgs assigned to the administration being processed.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of org objects.
+ */
+export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
+  const orgTypes = ['districts', 'schools', 'groups', 'families'];
+  const orgPaths = _flattenDeep(
+    orgTypes.map((orgType) => (assignedOrgs[orgType] ?? []).map((orgId) => `${orgType}/${orgId}`) ?? []),
+  );
+
+  const statsPaths = _flattenDeep(
+    orgTypes.map(
+      (orgType) =>
+        (assignedOrgs[orgType] ?? []).map((orgId) => `administrations/${administrationId}/stats/${orgId}`) ?? [],
+    ),
+  );
+
+  const promises = [batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'districtId']), batchGetDocs(statsPaths)];
+
+  const [orgDocs, statsDocs] = await Promise.all(promises);
+
+  const dsgfOrgs = _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
+    const { classes, schools, collection, ...nodeData } = orgDoc;
+    const node = {
+      key: String(index),
+      data: {
+        orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
+        schools,
+        classes,
+        stats,
+        ...nodeData,
+      },
+    };
+    if (classes)
+      node.children = classes.map((classId) => {
+        return {
+          key: `${node.key}-${classId}`,
+          data: {
+            orgType: 'class',
+            id: classId,
+          },
+        };
+      });
+    return node;
+  });
+
+  const dependentSchoolIds = _flattenDeep(dsgfOrgs.map((node) => node.data.schools ?? []));
+  const independentSchoolIds =
+    dsgfOrgs.length > 0 ? _without(assignedOrgs.schools, ...dependentSchoolIds) : assignedOrgs.schools;
+  const dependentClassIds = _flattenDeep(dsgfOrgs.map((node) => node.data.classes ?? []));
+  const independentClassIds =
+    dsgfOrgs.length > 0 ? _without(assignedOrgs.classes, ...dependentClassIds) : assignedOrgs.classes;
+
+  const independentSchools = (dsgfOrgs ?? []).filter((node) => {
+    return node.data.orgType === 'school' && independentSchoolIds.includes(node.data.id);
+  });
+
+  const dependentSchools = (dsgfOrgs ?? []).filter((node) => {
+    return node.data.orgType === 'school' && !independentSchoolIds.includes(node.data.id);
+  });
+
+  const independentClassPaths = independentClassIds.map((classId) => `classes/${classId}`);
+  const independentClassStatPaths = independentClassIds.map(
+    (classId) => `administrations/${administrationId}/stats/${classId}`,
+  );
+
+  const classPromises = [
+    batchGetDocs(independentClassPaths, ['name', 'schoolId']),
+    batchGetDocs(independentClassStatPaths),
+  ];
+
+  const [classDocs, classStats] = await Promise.all(classPromises);
+
+  const independentClasses = _without(
+    _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
+      const { collection = 'classes', ...nodeData } = orgDoc ?? {};
+
+      if (_isEmpty(nodeData)) return undefined;
+
+      const node = {
+        key: String(dsgfOrgs.length + index),
+        data: {
+          orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
+          ...(stats && { stats }),
+          ...nodeData,
+        },
+      };
+      return node;
+    }),
+    undefined,
+  );
+
+  const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === 'district');
+  treeTableOrgs.push(...independentSchools);
+
+  for (const school of dependentSchools) {
+    const districtId = school.data.districtId;
+    const districtIndex = treeTableOrgs.findIndex((node) => node.data.id === districtId);
+    if (districtIndex !== -1) {
+      if (treeTableOrgs[districtIndex].children === undefined) {
+        treeTableOrgs[districtIndex].children = [
+          {
+            ...school,
+            key: `${treeTableOrgs[districtIndex].key}-${school.key}`,
+          },
+        ];
+      } else {
+        treeTableOrgs[districtIndex].children.push(school);
+      }
+    } else {
+      treeTableOrgs.push(school);
+    }
+  }
+
+  treeTableOrgs.push(...(independentClasses ?? []));
+  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'group'));
+  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'family'));
+
+  treeTableOrgs.forEach((node) => {
+    // Sort the schools by existance of stats then alphabetically
+    if (node.children) {
+      node.children.sort((a, b) => {
+        if (!a.data.stats) return 1;
+        if (!b.data.stats) return -1;
+        return a.data.name.localeCompare(b.data.name);
+      });
+    }
+  });
+
+  return treeTableOrgs;
 };
