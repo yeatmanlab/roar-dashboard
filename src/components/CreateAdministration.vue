@@ -569,7 +569,6 @@ const submit = async () => {
             expectedTime: toRaw(state).expectedTime ?? '',
           },
         };
-        if (isTestData.value) args.isTestData = true;
         if (props.adminId) args.administrationId = props.adminId;
 
         await roarfirekit.value
@@ -652,6 +651,7 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
     state.legal = adminInfo.legal;
     state.consent = adminInfo?.legal?.consent ?? null;
     state.assent = adminInfo?.legal?.assent ?? null;
+    isTestData.value = adminInfo.testData;
 
     if (state.consent === 'No Consent') {
       noConsent.value = state.consent;
