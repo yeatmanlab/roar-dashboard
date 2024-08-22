@@ -277,11 +277,17 @@ const exportAll = async () => {
 
 const exportOrgUsers = async (orgId) => {
   try {
-    const users = await fetchUsersByOrg(activeOrgType.value, orgId.id, ref(1000000), ref(0), orderBy);
+    // Fetch the first page of users to estimate total count
+    const users = await fetchUsersByOrg(activeOrgType.value, orgId.id, ref(10001), ref(0), orderBy);
 
     if (!users || users.length === 0) {
       throw new Error('No users found for the organization.');
     }
+
+    if (users.length >= 10000) {
+      throw new Error('The list is too large to export.');
+    }
+
     const computedExportData = users.map((user) => ({
       Username: _get(user, 'username'),
       Email: _get(user, 'email'),
@@ -305,7 +311,7 @@ const exportOrgUsers = async (orgId) => {
     toast.add({
       severity: 'error',
       summary: 'Export Failed',
-      detail: 'Failed to export users. Please try again.',
+      detail: error.message,
       life: 3000,
     });
   }
