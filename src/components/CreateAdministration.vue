@@ -670,16 +670,11 @@ watch(familiesToGrab, async (updatedValue) => {
 });
 
 function findVariantWithParams(variants, params) {
-  console.log(`attempting to find variant of ${variants[0].task.id}`);
-
   const found = _find(variants, (variant) => {
     const cleanVariantParams = removeNull(variant.variant.params);
     const cleanInputParams = removeNull(params);
     return _isEqual(cleanInputParams, cleanVariantParams);
   });
-  if (found) {
-    console.log('found', found);
-  }
   // TODO: implement tie breakers if found.length > 1
   return found;
 }
