@@ -92,7 +92,6 @@
 import { onMounted, ref, watch, computed, toRaw } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
-import _head from 'lodash/head';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
 import _forEach from 'lodash/forEach';
@@ -398,9 +397,13 @@ watch(
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list
-    // of all administrations choose the first one from adminInfo
+    // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-      selectedAdmin.value = _head(adminInfo.value);
+      // Sort adminInfo by name in ascending order
+      const sortedAdminInfo = [...adminInfo.value].sort((a, b) => a.name.localeCompare(b.name));
+
+      // Choose the first sorted administration
+      selectedAdmin.value = sortedAdminInfo[0];
     }
   },
   { immediate: true },
