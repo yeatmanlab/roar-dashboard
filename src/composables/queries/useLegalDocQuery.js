@@ -5,14 +5,14 @@ import { LEGAL_DOCS_QUERY_KEY } from '@/constants/queryKeys';
 /**
  * Legal docs query.
  *
- * @param {QueryOptions|undefined} queryParams – Optional TanStack query options.
+ * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useLegalDocsQuery = (queryParams = undefined) => {
+const useLegalDocsQuery = (queryOptions = undefined) => {
   return useQuery({
     queryKey: [LEGAL_DOCS_QUERY_KEY],
     queryFn: () => fetchLegalDocs(),
-    ...queryParams,
+    ...queryOptions,
   });
 };
 

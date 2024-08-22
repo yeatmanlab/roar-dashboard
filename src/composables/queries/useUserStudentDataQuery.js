@@ -8,7 +8,7 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 /**
  * User student data query.
  *
- * @param {QueryOptions|undefined} queryParams – Optional TanStack query options.
+ * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useUserStudentDataQuery = (queryOptions = undefined) => {
