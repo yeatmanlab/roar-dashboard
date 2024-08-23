@@ -270,9 +270,6 @@ watch(fetchTestAdministrations, async (newState) => {
       });
 
       testAdminsCached.value = true;
-
-      // if (newAdministrationData) {
-      // }
     }
   }
 });
