@@ -301,14 +301,14 @@ const exportOrgUsers = async (orgType) => {
     }
 
     const computedExportData = users.map((user) => ({
-      "Username": _get(user, 'username', "(No Username Found)"),
-      "Email": _get(user, 'email', "(No Email Found)"),
-      "First Name": _get(user, 'name.first', "(No First Name Found)"),
-      "Last Name": _get(user, 'name.last', "(No Last Name Found)"),
-      "Grade": _get(user, 'studentData.grade', "(No Grade Found)"),
-      "Gender": _get(user, 'studentData.gender', "(No Gender Found)"),
-      "Date Of Birth": _get(user, 'studentData.dob', "(No Date of Birth Found)"),
-      "User Type": _get(user, 'userType', "(No User Type Found)"),
+      Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
+      FirstName: _get(user, 'name.first'),
+      LastName: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+      Gender: _get(user, 'studentData.gender'),
+      DateOfBirth: _get(user, 'studentData.dob'),
+      UserType: _get(user, 'userType'),
     }));
 
     // ex. cypress-test-district-users-export.csv
