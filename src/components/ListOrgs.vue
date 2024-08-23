@@ -119,10 +119,12 @@ import { useQuery } from '@tanstack/vue-query';
 import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
@@ -192,36 +194,11 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
+const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts', uid, orgsQueryKeyIndex],
-  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsQuery({
   enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
-
-function copyToClipboard(text) {
-  navigator.clipboard
-    .writeText(text)
-    .then(function () {
-      toast.add({
-        severity: 'success',
-        summary: 'Hoorah!',
-        detail: 'Your code has been successfully copied to clipboard!',
-        life: 3000,
-      });
-    })
-    .catch(function () {
-      toast.add({
-        severity: 'error',
-        summary: 'Error!',
-        detail: 'Your code has not been copied to clipboard! \n Please try again',
-        life: 3000,
-      });
-    });
-}
 
 const schoolQueryEnabled = computed(() => {
   return claimsLoaded.value && selectedDistrict.value !== undefined;
@@ -256,6 +233,27 @@ const {
   enabled: claimsLoaded,
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
+
+function copyToClipboard(text) {
+  navigator.clipboard
+    .writeText(text)
+    .then(function () {
+      toast.add({
+        severity: 'success',
+        summary: 'Hoorah!',
+        detail: 'Your code has been successfully copied to clipboard!',
+        life: 3000,
+      });
+    })
+    .catch(function () {
+      toast.add({
+        severity: 'error',
+        summary: 'Error!',
+        detail: 'Your code has not been copied to clipboard! \n Please try again',
+        life: 3000,
+      });
+    });
+}
 
 const exportAll = async () => {
   const exportData = await orgFetchAll(
