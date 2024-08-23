@@ -1,10 +1,9 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <h1>Link Users</h1>
-      <p>Upload a CSV file to link users. The file should contain columns for id, childId, parentId, and teacherId.</p>
+      <LinkUsersInfo />
 
-      <div v-if="!isFileUploaded">
+      <div class="mt-5" v-if="!isFileUploaded">
         <PvFileUpload
           name="linkUsersUploader[]"
           custom-upload
@@ -85,6 +84,7 @@ import { ref, toRaw } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '@/store/auth';
+import LinkUsersInfo from '@/components/LEVANTE/LinkUsersInfo.vue';
 
 const authStore = useAuthStore();
 const toast = useToast();
