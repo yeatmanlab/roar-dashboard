@@ -141,7 +141,6 @@
 import { ref, toRaw, onMounted } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
-import _chunk from 'lodash/chunk';
 import _compact from 'lodash/compact';
 import _forEach from 'lodash/forEach';
 import _includes from 'lodash/includes';
@@ -153,13 +152,11 @@ import _startCase from 'lodash/startCase';
 import _find from 'lodash/find';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
-import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
 
 const authStore = useAuthStore();
-const router = useRouter();
 const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
@@ -394,9 +391,6 @@ async function submitStudents() {
           _set(sendObject, `userData.${orgType}`, orgInfo);
         } else {
           addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
-          if (processedUsers >= totalUsers) {
-            activeSubmit.value = false;
-          }
           return;
         }
       }
@@ -405,6 +399,7 @@ async function submitStudents() {
     usersToSend.push(sendObject);
   }
   await roarfirekit.value.createUpdateUsers(usersToSend).then((results) => {
+    activeSubmit.value = false;
     for (const result of results) {
       if (result?.status === 'rejected') {
         const email = result.email;
@@ -416,12 +411,6 @@ async function submitStudents() {
         addErrorUser(user, result.reason);
       }
     }
-  });
-}
-
-function delay(milliseconds) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, milliseconds);
   });
 }
 
