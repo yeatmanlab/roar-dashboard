@@ -254,7 +254,7 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
-const claimsLoaded = computed(() => initialized && !isLoadingClaims.value);
+const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
 
 const { isLoading: isLoadingDistricts, data: districts } = useDistrictsQuery({
   enabled: claimsLoaded,

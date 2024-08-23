@@ -198,7 +198,7 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => initialized && !isLoadingClaims.value);
+const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
 
 const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsQuery({
   enabled: claimsLoaded,
