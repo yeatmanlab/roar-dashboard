@@ -121,7 +121,7 @@ import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
-import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
+import { orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
@@ -154,7 +154,7 @@ const schoolPlaceholder = computed(() => {
 const authStore = useAuthStore();
 const { roarfirekit, uid } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
