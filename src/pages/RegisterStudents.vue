@@ -150,6 +150,7 @@ import _omit from 'lodash/omit';
 import _set from 'lodash/set';
 import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase';
+import _find from 'lodash/find';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
@@ -189,6 +190,7 @@ const dropdown_options = ref([
       { label: 'First Name', value: 'firstName' },
       { label: 'Middle Name', value: 'middleName' },
       { label: 'Last Name', value: 'lastName' },
+      { label: 'Unenroll', value: 'unenroll' },
       { label: 'State ID', value: 'state_id' },
       { label: 'Gender', value: 'gender' },
       { label: 'English Language Level', value: 'ell_status' },
@@ -402,14 +404,16 @@ async function submitStudents() {
 
     usersToSend.push(sendObject);
   }
-  console.log('Invoke firekit function:', usersToSend);
-  await roarfirekit.value.createUpdateUsers(usersToSend).then((result) => {
-    console.log(result);
-    for (const item of result) {
-      if (item.status === 'rejected') {
-        // Parse information about the rejected user
-        const user = {}; // Grab user from the result object
-        addErrorUser(user, '');
+  await roarfirekit.value.createUpdateUsers(usersToSend).then((results) => {
+    for (const result of results) {
+      if (result?.status === 'rejected') {
+        const email = result.email;
+        const username = email.split('@')[0];
+        const usernameKey = getKeyByValue(dropdown_model.value, 'username');
+        const user = _find(rawStudentFile.value, (record) => {
+          return record[usernameKey] === username;
+        });
+        addErrorUser(user, result.reason);
       }
     }
   });
