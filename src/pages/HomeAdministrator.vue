@@ -146,14 +146,99 @@ const pageLimit = ref(10);
 const fetchTestAdministrations = ref(false);
 const testAdminsCached = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
-
 const queryClient = useQueryClient();
-const authStore = useAuthStore();
+const orderBy = ref(orderByDefault);
 
+const authStore = useAuthStore();
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
 
 const showTestAdminsOnLabel = computed(() => {
   return testAdminsCached.value ? 'Showing' : 'Fetching...';
+});
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
+const canQueryAdministrations = computed(() => {
+  return initialized.value && !isLoadingClaims.value;
+});
+
+const getAdministrations = async (queryKey) => {
+  let cachedData = await queryClient.getQueryData(queryKey);
+
+  if (!cachedData) {
+    cachedData = await queryClient.fetchQuery({
+      queryKey,
+      queryFn: () =>
+        administrationPageFetcher(
+          orderBy,
+          ref(10000),
+          ref(0),
+          isSuperAdmin,
+          adminOrgs,
+          exhaustiveAdminOrgs,
+          fetchTestAdministrations.value,
+        ),
+      keepPreviousData: true,
+      enabled: canQueryAdministrations,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+    testAdminsCached.value = true;
+  }
+
+  return cachedData;
+};
+
+const init = () => {
+  if (unsubscribeInitializer) unsubscribeInitializer();
+  initialized.value = true;
+};
+
+const clearSearch = () => {
+  search.value = '';
+  searchInput.value = '';
+  filteredAdministrations.value = administrations.value;
+};
+
+const onSearch = () => {
+  search.value = searchInput.value;
+  if (!search.value) filteredAdministrations.value = administrations.value;
+  else {
+    const searchedAdministrations = administrations.value.filter((item) =>
+      item.name.toLowerCase().includes(search.value.toLowerCase()),
+    );
+    filteredAdministrations.value = searchedAdministrations;
+  }
+};
+
+const autocomplete = () => {
+  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
+    item.toLowerCase().includes(searchInput.value.toLowerCase()),
+  );
+};
+
+const onSortChange = (event) => {
+  dataViewKey.value += 1;
+  page.value = 0;
+  const value = event.value.value;
+  const sortValue = event.value;
+
+  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
+    // catches edge case where a partner admin should sort by the public name attribute
+    sortField.value = 'publicName';
+  } else {
+    sortField.value = value[0].field?.fieldPath;
+  }
+  sortOrder.value = value[0].direction === 'DESCENDING' ? -1 : 1;
+  sortKey.value = sortValue;
+};
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+});
+
+let unsubscribeInitializer;
+unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
 });
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
@@ -163,28 +248,6 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
   cacheTime: Infinity,
-});
-
-let unsubscribeInitializer;
-const init = () => {
-  if (unsubscribeInitializer) unsubscribeInitializer();
-  initialized.value = true;
-};
-
-unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
-});
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
-});
-
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-const orderBy = ref(orderByDefault);
-const canQueryAdministrations = computed(() => {
-  return initialized.value && !isLoadingClaims.value;
 });
 
 const {
@@ -222,83 +285,7 @@ const {
   },
 });
 
-watch(fetchTestAdministrations, async (newState) => {
-  if (newState === false) {
-    // Use previous administration data
-    filteredAdministrations.value = await queryClient.getQueryData([
-      'administrations',
-      uid,
-      orderBy,
-      ref(0),
-      ref(10000),
-      isSuperAdmin,
-      administrationQueryKeyIndex,
-    ]);
-  } else {
-    // State has changed, check to see if test administrations are cached
-    const cachedTestAdministrations = await queryClient.getQueryData([
-      'testAdministrations',
-      uid,
-      orderBy,
-      ref(0),
-      ref(10000),
-      isSuperAdmin,
-      administrationQueryKeyIndex,
-    ]);
-
-    if (cachedTestAdministrations) {
-      // Use cached test administrations, if they exist
-      filteredAdministrations.value = cachedTestAdministrations;
-      testAdminsCached.value = true;
-    } else {
-      // Fetch test administrations if not already fetched
-      filteredAdministrations.value = await queryClient.fetchQuery({
-        queryKey: ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
-        queryFn: () =>
-          administrationPageFetcher(
-            orderBy,
-            ref(10000),
-            ref(0),
-            isSuperAdmin,
-            adminOrgs,
-            exhaustiveAdminOrgs,
-            fetchTestAdministrations.value,
-          ),
-        keepPreviousData: true,
-        enabled: canQueryAdministrations,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-      });
-
-      testAdminsCached.value = true;
-    }
-  }
-});
-
 const filteredAdministrations = ref(administrations.value);
-
-const clearSearch = () => {
-  search.value = '';
-  searchInput.value = '';
-  filteredAdministrations.value = administrations.value;
-};
-
-const onSearch = () => {
-  search.value = searchInput.value;
-  if (!search.value) filteredAdministrations.value = administrations.value;
-  else {
-    const searchedAdministrations = administrations.value.filter((item) =>
-      item.name.toLowerCase().includes(search.value.toLowerCase()),
-    );
-    filteredAdministrations.value = searchedAdministrations;
-  }
-};
-
-const autocomplete = () => {
-  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
-    item.toLowerCase().includes(searchInput.value.toLowerCase()),
-  );
-};
-
 const sortOptions = ref([
   {
     label: 'Name (ascending)',
@@ -378,26 +365,13 @@ const sortOrder = ref();
 const sortField = ref();
 const dataViewKey = ref(0);
 
-const onSortChange = (event) => {
-  dataViewKey.value += 1;
-  page.value = 0;
-  const value = event.value.value;
-  const sortValue = event.value;
+watch(fetchTestAdministrations, async (newState) => {
+  const queryKey = newState
+    ? ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex]
+    : ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex];
 
-  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
-    // catches edge case where a partner admin should sort by the public name attribute
-    sortField.value = 'publicName';
-  } else {
-    sortField.value = value[0].field?.fieldPath;
-  }
-  if (value[0].direction === 'DESCENDING') {
-    sortOrder.value = -1;
-  } else {
-    sortOrder.value = 1;
-  }
-
-  sortKey.value = sortValue;
-};
+  filteredAdministrations.value = await getAdministrations(queryKey);
+});
 </script>
 
 <style>
