@@ -83,7 +83,11 @@ module.exports = defineConfig({
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
     // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50 and push the test_legal_doc user
-    testUserList: Array.from({ length: 51 }, (_, i) => `CypressTestStudent${i}`).push('test_legal_doc'),
+    testUserList: (() => {
+      const list = Array.from({ length: 51 }, (_, i) => `CypressTestStudent${i}`);
+      list.push('test_legal_doc');
+      return list;
+    })(),
     roarDemoDistrictName: 'Roar Demo District',
     roarDemoDistrictId: 'dfyDUItJNf3wEoG6Mf8H',
     roarDemoAdministrationName: 'ROAR demo administration',
