@@ -198,7 +198,7 @@ async function checkConsent() {
 
   if (!legal?.consent) {
     // Always show consent form for this test student when running Cypress tests
-    if (userData.value?.id === 'XAq5qOuXnNPHClK0xZXXhfGsWX22') {
+    if (userData.value?.id === 'O75V6IcVeiTwW8TRjXb76uydlwV2') {
       consentType.value = 'consent';
       confirmText.value = 'This is a test student. Please do not accept this form.';
       showConsent.value = true;
