@@ -34,8 +34,6 @@ const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTime
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
-import { useRoute } from 'vue-router';
-import { useRecaptchaProvider } from 'vue-recaptcha';
 import { isLevante } from '@/helpers';
 
 

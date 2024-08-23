@@ -31,6 +31,8 @@ import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
 import { isLevante } from '@/helpers';
+import { useIdle } from '@vueuse/core';
+import { useConfirm } from 'primevue/useconfirm';
 
 let HomeParticipant, HomeAdministrator, ConsentModal;
 
@@ -195,7 +197,6 @@ watch([userData, userClaims], async ([newUserData, newUserClaims]) => {
 const { idle } = useIdle(60 * 10 * 1000); // 10 min
 const confirm = useConfirm();
 const timeLeft = ref(60);
-const i18n = useI18n();
 const t = i18n.t;
 
 watch(idle, (idleValue) => {
