@@ -275,31 +275,44 @@ const exportAll = async () => {
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
-const exportOrgUsers = async (orgId) => {
+const exportOrgUsers = async (orgType) => {
   try {
     // Fetch the first page of users to estimate total count
-    const users = await fetchUsersByOrg(activeOrgType.value, orgId.id, ref(10001), ref(0), orderBy);
+    const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, ref(10001), ref(0), orderBy);
 
     if (!users || users.length === 0) {
-      throw new Error('No users found for the organization.');
+      toast.add({
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: 'No users found for the organization.',
+        life: 3000,
+      });
+      return;
     }
 
     if (users.length >= 10000) {
-      throw new Error('The list is too large to export.');
+      toast.add({
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: 'Too many users to export. Please filter the users by selecting a smaller org type.',
+        life: 3000,
+      });
+      return;
     }
 
     const computedExportData = users.map((user) => ({
-      Username: _get(user, 'username'),
-      Email: _get(user, 'email'),
-      FirstName: _get(user, 'name.first'),
-      LastName: _get(user, 'name.last'),
-      Grade: _get(user, 'studentData.grade'),
-      Gender: _get(user, 'studentData.gender'),
-      DateOfBirth: _get(user, 'studentData.dob'),
-      UserType: _get(user, 'userType'),
+      "Username": _get(user, 'username', "(No Username Found)"),
+      "Email": _get(user, 'email', "(No Email Found)"),
+      "First Name": _get(user, 'name.first', "(No First Name Found)"),
+      "Last Name": _get(user, 'name.last', "(No Last Name Found)"),
+      "Grade": _get(user, 'studentData.grade', "(No Grade Found)"),
+      "Gender": _get(user, 'studentData.gender', "(No Gender Found)"),
+      "Date Of Birth": _get(user, 'studentData.dob', "(No Date of Birth Found)"),
+      "User Type": _get(user, 'userType', "(No User Type Found)"),
     }));
 
-    exportCsv(computedExportData, `organization-users-${_kebabCase(orgId)}.csv`);
+    // ex. cypress-test-district-users-export.csv
+    exportCsv(computedExportData, `${_kebabCase(orgType.name)}-users-export.csv`);
 
     toast.add({
       severity: 'success',
@@ -316,7 +329,6 @@ const exportOrgUsers = async (orgId) => {
     });
   }
 };
-
 const tableColumns = computed(() => {
   const columns = [
     { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
