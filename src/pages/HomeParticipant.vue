@@ -104,6 +104,7 @@ import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
+import { isLevante } from '@/helpers';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -111,7 +112,6 @@ const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
 
-const isLevante = import.meta.env.MODE === 'LEVANTE';
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
@@ -189,11 +189,16 @@ const sortedAdminInfo = computed(() => {
 
 async function checkConsent() {
   showConsent.value = false;
-  const dob = new Date(userData.value?.studentData?.dob);
+
+  if (isLevante) return;
+
+  const legal = selectedAdmin.value?.legal;
+  if (!legal) return;
+
+  const dob = new Date(userData.value?.studentData.dob);
   const grade = userData.value?.studentData.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
-  const legal = selectedAdmin.value?.legal;
 
   if (!legal?.consent) {
     // Always show consent form for this test student when running Cypress tests
@@ -282,9 +287,12 @@ const {
 const { data: surveyResponsesData } = useQuery({
   queryKey: ['surveyResponses', uid],
   queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
-  keepPreviousData: true,
   enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
-  staleTime: 5 * 60 * 1000,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: 10 * 60 * 1000,
+  // refetchOnMount: false,
+  // refetchOnWindowFocus: false,
+  // refetchOnReconnect: false,
 });
 
 const isLoading = computed(() => {
@@ -336,11 +344,11 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+    if (authStore?.userData.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'Survey') {
+          if (assessment.taskId === 'survey') {
             assessment.completedOn = new Date();
           }
         });
@@ -385,7 +393,7 @@ let completeGames = computed(() => {
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => {
   if (isLevante) {
-    return null;
+    return {};
   }
   return {
     grade: _get(userData.value, 'studentData.grade'),

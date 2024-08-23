@@ -144,7 +144,7 @@
                 >Please specify sequential behavior.</small
               >
             </div>
-            <div class="mt-2 mb-2">
+            <div v-if="!isLevante" class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
               <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
             </div>
@@ -191,8 +191,7 @@ import { variantsFetcher } from '@/helpers/query/tasks';
 import TaskPicker from './TaskPicker.vue';
 import { useConfirm } from 'primevue/useconfirm';
 import ConsentPicker from './ConsentPicker.vue';
-
-const isLevante = import.meta.env.MODE === 'LEVANTE';
+import { isLevante } from '@/helpers';
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
