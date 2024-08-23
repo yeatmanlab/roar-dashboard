@@ -137,31 +137,47 @@ import { useAuthStore } from '@/store/auth';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 
 const initialized = ref(false);
-const page = ref(0);
-const searchSuggestions = ref([]);
-const adminSearchTokens = ref([]);
-const searchInput = ref('');
-const search = ref('');
 const pageLimit = ref(10);
-const fetchTestAdministrations = ref(false);
-const testAdminsCached = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
-const queryClient = useQueryClient();
-const orderBy = ref(orderByDefault);
 
+const queryClient = useQueryClient();
 const authStore = useAuthStore();
+
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
 
-const showTestAdminsOnLabel = computed(() => {
-  return testAdminsCached.value ? 'Showing' : 'Fetching...';
+let unsubscribeInitializer;
+const init = () => {
+  if (unsubscribeInitializer) unsubscribeInitializer();
+  initialized.value = true;
+};
+
+unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.restConfig) init();
 });
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+
+onMounted(() => {
+  if (roarfirekit.value.restConfig) init();
+});
+
+const orderBy = ref(orderByDefault);
+const fetchTestAdministrations = ref(false);
+const testAdminsCached = ref(false);
+
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
+const showTestAdminsOnLabel = computed(() => {
+  return testAdminsCached.value ? 'Showing' : 'Fetching...';
+});
 
+/**
+ * Fetches administrations from the cache or the server
+ * @param {Array} queryKey - The query key to use for fetching the data
+ * @returns {Promise<unknown>} - The cached or fetched data
+ */
 const getAdministrations = async (queryKey) => {
   let cachedData = await queryClient.getQueryData(queryKey);
 
@@ -187,59 +203,6 @@ const getAdministrations = async (queryKey) => {
 
   return cachedData;
 };
-
-const init = () => {
-  if (unsubscribeInitializer) unsubscribeInitializer();
-  initialized.value = true;
-};
-
-const clearSearch = () => {
-  search.value = '';
-  searchInput.value = '';
-  filteredAdministrations.value = administrations.value;
-};
-
-const onSearch = () => {
-  search.value = searchInput.value;
-  if (!search.value) filteredAdministrations.value = administrations.value;
-  else {
-    const searchedAdministrations = administrations.value.filter((item) =>
-      item.name.toLowerCase().includes(search.value.toLowerCase()),
-    );
-    filteredAdministrations.value = searchedAdministrations;
-  }
-};
-
-const autocomplete = () => {
-  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
-    item.toLowerCase().includes(searchInput.value.toLowerCase()),
-  );
-};
-
-const onSortChange = (event) => {
-  dataViewKey.value += 1;
-  page.value = 0;
-  const value = event.value.value;
-  const sortValue = event.value;
-
-  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
-    // catches edge case where a partner admin should sort by the public name attribute
-    sortField.value = 'publicName';
-  } else {
-    sortField.value = value[0].field?.fieldPath;
-  }
-  sortOrder.value = value[0].direction === 'DESCENDING' ? -1 : 1;
-  sortKey.value = sortValue;
-};
-
-onMounted(() => {
-  if (roarfirekit.value.restConfig) init();
-});
-
-let unsubscribeInitializer;
-unsubscribeInitializer = authStore.$subscribe(async (mutation, state) => {
-  if (state.roarfirekit.restConfig) init();
-});
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
@@ -286,6 +249,23 @@ const {
 });
 
 const filteredAdministrations = ref(administrations.value);
+
+watch(fetchTestAdministrations, async (newState) => {
+  const queryKey = newState
+    ? ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex]
+    : ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex];
+
+  filteredAdministrations.value = await getAdministrations(queryKey);
+});
+
+const page = ref(0);
+const searchSuggestions = ref([]);
+const adminSearchTokens = ref([]);
+const searchInput = ref('');
+const search = ref('');
+const sortOrder = ref();
+const sortField = ref();
+const dataViewKey = ref(0);
 const sortOptions = ref([
   {
     label: 'Name (ascending)',
@@ -361,17 +341,49 @@ const sortOptions = ref([
   },
 ]);
 const sortKey = ref(sortOptions.value[0]);
-const sortOrder = ref();
-const sortField = ref();
-const dataViewKey = ref(0);
 
-watch(fetchTestAdministrations, async (newState) => {
-  const queryKey = newState
-    ? ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex]
-    : ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex];
+const clearSearch = () => {
+  search.value = '';
+  searchInput.value = '';
+  filteredAdministrations.value = administrations.value;
+};
 
-  filteredAdministrations.value = await getAdministrations(queryKey);
-});
+const onSearch = () => {
+  search.value = searchInput.value;
+  if (!search.value) filteredAdministrations.value = administrations.value;
+  else {
+    filteredAdministrations.value = administrations.value.filter((item) =>
+      item.name.toLowerCase().includes(search.value.toLowerCase()),
+    );
+  }
+};
+
+const autocomplete = () => {
+  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
+    item.toLowerCase().includes(searchInput.value.toLowerCase()),
+  );
+};
+
+const onSortChange = (event) => {
+  dataViewKey.value += 1;
+  page.value = 0;
+  const value = event.value.value;
+  const sortValue = event.value;
+
+  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
+    // catches edge case where a partner admin should sort by the public name attribute
+    sortField.value = 'publicName';
+  } else {
+    sortField.value = value[0].field?.fieldPath;
+  }
+  if (value[0].direction === 'DESCENDING') {
+    sortOrder.value = -1;
+  } else {
+    sortOrder.value = 1;
+  }
+
+  sortKey.value = sortValue;
+};
 </script>
 
 <style>
