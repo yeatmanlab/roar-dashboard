@@ -1,6 +1,6 @@
 <template>
   <div class="grid">
-    <div class="col-12 md:col-6">
+    <div v-if="editMode" class="col-12 md:col-6">
       <PvPanel class="m-0 p-0" header="Select organizations here">
         <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" class="m-0 p-0" lazy>
           <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
@@ -65,8 +65,8 @@
         </PvTabView>
       </PvPanel>
     </div>
-    <div class="col-12 md:col-6">
-      <PvPanel class="h-full" header="Selected organizations">
+    <div class="col-12" :class="editMode ? 'md:col-6' : ''">
+      <PvPanel class="h-full" :header="editMode ? 'Selected organizations' : 'Organizations'">
         <PvScrollPanel style="width: 100%; height: 26rem">
           <div v-for="orgKey in Object.keys(selectedOrgs)" :key="orgKey">
             <div v-if="selectedOrgs[orgKey].length > 0">
@@ -75,7 +75,7 @@
                 v-for="org in selectedOrgs[orgKey]"
                 :key="org.id"
                 class="m-1 surface-200 p-2 text-black border-round"
-                removable
+                :removable="editMode"
                 :label="org.name"
                 @remove="remove(org, orgKey)"
               />
@@ -119,6 +119,10 @@ const props = defineProps({
         families: [],
       };
     },
+  },
+  editMode: {
+    type: Boolean,
+    default: true,
   },
 });
 
