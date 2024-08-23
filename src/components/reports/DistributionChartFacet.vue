@@ -18,7 +18,11 @@
 <script setup>
 import { onMounted, ref, watch, computed } from 'vue';
 import embed from 'vega-embed';
-import { taskDisplayNames } from '@/helpers/reports';
+import { useAuthStore } from '@/store/auth';
+import { storeToRefs } from 'pinia';
+
+const authStore = useAuthStore();
+const { tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   initialized: {
@@ -109,7 +113,7 @@ const distributionChartFacet = (taskId) => {
   return {
     background: null,
     title: {
-      text: `ROAR-${taskDisplayNames[taskId].name}`,
+      text: `${tasksDictionary.value[taskId]?.publicName ?? taskId}`,
       subtitle: `${scoreMode.value.name} Distribution By ${props.facetMode.name}`,
       anchor: 'middle',
       fontSize: 18,

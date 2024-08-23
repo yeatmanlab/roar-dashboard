@@ -5,6 +5,7 @@ import Vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
 import mkcert from 'vite-plugin-mkcert';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import UnheadVite from '@unhead/addons/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -22,7 +23,6 @@ export default defineConfig({
         globPatterns: ['**/*'],
       },
       manifest: {
-        // Modify manifest options here...
         name: 'ROAR Dashboard',
         short_name: 'ROAD',
         start_url: '.',
@@ -55,7 +55,6 @@ export default defineConfig({
           },
         ],
       },
-      /* enable sw on development */
       devOptions: {
         enabled: true,
         type: 'module',
@@ -63,12 +62,13 @@ export default defineConfig({
         suppressWarnings: true,
       },
     }),
-    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     nodePolyfills({
       globals: {
         process: true,
       },
     }),
+    UnheadVite(),
+    ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
     ...(process.env.NODE_ENV !== 'development'
       ? [
           sentryVitePlugin({
@@ -78,17 +78,19 @@ export default defineConfig({
         ]
       : []),
   ],
+
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
+
   server: {
     fs: {
       allow: ['..'],
     },
   },
+
   build: {
     cssCodeSplit: true,
     sourcemap: true,

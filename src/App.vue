@@ -1,5 +1,5 @@
 <template>
-  <AppHead>
+  <Head>
     <title>{{ isLevante ? '' : 'ROAR:' }} {{ pageTitle }}</title>
     <meta name="description" content="A web-based tool to query ROAR assessment data!" />
 
@@ -10,32 +10,45 @@
     <!-- Twitter -->
     <meta name="twitter:title" content="ROAR Web Query" />
     <meta name="twitter:description" content="A web-based tool to query ROAR assessment data!" />
-  </AppHead>
+  </Head>
+
   <div>
     <PvToast />
     <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
     <router-view :key="$route.fullPath" />
+
+    <SessionTimer v-if="loadSessionTimeoutHandler" />
   </div>
 </template>
 
 <script setup>
-import { computed, onBeforeMount, ref } from 'vue';
-import NavBar from '@/components/NavBar.vue';
-import { useAuthStore } from '@/store/auth';
-import { fetchDocById } from '@/helpers/query/utils';
-import AppHead from '@/components/AppHead.vue';
-import { i18n } from '@/translations/i18n';
+import { computed, onBeforeMount, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
+import { Head } from '@unhead/vue/components';
+
+import NavBar from '@/components/NavBar.vue';
+
+const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
+
+import { useAuthStore } from '@/store/auth';
+import { fetchDocById } from '@/helpers/query/utils';
+import { i18n } from '@/translations/i18n';
 import { isLevante } from '@/helpers';
 
+
+const isAuthStoreReady = ref(false);
+
+const authStore = useAuthStore();
 const route = useRoute();
+
 const pageTitle = computed(() => {
   const locale = i18n.global.locale.value;
   const fallbackLocale = i18n.global.fallbackLocale.value;
   return route.meta?.pageTitle?.[locale] || route.meta?.pageTitle?.[fallbackLocale] || route.meta?.pageTitle;
 });
-const isAuthStoreReady = ref(false);
+
+const loadSessionTimeoutHandler = computed(() => isAuthStoreReady.value && authStore.isAuthenticated);
 
 useRecaptchaProvider();
 
@@ -68,7 +81,6 @@ const navbarBlacklist = ref([
 ]);
 
 onBeforeMount(async () => {
-  const authStore = useAuthStore();
   await authStore.initFirekit();
   authStore.setUser();
   await authStore.initStateFromRedirect().then(async () => {
@@ -77,6 +89,7 @@ onBeforeMount(async () => {
       const userClaims = await fetchDocById('userClaims', authStore.uid);
       authStore.userData = userData;
       authStore.userClaims = userClaims;
+      authStore.updateTasksDictionary();
     }
   });
   isAuthStoreReady.value = true;
