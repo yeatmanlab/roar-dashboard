@@ -2,16 +2,19 @@ import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { orgFetcher } from '@/helpers/query/orgs';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import { DISTRICTS_QUERY_KEY } from '@/constants/queryKeys';
+import { DISTRICT_SCHOOLS_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 /**
- * Districts query.
+ * District Schools query.
  *
+ * Query designed to fetch the schools of a given district.
+ *
+ * @param {String} districtId – The ID of the district to fetch schools for.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useDistrictsQuery = (queryOptions = undefined) => {
+const useDistrictSchoolsQuery = (districtId, queryOptions = undefined) => {
   // Fetch the user claims.
   const { data: userClaims, isLoading: isLoadingClaims } = useUserClaimsQuery({
     enabled: queryOptions?.enabled ?? true,
@@ -25,12 +28,11 @@ const useDistrictsQuery = (queryOptions = undefined) => {
   const isQueryEnabled = computed(() => claimsLoaded.value && (queryOptions?.enabled ?? true));
 
   return useQuery({
-    queryKey: [DISTRICTS_QUERY_KEY],
-    queryFn: () =>
-      orgFetcher(FIRESTORE_COLLECTIONS.DISTRICTS, undefined, isSuperAdmin, administrationOrgs, ['name', 'id', 'tags']),
-    enabled: isQueryEnabled.value,
+    queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, districtId],
+    queryFn: () => orgFetcher(FIRESTORE_COLLECTIONS.SCHOOLS, districtId, isSuperAdmin, administrationOrgs),
+    enabled: isQueryEnabled,
     ...queryOptions,
   });
 };
 
-export default useDistrictsQuery;
+export default useDistrictSchoolsQuery;
