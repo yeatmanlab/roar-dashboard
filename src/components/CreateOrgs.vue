@@ -212,6 +212,7 @@ import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher } from '@/helpers/query/orgs';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 
 const initialized = ref(false);
 const isTestData = ref(false);
@@ -253,14 +254,10 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
+const claimsLoaded = computed(() => initialized && !isLoadingClaims.value);
 
-const { isLoading: isLoadingDistricts, data: districts } = useQuery({
-  queryKey: ['districts'],
-  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs, ['name', 'id', 'tags']),
-  keepPreviousData: true,
+const { isLoading: isLoadingDistricts, data: districts } = useDistrictsQuery({
   enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const { data: groups } = useQuery({
