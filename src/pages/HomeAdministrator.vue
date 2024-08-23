@@ -128,9 +128,9 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
+import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
@@ -187,7 +187,7 @@ const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
 
-let {
+const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
@@ -225,7 +225,7 @@ let {
 watch(fetchTestAdministrations, async (newState) => {
   if (newState === false) {
     // Use previous administration data
-    administrations = await queryClient.getQueryData([
+    filteredAdministrations.value = await queryClient.getQueryData([
       'administrations',
       uid,
       orderBy,
@@ -234,10 +234,9 @@ watch(fetchTestAdministrations, async (newState) => {
       isSuperAdmin,
       administrationQueryKeyIndex,
     ]);
-    filteredAdministrations.value = administrations;
   } else {
-    // Attempt to get the cached test administrations
-    const testAdministrations = await queryClient.getQueryData([
+    // State has changed, check to see if test administrations are cached
+    const cachedTestAdministrations = await queryClient.getQueryData([
       'testAdministrations',
       uid,
       orderBy,
@@ -247,13 +246,13 @@ watch(fetchTestAdministrations, async (newState) => {
       administrationQueryKeyIndex,
     ]);
 
-    if (testAdministrations) {
+    if (cachedTestAdministrations) {
       // Use cached test administrations, if they exist
-      filteredAdministrations.value = testAdministrations;
+      filteredAdministrations.value = cachedTestAdministrations;
       testAdminsCached.value = true;
     } else {
       // Fetch test administrations if not already fetched
-      administrations = await queryClient.fetchQuery({
+      filteredAdministrations.value = await queryClient.fetchQuery({
         queryKey: ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
         queryFn: () =>
           administrationPageFetcher(
@@ -269,12 +268,11 @@ watch(fetchTestAdministrations, async (newState) => {
         enabled: canQueryAdministrations,
         staleTime: 5 * 60 * 1000, // 5 minutes
       });
-      // Set the test administrations
-      filteredAdministrations.value = administrations;
 
-      if (administrations) {
-        testAdminsCached.value = true;
-      }
+      testAdminsCached.value = true;
+
+      // if (newAdministrationData) {
+      // }
     }
   }
 });
