@@ -13,7 +13,7 @@
 
     <!-- Dynamic Favicon -->
     <link rel="icon" :href="`/favicon-${project}.ico`" />
-  </AppHead>
+  </Head>
   <div>
     <PvToast />
     <NavBar v-if="!navbarBlacklist.includes($route.name) && isAuthStoreReady" />
@@ -37,7 +37,6 @@ import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import { i18n } from '@/translations/i18n';
 import { isLevante } from '@/helpers';
-
 
 const isAuthStoreReady = ref(false);
 

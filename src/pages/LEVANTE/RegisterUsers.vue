@@ -6,21 +6,21 @@
 
       <PvDivider />
 
-      <div v-if="!isFileUploaded" class="text-gray-500 mb-7 surface-100 border-round-top-md">
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-2 surface-100 border-round p-2">
         <PvFileUpload
           v-if="!isFileUploaded"
           name="massUploader[]"
           custom-upload
           accept=".csv"
-          class="bg-primary mb-2 ml-2 mt-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
+          class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           auto
           :show-upload-button="false"
           :show-cancel-button="false"
           @uploader="onFileUpload($event)"
         >
           <template #empty>
-            <div class="extra-height">
-              <p>Drag and drop files here <b>or</b> click choose to upload.</p>
+            <div class="flex justify-center items-center text-gray-500">
+              <p>Click choose or drag and drop files to here to upload.</p>
             </div>
           </template>
         </PvFileUpload>
@@ -48,11 +48,12 @@
         </PvDataTable>
 
         <div class="submit-container">
-          <PvButton 
-            v-if="registeredUsers.length" 
-            label="Download Registered Users" 
-            @click="downloadCSV" 
-            class="bg-primary text-white border-none border-round p-3 hover:bg-red-900 text-xl"
+          <PvButton
+            v-if="registeredUsers.length"
+            label="Download Users"
+            @click="downloadCSV"
+            class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
+            icon="pi pi-download"
           />
           <PvButton
             v-else
@@ -60,7 +61,7 @@
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             @click="submitUsers"
-            class="bg-primary text-white border-none border-round p-3 hover:bg-red-900 text-xl"
+            class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           />
         </div>
       </div>
@@ -488,5 +489,9 @@ const getOrgId = async (orgType, orgName, parentDistrict, parentSchool) => {
 .org-dropdown {
   margin-right: 3rem;
   margin-top: 2rem;
+}
+
+.p-fileupload-content {
+  display: none;
 }
 </style>

@@ -3,20 +3,20 @@
     <section class="main-body">
       <LinkUsersInfo />
 
-      <div class="mt-5" v-if="!isFileUploaded">
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-2 surface-100 border-round p-2 mt-5">
         <PvFileUpload
           name="linkUsersUploader[]"
           custom-upload
           accept=".csv"
-          class="bg-primary text-white border-none border-round w-1 h-2rem m-0 pl-2 hover:bg-red-900"
+          class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           auto
           :show-upload-button="false"
           :show-cancel-button="false"
           @uploader="onFileUpload($event)"
         >
-          <template #empty>
-            <div class="extra-height">
-              <p>Drag and drop files here <b>or</b> click choose to upload.</p>
+        <template #empty>
+            <div class="flex justify-center items-center text-gray-500">
+              <p>Click choose or drag and drop files to here to upload.</p>
             </div>
           </template>
         </PvFileUpload>
@@ -49,6 +49,7 @@
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             @click="submitUsers"
+            class="bg-primary mb-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           />
         </div>
       </div>
@@ -144,14 +145,6 @@ const validateUsers = () => {
       }
     });
 
-    // Check for Group/District and School
-    // if (!user.Group && !user.District) {
-    //   errors.push('Missing both Group and District');
-    // }
-    // if (!user.School) {
-    //   errors.push('Missing School');
-    // }
-
     // Validate based on userType
     if (user.userType === 'child') {
       if (!user.parentId && !user.teacherId) {
@@ -215,7 +208,7 @@ const submitUsers = async () => {
       severity: 'success',
       summary: 'Success',
       detail: 'Users linked successfully',
-      life: 3000,
+      life: 5000,
     });
   } catch (error) {
     console.error(error);
