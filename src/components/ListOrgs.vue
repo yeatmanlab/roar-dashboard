@@ -125,6 +125,7 @@ import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
@@ -201,15 +202,11 @@ const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsQuery(
 });
 
 const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && selectedDistrict.value !== undefined;
+  return claimsLoaded.value && !!selectedDistrict.value;
 });
 
-const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', uid, selectedDistrict, orgsQueryKeyIndex],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
   enabled: schoolQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const {
