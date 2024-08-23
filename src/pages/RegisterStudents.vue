@@ -400,7 +400,7 @@ async function submitStudents() {
   }
   await roarfirekit.value.createUpdateUsers(usersToSend).then((results) => {
     activeSubmit.value = false;
-    for (const result of results) {
+    for (const result of results.data) {
       if (result?.status === 'rejected') {
         const email = result.email;
         const username = email.split('@')[0];
@@ -409,6 +409,9 @@ async function submitStudents() {
           return record[usernameKey] === username;
         });
         addErrorUser(user, result.reason);
+      } else if (result?.status === 'fulfilled') {
+        const email = result.email;
+        toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
       }
     }
   });
