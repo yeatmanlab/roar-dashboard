@@ -192,7 +192,7 @@ const validateUsers = () => {
     toast.add({
       severity: 'error',
       summary: 'Validation Errors',
-      detail: 'Some users could not be linked. See error table for details.',
+      detail: 'See error table for details.',
       life: 5000,
     });
   }
@@ -215,7 +215,7 @@ const submitUsers = async () => {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: `Failed to link users: ${error.message}`,
+      detail: `Failed to link users: ${error.message}. Please try again.`,
       life: 5000,
     });
   } finally {
