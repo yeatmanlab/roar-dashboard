@@ -1,5 +1,14 @@
 import { createI18n } from 'vue-i18n';
-import { enTranslations, enUSTranslations, esTranslations, esCOTranslations, deTranslations } from './exports';
+import {
+  enTranslations,
+  enUSTranslations,
+  enIndividualScoreReport,
+  enUSIndividualScoreReport,
+  esTranslations,
+  esCOTranslations, deTranslations,
+  esIndividualScoreReport,
+  esCOIndividualScoreReport,
+} from './exports';
 import { isLevante } from '@/helpers';
 
 export const languageOptions = {
@@ -42,10 +51,10 @@ export const i18n = createI18n({
   locale: getLocale(browserLocale),
   fallbackLocale: getFallbackLocale(),
   messages: {
-    en: enUSTranslations,
-    'en-US': enUSTranslations,
-    es: esTranslations,
-    'es-CO': esCOTranslations,
+    en: { ...enUSTranslations, ...enIndividualScoreReport },
+    'en-US': { ...enUSTranslations, ...enUSIndividualScoreReport },
+    es: { ...esTranslations, ...esIndividualScoreReport },
+    'es-CO': { ...esCOTranslations, ...esCOIndividualScoreReport },
     de: deTranslations,
   },
   legacy: false,

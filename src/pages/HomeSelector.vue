@@ -1,6 +1,6 @@
 <template>
   <div v-if="isLoading">
-    <div class="col-full text-center">
+    <div class="text-center col-full">
       <AppSpinner />
       <p class="text-center">{{ $t('homeSelector.loading') }}</p>
     </div>
@@ -16,18 +16,11 @@
     @accepted="updateConsent"
     @delayed="refreshDocs"
   />
-  <PvConfirmDialog group="inactivity-logout" class="confirm">
-    <template #message>
-      {{ $t('homeSelector.inactivityLogout', { timeLeft: timeLeft }) }}
-    </template>
-  </PvConfirmDialog>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, toRaw, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { useIdle } from '@vueuse/core';
-import { useConfirm } from 'primevue/useconfirm';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
@@ -45,6 +38,8 @@ const authStore = useAuthStore();
 const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 const router = useRouter();
+const i18n = useI18n();
+
 if (authFromClever.value) {
   console.log('Detected Clever authentication, routing to CleverLanding page');
   router.push({ name: 'CleverLanding' });
@@ -228,21 +223,3 @@ watch(idle, (idleValue) => {
   }
 });
 </script>
-
-<style>
-button.p-button.p-component.p-confirm-dialog-accept {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
-}
-
-.confirm .p-confirm-dialog-reject {
-  display: none !important;
-}
-
-.confirm .p-dialog-header-close {
-  display: none !important;
-}
-</style>

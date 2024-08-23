@@ -1,13 +1,13 @@
 <template>
   <div v-if="!studentData" class="flex flex-column justify-content-center align-items-center loading-container">
     <AppSpinner style="margin-bottom: 1rem" />
-    <span>Loading Your Individual Roar Score Report...</span>
+    <span>{{ $t('scoreReports.loading') }}</span>
   </div>
 
   <div v-else class="container flex flex-column align-items-around">
     <div id="individual-report-header" class="flex flex-column md:flex-row align-items-center my-2">
       <div class="student-name text-center md:text-left my-3">
-        <div class="text-lg uppercase text-gray-400">Individual Score Report</div>
+        <div class="text-lg uppercase text-gray-400">{{ $t('scoreReports.pageTitle') }}</div>
         <div class="text-5xl">
           <strong>{{ studentFirstName }} {{ studentLastName }}</strong>
         </div>
@@ -15,20 +15,24 @@
 
       <div class="student-info bg-gray-200">
         <p v-if="studentData?.studentData?.grade">
-          <strong>Grade:</strong> {{ getGradeWithSuffix(studentData.studentData.grade) }}
+          <strong>{{ $t('scoreReports.grade') }}:</strong> {{ getGradeWithSuffix(studentData.studentData.grade) }}
         </p>
         <!-- TODO: Get Student Class -->
-        <p v-if="studentData?.studentData?.class"><strong>Class:</strong> { Placeholder }</p>
-        <p v-if="administrationData?.name"><strong>Administration:</strong> {{ administrationData?.name }}</p>
+        <p v-if="studentData?.studentData?.class">
+          <strong>{{ $t('scoreReports.class') }}:</strong> { Placeholder }
+        </p>
+        <p v-if="administrationData?.name">
+          <strong>{{ $t('scoreReports.administration') }}:</strong> {{ administrationData?.name }}
+        </p>
       </div>
     </div>
     <div class="welcome-banner">
-      <div class="banner-text">Welcome to your ROAR Score Report</div>
+      <div class="banner-text">{{ $t('scoreReports.welcome') }}</div>
       <div class="flex gap-2">
         <PvButton
           outlined
           class="text-white bg-primary border-white border-1 border-round h-3rem p-3 hover:bg-red-900"
-          :label="!expanded ? 'Expand All Sections' : 'Collapse All Sections'"
+          :label="!expanded ? $t('scoreReports.expandSections') : $t('scoreReports.collapseSections')"
           :icon="!expanded ? 'pi pi-plus ml-2' : 'pi pi-minus ml-2'"
           icon-pos="right"
           data-html2canvas-ignore="true"
@@ -37,7 +41,7 @@
         <PvButton
           outlined
           class="text-white bg-primary border-white border-1 border-round h-3rem p-3 hover:bg-red-900"
-          label="Export to PDF"
+          :label="$t('scoreReports.exportPDF')"
           :icon="exportLoading ? 'pi pi-spin pi-spinner ml-2' : 'pi pi-download ml-2'"
           :disabled="exportLoading"
           icon-pos="right"
@@ -48,28 +52,36 @@
     </div>
 
     <div v-if="taskData?.length === 0" class="flex flex-column align-items-center py-6 bg-gray-100">
-      <div class="my-2 text-2xl font-bold text-gray-600">
-        It looks like {{ studentFirstName }} is still working on completing their assigned games!
-      </div>
-      <div class="text-md font-light">
-        {{ studentFirstName }}'s individual score report will be built when the student has completed at least one
-        assessment.
-      </div>
+      <i18n-t keypath="scoreReports.stillWorking" tag="div" class="my-2 text-2xl font-bold text-gray-600">
+        <template #firstName>
+          {{ studentFirstName }}
+        </template>
+      </i18n-t>
+      <i18n-t keypath="scoreReports.needOneComplete" tag="div" class="text-md font-light">
+        <template #firstName>
+          {{ studentFirstName }}
+        </template>
+      </i18n-t>
     </div>
 
     <div v-else id="individual-report-banner" class="welcome-card mt-2 mb-4">
       <div class="p-3 text-lg">
-        The Rapid Online Assessment of Reading (ROAR) assesses students across a range of foundational reading skills.
-        <div class="mt-2">{{ studentFirstName }} completed the following games:</div>
+        {{ $t('scoreReports.roarSummery') }}
+        <i18n-t keypath="scoreReports.completedTasks" tag="div" class="mt-2">
+          <template #firstName>
+            {{ studentFirstName }}
+          </template>
+        </i18n-t>
         <ul class="inline-flex p-0" style="list-style-type: none">
           <li>
             <strong>{{ formattedTasks }}</strong>
           </li>
         </ul>
-        <div>
-          In this report, you will find {{ studentFirstName }}’s scoring at the time of testing, as well as ways you can
-          support {{ studentFirstName }} in their path to reading fluency and comprehension!
-        </div>
+        <i18n-t keypath="scoreReports.summery" tag="div">
+          <template #firstName>
+            {{ studentFirstName }}
+          </template>
+        </i18n-t>
       </div>
     </div>
     <div id="individual-report-cards" class="individual-report-wrapper gap-4">
@@ -82,66 +94,78 @@
     </div>
     <div id="support-graphic" class="support-wrapper">
       <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
-        <PvAccordionTab header="Understanding the Scores">
+        <PvAccordionTab :header="$t('scoreReports.taskTabHeader')">
           <div class="flex flex-column align-items-center text-lg">
             <img v-if="!(studentData?.studentData?.grade >= 6)" src="../assets/support-distribution.png" width="650" />
-            <div class="text-xl font-bold mt-2">The ROAR assessments return these kinds of scores:</div>
+            <div class="text-xl font-bold mt-2">{{ $t('scoreReports.taskIntro') }}</div>
             <ul>
-              <li>
-                <b>Standard Score: </b>A <b>standard score </b>is a way of showing how your child's test performance
-                compares to other kids of the same age or grade. Standard Scores have a range of 0-180. The standard
-                score is comparable within a grade level, but not across grade levels or over time.
-              </li>
-              <li v-if="!(studentData?.studentData?.grade >= 6)">
-                <b>Percentile:</b> The <b>percentile</b> refers to a student's rank within their grade level on the
-                given skill. The percentile is the number of students out of 100 who have lower scores for that skill.
-                For example, students in the 50th percentile would score higher than 50 out of 100 students in the same
-                grade.
-              </li>
-              <li>
-                <b>Raw Score: </b>A <b>raw score</b> is the basic measure of a student’s performance on the test.
-                Depending on the test, the raw score is based on a number of factors. These may include the number of
-                items a student answered correctly or incorrectly, and the difficulty of the items. The raw score is
-                comparable across grade levels and over time.
-              </li>
+              <i18n-t keypath="scoreReports.standardScoreDescription" tag="li">
+                <template #taskTitle>
+                  <b>{{ _startCase($t('scoreReports.standardScore')) }}</b
+                  >: A <b>{{ $t('scoreReports.standardScore') }}</b>
+                </template>
+              </i18n-t>
+              <i18n-t
+                v-if="!(studentData?.studentData?.grade >= 6)"
+                keypath="scoreReports.percentileScoreDescription"
+                tag="li"
+              >
+                <template #taskTitle>
+                  <b>{{ _startCase($t('scoreReports.percentileScore')) }}</b
+                  >: A <b>{{ $t('scoreReports.percentileScore') }}</b>
+                </template>
+              </i18n-t>
+              <i18n-t keypath="scoreReports.rawScoreDescription" tag="li">
+                <template #taskTitle>
+                  <b>{{ _startCase($t('scoreReports.rawScore')) }}</b
+                  >: A <b>{{ $t('scoreReports.rawScore') }}</b>
+                </template>
+              </i18n-t>
             </ul>
             <div v-if="studentData?.studentData?.grade >= 6">
-              <b>ROAR</b> assesses foundational reading skills that are ideally in place before 5th grade.
+              <i18n-t keypath="scoreReports.roarDescription" tag="span">
+                <template #roar>
+                  <b>ROAR</b>
+                </template>
+              </i18n-t>
               <br />
               <br />
-              In Grades 6–12, skills that <span class="text-pink-600 font-bold">need extra support (pink) </span>are at
-              or below a 3rd-grade level. Students with this support level likely need additional systematic, intensive
-              instruction on this skill in order to access grade-level reading.
+              <i18n-t keypath="scoreReports.extraSupportDescription" tag="span">
+                <template #supportCategory>
+                  <span class="text-pink-600 font-bold">{{ $t('scoreReports.extraSupport') }}</span>
+                </template>
+              </i18n-t>
               <br />
               <br />
-              Skills that are <span class="text-yellow-600 font-bold"> developing (yellow) </span> are between a 3rd-
-              and 5th-grade level. Students with this support level may need additional instruction on this skill in
-              order to access grade-level reading.
+              <i18n-t keypath="scoreReports.developingDescription" tag="span">
+                <template #supportCategory>
+                  <span class="text-yellow-600 font-bold">{{ $t('scoreReports.developing') }}</span>
+                </template>
+              </i18n-t>
               <br />
               <br />
-              Skills that have been <span class="text-green-600 font-bold"> achieved (green) </span>are above a
-              5th-grade level. Students who have achieved this skill likely do not require intervention on this skill to
-              access grade-level reading.
+              <i18n-t keypath="scoreReports.achievedDescription" tag="span">
+                <template #supportCategory>
+                  <span class="text-green-600 font-bold">{{ $t('scoreReports.achieved') }}</span>
+                </template>
+              </i18n-t>
               <br />
               <br />
-              If a reader has achieved all of these skills, it is likely that foundational reading skills are
-              sufficient. If they are still struggling with reading comprehension, other skills such as vocabulary,
-              syntax, or comprehension strategies may be holding them back.
+              {{ $t('scoreReports.skillsDescription') }}
             </div>
           </div>
         </PvAccordionTab>
       </PvAccordion>
       <div data-html2canvas-ignore="true" class="w-full mb-7">
         <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
-          <PvAccordionTab header="Next Steps">
-            <div class="text-lg">
-              This score report provides a broad overview of your student’s reading development. Understand that a
-              student’s progress may not be linear, and their scores are not fixed- everyone has room to grow and learn.
-              To learn more about any given test or subskill, and to find more resources for supporting your student
-              <a :href="NextSteps" class="hover:text-red-700" data-html2canvas-ignore="true" target="_blank"
-                >click here.</a
-              >
-            </div>
+          <PvAccordionTab :header="$t('scoreReports.nextStepsTabHeader')">
+            <i18n-t keypath="scoreReports.nextSteps" tag="div" class="text-lg">
+              <template #link>
+                <a :href="NextSteps" class="hover:text-red-700" data-html2canvas-ignore="true" target="_blank"
+                  >click here.</a
+                >
+              </template>
+            </i18n-t>
           </PvAccordionTab>
         </PvAccordion>
       </div>
@@ -162,10 +186,11 @@ import AppSpinner from '../components/AppSpinner.vue';
 import { getGrade } from '@bdelab/roar-utils';
 import NextSteps from '@/assets/NextSteps.pdf';
 import jsPDF from 'jspdf';
+import _startCase from 'lodash/startCase';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit, uid, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -321,7 +346,7 @@ const formattedTasks = computed(() => {
           return -1;
         }
       })
-      .map((task) => (taskDisplayNames[task] ? taskDisplayNames[task].extendedName : task))
+      .map((task) => tasksDictionary.value[task]?.technicalName ?? task)
       .join(', ') + '.'
   );
 });

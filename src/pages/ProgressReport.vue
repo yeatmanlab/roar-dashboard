@@ -49,10 +49,10 @@
               :key="taskId"
               class="flex justify-content-between align-items-center"
             >
-              <div v-if="taskDisplayNames[taskId]" class="text-lg font-bold text-gray-600 w-full">
-                {{ taskDisplayNames[taskId].extendedName }}
-                <span v-if="taskDisplayNames[taskId].name" class="font-light uppercase text-sm">
-                  ({{ taskDisplayNames[taskId].name }})
+              <div v-if="tasksDictionary[taskId]" class="text-lg font-bold text-gray-600 w-full">
+                {{ tasksDictionary[taskId]?.technicalName ?? taskId }}
+                <span v-if="tasksDictionary[taskId].name" class="font-light uppercase text-sm">
+                  ({{ tasksDictionary[taskId]?.publicName }})
                 </span>
               </div>
               <div v-else class="text-lg font-bold text-gray-600 w-full">
@@ -175,7 +175,7 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -409,7 +409,7 @@ const exportSelected = (selectedRows) => {
       tableRow['School'] = _get(user, 'schoolName');
     }
     for (const taskId in progress) {
-      tableRow[taskDisplayNames[taskId]?.name ?? taskId] = progress[taskId].value;
+      tableRow[tasksDictionary.value[taskId]?.publicName ?? taskId] = progress[taskId].value;
     }
     return tableRow;
   });
@@ -433,7 +433,7 @@ const exportAll = async () => {
       tableRow['School'] = _get(user, 'schoolName');
     }
     for (const taskId in progress) {
-      tableRow[taskDisplayNames[taskId]?.name ?? taskId] = progress[taskId].value;
+      tableRow[tasksDictionary.value[taskId]?.publicName ?? taskId] = progress[taskId].value;
     }
     return tableRow;
   });
@@ -526,7 +526,7 @@ const progressReportColumns = computed(() => {
     tableColumns.push({
       field: `progress.${taskId}.value`,
       filterField: `progress.${taskId}.tags`,
-      header: taskDisplayNames[taskId]?.name ?? taskId,
+      header: tasksDictionary.value[taskId]?.publicName ?? taskId,
       dataType: 'progress',
       tag: true,
       severityField: `progress.${taskId}.severity`,
