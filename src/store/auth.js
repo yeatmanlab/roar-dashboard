@@ -101,6 +101,11 @@ export const useAuthStore = () => {
       async updateConsentStatus(docName, consentVersion, params = {}) {
         this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
       },
+      async registerBatchWithEmailPassword({ students }) {
+        console.log('batch user register called with students array: ', students);
+        return;
+        // return this.roarfirekit.registerBatchWIthEmailPassword(students);
+      },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },
