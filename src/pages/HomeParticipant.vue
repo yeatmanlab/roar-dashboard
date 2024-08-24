@@ -32,7 +32,7 @@
                 <PvDropdown
                   v-if="adminInfo.every((admin) => admin.publicName)"
                   v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
+                  :options="sortedAdminInfo ?? []"
                   option-label="publicName"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
@@ -41,7 +41,7 @@
                 <PvDropdown
                   v-else
                   v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
+                  :options="sortedAdminInfo ?? []"
                   option-label="name"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
@@ -92,7 +92,6 @@
 import { onMounted, ref, watch, computed, toRaw } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
-import _head from 'lodash/head';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
 import _forEach from 'lodash/forEach';
@@ -181,6 +180,10 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
+const sortedAdminInfo = computed(() => {
+  return [...(adminInfo.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+});
+
 async function checkConsent() {
   showConsent.value = false;
   const dob = new Date(userData.value?.studentData?.dob);
@@ -191,7 +194,7 @@ async function checkConsent() {
 
   if (!legal?.consent) {
     // Always show consent form for this test student when running Cypress tests
-    if (userData.value?.id === 'XAq5qOuXnNPHClK0xZXXhfGsWX22') {
+    if (userData.value?.id === 'O75V6IcVeiTwW8TRjXb76uydlwV2') {
       consentType.value = 'consent';
       confirmText.value = 'This is a test student. Please do not accept this form.';
       showConsent.value = true;
@@ -395,9 +398,10 @@ watch(
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list
-    // of all administrations choose the first one from adminInfo
+    // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-      selectedAdmin.value = _head(adminInfo.value);
+      // Choose the first sorted administration
+      selectedAdmin.value = sortedAdminInfo.value[0];
     }
   },
   { immediate: true },
