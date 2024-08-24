@@ -94,7 +94,6 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
-import _union from 'lodash/union';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
 import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
@@ -130,15 +129,22 @@ const selectedOrgs = reactive({
   families: [],
 });
 
+// Declare computed property to watch for changes in props.orgs
+const computedOrgsProp = computed(() => {
+  return props.orgs ?? {};
+});
+
+// Watch for changes in computedOrgsProp and update selectedOrgs
 watch(
-  () => props.orgs,
+  () => computedOrgsProp.value,
   (orgs) => {
-    selectedOrgs.districts = _union(selectedOrgs.districts, orgs.districts);
-    selectedOrgs.schools = _union(selectedOrgs.schools, orgs.schools);
-    selectedOrgs.classes = _union(selectedOrgs.classes, orgs.classes);
-    selectedOrgs.groups = _union(selectedOrgs.groups, orgs.groups);
-    selectedOrgs.families = _union(selectedOrgs.families, orgs.families);
+    selectedOrgs.districts = orgs.districts ?? [];
+    selectedOrgs.schools = orgs.schools ?? [];
+    selectedOrgs.classes = orgs.classes ?? [];
+    selectedOrgs.groups = orgs.groups ?? [];
+    selectedOrgs.families = orgs.families ?? [];
   },
+  { immediate: true, deep: true },
 );
 
 const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
@@ -243,7 +249,6 @@ const isSelected = (orgType, orgId) => {
 };
 
 const remove = (org, orgKey) => {
-  console.log('remove called. trying to remove', org, 'from key', orgKey);
   selectedOrgs[orgKey] = selectedOrgs[orgKey].filter((_org) => _org.id !== org.id);
 };
 
