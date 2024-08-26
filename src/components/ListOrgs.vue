@@ -116,7 +116,7 @@
 <script setup>
 import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
-import { fetchUsersByOrg } from '@/helpers/query/users';
+import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
@@ -125,6 +125,7 @@ import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _kebabCase from 'lodash/kebabCase';
+import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
@@ -277,10 +278,10 @@ const exportAll = async () => {
 
 const exportOrgUsers = async (orgType) => {
   try {
-    // Fetch the first page of users to estimate total count
-    const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, ref(10001), ref(0), orderBy);
+    // First, count the users
+    const userCount = await countUsersByOrg(activeOrgType.value, orgType.id, orderBy);
 
-    if (!users || users.length === 0) {
+    if (userCount === 0) {
       toast.add({
         severity: 'error',
         summary: 'Export Failed',
@@ -290,7 +291,7 @@ const exportOrgUsers = async (orgType) => {
       return;
     }
 
-    if (users.length >= 10000) {
+    if (userCount >= CSV_EXPORT_MAX_RECORD_COUNT) {
       toast.add({
         severity: 'error',
         summary: 'Export Failed',
@@ -299,6 +300,9 @@ const exportOrgUsers = async (orgType) => {
       });
       return;
     }
+
+    // Fetch the users if the count is within acceptable limits
+    const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, userCount, ref(0), orderBy);
 
     const computedExportData = users.map((user) => ({
       Username: _get(user, 'username'),
@@ -309,6 +313,12 @@ const exportOrgUsers = async (orgType) => {
       Gender: _get(user, 'studentData.gender'),
       DateOfBirth: _get(user, 'studentData.dob'),
       UserType: _get(user, 'userType'),
+      ell_status: _get(user, 'studentData.ell_status'),
+      iep_status: _get(user, 'studentData.iep_status'),
+      frl_status: _get(user, 'studentData.frl_status'),
+      race: _get(user, 'studentData.race'),
+      hispanic_ethnicity: _get(user, 'studentData.hispanic_ethnicity'),
+      home_language: _get(user, 'studentData.home_language'),
     }));
 
     // ex. cypress-test-district-users-export.csv
@@ -329,6 +339,7 @@ const exportOrgUsers = async (orgType) => {
     });
   }
 };
+
 const tableColumns = computed(() => {
   const columns = [
     { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
