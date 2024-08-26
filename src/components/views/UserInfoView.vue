@@ -90,7 +90,7 @@ async function submitUserData() {
   isSubmitting.value = true;
 
   await roarfirekit.value
-    .updateUserData(uid.value, localUserData.value)
+    .updateUserData(roarUid.value, localUserData.value)
     .then(() => {
       isEditMode.value = false;
       isSubmitting.value = false;
