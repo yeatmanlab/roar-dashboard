@@ -166,7 +166,7 @@ const {
   isFetching,
   data: users,
 } = useQuery({
-  queryKey: ['usersByOrgPage', uid, props.orgType, props.orgId, page, orderBy],
+  queryKey: ['usersByOrgPage', roarUid, uid, props.orgType, props.orgId, page, orderBy],
   queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, ref(1000000), page, orderBy),
   keepPreviousData: true,
   enabled: initialized,
@@ -305,7 +305,7 @@ async function updatePassword() {
   if (!v$.value.$invalid) {
     isSubmitting.value = true;
     await roarfirekit.value
-      .updateUserData(uid.value, { password: state.password })
+      .updateUserData(roarUid.value, { password: state.password })
       .then(() => {
         submitted.value = false;
         isSubmitting.value = false;
