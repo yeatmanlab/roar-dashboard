@@ -223,14 +223,25 @@ async function checkConsent() {
   if (_get(toRaw(consentStatus), consentDoc.version)) {
     const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
     let found = false;
+    let signedBeforeAugFirst = false;
     _forEach(legalDocs, (document) => {
+      const signedDate = new Date(document.dateSigned);
+      const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
+        if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
+          console.log('Signed before August 1st');
+          signedBeforeAugFirst = true;
+        }
+      }
+      if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
+        signedBeforeAugFirst = true;
       }
     });
 
-    if (!found) {
-      if (docAmount !== '' || docExpectedTime !== '') {
+    if (!found || signedBeforeAugFirst) {
+      if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
         return;
