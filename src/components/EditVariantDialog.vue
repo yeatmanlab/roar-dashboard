@@ -1,7 +1,6 @@
 <template>
   <PvButton
     class="surface-hover border-1 border-300 border-circle hover:bg-primary p-0 m-2"
-    class="surface-hover border-1 border-300 border-circle hover:bg-primary p-0 m-2"
     data-cy="button-edit-variant"
     @click="isVisible = true"
   >
@@ -12,7 +11,7 @@
     v-model:visible="isVisible"
     :draggable="false"
     modal
-    header="Edit Conditions for Assignment"
+    header="Edit Conditions"
     :close-on-escape="false"
     :style="{ width: '65vw' }"
     :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
@@ -50,7 +49,7 @@
         >
           <div class="text-xl uppercase font-bold">No Conditions Added</div>
           <div class="text-sm uppercase text-gray-700">
-            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all students in the
+            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all {{ isLevante ? 'users' : 'students' }} in the
             administration.
           </div>
         </div>
@@ -106,11 +105,11 @@
           >
             <div class="text-xl uppercase font-bold">No Conditions Added</div>
             <div v-if="isOptionalForAll" class="text-sm uppercase text-gray-700">
-              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all students in the
+              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all {{ isLevante ? 'users' : 'students' }} in the
               administration.
             </div>
             <div v-else class="text-sm uppercase text-gray-700">
-              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any students in the
+              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any {{ isLevante ? 'users' : 'students' }} in the
               administration.
             </div>
           </div>
@@ -140,7 +139,7 @@
 
           <div class="flex flex-row justify-content-between align-items-center">
             <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
-              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
+              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All {{ isLevante ? 'Users' : 'Students' }}</div>
               <PvInputSwitch
                 v-model="isOptionalForAll"
                 data-cy="switch-optional-for-everyone"
@@ -194,8 +193,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, toRaw } from 'vue';
-import { ref, onMounted, computed, toRaw } from 'vue';
+import { ref, onMounted, computed, toRaw, watch } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
 import _cloneDeep from 'lodash/cloneDeep';
 import { isLevante } from '@/helpers';
@@ -215,21 +213,18 @@ const props = defineProps({
   },
 });
 
+
 onMounted(() => {
   getAllConditions(props.assessment.task.id);
-
-  // NOTE: This has a bug, so it's backlogged for now
   // LEVANTE assigns surveys as assessments, so we add a defualt for child only so researchers
   // do not accidently assign tasks to parents and teachers
-  // if (isLevante) {
-  //   assignedConditions.value.push({ 
-  //     field: { label: 'User Type', value: 'userType', project: 'LEVANTE' },
-  //     op: { label: 'Equal', value: 'EQUAL' },
-  //     value: { label: 'Child', value: 'student' },
-  //   });
-  // }
-
-  // props.updateVariant(props.assessment.id, { assigned: { op: 'AND', conditions: { field: 'userType', op: 'EQUAL', value: 'student' } } });
+  if (isLevante && props.assessment.task.id !== 'survey') {
+    assignedConditions.value.push({ 
+      field: { label: 'User Type', value: 'userType', project: 'LEVANTE' },
+      op: { label: 'Equal', value: 'EQUAL' },
+      value: { label: 'Child', value: 'student' },
+    });
+  }
 });
 
 const isVisible = ref(false);
