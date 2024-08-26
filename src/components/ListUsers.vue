@@ -139,7 +139,7 @@ import RoarModal from './modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit, roarUid } = storeToRefs(authStore);
 const initialized = ref(false);
 const toast = useToast();
 
@@ -166,7 +166,7 @@ const {
   isFetching,
   data: users,
 } = useQuery({
-  queryKey: ['usersByOrgPage', roarUid, uid, props.orgType, props.orgId, page, orderBy],
+  queryKey: ['usersByOrgPage', roarUid, props.orgType, props.orgId, page, orderBy],
   queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, ref(1000000), page, orderBy),
   keepPreviousData: true,
   enabled: initialized,
