@@ -15,12 +15,7 @@
               <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div v-if="isSuperAdmin" class="flex flex-column gap-1">
                   <small class="text-gray-400">Show test administrations</small>
-                  <PvToggleButton
-                    v-model="fetchTestAdministrations"
-                    :on-label="showTestAdminsOnLabel"
-                    off-label="Hiding"
-                    class="p-2 rounded align-self-center my-auto"
-                  />
+                  <PvInputSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
                 </div>
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by administration name</small>
@@ -168,9 +163,6 @@ const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
-});
-const showTestAdminsOnLabel = computed(() => {
-  return testAdminsCached.value ? 'Showing' : 'Fetching...';
 });
 
 /**
