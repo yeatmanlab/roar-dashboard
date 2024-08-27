@@ -1,8 +1,14 @@
+const Vue = require('@vitejs/plugin-vue').default;
 const { defineConfig } = require('cypress');
+const { nodePolyfills } = require('vite-plugin-node-polyfills');
+const UnheadVite = require('@unhead/addons/vite');
+const { fileURLToPath, URL } = require('url');
+const path = require('path');
 require('dotenv').config();
 
 module.exports = defineConfig({
   projectId: 'cobw62',
+
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     experimentalRunAllSpecs: true,
@@ -12,6 +18,41 @@ module.exports = defineConfig({
       return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
     },
   },
+
+  component: {
+    devServer: {
+      framework: 'vue',
+      bundler: 'vite',
+      viteConfig: {
+        resolve: {
+          alias: {
+            '@': path.resolve(__dirname, './src'),
+          },
+        },
+        plugins: [
+          Vue({
+            include: [/\.vue$/, /\.md$/],
+          }),
+          nodePolyfills({
+            globals: {
+              process: true,
+            },
+          }),
+          UnheadVite(),
+        ],
+        server: {
+          port: 5173,
+          fs: {
+            allow: ['..'],
+          },
+        },
+        optimizeDeps: {
+          include: ['@bdelab/roar-firekit', 'vue-google-maps-community-fork', 'fast-deep-equal'],
+        },
+      },
+    },
+  },
+
   env: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     firestoreUrl: 'https://firestore.googleapis.com/**/*',

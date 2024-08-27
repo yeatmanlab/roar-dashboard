@@ -117,6 +117,8 @@ export const fetchDocById = async (
   return axiosInstance
     .get(docPath + queryString)
     .then(({ data }) => {
+      console.log('in fetchDocById');
+      console.log('data', data);
       return {
         id: docId,
         collection,

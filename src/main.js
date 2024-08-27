@@ -93,112 +93,114 @@ import './assets/styles/theme.scss'; // ROAR theme
 
 // translations
 import { i18n } from '@/translations/i18n.js';
-// https://www.npmjs.com/package/vue-country-flag-next
 
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
-
-// Begin the app!
-const app = createApp(App);
-const pinia = createPinia();
-const head = createHead();
-
-pinia.use(piniaPluginPersistedState);
-
-app.use(VueRecaptchaPlugin, {
-  v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
-});
-
-initSentry(app);
-
-app.use(PrimeVue, { ripple: true });
-app.use(ToastService);
-app.use(ConfirmationService);
-app.use(pinia);
-app.use(router);
-app.use(VueGoogleMaps, {
-  load: {
-    key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
-    libraries: 'places',
-  },
-});
-app.use(head);
-app.use(TextClamp);
-app.use(VueQueryPlugin);
-app.use(i18n);
-app.use(surveyPlugin);
-
-app.component('PvAccordion', PvAccordion);
-app.component('PvAccordionTab', PvAccordionTab);
-app.component('PvAutoComplete', PvAutoComplete);
-app.component('PvBadge', PvBadge);
-app.component('PvBlockUI', PvBlockUI);
-app.component('PvButton', PvButton);
-app.component('PvCalendar', PvCalendar);
-app.component('PvCard', PvCard);
-app.component('PvChart', PvChart);
-app.component('PvCheckbox', PvCheckbox);
-app.component('PvChip', PvChip);
-app.component('PvColumn', PvColumn);
-app.component('PvConfirmDialog', PvConfirmDialog);
-app.component('PvConfirmPopup', PvConfirmPopup);
-app.component('PvDataTable', PvDataTable);
-app.component('PvDataView', PvDataView);
-app.component('PvDialog', PvDialog);
-app.component('PvDivider', PvDivider);
-app.component('PvDropdown', PvDropdown);
-app.component('PvFileUpload', PvFileUpload);
-app.component('PvImage', PvImage);
-app.component('PvInlineMessage', PvInlineMessage);
-app.component('PvInputGroup', PvInputGroup);
-app.component('PvInputNumber', PvInputNumber);
-app.component('PvInputSwitch', PvInputSwitch);
-app.component('PvInputText', PvInputText);
-app.component('PvKnob', PvKnob);
-app.component('PvListbox', PvListbox);
-app.component('PvMenu', PvMenu);
-app.component('PvMenubar', PvMenubar);
-app.component('PvMessage', PvMessage);
-app.component('PvMultiSelect', PvMultiSelect);
-app.component('PvOverlayPanel', PvOverlayPanel);
-app.component('PvPanel', PvPanel);
-app.component('PvPassword', PvPassword);
-app.component('PvPickList', PvPickList);
-app.component('PvProgressBar', PvProgressBar);
-app.component('PvRadioButton', PvRadioButton);
-app.component('PvScrollPanel', PvScrollPanel);
-app.component('PvSelectButton', PvSelectButton);
-app.component('PvSidebar', PvSidebar);
-app.component('PvSkeleton', PvSkeleton);
-app.component('PvSpeedDial', PvSpeedDial);
-app.component('PvSplitter', PvSplitter);
-app.component('PvSplitterPanel', PvSplitterPanel);
-app.component('PvSteps', PvSteps);
-app.component('PvTabPanel', PvTabPanel);
-app.component('PvTabView', PvTabView);
-app.component('PvTag', PvTag);
-app.component('PvToast', PvToast);
-app.component('PvToggleButton', PvToggleButton);
-app.component('PvTreeTable', PvTreeTable);
-app.component('PvTriStateCheckbox', PvTriStateCheckbox);
-app.component('PvColumnGroup', PvColumnGroup);
-app.component('PvRow', PvRow);
-
-app.component('RoarDataTable', RoarDataTable);
-app.component('LanguageSelector', LanguageSelector);
-app.component('PvFieldset', PvFieldset);
-
-app.directive('tooltip', PvTooltip);
-
-// Register all components that begin with App
-const appComponentFiles = import.meta.glob('./components/App*.vue', { eager: true });
-
-Object.entries(appComponentFiles).forEach(([path, m]) => {
-  const componentName = path.split('/').pop().replace('.vue', '');
-  app.component(componentName, m.default);
-});
 
 import { Buffer } from 'buffer';
 // eslint-disable-next-line no-undef
 globalThis.Buffer = Buffer;
 
-app.mount('#app');
+export const initApp = () => {
+  // Begin the app!
+  const app = createApp(App);
+  const pinia = createPinia();
+  const head = createHead();
+
+  pinia.use(piniaPluginPersistedState);
+
+  app.use(VueRecaptchaPlugin, {
+    v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
+  });
+
+  initSentry(app);
+
+  app.use(PrimeVue, { ripple: true });
+  app.use(ToastService);
+  app.use(ConfirmationService);
+  app.use(pinia);
+  app.use(router);
+  app.use(VueGoogleMaps, {
+    load: {
+      key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
+      libraries: 'places',
+    },
+  });
+  app.use(head);
+  app.use(TextClamp);
+  app.use(VueQueryPlugin);
+  app.use(i18n);
+  app.use(surveyPlugin);
+
+  app.component('PvAccordion', PvAccordion);
+  app.component('PvAccordionTab', PvAccordionTab);
+  app.component('PvAutoComplete', PvAutoComplete);
+  app.component('PvBadge', PvBadge);
+  app.component('PvBlockUI', PvBlockUI);
+  app.component('PvButton', PvButton);
+  app.component('PvCalendar', PvCalendar);
+  app.component('PvCard', PvCard);
+  app.component('PvChart', PvChart);
+  app.component('PvCheckbox', PvCheckbox);
+  app.component('PvChip', PvChip);
+  app.component('PvColumn', PvColumn);
+  app.component('PvConfirmDialog', PvConfirmDialog);
+  app.component('PvConfirmPopup', PvConfirmPopup);
+  app.component('PvDataTable', PvDataTable);
+  app.component('PvDataView', PvDataView);
+  app.component('PvDialog', PvDialog);
+  app.component('PvDivider', PvDivider);
+  app.component('PvDropdown', PvDropdown);
+  app.component('PvFileUpload', PvFileUpload);
+  app.component('PvImage', PvImage);
+  app.component('PvInlineMessage', PvInlineMessage);
+  app.component('PvInputGroup', PvInputGroup);
+  app.component('PvInputNumber', PvInputNumber);
+  app.component('PvInputSwitch', PvInputSwitch);
+  app.component('PvInputText', PvInputText);
+  app.component('PvKnob', PvKnob);
+  app.component('PvListbox', PvListbox);
+  app.component('PvMenu', PvMenu);
+  app.component('PvMenubar', PvMenubar);
+  app.component('PvMessage', PvMessage);
+  app.component('PvMultiSelect', PvMultiSelect);
+  app.component('PvOverlayPanel', PvOverlayPanel);
+  app.component('PvPanel', PvPanel);
+  app.component('PvPassword', PvPassword);
+  app.component('PvPickList', PvPickList);
+  app.component('PvProgressBar', PvProgressBar);
+  app.component('PvRadioButton', PvRadioButton);
+  app.component('PvScrollPanel', PvScrollPanel);
+  app.component('PvSelectButton', PvSelectButton);
+  app.component('PvSidebar', PvSidebar);
+  app.component('PvSkeleton', PvSkeleton);
+  app.component('PvSpeedDial', PvSpeedDial);
+  app.component('PvSplitter', PvSplitter);
+  app.component('PvSplitterPanel', PvSplitterPanel);
+  app.component('PvSteps', PvSteps);
+  app.component('PvTabPanel', PvTabPanel);
+  app.component('PvTabView', PvTabView);
+  app.component('PvTag', PvTag);
+  app.component('PvToast', PvToast);
+  app.component('PvToggleButton', PvToggleButton);
+  app.component('PvTreeTable', PvTreeTable);
+  app.component('PvTriStateCheckbox', PvTriStateCheckbox);
+  app.component('PvColumnGroup', PvColumnGroup);
+  app.component('PvRow', PvRow);
+
+  app.component('RoarDataTable', RoarDataTable);
+  app.component('LanguageSelector', LanguageSelector);
+  app.component('PvFieldset', PvFieldset);
+
+  app.directive('tooltip', PvTooltip);
+
+  // Register all components that begin with App
+  const appComponentFiles = import.meta.glob('./components/App*.vue', { eager: true });
+
+  Object.entries(appComponentFiles).forEach(([path, m]) => {
+    const componentName = path.split('/').pop().replace('.vue', '');
+    app.component(componentName, m.default);
+  });
+  app.mount('#app');
+};
+
+// initApp();

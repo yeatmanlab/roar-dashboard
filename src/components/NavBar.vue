@@ -3,6 +3,21 @@
     <nav class="flex flex-row align-items-center justify-content-between w-full">
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
+          <!--          <p>userClaims: {{ userClaims }}</p>-->
+          <!--          <p>-->
+          <!--            <br />-->
+          <!--            isLoading: {{ userClaimsLoading }}-->
+          <!--          </p>-->
+          <!--          <p>-->
+          <!--            {{ userDisplayName }}-->
+          <!--          </p>-->
+          <!--          <p></p>-->
+          <p>
+            {{ rawActions }}
+          </p>
+          <p>
+            {{ computedItems }}
+          </p>
           <PvMenubar :model="computedItems" class="w-full">
             <template #start>
               <router-link :to="{ name: 'Home' }">
@@ -68,7 +83,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/store/auth';
+// import { useAuthStore } from '@/store/auth';
+import { useAuthStore } from '@/store/auth.js';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import _get from 'lodash/get';
@@ -95,6 +111,11 @@ const init = () => {
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
+
+const handleResize = () => {
+  screenWidth.value = window.innerWidth;
+  return;
+};
 
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
@@ -144,15 +165,12 @@ const computedItems = computed(() => {
   return items;
 });
 
-const handleResize = () => {
-  screenWidth.value = window.innerWidth;
-  return;
-};
-
 const userDisplayName = computed(() => {
   if (!userClaimsLoading) {
+    console.log('userClaims false');
     return '';
   } else {
+    console.log('userClaims true');
     let email = authStore?.userData?.email;
     if (email && email.split('@')[1] === 'roar-auth.com') {
       email = email.split('@')[0];
