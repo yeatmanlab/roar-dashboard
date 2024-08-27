@@ -23,12 +23,12 @@ import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit, roarUid, uid } = storeToRefs(authStore);
 const success = ref(false);
 
 authStore.$subscribe(async () => {
-  if (uid.value) {
-    const userData = await fetchDocById('users', uid.value);
+  if (roarUid.value) {
+    const userData = await fetchDocById('users', roarUid.value);
     const userClaims = await fetchDocById('userClaims', uid.value);
     authStore.userData = userData;
     authStore.userClaims = userClaims;
