@@ -120,7 +120,8 @@ const init = () => {
 };
 
 const authStore = useAuthStore();
-const { roarfirekit, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, roarUid, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } =
+  storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -138,8 +139,8 @@ const {
   isFetching: isFetchingUserData,
   data: userData,
 } = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', uid.value),
+  queryKey: ['userData', roarUid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', roarUid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -151,7 +152,7 @@ const {
   data: assignmentInfo,
 } = useQuery({
   queryKey: ['assignments', uid, assignmentQueryKeyIndex],
-  queryFn: () => getUserAssignments(uid.value),
+  queryFn: () => getUserAssignments(roarUid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 min

@@ -34,7 +34,7 @@ import { useI18n } from 'vue-i18n';
 let HomeParticipant, HomeAdministrator, ConsentModal;
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
+const { roarfirekit, roarUid, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 const router = useRouter();
 const i18n = useI18n();
@@ -62,8 +62,8 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', uid.value),
+  queryKey: ['userData', roarUid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', roarUid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
