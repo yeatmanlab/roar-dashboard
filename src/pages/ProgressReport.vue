@@ -176,7 +176,14 @@ import { fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { taskDisplayNames, gradeOptions, rawOnlyTasks, tasksToDisplayCorrectIncorrectDifference, tasksToDisplayPercentCorrect, tasksToDisplayTotalCorrect } from '@/helpers/reports.js';
+import {
+  taskDisplayNames,
+  gradeOptions,
+  rawOnlyTasks,
+  tasksToDisplayCorrectIncorrectDifference,
+  tasksToDisplayPercentCorrect,
+  tasksToDisplayTotalCorrect,
+} from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 
@@ -457,7 +464,7 @@ const exportReportCombination = async () => {
   const computedExportData = assignmentData.value.map((item) => {
     const user = item.user;
     const progress = item.assignment?.assessments || [];
-    
+
     let tableRow = {
       Username: _get(user, 'username'),
       Email: _get(user, 'email'),
@@ -465,51 +472,49 @@ const exportReportCombination = async () => {
       Last: _get(user, 'name.last'),
       Grade: _get(user, 'studentData.grade'),
     };
-    
+
     if (authStore.isUserSuperAdmin) {
       tableRow['PID'] = _get(user, 'assessmentPid');
     }
-    
+
     if (props.orgType === 'district') {
       tableRow['School'] = _get(user, 'schools.current[0].name');
     }
-    
+
     for (const assessment of progress) {
       const taskId = assessment.taskId;
       const scores = assessment.scores || {};
-      
+
       // Handle task-specific logic
       if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
         const numCorrect = scores?.raw?.composite?.test?.numCorrect;
         const numIncorrect = scores?.raw?.composite?.test?.numAttempted - numCorrect;
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Correct/Incorrect Difference`] = 
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Correct/Incorrect Difference`] =
           numCorrect != null && numIncorrect != null ? Math.round(numCorrect - numIncorrect) : null;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = numCorrect;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Incorrect`] = numIncorrect;
-
       } else if (tasksToDisplayPercentCorrect.includes(taskId)) {
         const numAttempted = scores?.raw?.composite?.test?.numAttempted;
         const numCorrect = scores?.raw?.composite?.test?.numCorrect;
-        const percentCorrect = numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
-          ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
-          : null;
+        const percentCorrect =
+          numAttempted > 0 && !isNaN(numCorrect) && !isNaN(numAttempted)
+            ? Math.round((numCorrect * 100) / numAttempted).toString() + '%'
+            : null;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Percent Correct`] = percentCorrect;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Attempted`] = numAttempted;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = numCorrect;
-
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
         const numAttempted = scores?.raw?.composite?.test?.numAttempted;
-        const numCorrect = numAttempted === undefined || numAttempted === 0
-          ? ''
-          : numAttempted !== 0 && scores?.raw?.composite?.test?.numCorrect !== undefined
-          ? scores?.raw?.composite?.test?.numCorrect
-          : 0;
+        const numCorrect =
+          numAttempted === undefined || numAttempted === 0
+            ? ''
+            : numAttempted !== 0 && scores?.raw?.composite?.test?.numCorrect !== undefined
+            ? scores?.raw?.composite?.test?.numCorrect
+            : 0;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Attempted`] = numAttempted;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Num Correct`] = numCorrect;
-
       } else if (rawOnlyTasks.includes(taskId)) {
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Raw`] = scores.rawScore;
-
       } else {
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Percentile`] = scores.percentileString;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Standard`] = scores.standardScore;
@@ -519,10 +524,14 @@ const exportReportCombination = async () => {
 
       // Handle special cases for specific taskIds
       if (taskId === 'letter' && scores) {
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Lower Case Score`] = scores.computed?.LowercaseNames?.subScore;
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Upper Case Score`] = scores.computed?.UppercaseNames?.subScore;
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Phoneme Score`] = scores.computed?.Phonemes?.subScore;
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Total Score`] = scores.computed?.composite?.totalCorrect;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Lower Case Score`] =
+          scores.computed?.LowercaseNames?.subScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Upper Case Score`] =
+          scores.computed?.UppercaseNames?.subScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Phoneme Score`] =
+          scores.computed?.Phonemes?.subScore;
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Total Score`] =
+          scores.computed?.composite?.totalCorrect;
 
         const incorrectLettersArray = [
           ...(_get(assessment, 'scores.computed.UppercaseNames.upperIncorrect') ?? '').split(','),
@@ -532,14 +541,14 @@ const exportReportCombination = async () => {
           .filter(Boolean)
           .join(', ');
 
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Incorrect Letters`] = 
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Incorrect Letters`] =
           incorrectLettersArray.length > 0 ? incorrectLettersArray : 'None';
 
         const incorrectPhonemesArray = (_get(assessment, 'scores.computed.Phonemes.phonemeIncorrect') ?? '')
           .split(',')
           .join(', ');
 
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Incorrect Phonemes`] = 
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Incorrect Phonemes`] =
           incorrectPhonemesArray.length > 0 ? incorrectPhonemesArray : 'None';
       }
 
@@ -554,8 +563,12 @@ const exportReportCombination = async () => {
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - First Sound`] = first;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Last Sound`] = last;
         tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Deletion`] = deletion;
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Total`] = _get(scores, 'computed.composite.roarScore');
-        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Skills`] = skills.length > 0 ? skills.join(', ') : 'None';
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Total`] = _get(
+          scores,
+          'computed.composite.roarScore',
+        );
+        tableRow[`${tasksDictionary.value[taskId]?.publicName ?? taskId} - Skills`] =
+          skills.length > 0 ? skills.join(', ') : 'None';
       }
     }
 
