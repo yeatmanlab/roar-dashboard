@@ -92,16 +92,22 @@ Cypress.Commands.add(
     cy.get('ul > li').contains(testGroupName).click({ animationDistanceThreshold: 20 });
   },
 );
-
-Cypress.Commands.add('agreeToConsent', (text) => {
-  const consents = ['CONSENT VIDEO AUDIO RECORDING FORM', 'FORMULARIO DE CONSENT BEHAIVORAL EYE TRACKING ES'];
-
-  for (const consent of consents) {
-    if (text.includes(consent)) {
-      cy.log('Consent form found, accepting...');
-      cy.get('.p-confirm-dialog-accept').contains('Continue').click();
+Cypress.Commands.add('agreeToConsent', () => {
+  cy.wait(0.3 * Cypress.env('timeout'));
+  cy.get('body').then(($body) => {
+    if ($body.find('.p-dialog').length > 0) {
+      cy.get('.p-dialog')
+        .invoke('text')
+        .then((text) => {
+          if (text.toLowerCase().includes('consent') || text.toLowerCase().includes('assent')) {
+            cy.log('Consent required, agreeing...');
+            cy.get('button').contains('Continue').click();
+          }
+        });
+    } else {
+      cy.log('Consent not required, continuing...');
     }
-  }
+  });
 });
 
 Cypress.Commands.add('selectAdministration', function selectAdministration(testAdministration, retries = 0) {
@@ -114,13 +120,12 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
   cy.get('body', { timeout: 2 * Cypress.env('timeout') })
     .invoke('text')
     .then((text) => {
-      cy.agreeToConsent(text);
-
       if (text.includes(testAdministration)) {
         cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
           .contains(testAdministration)
           .click();
         cy.log('Selected administration:', testAdministration);
+        cy.agreeToConsent();
       } else {
         cy.log('Administration not found, retrying...');
         selectAdministration(testAdministration, retries + 1);
