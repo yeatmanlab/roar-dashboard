@@ -15,6 +15,8 @@ import { useToast } from 'primevue/usetoast';
 import { useQueryClient } from '@tanstack/vue-query';
 import _merge from 'lodash/merge';
 
+const STORAGE_ITEM_KEY = 'levante-survey';
+
 const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
   const files = response.data || { items: [] };
@@ -87,6 +89,23 @@ const showAndPlaceAudioButton = (playAudioButton, el) => {
   }
 };
 
+function saveSurveyData(survey) {
+  const data = survey.data;
+  data.pageNo = survey.currentPageNo;
+  window.localStorage.setItem(STORAGE_ITEM_KEY, JSON.stringify(data));
+}
+
+function restoreSurveyData(survey) {
+  const prevData = window.localStorage.getItem(STORAGE_ITEM_KEY) || null;
+  if (prevData) {
+    const data = JSON.parse(prevData);
+    survey.data = data;
+    if (data.pageNo) {
+      survey.currentPageNo = data.pageNo;
+    }
+  }
+}
+
 async function getSurvey() {
   let userType = toRaw(authStore.userData.userType.toLowerCase());
   if (userType === 'student') userType = 'child';
@@ -98,7 +117,6 @@ async function getSurvey() {
     audioLinks.value = audioLinkMap;
 
     fetchedSurvey.value = response.data;
-    // Create the survey model with the fetched data
     const surveyInstance = new Model(fetchedSurvey.value);
 
     surveyInstance.locale = locale.value;
@@ -115,7 +133,6 @@ async function getSurvey() {
       options.html = str;
     });
 
-
     survey.value.onComplete.add(saveResults);
     survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
       const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
@@ -127,6 +144,14 @@ async function getSurvey() {
         showAndPlaceAudioButton(playAudioButton, el);
       });
     });
+
+    // Restore survey data from localStorage
+    restoreSurveyData(survey.value);
+
+    // Save survey results when users change a question value or switch to the next page
+    survey.value.onValueChanged.add(saveSurveyData);
+    survey.value.onCurrentPageChanged.add(saveSurveyData);
+
   } catch (error) {
     console.error(error);
   }
@@ -165,6 +190,8 @@ async function saveResults(sender) {
 
   // Values from the second object overwrite values from the first
   const responsesWithAllQuestions = _merge(unansweredQuestions, sender.data);
+  // remove pageNo, used for continuing incomplete survey, from the responses
+  delete responsesWithAllQuestions.pageNo;
 
   // turn on loading state
   isSavingResponses.value = true;
@@ -181,7 +208,9 @@ async function saveResults(sender) {
     gameStore.setSurveyCompleted();
     queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
-    // route back to game tabs (HomeParticipant)
+    // Clear localStorage after successful submission
+    window.localStorage.removeItem(STORAGE_ITEM_KEY);
+
     gameStore.requireHomeRefresh();
     router.push({ name: 'Home' });
   } catch (error) {
