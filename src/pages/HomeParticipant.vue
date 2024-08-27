@@ -139,7 +139,7 @@ const {
   isFetching: isFetchingUserData,
   data: userData,
 } = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
+  queryKey: ['userData', roarUid, userQueryKeyIndex],
   queryFn: () => fetchDocById('users', roarUid.value),
   keepPreviousData: true,
   enabled: initialized,
