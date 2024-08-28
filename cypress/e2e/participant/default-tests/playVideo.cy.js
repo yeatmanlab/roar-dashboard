@@ -7,6 +7,6 @@ describe('Playing Video', () => {
     cy.get('.tabview-nav-link-label', { timeout: 2 * timeout })
       .contains('ROAR - Word')
       .click();
-    cy.get('.vjs-big-play-button', { timeout: 2 * timeout }).click();
+    cy.get('.video-player-wrapper', { timeout: 2 * timeout }).click();
   });
 });
