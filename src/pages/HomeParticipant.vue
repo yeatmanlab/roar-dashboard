@@ -98,7 +98,7 @@ import _forEach from 'lodash/forEach';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
@@ -118,6 +118,8 @@ const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
+
+const queryClient = useQueryClient();
 
 const authStore = useAuthStore();
 const { roarfirekit, roarUid, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } =
@@ -269,10 +271,12 @@ async function updateConsent() {
     dateSigned: new Date(),
   };
   try {
-    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value);
-    userQueryKeyIndex.value += 1;
-  } catch {
-    console.log("Couldn't update consent value");
+    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value).then(async () => {
+      userQueryKeyIndex.value += 1;
+      await queryClient.invalidateQueries(['userData', roarUid, userQueryKeyIndex]);
+    });
+  } catch (e) {
+    console.log("Couldn't update consent value", e);
   }
 }
 
@@ -413,9 +417,9 @@ const studentInfo = computed(() => {
 
 watch(
   [selectedAdmin, adminInfo],
-  ([updateSelectedAdmin]) => {
+  async ([updateSelectedAdmin]) => {
     if (updateSelectedAdmin) {
-      checkConsent();
+      await checkConsent();
     }
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
