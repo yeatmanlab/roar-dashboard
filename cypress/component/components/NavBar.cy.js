@@ -20,50 +20,51 @@ const staticResponse = {
 
 describe('Mount and test the NavBar.vue component.', () => {
   beforeEach(() => {
-    const authStore = useAuthStore();
-
-    authStore.$patch({
-      firebaseUser: {
-        adminFirebaseUser: {
-          uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
-          email: '123',
-          isUserAuthedAdmin: true,
-          isUserAuthedApp: true,
-          isAuthenticated: true,
-        },
-        appFirebaseUser: {
-          uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
-          email: '123',
-          isUserAuthedAdmin: true,
-          isUserAuthedApp: true,
-          isAuthenticated: true,
-        },
-      },
-      roarfirekit: {
-        initialized: true,
-        restConfig: {
-          admin: {
-            // headers: { Authorization: `Bearer ${this._idTokens.admin}` },
-            baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents`,
-          },
-          app: {
-            // headers: { Authorization: `Bearer ${this._idTokens.app}` },
-            baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents`,
-          },
-        },
-      },
-      userData: {
-        uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
-        email: '123',
-        username: 'Test User',
-        name: {
-          first: 'Test',
-          last: 'User',
-        },
-      },
-    });
-
-    cy.wrap(authStore.$state).as('authStore');
+    cy.setAuthStore();
+    // const authStore = useAuthStore();
+    //
+    // authStore.$patch({
+    //   firebaseUser: {
+    //     adminFirebaseUser: {
+    //       uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
+    //       email: '123',
+    //       isUserAuthedAdmin: true,
+    //       isUserAuthedApp: true,
+    //       isAuthenticated: true,
+    //     },
+    //     appFirebaseUser: {
+    //       uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
+    //       email: '123',
+    //       isUserAuthedAdmin: true,
+    //       isUserAuthedApp: true,
+    //       isAuthenticated: true,
+    //     },
+    //   },
+    //   roarfirekit: {
+    //     initialized: true,
+    //     restConfig: {
+    //       admin: {
+    //         // headers: { Authorization: `Bearer ${this._idTokens.admin}` },
+    //         baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents`,
+    //       },
+    //       app: {
+    //         // headers: { Authorization: `Bearer ${this._idTokens.app}` },
+    //         baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents`,
+    //       },
+    //     },
+    //   },
+    //   userData: {
+    //     uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
+    //     email: '123',
+    //     username: 'Test User',
+    //     name: {
+    //       first: 'Test',
+    //       last: 'User',
+    //     },
+    //   },
+    // });
+    //
+    // cy.wrap(authStore.$state).as('authStore');
   });
 
   it('mounts and uses intercepted userClaims data', () => {

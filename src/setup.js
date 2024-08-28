@@ -11,6 +11,8 @@ import TextClamp from 'vue3-text-clamp';
 
 import PrimeVue from 'primevue/config';
 
+import plugins from './plugins.js';
+
 // PrimeVue component imports
 import PvAccordion from 'primevue/accordion';
 import PvAccordionTab from 'primevue/accordiontab';
@@ -98,39 +100,43 @@ import { VueRecaptchaPlugin } from 'vue-recaptcha';
 
 import { Buffer } from 'buffer';
 
-export const initApp = () => {
-  // Begin the app!
+export const createAppInstance = () => {
   const app = createApp(App);
-  const pinia = createPinia();
-  const head = createHead();
+  // const pinia = createPinia();
+  // const head = createHead();
+  //
+  //
+  // pinia.use(piniaPluginPersistedState);
 
-  // eslint-disable-next-line no-undef
-  globalThis.Buffer = Buffer;
+  // app.use(PrimeVue, { ripple: true });
+  // app.use(ToastService);
+  // app.use(ConfirmationService);
+  // app.use(pinia);
+  // app.use(router);
+  // app.use(VueGoogleMaps, {
+  //   load: {
+  //     key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
+  //     libraries: 'places',
+  //   },
+  // });
+  // app.use(head);
+  // app.use(TextClamp);
+  // app.use(VueQueryPlugin);
+  // app.use(i18n);
+  // app.use(surveyPlugin);
 
-  pinia.use(piniaPluginPersistedState);
+  // Register all plugins
+  plugins.forEach((plugin) => {
+    if (Array.isArray(plugin)) {
+      app.use(...plugin);
+    } else {
+      app.use(plugin);
+    }
+  });
 
   app.use(VueRecaptchaPlugin, {
     v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
   });
-
-  initSentry(app);
-
-  app.use(PrimeVue, { ripple: true });
-  app.use(ToastService);
-  app.use(ConfirmationService);
-  app.use(pinia);
-  app.use(router);
-  app.use(VueGoogleMaps, {
-    load: {
-      key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
-      libraries: 'places',
-    },
-  });
-  app.use(head);
-  app.use(TextClamp);
-  app.use(VueQueryPlugin);
-  app.use(i18n);
-  app.use(surveyPlugin);
 
   app.component('PvAccordion', PvAccordion);
   app.component('PvAccordionTab', PvAccordionTab);
@@ -202,6 +208,15 @@ export const initApp = () => {
     app.component(componentName, m.default);
   });
 
+  // eslint-disable-next-line no-undef
+  globalThis.Buffer = Buffer;
+
+  initSentry(app);
+
+  return app;
+};
+
+export const initApp = () => {
+  const app = createAppInstance();
   app.mount('#app');
-  console.log('App mounted');
 };
