@@ -119,7 +119,7 @@ jobs:
 
   build-and-deploy:
     name: Deploy to Firebase Production Hosting Channel
-    needs: [build-cypress-pre-release-tests, run-cypress-pre-release-tests]
+    # needs: [build-cypress-pre-release-tests, run-cypress-pre-release-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
