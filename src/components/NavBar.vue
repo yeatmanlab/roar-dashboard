@@ -3,21 +3,21 @@
     <nav class="flex flex-row align-items-center justify-content-between w-full">
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
-          <!--          <p>userClaims: {{ userClaims }}</p>-->
+          <!--                    <p>userClaims: {{ userClaims }}</p>-->
+          <!--          &lt;!&ndash;          <p>&ndash;&gt;-->
+          <!--          &lt;!&ndash;            <br />&ndash;&gt;-->
+          <!--          &lt;!&ndash;            isLoading: {{ userClaimsLoading }}&ndash;&gt;-->
+          <!--          &lt;!&ndash;          </p>&ndash;&gt;-->
+          <!--          &lt;!&ndash;          <p>&ndash;&gt;-->
+          <!--          &lt;!&ndash;            {{ userDisplayName }}&ndash;&gt;-->
+          <!--          &lt;!&ndash;          </p>&ndash;&gt;-->
+          <!--          &lt;!&ndash;          <p></p>&ndash;&gt;-->
           <!--          <p>-->
-          <!--            <br />-->
-          <!--            isLoading: {{ userClaimsLoading }}-->
+          <!--            {{ rawActions }}-->
           <!--          </p>-->
           <!--          <p>-->
-          <!--            {{ userDisplayName }}-->
+          <!--            {{ computedItems }}-->
           <!--          </p>-->
-          <!--          <p></p>-->
-          <p>
-            {{ rawActions }}
-          </p>
-          <p>
-            {{ computedItems }}
-          </p>
           <PvMenubar :model="computedItems" class="w-full">
             <template #start>
               <router-link :to="{ name: 'Home' }">
@@ -114,7 +114,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 const handleResize = () => {
   screenWidth.value = window.innerWidth;
-  return;
 };
 
 onMounted(() => {

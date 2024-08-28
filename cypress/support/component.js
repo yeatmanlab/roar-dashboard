@@ -97,23 +97,23 @@ import '../../src/assets/styles/theme.scss'; // ROAR theme
 
 initApp();
 Cypress.Commands.add('mount', (component, options = {}) => {
-  options.global = options.global || {};
-  options.global.plugins = options.global.plugins || [];
-
-  options.global.plugins.push(VueQueryPlugin);
-  options.global.plugins.push(PrimeVue, { ripple: true });
-
-  options.global.components = options.global.components || {};
-  options.global.components['PvButton'] = PvButton;
-  options.global.components['MenuBar'] = PvMenubar;
-
-  // Add the router separately
-  options.router = router;
-  options.global.plugins.push({
-    install(app) {
-      app.use(options.router);
-    },
-  });
+  // options.global = options.global || {};
+  // options.global.plugins = options.global.plugins || [];
+  //
+  // options.global.plugins.push(VueQueryPlugin);
+  // options.global.plugins.push(PrimeVue, { ripple: true });
+  //
+  // options.global.components = options.global.components || {};
+  // options.global.components['PvButton'] = PvButton;
+  // options.global.components['MenuBar'] = PvMenubar;
+  //
+  // // Add the router separately
+  // options.router = router;
+  // options.global.plugins.push({
+  //   install(app) {
+  //     app.use(options.router);
+  //   },
+  // });
 
   return mount(component, options);
 });
