@@ -225,6 +225,8 @@ async function checkConsent() {
     const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
     let found = false;
     let signedBeforeAugFirst = false;
+    let signedAfterAugFirst = false;
+
     _forEach(legalDocs, (document) => {
       const signedDate = new Date(document.dateSigned);
       const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
@@ -232,8 +234,10 @@ async function checkConsent() {
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
         if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
-          console.log('Signed before August 1st');
           signedBeforeAugFirst = true;
+        } else if (signedDate >= augustFirstThisYear) {
+          signedAfterAugFirst = true;
+          return false; // This stops the loop in Lodash _.forEach
         }
       }
       if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
@@ -241,7 +245,10 @@ async function checkConsent() {
       }
     });
 
-    if (!found || signedBeforeAugFirst) {
+    // If any document is signed after August 1st, do not show the consent form
+    if (signedAfterAugFirst) {
+      showConsent.value = false;
+    } else if (!found || signedBeforeAugFirst) {
       if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
