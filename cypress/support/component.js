@@ -14,40 +14,38 @@
 // ***********************************************************
 
 import './commands';
-import ToastService from 'primevue/toastservice';
-import ConfirmationService from 'primevue/confirmationservice';
-import { router } from '../../src/router/index.js';
-import VueGoogleMaps from 'vue-google-maps-community-fork';
-import TextClamp from 'vue3-text-clamp';
-import { i18n } from '../../src/translations/i18n.js';
-import { createPinia, setActivePinia } from 'pinia';
-import { createHead } from '@unhead/vue';
-import { VueQueryPlugin } from '@tanstack/vue-query';
+import plugins from '../../src/plugins.js';
 import { createAppInstance } from '../../src/setup.js';
 import { mount } from 'cypress/vue';
-import plugins from '../../src/plugins.js';
 
 import 'primevue/resources/primevue.css'; // primevue css
 import 'primeicons/primeicons.css'; // icons
 import 'primeflex/primeflex.scss'; // primeflex
 import '../../src/assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import '../../src/assets/styles/theme.scss';
-import { useAuthStore } from '../../src/store/auth.js'; // ROAR theme
 
+/**
+ * Custom Cypress command to mount a Vue component with the application's full context.
+ *
+ * This command initializes the Vue app instance, adds the necessary plugins, components,
+ * and directives to the Cypress context, and mounts the specified component for testing.
+ *
+ * The command ensures that all global plugins, components, and other context-specific
+ * items from the Vue app are available in the Cypress testing environment. This includes
+ * handling potential context duplication to ensure features like i18n work correctly.
+ *
+ * @param {VueComponent} component - The Vue component to mount.
+ * @param {object} [options={}] - Optional configuration for mounting, including global plugins and components.
+ * @returns {Cypress.Chainable} - The chainable Cypress object for further commands.
+ */
 Cypress.Commands.add('mount', (component, options = {}) => {
   const app = createAppInstance();
 
-  cy.createMockStore();
-
-  // Declare the app plugins and components for the Cypress context
   options.global = options.global || {};
   options.global.plugins = options.global.plugins || [];
   options.global.components = options.global.components || {};
 
-  // // Add the router to the Cypress context
-  // options.global.plugins.push(router);
-
-  // Add plugins from the Vue app to the Cypress context
+  // Add the Vue app plugins to the Cypress context
   plugins.forEach((plugin) => {
     if (Array.isArray(plugin)) {
       options.global.plugins.push(...plugin);
@@ -56,12 +54,16 @@ Cypress.Commands.add('mount', (component, options = {}) => {
     }
   });
 
-  // Copy the necessary Vue app global components to the Cypress context
+  // There is some context duplication between loop above and this loop
+  // But without this redundancy, some app context is not available in the Cypress context (namely i18n)
+  // Unsure why, need to investigate further
+
+  // Add the Vue app components, directives, and plugins to the Cypress context
   options.global.plugins.push({
     install(appInstance) {
       appInstance._context.components = app._context.components;
-      // appInstance._context.directives = app._context.directives;
-      // appInstance._context.provides = app._context.provides;
+      appInstance._context.directives = app._context.directives;
+      appInstance._context.provides = app._context.provides;
     },
   });
 

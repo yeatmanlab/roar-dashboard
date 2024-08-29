@@ -110,7 +110,6 @@ export const fetchDocById = async (
     );
     return {};
   }
-  console.log('fetchDocById');
   const docPath = `/${collection}/${docId}`;
   const axiosInstance = getAxiosInstance(db, unauthenticated);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
@@ -118,8 +117,6 @@ export const fetchDocById = async (
   return axiosInstance
     .get(docPath + queryString)
     .then(({ data }) => {
-      console.log('in fetchDocById');
-      console.log('data', data);
       return {
         id: docId,
         collection,

@@ -1,16 +1,8 @@
 import { createApp } from 'vue';
-import { createPinia } from 'pinia';
-import { createHead } from '@unhead/vue';
+import { VueRecaptchaPlugin } from 'vue-recaptcha';
+import { Buffer } from 'buffer';
 import { initSentry } from '@/sentry';
-import router from '@/router/index.js';
 import App from '@/App.vue';
-import { surveyPlugin } from 'survey-vue3-ui';
-
-import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
-import TextClamp from 'vue3-text-clamp';
-
-import PrimeVue from 'primevue/config';
-
 import plugins from './plugins.js';
 
 // PrimeVue component imports
@@ -74,13 +66,6 @@ import PvRow from 'primevue/row';
 // PrimeVue directive imports
 import PvTooltip from 'primevue/tooltip';
 
-// PrimeVue service imports
-import ConfirmationService from 'primevue/confirmationservice';
-import ToastService from 'primevue/toastservice';
-
-import { VueQueryPlugin } from '@tanstack/vue-query';
-import VueGoogleMaps from 'vue-google-maps-community-fork';
-
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
@@ -93,39 +78,14 @@ import 'primeflex/primeflex.scss'; // primeflex
 import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
 import './assets/styles/theme.scss'; // ROAR theme
 
-// translations
-import { i18n } from '@/translations/i18n.js';
-
-import { VueRecaptchaPlugin } from 'vue-recaptcha';
-
-import { Buffer } from 'buffer';
-
+/**
+ * Create a new Vue app instance with all the necessary plugins and components registered that can be used in the main app or in Cypress component tests.
+ * @returns {App<Element>}
+ */
 export const createAppInstance = () => {
   const app = createApp(App);
-  // const pinia = createPinia();
-  // const head = createHead();
-  //
-  //
-  // pinia.use(piniaPluginPersistedState);
 
-  // app.use(PrimeVue, { ripple: true });
-  // app.use(ToastService);
-  // app.use(ConfirmationService);
-  // app.use(pinia);
-  // app.use(router);
-  // app.use(VueGoogleMaps, {
-  //   load: {
-  //     key: 'AIzaSyA2Q2Wq5na79apugFwoTXKyj-RTDDR1U34',
-  //     libraries: 'places',
-  //   },
-  // });
-  // app.use(head);
-  // app.use(TextClamp);
-  // app.use(VueQueryPlugin);
-  // app.use(i18n);
-  // app.use(surveyPlugin);
-
-  // Register all plugins
+  // Register all default  app plugins
   plugins.forEach((plugin) => {
     if (Array.isArray(plugin)) {
       app.use(...plugin);
@@ -134,6 +94,7 @@ export const createAppInstance = () => {
     }
   });
 
+  // Not adding this to default plugins for now, it is causing issues with Cypress component tests
   app.use(VueRecaptchaPlugin, {
     v3SiteKey: '6Lc-LXsnAAAAAHGha6zgn0DIzgulf3TbGDhnZMAd',
   });
@@ -211,11 +172,18 @@ export const createAppInstance = () => {
   // eslint-disable-next-line no-undef
   globalThis.Buffer = Buffer;
 
-  initSentry(app);
+  if (process.env.NODE_ENV === 'production') {
+    initSentry(app);
+  }
 
   return app;
 };
 
+/**
+ * Initialize the main app instance and mount it to the DOM.
+ * Do not call this function in Cypress tests as the testing environment mounts the app differently.
+ * @returns {void}
+ */
 export const initApp = () => {
   const app = createAppInstance();
   app.mount('#app');

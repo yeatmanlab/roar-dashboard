@@ -1,8 +1,6 @@
 import NavBar from '../../../src/components/NavBar.vue';
 
 const staticResponse = {
-  // id: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
-  // collection: 'userClaims',
   fields: {
     claims: {
       mapValue: {
@@ -18,14 +16,10 @@ const staticResponse = {
 };
 
 describe('Mount and test the NavBar.vue component.', () => {
-  // beforeEach(() => {
-  //   cy.createMockStore()
-  // });
+  beforeEach(() => {
+    cy.setAuthStore().as('authStore');
 
-  it('mounts using a mobile viewport', () => {
-    cy.setViewport();
-
-    // Intercept the network call and respond with mock data
+    // Intercept network calls and respond with mock data
     cy.intercept(
       'GET',
       'https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents/userClaims/**/*',
@@ -33,24 +27,38 @@ describe('Mount and test the NavBar.vue component.', () => {
         req.reply({
           statusCode: 200,
           body: staticResponse,
-          delay: 1000, // Optional: simulate network delay
+          delay: 1000,
         });
       },
     ).as('userClaims');
-
-    cy.mount(NavBar);
-
-    // Wait for the intercepted request and check that it was successful
-    cy.wait('@userClaims').then((interception) => {
-      cy.log('Intercepted request:', interception);
-      expect(interception.response.statusCode).to.eq(200);
-      expect(interception.response.body).to.deep.equal(staticResponse);
-    });
   });
 
-  /*  it('mounts using a desktop viewport', () => {
+  it('mounts using default Cypress viewport', () => {
+    cy.mount(NavBar);
+
+    // Await the intercepted request to check that it was successful
+    cy.wait('@userClaims').then((interception) => {
+      if (interception?.response?.statusCode === 200) {
+        expect(interception?.response.body).to.deep.equal(staticResponse);
+        cy.log('Interception successful', interception?.response);
+      }
+    });
+
+    // Check that the component is mounted and the expected elements are present
+    cy.get('nav').should('exist');
+    cy.get('[data-cy=button-sign-out]').should('exist');
+    cy.get('[data-cy=button-profile-info]').should('exist');
+  });
+
+  it('mounts using a desktop viewport', () => {
     cy.setViewport('desktop');
     cy.mount(NavBar);
+    cy.get('[data-cy=button-sign-out]').should('contain.text', 'Sign Out');
+
+    cy.get('@authStore').then((authStore) => {
+      // Check that the user's first name is displayed in the profile button
+      const userFirstName = authStore?.userData.name.first;
+      cy.get('[data-cy=user-display-name]').should('contain.text', userFirstName);
+    });
   });
-  */
 });

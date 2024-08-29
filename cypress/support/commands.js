@@ -1,28 +1,32 @@
-import { createPinia, setActivePinia } from 'pinia';
-import { useAuthStore } from '../../src/store/auth.js';
+import { createMockStore } from './utils.js';
 
+/**
+ * Logs in a user using the provided username and password.
+ * Utilizes Cypress sessions to persist login state across tests.
+ *
+ * @param {string} username - The username to log in with.
+ * @param {string} password - The password to log in with.
+ */
 Cypress.Commands.add('login', (username, password) => {
-  cy.session(
-    [username, password],
-    () => {
-      cy.visit('/', { timeout: Cypress.env('timeout') });
-      cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
-      cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
-      cy.get('button')
-        .contains('Go!', { timeout: Cypress.env('timeout') })
-        .click();
-      cy.log('Login successful.').wait(3000);
-    },
-    {
-      // validate: () => {
-      //     cy.getCookie(Cypress.env('sessionCookieName')).should("exist")
-      //     // Maybe a function to GET and VALIDATE the current cookie between tests?
-      //     // cy.getCookie(Cypress.env('sessionCookieName')).should('have.property', 'value', Cypress.env('sessionCookieValue'))
-      //     }
-    },
-  );
+  cy.session([username, password], () => {
+    cy.visit('/', { timeout: Cypress.env('timeout') });
+    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
+    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
+    cy.get('button')
+      .contains('Go!', { timeout: Cypress.env('timeout') })
+      .click();
+    cy.log('Login successful.');
+    cy.wait(3000);
+  });
 });
 
+/**
+ * Logs in a user using email-based authentication flow.
+ * Handles different sign-in methods including email/password and magic link.
+ *
+ * @param {string} username - The email to log in with.
+ * @param {string} password - The password to log in with.
+ */
 Cypress.Commands.add('loginWithEmail', (username, password) => {
   cy.session([username, password], () => {
     cy.visit('/', { timeout: Cypress.env('timeout') });
@@ -46,6 +50,9 @@ Cypress.Commands.add('loginWithEmail', (username, password) => {
   });
 });
 
+/**
+ * Logs out the current user and verifies redirection to the sign-in page.
+ */
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="button-sign-out"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
@@ -53,12 +60,26 @@ Cypress.Commands.add('logout', () => {
   cy.log('Logout successful.');
 });
 
-Cypress.Commands.add('navigateTo', (page, login = false) => {
+/**
+ * Navigates to a specified page, optionally logging in first.
+ *
+ * @param {string} page - The path to navigate to.
+ * @param {boolean} [login=false] - Whether to log in before navigating.
+ */
+Cypress.Commands.add('navigateTo', (page) => {
   cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`);
   cy.visit(page, { timeout: Cypress.env('timeout') });
   cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`);
 });
 
+/**
+ * Selects a test district, school, class, and group within a multi-level dropdown.
+ *
+ * @param {string} [testDistrictName=Cypress.env('testDistrictName')] - Name of the district to select.
+ * @param {string} [testSchoolName=Cypress.env('testSchoolName')] - Name of the school to select.
+ * @param {string} [testClassName=Cypress.env('testClassName')] - Name of the class to select.
+ * @param {string} [testGroupName=Cypress.env('testGroupName')] - Name of the group to select.
+ */
 Cypress.Commands.add(
   'selectTestOrgs',
   (
@@ -95,6 +116,10 @@ Cypress.Commands.add(
     cy.get('ul > li').contains(testGroupName).click({ animationDistanceThreshold: 20 });
   },
 );
+
+/**
+ * Checks if a consent dialog is present, and if so, agrees to the consent.
+ */
 Cypress.Commands.add('agreeToConsent', () => {
   cy.wait(0.3 * Cypress.env('timeout'));
   cy.get('body').then(($body) => {
@@ -113,6 +138,12 @@ Cypress.Commands.add('agreeToConsent', () => {
   });
 });
 
+/**
+ * Selects a specific administration from a dropdown list, retrying if necessary.
+ *
+ * @param {string} testAdministration - The name of the administration to select.
+ * @param {number} [retries=0] - The current number of retry attempts.
+ */
 Cypress.Commands.add('selectAdministration', function selectAdministration(testAdministration, retries = 0) {
   cy.log(`'Selecting administration: ${testAdministration}, attempt: ${retries + 1}`);
   if (retries > 3) {
@@ -136,6 +167,11 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     });
 });
 
+/**
+ * Searches for and selects an administration card by its title.
+ *
+ * @param {string} testAdministration - The name of the administration to search for.
+ */
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
   cy.get('[data-cy=search-input]', { timeout: Cypress.env('timeout') }).type(`${testAdministration}{enter}`);
   // cy.get('ul > li').contains(`Name (${sort})`).click();
@@ -150,6 +186,9 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
     .click();
 });
 
+/**
+ * Switches the view to show optional assessments.
+ */
 Cypress.Commands.add('switchToOptionalAssessments', () => {
   cy.wait(0.2 * Cypress.env('timeout'));
   cy.get("[data-cy='switch-show-optional-assessments']")
@@ -164,6 +203,16 @@ Cypress.Commands.add('switchToOptionalAssessments', () => {
     });
 });
 
+/**
+ * Inputs organization details into a form, including optional fields like NCES ID, address, grade, and tag.
+ *
+ * @param {string} orgName - The name of the organization.
+ * @param {string} orgInitials - The initials of the organization.
+ * @param {string} [orgNcesId=null] - The NCES ID of the organization.
+ * @param {string} [orgAddress=null] - The address of the organization.
+ * @param {string} [orgGrade=null] - The grade level of the organization.
+ * @param {string} [orgTag=null] - The tag associated with the organization.
+ */
 Cypress.Commands.add('switchToRequiredAssessments', () => {
   cy.wait(0.2 * Cypress.env('timeout'));
   cy.get("[data-cy='switch-show-optional-assessments']").click();
@@ -204,6 +253,11 @@ Cypress.Commands.add(
   },
 );
 
+/**
+ * Verifies that all users in the provided list are present in the data table.
+ *
+ * @param {Array<string>} userList - The list of users to check.
+ */
 Cypress.Commands.add('checkUserList', (userList) => {
   cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
     cy.wrap(row)
@@ -219,6 +273,14 @@ Cypress.Commands.add('checkUserList', (userList) => {
   });
 });
 
+/**
+ * Executes the test spec for an optional game based on the provided administration.
+ *
+ * @param {object} game - The game object containing the testSpec method.
+ * @param {object} administration - The administration context to use.
+ * @param {object} optional - Additional options or parameters for the game.
+ * @returns {Cypress.Chainable} - The chainable Cypress object.
+ */
 Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
   return cy.wrap(null).then(() => {
     return game?.testSpec(administration, optional);
@@ -226,7 +288,8 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
 });
 
 /**
- * @param {string} size - The viewport size to set. One of 'mobile', 'tablet', 'desktop', 'widescreen', or 'ultra'. Defaults to 'mobile'.
+ * Sets the viewport size to the specified value. One of 'mobile', 'tablet', 'desktop', 'widescreen', or 'ultra'. Defaults to 'mobile'.
+ * @param {string} size - The viewport size to set.
  * @returns {void}
  */
 Cypress.Commands.add('setViewport', (size = 'mobile') => {
@@ -242,69 +305,13 @@ Cypress.Commands.add('setViewport', (size = 'mobile') => {
   cy.viewport(width, height);
 });
 
-/** Create a mock store for the user type specified.
+/**
+ * Create a mock store for the user type specified.
  * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
+ * @returns {void}
  */
-Cypress.Commands.add('createMockStore', (userType = 'participant') => {
-  const userTypes = {
-    superAdmin: {},
-    partnerAdmin: {},
-    participant: {
-      uid: Cypress.env('PARTICIPANT_UID'),
-      username: Cypress.env('PARTICIPANT_USERNAME'),
-      password: Cypress.env('PARTICIPANT_PASSWORD'),
-      email: Cypress.env('PARTICIPANT_EMAIL'),
-      name: {
-        first: 'Cypress',
-        last: 'Student',
-      },
-    },
-  };
-
-  setActivePinia(createPinia());
-  const authStore = useAuthStore();
-
-  authStore.$patch({
-    firebaseUser: {
-      adminFirebaseUser: {
-        uid: userTypes[userType].uid,
-        email: userTypes[userType].email,
-        isUserAuthedAdmin: userType !== 'participant',
-        isUserAuthedApp: true,
-        isAuthenticated: true,
-      },
-      appFirebaseUser: {
-        uid: userTypes[userType].uid,
-        email: userTypes[userType].email,
-        isUserAuthedAdmin: userType !== 'participant',
-        isUserAuthedApp: true,
-        isAuthenticated: true,
-      },
-    },
-    roarfirekit: {
-      initialized: true,
-      restConfig: {
-        admin: {
-          // headers: { Authorization: `Bearer ${this._idTokens.admin}` },
-          baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents`,
-        },
-        app: {
-          // headers: { Authorization: `Bearer ${this._idTokens.app}` },
-          baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents`,
-        },
-      },
-    },
-    userData: {
-      uid: userTypes[userType].uid,
-      email: userTypes[userType].email,
-      username: userTypes[userType].username,
-      name: {
-        first: userTypes[userType].name.first,
-        last: userTypes[userType].name.last,
-      },
-    },
-  });
-
+Cypress.Commands.add('setAuthStore', (userType = 'participant') => {
+  const authStore = createMockStore(userType);
   const serializedStore = JSON.stringify(authStore.$state);
 
   // Store the mock store in sessionStorage
@@ -312,8 +319,7 @@ Cypress.Commands.add('createMockStore', (userType = 'participant') => {
     window.sessionStorage.setItem('authStore', serializedStore);
   });
 
-  // Store the mock store in the Cypress context
-  cy.wrap(authStore).as('authStore');
-
-  cy.log('Mock store created for user type:', userType, 'with state:', authStore.$state);
+  cy.log('Created mock store for user type:', userType, ' with state:', authStore.$state);
+  // Store the mock store in the Cypress context as an alias
+  return cy.wrap(authStore.$state).as('authStore');
 });
