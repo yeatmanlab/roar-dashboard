@@ -31,6 +31,12 @@
             @change="handleViewChange"
           >
           </PvSelectButton>
+          <PvButton
+            class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+            :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+            label="Export Combined Reports"
+            @click="exportData({ includeProgress: true })"
+          />
         </div>
       </div>
       <div v-if="isLoadingScores" class="loading-wrapper">
@@ -163,15 +169,24 @@ import { storeToRefs } from 'pinia';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
+import _lowerCase from 'lodash/lowerCase';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById, exportCsv } from '../helpers/query/utils';
 import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { taskDisplayNames, gradeOptions } from '@/helpers/reports';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import {
+  taskDisplayNames,
+  rawOnlyTasks,
+  tasksToDisplayPercentCorrect,
+  tasksToDisplayTotalCorrect,
+  gradeOptions,
+  tasksToDisplayCorrectIncorrectDifference,
+  includedValidityFlags,
+} from '@/helpers/reports';
 
 const authStore = useAuthStore();
 
@@ -302,6 +317,15 @@ const {
   staleTime: 5 * 60 * 1000, // 5 mins
 });
 
+// Scores Query
+const { data: assignmentScoreData } = useQuery({
+  queryKey: ['scores', uid, props.administrationId, props.orgId],
+  queryFn: () => assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true),
+  keepPreviousData: true,
+  enabled: true,
+  staleTime: 5 * 60 * 1000, // 5 mins
+});
+
 const schoolNameDictionary = computed(() => {
   if (schoolsInfo.value) {
     return schoolsInfo.value.reduce((acc, school) => {
@@ -388,6 +412,20 @@ const computedProgressData = computed(() => {
   return assignmentTableDataAcc;
 });
 
+// This function takes in the return from assignmentFetchAll and returns 2 objects
+const computeAssignmentAndRunData = computed(() => {
+  return assignmentScoreData.value.map((item) => {
+    return {
+      username: item.assignment.userData.username,
+      firstName: item.assignment.userData.name.first,
+      lastName: item.assignment.userData.name.last,
+      grade: item.assignment.userData.grade,
+      email: item.assignment.userData.email,
+      scores: item.assignment.assessments,
+    };
+  });
+});
+
 const resetFilters = () => {
   filterSchools.value = [];
   filterGrades.value = [];
@@ -443,6 +481,129 @@ const exportAll = async () => {
       orgInfo.value.name,
     )}.csv`,
   );
+  return;
+};
+
+const createExportData = ({ rows, includeProgress = false }) => {
+  console.log('rows:', rows);
+  const computedExportData = _map(rows, (user) => {
+    let tableRow = {
+      Username: _get(user, 'username'),
+      Email: _get(user, 'email'), // This will only be used when exporting all rows
+      First: _get(user, 'firstName'),
+      Last: _get(user, 'lastName'),
+      Grade: _get(user, 'grade'),
+    };
+
+    if (authStore.isUserSuperAdmin) {
+      tableRow['PID'] = _get(user, 'assessmentPid');
+    }
+
+    if (props.orgType === 'district') {
+      tableRow['School'] = _get(user, 'schoolName');
+    }
+
+    for (const taskId in user.scores) {
+      const score = user.scores[taskId];
+      // console.log('score:', score);
+      const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
+
+      console.log('Percent Correct:', score.scores?.computed?.composite?.totalPercentCorrect ?? '');
+
+      if (tasksToDisplayPercentCorrect.includes(taskId)) {
+        tableRow[`${taskName} - Percent Correct`] = score.scores.computed.composite.totalPercentCorrect;
+        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
+        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+      } else if (rawOnlyTasks.includes(taskId)) {
+        tableRow[`${taskName} - Raw`] = score.rawScore;
+      } else {
+        tableRow[`${taskName} - Percentile`] = score.percentileString;
+        tableRow[`${taskName} - Standard`] = score.standardScore;
+        tableRow[`${taskName} - Raw`] = score.rawScore;
+        tableRow[`${taskName} - Support Level`] = score.supportLevel;
+      }
+
+      if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
+        const engagementFlags = Object.keys(score.engagementFlags);
+        if (engagementFlags.length > 0) {
+          if (includedValidityFlags[taskId]) {
+            const filteredFlags = Object.keys(score.engagementFlags).filter((flag) =>
+              includedValidityFlags[taskId].includes(flag),
+            );
+            tableRow[`${taskName} - Reliability`] =
+              filteredFlags.length === 0 ? 'Unreliable' : `Unreliable: ${filteredFlags.map(_lowerCase).join(', ')}`;
+          } else {
+            tableRow[`${taskName} - Reliability`] = `Unreliable: ${engagementFlags.map(_lowerCase).join(', ')}`;
+          }
+        } else {
+          tableRow[`${taskName} - Reliability`] = 'Assessment Incomplete';
+        }
+      } else {
+        tableRow[`${taskName} - Reliability`] = 'Reliable';
+      }
+    }
+
+    return tableRow;
+  });
+
+  if (includeProgress) {
+    const combinedData = computedExportData.map((exportRow) => {
+      const progressRow = computedProgressData.value.find((progress) => progress.user.username === exportRow.Username);
+
+      if (progressRow) {
+        for (const taskId in progressRow.progress) {
+          const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
+          exportRow[`${taskName} - Progress`] = progressRow.progress[taskId].value;
+        }
+      }
+
+      return exportRow;
+    });
+
+    const sortedCombinedData = combinedData.map((row) => {
+      const sortedRow = {};
+      const taskKeys = Object.keys(row)
+        .filter((key) => key.includes('-'))
+        .sort();
+      const nonTaskKeys = Object.keys(row).filter((key) => !key.includes('-'));
+
+      nonTaskKeys.forEach((key) => {
+        sortedRow[key] = row[key];
+      });
+      taskKeys.forEach((key) => {
+        sortedRow[key] = row[key];
+      });
+
+      return sortedRow;
+    });
+
+    return sortedCombinedData;
+  }
+
+  return computedExportData;
+};
+
+const exportData = async ({ selectedRows = null, includeProgress = false }) => {
+  console.log('Exporting data to CSV receiving data...');
+  const rows = selectedRows || computeAssignmentAndRunData.value;
+  const exportData = createExportData({ rows, includeProgress });
+
+  const fileNameSuffix = includeProgress ? '-scores-progress' : '-scores';
+  const selectedSuffix = selectedRows ? '-selected' : '';
+  const fileName = `roar${fileNameSuffix}${selectedSuffix}-${_kebabCase(
+    getTitle(administrationInfo.value, isSuperAdmin.value),
+  )}-${_kebabCase(orgInfo.value.name)}.csv`;
+
+  console.log('Exporting data to CSV:', exportData);
+
+  exportCsv(exportData, fileName);
   return;
 };
 
