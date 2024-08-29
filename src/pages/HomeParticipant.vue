@@ -98,7 +98,7 @@ import _forEach from 'lodash/forEach';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
@@ -118,6 +118,8 @@ const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
+
+const queryClient = useQueryClient();
 
 const authStore = useAuthStore();
 const { roarfirekit, roarUid, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } =
@@ -225,6 +227,8 @@ async function checkConsent() {
     const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
     let found = false;
     let signedBeforeAugFirst = false;
+    let signedAfterAugFirst = false;
+
     _forEach(legalDocs, (document) => {
       const signedDate = new Date(document.dateSigned);
       const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
@@ -232,8 +236,10 @@ async function checkConsent() {
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
         if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
-          console.log('Signed before August 1st');
           signedBeforeAugFirst = true;
+        } else if (signedDate >= augustFirstThisYear) {
+          signedAfterAugFirst = true;
+          return false; // This stops the loop in Lodash _.forEach
         }
       }
       if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
@@ -241,7 +247,10 @@ async function checkConsent() {
       }
     });
 
-    if (!found || signedBeforeAugFirst) {
+    // If any document is signed after August 1st, do not show the consent form
+    if (signedAfterAugFirst) {
+      showConsent.value = false;
+    } else if (!found || signedBeforeAugFirst) {
       if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
@@ -262,10 +271,12 @@ async function updateConsent() {
     dateSigned: new Date(),
   };
   try {
-    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value);
-    userQueryKeyIndex.value += 1;
-  } catch {
-    console.log("Couldn't update consent value");
+    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value).then(async () => {
+      userQueryKeyIndex.value += 1;
+      await queryClient.invalidateQueries(['userData', roarUid, userQueryKeyIndex]);
+    });
+  } catch (e) {
+    console.log("Couldn't update consent value", e);
   }
 }
 
@@ -406,9 +417,9 @@ const studentInfo = computed(() => {
 
 watch(
   [selectedAdmin, adminInfo],
-  ([updateSelectedAdmin]) => {
+  async ([updateSelectedAdmin]) => {
     if (updateSelectedAdmin) {
-      checkConsent();
+      await checkConsent();
     }
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);

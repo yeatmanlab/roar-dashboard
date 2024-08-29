@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@bdelab/roam-fluency": "1.11.26",
-    "@bdelab/roar-firekit": "^8.0.3",
+    "@bdelab/roar-firekit": "^8.0.4",
     "@bdelab/roar-letter": "1.11.5",
     "@bdelab/roar-multichoice": "^1.11.3",
     "@bdelab/roar-pa": "2.2.4",
@@ -92,7 +92,7 @@
     "@vite-pwa/assets-generator": "^0.2.4",
     "@vitejs/plugin-vue": "^5.1.2",
     "@vitest/coverage-istanbul": "^2.0.5",
-    "cypress": "^13.10.0",
+    "cypress": "^13.14.0",
     "cypress-fs": "^0.2.5",
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^9.0.0",
