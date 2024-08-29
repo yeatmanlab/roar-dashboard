@@ -291,7 +291,7 @@ const exportOrgUsers = async (orgType) => {
       return;
     }
 
-    if (userCount >= CSV_EXPORT_MAX_RECORD_COUNT) {
+    if (userCount > CSV_EXPORT_MAX_RECORD_COUNT) {
       toast.add({
         severity: 'error',
         summary: 'Export Failed',
