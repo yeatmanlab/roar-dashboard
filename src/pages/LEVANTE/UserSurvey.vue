@@ -92,11 +92,11 @@ const showAndPlaceAudioButton = (playAudioButton, el) => {
 function saveSurveyData(survey) {
   const data = survey.data;
   data.pageNo = survey.currentPageNo;
-  window.localStorage.setItem(STORAGE_ITEM_KEY, JSON.stringify(data));
+  window.localStorage.setItem(`${STORAGE_ITEM_KEY}-${uid.value}`, JSON.stringify(data));
 }
 
 function restoreSurveyData(survey) {
-  const prevData = window.localStorage.getItem(STORAGE_ITEM_KEY) || null;
+  const prevData = window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid.value}`) || null;
   if (prevData) {
     const data = JSON.parse(prevData);
     survey.data = data;
@@ -209,7 +209,7 @@ async function saveResults(sender) {
     queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
     // Clear localStorage after successful submission
-    window.localStorage.removeItem(STORAGE_ITEM_KEY);
+    window.localStorage.removeItem(`${STORAGE_ITEM_KEY}-${uid.value}`);
 
     gameStore.requireHomeRefresh();
     router.push({ name: 'Home' });
