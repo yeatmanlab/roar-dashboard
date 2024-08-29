@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, toRaw, watch } from 'vue';
+import { computed, onMounted, ref, toRaw } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
@@ -120,8 +120,23 @@ async function checkConsent() {
     if (!_get(toRaw(consentStatus), consentDoc.version)) {
       confirmText.value = consentDoc.text;
       showConsent.value = true;
+      return;
+    }
+
+    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+    const signedBeforeAugFirst = legalDocs.some((doc) => isSignedBeforeAugustFirst(doc.dateSigned));
+
+    if (signedBeforeAugFirst) {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
     }
   }
+}
+
+function isSignedBeforeAugustFirst(signedDate) {
+  const currentDate = new Date();
+  const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+  return new Date(signedDate) < augustFirstThisYear;
 }
 
 onMounted(async () => {
@@ -139,12 +154,6 @@ onMounted(async () => {
     if (isAdmin.value) {
       await checkConsent();
     }
-  }
-});
-
-watch(isLoading, async (newValue) => {
-  if (!newValue && isAdmin.value) {
-    await checkConsent();
   }
 });
 </script>

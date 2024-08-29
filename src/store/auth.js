@@ -102,7 +102,7 @@ export const useAuthStore = () => {
         return;
       },
       async updateConsentStatus(docName, consentVersion, params = {}) {
-        this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
+        return await this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
