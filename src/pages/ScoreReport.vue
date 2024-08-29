@@ -37,6 +37,12 @@
                     @change="handleViewChange"
                   >
                   </PvSelectButton>
+                  <PvButton
+                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                    :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
+                    label="Export Combined Reports"
+                    @click="exportCombinedReport"
+                  />
                 </div>
                 <div v-if="!isLoadingScores">
                   <PvButton
@@ -603,6 +609,49 @@ const getScoresAndSupportFromAssessment = ({
   };
 };
 
+const computedProgressData = computed(() => {
+  if (!assignmentData.value) return [];
+  // assignmentTableData is an array of objects, each representing a row in the table
+  const assignmentTableDataAcc = [];
+
+  for (const { assignment, user } of assignmentData.value) {
+    // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
+    // compute schoolName
+
+    const currRow = {
+      user: {
+        username: user.username,
+      },
+    };
+    const currRowProgress = {};
+    for (const assessment of assignment.assessments) {
+      // General Logic to grab support level, scores, etc
+      const taskId = assessment.taskId;
+
+      if (assessment?.optional) {
+        currRowProgress[taskId] = {
+          value: 'optional',
+        };
+      } else if (assessment?.completedOn !== undefined) {
+        currRowProgress[taskId] = {
+          value: 'completed',
+        };
+      } else if (assessment?.startedOn !== undefined) {
+        currRowProgress[taskId] = {
+          value: 'started',
+        };
+      } else {
+        currRowProgress[taskId] = {
+          value: 'assigned',
+        };
+      }
+      currRow.progress = currRowProgress;
+    }
+    assignmentTableDataAcc.push(currRow);
+  }
+  return assignmentTableDataAcc;
+});
+
 // This function takes in the return from assignmentFetchAll and returns 2 objects
 // 1. assignmentTableData: The data that should be passed into the ROARDataTable component
 // 2. runsByTaskId: run data for the TaskReport distribution chartsb
@@ -1024,6 +1073,116 @@ const exportAll = async () => {
   exportCsv(
     computedExportData,
     `roar-scores-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+      orgInfo.value.name,
+    )}.csv`,
+  );
+  return;
+};
+
+const exportCombinedReport = async () => {
+  // Map the assignment and run data into exportable rows
+  const computedExportData = _map(computeAssignmentAndRunData.value.assignmentTableData, ({ user, scores }) => {
+    let tableRow = {
+      Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
+      First: _get(user, 'firstName'),
+      Last: _get(user, 'lastName'),
+      Grade: _get(user, 'grade'),
+    };
+
+    // Add PID if user is a SuperAdmin
+    if (authStore.isUserSuperAdmin) {
+      tableRow['PID'] = _get(user, 'assessmentPid');
+    }
+
+    // Add School Name if orgType is district
+    if (props.orgType === 'district') {
+      tableRow['School'] = _get(user, 'schoolName');
+    }
+
+    // Map scores to export row
+    for (const taskId in scores) {
+      const score = scores[taskId];
+      const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
+
+      if (tasksToDisplayPercentCorrect.includes(taskId)) {
+        tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
+        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
+        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
+        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+      } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
+        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+      } else if (rawOnlyTasks.includes(taskId)) {
+        tableRow[`${taskName} - Raw`] = score.rawScore;
+      } else {
+        tableRow[`${taskName} - Percentile`] = score.percentileString;
+        tableRow[`${taskName} - Standard`] = score.standardScore;
+        tableRow[`${taskName} - Raw`] = score.rawScore;
+        tableRow[`${taskName} - Support Level`] = score.supportLevel;
+      }
+
+      // Handle reliability flags
+      if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
+        const engagementFlags = Object.keys(score.engagementFlags);
+        if (engagementFlags.length > 0) {
+          if (includedValidityFlags[taskId]) {
+            const filteredFlags = Object.keys(score.engagementFlags).filter((flag) =>
+              includedValidityFlags[taskId].includes(flag),
+            );
+            tableRow[`${taskName} - Reliability`] =
+              filteredFlags.length === 0 ? 'Unreliable' : `Unreliable: ${filteredFlags.map(_lowerCase).join(', ')}`;
+          } else {
+            tableRow[`${taskName} - Reliability`] = `Unreliable: ${engagementFlags.map(_lowerCase).join(', ')}`;
+          }
+        } else {
+          tableRow[`${taskName} - Reliability`] = 'Assessment Incomplete';
+        }
+      } else {
+        tableRow[`${taskName} - Reliability`] = 'Reliable';
+      }
+    }
+    return tableRow;
+  });
+
+  // Combine export data with progress data
+  const combinedData = computedExportData.map((exportRow) => {
+    const progressRow = computedProgressData.value.find((progress) => progress.user.username === exportRow.Username);
+
+    // Merge progress data into export row
+    if (progressRow) {
+      for (const taskId in progressRow.progress) {
+        const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
+        exportRow[`${taskName} - Progress`] = progressRow.progress[taskId].value;
+      }
+    }
+
+    return exportRow;
+  });
+
+  // Sort the combinedData to group by tasks
+  const sortedCombinedData = combinedData.map((row) => {
+    // Sort the row keys to group task-related data together
+    const sortedRow = {};
+    const taskKeys = Object.keys(row)
+      .filter((key) => key.includes('-'))
+      .sort();
+    const nonTaskKeys = Object.keys(row).filter((key) => !key.includes('-'));
+
+    nonTaskKeys.forEach((key) => {
+      sortedRow[key] = row[key];
+    });
+    taskKeys.forEach((key) => {
+      sortedRow[key] = row[key];
+    });
+    return sortedRow;
+  });
+  exportCsv(
+    sortedCombinedData,
+    `roar-scores-progress-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
       orgInfo.value.name,
     )}.csv`,
   );

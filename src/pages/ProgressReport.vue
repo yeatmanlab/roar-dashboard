@@ -32,23 +32,6 @@
           >
           </PvSelectButton>
         </div>
-        <PvButton
-          class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
-          icon="pi pi-download mr-2"
-          label="Download Combination of Reports"
-          @click="
-            () =>
-              exportReportCombination(
-                assignmentData,
-                tasksDictionary,
-                authStore,
-                props,
-                orgInfo,
-                administrationInfo,
-                isSuperAdmin,
-              )
-          "
-        />
       </div>
       <div v-if="isLoadingScores" class="loading-wrapper">
         <AppSpinner style="margin: 1rem 0rem" />
@@ -187,7 +170,6 @@ import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports';
-import { exportReportCombination } from '@/helpers/exportReports';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 
