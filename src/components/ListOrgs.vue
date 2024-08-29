@@ -276,6 +276,22 @@ const exportAll = async () => {
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
+/**
+ * Exports users of a given organization type to a CSV file.
+ * 
+ * @NOTE In order to avoid overly large exports, the function will allow exports up to a predefined limit (currently
+ * 10,000 records). To avoid running a large and potentially unecessary query, we first run an aggregation query to
+ * verify that the export is within the limit.
+ * 
+ * @TODO Replace this logic with a server driven export, for example a cloud function that generate a download link for
+ * the user, effectively allowing complete and large exports.
+ * 
+ * @param {Object} orgType - The organization type object.
+ * @param {string} orgType.id - The ID of the organization type.
+ * @param {string} orgType.name - The name of the organization type.
+ * 
+ * @returns {Promise<void>} - A promise that resolves when the export is complete.
+ */
 const exportOrgUsers = async (orgType) => {
   try {
     // First, count the users
