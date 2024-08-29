@@ -3,6 +3,10 @@
     <nav class="flex flex-row align-items-center justify-content-between w-full">
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
+          {{ userClaims }}
+          <p>
+            {{ initialized }}
+          </p>
           <PvMenubar :model="computedItems" class="w-full">
             <template #start>
               <router-link :to="{ name: 'Home' }">
@@ -68,7 +72,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-// import { useAuthStore } from '@/store/auth';
 import { useAuthStore } from '@/store/auth.js';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';

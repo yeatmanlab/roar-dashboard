@@ -1,3 +1,6 @@
+import { createPinia, setActivePinia } from 'pinia';
+import { useAuthStore } from '../../src/store/auth.js';
+
 Cypress.Commands.add('login', (username, password) => {
   cy.session(
     [username, password],
@@ -222,39 +225,95 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
   });
 });
 
-Cypress.Commands.add('loginByGoogleApi', () => {
-  cy.log('Logging in to Google');
-  cy.request({
-    method: 'POST',
-    url: 'https://www.googleapis.com/oauth2/v4/token',
-    body: {
-      grant_type: 'refresh_token',
-      client_id: Cypress.env('googleClientId'),
-      client_secret: Cypress.env('googleClientSecret'),
-      refresh_token: Cypress.env('googleRefreshToken'),
+/**
+ * @param {string} size - The viewport size to set. One of 'mobile', 'tablet', 'desktop', 'widescreen', or 'ultra'. Defaults to 'mobile'.
+ * @returns {void}
+ */
+Cypress.Commands.add('setViewport', (size = 'mobile') => {
+  const viewports = {
+    mobile: [375, 667],
+    tablet: [768, 1024],
+    desktop: [1440, 900],
+    widescreen: [2560, 1440],
+    ultra: [3840, 2160],
+  };
+
+  const [width, height] = viewports[size] || viewports['mobile'];
+  cy.viewport(width, height);
+});
+
+/** Create a mock store for the user type specified.
+ * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
+ */
+Cypress.Commands.add('createMockStore', (userType = 'participant') => {
+  const userTypes = {
+    superAdmin: {},
+    partnerAdmin: {},
+    participant: {
+      uid: Cypress.env('PARTICIPANT_UID'),
+      username: Cypress.env('PARTICIPANT_USERNAME'),
+      password: Cypress.env('PARTICIPANT_PASSWORD'),
+      email: Cypress.env('PARTICIPANT_EMAIL'),
+      name: {
+        first: 'Cypress',
+        last: 'Student',
+      },
     },
-  }).then(({ body }) => {
-    const { access_token, id_token } = body;
+  };
 
-    cy.request({
-      method: 'GET',
-      url: 'https://www.googleapis.com/oauth2/v3/userinfo',
-      headers: { Authorization: `Bearer ${access_token}` },
-    }).then(({ body }) => {
-      cy.log(body);
-      const userItem = {
-        token: id_token,
-        user: {
-          googleId: body.sub,
-          email: body.email,
-          givenName: body.given_name,
-          familyName: body.family_name,
-          imageUrl: body.picture,
+  setActivePinia(createPinia());
+  const authStore = useAuthStore();
+
+  authStore.$patch({
+    firebaseUser: {
+      adminFirebaseUser: {
+        uid: userTypes[userType].uid,
+        email: userTypes[userType].email,
+        isUserAuthedAdmin: userType !== 'participant',
+        isUserAuthedApp: true,
+        isAuthenticated: true,
+      },
+      appFirebaseUser: {
+        uid: userTypes[userType].uid,
+        email: userTypes[userType].email,
+        isUserAuthedAdmin: userType !== 'participant',
+        isUserAuthedApp: true,
+        isAuthenticated: true,
+      },
+    },
+    roarfirekit: {
+      initialized: true,
+      restConfig: {
+        admin: {
+          // headers: { Authorization: `Bearer ${this._idTokens.admin}` },
+          baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents`,
         },
-      };
-
-      window.localStorage.setItem('googleCypress', JSON.stringify(userItem));
-      // cy.visit('https://localhost:5173/')
-    });
+        app: {
+          // headers: { Authorization: `Bearer ${this._idTokens.app}` },
+          baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents`,
+        },
+      },
+    },
+    userData: {
+      uid: userTypes[userType].uid,
+      email: userTypes[userType].email,
+      username: userTypes[userType].username,
+      name: {
+        first: userTypes[userType].name.first,
+        last: userTypes[userType].name.last,
+      },
+    },
   });
+
+  const serializedStore = JSON.stringify(authStore.$state);
+
+  // Store the mock store in sessionStorage
+  cy.window().then((window) => {
+    window.sessionStorage.setItem('authStore', serializedStore);
+  });
+
+  // Store the mock store in the Cypress context
+  cy.wrap(authStore).as('authStore');
+
+  cy.log('Mock store created for user type:', userType, 'with state:', authStore.$state);
 });

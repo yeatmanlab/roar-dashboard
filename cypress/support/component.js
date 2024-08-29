@@ -34,75 +34,20 @@ import '../../src/assets/styles/theme-tailwind.css'; // base theme (pulled from 
 import '../../src/assets/styles/theme.scss';
 import { useAuthStore } from '../../src/store/auth.js'; // ROAR theme
 
-const createMockStore = () => {
-  setActivePinia(createPinia());
-  const authStore = useAuthStore();
-
-  authStore.$patch({
-    firebaseUser: {
-      adminFirebaseUser: {
-        uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
-        email: '123',
-        isUserAuthedAdmin: true,
-        isUserAuthedApp: true,
-        isAuthenticated: true,
-      },
-      appFirebaseUser: {
-        uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
-        email: '123',
-        isUserAuthedAdmin: true,
-        isUserAuthedApp: true,
-        isAuthenticated: true,
-      },
-    },
-    roarfirekit: {
-      initialized: true,
-      restConfig: {
-        admin: {
-          // headers: { Authorization: `Bearer ${this._idTokens.admin}` },
-          baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents`,
-        },
-        app: {
-          // headers: { Authorization: `Bearer ${this._idTokens.app}` },
-          baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents`,
-        },
-      },
-    },
-    userData: {
-      uid: 'yXuZ8S0En1UsOE4C0uh6wUlQ5Wt1',
-      email: '123',
-      username: 'Test User',
-      name: {
-        first: 'Test',
-        last: 'User',
-      },
-    },
-  });
-  console.log('mock store created', authStore);
-  return authStore;
-};
-
-Cypress.Commands.add('setAuthStore', () => {
-  const authStore = createMockStore();
-  const serializedStore = JSON.stringify(authStore.$state);
-
-  cy.window().then((window) => {
-    window.sessionStorage.setItem('authStore', serializedStore);
-  });
-
-  cy.wrap(authStore.$state).as('authStore');
-});
-
 Cypress.Commands.add('mount', (component, options = {}) => {
   const app = createAppInstance();
 
+  cy.createMockStore();
+
+  // Declare the app plugins and components for the Cypress context
   options.global = options.global || {};
   options.global.plugins = options.global.plugins || [];
   options.global.components = options.global.components || {};
 
-  // Add the router to the Cypress context
-  options.global.plugins.push(router);
+  // // Add the router to the Cypress context
+  // options.global.plugins.push(router);
 
+  // Add plugins from the Vue app to the Cypress context
   plugins.forEach((plugin) => {
     if (Array.isArray(plugin)) {
       options.global.plugins.push(...plugin);
@@ -111,14 +56,14 @@ Cypress.Commands.add('mount', (component, options = {}) => {
     }
   });
 
+  // Copy the necessary Vue app global components to the Cypress context
   options.global.plugins.push({
     install(appInstance) {
-      appInstance.component = app.component;
-      appInstance.directive = app.directive;
+      appInstance._context.components = app._context.components;
+      // appInstance._context.directives = app._context.directives;
+      // appInstance._context.provides = app._context.provides;
     },
   });
-
-  // cy.wrap(createMockStore()).as('authStore');
 
   return mount(component, options);
 });

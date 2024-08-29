@@ -18,11 +18,13 @@ const staticResponse = {
 };
 
 describe('Mount and test the NavBar.vue component.', () => {
-  beforeEach(() => {
-    cy.setAuthStore();
-  });
+  // beforeEach(() => {
+  //   cy.createMockStore()
+  // });
 
-  it('mounts and uses intercepted userClaims data', () => {
+  it('mounts using a mobile viewport', () => {
+    cy.setViewport();
+
     // Intercept the network call and respond with mock data
     cy.intercept(
       'GET',
@@ -45,4 +47,10 @@ describe('Mount and test the NavBar.vue component.', () => {
       expect(interception.response.body).to.deep.equal(staticResponse);
     });
   });
+
+  /*  it('mounts using a desktop viewport', () => {
+    cy.setViewport('desktop');
+    cy.mount(NavBar);
+  });
+  */
 });

@@ -67,6 +67,7 @@ module.exports = defineConfig({
     partnerAdminId: process.env.PARTNER_ADMIN_ID,
     participantUsername: process.env.PARTICIPANT_USERNAME,
     participantPassword: process.env.PARTICIPANT_PASSWORD,
+    participantUid: process.env.PARTICIPANT_UID,
     participantEmail: process.env.PARTICIPANT_EMAIL,
     participantEmailPassword: process.env.PARTICIPANT_EMAIL_PASSWORD,
     cleverOAuthLink: 'https://clever.com/oauth/authorize',
