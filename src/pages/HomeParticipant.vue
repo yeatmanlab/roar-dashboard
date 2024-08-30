@@ -105,6 +105,7 @@ import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import { isLevante } from '@/helpers';
+import useSurveyResponses from '@/composables/useSurveyResponses/useSurveyResponses';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -284,16 +285,7 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
-const { data: surveyResponsesData } = useQuery({
-  queryKey: ['surveyResponses', uid],
-  queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
-  enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  cacheTime: 10 * 60 * 1000,
-  // refetchOnMount: false,
-  // refetchOnWindowFocus: false,
-  // refetchOnReconnect: false,
-});
+const { data: surveyResponsesData } = useSurveyResponses(undefined, isLevante);
 
 const isLoading = computed(() => {
   return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
@@ -347,11 +339,15 @@ const assessments = computed(() => {
     if (authStore?.userData.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
-        fetchedAssessments.forEach((assessment) => {
-          if (assessment.taskId === 'survey') {
+        // Find survey doc for the current administration
+        const surveyResponse = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
+        if (surveyResponse) {
+          fetchedAssessments.forEach((assessment) => {
+            if (assessment.taskId === 'survey') {
             assessment.completedOn = new Date();
           }
-        });
+          });
+        }
       }
     }
 
