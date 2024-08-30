@@ -2,16 +2,16 @@
   <PvButton
     class="surface-hover border-1 border-300 border-circle hover:bg-primary p-0 m-2"
     data-cy="button-edit-variant"
-    @click="visible = true"
+    @click="isVisible = true"
   >
     <i class="pi pi-pencil text-primary hover:text-white-alpha-90 p-2" style="font-size: 1rem"></i>
   </PvButton>
 
   <PvDialog
-    v-model:visible="visible"
+    v-model:visible="isVisible"
     :draggable="false"
     modal
-    header="Edit Conditions for Assignment"
+    header="Edit Conditions"
     :close-on-escape="false"
     :style="{ width: '65vw' }"
     :breakpoints="{ '1199px': '85vw', '575px': '95vw' }"
@@ -38,96 +38,49 @@
     <div class="flex flex-column w-full my-2 gap-2">
       <div class="card p-fluid bg-gray-100 p-3">
         <div class="text-lg font-normal text-gray-500 uppercase mb-2">Assigned Conditions</div>
+        <div v-if="assignedConditions.length > 0" class="flex flex-row flex-wrap justify-content-around align-content-center w-full font-semibold uppercase pr-6">
+          <p>Field</p>
+          <p>Condition</p>
+          <p>Value</p>
+        </div>
         <div
           v-if="assignedConditions.length == 0"
           class="flex flex-column align-items-center justify-content-center py-2 gap-2"
         >
           <div class="text-xl uppercase font-bold">No Conditions Added</div>
           <div class="text-sm uppercase text-gray-700">
-            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all students in the
+            Assignment will be <PvTag severity="warning" class="mx-1">ASSIGNED</PvTag> to all {{ isLevante ? 'users' : 'students' }} in the
             administration.
           </div>
         </div>
-        <PvDataTable
-          v-if="assignedConditions.length > 0"
-          v-model:editingRows="assignedEditingRows"
-          :value="assignedConditions"
-          edit-mode="row"
-          data-key="id"
-          :pt="{
-            table: { style: 'min-width: 50rem' },
-            column: {
-              bodycell: ({ state }) => ({
-                style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem; padding-left: 0.6rem',
-              }),
-            },
-          }"
-          data-cy="button-assigned-accept"
-          @row-edit-save="onAssignedRowEditSave"
-        >
-          <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem">
-            <template #editor="{ data, field }">
-              <PvDropdown
-                v-model="data[field]"
-                :options="isLevante ? levanteFields : fieldExamples"
-                option-label="label"
-                option-value="label"
-                :editable="!isLevante"
-                :placeholder="isLevante ? 'Choose a field' : 'Type or choose field'"
-                data-cy="dropdown-assigned-field"
-              >
-              </PvDropdown>
-            </template>
-          </PvColumn>
-          <PvColumn field="op" header="Condition" style="width: 5%">
-            <template #editor="{ data, field }">
-              <PvDropdown
-                v-model="data[field]"
-                :options="isLevante ? levanteConditions : conditions"
-                option-label="label"
-                option-value="value"
-                placeholder="Select Condition"
-                data-cy="dropdown-assigned-condition"
-              >
-                <template #option="slotProps">
-                  <PvTag :value="slotProps.option.label" severity="warning" />
-                </template>
-              </PvDropdown>
-            </template>
-            <template #body="slotProps">
-              <PvTag :value="slotProps.data.op" severity="warning" />
-            </template>
-          </PvColumn>
-          <PvColumn field="value" header="Value" style="width: 10%">
-            <template #editor="{ data, field }">
-              <PvDropdown
-                v-if="isLevante"
-                v-model="data[field]"
-                :options="levanteUserTypes"
-                option-label="label"
-                option-value="value"
-                placeholder="Choose a value"
-                data-cy="dropdown-assigned-field"
-              ></PvDropdown>
-              <PvInputText v-else v-model="data[field]" data-cy="assigned-value-content" />
-            </template>
-          </PvColumn>
-          <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
-          <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
-            <template #body="{ index }">
+        <!-- ASSIGNED CONDITIONS  -->
+        <div v-for="(condtion, index) in assignedConditions" :key="index">
+            <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
+               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
+              </div>
+
+              <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
+              </div>
+
+              <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.value" :options="computedValueOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
+              </div>
+
               <PvButton
-                text
-                class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
                 icon="pi pi-trash"
-                @click="removeAssignedRow(index)"
+                text
+                class="bg-primary text-white w-2 border-round border-none hover:bg-red-900"
+                @click="removeCondition(assignedConditions, index)"
               />
-            </template>
-          </PvColumn>
-        </PvDataTable>
+            </div>
+        </div>
+
         <div class="flex flex-row-reverse justify-content-between align-items-center">
           <div class="mt-2 flex">
             <PvButton
-              label="Add Assigned Condition"
+              label="Add Condition"
               icon="pi pi-plus mr-2"
               class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
               data-cy="button-assigned-condition"
@@ -137,123 +90,85 @@
         </div>
       </div>
       <!-- OPTIONAL CONDITIONS -->
-      <div v-if="!isLevante">
-        <div class="mt-2 flex flex-column gap-2">
-          <div class="card p-fluid bg-gray-100 p-3">
-            <div class="text-lg font-normal text-gray-500 uppercase mb-2">Optional Conditions</div>
-            <div
-              v-if="optionalConditions.length == 0"
-              class="flex flex-column align-items-center justify-content-center py-2 gap-2"
-            >
-              <div class="text-xl uppercase font-bold">No Conditions Added</div>
-              <div v-if="optionalForAllFlag" class="text-sm uppercase text-gray-700">
-                Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all students in the
-                administration.
-              </div>
-              <div v-else class="text-sm uppercase text-gray-700">
-                Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any students in the
-                administration.
-              </div>
+    <div >
+      <div class="mt-2 flex flex-column gap-2">
+        <div class="card p-fluid bg-gray-100 p-3">
+          <div class="text-lg font-normal text-gray-500 uppercase mb-2">Optional Conditions</div>
+          <div v-if="optionalConditions.length > 0" class="flex flex-row flex-wrap justify-content-around align-content-center w-full font-semibold uppercase pr-6">
+            <p>Field</p>
+            <p>Condition</p>
+            <p>Value</p>
+          </div>
+          <div
+            v-if="optionalConditions.length == 0"
+            class="flex flex-column align-items-center justify-content-center py-2 gap-2"
+          >
+            <div class="text-xl uppercase font-bold">No Conditions Added</div>
+            <div v-if="isOptionalForAll" class="text-sm uppercase text-gray-700">
+              Assignment will be <PvTag severity="success" class="mx-1">OPTIONAL</PvTag> for all {{ isLevante ? 'users' : 'students' }} in the
+              administration.
             </div>
-            <PvDataTable
-              v-if="optionalConditions.length > 0"
-              v-model:editingRows="optionalEditingRows"
-              :value="optionalConditions"
-              edit-mode="row"
-              data-key="id"
-              :pt="{
-                table: { style: 'min-width: 50rem' },
-                column: {
-                  bodycell: ({ state }) => ({
-                    style: state['d_editing'] && 'padding-top: 0.6rem; padding-bottom: 0.6rem',
-                  }),
-                },
-              }"
-              @row-edit-save="onOptionalRowEditSave"
-            >
-              <PvColumn field="field" header="Field" style="width: 20%; min-width: 8rem" body-style="text-align:center">
-                <template #editor="{ data, field }">
-                  <PvDropdown
-                    v-model="data[field]"
-                    :options="fieldExamples"
-                    option-label="label"
-                    option-value="value"
-                    editable
-                    placeholder="Type or choose field"
-                    data-cy="dropdown-optional-field"
-                  >
-                  </PvDropdown>
-                </template>
-              </PvColumn>
-              <PvColumn field="op" header="Condition" style="width: 5%" body-style="text-align:center">
-                <template #editor="{ data, field }">
-                  <PvDropdown
-                    v-model="data[field]"
-                    :options="conditions"
-                    option-label="label"
-                    option-value="value"
-                    placeholder="Select Condition"
-                    data-cy="dropdown-optional-condition"
-                  >
-                    <template #option="slotProps">
-                      <PvTag :value="slotProps.option.label" severity="warning" />
-                    </template>
-                  </PvDropdown>
-                </template>
-                <template #body="slotProps">
-                  <PvTag :value="slotProps.data.op" severity="warning" />
-                </template>
-              </PvColumn>
-              <PvColumn field="value" header="Value" style="width: 10%" body-style="text-align:center">
-                <template #editor="{ data, field }">
-                  <PvInputText v-model="data[field]" data-cy="optional-value-content" />
-                </template>
-              </PvColumn>
-              <PvColumn :row-editor="true" style="width: 8%; min-width: 8%" body-style="text-align:center"> </PvColumn>
-              <PvColumn :row-editor="true" style="width: 5%; max-width: 1rem" body-style="text-align:center">
-                <template #body="{ index }">
-                  <PvButton
-                    icon="pi pi-trash"
-                    class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-                    @click="removeOptionalRow(index)"
-                  />
-                </template>
-              </PvColumn>
-            </PvDataTable>
-            <div class="flex flex-row justify-content-between align-items-center">
-              <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
-                <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All Students</div>
-                <PvInputSwitch
-                  v-model="optionalForAllFlag"
-                  data-cy="switch-optional-for-everyone"
-                  @update:model-value="handleOptionalForAllSwitch"
-                />
+            <div v-else class="text-sm uppercase text-gray-700">
+              Assignment will <PvTag severity="danger" class="mx-1">NOT BE OPTIONAL</PvTag> for any {{ isLevante ? 'users' : 'students' }} in the
+              administration.
+            </div>
+          </div>
+
+          <div v-for="(condtion, index) in optionalConditions" :key="index">
+            <div class="flex gap-2 align-content-start flex-grow-0 params-container mb-2">
+               <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.field" :options="computedFieldOptions" optionLabel="label" class="w-full" placeholder="Select a Field" inputId="Field"/>
               </div>
-              <div class="mt-2 flex gap-2">
-                <PvButton
-                  label="Add Optional Condition"
-                  icon="pi pi-plus mr-2"
-                  class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
-                  :disabled="optionalForAllFlag === true"
-                  data-cy="button-optional-condition"
-                  @click="addOptionalCondition"
-                />
+
+              <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.op" :options="computedConditionOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Condition" inputId="Condition"/>
               </div>
+
+              <div class="flex flex-row flex-wrap justify-content-between align-content-center gap-2 w-full">
+                <PvDropdown v-model="condtion.value" :options="computedValueOptions(condtion.field)" optionLabel="label" class="w-full" placeholder="Value"/>
+              </div>
+
+              <PvButton
+                icon="pi pi-trash"
+                text
+                class="bg-primary text-white w-2 border-round border-none hover:bg-red-900"
+                @click="removeCondition(optionalConditions, index)"
+              />
+            </div>
+        </div>
+
+          <div class="flex flex-row justify-content-between align-items-center">
+            <div class="flex flex-row justify-content-end align-items-center gap-2 mr-2">
+              <div class="uppercase text-md font-bold text-gray-600">Make Assessment Optional For All {{ isLevante ? 'Users' : 'Students' }}</div>
+              <PvInputSwitch
+                v-model="isOptionalForAll"
+                data-cy="switch-optional-for-everyone"
+                @update:model-value="handleOptionalForAllSwitch"
+              />
+            </div>
+            <div class="mt-2 flex gap-2">
+              <PvButton
+                label="AddCondition"
+                icon="pi pi-plus mr-2"
+                class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
+                :disabled="isOptionalForAll === true"
+                @click="addOptionalCondition"
+                data-cy="button-optional-condition"
+              />
             </div>
           </div>
         </div>
       </div>
+    </div>
       <PvDivider />
       <div class="flex flex-column align-items-center gap-1 mx-2">
-        <div v-if="optionalAllFlagAndOptionalConditionsPresent" class="text-sm">
+        <div v-if="isOptionalForAllAndOptionalConditionsPresent" class="text-sm">
           <PvTag icon="pi pi-info-circle" severity="info">
             Making the assessment optional for all will override any optional conditions you have added.
           </PvTag>
         </div>
         <div v-if="errorSubmitText.length > 0" class="text-sm">
-          <PvTag icon="pi pi-exclamation-triangle" severity="error" class="bg-transparent text-red-600">{{
-            errorSubmitText
-          }}</PvTag>
+          <PvTag icon="pi pi-exclamation-triangle" severity="error" class="bg-transparent text-red-600">{{ errorSubmitText }}</PvTag>
         </div>
       </div>
       <div class="flex justify-content-center gap-2">
@@ -270,7 +185,7 @@
           class="bg-primary text-white border-none border-round p-2 hover:bg-red-900"
           label="Save"
           data-cy="button-save-conditions"
-          @click="handleSubmit"
+          @click="handleSave"
         ></PvButton>
       </div>
     </div>
@@ -278,11 +193,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, toRaw } from 'vue';
+import { ref, onMounted, computed, toRaw, watch } from 'vue';
 import _isEmpty from 'lodash/isEmpty';
+import _cloneDeep from 'lodash/cloneDeep';
 import { isLevante } from '@/helpers';
 
-const visible = ref(false);
 const props = defineProps({
   assessment: {
     type: Object,
@@ -298,21 +213,110 @@ const props = defineProps({
   },
 });
 
+
 onMounted(() => {
   getAllConditions(props.assessment.task.id);
+  // LEVANTE assigns surveys as assessments, so we add a defualt for child only so researchers
+  // do not accidently assign tasks to parents and teachers
+  if (isLevante && props.assessment.task.id !== 'survey') {
+    assignedConditions.value.push({ 
+      field: { label: 'User Type', value: 'userType', project: 'LEVANTE' },
+      op: { label: 'Equal', value: 'EQUAL' },
+      value: { label: 'Child', value: 'student' },
+    });
+  }
 });
+
+const isVisible = ref(false);
+const assignedConditions = ref([]);
+const optionalConditions = ref([]);
+// Store optional conditions in case the isOptionalForAll is toggled on and off again (prevents the form from resetting to the original state)
+const previousOptionalConditions = ref([]);
+
+const computedValueOptions = (field) => {
+  const processedField = toRaw(field);
+  if (!processedField) return 
+  const selectedField = processedField.label;
+
+  if (selectedField === 'Grade') {
+    return [
+      { label: 'PK', value: 'PK' },
+      { label: 'TK', value: 'TK' },
+      { label: 'K', value: 'K' },
+      { label: '1', value: '1' },
+      { label: '2', value: '2' },
+      { label: '3', value: '3' },
+      { label: '4', value: '4' },
+      { label: '5', value: '5' },
+      { label: '6', value: '6' },
+      { label: '7', value: '7' },
+      { label: '8', value: '8' },
+      { label: '9', value: '9' },
+      { label: '10', value: '10' },
+      { label: '11', value: '11' },
+      { label: '12', value: '12' },
+    ];
+  } else if (selectedField === 'School Level') {
+    return [
+      { label: 'Elementary', value: 'Elementary' },
+      { label: 'Middle', value: 'Middle' },
+      { label: 'High', value: 'High' },
+    ];
+  } else if (selectedField === 'User Type') {
+    return [
+      { label: 'Child', value: 'student' },
+      { label: 'Parent', value: 'parent' },
+      { label: 'Teacher', value: 'teacher' },
+    ];
+  }
+}
+
+const computedConditionOptions = (field) => {
+  const processedField = toRaw(field);
+  if (!processedField) return 
+  const selectedField = processedField.label;
+  
+  if (selectedField === 'Grade') {
+    return [
+      { label: 'Less Than', value: 'LESS_THAN' },
+      { label: 'Greater Than', value: 'GREATER_THAN' },
+      { label: 'Less Than or Equal', value: 'LESS_THAN_OR_EQUAL' },
+      { label: 'Greater Than or Equal', value: 'GREATER_THAN_OR_EQUAL' },
+      { label: 'Equal', value: 'EQUAL' },
+      { label: 'Not Equal', value: 'NOT_EQUAL' },
+    ];
+  } else if (selectedField === 'School Level') {
+    return [
+      { label: 'Equal', value: 'EQUAL' },
+      { label: 'Not Equal', value: 'NOT_EQUAL' },
+    ];
+  } else if (selectedField === 'User Type') {
+    return [
+      { label: 'Equal', value: 'EQUAL' },
+      { label: 'Not Equal', value: 'NOT_EQUAL' },
+    ];
+  }
+}
+
+
+const removeCondition = (condtions, index) => {
+  condtions.splice(index, 1);
+};
+
 
 function getAllConditions(taskId) {
   const existingAssignedConditions = getAssignedConditions(taskId);
   const existingOptionalConditions = getOptionalConditions(taskId);
+
   setAssignedConditions(existingAssignedConditions);
   setOptionalConditions(existingOptionalConditions);
 }
 
 // Get the assigned and optional conditions from the pre-existing admin info
 function getAssignedConditions(taskId) {
-  return props.preExistingAssessmentInfo.find((assessment) => assessment.taskId === taskId)?.conditions?.assigned
-    ?.conditions;
+  return props.preExistingAssessmentInfo
+          .find((assessment) => assessment.taskId === taskId)
+          ?.conditions?.assigned?.conditions;
 }
 
 function getOptionalConditions(taskId) {
@@ -320,10 +324,10 @@ function getOptionalConditions(taskId) {
   const hasOptionalConditions = task?.conditions?.optional?.conditions;
 
   if (hasOptionalConditions) {
-    optionalForAllFlag.value = false;
+    isOptionalForAll.value = false;
     return hasOptionalConditions;
   } else {
-    optionalForAllFlag.value = !!task?.conditions?.optional;
+    isOptionalForAll.value = !!task?.conditions?.optional;
     return [];
   }
 }
@@ -341,34 +345,22 @@ function setOptionalConditions(existingOptionalConditions) {
   for (const condition of existingOptionalConditions) {
     optionalConditions.value = [condition, ...optionalConditions.value];
   }
-}
+};
 
 const addOptionalCondition = () => {
-  optionalConditions.value.push({ id: optionalConditions.value.length, field: '', op: '', value: '' });
-  optionalEditingRows.value = [
-    ...optionalEditingRows.value,
-    optionalConditions.value[optionalConditions.value.length - 1],
-  ];
+  optionalConditions.value.push({ field: '', op: '', value: '' });
 };
 
 const addAssignedCondition = () => {
-  console.log('Before adding condition', toRaw(assignedConditions.value));
-  console.log('Editing rows before condition', toRaw(assignedEditingRows.value));
-  assignedConditions.value.push({ id: assignedConditions.value.length, field: '', op: '', value: '' });
-  assignedEditingRows.value = [
-    ...assignedEditingRows.value,
-    assignedConditions.value[assignedConditions.value.length - 1],
-  ];
-  console.log('After Assigned Conditions', toRaw(assignedConditions.value));
+  assignedConditions.value.push({ field: '', op: '', value: '' });
 };
 
-const optionalForAllFlag = ref(false);
-
+const isOptionalForAll = ref(false);
 const errorSubmitText = ref('');
 
 const handleOptionalForAllSwitch = () => {
-  if (optionalForAllFlag.value === true) {
-    // Store the optional conditions in case the optionalForAllFlag is toggled on and off again
+  if (isOptionalForAll.value === true) {
+    // Store the optional conditions in case the isOptionalForAll is toggled on and off again
     previousOptionalConditions.value = optionalConditions.value;
     optionalConditions.value = [];
   } else {
@@ -376,174 +368,105 @@ const handleOptionalForAllSwitch = () => {
   }
 };
 
-const optionalAllFlagAndOptionalConditionsPresent = computed(() => {
-  return optionalForAllFlag.value && computedConditions.value['optional']?.conditions?.length > 0;
+const isOptionalForAllAndOptionalConditionsPresent = computed(() => {
+  return isOptionalForAll.value && toRaw(previousOptionalConditions.value)?.length > 0;
 });
 
 const handleReset = () => {
+  errorSubmitText.value = '';
   assignedConditions.value = [];
-  assignedEditingRows.value = [];
-
   optionalConditions.value = [];
-  optionalEditingRows.value = [];
 
   getAllConditions(props.assessment.task.id);
 };
 
-const handleSubmit = () => {
+const handleSave = () => {
   let error = false;
 
-  // Check for error where any conditional attribute is empty
+  // Check if any emppty fields in Assigned Conditions
   for (const condition of assignedConditions.value) {
     for (const [key, value] of Object.entries(condition)) {
-      if (key != 'id' && value == '') {
-        errorSubmitText.value = 'Please fill in all empty conditional fields or delete unused rows';
-        error = true;
+      if (value == '') {
+          errorSubmitText.value = 'Missing fields in Assigned Conditions';
+          error = true;
       }
     }
   }
 
-  console.log('conditional attribute is empty');
-
+  // Check if any emppty fields in Optional Conditions
   for (const condition of optionalConditions.value) {
     for (const [key, value] of Object.entries(condition)) {
-      if (key != 'id' && value == '') {
-        errorSubmitText.value = 'Please fill in all empty conditional fields or delete unused rows';
+      if (value == '') {
+        errorSubmitText.value = 'Missing fields in Optional Conditions';
         error = true;
       }
     }
   }
-
-  console.log('Empty condtional fields or rows');
-
-  // Check for error where rows are still being edited
-  if (optionalEditingRows.value.length > 0 || assignedEditingRows.value.length > 0) {
-    error = true;
-    errorSubmitText.value = 'Please save all rows before submitting.';
-  }
-
-  console.log('Row still being edited');
 
   if (!error) {
     errorSubmitText.value = '';
-    // If optionalForAllFlag is true, then overwrite optional conditions by setting optional to true
-    let conditionsCopy = computedConditions.value;
-    console.log('conditionsCopy: ', conditionsCopy);
-    if (optionalForAllFlag.value === true) {
+    // If isOptionalForAll is true, then overwrite optional conditions by setting optional to true
+    const [assignedConditionsToValues, optionalConditionsToValues] = conditionsToValues()
+    const conditionsCopy = computedConditions(assignedConditionsToValues, optionalConditionsToValues);
+
+    if (isOptionalForAll.value === true) {
       conditionsCopy['optional'] = true;
     }
-    // if optionalForAllFlag is false, and there are no optional conditions, then set optional to false
-    if (optionalForAllFlag.value === false && !_isEmpty(optionalConditions.value)) {
-      conditionsCopy['optional'] = { conditions: optionalConditions.value, op: 'AND' };
-    }
+
     props.updateVariant(props.assessment.id, conditionsCopy);
-    visible.value = false;
+    isVisible.value = false;
   }
+
   return;
 };
 
-const removeRowById = (type, index) => {
-  if (type === 'assigned') {
-    // Get the current data of the row to match later for deletion
-    const currentData = assignedConditions.value[index];
+// Conditions hold the object of the form { field: { lable: 'Grade', value: 'studentData.grade', project: ALL }, etc }
+// We need to convert the conditions to the form { field: 'studnetData.grade', etc }
+function conditionsToValues() {
+  const assignedConditionsCopy = _cloneDeep(assignedConditions.value);
+  const optionalConditionsCopy = _cloneDeep(optionalConditions.value);
 
-    // Remove the row from the editing rows array by matching the id
-    const editingRowIndex = assignedEditingRows.value.findIndex((item) => item.id === currentData.id);
-    if (editingRowIndex > -1) {
-      assignedEditingRows.value.splice(editingRowIndex, 1);
-    }
-  } else if (type === 'optional') {
-    // Get the current data of the row to match later for deletion
-    const currentData = optionalConditions.value[index];
+  assignedConditionsCopy.forEach((condition) => {
+    for (const [key, value] of Object.entries(condition)) {
+        condition[key] = condition[key] = value.value;
+      }
+  });
 
-    // Remove the row from the editing rows array by matching the id
-    const editingRowIndex = optionalEditingRows.value.findIndex((item) => item.id === currentData.id);
-    if (editingRowIndex > -1) {
-      optionalEditingRows.value.splice(editingRowIndex, 1);
-    }
+  optionalConditionsCopy.forEach((condition) => {
+    for (const [key, value] of Object.entries(condition)) {          
+        condition[key] = condition[key] = value.value;  
+      }
+  });
+
+  return [assignedConditionsCopy, optionalConditionsCopy];
+}
+
+const computedConditions = (assignedConditions, optionalConditions) => {
+  const conditions = {};
+
+  if (!_isEmpty(optionalConditions)) {
+    conditions.optional = { op: 'AND', conditions: optionalConditions };
+  }
+
+  if (!_isEmpty(assignedConditions)) {
+    conditions.assigned = { op: 'AND', conditions: assignedConditions };
+  }
+
+  return conditions;
+};
+
+
+const fieldOptions = [
+  { label: 'Grade', value: 'studentData.grade', project: 'ROAR' },
+  { label: 'School Level', value: 'studentData.schoolLevel', project: 'ROAR' },
+  { label: 'User Type', value: 'userType', project: 'LEVANTE' },
+];
+
+const computedFieldOptions = computed(() => {
+  if (isLevante) {
+    return fieldOptions.filter((option) => option.project === 'LEVANTE' || option.project === 'ALL');
   } else {
-    console.error('Invalid type, choose one of "optional" or "assigned"');
+    return fieldOptions.filter((option) => option.project === 'ROAR' || option.project === 'ALL');
   }
-};
-
-const removeAssignedRow = (index) => {
-  removeRowById('assigned', index);
-
-  assignedConditions.value.splice(index, 1);
-  // Update the id of each condition after removing a row to maintain proper indexing
-  for (let i = 0; i < assignedConditions.value.length; i++) {
-    assignedConditions.value[i].id = i;
-  }
-};
-const removeOptionalRow = (index) => {
-  removeRowById('optional', index);
-
-  // Remove the row from the conditions array
-  optionalConditions.value.splice(index, 1);
-
-  // Update the id of each condition after removing a row to maintain proper indexing
-  for (let i = 0; i < optionalConditions.value.length; i++) {
-    optionalConditions.value[i].id = i;
-  }
-};
-
-const optionalConditions = ref([]);
-const assignedConditions = ref([]);
-// Store optional conditions in case the optionalForAllFlag is toggled on and off again (prevents the form from resetting to the original state)
-const previousOptionalConditions = ref([]);
-
-const computedConditions = computed(() => {
-  return {
-    ...(!_isEmpty(optionalConditions.value) && {
-      optional: { op: 'AND', conditions: optionalConditions.value },
-    }),
-    ...(!_isEmpty(assignedConditions.value) && {
-      assigned: { op: 'AND', conditions: assignedConditions.value },
-    }),
-  };
 });
-
-const assignedEditingRows = ref([]);
-const optionalEditingRows = ref([]);
-
-const fieldExamples = ref([
-  { label: 'studentData.grade', value: 'studentData.grade' },
-  { label: 'studentData.schoolLevel', value: 'studentData.schoolLevel' },
-]);
-
-const levanteFields = ref([{ label: 'User Type', value: 'userData.userType' }]);
-
-const levanteUserTypes = ref([
-  { label: 'Child', value: 'child' },
-  { label: 'Parent', value: 'parent' },
-  { label: 'Teacher', value: 'teacher' },
-]);
-
-const conditions = ref([
-  { label: 'Less Than', value: 'LESS_THAN' },
-  { label: 'Greater Than', value: 'GREATER_THAN' },
-  { label: 'Less Than or Equal', value: 'LESS_THAN_OR_EQUAL' },
-  { label: 'Greater Than or Equal', value: 'GREATER_THAN_OR_EQUAL' },
-  { label: 'Equal', value: 'EQUAL' },
-  { label: 'Not Equal', value: 'NOT_EQUAL' },
-]);
-
-const levanteConditions = ref([
-  { label: 'Equal', value: 'EQUAL' },
-  { label: 'Not Equal', value: 'NOT_EQUAL' },
-]);
-
-const onAssignedRowEditSave = (event) => {
-  let { newData, index } = event;
-  // Update the specific row in the conditions array
-  assignedConditions.value[index] = newData;
-  removeRowById('assigned', index);
-};
-
-const onOptionalRowEditSave = (event) => {
-  let { newData, index } = event;
-  // Update the specific row in the conditions array
-  optionalConditions.value[index] = newData;
-  removeRowById('optional', index);
-};
 </script>

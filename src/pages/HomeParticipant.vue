@@ -285,6 +285,7 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
+
 const { data: surveyResponsesData } = useSurveyResponses(undefined, isLevante);
 
 const isLoading = computed(() => {

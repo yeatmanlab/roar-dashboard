@@ -6,13 +6,13 @@
 
       <PvDivider />
 
-      <div v-if="!isFileUploaded">
+      <div v-if="!isFileUploaded" class="text-gray-500 mb-7 surface-100 border-round-top-md">
         <PvFileUpload
           v-if="!isFileUploaded"
           name="massUploader[]"
           custom-upload
           accept=".csv"
-          class="bg-primary text-white border-none border-round w-1 h-2rem m-0 pl-2 hover:bg-red-900"
+          class="bg-primary mb-2 ml-2 mt-2 p-3 w-2 text-white border-none border-round h-3rem m-0 hover:bg-red-900"
           auto
           :show-upload-button="false"
           :show-cancel-button="false"
@@ -48,13 +48,19 @@
         </PvDataTable>
 
         <div class="submit-container">
-          <PvButton v-if="registeredUsers.length" label="Download Registered Users" @click="downloadCSV" />
+          <PvButton 
+            v-if="registeredUsers.length" 
+            label="Download Registered Users" 
+            @click="downloadCSV" 
+            class="bg-primary text-white border-none border-round p-3 hover:bg-red-900 text-xl"
+          />
           <PvButton
             v-else
             :label="activeSubmit ? 'Registering Users' : 'Start Registration'"
             :icon="activeSubmit ? 'pi pi-spin pi-spinner' : ''"
             :disabled="activeSubmit"
             @click="submitUsers"
+            class="bg-primary text-white border-none border-round p-3 hover:bg-red-900 text-xl"
           />
         </div>
       </div>

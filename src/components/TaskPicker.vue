@@ -148,7 +148,7 @@ import _union from 'lodash/union';
 import { VueDraggableNext } from 'vue-draggable-next';
 import VariantCard from './VariantCard.vue';
 import { useToast } from 'primevue/usetoast';
-
+import _cloneDeep from 'lodash/cloneDeep';
 const toast = useToast();
 
 const props = defineProps({
@@ -194,9 +194,9 @@ const updateVariant = (variantId, conditions) => {
       return variant;
     }
   });
+
   selectedVariants.value = updatedVariants;
   return;
-  // props.selectedVariant[]
 };
 
 const selectedVariants = ref([]);
@@ -318,7 +318,9 @@ const selectCard = (variant) => {
         life: 3000,
       });
     }
-    selectedVariants.value.push(variant);
+
+    const defaultedVariant = addChildDefaultCondition(variant);
+    selectedVariants.value.push(defaultedVariant);
   } else {
     debounceToast();
   }
@@ -337,6 +339,22 @@ const moveCardDown = (variant) => {
   selectedVariants.value.splice(index, 1);
   selectedVariants.value.splice(index + 1, 0, item);
 };
+
+// Default all tasks to child only, unless it is the survey (for LEVANTE).
+function addChildDefaultCondition(variant) {
+  if (variant.task.id === 'survey') return variant;
+
+  const defaultedVariant = _cloneDeep(variant);
+  defaultedVariant.variant['conditions'] = {}
+  defaultedVariant.variant['conditions']['assigned'] = {
+    op: 'AND',
+    conditions: [
+      { field: 'userType', op: 'EQUAL', value: 'student' },
+    ],
+  };
+  return defaultedVariant;
+}
+
 </script>
 <style lang="scss">
 .task-tab {
