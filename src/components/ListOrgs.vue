@@ -118,6 +118,7 @@ import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
 import { ref, computed, onMounted, watch } from 'vue';
+import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
@@ -278,18 +279,18 @@ const exportAll = async () => {
 
 /**
  * Exports users of a given organization type to a CSV file.
- * 
+ *
  * @NOTE In order to avoid overly large exports, the function will allow exports up to a predefined limit (currently
  * 10,000 records). To avoid running a large and potentially unecessary query, we first run an aggregation query to
  * verify that the export is within the limit.
- * 
+ *
  * @TODO Replace this logic with a server driven export, for example a cloud function that generate a download link for
  * the user, effectively allowing complete and large exports.
- * 
+ *
  * @param {Object} orgType - The organization type object.
  * @param {string} orgType.id - The ID of the organization type.
  * @param {string} orgType.name - The name of the organization type.
- * 
+ *
  * @returns {Promise<void>} - A promise that resolves when the export is complete.
  */
 const exportOrgUsers = async (orgType) => {
@@ -353,6 +354,7 @@ const exportOrgUsers = async (orgType) => {
       detail: error.message,
       life: 3000,
     });
+    Sentry.captureException(error);
   }
 };
 
