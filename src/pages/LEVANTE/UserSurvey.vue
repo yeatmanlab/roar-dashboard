@@ -32,7 +32,7 @@ const context = new AudioContext();
 const audioLinks = ref({});
 const toast = useToast();
 const queryClient = useQueryClient();
-const shouldFetchSurveyResponses = false;
+let shouldFetchSurveyResponses = false;
 
 const STORAGE_ITEM_KEY = 'levante-survey';
 

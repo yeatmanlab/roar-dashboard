@@ -428,6 +428,12 @@ const routes = [
     meta: { pageTitle: 'Register Users', requireAdmin: true, project: 'LEVANTE' },
   },
   {
+    path: '/link-users',
+    name: 'Link Users',
+    component: () => import('../pages/LEVANTE/LinkUsers.vue'),
+    meta: { pageTitle: 'Link Users', requireAdmin: true, project: 'LEVANTE' },
+  },
+  {
     path: '/survey',
     name: 'Survey',
     component: () => import('../pages/LEVANTE/UserSurvey.vue'),
