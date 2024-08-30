@@ -54,6 +54,13 @@ const routes = [
     meta: { pageTitle: 'SWR (ES)' },
   },
   {
+    path: '/game/swr-de',
+    name: 'SWR-DE',
+    component: () => import('../components/tasks/TaskSWR.vue'),
+    props: { taskId: 'swr-de', language: 'de' },
+    meta: { pageTitle: 'SWR (DE)' },
+  },
+  {
     path: '/game/pa',
     name: 'PA',
     component: () => import('../components/tasks/TaskPA.vue'),
@@ -68,6 +75,13 @@ const routes = [
     meta: { pageTitle: 'PA-ES' },
   },
   {
+    path: '/game/pa-de',
+    name: 'PA-DE',
+    component: () => import('../components/tasks/TaskPA.vue'),
+    props: { taskId: 'pa-de', language: 'de' },
+    meta: { pageTitle: 'PA-DE' },
+  },
+  {
     path: '/game/sre',
     name: 'SRE',
     component: () => import('../components/tasks/TaskSRE.vue'),
@@ -80,6 +94,13 @@ const routes = [
     component: () => import('../components/tasks/TaskSRE.vue'),
     props: { taskId: 'sre-es', language: 'es' },
     meta: { pageTitle: 'SRE-ES' },
+  },
+  {
+    path: '/game/sre-de',
+    name: 'SRE-DE',
+    component: () => import('../components/tasks/TaskSRE.vue'),
+    props: { taskId: 'sre-de', language: 'de' },
+    meta: { pageTitle: 'SRE-DE' },
   },
   {
     path: '/game/letter',
