@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { createPinia, setActivePinia } from 'pinia';
 import { useAuthStore } from '../../src/store/auth.js';
+import featurePackageJson from '../../package.json';
 
 /**
  * Generates a randomized name by appending a random 10-digit number to the provided organization name.
@@ -19,7 +20,7 @@ export const randomizeName = (orgName) => {
  * @returns {Promise<boolean>} - Returns true if the app version matches the main branch version, otherwise false.
  */
 export const isCurrentVersion = async (app) => {
-  const featurePackageJson = require('../../package.json');
+  // const featurePackageJson = require('../../package.json');
   const featureDependencies = featurePackageJson.dependencies;
 
   const owner = 'yeatmanlab';

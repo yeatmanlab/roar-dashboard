@@ -2,8 +2,8 @@ const Vue = require('@vitejs/plugin-vue').default;
 const { defineConfig } = require('cypress');
 const { nodePolyfills } = require('vite-plugin-node-polyfills');
 const UnheadVite = require('@unhead/addons/vite');
-const { fileURLToPath, URL } = require('url');
 const path = require('path');
+const vitePreprocessor = require('cypress-vite');
 require('dotenv').config();
 
 module.exports = defineConfig({
@@ -15,6 +15,7 @@ module.exports = defineConfig({
     experimentalMemoryManagement: true,
     retries: 2,
     setupNodeEvents(on, config) {
+      on('file:preprocessor', vitePreprocessor());
       return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
     },
   },

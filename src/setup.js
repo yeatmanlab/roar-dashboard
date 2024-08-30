@@ -184,7 +184,7 @@ export const createAppInstance = () => {
  * Do not call this function in Cypress tests as the testing environment mounts the app differently.
  * @returns {void}
  */
-export const initApp = () => {
+export const mountApp = () => {
   const app = createAppInstance();
   app.mount('#app');
 };
