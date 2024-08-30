@@ -14,6 +14,34 @@ import { BufferLoader, AudioContext } from '@/helpers/audio';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient } from '@tanstack/vue-query';
 import _merge from 'lodash/merge';
+import useSurveyResponses from '@/composables/useSurveyResponses/useSurveyResponses';
+
+
+const authStore = useAuthStore();
+const { roarfirekit, uid } = storeToRefs(authStore);
+const fetchedSurvey = ref(null);
+const survey = ref(null);
+const isSavingResponses = ref(false);
+const gameStore = useGameStore();
+const converter = new Converter();
+const { locale } = useI18n();
+const audioPlayerBuffers = ref({});
+const audioLoading = ref(false);
+const router = useRouter();
+const context = new AudioContext();
+const audioLinks = ref({});
+const toast = useToast();
+const queryClient = useQueryClient();
+const shouldFetchSurveyResponses = false;
+
+const STORAGE_ITEM_KEY = 'levante-survey';
+
+// Fetch the survey on component mount
+onMounted(async () => {
+  await getSurvey();
+});
+
+const { isLoading, data: surveyResponsesData, refetch: refetchSurveyResponses } = useSurveyResponses(undefined, shouldFetchSurveyResponses);
 
 const fetchAudioLinks = async (surveyType) => {
   const response = await axios.get('https://storage.googleapis.com/storage/v1/b/road-dashboard/o/');
@@ -33,21 +61,6 @@ const fetchAudioLinks = async (surveyType) => {
   return audioLinkMap;
 };
 
-const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
-const fetchedSurvey = ref(null);
-const survey = ref(null);
-const isSavingResponses = ref(false);
-const gameStore = useGameStore();
-const converter = new Converter();
-const { locale } = useI18n();
-const audioPlayerBuffers = ref({});
-const audioLoading = ref(false);
-const router = useRouter();
-const context = new AudioContext();
-const audioLinks = ref({});
-const toast = useToast();
-const queryClient = useQueryClient();
 
 let currentAudioSource = null;
 
@@ -74,10 +87,6 @@ const fetchBuffer = (parsedLocale) => {
   bufferLoader.load();
 };
 
-// Fetch the survey on component mount
-onMounted(async () => {
-  await getSurvey();
-});
 
 const showAndPlaceAudioButton = (playAudioButton, el) => {
   if (playAudioButton) {
@@ -86,6 +95,44 @@ const showAndPlaceAudioButton = (playAudioButton, el) => {
     el.appendChild(playAudioButton);
   }
 };
+
+async function saveSurveyData(survey) {
+  const data = survey.data;
+  data.pageNo = survey.currentPageNo;
+  window.localStorage.setItem(`${STORAGE_ITEM_KEY}-${uid.value}`, JSON.stringify(data));
+  await roarfirekit.value.saveSurveyResponses({
+    responses: data,
+    administrationId: gameStore?.selectedAdmin?.id ?? null,
+  });
+}
+
+async function restoreSurveyData(survey) {
+  const prevData = window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid.value}`) || null;
+  if (prevData) {
+    const data = JSON.parse(prevData);
+    survey.data = data;
+    if (data.pageNo) {
+      survey.currentPageNo = data.pageNo;
+    }
+  } else {
+    shouldFetchSurveyResponses = true;
+    await refetchSurveyResponses();
+
+    if (surveyResponsesData.value) {
+      // find the survey response doc with the correspoding administrationId
+      const surveyResponse = surveyResponsesData.value.find((doc) => doc?.administrationId === gameStore.selectedAdmin?.id);
+      if (surveyResponse) {
+        survey.data = surveyResponse;
+
+        if (surveyResponse.pageNo) {
+          survey.currentPageNo = surveyResponse.pageNo;
+        }
+      }
+    }
+    // If there's no data in localStorage and no data from the server,
+    // the survey has never been started, so we continue with an empty survey
+  }
+}
 
 async function getSurvey() {
   let userType = toRaw(authStore.userData.userType.toLowerCase());
@@ -98,7 +145,6 @@ async function getSurvey() {
     audioLinks.value = audioLinkMap;
 
     fetchedSurvey.value = response.data;
-    // Create the survey model with the fetched data
     const surveyInstance = new Model(fetchedSurvey.value);
 
     surveyInstance.locale = locale.value;
@@ -115,8 +161,6 @@ async function getSurvey() {
       options.html = str;
     });
 
-
-    survey.value.onComplete.add(saveResults);
     survey.value.onAfterRenderPage.add((__, { htmlElement }) => {
       const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
       if (currentAudioSource) {
@@ -127,6 +171,16 @@ async function getSurvey() {
         showAndPlaceAudioButton(playAudioButton, el);
       });
     });
+
+    // Restore survey data from localStorage
+    await restoreSurveyData(survey.value);
+
+    // Save survey results when users change a question value or switch to the next page
+    survey.value.onValueChanged.add(saveSurveyData);
+    survey.value.onCurrentPageChanged.add(saveSurveyData);
+    // Need to have this as well to save all the responses, even if the user doesn't answer all the questions
+    survey.value.onComplete.add(saveResults);
+
   } catch (error) {
     console.error(error);
   }
@@ -165,6 +219,8 @@ async function saveResults(sender) {
 
   // Values from the second object overwrite values from the first
   const responsesWithAllQuestions = _merge(unansweredQuestions, sender.data);
+  // remove pageNo, used for continuing incomplete survey, from the responses
+  delete responsesWithAllQuestions.pageNo;
 
   // turn on loading state
   isSavingResponses.value = true;
@@ -181,7 +237,9 @@ async function saveResults(sender) {
     gameStore.setSurveyCompleted();
     queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
-    // route back to game tabs (HomeParticipant)
+    // Clear localStorage after successful submission
+    window.localStorage.removeItem(`${STORAGE_ITEM_KEY}-${uid.value}`);
+
     gameStore.requireHomeRefresh();
     router.push({ name: 'Home' });
   } catch (error) {
