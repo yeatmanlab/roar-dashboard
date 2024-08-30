@@ -69,3 +69,4 @@ jobs:
           parallel: true
           spec: 'cypress/component/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
+          command: npx cypress run --component
