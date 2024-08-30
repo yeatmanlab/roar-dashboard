@@ -127,7 +127,11 @@ Cypress.Commands.add('agreeToConsent', () => {
       cy.get('.p-dialog')
         .invoke('text')
         .then((text) => {
-          if (text.toLowerCase().includes('consent') || text.toLowerCase().includes('assent')) {
+          if (
+            text.toLowerCase().includes('consent') ||
+            text.toLowerCase().includes('assent') ||
+            text.toLowerCase().includes('tos')
+          ) {
             cy.log('Consent required, agreeing...');
             cy.get('button').contains('Continue').click();
           }
