@@ -1,10 +1,10 @@
 <template>
   <AppSpinner v-if="localStorageEmail" />
   <div v-else class="field col">
-    <PvFloatLabel>
+    <span class="p-float-label">
       <PvInputText id="email" v-model="formEmail" />
       <label for="email">Email</label>
-    </PvFloatLabel>
+    </span>
     <div class="col-12 mb-3">
       <PvButton label="Finish signing in" @click="loginFromEmailLink(formEmail)" />
     </div>
@@ -23,12 +23,12 @@ import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit, roarUid, uid } = storeToRefs(authStore);
 const success = ref(false);
 
 authStore.$subscribe(async () => {
-  if (uid.value) {
-    const userData = await fetchDocById('users', uid.value);
+  if (roarUid.value) {
+    const userData = await fetchDocById('users', roarUid.value);
     const userClaims = await fetchDocById('userClaims', uid.value);
     authStore.userData = userData;
     authStore.userClaims = userClaims;

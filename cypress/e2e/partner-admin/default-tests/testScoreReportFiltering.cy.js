@@ -33,25 +33,15 @@ function setFilterByGrade(grade) {
 }
 
 function setFilterByProgressCategory(header, category) {
-  cy.contains(
-    'th.p-datatable-header-cell.p-datatable-sortable-column.p-datatable-resizable-column.p-datatable-reorderable-column',
-    header,
-  )
-    .find('button')
-    .click();
+  cy.contains('div.p-column-header-content', header).find('button').click();
   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-  cy.get('ul>li').find('span.p-tag-label', { timeout: timeout }).contains(category).click();
+  cy.get('ul>li').find('.p-tag-value', { timeout: timeout }).contains(category).click();
   cy.get('button').contains('Apply').click();
   cy.wait(0.05 * timeout);
 }
 
 function setFilterByScoreCategory(header, category) {
-  cy.contains(
-    'th.p-datatable-header-cell.p-datatable-sortable-column.p-datatable-resizable-column.p-datatable-reorderable-column',
-    header,
-  )
-    .find('button')
-    .click();
+  cy.contains('div.p-column-header-content', header).find('button').click();
   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
   cy.get('ul > li', { timeout: timeout }).contains(category).click();
   cy.get('button').contains('Apply').click();
@@ -144,7 +134,7 @@ describe('The partner admin can view score reports for a given administration an
     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
     clickScoreButton(roarTestAdministrationId);
     setFilterByScoreCategory('ROAR - Written Vocab', 'Optional');
-    cy.get('.flex.flex-column.align-items-center.align-text-left.my-8').contains('No results found');
-    cy.get('.flex.flex-column.align-items-center.align-text-left.my-8').contains('Reset Filters');
+    cy.get('.p-datatable-emptymessage').contains('No results found');
+    cy.get('.p-datatable-emptymessage').contains('Reset Filters');
   });
 });

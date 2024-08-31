@@ -1,6 +1,6 @@
 <template>
   <div class="flex align-items-center gap-1">
-    <PvSelect
+    <PvDropdown
       v-model="$i18n.locale"
       class=""
       :options="languageDropdownOptions"
@@ -14,7 +14,7 @@
           {{ $t('authSignIn.selectLanguage') }}
         </small>
       </template>
-    </PvSelect>
+    </PvDropdown>
   </div>
 </template>
 

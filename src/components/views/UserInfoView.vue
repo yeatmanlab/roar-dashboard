@@ -45,7 +45,7 @@ import _get from 'lodash/get';
 // +----------------+
 const authStore = useAuthStore();
 const toast = useToast();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit, roarUid } = storeToRefs(authStore);
 const localUserData = ref({});
 const isEditMode = ref(false);
 const isSubmitting = ref(false);
@@ -75,8 +75,8 @@ onMounted(() => {
 // | Queries |
 // +---------+
 const { data: userData } = useQuery({
-  queryKey: ['userData', uid],
-  queryFn: () => fetchDocById('users', uid.value),
+  queryKey: ['userData', roarUid],
+  queryFn: () => fetchDocById('users', roarUid.value),
   keepPrevousData: true,
   enabled: initialized,
   staleTime: 1000 * 60 * 5, // 5 minutes
@@ -90,7 +90,7 @@ async function submitUserData() {
   isSubmitting.value = true;
 
   await roarfirekit.value
-    .updateUserData(uid.value, localUserData.value)
+    .updateUserData(roarUid.value, localUserData.value)
     .then(() => {
       isEditMode.value = false;
       isSubmitting.value = false;

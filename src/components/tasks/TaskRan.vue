@@ -29,7 +29,7 @@ const router = useRouter();
 const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
-const { isFirekitInit, roarfirekit, uid } = storeToRefs(authStore);
+const { isFirekitInit, roarfirekit, roarUid } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -46,8 +46,8 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
-  queryKey: ['userData', uid, 'studentData'],
-  queryFn: () => fetchDocById('users', uid.value, ['studentData']),
+  queryKey: ['userData', roarUid, 'studentData'],
+  queryFn: () => fetchDocById('users', roarUid.value, ['studentData']),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes

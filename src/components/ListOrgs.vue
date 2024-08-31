@@ -9,69 +9,61 @@
             <div class="admin-page-header">List Organizations</div>
           </div>
         </div>
-        <div class="text-md text-gray-500 ml-6">View organizations assigned to your account.</div>
+        <div class="text-md text-gray-500 ml-6">View organizations asssigned to your account.</div>
       </div>
-      <PvTabs v-if="claimsLoaded" v-model:value="activeOrgType" class="mb-7">
-        <PvTabList>
-          <PvTab v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id" class="text-lg">
-            {{ orgType.header }}
-          </PvTab>
-        </PvTabList>
-        <PvTabPanels>
-          <PvTabPanel v-for="orgType in orgHeaders" :key="orgType.id" :value="orgType.id">
-            <div class="grid column-gap-3 mt-2">
-              <div
-                v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
-                class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
-              >
-                <PvFloatLabel>
-                  <PvSelect
-                    v-model="selectedDistrict"
-                    input-id="district"
-                    :options="allDistricts"
-                    option-label="name"
-                    option-value="id"
-                    :placeholder="districtPlaceholder"
-                    :loading="isLoadingDistricts"
-                    class="w-full"
-                    data-cy="dropdown-parent-district"
-                  />
-                  <label for="district">District</label>
-                </PvFloatLabel>
-              </div>
-              <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
-                <PvFloatLabel>
-                  <PvSelect
-                    v-model="selectedSchool"
-                    input-id="school"
-                    :options="allSchools"
-                    option-label="name"
-                    option-value="id"
-                    :placeholder="schoolPlaceholder"
-                    :loading="isLoadingSchools"
-                    class="w-full"
-                    data-cy="dropdown-parent-school"
-                  />
-                  <label for="school">School</label>
-                </PvFloatLabel>
-              </div>
+      <PvTabView v-if="claimsLoaded" v-model:activeIndex="activeIndex" lazy class="mb-7">
+        <PvTabPanel v-for="orgType in orgHeaders" :key="orgType" :header="orgType.header">
+          <div class="grid column-gap-3 mt-2">
+            <div
+              v-if="activeOrgType === 'schools' || activeOrgType === 'classes'"
+              class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3"
+            >
+              <span class="p-float-label">
+                <PvDropdown
+                  v-model="selectedDistrict"
+                  input-id="district"
+                  :options="allDistricts"
+                  option-label="name"
+                  option-value="id"
+                  :placeholder="districtPlaceholder"
+                  :loading="isLoadingDistricts"
+                  class="w-full"
+                  data-cy="dropdown-parent-district"
+                />
+                <label for="district">District</label>
+              </span>
             </div>
-            <div v-if="tableData.length > 0">
-              <RoarDataTable
-                :key="tableKey"
-                :columns="tableColumns"
-                :data="tableData"
-                sortable
-                :loading="isLoading || isFetching"
-                :allow-filtering="false"
-                @export-all="exportAll"
-                @selected-org-id="showCode"
-              />
+            <div v-if="orgType.id === 'classes'" class="col-12 md:col-6 lg:col-3 xl:col-3 mt-3">
+              <span class="p-float-label">
+                <PvDropdown
+                  v-model="selectedSchool"
+                  input-id="school"
+                  :options="allSchools"
+                  option-label="name"
+                  option-value="id"
+                  :placeholder="schoolPlaceholder"
+                  :loading="isLoadingSchools"
+                  class="w-full"
+                  data-cy="dropdown-parent-school"
+                />
+                <label for="school">School</label>
+              </span>
             </div>
-            <AppSpinner v-else />
-          </PvTabPanel>
-        </PvTabPanels>
-      </PvTabs>
+          </div>
+          <RoarDataTable
+            v-if="tableData"
+            :key="tableKey"
+            :columns="tableColumns"
+            :data="tableData"
+            sortable
+            :loading="isLoading || isFetching"
+            :allow-filtering="false"
+            @export-all="exportAll"
+            @selected-org-id="showCode"
+          />
+          <AppSpinner v-else />
+        </PvTabPanel>
+      </PvTabView>
       <AppSpinner v-else />
     </section>
     <section class="flex mt-8 justify-content-end">
@@ -120,7 +112,6 @@
     </section>
   </main>
 </template>
-
 <script setup>
 import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
@@ -199,7 +190,10 @@ const orgHeaders = computed(() => {
   return result;
 });
 
-const activeOrgType = ref('districts');
+const activeIndex = ref(0);
+const activeOrgType = computed(() => {
+  return Object.keys(orgHeaders.value)[activeIndex.value];
+});
 
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 
@@ -316,6 +310,7 @@ const tableColumns = computed(() => {
       sort: false,
     },
   );
+
   return columns;
 });
 
@@ -369,16 +364,7 @@ watch(allSchools, (newValue) => {
 });
 
 const tableKey = ref(0);
-watch([selectedDistrict, selectedSchool, activeOrgType], () => {
+watch([selectedDistrict, selectedSchool], () => {
   tableKey.value += 1;
 });
 </script>
-
-<style>
-.p-datatable-gridlines .p-datatable-tbody > tr > td {
-  padding-left: 0.5rem !important;
-  padding-right: 0.5rem !important;
-  padding-top: 0.3rem !important;
-  padding-bottom: 0.3rem !important;
-}
-</style>

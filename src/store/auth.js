@@ -37,6 +37,9 @@ export const useAuthStore = () => {
       uid: (state) => {
         return state.firebaseUser.adminFirebaseUser?.uid;
       },
+      roarUid: (state) => {
+        return state.userClaims?.claims?.roarUid;
+      },
       email: (state) => {
         return state.firebaseUser.adminFirebaseUser?.email;
       },
@@ -99,7 +102,7 @@ export const useAuthStore = () => {
         return;
       },
       async updateConsentStatus(docName, consentVersion, params = {}) {
-        this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
+        return await this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);

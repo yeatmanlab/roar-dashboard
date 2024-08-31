@@ -8,7 +8,7 @@
       :style="`background-color: ${_get(colData, col.tagColor)}; min-width: 2rem; 
       ${returnScoreTooltip(colData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'};
       font-weight: bold;
-      color: ${_get(colData, col.tagColor) === 'white' ? '#303030' : 'white'}
+      color: ${_get(colData, col.tagColor) === '#A4DDED' ? 'black' : 'white'};
       `"
       rounded
     />
@@ -17,7 +17,7 @@
     <div
       class="circle"
       :style="`background-color: ${_get(colData, col.tagColor)}; color: ${
-        _get(colData, col.tagColor) === 'white' ? 'black' : 'white'
+        _get(colData, col.tagColor) === '#A4DDED' ? 'black' : 'white'
       }; ${returnScoreTooltip(colData, col.field)?.length > 0 && 'outline: 1px dotted #0000CD; outline-offset: 3px'}`"
     />
   </div>
