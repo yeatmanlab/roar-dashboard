@@ -23,12 +23,11 @@ function clickScoreButton() {
 }
 
 function checkAssignmentColumns() {
-  cy.get('.p-datatable-column-header-content').then(($header) => {
-    const tableHeaders = Array.from($header).map((header) => header.innerText);
-    cy.log('Table Headers:', tableHeaders);
+  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+    const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
     testAssignments.forEach((assignment) => {
-      expect(tableHeaders).to.include(assignment, `Expected header to include ${assignment}`);
+      expect(tableHeaders).to.include(assignment);
     });
   });
 }

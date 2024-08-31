@@ -3,17 +3,33 @@
     <div class="card flex justify-content-center">
       <div class="flex flex-wrap gap-3">
         <div class="flex align-items-center">
-          <PvRadioButton v-model="decision" input-id="helpChoose" name="help" value="help" @change="whatDecision" />
+          <PvRadioButton
+            v-model="decision"
+            input-id="helpChoose"
+            class="border-2 border-circle border-300"
+            style="width: 15px; height: 15px"
+            name="help"
+            value="help"
+            @change="whatDecision"
+          />
           <label for="helpChoose" class="ml-2">Help me choose</label>
         </div>
         <div class="flex align-items-center">
-          <PvRadioButton v-model="decision" input-id="iKnow" name="know" value="know" @change="whatDecision" />
+          <PvRadioButton
+            v-model="decision"
+            input-id="iKnow"
+            class="border-2 border-circle border-300"
+            style="width: 15px; height: 15px"
+            name="know"
+            value="know"
+            @change="whatDecision"
+          />
           <label for="iKnow" class="ml-2">I know what to select</label>
         </div>
       </div>
     </div>
     <div class="flex justify-content-center mt-2">
-      <PvCheckbox v-model="noConsent" input-id="no-consent" class="flex" value="noConsent" />
+      <PvCheckbox v-model="noConsent" :binary="true" input-id="no-consent" class="flex" value="noConsent" />
       <label class="ml-2 flex text-center" for="no-consent"
         >This administration does not require consent or assent forms</label
       >
@@ -91,7 +107,7 @@
                 :class="['cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 @change="checkBoxStatus"
               />
-              <i class="pi pi-microphone" style="font-size: 1rem; width: 8%"></i>
+              <i class="pi pi-phone" style="font-size: 1rem; width: 8%"></i>
               <label
                 :class="['mr-3 p-0 flex cursor-pointer', { 'pointer-events-none': !disableIfNotDefault }]"
                 style="width: 80%"
@@ -132,23 +148,23 @@
           <h3 class="mb-4 mt-4">Compensation Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
-              <PvFloatLabel>
+              <span class="p-float-label">
                 <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
-              </PvFloatLabel>
+              </span>
             </div>
             <div class="ml-3">
-              <PvFloatLabel>
+              <span class="p-float-label">
                 <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
-              </PvFloatLabel>
+              </span>
             </div>
           </div>
         </div>
       </div>
       <div v-if="knowWhatIWant && !noConsent" class="flex flex-column pl-3" style="width: 50%">
         <h3>Select a Consent Form</h3>
-        <PvSelect
+        <PvDropdown
           v-model="selectedConsent"
           :options="listOfDocs.consent"
           option-label="fileName"
@@ -157,7 +173,7 @@
           @change="updateConsent"
         />
         <h3 class="pt-3">Select an Assent Form</h3>
-        <PvSelect
+        <PvDropdown
           v-model="selectedAssent"
           :options="listOfDocs.assent"
           option-label="fileName"
@@ -169,16 +185,16 @@
           <h3 class="mb-4 mt-5">Consent Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
-              <PvFloatLabel>
+              <span class="p-float-label">
                 <PvInputText id="consent-amount" v-model="amount" class="w-full" disabled="true" />
                 <label for="consent-amount" class="text-sm w-full">Payment Amount $$</label>
-              </PvFloatLabel>
+              </span>
             </div>
             <div class="ml-3">
-              <PvFloatLabel>
+              <span class="p-float-label">
                 <PvInputText id="consent-time" v-model="expectedTime" class="w-full" disabled="true" />
                 <label for="consent-time" class="text-sm w-full">Expected Time Amount</label>
-              </PvFloatLabel>
+              </span>
             </div>
           </div>
         </div>
@@ -201,8 +217,7 @@
               </div>
               <div class="flex align-items-center justify-content-center">
                 <PvButton
-                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-white hover:bg-primary"
-                  style="height: 6rem; width: 6rem"
+                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
                   label="Show Consent"
                   @click="seeConsent(result.consent[0])"
                 />
@@ -229,7 +244,7 @@
               </div>
               <div class="flex align-items-center justify-content-center">
                 <PvButton
-                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-white hover:bg-primary"
+                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
                   label="Show Assent"
                   @click="seeConsent(result.assent[0])"
                 />
@@ -547,6 +562,20 @@ function processConsentAssent(consent, targetArray) {
   });
 }
 
+// Declare a computed property to watch the legal prop
+const computedLegalProps = computed(() => {
+  return props.legal ?? {};
+});
+
+// Watch the computed property and set the noConsent value accordingly
+watch(computedLegalProps, (newValue) => {
+  if (newValue.consent === 'No Consent') {
+    noConsent.value = true;
+  } else {
+    noConsent.value = false;
+  }
+});
+
 watch(amount, (newValue) => {
   result.amount = newValue;
   emit('consent-selected', result);
@@ -558,7 +587,7 @@ watch(expectedTime, (newValue) => {
 });
 
 watch(noConsent, () => {
-  if (noConsent.value && noConsent.value?.find((item) => item === 'noConsent')) {
+  if (noConsent.value) {
     emit('consent-selected', 'No Consent');
   } else {
     emit('consent-selected', '');
@@ -571,5 +600,25 @@ watch(noConsent, () => {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: white;
+}
+.p-radiobutton.p-component.p-radiobutton-checked {
+  position: relative;
+  width: 20px; /* adjust as needed */
+  height: 20px; /* adjust as needed */
+  background-color: var(--primary-color);
+  border-color: var(--primary-color) !important;
+  border-radius: 50%; /* make the element itself circular */
+}
+
+.p-radiobutton.p-component.p-radiobutton-checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px; /* adjust size of the inner circle as needed */
+  height: 5px; /* adjust size of the inner circle as needed */
+  background-color: white; /* color of the inner circle */
+  border-radius: 50%; /* make the inner element circular */
+  transform: translate(-50%, -50%); /* center the inner circle */
 }
 </style>

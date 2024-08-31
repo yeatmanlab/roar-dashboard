@@ -15,23 +15,22 @@
             <template #menubuttonicon>
               <PvButton
                 icon="pi pi-bars mr-2"
-                class="bg-primary text-white flex border-none border-round w-full hover:bg-red-900"
+                class="bg-primary text-white p-2 mr-2 border-none border-round hover:bg-red-900"
                 label="Menu"
-                style="min-width: 10vh; margin-left: 3vh"
                 @click="toggleMenu"
               />
             </template>
             <template #end>
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
-                <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 p-2 bg-gray-100">
-                  <div class="text-lg font-bold text-gray-600 display-name">
+                <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
+                  <div class="text-lg font-bold text-gray-600">
                     {{ userDisplayName }}
                   </div>
                   <router-link :to="{ name: 'SignOut' }" class="signout-button">
                     <PvButton
                       text
                       data-cy="button-sign-out"
-                      class="no-underline p-2 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
+                      class="no-underline h-2 p-1 m-0 text-primary border-none border-round h-2rem text-sm hover:bg-red-900 hover:text-white"
                       >{{ $t('navBar.signOut') }}
                     </PvButton>
                   </router-link>
@@ -45,13 +44,12 @@
                     >
                   </router-link>
                 </div>
-                <div v-tooltip="'Click to see your Information'" class="nav-user-wrapper bg-gray-100 p-0">
+                <div class="nav-user-wrapper bg-gray-100">
                   <router-link :to="{ name: 'ProfileInfo' }"
                     ><button
-                      class="no-underline text-primary bg-white border-none border-round cursor-pointer m-0 text-sm hover:bg-red-900 hover:text-white"
-                      style="padding: 0.9rem"
+                      class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
                     >
-                      <i class="pi pi-cog m-0 p-0"></i></button
+                      <i class="pi pi-cog"></i></button
                   ></router-link>
                 </div>
                 <div class="my-2">
@@ -256,23 +254,5 @@ nav {
   outline: 1.2px solid rgba(0, 0, 0, 0.1);
   border-radius: 0.3rem;
   padding: 0.5rem 0.8rem;
-}
-
-@media only screen and (max-width: 800px) {
-  .display-name {
-    max-width: 10vh;
-  }
-}
-
-@media only screen and (max-width: 820px) {
-  .display-name {
-    max-width: 13vh;
-  }
-}
-
-@media only screen and (max-width: 960px) {
-  .display-name {
-    max-width: 20vh;
-  }
 }
 </style>

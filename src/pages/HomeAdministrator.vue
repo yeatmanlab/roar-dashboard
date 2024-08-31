@@ -36,7 +36,7 @@
               </div>
               <div class="flex flex-column gap-1">
                 <small for="dd-sort" class="text-gray-400">Sort by</small>
-                <PvSelect
+                <PvDropdown
                   v-model="sortKey"
                   input-id="dd-sort"
                   :options="sortOptions"

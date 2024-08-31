@@ -1,6 +1,6 @@
 <template>
   <PvToast />
-  <PvConfirmDialog group="templating" :close-on-escape="false">
+  <PvConfirmDialog group="templating" class="confirm" :close-on-escape="false">
     <template #message>
       <div class="scrolling-box">
         <!-- eslint-disable-next-line vue/no-v-html -->
@@ -84,10 +84,6 @@ onMounted(() => {
 }
 
 .confirm .p-confirm-dialog-reject {
-  display: none !important;
-}
-
-button.p-button.p-component.p-confirmdialog-reject-button {
   display: none !important;
 }
 

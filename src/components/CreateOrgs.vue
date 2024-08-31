@@ -15,8 +15,8 @@
       <div class="bg-gray-100 rounded p-4">
         <div class="grid column-gap-3 mt-5 rounded">
           <div class="col-12 md:col-6 lg:col-3 xl:col-3">
-            <PvFloatLabel>
-              <PvSelect
+            <span class="p-float-label">
+              <PvDropdown
                 v-model="orgType"
                 input-id="org-type"
                 :options="isLevante ? levanteOrgTypes : orgTypes"
@@ -27,14 +27,14 @@
                 data-cy="dropdown-org-type"
               />
               <label for="org-type">Org Type<span id="required-asterisk">*</span></label>
-            </PvFloatLabel>
+            </span>
           </div>
         </div>
 
         <div v-if="parentOrgRequired" class="grid mt-4">
           <div class="col-12 md:col-6 lg:col-4">
-            <PvFloatLabel>
-              <PvSelect
+            <span class="p-float-label">
+              <PvDropdown
                 v-model="state.parentDistrict"
                 input-id="parent-district"
                 :options="districts"
@@ -47,12 +47,12 @@
               />
               <label for="parent-district">District<span id="required-asterisk">*</span></label>
               <small v-if="v$.parentDistrict.$invalid && submitted" class="p-error"> Please select a district. </small>
-            </PvFloatLabel>
+            </span>
           </div>
 
           <div v-if="orgType.singular === 'class'" class="col-12 md:col-6 lg:col-4">
-            <PvFloatLabel>
-              <PvSelect
+            <span class="p-float-label">
+              <PvDropdown
                 v-model="state.parentSchool"
                 input-id="parent-school"
                 :options="schools"
@@ -65,30 +65,30 @@
               />
               <label for="parent-school">School<span id="required-asterisk">*</span></label>
               <small v-if="v$.parentSchool.$invalid && submitted" class="p-error"> Please select a district. </small>
-            </PvFloatLabel>
+            </span>
           </div>
         </div>
 
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3">
-            <PvFloatLabel>
+            <span class="p-float-label">
               <PvInputText id="org-name" v-model="state.orgName" class="w-full" data-cy="input-org-name" />
               <label for="org-name">{{ orgTypeLabel }} Name<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgName.$invalid && submitted" class="p-error">Please supply a name</small>
-            </PvFloatLabel>
+            </span>
           </div>
 
           <div class="col-12 md:col-6 lg:col-4 mt-3">
-            <PvFloatLabel>
+            <span class="p-float-label">
               <PvInputText id="org-initial" v-model="state.orgInitials" class="w-full" data-cy="input-org-initials" />
               <label for="org-initial">{{ orgTypeLabel }} Abbreviation<span id="required-asterisk">*</span></label>
               <small v-if="v$.orgInitials.$invalid && submitted" class="p-error">Please supply an abbreviation</small>
-            </PvFloatLabel>
+            </span>
           </div>
 
           <div v-if="orgType?.singular === 'class'" class="col-12 md:col-6 lg:col-4 mt-3">
-            <PvFloatLabel>
-              <PvSelect
+            <span class="p-float-label">
+              <PvDropdown
                 v-model="state.grade"
                 input-id="grade"
                 :options="grades"
@@ -100,16 +100,16 @@
               />
               <label for="grade">Grade<span id="required-asterisk">*</span></label>
               <small v-if="v$.grade.$invalid && submitted" class="p-error">Please select a grade</small>
-            </PvFloatLabel>
+            </span>
           </div>
         </div>
 
-        <div class="mt-5 mb-0 pb-0 text-gray-600">Optional fields:</div>
+        <div class="mt-5 mb-0 pb-0">Optional fields:</div>
 
         <div v-if="['district', 'school', 'group'].includes(orgType?.singular)">
           <div class="grid column-gap-3">
             <div v-if="['district', 'school'].includes(orgType?.singular)" class="col-12 md:col-6 lg:col-4 mt-5">
-              <PvFloatLabel>
+              <span class="p-float-label">
                 <PvInputText
                   v-model="state.ncesId"
                   v-tooltip="ncesTooltip"
@@ -118,20 +118,20 @@
                   data-cy="input-nces-id"
                 />
                 <label for="nces-id">NCES ID</label>
-              </PvFloatLabel>
+              </span>
             </div>
           </div>
           <div class="grid mt-3">
             <div class="col-12">Search for a {{ orgType.singular }} address:</div>
-            <div class="w-9">
+            <div class="col-12 md:col-6 lg:col-6 xl:col-6 p-inputgroup">
               <span class="p-inputgroup-addon">
-                <i class="pi pi-map mr-3 ml-5 text-primary"></i>
+                <i class="pi pi-map"></i>
               </span>
               <GMapAutocomplete
                 :options="{
                   fields: ['address_components', 'formatted_address', 'place_id', 'url'],
                 }"
-                class="p-inputtext p-component w-8"
+                class="p-inputtext p-component w-full"
                 data-cy="input-address"
                 @place_changed="setAddress"
               >
@@ -153,7 +153,7 @@
 
         <div class="grid mt-3">
           <div class="col-12 md:col-6 lg:col-4 mt-3" data-cy="div-auto-complete">
-            <PvFloatLabel>
+            <span class="p-float-label">
               <PvAutoComplete
                 v-model="state.tags"
                 multiple
@@ -161,22 +161,22 @@
                 :options="allTags"
                 :suggestions="tagSuggestions"
                 name="tags"
-                class="w-full card"
+                class="w-full"
                 data-cy="input-autocomplete"
                 @complete="searchTags"
               />
               <label for="tags">Tags</label>
-            </PvFloatLabel>
+            </span>
           </div>
         </div>
         <div class="flex flex-row align-items-center justify-content-stagap-2 flex-order-0 my-3">
           <div class="flex flex-row align-items-center">
             <PvCheckbox v-model="isDemoData" input-id="chbx-demodata" :binary="true" />
-            <label class="ml-1 mr-3 text-gray-600" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
+            <label class="ml-1 mr-3" for="chbx-demodata">Mark as <b>Demo Organization</b></label>
           </div>
           <div class="flex flex-row align-items-center">
             <PvCheckbox v-model="isTestData" input-id="chbx-testdata" :binary="true" />
-            <label class="ml-1 mr-3 text-gray-600" for="chbx-testdata">Mark as <b>Test Organization</b></label>
+            <label class="ml-1 mr-3" for="chbx-testdata">Mark as <b>Test Organization</b></label>
           </div>
         </div>
 
@@ -567,6 +567,23 @@ button.p-button.p-component.p-button-icon-only.p-autocomplete-dropdown {
   .hide {
     display: none;
   }
+}
+
+.p-autocomplete-token {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  background: var(--primary-color);
+  padding: 0.25rem;
+  border-radius: 0.35rem;
+  color: white;
+  margin: 0.05rem;
+}
+
+.p-autocomplete-token-icon,
+g {
+  margin-left: 0.5rem;
+  color: white;
 }
 
 #required-asterisk {

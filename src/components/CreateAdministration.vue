@@ -15,7 +15,7 @@
       <div class="bg-gray-100 rounded p-5">
         <div class="formgrid grid mt-5">
           <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
+            <span class="p-float-label">
               <PvInputText
                 id="administration-name"
                 v-model="state.administrationName"
@@ -28,11 +28,11 @@
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please name your administration</small
               >
-            </PvFloatLabel>
+            </span>
           </div>
 
           <div class="field col-12 xl:col-6 mb-5">
-            <PvFloatLabel>
+            <span class="p-float-label">
               <PvInputText
                 id="administration-public-name"
                 v-model="state.administrationPublicName"
@@ -45,20 +45,19 @@
                 class="p-error white-space-nowrap overflow-hidden text-overflow-ellipsis"
                 >Please provide a public-facing name for this administration</small
               >
-            </PvFloatLabel>
+            </span>
           </div>
         </div>
         <div class="formgrid grid">
           <div class="field col-12 md:col-6 mb-5">
-            <PvFloatLabel>
-              <PvDatePicker
+            <span class="p-float-label">
+              <PvCalendar
                 v-model="state.dateStarted"
-                class="w-full p-0"
+                class="w-full"
                 :min-date="minStartDate"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
-                icon="pi pi-calendar text-primary"
+                icon="pi pi-calendar text-white p-1"
                 input-id="start-date"
                 show-button-bar
                 data-cy="input-start-date"
@@ -67,19 +66,18 @@
               <small v-if="v$.dateStarted.required.$invalid && submitted" class="p-error"
                 >Please select a start date.</small
               >
-            </PvFloatLabel>
+            </span>
           </div>
           <div class="field col-12 md:col-6">
-            <PvFloatLabel>
-              <PvDatePicker
+            <span class="p-float-label">
+              <PvCalendar
                 v-model="state.dateClosed"
-                class="w-full p-0"
+                class="w-full"
                 :min-date="minEndDate"
                 input-id="end-date"
                 :number-of-months="1"
                 :manual-input="false"
-                show-icon
-                icon="pi pi-calendar text-primary"
+                icon="pi pi-calendar text-white p-1"
                 show-button-bar
                 data-cy="input-end-date"
               />
@@ -87,7 +85,7 @@
               <small v-if="v$.dateClosed.required.$invalid && submitted" class="p-error"
                 >Please select an end date.</small
               >
-            </PvFloatLabel>
+            </span>
           </div>
         </div>
 
@@ -111,28 +109,37 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
+          :pre-existing-assessment-info="preExistingAssessmentInfo"
           @variants-changed="handleVariantsChanged"
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
-          <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
+          <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
             >Please select a consent/assent form.</small
           >
         </div>
         <div class="flex flex-column justify-content-center mt-5">
           <div class="flex flex-column mt-2 align-items-center justify-content-center">
             <div class="flex">
-              <label style="font-weight: bold" class="mb-2 mx-2 text-gray-600">Sequential?</label>
+              <label style="font-weight: bold" class="mb-2 mx-2">Sequential?</label>
               <span class="flex gap-2">
-                <PvRadioButton v-model="state.sequential" input-id="Yes" :value="true" />
-                <label for="Yes" class="text-gray-600">Yes</label>
+                <PvRadioButton
+                  v-model="state.sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
+                  input-id="Yes"
+                  :value="true"
+                />
+                <label for="Yes">Yes</label>
                 <PvRadioButton
                   v-model="state.sequential"
                   data-cy="radio-button-not-sequential"
+                  class="border-2 border-circle border-300"
+                  style="width: 15px; height: 15px"
                   input-id="No"
                   :value="false"
                 />
-                <label for="No" class="text-gray-600">No</label>
+                <label for="No">No</label>
               </span>
               <small v-if="v$.sequential.$invalid && submitted" class="p-error mt-2"
                 >Please specify sequential behavior.</small
@@ -140,7 +147,7 @@
             </div>
             <div class="mt-2 mb-2">
               <PvCheckbox v-model="isTestData" :binary="true" data-cy="checkbutton-test-data" input-id="isTestData" />
-              <label for="isTestData" class="ml-2 text-gray-600">Mark As <b>Test Administration</b></label>
+              <label for="isTestData" class="ml-2">Mark As <b>Test Administration</b></label>
             </div>
           </div>
           <div class="divider mx-2 my-3" />
@@ -160,11 +167,11 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, toRaw, computed, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import _filter from 'lodash/filter';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
@@ -187,6 +194,14 @@ import { useConfirm } from 'primevue/useconfirm';
 import ConsentPicker from './ConsentPicker.vue';
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
+const initialized = ref(false);
+const router = useRouter();
+const toast = useToast();
+const confirm = useConfirm();
+const queryClient = useQueryClient();
+const authStore = useAuthStore();
+
+const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -215,13 +230,17 @@ const submitLabel = computed(() => {
   return 'Create Administration';
 });
 
-const router = useRouter();
-const toast = useToast();
-const initialized = ref(false);
-const confirm = useConfirm();
-
-const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
+//      +------------------------------------------+
+// -----| Queries for grabbing variants |-----
+//      +------------------------------------------+
+const findVariantWithParams = (variants, params) => {
+  // TODO: implement tie breakers if found.length > 1
+  return _find(variants, (variant) => {
+    const cleanVariantParams = removeNull(variant.variant.params);
+    const cleanInputParams = removeNull(params);
+    return _isEqual(cleanInputParams, cleanVariantParams);
+  });
+};
 
 const { data: allVariants } = useQuery({
   queryKey: ['variants', 'all'],
@@ -234,15 +253,23 @@ const { data: allVariants } = useQuery({
 //      +------------------------------------------+
 // -----| Queries for grabbing pre-existing admins |-----
 //      +------------------------------------------+
+
+const queryKeys = [
+  ['administration', props.adminId],
+  ['variants', 'all'],
+  ['districts', props.adminId],
+  ['schools', 'minimalOrgs', props.adminId],
+  ['classes', 'minimal', props.adminId],
+  ['groups', props.adminId],
+  ['families', props.adminId],
+];
+
 const shouldGrabAdminInfo = computed(() => {
   return initialized.value && Boolean(props.adminId);
 });
-const { data: preExistingAdminInfo } = useQuery({
-  queryKey: ['administration', props.adminId],
-  queryFn: () => fetchDocById('administrations', props.adminId),
-  keepPreviousData: true,
-  enabled: shouldGrabAdminInfo,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+
+const preExistingAssessmentInfo = computed(() => {
+  return _get(preExistingAdminInfo.value, 'assessments', []);
 });
 
 // Grab districts from preExistingAdminInfo.minimalOrgs.districts
@@ -256,15 +283,9 @@ const districtsToGrab = computed(() => {
     };
   });
 });
+
 const shouldGrabDistricts = computed(() => {
   return initialized.value && districtsToGrab.value.length > 0;
-});
-const { data: preDistricts } = useQuery({
-  queryKey: ['districts', props.adminId],
-  queryFn: () => fetchDocsById(districtsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabDistricts,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 // grab schools from preExistingAdminInfo.minimalOrgs.schools
@@ -278,16 +299,9 @@ const schoolsToGrab = computed(() => {
     };
   });
 });
+
 const shouldGrabSchools = computed(() => {
   return initialized.value && schoolsToGrab.value.length > 0;
-});
-
-const { data: preSchools } = useQuery({
-  queryKey: ['schools', 'minimalOrgs', props.adminId],
-  queryFn: () => fetchDocsById(schoolsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabSchools,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 // Grab classes from preExistingAdminInfo.minimalOrgs.classes
@@ -301,16 +315,9 @@ const classesToGrab = computed(() => {
     };
   });
 });
+
 const shouldGrabClasses = computed(() => {
   return initialized.value && classesToGrab.value.length > 0;
-});
-
-const { data: preClasses } = useQuery({
-  queryKey: ['classes', 'minimal', props.adminId],
-  queryFn: () => fetchDocsById(classesToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabClasses,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 // Grab groups from preExistingAdminInfo.minimalOrgs.groups
@@ -329,14 +336,6 @@ const shouldGrabGroups = computed(() => {
   return initialized.value && groupsToGrab.value.length > 0;
 });
 
-const { data: preGroups } = useQuery({
-  queryKey: ['groups', props.adminId],
-  queryFn: () => fetchDocsById(groupsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabGroups,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
 // Grab families from preExistingAdminInfo.families
 const familiesToGrab = computed(() => {
   const familyIds = _get(preExistingAdminInfo.value, 'minimalOrgs.families', []);
@@ -353,6 +352,58 @@ const shouldGrabFamilies = computed(() => {
   return initialized.value && familiesToGrab.value.length > 0;
 });
 
+const resetAllQueries = async () => {
+  for (const key of queryKeys) {
+    await queryClient.resetQueries(key);
+  }
+};
+
+const invalidateAllQueries = async () => {
+  for (const key of queryKeys) {
+    await queryClient.invalidateQueries(key);
+  }
+};
+
+const { data: preExistingAdminInfo } = useQuery({
+  queryKey: ['administration', props.adminId],
+  queryFn: () => fetchDocById('administrations', props.adminId),
+  keepPreviousData: true,
+  enabled: shouldGrabAdminInfo,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const { data: preDistricts } = useQuery({
+  queryKey: ['districts', props.adminId],
+  queryFn: () => fetchDocsById(districtsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabDistricts,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const { data: preSchools } = useQuery({
+  queryKey: ['schools', 'minimalOrgs', props.adminId],
+  queryFn: () => fetchDocsById(schoolsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabSchools,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const { data: preClasses } = useQuery({
+  queryKey: ['classes', 'minimal', props.adminId],
+  queryFn: () => fetchDocsById(classesToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabClasses,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const { data: preGroups } = useQuery({
+  queryKey: ['groups', props.adminId],
+  queryFn: () => fetchDocsById(groupsToGrab.value),
+  keepPreviousData: true,
+  enabled: shouldGrabGroups,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
 const { data: preFamilies } = useQuery({
   queryKey: ['families', props.adminId],
   queryFn: () => fetchDocsById(familiesToGrab.value),
@@ -364,6 +415,13 @@ const { data: preFamilies } = useQuery({
 //      +---------------------------------+
 // -----| Form state and validation rules |-----
 //      +---------------------------------+
+let noConsent = ref('');
+
+const pickListError = ref('');
+const orgError = ref('');
+const submitted = ref(false);
+const isTestData = ref(false);
+
 const state = reactive({
   administrationName: '',
   administrationPublicName: '',
@@ -382,6 +440,18 @@ const state = reactive({
   expectedTime: '',
 });
 
+const rules = {
+  administrationName: { required },
+  administrationPublicName: { required },
+  dateStarted: { required },
+  dateClosed: { required },
+  sequential: { required },
+  consent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
+  assent: { requiredIf: requiredIf(!isLevante && noConsent.value === '') },
+};
+
+const v$ = useVuelidate(rules, state);
+
 const minStartDate = computed(() => {
   if (props.adminId && preExistingAdminInfo.value?.dateOpened) {
     return new Date(preExistingAdminInfo.value.dateOpened);
@@ -396,33 +466,9 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
-let noConsent = '';
-
-const rules = {
-  administrationName: { required },
-  administrationPublicName: { required },
-  dateStarted: { required },
-  dateClosed: { required },
-  sequential: { required },
-  consent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
-  assent: { requiredIf: requiredIf(!isLevante && noConsent !== '') },
-};
-
-const v$ = useVuelidate(rules, state);
-const pickListError = ref('');
-const orgError = ref('');
-const submitted = ref(false);
-const isTestData = ref(false);
-
 //      +---------------------------------+
 // -----|          Org Selection          |-----
 //      +---------------------------------+
-const selection = (selected) => {
-  for (const [key, value] of _toPairs(selected)) {
-    state[key] = value;
-  }
-};
-
 const orgsList = computed(() => {
   return {
     districts: preDistricts.value,
@@ -433,11 +479,19 @@ const orgsList = computed(() => {
   };
 });
 
+const selection = (selected) => {
+  for (const [key, value] of _toPairs(selected)) {
+    state[key] = value;
+  }
+};
+
 //      +---------------------------------+
 // -----|       Assessment Selection      |-----
 //      +---------------------------------+
 const variants = ref([]);
 const preSelectedVariants = ref([]);
+const nonUniqueTasks = ref('');
+
 const variantsByTaskId = computed(() => {
   return _groupBy(allVariants.value, 'task.id');
 });
@@ -448,13 +502,16 @@ const handleVariantsChanged = (newVariants) => {
 
 const handleConsentSelected = (newConsentAssent) => {
   if (newConsentAssent !== 'No Consent') {
-    noConsent = '';
+    noConsent.value = '';
     state.consent = newConsentAssent.consent;
     state.assent = newConsentAssent.assent;
     state.amount = newConsentAssent.amount;
     state.expectedTime = newConsentAssent.expectedTime;
   } else {
-    noConsent = newConsentAssent;
+    // Set to "No Consent"
+    noConsent.value = newConsentAssent;
+    state.consent = newConsentAssent;
+    state.assent = newConsentAssent;
   }
 };
 
@@ -464,7 +521,6 @@ const checkForUniqueTasks = (assignments) => {
   return uniqueTasks.length === assignments.length;
 };
 
-const nonUniqueTasks = ref('');
 const getNonUniqueTasks = (assignments) => {
   const grouped = _groupBy(assignments, (assignment) => assignment.taskId);
   const taskIds = _values(grouped);
@@ -480,7 +536,6 @@ const checkForRequiredOrgs = (orgs) => {
 //      +---------------------------------+
 // -----|         Form submission         |-----
 //      +---------------------------------+
-
 const removeNull = (obj) => {
   // eslint-disable-next-line no-unused-vars
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
@@ -537,7 +592,6 @@ const submit = async () => {
             expectedTime: toRaw(state).expectedTime ?? '',
           },
         };
-        if (isTestData.value) args.isTestData = true;
         if (props.adminId) args.administrationId = props.adminId;
 
         await roarfirekit.value
@@ -550,11 +604,6 @@ const submit = async () => {
               life: 3000,
             });
             administrationQueryKeyIndex.value += 1;
-
-            // TODO: Invalidate for administrations query.
-            // This does not work in prod for some reason.
-            // queryClient.invalidateQueries({ queryKey: ['administrations'] })
-
             router.push({ name: 'Home' });
           })
           .catch((error) => {
@@ -595,6 +644,15 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
+  // Invalidate the query to allow a re-fetch of the data after editing an administration
+  await invalidateAllQueries();
+});
+
+onUnmounted(async () => {
+  if (!submitted.value) {
+    // Reset the query to allow a clean re-fetch of the data if exiting the page without submitting (editing)
+    await resetAllQueries();
+  }
 });
 
 watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
@@ -614,24 +672,69 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
       }
     });
     state.legal = adminInfo.legal;
+    state.consent = adminInfo?.legal?.consent ?? null;
+    state.assent = adminInfo?.legal?.assent ?? null;
+    isTestData.value = adminInfo.testData;
+
+    if (state.consent === 'No Consent') {
+      noConsent.value = state.consent;
+    }
   }
 });
 
-function findVariantWithParams(variants, params) {
-  console.log(`attempting to find variant of ${variants[0].task.id}`);
-
-  const found = _find(variants, (variant) => {
-    const cleanVariantParams = removeNull(variant.variant.params);
-    const cleanInputParams = removeNull(params);
-    return _isEqual(cleanInputParams, cleanVariantParams);
-  });
-
-  if (found) {
-    console.log('found', found);
+// Set up watchers for changes to orgs as a result of editing an administration
+watch(districtsToGrab, async (updatedValue) => {
+  if (updatedValue.length !== 0) {
+    // Invalidate the districts query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['districts', props.adminId]);
+    const fetchedDistricts = await queryClient.fetchQuery(['districts', props.adminId], () =>
+      fetchDocsById(updatedValue),
+    );
+    state.districts = fetchedDistricts ?? [];
   }
-  // TODO: implement tie breakers if found.length > 1
-  return found;
-}
+});
+
+watch(schoolsToGrab, async (updatedValue) => {
+  if (updatedValue.length !== 0) {
+    // Invalidate the schools query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['schools', 'minimalOrgs', props.adminId]);
+    const fetchedSchools = await queryClient.fetchQuery(['schools', 'minimalOrgs', props.adminId], () =>
+      fetchDocsById(updatedValue),
+    );
+    state.schools = fetchedSchools ?? [];
+  }
+});
+
+watch(classesToGrab, async (updatedValue) => {
+  if (updatedValue.length !== 0) {
+    // Invalidate the classes query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['classes', 'minimal', props.adminId]);
+    const fetchedClasses = await queryClient.fetchQuery(['classes', 'minimal', props.adminId], () =>
+      fetchDocsById(updatedValue),
+    );
+    state.classes = fetchedClasses ?? [];
+  }
+});
+
+watch(groupsToGrab, async (updatedValue) => {
+  if (updatedValue.length !== 0) {
+    // Invalidate the groups query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['groups', props.adminId]);
+    const fetchedGroups = await queryClient.fetchQuery(['groups', props.adminId], () => fetchDocsById(updatedValue));
+    state.groups = fetchedGroups ?? [];
+  }
+});
+
+watch(familiesToGrab, async (updatedValue) => {
+  if (updatedValue.length !== 0) {
+    // Invalidate the families query and re-fetch the data based on the updated value
+    await queryClient.invalidateQueries(['families', props.adminId]);
+    const fetchedFamilies = await queryClient.fetchQuery(['families', props.adminId], () =>
+      fetchDocsById(updatedValue),
+    );
+    state.families = fetchedFamilies ?? [];
+  }
+});
 </script>
 
 <style lang="scss">
@@ -758,7 +861,24 @@ function findVariantWithParams(variants, params) {
     display: none;
   }
 }
-.p-tabview-panels {
-  padding-top: 2vh !important;
+.p-radiobutton.p-component.p-radiobutton-checked {
+  position: relative;
+  width: 20px; /* adjust as needed */
+  height: 20px; /* adjust as needed */
+  background-color: var(--primary-color);
+  border-color: var(--primary-color) !important;
+  border-radius: 50%; /* make the element itself circular */
+}
+
+.p-radiobutton.p-component.p-radiobutton-checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px; /* adjust size of the inner circle as needed */
+  height: 5px; /* adjust size of the inner circle as needed */
+  background-color: white; /* color of the inner circle */
+  border-radius: 50%; /* make the inner element circular */
+  transform: translate(-50%, -50%); /* center the inner circle */
 }
 </style>

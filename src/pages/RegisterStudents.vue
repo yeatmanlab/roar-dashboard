@@ -6,7 +6,7 @@
           <i class="pi pi-users text-gray-400 rounded" style="font-size: 1.6rem" />
           <div class="admin-page-header">Add Participants</div>
         </div>
-        <div class="flex flex-column text-md text-gray-500 ml-6 gap-2 mb-4">
+        <div class="flex flex-column text-md text-gray-500 ml-6 gap-2">
           <div>Add participants by uploading a CSV.</div>
           <div>
             The following fields are required for registering a student:
@@ -79,7 +79,7 @@
           <PvColumn v-for="col of tableColumns" :key="col.field" :field="col.field">
             <template #header>
               <div class="col-header">
-                <PvSelect
+                <PvDropdown
                   v-model="dropdown_model[col.field]"
                   :options="dropdown_options"
                   option-label="label"
@@ -95,7 +95,7 @@
         <div class="submit-container">
           <div class="m-2">
             <PvCheckbox v-model="isAllTestData" :binary="true" input-id="isTestData" />
-            <label for="isTestData" class="ml-2 text-gray-600">All users are test accounts</label>
+            <label for="isTestData" class="ml-2">All users are test accounts</label>
           </div>
           <PvButton
             label="Start Registration"
@@ -138,10 +138,9 @@
   </main>
 </template>
 <script setup>
-import { ref, toRaw } from 'vue';
+import { ref, toRaw, onMounted } from 'vue';
 import { csvFileToJson } from '@/helpers';
 import _cloneDeep from 'lodash/cloneDeep';
-import _chunk from 'lodash/chunk';
 import _compact from 'lodash/compact';
 import _forEach from 'lodash/forEach';
 import _includes from 'lodash/includes';
@@ -150,18 +149,20 @@ import _omit from 'lodash/omit';
 import _set from 'lodash/set';
 import _uniqBy from 'lodash/uniqBy';
 import _startCase from 'lodash/startCase';
+import _find from 'lodash/find';
 import { useAuthStore } from '@/store/auth';
-import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { fetchOrgByName } from '@/helpers/query/orgs';
 
 const authStore = useAuthStore();
-const router = useRouter();
 const toast = useToast();
 const isFileUploaded = ref(false);
 const rawStudentFile = ref({});
 const isAllTestData = ref(false);
+
+const { roarfirekit } = storeToRefs(authStore);
 
 // Primary Table & Dropdown refs
 const dataTable = ref();
@@ -186,6 +187,7 @@ const dropdown_options = ref([
       { label: 'First Name', value: 'firstName' },
       { label: 'Middle Name', value: 'middleName' },
       { label: 'Last Name', value: 'lastName' },
+      { label: 'Unenroll', value: 'unenroll' },
       { label: 'State ID', value: 'state_id' },
       { label: 'Gender', value: 'gender' },
       { label: 'English Language Level', value: 'ell_status' },
@@ -343,110 +345,75 @@ async function submitStudents() {
     activeSubmit.value = false;
     return;
   }
-  // Begin submit process
-  const totalUsers = submitObject.length;
-  const chunkedSubmitObject = _chunk(submitObject, 10);
-  for (const chunk of chunkedSubmitObject) {
-    for (const user of chunk) {
-      // Handle Email Registration
-      const {
-        email,
-        username,
-        password,
-        firstName,
-        middleName,
-        lastName,
-        district,
-        school,
-        uClass,
-        group,
-        ...userData
-      } = user;
-      const computedEmail = email || `${username}@roar-auth.com`;
-      let sendObject = {
-        email: computedEmail,
-        password,
-        userData,
-      };
-      if (username) _set(sendObject, 'userData.username', username);
-      if (firstName) _set(sendObject, 'userData.name.first', firstName);
-      if (middleName) _set(sendObject, 'userData.name.middle', middleName);
-      if (lastName) _set(sendObject, 'userData.name.last', lastName);
 
-      const orgNameMap = {
-        district: district,
-        school: school,
-        class: uClass,
-        group: group,
-      };
+  // Send the bulk user data to sorting
+  const usersToSend = [];
+  for (const user of submitObject) {
+    // Handle Email Registration
+    const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } =
+      user;
+    const computedEmail = email || `${username}@roar-auth.com`;
+    let sendObject = {
+      email: computedEmail,
+      password,
+      userData,
+    };
+    if (username) _set(sendObject, 'userData.username', username);
+    if (firstName) _set(sendObject, 'userData.name.first', firstName);
+    if (middleName) _set(sendObject, 'userData.name.middle', middleName);
+    if (lastName) _set(sendObject, 'userData.name.last', lastName);
 
-      // If orgType is a given column, check if the name is
-      //   associated with a valid id. If so, add the id to
-      //   the sendObject. If not, reject user
-      for (const [orgType, orgName] of Object.entries(orgNameMap)) {
-        if (orgName) {
-          let orgInfo;
-          if (orgType === 'school') {
-            const { id: districtId } = await getOrgId('districts', district);
-            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
-          } else if (orgType === 'class') {
-            const { id: districtId } = await getOrgId('districts', district);
-            const { id: schoolId } = await getOrgId('schools', school);
-            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
-          } else {
-            orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
-          }
+    const orgNameMap = {
+      district: district,
+      school: school,
+      class: uClass,
+      group: group,
+    };
 
-          if (!_isEmpty(orgInfo)) {
-            _set(sendObject, `userData.${orgType}`, orgInfo);
-          } else {
-            addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
-            if (processedUsers >= totalUsers) {
-              activeSubmit.value = false;
-            }
-            return;
-          }
+    // If orgType is a given column, check if the name is
+    //   associated with a valid id. If so, add the id to
+    //   the sendObject. If not, reject user
+    for (const [orgType, orgName] of Object.entries(orgNameMap)) {
+      if (orgName) {
+        let orgInfo;
+        if (orgType === 'school') {
+          const { id: districtId } = await getOrgId('districts', district);
+          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(undefined));
+        } else if (orgType === 'class') {
+          const { id: districtId } = await getOrgId('districts', district);
+          const { id: schoolId } = await getOrgId('schools', school);
+          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
+        } else {
+          orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
+        }
+
+        if (!_isEmpty(orgInfo)) {
+          _set(sendObject, `userData.${orgType}`, orgInfo);
+        } else {
+          addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
+          return;
         }
       }
-
-      authStore
-        .registerWithEmailAndPassword(sendObject)
-        .then(() => {
-          toast.add({
-            severity: 'success',
-            summary: 'User Creation Success',
-            detail: `${sendObject.email} was sucessfully created.`,
-            life: 9000,
-          });
-          processedUsers = processedUsers + 1;
-          if (processedUsers >= totalUsers) {
-            activeSubmit.value = false;
-            if (errorUsers.value.length === 0) {
-              // Processing is finished, and there are no error users.
-              router.push({ name: 'Home' });
-            }
-          }
-        })
-        .catch((e) => {
-          toast.add({
-            severity: 'error',
-            summary: 'User Creation Failed',
-            detail: 'Please see error table below.',
-            life: 3000,
-          });
-          addErrorUser(user, e);
-          if (processedUsers >= totalUsers) {
-            activeSubmit.value = false;
-          }
-        });
     }
-    await delay(2250);
-  }
-}
 
-function delay(milliseconds) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, milliseconds);
+    usersToSend.push(sendObject);
+  }
+  await roarfirekit.value.createUpdateUsers(usersToSend).then((results) => {
+    activeSubmit.value = false;
+    for (const result of results.data) {
+      if (result?.status === 'rejected') {
+        const email = result.email;
+        const username = email.split('@')[0];
+        const usernameKey = getKeyByValue(dropdown_model.value, 'username');
+        const user = _find(rawStudentFile.value, (record) => {
+          return record[usernameKey] === username;
+        });
+        addErrorUser(user, result.reason);
+      } else if (result?.status === 'fulfilled') {
+        const email = result.email;
+        toast.add({ severity: 'success', summary: 'Success', detail: `User ${email} processed!`, life: 3000 });
+      }
+    }
   });
 }
 
@@ -505,6 +472,31 @@ function downloadErrorTable() {
 //   console.log('handler for beforeunload')
 //   e.preventDefault();
 // });
+
+// +-----------------------------------+
+// | Handle roarfirekit initialization |
+// +-----------------------------------+
+
+const refreshing = ref(false);
+const initialized = ref(false);
+let unsubscribe;
+const refresh = () => {
+  refreshing.value = true;
+  if (unsubscribe) unsubscribe();
+
+  refreshing.value = false;
+  initialized.value = true;
+};
+
+unsubscribe = authStore.$subscribe(async (mutation, state) => {
+  if (state.roarfirekit.createUpdateUser) refresh();
+});
+
+onMounted(async () => {
+  if (roarfirekit.value.createUpdateUser) {
+    refresh();
+  }
+});
 </script>
 <style scoped>
 .extra-height {

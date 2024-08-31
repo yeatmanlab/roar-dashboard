@@ -1,23 +1,20 @@
 <template>
   <div>
-    <div v-if="!noGamesAvailable || consentSpinner" class="bg-white-alpha-90">
-      <!-- <WE ARE USING V-SHOW INSTEAD OF V-IF BECAUSE OTHERWISE THE STYLE WILL BREAK> -->
-      <div v-show="isFetching" class="loading-container">
+    <div v-if="!noGamesAvailable || consentSpinner">
+      <div v-if="isFetching" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
-      <div v-show="!isFetching">
-        <PvFloatLabel>
-          <h2 v-if="adminInfo?.length == 1" class="dropdown-container text-gray-600 ml-5">
-            {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
-          </h2>
-        </PvFloatLabel>
-        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between text-gray-600">
+      <div v-else>
+        <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
+          {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
+        </h2>
+        <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
           <div
             v-if="optionalAssessments.length !== 0"
             class="switch-container flex flex-row align-items-center justify-content-end mr-6 gap-2"
           >
-            <PvToggleSwitch
+            <PvInputSwitch
               v-model="showOptionalAssessments"
               input-id="switch-optional"
               data-cy="switch-show-optional-assessments"
@@ -28,51 +25,51 @@
           </div>
           <div
             v-if="adminInfo?.length > 0"
-            class="flex flex-row justify-center align-items-center dropdown-container gap-4 w-full"
+            class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
-                <PvFloatLabel class="mt-5 ml-5">
-                  <PvSelect
-                    v-if="adminInfo.every((admin) => admin.publicName)"
-                    v-model="selectedAdmin"
-                    :options="adminInfo ?? []"
-                    option-label="publicName"
-                    input-id="dd-assignment"
-                    data-cy="dropdown-select-administration"
-                    @change="toggleShowOptionalAssessments"
-                  />
-                  <PvSelect
-                    v-else
-                    v-model="selectedAdmin"
-                    :options="adminInfo ?? []"
-                    option-label="name"
-                    input-id="dd-assignment"
-                    data-cy="dropdown-select-administration"
-                    @change="toggleShowOptionalAssessments"
-                  />
-                  <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
-                </PvFloatLabel>
+                <PvDropdown
+                  v-if="adminInfo.every((admin) => admin.publicName)"
+                  v-model="selectedAdmin"
+                  :options="sortedAdminInfo ?? []"
+                  option-label="publicName"
+                  input-id="dd-assignment"
+                  data-cy="dropdown-select-administration"
+                  @change="toggleShowOptionalAssessments"
+                />
+                <PvDropdown
+                  v-else
+                  v-model="selectedAdmin"
+                  :options="sortedAdminInfo ?? []"
+                  option-label="name"
+                  input-id="dd-assignment"
+                  data-cy="dropdown-select-administration"
+                  @change="toggleShowOptionalAssessments"
+                />
+                <label for="dd-assignment">{{ $t('homeParticipant.selectAssignment') }}</label>
               </div>
             </div>
           </div>
         </div>
         <div class="tabs-container">
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
-          <GameTabs
-            v-if="showOptionalAssessments"
-            :games="optionalAssessments"
-            :sequential="isSequential"
-            :user-data="userData"
-          />
-          <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
+          <Transition name="fade" mode="out-in">
+            <GameTabs
+              v-if="showOptionalAssessments"
+              :games="optionalAssessments"
+              :sequential="isSequential"
+              :user-data="userData"
+            />
+            <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
+          </Transition>
         </div>
       </div>
     </div>
-    <div v-else class="bg-white-alpha-90">
+    <div v-else>
       <div class="col-full text-center">
-        <h1 class="text-gray-600">{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center text-gray-600">{{ $t('homeParticipant.contactAdministrator') }}</p>
+        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
+        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
         <router-link :to="{ name: 'SignOut' }">
           <PvButton
             :label="$t('navBar.signOut')"
@@ -95,20 +92,18 @@
 import { onMounted, ref, watch, computed, toRaw } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
-import _head from 'lodash/head';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
 import _forEach from 'lodash/forEach';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
-import AppSpinner from '../components/AppSpinner.vue';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -124,8 +119,11 @@ const init = () => {
   initialized.value = true;
 };
 
+const queryClient = useQueryClient();
+
 const authStore = useAuthStore();
-const { roarfirekit, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, roarUid, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } =
+  storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -143,8 +141,8 @@ const {
   isFetching: isFetchingUserData,
   data: userData,
 } = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', uid.value),
+  queryKey: ['userData', roarUid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', roarUid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -156,7 +154,7 @@ const {
   data: assignmentInfo,
 } = useQuery({
   queryKey: ['assignments', uid, assignmentQueryKeyIndex],
-  queryFn: () => getUserAssignments(uid.value),
+  queryFn: () => getUserAssignments(roarUid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 min
@@ -186,6 +184,10 @@ const {
   keepPreviousData: true,
   enabled: administrationQueryEnabled,
   staleTime: 5 * 60 * 1000,
+});
+
+const sortedAdminInfo = computed(() => {
+  return [...(adminInfo.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 });
 
 async function checkConsent() {
@@ -224,14 +226,32 @@ async function checkConsent() {
   if (_get(toRaw(consentStatus), consentDoc.version)) {
     const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
     let found = false;
+    let signedBeforeAugFirst = false;
+    let signedAfterAugFirst = false;
+
     _forEach(legalDocs, (document) => {
+      const signedDate = new Date(document.dateSigned);
+      const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
+        if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
+          signedBeforeAugFirst = true;
+        } else if (signedDate >= augustFirstThisYear) {
+          signedAfterAugFirst = true;
+          return false; // This stops the loop in Lodash _.forEach
+        }
+      }
+      if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
+        signedBeforeAugFirst = true;
       }
     });
 
-    if (!found) {
-      if (docAmount !== '' || docExpectedTime !== '') {
+    // If any document is signed after August 1st, do not show the consent form
+    if (signedAfterAugFirst) {
+      showConsent.value = false;
+    } else if (!found || signedBeforeAugFirst) {
+      if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
         return;
@@ -251,10 +271,12 @@ async function updateConsent() {
     dateSigned: new Date(),
   };
   try {
-    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value);
-    userQueryKeyIndex.value += 1;
-  } catch {
-    console.log("Couldn't update consent value");
+    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value).then(async () => {
+      userQueryKeyIndex.value += 1;
+      await queryClient.invalidateQueries(['userData', roarUid, userQueryKeyIndex]);
+    });
+  } catch (e) {
+    console.log("Couldn't update consent value", e);
   }
 }
 
@@ -395,22 +417,23 @@ const studentInfo = computed(() => {
 
 watch(
   [selectedAdmin, adminInfo],
-  ([updateSelectedAdmin]) => {
+  async ([updateSelectedAdmin]) => {
     if (updateSelectedAdmin) {
-      checkConsent();
+      await checkConsent();
     }
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list
-    // of all administrations choose the first one from adminInfo
+    // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-      selectedAdmin.value = _head(adminInfo.value);
+      // Choose the first sorted administration
+      selectedAdmin.value = sortedAdminInfo.value[0];
     }
   },
   { immediate: true },
 );
 </script>
-<style>
+<style scoped>
 .tabs-container {
   display: flex;
   flex-direction: row;
@@ -427,6 +450,11 @@ watch(
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.dropdown-container {
+  margin-top: 2rem;
+  margin-left: 2rem;
 }
 
 .assignment-select-container {

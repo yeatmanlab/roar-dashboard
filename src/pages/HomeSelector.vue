@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, toRaw, watch } from 'vue';
+import { computed, onMounted, ref, toRaw } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
@@ -31,13 +31,10 @@ import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
 
-const HomeParticipant = ref(null);
-const HomeAdministrator = ref(null);
-const ConsentModal = ref(null);
-
+let HomeParticipant, HomeAdministrator, ConsentModal;
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
+const { roarfirekit, roarUid, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
 
 const router = useRouter();
 const i18n = useI18n();
@@ -65,8 +62,8 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 });
 
 const { isLoading: isLoadingUserData, data: userData } = useQuery({
-  queryKey: ['userData', uid, userQueryKeyIndex],
-  queryFn: () => fetchDocById('users', uid.value),
+  queryKey: ['userData', roarUid, userQueryKeyIndex],
+  queryFn: () => fetchDocById('users', roarUid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -123,14 +120,29 @@ async function checkConsent() {
     if (!_get(toRaw(consentStatus), consentDoc.version)) {
       confirmText.value = consentDoc.text;
       showConsent.value = true;
+      return;
+    }
+
+    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+    const signedBeforeAugFirst = legalDocs.some((doc) => isSignedBeforeAugustFirst(doc.dateSigned));
+
+    if (signedBeforeAugFirst) {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
     }
   }
 }
 
+function isSignedBeforeAugustFirst(signedDate) {
+  const currentDate = new Date();
+  const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+  return new Date(signedDate) < augustFirstThisYear;
+}
+
 onMounted(async () => {
-  HomeParticipant.value = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator.value = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal.value = (await import('@/components/ConsentModal.vue')).default;
+  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
+  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
+  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
 
   if (requireRefresh.value) {
     requireRefresh.value = false;
@@ -142,12 +154,6 @@ onMounted(async () => {
     if (isAdmin.value) {
       await checkConsent();
     }
-  }
-});
-
-watch(isLoading, async (newValue) => {
-  if (!newValue && isAdmin.value) {
-    await checkConsent();
   }
 });
 </script>
