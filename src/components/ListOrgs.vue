@@ -115,20 +115,20 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
 import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
-import { orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
+import { orgFetchAll } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 
 const initialized = ref(false);
-const orgsQueryKeyIndex = ref(0);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 const orderBy = ref(orderByDefault);
@@ -152,14 +152,14 @@ const schoolPlaceholder = computed(() => {
 
 // Authstore and Sidebar
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const { isSuperAdmin } = useUserType(userClaims);
+const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
   const headers = {
@@ -213,22 +213,8 @@ const {
   isLoading,
   isFetching,
   data: orgData,
-} = useQuery({
-  queryKey: ['orgsPage', uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
-  queryFn: () =>
-    orgPageFetcher(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
-      orderBy,
-      ref(100000),
-      ref(0),
-      isSuperAdmin,
-      adminOrgs,
-    ),
-  keepPreviousData: true,
+} = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
   enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 function copyToClipboard(text) {

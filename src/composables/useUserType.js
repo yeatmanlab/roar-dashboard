@@ -25,7 +25,7 @@ export default function useUserType(userClaims) {
     }
 
     // Check if the user has any minimal admin organizations.
-    const minimalAdminOrgs = claims.minimalAdminOrgs || {};
+    const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
     const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
 
     if (hasMinimalAdminOrgs) {
