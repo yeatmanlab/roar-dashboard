@@ -138,7 +138,7 @@
   </PvPanel>
 </template>
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import _filter from 'lodash/filter';
 import _findIndex from 'lodash/findIndex';
 import _debounce from 'lodash/debounce';
@@ -183,6 +183,15 @@ watch(
   () => props.inputVariants,
   (newVariants) => {
     selectedVariants.value = _union(selectedVariants.value, newVariants);
+
+    // Update the conditions for the variants that were pre-existing
+    selectedVariants.value = selectedVariants.value.map((variant) => {
+      const preExistingInfo = props.preExistingAssessmentInfo.find((info) => info?.variantId === variant?.id);
+      if (preExistingInfo) {
+        return { ...variant, variant: { ...variant?.variant, conditions: preExistingInfo.conditions } };
+      }
+      return variant;
+    });
   },
 );
 
@@ -227,7 +236,8 @@ const searchCards = (term) => {
       if (
         _toLower(variant.variant.name).includes(_toLower(term)) ||
         _toLower(variant.id).includes(_toLower(term)) ||
-        _toLower(variant.task.id).includes(_toLower(term))
+        _toLower(variant.task.id).includes(_toLower(term)) ||
+        _toLower(variant.task.studentFacingName).includes(_toLower(term))
       )
         return true;
       else return false;

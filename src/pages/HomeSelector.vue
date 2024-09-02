@@ -5,12 +5,14 @@
       <p class="text-center">{{ $t('homeSelector.loading') }}</p>
     </div>
   </div>
+
   <div v-else>
-    <HomeParticipant v-if="!isAdmin" />
+    <HomeParticipant v-if="isParticipant" />
     <HomeAdministrator v-else-if="isAdmin" />
   </div>
+
   <ConsentModal
-    v-if="showConsent && isAdmin"
+    v-if="!isLoading && showConsent && isAdmin"
     :consent-text="confirmText"
     :consent-type="consentType"
     @accepted="updateConsent"
@@ -19,20 +21,21 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, toRaw, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, toRaw } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import _get from 'lodash/get';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
-import _get from 'lodash/get';
-import _isEmpty from 'lodash/isEmpty';
-import _union from 'lodash/union';
-import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
 
+import useUserType from '@/composables/useUserType';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
-let HomeParticipant, HomeAdministrator, ConsentModal;
+const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
+const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
+const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModal.vue'));
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
@@ -71,13 +74,9 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
+const { isAdmin, isParticipant } = useUserType(userClaims);
 
-const isAdmin = computed(() => {
-  if (userClaims.value?.claims?.super_admin) return true;
-  if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;
-  return true;
-});
+const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
 
 const consentType = computed(() => {
   if (isAdmin.value) {
@@ -106,23 +105,36 @@ async function checkConsent() {
     // skip the consent for levante
     return;
   }
+
   // Check for consent
   if (isAdmin.value) {
     const consentStatus = _get(userData.value, `legal.${consentType.value}`);
     const consentDoc = await authStore.getLegalDoc(consentType.value);
     consentVersion.value = consentDoc.version;
+
     if (!_get(toRaw(consentStatus), consentDoc.version)) {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
+      return;
+    }
+
+    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+    const signedBeforeAugFirst = legalDocs.some((doc) => isSignedBeforeAugustFirst(doc.dateSigned));
+
+    if (signedBeforeAugFirst) {
       confirmText.value = consentDoc.text;
       showConsent.value = true;
     }
   }
 }
 
-onMounted(async () => {
-  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+function isSignedBeforeAugustFirst(signedDate) {
+  const currentDate = new Date();
+  const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+  return new Date(signedDate) < augustFirstThisYear;
+}
 
+onMounted(async () => {
   if (requireRefresh.value) {
     requireRefresh.value = false;
     router.go(0);
@@ -133,12 +145,6 @@ onMounted(async () => {
     if (isAdmin.value) {
       await checkConsent();
     }
-  }
-});
-
-watch(isLoading, async (newValue) => {
-  if (!newValue && isAdmin.value) {
-    await checkConsent();
   }
 });
 </script>

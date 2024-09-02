@@ -29,7 +29,7 @@
       </div>
     </div>
     <div class="flex justify-content-center mt-2">
-      <PvCheckbox v-model="noConsent" input-id="no-consent" class="flex" value="noConsent" />
+      <PvCheckbox v-model="noConsent" :binary="true" input-id="no-consent" class="flex" value="noConsent" />
       <label class="ml-2 flex text-center" for="no-consent"
         >This administration does not require consent or assent forms</label
       >
@@ -557,6 +557,20 @@ function processConsentAssent(consent, targetArray) {
   });
 }
 
+// Declare a computed property to watch the legal prop
+const computedLegalProps = computed(() => {
+  return props.legal ?? {};
+});
+
+// Watch the computed property and set the noConsent value accordingly
+watch(computedLegalProps, (newValue) => {
+  if (newValue.consent === 'No Consent') {
+    noConsent.value = true;
+  } else {
+    noConsent.value = false;
+  }
+});
+
 watch(amount, (newValue) => {
   result.amount = newValue;
   emit('consent-selected', result);
@@ -568,7 +582,7 @@ watch(expectedTime, (newValue) => {
 });
 
 watch(noConsent, () => {
-  if (noConsent.value && noConsent.value?.find((item) => item === 'noConsent')) {
+  if (noConsent.value) {
     emit('consent-selected', 'No Consent');
   } else {
     emit('consent-selected', '');

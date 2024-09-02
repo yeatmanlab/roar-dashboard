@@ -32,7 +32,7 @@
                 <PvDropdown
                   v-if="adminInfo.every((admin) => admin.publicName)"
                   v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
+                  :options="sortedAdminInfo ?? []"
                   option-label="publicName"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
@@ -41,7 +41,7 @@
                 <PvDropdown
                   v-else
                   v-model="selectedAdmin"
-                  :options="adminInfo ?? []"
+                  :options="sortedAdminInfo ?? []"
                   option-label="name"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
@@ -92,14 +92,13 @@
 import { onMounted, ref, watch, computed, toRaw } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
-import _head from 'lodash/head';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
 import _forEach from 'lodash/forEach';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { fetchDocsById, fetchSubcollection } from '@/helpers/query/utils';
 import { getUserAssignments } from '@/helpers/query/assignments';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
@@ -121,8 +120,11 @@ const init = () => {
   initialized.value = true;
 };
 
+const queryClient = useQueryClient();
+
 const authStore = useAuthStore();
-const { roarfirekit, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, roarUid, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } =
+  storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -149,7 +151,7 @@ const {
   data: assignmentInfo,
 } = useQuery({
   queryKey: ['assignments', uid, assignmentQueryKeyIndex],
-  queryFn: () => getUserAssignments(uid.value),
+  queryFn: () => getUserAssignments(roarUid.value),
   keepPreviousData: true,
   enabled: initialized,
   staleTime: 5 * 60 * 1000, // 5 min
@@ -181,6 +183,10 @@ const {
   staleTime: 5 * 60 * 1000,
 });
 
+const sortedAdminInfo = computed(() => {
+  return [...(adminInfo.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+});
+
 async function checkConsent() {
   showConsent.value = false;
   const dob = new Date(userData.value?.studentData?.dob);
@@ -191,7 +197,7 @@ async function checkConsent() {
 
   if (!legal?.consent) {
     // Always show consent form for this test student when running Cypress tests
-    if (userData.value?.id === 'XAq5qOuXnNPHClK0xZXXhfGsWX22') {
+    if (userData.value?.id === 'O75V6IcVeiTwW8TRjXb76uydlwV2') {
       consentType.value = 'consent';
       confirmText.value = 'This is a test student. Please do not accept this form.';
       showConsent.value = true;
@@ -217,14 +223,32 @@ async function checkConsent() {
   if (_get(toRaw(consentStatus), consentDoc.version)) {
     const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
     let found = false;
+    let signedBeforeAugFirst = false;
+    let signedAfterAugFirst = false;
+
     _forEach(legalDocs, (document) => {
+      const signedDate = new Date(document.dateSigned);
+      const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
+        if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
+          signedBeforeAugFirst = true;
+        } else if (signedDate >= augustFirstThisYear) {
+          signedAfterAugFirst = true;
+          return false; // This stops the loop in Lodash _.forEach
+        }
+      }
+      if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
+        signedBeforeAugFirst = true;
       }
     });
 
-    if (!found) {
-      if (docAmount !== '' || docExpectedTime !== '') {
+    // If any document is signed after August 1st, do not show the consent form
+    if (signedAfterAugFirst) {
+      showConsent.value = false;
+    } else if (!found || signedBeforeAugFirst) {
+      if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
         return;
@@ -244,10 +268,12 @@ async function updateConsent() {
     dateSigned: new Date(),
   };
   try {
-    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value);
-    userQueryKeyIndex.value += 1;
-  } catch {
-    console.log("Couldn't update consent value");
+    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value).then(async () => {
+      userQueryKeyIndex.value += 1;
+      await queryClient.invalidateQueries(['userData', roarUid, userQueryKeyIndex]);
+    });
+  } catch (e) {
+    console.log("Couldn't update consent value", e);
   }
 }
 
@@ -388,16 +414,17 @@ const studentInfo = computed(() => {
 
 watch(
   [selectedAdmin, adminInfo],
-  ([updateSelectedAdmin]) => {
+  async ([updateSelectedAdmin]) => {
     if (updateSelectedAdmin) {
-      checkConsent();
+      await checkConsent();
     }
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list
-    // of all administrations choose the first one from adminInfo
+    // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
-      selectedAdmin.value = _head(adminInfo.value);
+      // Choose the first sorted administration
+      selectedAdmin.value = sortedAdminInfo.value[0];
     }
   },
   { immediate: true },
