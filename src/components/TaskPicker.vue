@@ -236,7 +236,8 @@ const searchCards = (term) => {
       if (
         _toLower(variant.variant.name).includes(_toLower(term)) ||
         _toLower(variant.id).includes(_toLower(term)) ||
-        _toLower(variant.task.id).includes(_toLower(term))
+        _toLower(variant.task.id).includes(_toLower(term)) ||
+        _toLower(variant.task.studentFacingName).includes(_toLower(term))
       )
         return true;
       else return false;

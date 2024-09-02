@@ -13,11 +13,11 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  */
 const useUserStudentDataQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
-  const { uid } = storeToRefs(authStore);
+  const { roarUid } = storeToRefs(authStore);
 
   return useQuery({
     queryKey: [USER_STUDENT_DATA_QUERY_KEY, uid.value],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid.value, ['studentData']),
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, roarUid.value, ['studentData']),
     placeholderData: keepPreviousData,
     ...queryOptions,
   });
