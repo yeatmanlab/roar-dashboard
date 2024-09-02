@@ -118,7 +118,6 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
-import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { orgFetchAll } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
@@ -195,7 +194,7 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
+const claimsLoaded = computed(() => !!userClaims?.value?.claims);
 
 const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsQuery({
   enabled: claimsLoaded,
