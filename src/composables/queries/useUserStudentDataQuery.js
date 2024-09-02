@@ -16,7 +16,7 @@ const useUserStudentDataQuery = (queryOptions = undefined) => {
   const { roarUid } = storeToRefs(authStore);
 
   return useQuery({
-    queryKey: [USER_STUDENT_DATA_QUERY_KEY, uid.value],
+    queryKey: [USER_STUDENT_DATA_QUERY_KEY, roarUid.value],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, roarUid.value, ['studentData']),
     placeholderData: keepPreviousData,
     ...queryOptions,

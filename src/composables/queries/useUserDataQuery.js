@@ -16,7 +16,7 @@ const useUserDataQuery = (queryOptions = undefined) => {
   const { roarUid, userQueryKeyIndex } = storeToRefs(authStore);
 
   return useQuery({
-    queryKey: [USER_DATA_QUERY_KEY, uid.value, userQueryKeyIndex.value],
+    queryKey: [USER_DATA_QUERY_KEY, roarUid.value, userQueryKeyIndex.value],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, roarUid.value),
     placeholderData: keepPreviousData,
     ...queryOptions,

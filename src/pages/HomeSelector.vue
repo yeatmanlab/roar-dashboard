@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, onMounted, ref, toRaw, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, toRaw } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
