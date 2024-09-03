@@ -2,6 +2,7 @@ import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { orgFetcher } from '@/helpers/query/orgs';
+import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { DISTRICT_SCHOOLS_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
@@ -22,8 +23,7 @@ const useDistrictSchoolsQuery = (districtId, queryOptions = undefined) => {
   });
 
   // Get admin status and administation orgs.
-  // @TODO: Replace with useUserType composable once yeatmanlab/roar-dashboard/pull/751 is merged.
-  const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+  const { isSuperAdmin } = useUserType(userClaims);
   const administrationOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
   // Ensure all necessary data is loaded before enabling the query.
