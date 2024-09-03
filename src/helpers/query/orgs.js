@@ -248,7 +248,7 @@ export const orgFetcher = async (
   selectedDistrict,
   isSuperAdmin,
   adminOrgs,
-  select = ['name', 'id', 'currentActivationCode'],
+  select = ['name', 'id', 'tags', 'currentActivationCode'],
 ) => {
   if (isSuperAdmin.value) {
     const axiosInstance = getAxiosInstance();
