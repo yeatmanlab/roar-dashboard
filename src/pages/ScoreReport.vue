@@ -625,7 +625,11 @@ const computeAssignmentAndRunData = computed(() => {
         schoolName = schoolNameDictionary.value[schoolId];
       }
 
-      const firstNameOrUsername = user.name?.first ?? user.username;
+      const firstName = user.name?.first;
+      const lastName = user.name?.last;
+      const username = user.username;
+      
+      const firstNameOrUsername = firstName ?? username;
 
       const currRow = {
         user: {
