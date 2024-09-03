@@ -77,6 +77,17 @@ export const getAxiosInstance = (db = 'admin', unauthenticated = false) => {
   if (unauthenticated) {
     delete axiosOptions.headers;
   }
+
+  // Throw error when the Axios baseUrl is not set.
+  // This is a temporary solution to ensure the Axios base URL is set before making requests. This is a workaround that
+  // is required because the initialization logic seems to contain a race condition that causes TanStack to make
+  // requests before the base URL is set. Throwing an error ensures that TanStack identifies the request as invalid and
+  // retries it after the base URL is set.
+  // @TODO: Remove once initialization logic issue is identified and fixed.
+  if (!axiosOptions.baseURL) {
+    throw new Error('Base URL is not set.');
+  }
+
   return axios.create(axiosOptions);
 };
 
