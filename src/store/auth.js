@@ -31,6 +31,7 @@ export const useAuthStore = () => {
         assignmentQueryKeyIndex: 0,
         administrationQueryKeyIndex: 0,
         tasksDictionary: {},
+        showOptionalAssessments: false,
       };
     },
     getters: {
