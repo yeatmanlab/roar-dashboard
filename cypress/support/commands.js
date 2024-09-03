@@ -149,7 +149,16 @@ Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
 
 Cypress.Commands.add('switchToOptionalAssessments', () => {
   cy.wait(0.2 * Cypress.env('timeout'));
-  cy.get("[data-cy='switch-show-optional-assessments']").click();
+  cy.get("[data-cy='switch-show-optional-assessments']")
+    .invoke('attr', 'class')
+    .then((classes) => {
+      if (classes.includes('p-inputswitch-checked')) {
+        cy.log('Optional assessments already selected.');
+      } else {
+        cy.get("[data-cy='switch-show-optional-assessments']").click();
+        cy.log('Optional assessments selected.');
+      }
+    });
 });
 
 Cypress.Commands.add(
