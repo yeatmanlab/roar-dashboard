@@ -211,8 +211,11 @@ import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher } from '@/helpers/query/orgs';
+import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 
 const initialized = ref(false);
 const isTestData = ref(false);
@@ -251,9 +254,8 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const { isSuperAdmin } = useUserType(userClaims);
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-
 const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
 
 const { isLoading: isLoadingDistricts, data: districts } = useDistrictsQuery({
@@ -274,12 +276,8 @@ const schoolQueryEnabled = computed(() => {
 
 const selectedDistrict = computed(() => state.parentDistrict?.id);
 
-const { isFetching: isFetchingSchools, data: schools } = useQuery({
-  queryKey: ['schools', selectedDistrict],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs, ['name', 'id', 'tags']),
-  keepPreviousData: true,
+const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery(selectedDistrict, {
   enabled: schoolQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const classQueryEnabled = computed(() => {
@@ -292,12 +290,8 @@ const schoolDropdownEnabled = computed(() => {
 
 const selectedSchool = computed(() => state.parentSchool?.id);
 
-const { data: classes } = useQuery({
-  queryKey: ['classes', selectedSchool],
-  queryFn: () => orgFetcher('classes', selectedSchool, isSuperAdmin, adminOrgs, ['name', 'id', 'tags']),
-  keepPreviousData: true,
+const { data: classes } = useSchoolClassesQuery(selectedSchool, {
   enabled: classQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const rules = {
