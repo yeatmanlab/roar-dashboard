@@ -29,8 +29,7 @@ const useDistrictsQuery = (queryOptions = undefined) => {
 
   return useQuery({
     queryKey: [DISTRICTS_QUERY_KEY],
-    queryFn: () =>
-      orgFetcher(FIRESTORE_COLLECTIONS.DISTRICTS, undefined, isSuperAdmin, administrationOrgs, ['name', 'id', 'tags']),
+    queryFn: () => orgFetcher(FIRESTORE_COLLECTIONS.DISTRICTS, undefined, isSuperAdmin, administrationOrgs),
     enabled: isQueryEnabled,
     ...queryOptions,
   });
