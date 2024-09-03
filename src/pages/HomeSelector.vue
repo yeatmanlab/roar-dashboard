@@ -117,7 +117,10 @@ async function checkConsent() {
     const consentStatus = _get(userData.value, `legal.${consentType.value}`);
     const consentDoc = await authStore.getLegalDoc(consentType.value);
     consentVersion.value = consentDoc.version;
+    console.log('consentStatus', toRaw(consentStatus));
+    console.log('consentDoc.version', consentDoc.version);
     if (!_get(toRaw(consentStatus), consentDoc.version)) {
+      console.log('consent not signed');
       confirmText.value = consentDoc.text;
       showConsent.value = true;
       return;
