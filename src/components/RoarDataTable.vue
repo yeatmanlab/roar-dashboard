@@ -83,6 +83,7 @@
           :export-filename="exportFilename"
           removable-sort
           sort-mode="multiple"
+          :multi-sort-meta="lazyPreSorting"
           show-gridlines
           filter-display="menu"
           paginator
