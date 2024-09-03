@@ -8,3 +8,4 @@ export const DSGF_ORGS_QUERY_KEY = 'dsgf-orgs';
 export const ADMINITRATION_VARIANTS_QUERY_KEY = 'administration-variants';
 export const ORGS_TABLE_QUERY_KEY = 'orgs-table';
 export const SCHOOL_CLASSES_QUERY_KEY = 'school-classes';
+export const GROUPS_QUERY_KEY = 'groups';

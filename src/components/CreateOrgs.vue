@@ -206,16 +206,13 @@ import { storeToRefs } from 'pinia';
 import _capitalize from 'lodash/capitalize';
 import _union from 'lodash/union';
 import _without from 'lodash/without';
-import { useQuery } from '@tanstack/vue-query';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
-import { orgFetcher } from '@/helpers/query/orgs';
-import useUserType from '@/composables/useUserType';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
+import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 
 const initialized = ref(false);
 const isTestData = ref(false);
@@ -250,28 +247,16 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { isLoading: isLoadingDistricts, data: districts } = useDistrictsQuery({
   enabled: initialized,
 });
 
-const { isSuperAdmin } = useUserType(userClaims);
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
-
-const { isLoading: isLoadingDistricts, data: districts } = useDistrictsQuery({
-  enabled: claimsLoaded,
-});
-
-const { data: groups } = useQuery({
-  queryKey: ['groups'],
-  queryFn: () => orgFetcher('groups', undefined, isSuperAdmin, adminOrgs, ['name', 'id', 'tags']),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+const { data: groups } = useGroupsQuery({
+  enabled: initialized,
 });
 
 const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && state.parentDistrict !== undefined;
+  return initialized.value && state.parentDistrict !== undefined;
 });
 
 const selectedDistrict = computed(() => state.parentDistrict?.id);
@@ -281,7 +266,7 @@ const { isFetching: isFetchingSchools, data: schools } = useDistrictSchoolsQuery
 });
 
 const classQueryEnabled = computed(() => {
-  return claimsLoaded.value && state.parentSchool !== undefined;
+  return initialized.value && state.parentSchool !== undefined;
 });
 
 const schoolDropdownEnabled = computed(() => {
