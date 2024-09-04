@@ -937,7 +937,7 @@ const toggle = (event, column) => {
   op.value.toggle(event);
 };
 // Pass through data table events
-const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected']);
+const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
 </script>
 <style>
 .small-circle {
