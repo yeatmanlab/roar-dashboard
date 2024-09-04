@@ -12,7 +12,11 @@
               <div class="text-md text-gray-500 ml-6">Lists administrations assigned to your account</div>
             </div>
             <div class="flex align-items-center gap-2">
-              <div class="flex gap-3 align-items-center justify-content-start">
+              <div class="flex gap-3 align-items-stretch justify-content-start">
+                <div v-if="isSuperAdmin" class="flex flex-column gap-1">
+                  <small class="text-gray-400">Show test administrations</small>
+                  <PvInputSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
+                </div>
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by administration name</small>
                   <div class="flex align-items-center">
@@ -119,35 +123,22 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { orderByDefault, fetchDocById } from '@/helpers/query/utils';
+import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 
 const initialized = ref(false);
-const page = ref(0);
-const searchSuggestions = ref([]);
-const adminSearchTokens = ref([]);
-const searchInput = ref('');
-const search = ref('');
 const pageLimit = ref(10);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
+const queryClient = useQueryClient();
 const authStore = useAuthStore();
 
 const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
-
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  cacheTime: Infinity,
-});
 
 let unsubscribeInitializer;
 const init = () => {
@@ -163,12 +154,55 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const orderBy = ref(orderByDefault);
+const fetchTestAdministrations = ref(false);
+const testAdminsCached = ref(false);
+
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-const orderBy = ref(orderByDefault);
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
+});
+
+/**
+ * Fetches administrations from the cache or the server
+ * @param {Array} queryKey - The query key to use for fetching the data
+ * @returns {Promise<unknown>} - The cached or fetched data
+ */
+const getAdministrations = async (queryKey) => {
+  let cachedData = await queryClient.getQueryData(queryKey);
+
+  if (!cachedData) {
+    cachedData = await queryClient.fetchQuery({
+      queryKey,
+      queryFn: () =>
+        administrationPageFetcher(
+          orderBy,
+          ref(10000),
+          ref(0),
+          isSuperAdmin,
+          adminOrgs,
+          exhaustiveAdminOrgs,
+          fetchTestAdministrations.value,
+        ),
+      keepPreviousData: true,
+      enabled: canQueryAdministrations,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+    testAdminsCached.value = true;
+  }
+
+  return cachedData;
+};
+
+const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
+  queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
+  queryFn: () => fetchDocById('userClaims', uid.value),
+  keepPreviousData: true,
+  enabled: initialized,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: Infinity,
 });
 
 const {
@@ -177,7 +211,16 @@ const {
   data: administrations,
 } = useQuery({
   queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  queryFn: () =>
+    administrationPageFetcher(
+      orderBy,
+      ref(10000),
+      ref(0),
+      isSuperAdmin,
+      adminOrgs,
+      exhaustiveAdminOrgs,
+      fetchTestAdministrations,
+    ),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -199,29 +242,22 @@ const {
 
 const filteredAdministrations = ref(administrations.value);
 
-const clearSearch = () => {
-  search.value = '';
-  searchInput.value = '';
-  filteredAdministrations.value = administrations.value;
-};
+watch(fetchTestAdministrations, async (newState) => {
+  const queryKey = newState
+    ? ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex]
+    : ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex];
 
-const onSearch = () => {
-  search.value = searchInput.value;
-  if (!search.value) filteredAdministrations.value = administrations.value;
-  else {
-    const searchedAdministrations = administrations.value.filter((item) =>
-      item.name.toLowerCase().includes(search.value.toLowerCase()),
-    );
-    filteredAdministrations.value = searchedAdministrations;
-  }
-};
+  filteredAdministrations.value = await getAdministrations(queryKey);
+});
 
-const autocomplete = () => {
-  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
-    item.toLowerCase().includes(searchInput.value.toLowerCase()),
-  );
-};
-
+const page = ref(0);
+const searchSuggestions = ref([]);
+const adminSearchTokens = ref([]);
+const searchInput = ref('');
+const search = ref('');
+const sortOrder = ref();
+const sortField = ref();
+const dataViewKey = ref(0);
 const sortOptions = ref([
   {
     label: 'Name (ascending)',
@@ -297,9 +333,28 @@ const sortOptions = ref([
   },
 ]);
 const sortKey = ref(sortOptions.value[0]);
-const sortOrder = ref();
-const sortField = ref();
-const dataViewKey = ref(0);
+
+const clearSearch = () => {
+  search.value = '';
+  searchInput.value = '';
+  filteredAdministrations.value = administrations.value;
+};
+
+const onSearch = () => {
+  search.value = searchInput.value;
+  if (!search.value) filteredAdministrations.value = administrations.value;
+  else {
+    filteredAdministrations.value = administrations.value.filter((item) =>
+      item.name.toLowerCase().includes(search.value.toLowerCase()),
+    );
+  }
+};
+
+const autocomplete = () => {
+  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
+    item.toLowerCase().includes(searchInput.value.toLowerCase()),
+  );
+};
 
 const onSortChange = (event) => {
   dataViewKey.value += 1;
