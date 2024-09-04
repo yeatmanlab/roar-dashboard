@@ -61,8 +61,12 @@ jobs:
 
       - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
+      - name: Set Output Deploy URL
+        id: set-deploy-url
+        run: echo "::set-output name=deployUrl::$(echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }})"
+
     outputs:
-      deployUrl: ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
+      deployUrl: ${{ steps.set-deploy-url.outputs.deployUrl }}
 
   whitelist-pr-domains:
     name: Whitelist PR Domains on Firebase App Check
@@ -72,6 +76,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Extract PR Domain from Deploy URL
+        id: extract_pr_domain
+        run: echo "::set-output name=domain::$(echo ${{ needs.build-and-preview.outputs.deployUrl }}"
 
       - name: Set up Google Cloud SDK with Firebase Service Account
         uses: google-github-actions/setup-gcloud@v1
@@ -86,7 +94,7 @@ jobs:
         run: |
           CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ADMIN }} --format="value(webSettings.allowedDomains)")
           CURRENT_DOMAINS=$(echo $CURRENT_DOMAINS | tr ';' ',')
-          NEW_DOMAIN=${{ needs.build-and-preview.outputs.deployUrl }}
+          NEW_DOMAIN=${{ steps.extract_pr_domain.outputs.domain }}
           UPDATED_DOMAINS="${CURRENT_DOMAINS},${NEW_DOMAIN}"
           gcloud recaptcha keys update ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ADMIN }} --domains="$UPDATED_DOMAINS" --web
 
@@ -103,6 +111,6 @@ jobs:
         run: |
           CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ASSESSMENT }} --project=gse-roar-assessment --format="value(webSettings.allowedDomains)")
           CURRENT_DOMAINS=$(echo $CURRENT_DOMAINS | tr ';' ',')
-          NEW_DOMAIN=${{ build-and-preview.outputs.deployUrl }}
+          NEW_DOMAIN=${{ steps.extract_pr_domain.outputs.domain }}
           UPDATED_DOMAINS="${CURRENT_DOMAINS},${NEW_DOMAIN}"
           gcloud recaptcha keys update ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ASSESSMENT }} --domains="$UPDATED_DOMAINS" --web
