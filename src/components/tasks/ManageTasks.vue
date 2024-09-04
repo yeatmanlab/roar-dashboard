@@ -2,11 +2,11 @@
   <PvToast />
   <PvSelectButton
     v-model="viewModel"
-    :options="modelViews"
+    :options="Object.values(MODEL_VIEWS)"
     class="flex my-2 select-button p-2"
     @change="handleViewChange($event.value)"
   />
-  <div v-show="viewModel === 'Create Task'">
+  <div v-show="viewModel === MODEL_VIEWS.CREATE_TASK">
     <div v-if="!created" class="card px-3">
       <h1 class="text-center font-bold">Create a New Task</h1>
       <!-- <p class="login-title" align="left">Register for ROAR</p> -->
@@ -218,7 +218,7 @@
     </div>
   </div>
 
-  <div v-show="viewModel === 'Update Task'">
+  <div v-show="viewModel === MODEL_VIEWS.UPDATE_TASK">
     <h1 class="text-center font-bold">Update a Task</h1>
     <form @submit.prevent="handleUpdateTask()">
       <section class="flex flex-column gap-2 mb-4 p-4">
@@ -458,11 +458,15 @@ let newFields = reactive([]);
 // This array of objects is later converted back into an object and spread into the updatedTaskData object
 let addedGameConfig = reactive([]);
 
-const viewModel = ref('Create Task');
-const modelViews = ['Create Task', 'Update Task'];
+const MODEL_VIEWS = Object.freeze({
+  CREATE_TASK: 'Create Task',
+  UPDATE_TASK: 'Update Task',
+});
+
+const viewModel = ref(MODEL_VIEWS.CREATE_TASK);
 
 const handleViewChange = (value) => {
-  const selectedView = modelViews.find((view) => view === value);
+  const selectedView = Object.values(MODEL_VIEWS).find((view) => view === value);
   if (selectedView) {
     viewModel.value = selectedView;
   }
