@@ -44,10 +44,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      #      # Allows Cypress tests to bypass the app check verification
-      #      - name: Create .env file with App Check Debug Token
-      #        run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
-
       - name: Build project
         run: npm run build
 
@@ -86,9 +82,6 @@ jobs:
         with:
           project_id: gse-roar-admin
 
-      #      - name: Set gcloud Project ID for gse-roar-admin
-      #        run: gcloud config set project gse-roar-admin
-
       - name: Update App Check Domains for gse-roar-admin
         run: |
           CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ADMIN }} --format="value(webSettings.allowedDomains)")
@@ -115,9 +108,6 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: gse-roar-assessment
-
-      #      - name: Set gcloud Project ID for gse-roar-assessment
-      #        run: gcloud config set project gse-roar-assessment
 
       - name: Update App Check Domains for gse-roar-assessment
         run: |
