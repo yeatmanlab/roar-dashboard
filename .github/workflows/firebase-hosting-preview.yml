@@ -78,16 +78,15 @@ jobs:
       - name: Authenticate with Google Cloud SDK
         uses: google-github-actions/auth@v2
         with:
-          service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
 
       - name: Set up Google Cloud SDK with Firebase Service Account
         uses: google-github-actions/setup-gcloud@v2
         with:
-          service_account_key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
           project_id: gse-roar-admin
 
-      - name: Set gcloud Project ID for gse-roar-admin
-        run: gcloud config set project gse-roar-admin
+      #      - name: Set gcloud Project ID for gse-roar-admin
+      #        run: gcloud config set project gse-roar-admin
 
       - name: Update App Check Domains for gse-roar-admin
         run: |
@@ -109,16 +108,15 @@ jobs:
       - name: Authenticate with Google Cloud SDK
         uses: google-github-actions/auth@v2
         with:
-          service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}
 
       - name: Set up Google Cloud SDK for gse-roar-assessment
         uses: google-github-actions/setup-gcloud@v2
         with:
-          service_account_key: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}
           project_id: gse-roar-assessment
 
-      - name: Set gcloud Project ID for gse-roar-assessment
-        run: gcloud config set project gse-roar-assessment
+      #      - name: Set gcloud Project ID for gse-roar-assessment
+      #        run: gcloud config set project gse-roar-assessment
 
       - name: Update App Check Domains for gse-roar-assessment
         run: |
