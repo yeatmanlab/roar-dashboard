@@ -10,7 +10,7 @@
     <div v-if="!created" class="card px-3">
       <h1 class="text-center font-bold">Create a New Task</h1>
       <!-- <p class="login-title" align="left">Register for ROAR</p> -->
-      <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!t$.$invalid)">
+      <form class="p-fluid" @submit.prevent="handleNewTaskSubmit(!v$.$invalid)">
         <!-- Task name -->
         <div class="flex flex-column row-gap-3">
           <section class="form-section">
@@ -20,19 +20,19 @@
                 <span class="required">*</span></label
               >
               <PvInputText
-                v-model="t$.taskName.$model"
+                v-model="v$.taskName.$model"
                 name="taskName"
-                :class="{ 'p-invalid': t$.taskName.$invalid && submitted }"
+                :class="{ 'p-invalid': v$.taskName.$invalid && submitted }"
                 aria-describedby="activation-code-error"
               />
             </div>
-            <span v-if="t$.taskName.$error && submitted">
-              <span v-for="(error, index) of t$.taskName.$errors" :key="index">
+            <span v-if="v$.taskName.$error && submitted">
+              <span v-for="(error, index) of v$.taskName.$errors" :key="index">
                 <small class="p-error">{{ error.$message }}</small>
               </span>
             </span>
-            <small v-if="(t$.taskName.$invalid && submitted) || t$.taskName.$pending.$response" class="p-error">
-              {{ t$.taskName.required.$message.replace('Value', 'Task Name') }}
+            <small v-if="(v$.taskName.$invalid && submitted) || v$.taskName.$pending.$response" class="p-error">
+              {{ v$.taskName.required.$message.replace('Value', 'Task Name') }}
             </small>
           </section>
           <!-- Task ID -->
@@ -43,19 +43,19 @@
                 <span class="required">*</span></label
               >
               <PvInputText
-                v-model="t$.taskId.$model"
+                v-model="v$.taskId.$model"
                 name="taskId"
-                :class="{ 'p-invalid': t$.taskId.$invalid && submitted }"
+                :class="{ 'p-invalid': v$.taskId.$invalid && submitted }"
                 aria-describedby="activation-code-error"
               />
             </div>
-            <span v-if="t$.taskId.$error && submitted">
-              <span v-for="(error, index) of t$.taskId.$errors" :key="index">
+            <span v-if="v$.taskId.$error && submitted">
+              <span v-for="(error, index) of v$.taskId.$errors" :key="index">
                 <small class="p-error">{{ error.$message }}</small>
               </span>
             </span>
-            <small v-else-if="(t$.taskId.$invalid && submitted) || t$.taskId.$pending.$response" class="p-error">
-              {{ t$.taskId.required.$message.replace('Value', 'Task ID') }}
+            <small v-else-if="(v$.taskId.$invalid && submitted) || v$.taskId.$pending.$response" class="p-error">
+              {{ v$.taskId.required.$message.replace('Value', 'Task ID') }}
             </small>
           </section>
           <!-- Cover Image -->
@@ -84,18 +84,18 @@
                 <span class="required">*</span></label
               >
               <PvInputText
-                v-model="t$.taskURL.$model"
+                v-model="v$.taskURL.$model"
                 name="taskURL"
-                :class="{ 'p-invalid': t$.taskURL.$invalid && submitted }"
+                :class="{ 'p-invalid': v$.taskURL.$invalid && submitted }"
                 aria-describedby="first-name-error"
               />
-              <span v-if="t$.taskURL.$error && submitted">
-                <span v-for="(error, index) of t$.taskURL.$errors" :key="index">
+              <span v-if="v$.taskURL.$error && submitted">
+                <span v-for="(error, index) of v$.taskURL.$errors" :key="index">
                   <small class="p-error">{{ error.$message }}</small>
                 </span>
               </span>
-              <small v-else-if="(t$.taskURL.$invalid && submitted) || t$.taskURL.$pending.$response" class="p-error">
-                {{ t$.taskURL.required.$message.replace('Value', 'Task URL') }}
+              <small v-else-if="(v$.taskURL.$invalid && submitted) || v$.taskURL.$pending.$response" class="p-error">
+                {{ v$.taskURL.required.$message.replace('Value', 'Task URL') }}
               </small>
             </div>
           </section>
@@ -532,7 +532,7 @@ const taskRules = {
   taskId: { required },
 };
 
-const t$ = useVuelidate(taskRules, taskFields);
+const v$ = useVuelidate(taskRules, taskFields);
 
 // Array of objects which models the game configuration fields
 // This array of objects is later converted back into an object and spread into the task object
@@ -704,8 +704,16 @@ const handleNewTaskSubmit = async (isFormValid) => {
   await addTask(newTaskObject, {
     onSuccess: () => {
       created.value = true;
+      // @TODO: Add form reset to ensure users see a clean form when clicking the "Create Another Task" button. This
+      // will also prevent users from accidentally submitting the same task twice.
     },
     onError: (error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to create task, please try again.',
+        life: 3000,
+      });
       console.error('Failed to add task.', error);
     },
   });
