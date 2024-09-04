@@ -81,10 +81,8 @@ const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.valu
 
 const consentType = computed(() => {
   if (isAdminUser.value) {
-    console.warn('[debug] consentType', 'tos');
     return 'tos';
   } else {
-    console.warn('[debug] consentType', i18n.locale.value.includes('es') ? 'assent-es' : 'assent');
     return i18n.locale.value.includes('es') ? 'assent-es' : 'assent';
   }
 });
