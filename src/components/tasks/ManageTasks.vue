@@ -425,13 +425,13 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
-import { useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { cloneDeep, camelCase } from 'lodash';
 import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
+import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation';
 
 const toast = useToast();
 const initialized = ref(false);
@@ -439,11 +439,12 @@ const taskCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const queryClient = useQueryClient();
 const { mutate: addTask } = useAddTaskMutation();
+const { mutate: updateTask } = useUpdateTaskMutation();
 
 const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
 const selectedTask = ref(null);
+
 let taskData = computed(() => {
   if (!selectedTask.value) return null;
   return tasks.value.find((task) => task.id === selectedTask.value);
@@ -651,7 +652,8 @@ const handleUpdateTask = async () => {
 
   const convertedFields = convertParamsToObj(newFields);
   const convertedGameConfig = convertParamsToObj(addedGameConfig);
-  const updateData = {
+
+  const taskData = {
     taskId: selectedTask.value,
     data: {
       ...updatedTaskData,
@@ -663,16 +665,21 @@ const handleUpdateTask = async () => {
     },
   };
 
-  try {
-    await authStore.roarfirekit.updateTaskOrVariant(updateData);
-    toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Task successfully updated.', life: 3000 });
-
-    // Reset the form and re-fetch the tasks
-    resetUpdateTaskForm();
-    await queryClient.invalidateQueries(['tasks']); //@TODO: Adjust for new query composables!
-  } catch (error) {
-    console.error(error);
-  }
+  await updateTask(taskData, {
+    onSuccess: () => {
+      toast.add({ severity: 'success', summary: 'Hoorah!', detail: 'Task successfully updated.', life: 3000 });
+      resetUpdateTaskForm();
+    },
+    onError: (error) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Unable to update task, please try again.',
+        life: 3000,
+      });
+      console.error('Failed to update task.', error);
+    },
+  });
 };
 
 const handleNewTaskSubmit = async (isFormValid) => {
