@@ -5,6 +5,7 @@ import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
 /**
  * Tasks query.
  *
+ * @param {Boolean} [registeredTasksOnly=false] – Whether to fetch only registered tasks.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
