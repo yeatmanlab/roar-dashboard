@@ -14,6 +14,7 @@ function setDebugToken(config) {
   if (debugToken) {
     config.debugToken = debugToken;
   }
+  console.log('token', debugToken);
 }
 
 if (isEmulated) {
@@ -79,6 +80,8 @@ if (isEmulated) {
 
 setDebugToken(appConfig);
 setDebugToken(adminConfig);
+
+console.log('appConfig', appConfig);
 
 export default {
   app: appConfig,
