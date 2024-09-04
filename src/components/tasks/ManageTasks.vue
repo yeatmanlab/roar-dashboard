@@ -425,16 +425,15 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required, requiredIf, url } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
-import { useAuthStore } from '@/store/auth';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { taskFetcher } from '@/helpers/query/tasks';
 import { cloneDeep, camelCase } from 'lodash';
+import { useAuthStore } from '@/store/auth';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
 
 const toast = useToast();
 const initialized = ref(false);
-const registeredTasksOnly = ref(true);
 const taskCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -498,13 +497,8 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { data: tasks } = useQuery({
-  queryKey: ['tasks', registeredTasksOnly],
-  // non-registered tasks, all data
-  queryFn: () => taskFetcher(false, true),
-  keepPreviousData: true,
+const { data: tasks } = useTasksQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const formattedTasks = computed(() => {
@@ -670,7 +664,7 @@ const handleUpdateTask = async () => {
 
     // Reset the form and re-fetch the tasks
     resetUpdateTaskForm();
-    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
+    await queryClient.invalidateQueries(['tasks']); //@TODO: Adjust for new query composables!
   } catch (error) {
     console.error(error);
   }
@@ -711,7 +705,7 @@ const handleNewTaskSubmit = async (isFormValid) => {
     await authStore.roarfirekit.registerTaskVariant({ ...newTaskObject });
     created.value = true;
     // Re-fetch tasks
-    await queryClient.invalidateQueries(['tasks', registeredTasksOnly]);
+    await queryClient.invalidateQueries(['tasks']); //@TODO: Adjust for new query composables!
   } catch (error) {
     console.error(error);
   }
