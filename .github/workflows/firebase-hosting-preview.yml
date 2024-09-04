@@ -44,6 +44,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Inject the App Check Debug Token into the .env file at build time
+      - name: Create .env file with App Check Debug Token
+        run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
+
       - name: Build project
         run: npm run build
 
@@ -84,10 +88,10 @@ jobs:
 
       - name: Update App Check Domains for gse-roar-admin
         run: |
-          CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ADMIN }} --format="value(webSettings.allowedDomains)")
-          CURRENT_DOMAINS=$(echo $CURRENT_DOMAINS | tr ';' ',')
+          CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ADMIN }} --format="value(webSettings.allowedDomains)" | tr ';' '\n')
           NEW_DOMAIN=$(echo ${{ needs.build-and-preview.outputs.deployUrl }} | sed 's|https://||')
-          UPDATED_DOMAINS="${CURRENT_DOMAINS},${NEW_DOMAIN}"
+          ALL_DOMAINS=$(echo -e "${CURRENT_DOMAINS}\n${NEW_DOMAIN}")
+          UPDATED_DOMAINS=$(echo "$ALL_DOMAINS" | sort | uniq | paste -sd ',' -)
           gcloud recaptcha keys update ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ADMIN }} --domains="$UPDATED_DOMAINS" --web
 
   whitelist-pr-domains-roar-assessment:
@@ -111,8 +115,8 @@ jobs:
 
       - name: Update App Check Domains for gse-roar-assessment
         run: |
-          CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ASSESSMENT }} --project=gse-roar-assessment --format="value(webSettings.allowedDomains)")
-          CURRENT_DOMAINS=$(echo $CURRENT_DOMAINS | tr ';' ',')
+          CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ASSESSMENT }} --format="value(webSettings.allowedDomains)" | tr ';' '\n')
           NEW_DOMAIN=$(echo ${{ needs.build-and-preview.outputs.deployUrl }} | sed 's|https://||')
-          UPDATED_DOMAINS="${CURRENT_DOMAINS},${NEW_DOMAIN}"
+          ALL_DOMAINS=$(echo -e "${CURRENT_DOMAINS}\n${NEW_DOMAIN}")
+          UPDATED_DOMAINS=$(echo "$ALL_DOMAINS" | sort | uniq | paste -sd ',' -)
           gcloud recaptcha keys update ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ASSESSMENT }} --domains="$UPDATED_DOMAINS" --web
