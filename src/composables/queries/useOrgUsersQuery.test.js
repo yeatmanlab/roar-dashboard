@@ -5,7 +5,7 @@ import { fetchUsersByOrg } from '@/helpers/query/users';
 import useOrgUsersQuery from './useOrgUsersQuery';
 
 vi.mock('@/helpers/query/users', () => ({
-  fetchUsersByOrg: vi.fn(),
+  fetchUsersByOrg: vi.fn().mockImplementation(() => [{ name: 'mock-user' }]),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -36,7 +36,7 @@ describe('useOrgUsersQuery', () => {
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    const [result] = withSetup(() => useOrgUsersQuery(orgType, orgId, page, orderBy, queryOptions), {
+    withSetup(() => useOrgUsersQuery(orgType, orgId, page, orderBy, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -53,7 +53,7 @@ describe('useOrgUsersQuery', () => {
     const page = 1;
     const orderBy = 'name';
 
-    const [result] = withSetup(() => useOrgUsersQuery(orgType, orgId, page, orderBy), {
+    withSetup(() => useOrgUsersQuery(orgType, orgId, page, orderBy), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
