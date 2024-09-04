@@ -44,8 +44,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create .env file with App Check Debug Token
-        run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
+      #      # Allows Cypress tests to bypass the app check verification
+      #      - name: Create .env file with App Check Debug Token
+      #        run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
 
       - name: Build project
         run: npm run build
@@ -92,7 +93,7 @@ jobs:
         run: |
           CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ADMIN }} --format="value(webSettings.allowedDomains)")
           CURRENT_DOMAINS=$(echo $CURRENT_DOMAINS | tr ';' ',')
-          NEW_DOMAIN=${{ needs.build-and-preview.outputs.deployUrl }}
+          NEW_DOMAIN=$(echo ${{ needs.build-and-preview.outputs.deployUrl }} | sed 's|https://||')
           UPDATED_DOMAINS="${CURRENT_DOMAINS},${NEW_DOMAIN}"
           gcloud recaptcha keys update ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ADMIN }} --domains="$UPDATED_DOMAINS" --web
 
@@ -122,6 +123,6 @@ jobs:
         run: |
           CURRENT_DOMAINS=$(gcloud recaptcha keys describe ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ASSESSMENT }} --project=gse-roar-assessment --format="value(webSettings.allowedDomains)")
           CURRENT_DOMAINS=$(echo $CURRENT_DOMAINS | tr ';' ',')
-          NEW_DOMAIN=${{ needs.build-and-preview.outputs.deployUrl }}
+          NEW_DOMAIN=$(echo ${{ needs.build-and-preview.outputs.deployUrl }} | sed 's|https://||')
           UPDATED_DOMAINS="${CURRENT_DOMAINS},${NEW_DOMAIN}"
           gcloud recaptcha keys update ${{ secrets.FIREBASE_APPCHECK_SITE_KEY_GSE_ROAR_ASSESSMENT }} --domains="$UPDATED_DOMAINS" --web
