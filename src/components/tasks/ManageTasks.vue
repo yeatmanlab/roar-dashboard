@@ -431,19 +431,21 @@ import { useToast } from 'primevue/usetoast';
 import { cloneDeep, camelCase } from 'lodash';
 import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
+import useAddTaskMutation from '@/composables/mutations/useAddTaskMutation';
 
 const toast = useToast();
 const initialized = ref(false);
 const taskCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
+
 const queryClient = useQueryClient();
+const { mutate: addTask } = useAddTaskMutation();
 
 const isExternalTask = computed(() => !!taskCheckboxData.value?.find((item) => item === 'isExternalTask'));
 const selectedTask = ref(null);
 let taskData = computed(() => {
   if (!selectedTask.value) return null;
-
   return tasks.value.find((task) => task.id === selectedTask.value);
 });
 
@@ -606,7 +608,6 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
 // Helper function to check for errors before updating a task
 // Returns true if there are errors, false if there are none
 const checkForErrors = () => {
-  console.log('Checking for errors...');
   if (!selectedTask.value) {
     toast.add({ severity: 'error', summary: 'Oops!', detail: 'Please select a task to update.', life: 3000 });
     return true;
@@ -700,15 +701,14 @@ const handleNewTaskSubmit = async (isFormValid) => {
     newTaskObject.taskURL = buildTaskURL(taskFields.taskURL, taskParams);
   }
 
-  // Write task variant to DB
-  try {
-    await authStore.roarfirekit.registerTaskVariant({ ...newTaskObject });
-    created.value = true;
-    // Re-fetch tasks
-    await queryClient.invalidateQueries(['tasks']); //@TODO: Adjust for new query composables!
-  } catch (error) {
-    console.error(error);
-  }
+  await addTask(newTaskObject, {
+    onSuccess: () => {
+      created.value = true;
+    },
+    onError: (error) => {
+      console.error('Failed to add task.', error);
+    },
+  });
 };
 
 function convertParamsToObj(paramType) {
