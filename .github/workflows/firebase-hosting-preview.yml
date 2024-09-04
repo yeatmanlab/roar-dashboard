@@ -54,17 +54,14 @@ jobs:
         id: firebase-deploy
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}'
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ADMIN }}
           projectId: gse-roar-admin
           target: staging
-
-      - run: echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}
 
       - name: Set Output Deploy URL
         id: set-deploy-url
         run: echo "deployUrl=${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }}" >> $GITHUB_OUTPUT
-    #        run: echo "::set-output name=deployUrl::$(echo ${{ fromJson(steps.firebase-deploy.outputs.urls)[0] }})"
 
     outputs:
       deployUrl: ${{ steps.set-deploy-url.outputs.deployUrl }}
@@ -77,11 +74,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      #      - name: Extract PR Domain from Deploy URL
-      #        id: extract_pr_domain
-      #        run: echo
-      ##        run: echo "::set-output name=domain::$(echo ${{ needs.build-and-preview.outputs.deployUrl }}"
 
       - name: Authenticate with Google Cloud SDK
         uses: google-github-actions/auth@v2
@@ -112,12 +104,12 @@ jobs:
 
     steps:
       - name: Checkout code
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Authenticate with Google Cloud SDK
-      - uses: google-github-actions/auth@v2
-      - with:
-          - service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GSE_ROAR_ASSESSMENT }}
 
       - name: Set up Google Cloud SDK for gse-roar-assessment
         uses: google-github-actions/setup-gcloud@v2
