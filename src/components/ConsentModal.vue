@@ -19,9 +19,11 @@ import { marked } from 'marked';
 import { useAuthStore } from '@/store/auth';
 import { useI18n } from 'vue-i18n';
 import _lowerCase from 'lodash/lowerCase';
+import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
 const i18n = useI18n();
+const router = useRouter();
 
 const props = defineProps({
   consentText: { type: String, require: true, default: 'Text Here' },
@@ -44,20 +46,19 @@ onMounted(() => {
   const delayPromise = delay(1000);
   confirm.require({
     group: 'templating',
-    header: props.consentType.includes('-es')
-      ? `FORMULARIO DE ${_lowerCase(props.consentType).toUpperCase()}`
-      : `${_lowerCase(props.consentType).toUpperCase()} FORM`,
+    header: i18n.t(`consentModal.header`, props.consentType.toUpperCase()),
     icon: 'pi pi-question-circle',
-    acceptLabel: i18n.t('consentModal.acceptButton'),
-    acceptClass: 'bg-primary text-white border-none border-round p-2 hover:bg-red-900',
+    acceptLabel: i18n.t('consentModal.acceptButton', 'Accept'),
+    rejectLabel: i18n.t('consentModal.rejectButton', 'Reject'),
+    acceptClass: 'bg-green-500 text-white border-none border-round p-2 hover:bg-green-700',
     acceptIcon: 'pi pi-check mr-2',
+    rejectClass: 'bg-red-500 text-white border-none border-round p-2 hover:bg-red-700',
+    rejectIcon: 'pi pi-times mr-2',
     accept: async () => {
       toast.add({
         severity: 'info',
         summary: i18n.t('consentModal.toastHeader'),
-        detail: props.consentType.includes('-es')
-          ? `ESTADO DE ${_lowerCase(props.consentType).toUpperCase()} ACTUALIZADO`
-          : `${_lowerCase(props.consentType).toUpperCase()} STATUS UPDATED.`,
+        detail: i18n.t(`consentModal.${_lowerCase(props.consentType)}UpdatedStatus`, `${props.consentType.toUpperCase()} STATUS UPDATED.`),
         life: 3000,
       });
       emit('accepted');
@@ -66,6 +67,10 @@ onMounted(() => {
         consentSpinner.value = false;
         emit('delayed');
       });
+    },
+    reject: () => {
+      authStore.signOut();
+      router.push({ name: 'SignOut' });
     },
   });
 });
@@ -83,8 +88,14 @@ onMounted(() => {
   border-radius: 5px;
 }
 
-.confirm .p-confirm-dialog-reject {
-  display: none !important;
+/* .confirm .p-confirm-dialog-reject {
+  display: block !important;
+} */
+
+.confirm .p-dialog-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 
 .confirm .p-dialog-header-close {

@@ -80,8 +80,9 @@
       </div>
     </div>
   </div>
+  <!-- && !isLevante -->
   <ConsentModal
-    v-if="showConsent && !isLevante"
+    v-if="showConsent"
     :consent-text="confirmText"
     :consent-type="consentType"
     @accepted="updateConsent"
@@ -106,12 +107,14 @@ import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import { isLevante } from '@/helpers';
 import useSurveyResponses from '@/composables/useSurveyResponses/useSurveyResponses';
+import { useI18n } from 'vue-i18n';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
 const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
+const { locale } = useI18n();
 
 let unsubscribe;
 const initialized = ref(false);
@@ -191,61 +194,77 @@ const sortedAdminInfo = computed(() => {
 async function checkConsent() {
   showConsent.value = false;
 
-  if (isLevante) return;
-
   const legal = selectedAdmin.value?.legal;
   if (!legal) return;
 
-  const dob = new Date(userData.value?.studentData.dob);
-  const grade = userData.value?.studentData.grade;
-  const currentDate = new Date();
-  const age = currentDate.getFullYear() - dob.getFullYear();
+  if (!isLevante) {
+    const dob = new Date(userData.value?.studentData.dob);
+    const grade = userData.value?.studentData.grade;
+    const currentDate = new Date();
+    const age = currentDate.getFullYear() - dob.getFullYear();
 
-  if (!legal?.consent) {
-    // Always show consent form for this test student when running Cypress tests
-    if (userData.value?.id === 'XAq5qOuXnNPHClK0xZXXhfGsWX22') {
-      consentType.value = 'consent';
-      confirmText.value = 'This is a test student. Please do not accept this form.';
-      showConsent.value = true;
-    }
-    return;
-  }
-
-  const isAdult = age >= 18;
-  const isSeniorGrade = grade >= 12;
-  const isOlder = isAdult || isSeniorGrade;
-
-  let docTypeKey = isOlder ? 'consent' : 'assent';
-  let docType = legal[docTypeKey][0]?.type.toLowerCase();
-  let docAmount = legal?.amount;
-  let docExpectedTime = legal?.expectedTime;
-
-  consentType.value = docType;
-
-  const consentStatus = _get(userData.value, `legal.${consentType.value}`);
-  const consentDoc = await authStore.getLegalDoc(docType);
-  consentVersion.value = consentDoc.version;
-
-  if (_get(toRaw(consentStatus), consentDoc.version)) {
-    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
-    let found = false;
-    _forEach(legalDocs, (document) => {
-      if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
-        found = true;
+    if (!legal?.consent) {
+      // Always show consent form for this test student when running Cypress tests
+      if (userData.value?.id === 'XAq5qOuXnNPHClK0xZXXhfGsWX22') {
+        consentType.value = 'consent';
+        confirmText.value = 'This is a test student. Please do not accept this form.';
+        showConsent.value = true;
       }
-    });
+      return;
+    }
 
-    if (!found) {
-      if (docAmount !== '' || docExpectedTime !== '') {
+    const isAdult = age >= 18;
+    const isSeniorGrade = grade >= 12;
+    const isOlder = isAdult || isSeniorGrade;
+
+    let docTypeKey = isOlder ? 'consent' : 'assent';
+    let docType = legal[docTypeKey][0]?.type.toLowerCase();
+    let docAmount = legal?.amount;
+    let docExpectedTime = legal?.expectedTime;
+
+    consentType.value = docType;
+
+    const consentStatus = _get(userData.value, `legal.${consentType.value}`);
+    const consentDoc = await authStore.getLegalDoc(docType);
+    consentVersion.value = consentDoc.version;
+
+    if (_get(toRaw(consentStatus), consentDoc.version)) {
+      const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+      let found = false;
+      _forEach(legalDocs, (document) => {
+        if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
+          found = true;
+        }
+      });
+
+      if (!found) {
+        if (docAmount !== '' || docExpectedTime !== '') {
+          confirmText.value = consentDoc.text;
+          showConsent.value = true;
+          return;
+        }
+      }
+    } else if (age > 7 || grade > 1) {
+      confirmText.value = consentDoc.text;
+      showConsent.value = true;
+      return;
+    }
+  } else {
+      try {
+        const consentDoc = await authStore.getLegalDoc(`${locale.value}Consent`); 
+        
+        if (!consentDoc) {
+          console.log('No consent doc found');
+          return;
+        }
+        
+        console.log('consentDoc: ', consentDoc);
+
         confirmText.value = consentDoc.text;
         showConsent.value = true;
-        return;
+      } catch {
+        console.log('Error getting consent doc');
       }
-    }
-  } else if (age > 7 || grade > 1) {
-    confirmText.value = consentDoc.text;
-    showConsent.value = true;
-    return;
   }
 }
 

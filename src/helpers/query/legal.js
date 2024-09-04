@@ -4,6 +4,7 @@ import { convertValues, getAxiosInstance } from './utils';
 export const fetchLegalDocs = () => {
   const axiosInstance = getAxiosInstance('admin');
   return axiosInstance.get('/legal').then(({ data }) => {
+    console.log('legal docs:', data.documents);
     const docs = data.documents.map((doc) => {
       const type = _capitalize(doc.name.split('/').pop());
       const lastUpdated = new Date(doc.createTime);

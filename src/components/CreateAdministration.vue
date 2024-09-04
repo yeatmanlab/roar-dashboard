@@ -111,7 +111,7 @@
           :input-variants="preSelectedVariants"
           @variants-changed="handleVariantsChanged"
         />
-        <div v-if="!isLevante" class="mt-2 flex w-full">
+        <div class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
           <small v-if="submitted && !isLevante && noConsent === ''" class="p-error mt-2"
             >Please select a consent/assent form.</small

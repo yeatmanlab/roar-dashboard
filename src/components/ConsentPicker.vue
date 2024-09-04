@@ -172,16 +172,18 @@
           :placeholder="props.legal?.consent[0]?.fileName || 'Select a Consent Form'"
           @change="updateConsent"
         />
-        <h3 class="pt-3">Select an Assent Form</h3>
-        <PvDropdown
-          v-model="selectedAssent"
-          :options="listOfDocs.assent"
-          option-label="fileName"
-          style="width: 70%"
-          :placeholder="props.legal?.assent[0]?.fileName || 'Select an Assent Form'"
-          @change="updateAssent"
-        />
-        <div div class="hidden">
+        <div v-if="!isLevante">
+          <h3 class="pt-3">Select an Assent Form</h3>
+          <PvDropdown
+            v-model="selectedAssent"
+            :options="listOfDocs.assent"
+            option-label="fileName"
+            style="width: 70%"
+            :placeholder="props.legal?.assent[0]?.fileName || 'Select an Assent Form'"
+            @change="updateAssent"
+            />
+        </div>
+        <div class="hidden">
           <h3 class="mb-4 mt-5">Consent Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
@@ -207,12 +209,14 @@
               <div style="width: 80%">
                 <p class="m-0">
                   <span class="font-bold">Name: </span>{{ result.consent[0]?.fileName }} <br />
-                  <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
-                  <br />
-                  <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
-                  <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}
-                  <br />
-                  <span class="font-bold">Last Updated: </span>{{ result.consent[0]?.lastUpdated }} <br />
+                  <div v-if="!isLevante">
+                    <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
+                    <br />
+                    <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
+                    <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}
+                    <br />
+                    <span class="font-bold">Last Updated: </span>{{ result.consent[0]?.lastUpdated }} <br />
+                  </div>
                 </p>
               </div>
               <div class="flex align-items-center justify-content-center">
@@ -229,30 +233,32 @@
           </div>
         </div>
         <div class="w-full mt-2">
-          <PvFieldset v-if="consents && consents.length > 0" legend="Assent">
-            <div class="flex flex-row w-full">
-              <div style="width: 80%">
-                <p class="m-0">
-                  <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName }} <br />
-                  <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit }}
-                  <br />
-                  <span class="font-bold">GitHub Org: </span>{{ result.assent[0]?.gitHubOrg }} <br />
-                  <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository }}
-                  <br />
-                  <span class="font-bold">Last Updated: </span>{{ result.assent[0]?.lastUpdated }} <br />
-                </p>
+          <div v-if="!isLevante">
+            <PvFieldset v-if="consents && consents.length > 0" legend="Assent">
+              <div class="flex flex-row w-full">
+                <div style="width: 80%">
+                  <p class="m-0">
+                    <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName }} <br />
+                    <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit }}
+                    <br />
+                    <span class="font-bold">GitHub Org: </span>{{ result.assent[0]?.gitHubOrg }} <br />
+                    <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository }}
+                    <br />
+                    <span class="font-bold">Last Updated: </span>{{ result.assent[0]?.lastUpdated }} <br />
+                  </p>
+                </div>
+                <div class="flex align-items-center justify-content-center">
+                  <PvButton
+                    class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
+                    label="Show Assent"
+                    @click="seeConsent(result.assent[0])"
+                  />
+                </div>
               </div>
-              <div class="flex align-items-center justify-content-center">
-                <PvButton
-                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
-                  label="Show Assent"
-                  @click="seeConsent(result.assent[0])"
-                />
-              </div>
+            </PvFieldset>
+            <div v-else>
+              <p>No assent available.</p>
             </div>
-          </PvFieldset>
-          <div v-else>
-            <p>No assent available.</p>
           </div>
         </div>
       </div>
@@ -279,6 +285,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { marked } from 'marked';
 import _forEach from 'lodash/forEach';
+import { isLevante } from '@/helpers';
 
 const props = defineProps({
   legal: { type: Object, required: false, default: null },
@@ -378,7 +385,13 @@ onMounted(() => {
     selectedConsent.value = props.legal.consent[0];
     selectedAssent.value = props.legal.assent[0];
   }
+
+  console.log('result on mounted: ', result);
 });
+
+watch(result.consent, () => {
+  console.log('result.consent in watch: ', result.consent);
+}, { deep: true });
 
 watch(
   () => props.legal,
@@ -430,6 +443,8 @@ const { data: consents } = useQuery({
   staleTime: 5 * 60 * 1000,
 });
 
+console.log('consents', consents.value);
+
 const listOfDocs = computed(() => {
   let consent = [];
   let assent = [];
@@ -445,12 +460,16 @@ const listOfDocs = computed(() => {
 });
 
 async function seeConsent(consent) {
+  console.log('consent: ', consent);
+
   let consentDoc;
   if (consent?.type === 'Assent-es') {
     consentDoc = await authStore.getLegalDoc('assent-es');
   } else {
     consentDoc = await authStore.getLegalDoc(consent?.type.toLowerCase());
   }
+  console.log('consentDoc:', consentDoc);
+
   consentVersion.value = consentDoc.version;
   confirmText.value = marked(consentDoc.text);
   showConsent.value = true;
