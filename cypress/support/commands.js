@@ -161,6 +161,11 @@ Cypress.Commands.add('switchToOptionalAssessments', () => {
     });
 });
 
+Cypress.Commands.add('switchToRequiredAssessments', () => {
+  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.get("[data-cy='switch-show-optional-assessments']").click();
+});
+
 Cypress.Commands.add(
   'inputOrgDetails',
   (orgName, orgInitials, orgNcesId = null, orgAddress = null, orgGrade = null, orgTag = null) => {
