@@ -134,6 +134,7 @@
         </div>
       </div>
     </div>
+
     <div v-if="unsavedChanges === true">
       <PvAlert severity="warning" class="my-2">
         <div class="flex flex-column gap-2">
@@ -142,6 +143,7 @@
         </div>
       </PvAlert>
     </div>
+
     <div class="flex align-items-center justify-content-center mt-2">
       <div v-if="isSubmitting" class="mr-2">
         <PvButton
@@ -171,15 +173,15 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useQueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
-import { administrationPageFetcher } from '@/helpers/query/administrations';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 
 const authStore = useAuthStore();
-const { roarfirekit, uid, administrationQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid } = storeToRefs(authStore);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -225,12 +227,8 @@ const formattedTasks = computed(() => {
   });
 });
 
-const { isLoading: isLoadingAdministrations, data: administrations } = useQuery({
-  queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
-  keepPreviousData: true,
+const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsQuery(orderBy, {
   enabled: canQueryAdministrations,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const selectedOfflineTasks = ref([]);
