@@ -20,7 +20,6 @@ export const randomizeName = (orgName) => {
  * @returns {Promise<boolean>} - Returns true if the app version matches the main branch version, otherwise false.
  */
 export const isCurrentVersion = async (app) => {
-  // const featurePackageJson = require('../../package.json');
   const featureDependencies = featurePackageJson.dependencies;
 
   const owner = 'yeatmanlab';

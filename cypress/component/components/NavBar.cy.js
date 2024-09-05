@@ -1,5 +1,9 @@
 import NavBar from '../../../src/components/NavBar.vue';
 
+// Fetch documents from this Firestore endpoint
+const endPoint = 'userClaims/**/*';
+
+// Mock data formatted the match the output of fetchDocById()
 const staticResponse = {
   fields: {
     claims: {
@@ -20,17 +24,13 @@ describe('<NavBar />', () => {
     cy.setAuthStore().as('authStore');
 
     // Intercept network calls and respond with mock data
-    cy.intercept(
-      'GET',
-      'https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents/userClaims/**/*',
-      (req) => {
-        req.reply({
-          statusCode: 200,
-          body: staticResponse,
-          delay: 1000,
-        });
-      },
-    ).as('userClaims');
+    cy.intercept('GET', `${Cypress.env('firestoreAdminUrl')}/${endPoint}`, (req) => {
+      req.reply({
+        statusCode: 200,
+        body: staticResponse,
+        delay: 1000,
+      });
+    }).as('userClaims');
   });
 
   it('mounts using default Cypress viewport', () => {
@@ -40,7 +40,6 @@ describe('<NavBar />', () => {
     cy.wait('@userClaims').then((interception) => {
       if (interception?.response?.statusCode === 200) {
         expect(interception?.response.body).to.deep.equal(staticResponse);
-        cy.log('Interception successful', interception?.response);
       }
     });
 
@@ -55,8 +54,8 @@ describe('<NavBar />', () => {
     cy.mount(NavBar);
     cy.get('[data-cy=button-sign-out]').should('contain.text', 'Sign Out');
 
+    // Check that the user's first name is displayed in the profile button
     cy.get('@authStore').then((authStore) => {
-      // Check that the user's first name is displayed in the profile button
       const userFirstName = authStore?.userData.name.first;
       cy.get('[data-cy=user-display-name]').should('contain.text', userFirstName);
     });

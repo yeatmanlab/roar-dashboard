@@ -14,9 +14,8 @@
 // ***********************************************************
 
 import './commands';
-import '../../src/styles.js';
-import plugins from '../../src/plugins.js';
-import { createAppInstance } from '../../src/setup.js';
+import plugins from '../../src/plugins';
+import { createAppInstance } from '../../src/setup';
 import { mount } from 'cypress/vue';
 
 /**

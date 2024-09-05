@@ -19,7 +19,6 @@ import piniaPluginPersistedState from 'pinia-plugin-persistedstate';
 const pinia = createPinia().use(piniaPluginPersistedState);
 const head = createHead();
 
-// Plugins common to both the main app and the Cypress component tests
 const plugins = [
   [PrimeVue, { ripple: true }],
   [

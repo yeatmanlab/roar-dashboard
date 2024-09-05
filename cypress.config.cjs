@@ -5,6 +5,7 @@ const vitePreprocessor = require('cypress-vite');
 const UnheadVite = require('@unhead/addons/vite');
 const path = require('path');
 
+// Load environment variables from .env.test located in the root of the project
 require('dotenv').config({ path: path.resolve(__dirname, '.env.test') });
 
 module.exports = defineConfig({
@@ -61,6 +62,9 @@ module.exports = defineConfig({
   env: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     firestoreUrl: 'https://firestore.googleapis.com/**/*',
+    firestoreAdminUrl: 'https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents',
+    firestoreAppUrl:
+      'https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents',
     timeout: 10000,
     sessionCookieName: process.env.SESSION_COOKIE_NAME,
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,

@@ -9,7 +9,7 @@ import { Buffer } from 'buffer';
 import { initSentry } from '@/sentry';
 import App from '@/App.vue';
 import plugins from './plugins';
-import './styles';
+import './styles.css';
 
 // PrimeVue component imports
 import PvAccordion from 'primevue/accordion';
