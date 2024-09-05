@@ -10,7 +10,9 @@ import { TASK_VARIANTS_QUERY_KEY } from '@/constants/queryKeys';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useTaskVariantsQuery = (registeredVariantsOnly = false, queryOptions = undefined) => {
-  const queryKey = toValue(registeredVariantsOnly) ? [TASK_VARIANTS_QUERY_KEY, 'registered'] : TASK_VARIANTS_QUERY_KEY;
+  const queryKey = toValue(registeredVariantsOnly)
+    ? [TASK_VARIANTS_QUERY_KEY, 'registered']
+    : [TASK_VARIANTS_QUERY_KEY];
 
   return useQuery({
     queryKey,
