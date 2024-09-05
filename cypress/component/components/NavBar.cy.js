@@ -15,7 +15,7 @@ const staticResponse = {
   },
 };
 
-describe('Mount and test the NavBar.vue component.', () => {
+describe('<NavBar />', () => {
   beforeEach(() => {
     cy.setAuthStore().as('authStore');
 
