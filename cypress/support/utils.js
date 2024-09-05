@@ -51,6 +51,7 @@ export const isCurrentVersion = async (app) => {
  */
 export const createMockStore = (userType = 'participant') => {
   const userTypes = {
+    // Add user data as needed here
     superAdmin: {},
     partnerAdmin: {},
     participant: {
@@ -68,6 +69,7 @@ export const createMockStore = (userType = 'participant') => {
   setActivePinia(createPinia());
   const authStore = useAuthStore();
 
+  // Patch the store with the user data as needed here
   authStore.$patch({
     firebaseUser: {
       adminFirebaseUser: {
@@ -89,12 +91,10 @@ export const createMockStore = (userType = 'participant') => {
       initialized: true,
       restConfig: {
         admin: {
-          // headers: { Authorization: `Bearer ${this._idTokens.admin}` },
-          baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents`,
+          baseURL: Cypress.env('firestoreAdminUrl'),
         },
         app: {
-          // headers: { Authorization: `Bearer ${this._idTokens.app}` },
-          baseURL: `https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents`,
+          baseURL: Cypress.env('firestoreAppUrl'),
         },
       },
     },
