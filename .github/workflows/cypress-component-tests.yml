@@ -59,6 +59,7 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          component: true
           browser: ${{ matrix.browser }}
           build: npm ci && npm run build
           start: npm run dev
@@ -67,4 +68,3 @@ jobs:
           parallel: true
           spec: 'cypress/component/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
-          command: npx cypress run --component --record
