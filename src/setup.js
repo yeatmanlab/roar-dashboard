@@ -3,7 +3,8 @@ import { VueRecaptchaPlugin } from 'vue-recaptcha';
 import { Buffer } from 'buffer';
 import { initSentry } from '@/sentry';
 import App from '@/App.vue';
-import plugins from './plugins.js';
+import plugins from './plugins';
+import './styles';
 
 // PrimeVue component imports
 import PvAccordion from 'primevue/accordion';
@@ -69,14 +70,6 @@ import PvTooltip from 'primevue/tooltip';
 // Internal Roar components
 import RoarDataTable from '@/components/RoarDataTable.vue';
 import LanguageSelector from '@/components/LanguageSelector.vue';
-
-// Style assets
-import 'primevue/resources/primevue.css'; // primevue css
-import 'primeicons/primeicons.css'; // icons
-import 'primeflex/primeflex.scss'; // primeflex
-
-import './assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
-import './assets/styles/theme.scss'; // ROAR theme
 
 /**
  * Create a new Vue app instance with all the necessary plugins and components registered that can be used in the main app or in Cypress component tests.

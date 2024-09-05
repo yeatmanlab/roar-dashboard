@@ -14,15 +14,10 @@
 // ***********************************************************
 
 import './commands';
+import '../../src/styles.js';
 import plugins from '../../src/plugins.js';
 import { createAppInstance } from '../../src/setup.js';
 import { mount } from 'cypress/vue';
-
-import 'primevue/resources/primevue.css'; // primevue css
-import 'primeicons/primeicons.css'; // icons
-import 'primeflex/primeflex.scss'; // primeflex
-import '../../src/assets/styles/theme-tailwind.css'; // base theme (pulled from Primevue)
-import '../../src/assets/styles/theme.scss';
 
 /**
  * Custom Cypress command to mount a Vue component with the application's full context.

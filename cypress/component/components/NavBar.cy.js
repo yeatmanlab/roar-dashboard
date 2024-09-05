@@ -51,7 +51,7 @@ describe('<NavBar />', () => {
   });
 
   it('mounts using a desktop viewport', () => {
-    cy.setViewport('desktop');
+    cy.viewport(1920, 1080);
     cy.mount(NavBar);
     cy.get('[data-cy=button-sign-out]').should('contain.text', 'Sign Out');
 

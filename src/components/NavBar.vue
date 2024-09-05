@@ -69,7 +69,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/store/auth.js';
+import { useAuthStore } from '@/store/auth';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import _get from 'lodash/get';

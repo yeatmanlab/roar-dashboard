@@ -5,7 +5,7 @@ const vitePreprocessor = require('cypress-vite');
 const UnheadVite = require('@unhead/addons/vite');
 const path = require('path');
 
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '.env.test') });
 
 module.exports = defineConfig({
   projectId: 'cobw62',

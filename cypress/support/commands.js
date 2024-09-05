@@ -292,24 +292,6 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
 });
 
 /**
- * Sets the viewport size to the specified value. One of 'mobile', 'tablet', 'desktop', 'widescreen', or 'ultra'. Defaults to 'mobile'.
- * @param {string} size - The viewport size to set.
- * @returns {void}
- */
-Cypress.Commands.add('setViewport', (size = 'mobile') => {
-  const viewports = {
-    mobile: [375, 667],
-    tablet: [768, 1024],
-    desktop: [1440, 900],
-    widescreen: [2560, 1440],
-    ultra: [3840, 2160],
-  };
-
-  const [width, height] = viewports[size] || viewports['mobile'];
-  cy.viewport(width, height);
-});
-
-/**
  * Create a mock store for the user type specified.
  * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
  * @returns {void}
