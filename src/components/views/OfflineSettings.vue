@@ -177,7 +177,6 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 
 const authStore = useAuthStore();
@@ -193,10 +192,6 @@ const init = () => {
 const toast = useToast();
 const queryClient = useQueryClient();
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
-  enabled: initialized,
-});
-
 const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery({
   enabled: initialized,
 });
@@ -209,12 +204,8 @@ const { data: tasks } = useTasksQuery(false, {
   enabled: initialized && offlineEnabled,
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-
-const canQueryAdministrations = computed(() => {
-  return initialized.value && !isLoadingClaims.value && offlineEnabled.value;
+const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsQuery(orderBy, {
+  enabled: initialized && offlineEnabled,
 });
 
 const formattedTasks = computed(() => {
@@ -225,10 +216,6 @@ const formattedTasks = computed(() => {
       ...task,
     };
   });
-});
-
-const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsQuery(orderBy, {
-  enabled: canQueryAdministrations,
 });
 
 const selectedOfflineTasks = ref([]);
