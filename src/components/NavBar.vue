@@ -151,7 +151,6 @@ const computedItems = computed(() => {
 
 const userDisplayName = computed(() => {
   if (!userClaimsLoading) {
-    console.log('userClaims false');
     return '';
   } else {
     console.log('userClaims true');
