@@ -443,7 +443,7 @@ import { useToast } from 'primevue/usetoast';
 import { cloneDeep, camelCase } from 'lodash';
 import { useAuthStore } from '@/store/auth';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
-import useAdministrationVariantsQuery from '@/composables/queries/useAdministrationVariantsQuery';
+import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
 import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
 
@@ -513,7 +513,7 @@ const { isFetching: isFetchingTasks, data: tasks } = useTasksQuery({
   enabled: initialized,
 });
 
-const { data: variants } = useAdministrationVariantsQuery(registeredTasksOnly, {
+const { data: variants } = useTaskVariantsQuery(registeredTasksOnly, {
   enabled: initialized,
 });
 
