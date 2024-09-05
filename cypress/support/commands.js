@@ -208,6 +208,14 @@ Cypress.Commands.add('switchToOptionalAssessments', () => {
 });
 
 /**
+ * Switches the view to show required assessments.
+ */
+Cypress.Commands.add('switchToRequiredAssessments', () => {
+  cy.wait(0.2 * Cypress.env('timeout'));
+  cy.get("[data-cy='switch-show-optional-assessments']").click();
+});
+
+/**
  * Inputs organization details into a form, including optional fields like NCES ID, address, grade, and tag.
  *
  * @param {string} orgName - The name of the organization.
@@ -217,11 +225,6 @@ Cypress.Commands.add('switchToOptionalAssessments', () => {
  * @param {string} [orgGrade=null] - The grade level of the organization.
  * @param {string} [orgTag=null] - The tag associated with the organization.
  */
-Cypress.Commands.add('switchToRequiredAssessments', () => {
-  cy.wait(0.2 * Cypress.env('timeout'));
-  cy.get("[data-cy='switch-show-optional-assessments']").click();
-});
-
 Cypress.Commands.add(
   'inputOrgDetails',
   (orgName, orgInitials, orgNcesId = null, orgAddress = null, orgGrade = null, orgTag = null) => {
