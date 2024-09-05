@@ -38,7 +38,8 @@
     "loadingAssignments": "Cargando actividades",
     "selectAssignment": "Selecciona una actividad",
     "noAssignments": "¡No tienes actividades!",
-    "contactAdministrator": "Por favor, contacta a tu administrador para que agregue a una actividad."
+    "contactAdministrator": "Por favor, contacta a tu administrador para que agregue a una actividad.",
+    "consentUpdatedStatus": "Estado de consentimiento actualizado"
   },
   "homeSelector": {
     "loading": "Cargando...",

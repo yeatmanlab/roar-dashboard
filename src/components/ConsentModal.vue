@@ -50,15 +50,15 @@ onMounted(() => {
     icon: 'pi pi-question-circle',
     acceptLabel: i18n.t('consentModal.acceptButton', 'Accept'),
     rejectLabel: i18n.t('consentModal.rejectButton', 'Reject'),
-    acceptClass: 'bg-green-500 text-white border-none border-round p-2 hover:bg-green-700',
+    acceptClass: 'bg-green-600 text-white border-none border-round p-2 hover:bg-green-800',
     acceptIcon: 'pi pi-check mr-2',
-    rejectClass: 'bg-red-500 text-white border-none border-round p-2 hover:bg-red-700',
+    rejectClass: 'bg-red-600 text-white border-none border-round p-2 hover:bg-red-800',
     rejectIcon: 'pi pi-times mr-2',
     accept: async () => {
       toast.add({
         severity: 'info',
         summary: i18n.t('consentModal.toastHeader'),
-        detail: i18n.t(`consentModal.${_lowerCase(props.consentType)}UpdatedStatus`, `${props.consentType.toUpperCase()} STATUS UPDATED.`),
+        detail: i18n.t(`consentModal.${_lowerCase(props.consentType)}UpdatedStatus`),
         life: 3000,
       });
       emit('accepted');
@@ -92,10 +92,18 @@ onMounted(() => {
   display: block !important;
 } */
 
+.p-dialog .p-dialog-content {
+  padding: 1rem;
+}
+
 .confirm .p-dialog-footer {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+}
+
+.p-dialog .p-dialog-footer {
+  padding: 1rem;
 }
 
 .confirm .p-dialog-header-close {

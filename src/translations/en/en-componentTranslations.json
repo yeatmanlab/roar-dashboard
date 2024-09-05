@@ -30,7 +30,8 @@
     "title": "Consent",
     "acceptButton": "Accept",
     "rejectButton": "No, sign me out",
-    "toastHeader": "Confirmed"
+    "toastHeader": "Confirmed",
+    "consentUpdatedStatus": "Consent status updated"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Show optional assignments",

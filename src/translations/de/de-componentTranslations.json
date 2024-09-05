@@ -30,7 +30,8 @@
   "title": "Zustimmung",
   "acceptButton": "Akzeptieren",
   "rejectButton": "Nein, mich abmelden",
-  "toastHeader": "Bestätigt"
+  "toastHeader": "Bestätigt",
+  "consentUpdatedStatus": "Zustimmungsstatus aktualisiert"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Optionale Zuordnungen anzeigen",

@@ -31,7 +31,9 @@
   "title": "Consentimiento",
   "acceptButton": "Aceptar",
   "rejectButton": "No, cerrar sesión",
-  "toastHeader": "Confirmado"
+  "toastHeader": "Confirmado",
+  "consentUpdatedStatus": "Estado de consentimiento actualizado"
+
   },
   "homeParticipant": {
     "showOptionalAssignments": "Mostrar actividades opcionales",

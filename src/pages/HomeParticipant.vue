@@ -100,7 +100,7 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, fetchDocsById, fetchSubcollection } from '../helpers/query/utils';
+import { fetchDocById, fetchDocsById, } from '../helpers/query/utils';
 import { getUserAssignments } from '../helpers/query/assignments';
 import ConsentModal from '../components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
@@ -249,22 +249,26 @@ async function checkConsent() {
       showConsent.value = true;
       return;
     }
+    // LEVANTE
   } else {
-      try {
-        const consentDoc = await authStore.getLegalDoc(`${locale.value}Consent`); 
-        
-        if (!consentDoc) {
-          console.log('No consent doc found');
-          return;
-        }
-        
-        console.log('consentDoc: ', consentDoc);
+    // Check if the user has already consented to the Levante consent form
+    const consentStatus = _get(userData.value, `legal.consent`);
+    if (consentStatus) {
+      return;
+    }
 
-        confirmText.value = consentDoc.text;
-        showConsent.value = true;
-      } catch {
-        console.log('Error getting consent doc');
-      }
+    try {
+      const consentDoc = await authStore.getLegalDoc(`${locale.value}Consent`); 
+      
+      if (!consentDoc) return
+
+      consentType.value = toRaw(legal).consent[0].type;
+      confirmText.value = consentDoc.text;
+      consentVersion.value = consentDoc.version;
+      showConsent.value = true;
+    } catch {
+      console.log('Error getting consent doc');
+    }
   }
 }
 
@@ -275,6 +279,7 @@ async function updateConsent() {
     dateSigned: new Date(),
   };
   try {
+    // args: docName, consentVersion, params
     await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value);
     userQueryKeyIndex.value += 1;
   } catch {
