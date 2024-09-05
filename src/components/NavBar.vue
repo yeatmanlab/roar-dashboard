@@ -23,7 +23,7 @@
             <template #end>
               <div class="flex gap-2 align-items-center justify-content-center mr-3">
                 <div v-if="isWideScreen" class="nav-user-wrapper flex align-items-center gap-2 bg-gray-100">
-                  <div class="text-lg font-bold text-gray-600">
+                  <div class="text-lg font-bold text-gray-600" data-cy="user-display-name">
                     {{ userDisplayName }}
                   </div>
                   <router-link :to="{ name: 'SignOut' }" class="signout-button">
@@ -47,6 +47,7 @@
                 <div class="nav-user-wrapper bg-gray-100">
                   <router-link :to="{ name: 'ProfileInfo' }"
                     ><button
+                      data-cy="button-profile-info"
                       class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
                     >
                       <i class="pi pi-cog"></i></button
@@ -96,6 +97,10 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
+const handleResize = () => {
+  screenWidth.value = window.innerWidth;
+};
+
 onMounted(() => {
   if (roarfirekit.value.restConfig) init();
   window.addEventListener('resize', handleResize);
@@ -143,11 +148,6 @@ const computedItems = computed(() => {
   }
   return items;
 });
-
-const handleResize = () => {
-  screenWidth.value = window.innerWidth;
-  return;
-};
 
 const userDisplayName = computed(() => {
   if (!userClaimsLoading) {
