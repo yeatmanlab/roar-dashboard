@@ -18,7 +18,7 @@ export async function initNewFirekit() {
     // The site key is used for app check token verification
     // The debug token is used to bypass app check for local development
     siteKey: roarConfig.siteKey,
-    debugToken: roarConfig.debugToken,
+    debugToken: roarConfig?.debugToken,
   });
   return await firekit.init();
 }
