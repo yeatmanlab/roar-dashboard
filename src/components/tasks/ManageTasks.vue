@@ -435,6 +435,7 @@ import useUpdateTaskMutation from '@/composables/mutations/useUpdateTaskMutation
 
 const toast = useToast();
 const initialized = ref(false);
+const registeredTasksOnly = ref(true);
 const taskCheckboxData = ref();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
@@ -504,7 +505,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { data: tasks } = useTasksQuery({
+const { data: tasks } = useTasksQuery(registeredTasksOnly, {
   enabled: initialized,
 });
 

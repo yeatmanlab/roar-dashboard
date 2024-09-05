@@ -438,12 +438,11 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { required } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { cloneDeep, camelCase } from 'lodash';
 import { useAuthStore } from '@/store/auth';
-import { taskFetcher } from '@/helpers/query/tasks';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useAdministrationVariantsQuery from '@/composables/queries/useAdministrationVariantsQuery';
 import useAddTaskVariantMutation from '@/composables/mutations/useAddTaskVariantMutation';
 import useUpdateTaskVariantMutation from '@/composables/mutations/useUpdateTaskVariantMutation';
@@ -510,15 +509,11 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { isFetching: isFetchingTasks, data: tasks } = useQuery({
-  queryKey: ['tasks', registeredTasksOnly],
-  queryFn: () => taskFetcher(registeredTasksOnly.value),
-  keepPreviousData: true,
+const { isFetching: isFetchingTasks, data: tasks } = useTasksQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-const { data: allVariants } = useAdministrationVariantsQuery({
+const { data: variants } = useAdministrationVariantsQuery(registeredTasksOnly, {
   enabled: initialized,
 });
 
@@ -534,11 +529,11 @@ const formattedTasks = computed(() => {
 
 // Filter variants based on selected task
 const filteredVariants = computed(() => {
-  if (!allVariants.value || !selectedTask.value) {
+  if (!variants.value || !selectedTask.value) {
     return [];
   }
 
-  return allVariants.value.filter((variant) => variant.task.id === selectedTask.value);
+  return variants.value.filter((variant) => variant.task.id === selectedTask.value);
 });
 
 // Fields for modeling  a new variant
@@ -663,7 +658,7 @@ const checkForDuplicates = (newItemsArray, currentDataObject) => {
 };
 
 function checkVariantExists(value) {
-  allVariants.value.forEach((item) => {
+  variants.value.forEach((item) => {
     if (value === item.variant?.name) {
       toast.add({
         severity: 'error',

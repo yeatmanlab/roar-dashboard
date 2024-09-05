@@ -1,3 +1,4 @@
+import { toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { taskFetcher } from '@/helpers/query/tasks';
 import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
@@ -10,7 +11,7 @@ import { TASKS_QUERY_KEY } from '@/constants/queryKeys';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useTasksQuery = (registeredTasksOnly = false, queryOptions = undefined) => {
-  const queryKey = registeredTasksOnly ? [TASKS_QUERY_KEY, 'registered'] : [TASKS_QUERY_KEY];
+  const queryKey = toValue(registeredTasksOnly) ? [TASKS_QUERY_KEY, 'registered'] : [TASKS_QUERY_KEY];
 
   return useQuery({
     queryKey,
