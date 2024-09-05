@@ -65,6 +65,7 @@ jobs:
           start: npm run dev
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
+          record: true
           parallel: true
           spec: 'cypress/component/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
