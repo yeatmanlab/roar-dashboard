@@ -492,7 +492,6 @@ const closeDialog = () => {
 
 const updateOrgData = async () => {
   isSubmitting.value = true;
-  console.log('Updating org data', localOrgData.value);
   await roarfirekit.value
     .createOrg(
       activeOrgType.value,
