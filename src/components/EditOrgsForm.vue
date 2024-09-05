@@ -55,6 +55,7 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useQuery } from '@tanstack/vue-query';
+import PvChips from 'primevue/chips';
 import _isEmpty from 'lodash/isEmpty';
 const props = defineProps({
   orgType: { type: String, required: true },
@@ -96,7 +97,6 @@ const localOrgData = ref({
 });
 
 const setupOrgData = (orgData) => {
-  console.log('setupOrgData', orgData);
   let org = {
     name: orgData?.name ?? '',
     abbreviation: orgData?.abbreviation ?? '',
@@ -152,7 +152,6 @@ onMounted(() => {
 watch(
   () => localOrgData,
   (orgData) => {
-    console.log('emitting new orgData', orgData);
     emit('update:orgData', orgData.value);
   },
   { deep: true, immediate: false },
