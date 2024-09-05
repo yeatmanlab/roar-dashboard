@@ -1,7 +1,7 @@
 <template>
   <PvPanel class="m-0 p-0 w-full" header="Select Consent and Assent Forms">
     <div class="card flex justify-content-center">
-      <div class="flex flex-wrap gap-3">
+      <div v-if="!noConsent" class="flex flex-wrap gap-3">
         <div class="flex align-items-center">
           <PvRadioButton
             v-model="decision"
@@ -31,7 +31,7 @@
     <div class="flex justify-content-center mt-2">
       <PvCheckbox v-model="noConsent" input-id="no-consent" class="flex" value="noConsent" />
       <label class="ml-2 flex text-center" for="no-consent"
-        >This administration does not require consent or assent forms</label
+        >This administration does not require consent {{ isLevante ? '' : 'or assent' }} forms</label
       >
     </div>
     <div class="flex flex-row">
@@ -385,13 +385,8 @@ onMounted(() => {
     selectedConsent.value = props.legal.consent[0];
     selectedAssent.value = props.legal.assent[0];
   }
-
-  console.log('result on mounted: ', result);
 });
 
-watch(result.consent, () => {
-  console.log('result.consent in watch: ', result.consent);
-}, { deep: true });
 
 watch(
   () => props.legal,
@@ -443,8 +438,6 @@ const { data: consents } = useQuery({
   staleTime: 5 * 60 * 1000,
 });
 
-console.log('consents', consents.value);
-
 const listOfDocs = computed(() => {
   let consent = [];
   let assent = [];
@@ -460,15 +453,12 @@ const listOfDocs = computed(() => {
 });
 
 async function seeConsent(consent) {
-  console.log('consent: ', consent);
-
   let consentDoc;
   if (consent?.type === 'Assent-es') {
     consentDoc = await authStore.getLegalDoc('assent-es');
   } else {
     consentDoc = await authStore.getLegalDoc(consent?.type.toLowerCase());
   }
-  console.log('consentDoc:', consentDoc);
 
   consentVersion.value = consentDoc.version;
   confirmText.value = marked(consentDoc.text);
@@ -600,6 +590,7 @@ watch(noConsent, () => {
   }
 });
 </script>
+
 <style scoped>
 .p-checkbox-box.p-highlight {
   background-color: var(--primary-color);
