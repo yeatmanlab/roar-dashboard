@@ -9,7 +9,7 @@ const useSandbox = import.meta.env.VITE_FIREBASE_DATA_SOURCE === 'sandbox';
 const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
 
 function setDebugToken(config) {
-  const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+  const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || (self.FIREBASE_APPCHECK_DEBUG_TOKEN = true);
 
   if (debugToken) {
     config.debugToken = debugToken;
