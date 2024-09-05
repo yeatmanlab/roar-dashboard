@@ -153,7 +153,6 @@ const userDisplayName = computed(() => {
   if (!userClaimsLoading) {
     return '';
   } else {
-    console.log('userClaims true');
     let email = authStore?.userData?.email;
     if (email && email.split('@')[1] === 'roar-auth.com') {
       email = email.split('@')[0];
