@@ -86,9 +86,9 @@
             Add administrations to this list to maintain access to them while you are offline.
           </div>
         </div>
-        <div v-if="isLoadingAdministrations === true" class="flex text-gray-600 font-light uppercase font-xs">
-          <i class="pi pi-spinner pi-spin"></i>
-          <div class="text-xs">Loading Adminstrations</div>
+        <div v-if="isLoadingAdministrations === true" class="flex gap-2 text-gray-600 font-light uppercase font-xs">
+          <div><i class="pi pi-spinner pi-spin"></i></div>
+          <div class="text-xs">Loading Administrations</div>
         </div>
         <div v-else class="flex gap-1">
           <PvDropdown
@@ -113,7 +113,7 @@
           v-if="selectedOfflineAdministrations.length === 0"
           class="px-2 py-4 rounded bg-gray-200 flex align-items-center justify-content-center text-gray-400"
         >
-          No administrations added
+          No administrations added.
         </div>
         <div v-else class="flex flex-column gap-2">
           <div
