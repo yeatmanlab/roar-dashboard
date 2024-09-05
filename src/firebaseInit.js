@@ -16,7 +16,7 @@ export async function initNewFirekit() {
     verboseLogging: import.meta.env.MODE === 'LEVANTE' ? false : true,
 
     // The site key is used for app check token verification
-    // The debug token is used to bypass the app check token requirement for local development and for PR deployments
+    // The debug token is used to bypass app check for local development
     siteKey: roarConfig.siteKey,
     debugToken: roarConfig.debugToken,
   });
