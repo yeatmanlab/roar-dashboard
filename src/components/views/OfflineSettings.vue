@@ -170,16 +170,20 @@ import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
 
+const toast = useToast();
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
 
 const initialized = ref(false);
+const isSubmitting = ref(false);
+const orderBy = ref(orderByDefault);
+
+const { roarfirekit, uid } = storeToRefs(authStore);
+
 let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
-const toast = useToast();
 
 const { mutate: updateUser } = useUpdateUserMutation();
 
@@ -187,17 +191,7 @@ const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery({
   enabled: initialized,
 });
 
-watch(userData, (newUserData) => {
-  console.log('[debug] userData', newUserData);
-});
-
-watch(isLoadingUserData, (isLoading) => {
-  console.log('[debug] isLoadingUserData', isLoading);
-});
-
 const offlineEnabled = ref(userData?.offlineEnabled ?? false);
-const orderBy = ref(orderByDefault);
-const isSubmitting = ref(false);
 
 const { data: tasks } = useTasksQuery(false, {
   enabled: initialized && offlineEnabled,
