@@ -153,6 +153,7 @@ import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts.js';
 import EditOrgsForm from './EditOrgsForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 import _get from 'lodash/get';
@@ -251,18 +252,18 @@ function copyToClipboard(text) {
     .writeText(text)
     .then(function () {
       toast.add({
-        severity: 'success',
+        severity: TOAST_SEVERITIES.SUCCESS,
         summary: 'Hoorah!',
         detail: 'Your code has been successfully copied to clipboard!',
-        life: 3000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     })
     .catch(function () {
       toast.add({
-        severity: 'error',
+        severity: TOAST_SEVERITIES.ERROR,
         summary: 'Error!',
         detail: 'Your code has not been copied to clipboard! \n Please try again',
-        life: 3000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     });
 }
@@ -504,18 +505,18 @@ const updateOrgData = async () => {
       isSubmitting.value = false;
       closeEditModal();
       toast.add({
-        severity: 'success',
+        severity: TOAST_SEVERITIES.SUCCESS,
         summary: 'Updated',
         detail: 'Organization data updated successfully!',
-        life: 3000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
     })
     .catch((error) => {
       toast.add({
-        severity: 'error',
+        severity: TOAST_SEVERITIES.ERROR,
         summary: 'Unexpexcted error',
         detail: `Unexpected error occurred: ${error.message}`,
-        life: 3000,
+        life: TOAST_DEFAULT_LIFE_DURATION,
       });
       isSubmitting.value = false;
     });
