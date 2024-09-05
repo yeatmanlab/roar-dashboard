@@ -3,10 +3,12 @@
     <div class="font-bold text-2xl">Offline Mode</div>
     <div class="text-sm font-light">Offline Mode caches data on your device and stores run data locally.</div>
   </div>
+
   <div v-if="isLoadingUserData" class="flex flex-column align-items-center justify-content-center">
     <AppSpinner />
     <div>Loading User Data</div>
   </div>
+
   <div v-else>
     <div class="flex flex-row flex-wrap justify-content-between bg-gray-100 px-4 py-4 gap-3">
       <div class="flex flex-column gap-3">
@@ -23,6 +25,7 @@
         <PvToggleButton v-model="offlineEnabled" on-label="On" off-label="Off" class="p-2 rounded" />
       </div>
     </div>
+
     <div v-if="userData?.offlineEnabled" class="flex flex-column bg-gray-100 my-2 p-4 rounded gap-4">
       <div class="flex flex-wrap justify-content-between gap-3">
         <div class="flex flex-column gap-2">
@@ -170,22 +173,14 @@ import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
-import { taskFetcher } from '@/helpers/query/tasks';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
 
-// +----------------+
-// | Initialization |
-// +----------------+
 const authStore = useAuthStore();
-const toast = useToast();
 const { roarfirekit, uid, administrationQueryKeyIndex } = storeToRefs(authStore);
-const queryClient = useQueryClient();
 
-// +-------------------------+
-// | Firekit Inititalization |
-// +-------------------------+
 const initialized = ref(false);
 let unsubscribe;
 const init = () => {
@@ -193,27 +188,8 @@ const init = () => {
   initialized.value = true;
 };
 
-// Query Init
-
-const orderBy = ref(orderByDefault);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const canQueryAdministrations = computed(() => {
-  return initialized.value && !isLoadingClaims.value;
-});
-const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-
-// +---------+
-// | Queries |
-// +---------+
-const { data: tasks } = useQuery({
-  queryKey: ['tasks'],
-  // non-registered tasks, all data
-  queryFn: () => taskFetcher(false, true),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
+const toast = useToast();
+const queryClient = useQueryClient();
 
 const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
@@ -223,12 +199,20 @@ const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery({
   enabled: initialized,
 });
 
-const { isLoading: isLoadingAdministrations, data: administrations } = useQuery({
-  queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
-  keepPreviousData: true,
-  enabled: canQueryAdministrations,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+const offlineEnabled = ref(userData?.offlineEnabled ?? false);
+const orderBy = ref(orderByDefault);
+const isSubmitting = ref(false);
+
+const { data: tasks } = useTasksQuery(false, {
+  enabled: initialized && offlineEnabled,
+});
+
+const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
+
+const canQueryAdministrations = computed(() => {
+  return initialized.value && !isLoadingClaims.value && offlineEnabled.value;
 });
 
 const formattedTasks = computed(() => {
@@ -241,12 +225,18 @@ const formattedTasks = computed(() => {
   });
 });
 
-const offlineEnabled = ref(userData?.offlineEnabled ?? false);
+const { isLoading: isLoadingAdministrations, data: administrations } = useQuery({
+  queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
+  queryFn: () => administrationPageFetcher(orderBy, ref(10000), ref(0), isSuperAdmin, adminOrgs, exhaustiveAdminOrgs),
+  keepPreviousData: true,
+  enabled: canQueryAdministrations,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
 const selectedOfflineTasks = ref([]);
 const selectedOfflineAdministrations = ref([]);
 const selectedOfflineTask = ref('');
 const selectedOfflineAdministration = ref('');
-const isSubmitting = ref(false);
 
 const updateRefsFromUserData = (newUserData) => {
   // Ensure newUserData and its properties are defined
@@ -267,8 +257,8 @@ const addOfflineAdministration = () => {
   if (selectedOfflineAdministrations.value.includes(selectedOfflineAdministration.value)) {
     toast.add({
       severity: 'info',
-      summary: 'Task already added',
-      detail: 'This task has already been added',
+      summary: 'Administration already added',
+      detail: 'This administration has already been added.',
       life: 3000,
     });
     return;
@@ -283,7 +273,7 @@ const addOfflineTask = () => {
     toast.add({
       severity: 'info',
       summary: 'Task already added',
-      detail: 'This task has already been added',
+      detail: 'This task has already been added.',
       life: 3000,
     });
     return;
@@ -322,7 +312,7 @@ const saveOfflineSettings = async () => {
     })
     .then(() => {
       isSubmitting.value = false;
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'Your Info has been updated', life: 3000 });
+      toast.add({ severity: 'success', summary: 'Updated', detail: 'Your settings have been updated.', life: 3000 });
     })
     .catch((error) => {
       console.error('Error updating user data', error);
@@ -333,8 +323,8 @@ const saveOfflineSettings = async () => {
         life: 3000,
       });
     });
-  // invalidate tanstack queries
 
+  // invalidate tanstack queries
   await queryClient.invalidateQueries(['userData', uid]);
 };
 </script>
