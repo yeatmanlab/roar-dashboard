@@ -1,3 +1,8 @@
+// *********************************************
+// | Use this file to create a shared list of plugins  |
+// | for both the main app and testing.                  |
+// *********************************************
+
 import PrimeVue from 'primevue/config';
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';

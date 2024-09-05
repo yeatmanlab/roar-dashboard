@@ -1,3 +1,8 @@
+// *****************************************
+// | Use this file to create a shared setup for  |
+// | both the main app and testing.                 |
+// *****************************************
+
 import { createApp } from 'vue';
 import { VueRecaptchaPlugin } from 'vue-recaptcha';
 import { Buffer } from 'buffer';
