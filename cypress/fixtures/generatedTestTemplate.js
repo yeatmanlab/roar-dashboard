@@ -8,7 +8,7 @@ export const generatedSpecTemplate = (adminName) => {
       if ($body.find('[data-cy="switch-show-optional-assessments"]').length > 0) {
         cy.log('Optional assessments button found, switching to optional assessments');
         cy.switchToOptionalAssessments();
-
+        cy.wait(0.3 * timeout);
         cy.get('.p-tabview').invoke('text').then((text) => {
             if (text.includes(spec.name)) {
               cy.log(\`Initializing test for optional game: \${spec.name}\`);
@@ -20,7 +20,7 @@ export const generatedSpecTemplate = (adminName) => {
               });
             } else {
               cy.log('No optional game found for game:', spec.name, 'switching back to assessments.');
-              cy.switchToOptionalAssessments();
+              cy.switchToRequiredAssessments();
             }
         })
       } else {
