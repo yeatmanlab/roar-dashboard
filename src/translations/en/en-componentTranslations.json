@@ -26,9 +26,12 @@
     "classLinkLoading": "Loading your data from ClassLink..."
   },
   "consentModal": {
+    "header": "Consent",
     "title": "Consent",
-    "acceptButton": "Continue",
-    "toastHeader": "Confirmed"
+    "acceptButton": "Accept",
+    "rejectButton": "No, sign me out",
+    "toastHeader": "Confirmed",
+    "consentUpdatedStatus": "Consent status updated"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Show optional assignments",

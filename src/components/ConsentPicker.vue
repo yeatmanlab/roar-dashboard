@@ -1,7 +1,7 @@
 <template>
   <PvPanel class="m-0 p-0 w-full" header="Select Consent and Assent Forms">
     <div class="card flex justify-content-center">
-      <div class="flex flex-wrap gap-3">
+      <div v-if="!noConsent" class="flex flex-wrap gap-3">
         <div class="flex align-items-center">
           <PvRadioButton
             v-model="decision"
@@ -31,7 +31,7 @@
     <div class="flex justify-content-center mt-2">
       <PvCheckbox v-model="noConsent" input-id="no-consent" class="flex" value="noConsent" />
       <label class="ml-2 flex text-center" for="no-consent"
-        >This administration does not require consent or assent forms</label
+        >This administration does not require consent {{ isLevante ? '' : 'or assent' }} forms</label
       >
     </div>
     <div class="flex flex-row">
@@ -172,16 +172,18 @@
           :placeholder="props.legal?.consent[0]?.fileName || 'Select a Consent Form'"
           @change="updateConsent"
         />
-        <h3 class="pt-3">Select an Assent Form</h3>
-        <PvDropdown
-          v-model="selectedAssent"
-          :options="listOfDocs.assent"
-          option-label="fileName"
-          style="width: 70%"
-          :placeholder="props.legal?.assent[0]?.fileName || 'Select an Assent Form'"
-          @change="updateAssent"
-        />
-        <div div class="hidden">
+        <div v-if="!isLevante">
+          <h3 class="pt-3">Select an Assent Form</h3>
+          <PvDropdown
+            v-model="selectedAssent"
+            :options="listOfDocs.assent"
+            option-label="fileName"
+            style="width: 70%"
+            :placeholder="props.legal?.assent[0]?.fileName || 'Select an Assent Form'"
+            @change="updateAssent"
+            />
+        </div>
+        <div class="hidden">
           <h3 class="mb-4 mt-5">Consent Amount and Expected Time</h3>
           <div class="flex flex-row">
             <div class="mr-1">
@@ -207,12 +209,14 @@
               <div style="width: 80%">
                 <p class="m-0">
                   <span class="font-bold">Name: </span>{{ result.consent[0]?.fileName }} <br />
-                  <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
-                  <br />
-                  <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
-                  <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}
-                  <br />
-                  <span class="font-bold">Last Updated: </span>{{ result.consent[0]?.lastUpdated }} <br />
+                  <div v-if="!isLevante">
+                    <span class="font-bold">Current Commit: </span>{{ result.consent[0]?.currentCommit }}
+                    <br />
+                    <span class="font-bold">GitHub Org: </span>{{ result.consent[0]?.gitHubOrg }} <br />
+                    <span class="font-bold">GitHub Repository: </span>{{ result.consent[0]?.gitHubRepository }}
+                    <br />
+                    <span class="font-bold">Last Updated: </span>{{ result.consent[0]?.lastUpdated }} <br />
+                  </div>
                 </p>
               </div>
               <div class="flex align-items-center justify-content-center">
@@ -229,30 +233,32 @@
           </div>
         </div>
         <div class="w-full mt-2">
-          <PvFieldset v-if="consents && consents.length > 0" legend="Assent">
-            <div class="flex flex-row w-full">
-              <div style="width: 80%">
-                <p class="m-0">
-                  <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName }} <br />
-                  <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit }}
-                  <br />
-                  <span class="font-bold">GitHub Org: </span>{{ result.assent[0]?.gitHubOrg }} <br />
-                  <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository }}
-                  <br />
-                  <span class="font-bold">Last Updated: </span>{{ result.assent[0]?.lastUpdated }} <br />
-                </p>
+          <div v-if="!isLevante">
+            <PvFieldset v-if="consents && consents.length > 0" legend="Assent">
+              <div class="flex flex-row w-full">
+                <div style="width: 80%">
+                  <p class="m-0">
+                    <span class="font-bold">Name: </span>{{ result.assent[0]?.fileName }} <br />
+                    <span class="font-bold">Current Commit: </span>{{ result.assent[0]?.currentCommit }}
+                    <br />
+                    <span class="font-bold">GitHub Org: </span>{{ result.assent[0]?.gitHubOrg }} <br />
+                    <span class="font-bold">GitHub Repository: </span>{{ result.assent[0]?.gitHubRepository }}
+                    <br />
+                    <span class="font-bold">Last Updated: </span>{{ result.assent[0]?.lastUpdated }} <br />
+                  </p>
+                </div>
+                <div class="flex align-items-center justify-content-center">
+                  <PvButton
+                    class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
+                    label="Show Assent"
+                    @click="seeConsent(result.assent[0])"
+                  />
+                </div>
               </div>
-              <div class="flex align-items-center justify-content-center">
-                <PvButton
-                  class="border-circle w-6rem h-6rem m-2 surface-hover text-primary border-none font-bold flex align-items-center justify-content-center hover:text-100 hover:bg-primary"
-                  label="Show Assent"
-                  @click="seeConsent(result.assent[0])"
-                />
-              </div>
+            </PvFieldset>
+            <div v-else>
+              <p>No assent available.</p>
             </div>
-          </PvFieldset>
-          <div v-else>
-            <p>No assent available.</p>
           </div>
         </div>
       </div>
@@ -279,6 +285,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { marked } from 'marked';
 import _forEach from 'lodash/forEach';
+import { isLevante } from '@/helpers';
 
 const props = defineProps({
   legal: { type: Object, required: false, default: null },
@@ -380,6 +387,7 @@ onMounted(() => {
   }
 });
 
+
 watch(
   () => props.legal,
   // eslint-disable-next-line no-unused-vars
@@ -451,6 +459,7 @@ async function seeConsent(consent) {
   } else {
     consentDoc = await authStore.getLegalDoc(consent?.type.toLowerCase());
   }
+
   consentVersion.value = consentDoc.version;
   confirmText.value = marked(consentDoc.text);
   showConsent.value = true;
@@ -581,6 +590,7 @@ watch(noConsent, () => {
   }
 });
 </script>
+
 <style scoped>
 .p-checkbox-box.p-highlight {
   background-color: var(--primary-color);

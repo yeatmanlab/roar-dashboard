@@ -26,17 +26,20 @@
   "classLinkLanding": {
     "classLinkLoading": "Cargando tus datos desde ClassLink..."
   },
-  "consentModal": {
-    "title": "Consentimiento",
-    "acceptButton": "Continuar",
-    "toastHeader": "Confirmado"
+"consentModal": {
+  "header": "Consentimiento",
+  "title": "Consentimiento",
+  "acceptButton": "Aceptar",
+  "rejectButton": "No, cerrar sesión",
+  "toastHeader": "Confirmado"
   },
   "homeParticipant": {
     "showOptionalAssignments": "Mostrar actividades opcionales",
     "loadingAssignments": "Cargando actividades",
     "selectAssignment": "Selecciona una actividad",
     "noAssignments": "¡No tienes actividades!",
-    "contactAdministrator": "Por favor, contacta a tu administrador para que agregue a una actividad."
+    "contactAdministrator": "Por favor, contacta a tu administrador para que agregue a una actividad.",
+    "consentUpdatedStatus": "Estado de consentimiento actualizado"
   },
   "homeSelector": {
     "loading": "Cargando...",
