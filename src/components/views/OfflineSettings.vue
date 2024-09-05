@@ -144,21 +144,12 @@
       </PvAlert>
     </div>
 
-    <div class="flex align-items-center justify-content-center mt-2">
-      <div v-if="isSubmitting" class="mr-2">
-        <PvButton
-          disabled
-          class="m-0 bg-primary text-white border-none border-round h-2rem text-md hover:bg-red-900"
-          @click="saveOfflineSettings"
-        >
-          <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2" />
-          Save Settings
-        </PvButton>
-      </div>
-      <div v-else>
+    <div class="flex align-items-center justify-content-center mt-4">
+      <div class="mr-2">
         <PvButton
           class="m-0 bg-primary text-white border-none border-round h-2rem text-md hover:bg-red-900"
           @click="saveOfflineSettings"
+          :disabled="isSubmitting"
         >
           <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2" />
           Save Settings
@@ -173,11 +164,11 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQueryClient } from '@tanstack/vue-query';
 import { orderByDefault } from '@/helpers/query/utils';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
+import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
 
 const authStore = useAuthStore();
 const { roarfirekit, uid } = storeToRefs(authStore);
@@ -188,12 +179,20 @@ const init = () => {
   if (unsubscribe) unsubscribe();
   initialized.value = true;
 };
-
 const toast = useToast();
-const queryClient = useQueryClient();
+
+const { mutate: updateUser } = useUpdateUserMutation();
 
 const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery({
   enabled: initialized,
+});
+
+watch(userData, (newUserData) => {
+  console.log('[debug] userData', newUserData);
+});
+
+watch(isLoadingUserData, (isLoading) => {
+  console.log('[debug] isLoadingUserData', isLoading);
 });
 
 const offlineEnabled = ref(userData?.offlineEnabled ?? false);
@@ -269,12 +268,10 @@ const addOfflineTask = () => {
 };
 
 const removeOfflineAdministration = (name) => {
-  console.log('called offline administrations');
   selectedOfflineAdministrations.value = selectedOfflineAdministrations.value.filter((task) => task !== name);
 };
 
 const removeOfflineTask = (name) => {
-  console.log('called delete offline on:', name);
   selectedOfflineTasks.value = selectedOfflineTasks.value.filter((task) => task !== name);
 };
 
@@ -288,29 +285,37 @@ onMounted(() => {
 });
 
 const saveOfflineSettings = async () => {
-  isSubmitting.value = true;
-  await roarfirekit.value
-    .updateUserData(uid.value, {
-      offlineEnabled: offlineEnabled.value,
-      offlineTasks: selectedOfflineTasks.value,
-      offlineAdministrations: selectedOfflineAdministrations.value,
-    })
-    .then(() => {
-      isSubmitting.value = false;
-      toast.add({ severity: 'success', summary: 'Updated', detail: 'Your settings have been updated.', life: 3000 });
-    })
-    .catch((error) => {
-      console.error('Error updating user data', error);
-      toast.add({
-        severity: 'error',
-        summary: 'Unexpected Error',
-        detail: 'An unexpected error has occurred.',
-        life: 3000,
-      });
-    });
+  const userData = {
+    offlineEnabled: offlineEnabled.value,
+    offlineTasks: selectedOfflineTasks.value,
+    offlineAdministrations: selectedOfflineAdministrations.value,
+  };
 
-  // invalidate tanstack queries
-  await queryClient.invalidateQueries(['userData', uid]);
+  isSubmitting.value = true;
+
+  await updateUser(
+    {
+      userId: uid.value,
+      userData,
+    },
+    {
+      onSuccess: () => {
+        toast.add({ severity: 'success', summary: 'Updated', detail: 'Your settings have been updated.', life: 3000 });
+      },
+      onError: (error) => {
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Unable to update settings, please try again.',
+          life: 3000,
+        });
+        console.error('Failed updating user data.', error);
+      },
+      onSettled: () => {
+        isSubmitting.value = false;
+      },
+    },
+  );
 };
 </script>
 <style scoped>
