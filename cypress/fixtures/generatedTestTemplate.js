@@ -3,7 +3,7 @@ export const generatedSpecTemplate = (adminName) => {
   import { testSpecs } from "../../../fixtures/taskTestSpecs.js";
   const timeout = Cypress.env('timeout');
   
-    function checkOptionalGame(spec, admin) {
+  function checkOptionalGame(spec, admin) {
     cy.get('body').then(($body) => {
       if ($body.find('[data-cy="switch-show-optional-assessments"]').length > 0) {
         cy.log('Optional assessments button found, switching to optional assessments');
@@ -54,6 +54,7 @@ export const generatedSpecTemplate = (adminName) => {
       cy.visit('/', { timeout: 2 * timeout });
       cy.selectAdministration('${adminName}');
       testSpecs.forEach((spec) => {
+        cy.switchToRequiredAssessments();
         testGame(spec, '${adminName}');
       });
       cy.log(\`Found administration: ${adminName}\`);
