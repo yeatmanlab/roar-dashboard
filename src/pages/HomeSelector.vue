@@ -8,11 +8,11 @@
 
   <div v-else>
     <HomeParticipant v-if="isParticipant" />
-    <HomeAdministrator v-else-if="isAdmin" />
+    <HomeAdministrator v-else-if="isAdminUser" />
   </div>
 
   <ConsentModal
-    v-if="!isLoading && showConsent && isAdmin"
+    v-if="!isLoading && showConsent && isAdminUser"
     :consent-text="confirmText"
     :consent-type="consentType"
     @accepted="updateConsent"
@@ -74,12 +74,13 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const { isAdmin, isParticipant } = useUserType(userClaims);
+const { isAdmin, isSuperAdmin, isParticipant } = useUserType(userClaims);
 
+const isAdminUser = computed(() => isAdmin.value || isSuperAdmin.value);
 const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
 
 const consentType = computed(() => {
-  if (isAdmin.value) {
+  if (isAdminUser.value) {
     return 'tos';
   } else {
     return i18n.locale.value.includes('es') ? 'assent-es' : 'assent';
@@ -90,7 +91,7 @@ const confirmText = ref('');
 const consentVersion = ref('');
 
 async function updateConsent() {
-  if (isAdmin.value) {
+  if (isAdminUser.value) {
     await authStore.updateConsentStatus(consentType.value, consentVersion.value);
     userQueryKeyIndex.value += 1;
   }
@@ -107,7 +108,7 @@ async function checkConsent() {
   }
 
   // Check for consent
-  if (isAdmin.value) {
+  if (isAdminUser.value) {
     const consentStatus = _get(userData.value, `legal.${consentType.value}`);
     const consentDoc = await authStore.getLegalDoc(consentType.value);
     consentVersion.value = consentDoc.version;
@@ -142,7 +143,7 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
   if (!isLoading.value) {
     refreshDocs();
-    if (isAdmin.value) {
+    if (isAdminUser.value) {
       await checkConsent();
     }
   }
