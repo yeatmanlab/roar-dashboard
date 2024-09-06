@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, onMounted, ref, toRaw } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -135,6 +135,13 @@ function isSignedBeforeAugustFirst(signedDate) {
   return new Date(signedDate) < augustFirstThisYear;
 }
 
+// Only check consent if the user data is loaded
+watch(userData, async (newValue) => {
+  if (!_isEmpty(newValue)) {
+    await checkConsent();
+  }
+});
+
 onMounted(async () => {
   if (requireRefresh.value) {
     requireRefresh.value = false;
@@ -143,9 +150,6 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
   if (!isLoading.value) {
     refreshDocs();
-    if (isAdminUser.value) {
-      await checkConsent();
-    }
   }
 });
 </script>
