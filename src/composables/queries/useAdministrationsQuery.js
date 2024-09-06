@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useUserType from '@/composables/useUserType';
 import { ADMINISTRATIONS_QUERY_KEY } from '@/constants/queryKeys';
 
 /**
@@ -19,8 +20,7 @@ const useAdministrationsQuery = (orderBy, queryOptions = undefined) => {
   });
 
   // Get admin status and administation orgs.
-  // @TODO: Replace with useUserType composable once yeatmanlab/roar-dashboard/pull/778 is merged.
-  const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+  const { isSuperAdmin } = useUserType(userClaims);
   const administrationOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
   const exhaustiveAdministrationOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
