@@ -129,6 +129,7 @@ import { orderByDefault } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
 const initialized = ref(false);
@@ -141,15 +142,15 @@ const searchTokens = ref([]);
 const searchInput = ref('');
 const search = ref('');
 
+const filteredAdministrations = ref([]);
 const fetchTestAdministrations = ref(false);
-const testAdminsCached = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const queryClient = useQueryClient();
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, administrationQueryKeyIndex, userClaimsQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, uid, administrationQueryKeyIndex } = storeToRefs(authStore);
 
 let unsubscribeInitializer;
 const init = () => {
@@ -199,67 +200,12 @@ const generateAutoCompleteSearchTokens = () => {
   searchTokens.value = [...new Set(searchTokens.value)];
 };
 
-/**
- * Fetches administrations from the cache or the server
- * @param {Array} queryKey - The query key to use for fetching the data
- * @returns {Promise<unknown>} - The cached or fetched data
- */
-const getAdministrations = async (queryKey) => {
-  let cachedData = await queryClient.getQueryData(queryKey);
-
-  if (!cachedData) {
-    cachedData = await queryClient.fetchQuery({
-      queryKey,
-      queryFn: () =>
-        administrationPageFetcher(
-          orderBy,
-          ref(10000),
-          ref(0),
-          isSuperAdmin,
-          adminOrgs,
-          exhaustiveAdminOrgs,
-          fetchTestAdministrations.value,
-        ),
-      keepPreviousData: true,
-      enabled: canQueryAdministrations,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    });
-    testAdminsCached.value = true;
-  }
-
-  return cachedData;
-};
-
 const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
-} = useQuery({
-  queryKey: ['administrations', uid, orderBy, ref(0), ref(5), isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () =>
-    administrationPageFetcher(
-      orderBy,
-      ref(5),
-      ref(0),
-      isSuperAdmin,
-      adminOrgs,
-      exhaustiveAdminOrgs,
-      fetchTestAdministrations,
-    ),
-  keepPreviousData: true,
-  enabled: canQueryAdministrations,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  cacheTime: Infinity,
-});
-
-const filteredAdministrations = ref(administrations.value);
-
-watch(fetchTestAdministrations, async (newState) => {
-  const queryKey = newState
-    ? ['testAdministrations', uid, orderBy, ref(0), ref(5), isSuperAdmin, administrationQueryKeyIndex]
-    : ['administrations', uid, orderBy, ref(0), ref(5), isSuperAdmin, administrationQueryKeyIndex];
-
-  filteredAdministrations.value = await getAdministrations(queryKey);
+} = useAdministrationsQuery(orderBy, fetchTestAdministrations, {
+  enabled: initialized,
 });
 
 /**
@@ -373,7 +319,6 @@ const dataViewKey = ref(0); //@TODO: Remove this when we have a better solution 
  * Clear the search input and reset the filtered administrations list.
  * @returns {void}
  */
-
 const clearSearch = () => {
   search.value = '';
   searchInput.value = '';
