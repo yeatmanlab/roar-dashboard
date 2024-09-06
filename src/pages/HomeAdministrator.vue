@@ -125,8 +125,9 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
-import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
+import { orderByDefault } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '@/helpers/query/administrations';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
 const initialized = ref(false);
@@ -138,6 +139,9 @@ const searchSuggestions = ref([]);
 const searchTokens = ref([]);
 const searchInput = ref('');
 const search = ref('');
+
+const fetchTestAdministrations = ref(false);
+const testAdminsCached = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
@@ -160,8 +164,9 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const fetchTestAdministrations = ref(false);
-const testAdminsCached = ref(false);
+const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+  enabled: initialized,
+});
 
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
@@ -222,15 +227,6 @@ const getAdministrations = async (queryKey) => {
 
   return cachedData;
 };
-
-const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
-  queryKey: ['userClaims', uid, userClaimsQueryKeyIndex],
-  queryFn: () => fetchDocById('userClaims', uid.value),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  cacheTime: Infinity,
-});
 
 const {
   isLoading: isLoadingAdministrations,
