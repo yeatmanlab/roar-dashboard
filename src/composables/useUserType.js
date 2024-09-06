@@ -21,11 +21,11 @@ export default function useUserType(userClaims) {
 
     // Check if the user is a super admin.
     if (claims?.super_admin) {
-      return AUTH_USER_TYPE.ADMIN;
+      return AUTH_USER_TYPE.SUPER_ADMIN;
     }
 
     // Check if the user has any minimal admin organizations.
-    const minimalAdminOrgs = claims.minimalAdminOrgs || {};
+    const minimalAdminOrgs = claims?.minimalAdminOrgs || {};
     const hasMinimalAdminOrgs = Object.values(minimalAdminOrgs).some((org) => !_isEmpty(org));
 
     if (hasMinimalAdminOrgs) {
@@ -38,10 +38,12 @@ export default function useUserType(userClaims) {
 
   const isAdmin = computed(() => userType.value === AUTH_USER_TYPE.ADMIN);
   const isParticipant = computed(() => userType.value === AUTH_USER_TYPE.PARTICIPANT);
+  const isSuperAdmin = computed(() => userType.value === AUTH_USER_TYPE.SUPER_ADMIN);
 
   return {
     userType,
     isAdmin,
     isParticipant,
+    isSuperAdmin,
   };
 }
