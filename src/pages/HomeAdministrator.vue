@@ -122,12 +122,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { orderByDefault } from '@/helpers/query/utils';
-import { administrationPageFetcher, getTitle } from '@/helpers/query/administrations';
+import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
@@ -148,10 +147,9 @@ const fetchTestAdministrations = ref(false);
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
-const queryClient = useQueryClient();
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, administrationQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 let unsubscribeInitializer;
 const init = () => {
@@ -167,18 +165,11 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
 const { isSuperAdmin } = useUserType(userClaims);
-
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
-const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-
-const canQueryAdministrations = computed(() => {
-  return initialized.value && !isLoadingClaims.value;
-});
 
 /**
  * Generate search tokens for autocomplete.
