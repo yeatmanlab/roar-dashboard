@@ -127,6 +127,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { orderByDefault } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '@/helpers/query/administrations';
+import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
@@ -168,9 +169,10 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
+const { isSuperAdmin } = useUserType(userClaims);
+
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 
 const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
