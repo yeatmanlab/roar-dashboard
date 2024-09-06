@@ -305,7 +305,7 @@ const sortOptions = ref([
 const sortKey = ref(sortOptions.value[0]);
 const sortOrder = ref();
 const sortField = ref();
-const dataViewKey = ref(0); //@TODO: Remove this when we have a better solution ?
+const dataViewKey = ref(0);
 
 /**
  * Clear the search input and reset the filtered administrations list.
