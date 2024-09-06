@@ -54,7 +54,11 @@ export const generatedSpecTemplate = (adminName) => {
       cy.visit('/', { timeout: 2 * timeout });
       cy.selectAdministration('${adminName}');
       testSpecs.forEach((spec) => {
-        cy.switchToRequiredAssessments();
+        cy.get('body').then(($body) => {
+          if ($body.find('[data-cy="switch-show-optional-assessments"]').length > 0) {
+            cy.switchToRequiredAssessments();
+          }
+        });
         testGame(spec, '${adminName}');
       });
       cy.log(\`Found administration: ${adminName}\`);
