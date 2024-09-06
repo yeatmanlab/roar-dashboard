@@ -20,7 +20,6 @@ function setDebugToken(config) {
   if (debugToken) {
     config.debugToken = debugToken;
   }
-  console.log('debugToken', debugToken);
 }
 
 if (isEmulated) {
