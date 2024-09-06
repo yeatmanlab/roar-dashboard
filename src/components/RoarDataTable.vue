@@ -83,6 +83,7 @@
           :export-filename="exportFilename"
           removable-sort
           sort-mode="multiple"
+          :multi-sort-meta="lazyPreSorting"
           show-gridlines
           filter-display="menu"
           paginator
@@ -937,7 +938,7 @@ const toggle = (event, column) => {
   op.value.toggle(event);
 };
 // Pass through data table events
-const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected']);
+const emit = defineEmits(['export-all', 'selection', 'reset-filters', 'export-selected', 'export-org-users']);
 </script>
 <style>
 .small-circle {
