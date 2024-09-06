@@ -88,6 +88,7 @@ import { useI18n } from 'vue-i18n';
 import { camelize, getAgeData } from '@bdelab/roar-utils';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import { isLevante } from '@/helpers';
+import _capitalize from 'lodash/capitalize';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -125,14 +126,32 @@ const getTaskName = (taskId, taskName) => {
   // Translate Levante task names. The task name is not the same as the taskId.
   const taskIdLowercased = taskId.toLowerCase();
 
+  if (taskIdLowercased === 'survey') {
+    if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
+      return t(`gameTabs.surveyName${_capitalize(props.userData.userType)}Part1`);
+    } else {
+      // child
+      return t(`gameTabs.surveyNameChild`);
+    }
+  }
+
   if (levanteTasks.includes(camelize(taskIdLowercased))) {
-    return t(`gameTabs.${camelize(taskIdLowercased)}Name`);
+    return t(`gameTabs.${camelize(taskIdLowercased)}Name`); 
   }
   return taskName;
 };
 const getTaskDescription = (taskId, taskDescription) => {
   // Translate Levante task descriptions if not in English
   const taskIdLowercased = taskId.toLowerCase();
+
+  if (taskIdLowercased === 'survey') {
+    if (props.userData.userType === 'teacher' || props.userData.userType === 'parent') {
+      return t(`gameTabs.surveyDescription${_capitalize(props.userData.userType)}Part1`);
+    } else {
+      // child
+      return t(`gameTabs.surveyDescriptionChild`);
+    }
+  }
 
   if (levanteTasks.includes(camelize(taskIdLowercased))) {
     return t(`gameTabs.${camelize(taskIdLowercased)}Description`);
