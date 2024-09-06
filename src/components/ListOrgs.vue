@@ -60,6 +60,7 @@
             :allow-filtering="false"
             @export-all="exportAll"
             @selected-org-id="showCode"
+            @export-org-users="(orgId) => exportOrgUsers(orgId)"
           />
           <AppSpinner v-else />
         </PvTabPanel>
@@ -114,15 +115,19 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
 import { useQuery } from '@tanstack/vue-query';
 import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _kebabCase from 'lodash/kebabCase';
 import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 
 const initialized = ref(false);
 const orgsQueryKeyIndex = ref(0);
@@ -269,6 +274,87 @@ const exportAll = async () => {
   exportCsv(exportData, `roar-${activeOrgType.value}.csv`);
 };
 
+/**
+ * Exports users of a given organization type to a CSV file.
+ *
+ * @NOTE In order to avoid overly large exports, the function will allow exports up to a predefined limit (currently
+ * 10,000 records). To avoid running a large and potentially unecessary query, we first run an aggregation query to
+ * verify that the export is within the limit.
+ *
+ * @TODO Replace this logic with a server driven export, for example a cloud function that generate a download link for
+ * the user, effectively allowing complete and large exports.
+ *
+ * @param {Object} orgType - The organization type object.
+ * @param {string} orgType.id - The ID of the organization type.
+ * @param {string} orgType.name - The name of the organization type.
+ *
+ * @returns {Promise<void>} - A promise that resolves when the export is complete.
+ */
+const exportOrgUsers = async (orgType) => {
+  try {
+    // First, count the users
+    const userCount = await countUsersByOrg(activeOrgType.value, orgType.id, orderBy);
+
+    if (userCount === 0) {
+      toast.add({
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: 'No users found for the organization.',
+        life: 3000,
+      });
+      return;
+    }
+
+    if (userCount > CSV_EXPORT_MAX_RECORD_COUNT) {
+      toast.add({
+        severity: 'error',
+        summary: 'Export Failed',
+        detail: 'Too many users to export. Please filter the users by selecting a smaller org type.',
+        life: 3000,
+      });
+      return;
+    }
+
+    // Fetch the users if the count is within acceptable limits
+    const users = await fetchUsersByOrg(activeOrgType.value, orgType.id, userCount, ref(0), orderBy);
+
+    const computedExportData = users.map((user) => ({
+      Username: _get(user, 'username'),
+      Email: _get(user, 'email'),
+      FirstName: _get(user, 'name.first'),
+      LastName: _get(user, 'name.last'),
+      Grade: _get(user, 'studentData.grade'),
+      Gender: _get(user, 'studentData.gender'),
+      DateOfBirth: _get(user, 'studentData.dob'),
+      UserType: _get(user, 'userType'),
+      ell_status: _get(user, 'studentData.ell_status'),
+      iep_status: _get(user, 'studentData.iep_status'),
+      frl_status: _get(user, 'studentData.frl_status'),
+      race: _get(user, 'studentData.race'),
+      hispanic_ethnicity: _get(user, 'studentData.hispanic_ethnicity'),
+      home_language: _get(user, 'studentData.home_language'),
+    }));
+
+    // ex. cypress-test-district-users-export.csv
+    exportCsv(computedExportData, `${_kebabCase(orgType.name)}-users-export.csv`);
+
+    toast.add({
+      severity: 'success',
+      summary: 'Export Successful',
+      detail: 'Users have been exported successfully!',
+      life: 3000,
+    });
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Export Failed',
+      detail: error.message,
+      life: 3000,
+    });
+    Sentry.captureException(error);
+  }
+};
+
 const tableColumns = computed(() => {
   const columns = [
     { field: 'name', header: 'Name', dataType: 'string', pinned: true, sort: true },
@@ -304,6 +390,14 @@ const tableColumns = computed(() => {
       button: true,
       eventName: 'selected-org-id',
       buttonIcon: 'pi pi-send mr-2',
+      sort: false,
+    },
+    {
+      header: 'Export Users',
+      buttonLabel: 'Export Users',
+      button: true,
+      eventName: 'export-org-users',
+      buttonIcon: 'pi pi-download mr-2',
       sort: false,
     },
   );

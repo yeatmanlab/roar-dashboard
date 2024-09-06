@@ -1,4 +1,4 @@
-name: Run Cypress Partner Admin Tests
+name: Run Cypress Component Tests
 
 on:
   pull_request:
@@ -10,12 +10,12 @@ on:
         required: true
 
 concurrency:
-  group: cypress-tests-${{ github.ref }}-1
+  group: cypress-tests-${{ github.ref }}-3
   cancel-in-progress: true
 
 jobs:
   cypress-run:
-    name: Run Cypress Partner Admin Tests
+    name: Run Cypress Component Tests
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -28,13 +28,14 @@ jobs:
       NODE_ENV: 'test'
       CYPRESS_BASE_URL: 'http://localhost:5173'
       CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-      COMMIT_INFO_MESSAGE: E2E Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
+      COMMIT_INFO_MESSAGE: Component Tests for PR ${{ github.event.number }} "${{ github.event.pull_request.title }}" from commit "${{ github.event.pull_request.head.sha }}"
       COMMIT_INFO_SHA: ${{ github.event.pull_request.head.sha }}
       PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
       PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
       PARTNER_ADMIN_ID: ${{ secrets.PARTNER_ADMIN_ID }}
       PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+      PARTICIPANT_UID: ${{ secrets.PARTICIPANT_UID }}
       PARTICIPANT_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
       PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -45,7 +46,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       # For workflows triggered manually, targeting the LEVANTE dashboard repository specifically
       - name: Checkout manual trigger code
@@ -59,6 +59,7 @@ jobs:
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          component: true
           browser: ${{ matrix.browser }}
           build: npm ci && npm run build
           start: npm run dev
@@ -66,5 +67,5 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          spec: 'cypress/e2e/partner-admin/default-tests/**/*'
+          spec: 'cypress/component/**/*'
           ci-build-id: ${{ github.run_id }}-${{ matrix.browser }}
