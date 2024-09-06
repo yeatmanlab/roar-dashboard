@@ -123,8 +123,15 @@ const init = () => {
 const queryClient = useQueryClient();
 
 const authStore = useAuthStore();
-const { roarfirekit, roarUid, uid, consentSpinner, userQueryKeyIndex, assignmentQueryKeyIndex } =
-  storeToRefs(authStore);
+const {
+  roarfirekit,
+  roarUid,
+  uid,
+  consentSpinner,
+  showOptionalAssessments,
+  userQueryKeyIndex,
+  assignmentQueryKeyIndex,
+} = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -320,7 +327,6 @@ const noGamesAvailable = computed(() => {
   return assessments.value.length === 0;
 });
 
-const showOptionalAssessments = ref(null);
 const toggleShowOptionalAssessments = async () => {
   await checkConsent();
   showOptionalAssessments.value = null;

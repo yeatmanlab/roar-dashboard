@@ -31,6 +31,8 @@ dev-dist
 
 # Env
 .env
+.env.local
+.env.test
 
 # Test coverage
 coverage
