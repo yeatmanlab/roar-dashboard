@@ -9,8 +9,13 @@ const useSandbox = import.meta.env.VITE_FIREBASE_DATA_SOURCE === 'sandbox';
 const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
 
 function setDebugToken(config) {
+  // If the NODE_ENV = test, use the debug token from the Cypress config
+  // Otherwise, use the VITE_APPCHECK_DEBUG_TOKEN environment variable
+  // If neither are set, set a new debug token
   const debugToken =
-    process.env.NODE_ENV === 'test' ? Cypress.env('appCheckDebugToken') : import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+    process.env.NODE_ENV === 'test'
+      ? Cypress.env('appCheckDebugToken')
+      : import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || (self.FIREBASE_APPCHECK_DEBUG_TOKEN = true);
 
   if (debugToken) {
     config.debugToken = debugToken;
