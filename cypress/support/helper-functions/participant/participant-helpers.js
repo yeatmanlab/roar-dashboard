@@ -7,7 +7,6 @@ export function signInWithClever() {
   cy.origin(Cypress.env('cleverOAuthLink'), () => {
     cy.get('input[title="School name"]', { timeout: 60000 }).type(Cypress.env('cleverSchoolName'));
     cy.get('ul > li').contains(Cypress.env('cleverSchoolName')).click();
-
     // Find the username input field and input the username
     cy.get('input#username').type(Cypress.env('cleverUsername'));
 

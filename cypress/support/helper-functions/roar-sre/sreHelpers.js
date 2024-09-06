@@ -60,7 +60,7 @@ export const playSRE = ({
 };
 
 function playSREGame() {
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 50; i++) {
     cy.log('loop 0', i);
     cy.wait(0.3 * timeout);
     cy.get('body').type('{leftarrow}{rightarrow}');

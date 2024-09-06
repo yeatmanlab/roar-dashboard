@@ -24,6 +24,7 @@ const getAdministrationsRequestBody = ({
   skinnyQuery = false,
   assigningOrgCollection,
   assigningOrgIds,
+  testData = false,
 }) => {
   const requestBody = {
     structuredQuery: {
@@ -56,6 +57,7 @@ const getAdministrationsRequestBody = ({
           { fieldPath: 'classes' },
           { fieldPath: 'groups' },
           { fieldPath: 'families' },
+          { fieldPath: 'testData' },
         ],
       };
     }
@@ -67,19 +69,57 @@ const getAdministrationsRequestBody = ({
       allDescendants: false,
     },
   ];
+  const filters = [];
 
-  if (assigningOrgCollection && assigningOrgIds) {
-    requestBody.structuredQuery.where = {
+  // If we're fetching test data, we don't need to filter by assigningOrgs as a super admin
+  // This assumes that the document has a testData field that is a boolean
+  if (testData === true) {
+    filters.push({
       fieldFilter: {
-        field: { fieldPath: `readOrgs.${assigningOrgCollection}` },
-        op: 'ARRAY_CONTAINS_ANY',
-        value: {
-          arrayValue: {
-            values: assigningOrgIds.map((orgId) => ({ stringValue: orgId })),
+        field: { fieldPath: 'testData' },
+        op: 'EQUAL',
+        value: { booleanValue: true },
+      },
+    });
+  } else {
+    // Else only fetch data not marked as test data
+    // This assumes that the document has a testData field that is a boolean
+    filters.push({
+      fieldFilter: {
+        field: { fieldPath: 'testData' },
+        op: 'EQUAL',
+        value: { booleanValue: false },
+      },
+    });
+
+    // If we're not a super admin, we need to filter by assigningOrgs
+    // Non-super admin users do not have access to test data
+    if (assigningOrgCollection && assigningOrgIds) {
+      filters.push({
+        fieldFilter: {
+          field: { fieldPath: `readOrgs.${assigningOrgCollection}` },
+          op: 'ARRAY_CONTAINS_ANY',
+          value: {
+            arrayValue: {
+              values: assigningOrgIds.map((orgId) => ({ stringValue: orgId })),
+            },
           },
         },
-      },
-    };
+      });
+    }
+  }
+
+  // If we have filters, add them to the request body
+  if (filters.length > 0) {
+    requestBody.structuredQuery.where =
+      filters.length === 1
+        ? filters[0]
+        : {
+            compositeFilter: {
+              op: 'AND',
+              filters: filters,
+            },
+          };
   }
 
   if (aggregationQuery) {
@@ -196,7 +236,8 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
       },
       assessments: a.assessments,
       assignedOrgs,
-      ...(a.testData ?? { testData: true }),
+      // If testData is not defined, default to false when mapping
+      testData: a.testData ?? false,
     };
   });
 
@@ -228,6 +269,7 @@ export const administrationPageFetcher = async (
   isSuperAdmin,
   adminOrgs,
   exhaustiveAdminOrgs,
+  fetchTestData = false,
 ) => {
   const axiosInstance = getAxiosInstance();
   if (isSuperAdmin.value) {
@@ -238,6 +280,7 @@ export const administrationPageFetcher = async (
       page: page.value,
       skinnyQuery: false,
       pageLimit: pageLimit.value,
+      testData: fetchTestData,
     });
     console.log(`Fetching page ${page.value} for administrations`);
     return axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
