@@ -67,7 +67,12 @@
             </PvButton>
           </div>
         </div>
-        <div v-if="initialized && !isLoadingAdministrations">
+
+        <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
+          <AppSpinner class="mb-4" />
+          <span class="uppercase font-light text-sm text-gray-600">Loading Administrations</span>
+        </div>
+        <div v-else>
           <PvBlockUI :blocked="isFetchingAdministrations">
             <PvDataView
               :key="dataViewKey"
@@ -110,10 +115,6 @@
               </template>
             </PvDataView>
           </PvBlockUI>
-        </div>
-        <div v-else class="loading-container">
-          <AppSpinner class="mb-4" />
-          <span class="uppercase font-light text-sm text-gray-600">Loading Administrations</span>
         </div>
       </div>
     </section>
