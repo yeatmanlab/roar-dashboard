@@ -31,7 +31,7 @@ const useAdministrationsQuery = (orderBy, testAdministrationsOnly = false, query
 
   // Set pagination data to fetch all administrations since pagination is not yet supported.
   const currentPage = ref(0);
-  const itemsPerPage = ref(5);
+  const itemsPerPage = ref(10000);
 
   // Build query key, based on whether or not we only fetch test administrations.
   const queryKey = computed(() =>
