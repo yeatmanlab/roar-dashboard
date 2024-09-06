@@ -212,7 +212,16 @@ Cypress.Commands.add('switchToOptionalAssessments', () => {
  */
 Cypress.Commands.add('switchToRequiredAssessments', () => {
   cy.wait(0.2 * Cypress.env('timeout'));
-  cy.get("[data-cy='switch-show-optional-assessments']").click();
+  cy.get("[data-cy='switch-show-optional-assessments']")
+    .invoke('attr', 'class')
+    .then((classes) => {
+      if (classes.includes('p-inputswitch-checked')) {
+        cy.log('Going to Required assessments.');
+        cy.get("[data-cy='switch-show-optional-assessments']").click();
+      } else {
+        cy.log('required already selected');
+      }
+    });
 });
 
 /**
