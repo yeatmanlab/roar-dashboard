@@ -117,20 +117,23 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import * as Sentry from '@sentry/vue';
 import { storeToRefs } from 'pinia';
-import { useQuery } from '@tanstack/vue-query';
 import { useToast } from 'primevue/usetoast';
 import _get from 'lodash/get';
 import _head from 'lodash/head';
+import _isEmpty from 'lodash/isEmpty';
 import _kebabCase from 'lodash/kebabCase';
 import { useAuthStore } from '@/store/auth';
-import { orgFetcher, orgFetchAll, orgPageFetcher } from '@/helpers/query/orgs';
-import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import { orgFetchAll } from '@/helpers/query/orgs';
 import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
+import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
+import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
 
 const initialized = ref(false);
-const orgsQueryKeyIndex = ref(0);
 const selectedDistrict = ref(undefined);
 const selectedSchool = ref(undefined);
 const orderBy = ref(orderByDefault);
@@ -152,16 +155,15 @@ const schoolPlaceholder = computed(() => {
   return 'Select a school';
 });
 
-// Authstore and Sidebar
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const { isSuperAdmin } = useUserType(userClaims);
+const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
 
 const orgHeaders = computed(() => {
   const headers = {
@@ -197,14 +199,26 @@ const activeOrgType = computed(() => {
   return Object.keys(orgHeaders.value)[activeIndex.value];
 });
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
+const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useQuery({
-  queryKey: ['districts', uid, orgsQueryKeyIndex],
-  queryFn: () => orgFetcher('districts', undefined, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsQuery({
   enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+
+const schoolQueryEnabled = computed(() => {
+  return claimsLoaded.value && !!selectedDistrict.value;
+});
+
+const { isLoading: isLoadingSchools, data: allSchools } = useDistrictSchoolsQuery(selectedDistrict, {
+  enabled: schoolQueryEnabled,
+});
+
+const {
+  isLoading,
+  isFetching,
+  data: orgData,
+} = useOrgsTableQuery(activeOrgType, selectedDistrict, selectedSchool, orderBy, {
+  enabled: claimsLoaded,
 });
 
 function copyToClipboard(text) {
@@ -227,40 +241,6 @@ function copyToClipboard(text) {
       });
     });
 }
-
-const schoolQueryEnabled = computed(() => {
-  return claimsLoaded.value && selectedDistrict.value !== undefined;
-});
-
-const { isLoading: isLoadingSchools, data: allSchools } = useQuery({
-  queryKey: ['schools', uid, selectedDistrict, orgsQueryKeyIndex],
-  queryFn: () => orgFetcher('schools', selectedDistrict, isSuperAdmin, adminOrgs),
-  keepPreviousData: true,
-  enabled: schoolQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const {
-  isLoading,
-  isFetching,
-  data: orgData,
-} = useQuery({
-  queryKey: ['orgsPage', uid, activeOrgType, selectedDistrict, selectedSchool, orderBy, orgsQueryKeyIndex],
-  queryFn: () =>
-    orgPageFetcher(
-      activeOrgType,
-      selectedDistrict,
-      selectedSchool,
-      orderBy,
-      ref(100000),
-      ref(0),
-      isSuperAdmin,
-      adminOrgs,
-    ),
-  keepPreviousData: true,
-  enabled: claimsLoaded,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
 
 const exportAll = async () => {
   const exportData = await orgFetchAll(
