@@ -19,5 +19,5 @@ export const AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION =
 export const AUTH_USER_TYPE = {
   ADMIN: 'admin',
   PARTICIPANT: 'participant',
-  SUPER_ADMIN: 'super_admin',
+  SUPER_ADMIN: 'super-admin',
 };
