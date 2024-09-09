@@ -1,4 +1,4 @@
-import { computed, toValue } from 'vue';
+import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { orgFetcher } from '@/helpers/query/orgs';
@@ -10,11 +10,10 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 /**
  * Groups query.
  *
- * @param {Ref<String>} districtId – A Vue ref containing the ID of the district to fetch schools for.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useGroupsQuery = (districtId, queryOptions = undefined) => {
+const useGroupsQuery = (queryOptions = undefined) => {
   // Fetch the user claims.
   const { data: userClaims } = useUserClaimsQuery({
     enabled: queryOptions?.enabled ?? true,
@@ -26,7 +25,7 @@ const useGroupsQuery = (districtId, queryOptions = undefined) => {
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const isQueryEnabled = computed(() => !!toValue(districtId) && claimsLoaded.value && (queryOptions?.enabled ?? true));
+  const isQueryEnabled = computed(() => claimsLoaded.value && (queryOptions?.enabled ?? true));
 
   return useQuery({
     queryKey: [GROUPS_QUERY_KEY],
