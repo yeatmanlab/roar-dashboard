@@ -1,6 +1,8 @@
 import { generatedSpecTemplate } from '../../fixtures/generatedTestTemplate';
 import { getDevFirebase } from '../../support/devFirebase';
 import { getOpenAdministrations } from '../../support/query';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import * as path from 'path';
 
 const timeout = Cypress.env('timeout');
@@ -14,6 +16,8 @@ async function getOpenAdmins() {
 
 function createAdminTestSpec(adminName) {
   cy.log('Creating test spec for administration:', adminName);
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
   const currentPath = __dirname;
   const testSpecPath = path.join(currentPath, 'generated-tests', `${adminName.replaceAll(' ', '_')}.cy.js`);
   cy.log(`Test spec path: ${testSpecPath}`);
@@ -44,6 +48,8 @@ describe('Fetches all open administrations and generates test spec files for eac
   });
 
   it('Deletes existing test spec files if they exist.', () => {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
     const currentPath = __dirname;
     const dirPath = path.join(currentPath, 'generated-tests');
     cy.log(`Current working directory: ${dirPath}`);
@@ -74,6 +80,8 @@ describe('Fetches all open administrations and generates test spec files for eac
 
     cy.log('Getting open admins...');
     cy.get('@openAdmins').then((openAdmins) => {
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
       const currentPath = __dirname;
       const dirPath = path.join(currentPath, 'generated-tests');
       openAdmins.forEach((admin) => {

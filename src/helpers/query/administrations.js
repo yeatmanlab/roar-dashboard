@@ -1,3 +1,4 @@
+import { toValue } from 'vue';
 import _chunk from 'lodash/chunk';
 import _flatten from 'lodash/flatten';
 import _mapValues from 'lodash/mapValues';
@@ -280,7 +281,7 @@ export const administrationPageFetcher = async (
       page: page.value,
       skinnyQuery: false,
       pageLimit: pageLimit.value,
-      testData: fetchTestData,
+      testData: toValue(fetchTestData),
     });
     console.log(`Fetching page ${page.value} for administrations`);
     return axiosInstance.post(':runQuery', requestBody).then(async ({ data }) => {
