@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
@@ -10,10 +10,11 @@ import { ADMINISTRATIONS_QUERY_KEY } from '@/constants/queryKeys';
  * Administrations query.
  *
  * @param {ref<String>} orderBy – A Vue ref containing the field to order the query by.
+ * @param {ref<Boolean>} [testAdministrationsOnly=false] – A Vue ref containing whether to fetch only test data.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
-const useAdministrationsQuery = (orderBy, queryOptions = undefined) => {
+const useAdministrationsQuery = (orderBy, testAdministrationsOnly = false, queryOptions = undefined) => {
   // Fetch the user claims.
   const { data: userClaims } = useUserClaimsQuery({
     enabled: queryOptions?.enabled ?? true,
@@ -32,8 +33,15 @@ const useAdministrationsQuery = (orderBy, queryOptions = undefined) => {
   const currentPage = ref(0);
   const itemsPerPage = ref(10000);
 
+  // Build query key, based on whether or not we only fetch test administrations.
+  const queryKey = computed(() =>
+    toValue(testAdministrationsOnly)
+      ? [ADMINISTRATIONS_QUERY_KEY, 'test-data', currentPage, itemsPerPage, orderBy]
+      : [ADMINISTRATIONS_QUERY_KEY, currentPage, itemsPerPage, orderBy],
+  );
+
   return useQuery({
-    queryKey: [ADMINISTRATIONS_QUERY_KEY, currentPage, itemsPerPage, orderBy],
+    queryKey,
     queryFn: () =>
       administrationPageFetcher(
         orderBy,
@@ -42,6 +50,7 @@ const useAdministrationsQuery = (orderBy, queryOptions = undefined) => {
         isSuperAdmin,
         administrationOrgs,
         exhaustiveAdministrationOrgs,
+        testAdministrationsOnly,
       ),
     enabled: isQueryEnabled,
     ...queryOptions,
