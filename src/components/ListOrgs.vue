@@ -501,7 +501,6 @@ const updateOrgData = async () => {
       currentEditOrgId.value,
     )
     .then(() => {
-      isSubmitting.value = false;
       closeEditModal();
       toast.add({
         severity: TOAST_SEVERITIES.SUCCESS,
@@ -513,10 +512,13 @@ const updateOrgData = async () => {
     .catch((error) => {
       toast.add({
         severity: TOAST_SEVERITIES.ERROR,
-        summary: 'Unexpexcted error',
+        summary: 'Unexpected error',
         detail: `Unexpected error occurred: ${error.message}`,
         life: TOAST_DEFAULT_LIFE_DURATION,
       });
+      Sentry.captureException(error);
+    })
+    .finally(() => {
       isSubmitting.value = false;
     });
 };
