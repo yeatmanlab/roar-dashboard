@@ -1,4 +1,4 @@
-import { computed } from 'vue';
+import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
@@ -16,7 +16,7 @@ const useSurveyResponsesQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { uid } = storeToRefs(authStore);
 
-  const isQueryEnabled = computed(() => !!uid.value && (queryOptions?.enabled ?? true));
+  const isQueryEnabled = computed(() => !!uid.value && (toValue(queryOptions?.enabled) ?? true));
 
   const options = queryOptions ? { ...queryOptions } : {};
   delete options.enabled;
