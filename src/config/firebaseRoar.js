@@ -13,7 +13,7 @@ function setDebugToken(config) {
   // Otherwise, use the VITE_APPCHECK_DEBUG_TOKEN environment variable
   // If neither are set, set a new debug token
   const debugToken =
-    process.env.NODE_ENV === 'test'
+    import.meta.env.NODE_ENV === 'test'
       ? Cypress.env('appCheckDebugToken')
       : import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || (self.FIREBASE_APPCHECK_DEBUG_TOKEN = true);
 

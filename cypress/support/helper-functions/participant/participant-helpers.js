@@ -19,4 +19,5 @@ export function signInWithClever() {
     // Click the login button
     cy.get('button#UsernamePasswordForm--loginButton', { timeout: innerTimeout }).click();
   });
+  cy.contains('tasks completed!', { timeout: 6 * timeout }).should('be.visible');
 }
