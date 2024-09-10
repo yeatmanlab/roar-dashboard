@@ -1,4 +1,4 @@
-import { computed } from 'vue';
+import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
@@ -15,13 +15,13 @@ const useUserAssignmentsQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
-  const isQueryEnabled = computed(() => !!roarUid.value && (queryOptions?.enabled ?? true));
+  const isQueryEnabled = computed(() => !!roarUid.value && (toValue(queryOptions?.enabled) ?? true));
 
   const options = queryOptions ? { ...queryOptions } : {};
   delete options.enabled;
 
   return useQuery({
-    queryKey: [USER_ASSIGNMENTS_QUERY_KEY, roarUid],
+    queryKey: [USER_ASSIGNMENTS_QUERY_KEY],
     queryFn: () => getUserAssignments(roarUid.value),
     // Refetch on window focus for MEFS assessments as those are opened in a separate tab.
     refetchOnWindowFocus: 'always',

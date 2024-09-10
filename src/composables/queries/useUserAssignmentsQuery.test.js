@@ -4,11 +4,11 @@ import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
-import { fetchSubcollection } from '@/helpers/query/utils';
-import useSurveyResponsesQuery from './useSurveyResponsesQuery';
+import { getUserAssignments } from '@/helpers/query/assignments';
+import useUserAssignmentsQuery from './useUserAssignmentsQuery';
 
-vi.mock('@/helpers/query/utils', () => ({
-  fetchSubcollection: vi.fn().mockImplementation(() => []),
+vi.mock('@/helpers/query/assignments', () => ({
+  getUserAssignments: vi.fn().mockImplementation(() => []),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -19,7 +19,7 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-describe('useSurveyResponsesQuery', () => {
+describe('useUserAssignmentsQuery', () => {
   let piniaInstance;
   let queryClient;
 
@@ -34,39 +34,40 @@ describe('useSurveyResponsesQuery', () => {
 
   it('should call useQuery with correct parameters', () => {
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
+    authStore.roarUid = 'mock-roar-id-1';
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useSurveyResponsesQuery(), {
+    withSetup(() => useUserAssignmentsQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['survey-responses'],
+      queryKey: ['user-assignments'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
         __v_isRef: true,
         __v_isReadonly: true,
       }),
+      refetchOnWindowFocus: 'always',
     });
   });
 
-  it('should call fetchSubcollection with correct parameters', () => {
+  it('should call getUserAssignments with correct parameters', () => {
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
+    authStore.roarUid = 'mock-roar-id-1';
 
-    withSetup(() => useSurveyResponsesQuery(), {
+    withSetup(() => useUserAssignmentsQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(fetchSubcollection).toHaveBeenCalledWith('users/mock-uid-1', 'surveyResponses');
+    expect(getUserAssignments).toHaveBeenCalledWith('mock-roar-id-1');
   });
 
   it('should correctly control the enabled state of the query', async () => {
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
+    authStore.roarUid = 'mock-roar-id-1';
 
     const enableQuery = ref(false);
 
@@ -74,25 +75,26 @@ describe('useSurveyResponsesQuery', () => {
       enabled: computed(() => enableQuery.value),
     };
 
-    withSetup(() => useSurveyResponsesQuery(queryOptions), {
+    withSetup(() => useUserAssignmentsQuery(queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['survey-responses'],
+      queryKey: ['user-assignments'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
         __v_isRef: true,
         __v_isReadonly: true,
       }),
+      refetchOnWindowFocus: 'always',
     });
 
-    expect(fetchSubcollection).not.toHaveBeenCalled();
+    expect(getUserAssignments).not.toHaveBeenCalled();
 
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchSubcollection).toHaveBeenCalled();
+    expect(getUserAssignments).toHaveBeenCalled();
   });
 });
