@@ -36,8 +36,23 @@ export const getUsersRequestBody = ({
     },
   ];
 
+  requestBody.structuredQuery.where = {
+    compositeFilter: {
+      op: 'AND',
+      filters: [
+        {
+          fieldFilter: {
+            field: { fieldPath: 'archived' },
+            op: 'EQUAL',
+            value: { booleanValue: false },
+          },
+        },
+      ],
+    },
+  };
+
   if (userIds.length > 0) {
-    requestBody.structuredQuery.where = {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: 'id' }, // change this to accept document Id, if we need
         op: 'IN',
@@ -51,15 +66,15 @@ export const getUsersRequestBody = ({
           },
         },
       },
-    };
+    });
   } else if (orgType && orgId) {
-    requestBody.structuredQuery.where = {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: `${orgType}.current` }, // change this to accept document Id, if we need
         op: 'ARRAY_CONTAINS',
         value: { stringValue: orgId },
       },
-    };
+    });
   } else {
     throw new Error('Must provide either userIds or orgType and orgId');
   }

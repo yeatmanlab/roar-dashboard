@@ -221,9 +221,16 @@ export const getUsersByAssignmentIdRequestBody = ({
         },
         {
           fieldFilter: {
-            field: { fieldPath: `assignments.assigned` },
+            field: { fieldPath: 'assignments.assigned' },
             op: 'ARRAY_CONTAINS_ANY',
             value: { arrayValue: { values: [{ stringValue: adminId }] } },
+          },
+        },
+        {
+          fieldFilter: {
+            field: { fieldPath: 'archived' },
+            op: 'EQUAL',
+            value: { booleanValue: false },
           },
         },
       ],
