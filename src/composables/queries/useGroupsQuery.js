@@ -25,13 +25,20 @@ const useGroupsQuery = (queryOptions = undefined) => {
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const isQueryEnabled = computed(() => claimsLoaded.value && (queryOptions?.enabled ?? true));
+  const isQueryEnabled = computed(() => {
+    const enabled = queryOptions?.enabled;
+    return claimsLoaded.value && (enabled === undefined ? true : enabled);
+  });
+
+  // Remove the enabled property from the query options to avoid overriding the computed value.
+  const options = queryOptions ? { ...queryOptions } : {};
+  delete options.enabled;
 
   return useQuery({
     queryKey: [GROUPS_QUERY_KEY],
     queryFn: () => orgFetcher(FIRESTORE_COLLECTIONS.GROUPS, undefined, isSuperAdmin, administrationOrgs),
     enabled: isQueryEnabled,
-    ...queryOptions,
+    ...options,
   });
 };
 

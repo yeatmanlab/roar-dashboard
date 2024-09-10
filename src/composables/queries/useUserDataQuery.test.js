@@ -1,3 +1,4 @@
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
@@ -47,8 +48,11 @@ describe('useUserDataQuery', () => {
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
       queryKey: ['user', authStore.roarUid, authStore.userQueryKeyIndex],
       queryFn: expect.any(Function),
-      placeholderData: expect.any(Function),
-      enabled: false,
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+        __v_isReadonly: true,
+      }),
     });
   });
 
@@ -61,6 +65,39 @@ describe('useUserDataQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', authStore.roarUid);
+    expect(fetchDocById).toHaveBeenCalledWith('users', 'mock-roar-uid-2');
+  });
+
+  it('should correctly control the enabled state of the query', async () => {
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = 'mock-roar-uid-3';
+    authStore.userQueryKeyIndex = 3;
+
+    const enableQuery = ref(false);
+
+    const queryOptions = {
+      enabled: enableQuery,
+    };
+
+    withSetup(() => useUserDataQuery(queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', 'mock-roar-uid-3', 3],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: expect.objectContaining({
+          _value: false,
+        }),
+      }),
+    });
+
+    expect(fetchDocById).not.toHaveBeenCalled();
+
+    enableQuery.value = true;
+    await nextTick();
+
+    expect(fetchDocById).toHaveBeenCalledWith('users', 'mock-roar-uid-3');
   });
 });

@@ -1,3 +1,4 @@
+import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { DSGF_ORGS_QUERY_KEY } from '@/constants/queryKeys';
 import { storeToRefs } from 'pinia';
@@ -19,10 +20,21 @@ const useDsgfOrgQuery = (administrationId, assignedOrgs, queryOptions = undefine
   const authStore = useAuthStore();
   const { uid } = storeToRefs(authStore);
 
+  // Ensure the User ID is available and the query is enabled.
+  const isQueryEnabled = computed(() => {
+    const enabled = queryOptions?.enabled;
+    return !!uid.value && (enabled === undefined ? true : enabled);
+  });
+
+  // Remove the enabled property from the query options to avoid overriding the computed value.
+  const options = queryOptions ? { ...queryOptions } : {};
+  delete options.enabled;
+
   return useQuery({
-    queryKey: [DSGF_ORGS_QUERY_KEY, uid.value, administrationId],
+    queryKey: [DSGF_ORGS_QUERY_KEY, administrationId],
     queryFn: () => fetchTreeOrgs(administrationId, assignedOrgs),
-    ...queryOptions,
+    enabled: isQueryEnabled,
+    ...options,
   });
 };
 

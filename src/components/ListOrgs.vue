@@ -386,7 +386,7 @@ const tableColumns = computed(() => {
 
 const tableData = computed(() => {
   if (isLoading.value) return [];
-  return orgData.value.map((org) => {
+  return orgData?.value?.map((org) => {
     return {
       ...org,
       routeParams: {

@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
+import _isEmpty from 'lodash/isEmpty';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { orgPageFetcher } from '@/helpers/query/orgs';
@@ -21,9 +22,21 @@ import { ORGS_TABLE_QUERY_KEY } from '@/constants/queryKeys';
  */
 const useOrgsTableQuery = (activeOrgType, selectedDistrict, selectedSchool, orderBy, queryOptions = undefined) => {
   const { data: userClaims } = useUserClaimsQuery({ enabled: queryOptions?.enabled ?? true });
-  const { isSuperAdmin } = useUserType(userClaims);
 
-  const adminOrgs = computed(() => userClaims?.value?.claims?.minimalAdminOrgs);
+  // Get the admin status and administation orgs.
+  const { isSuperAdmin } = useUserType(userClaims);
+  const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+
+  // Ensure all necessary data is loaded before enabling the query.
+  const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
+  const isQueryEnabled = computed(() => {
+    const enabled = queryOptions?.enabled;
+    return claimsLoaded.value && (enabled === undefined ? true : enabled);
+  });
+
+  // Remove the enabled property from the query options to avoid overriding the computed value.
+  const options = queryOptions ? { ...queryOptions } : {};
+  delete options.enabled;
 
   return useQuery({
     queryKey: [ORGS_TABLE_QUERY_KEY, activeOrgType, selectedDistrict, selectedSchool, orderBy],
@@ -38,7 +51,8 @@ const useOrgsTableQuery = (activeOrgType, selectedDistrict, selectedSchool, orde
         isSuperAdmin,
         adminOrgs,
       ),
-    ...queryOptions,
+    enabled: isQueryEnabled,
+    ...options,
   });
 };
 

@@ -1,4 +1,5 @@
-import { useQuery, keepPreviousData } from '@tanstack/vue-query';
+import { computed } from 'vue';
+import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
@@ -15,11 +16,21 @@ const useUserStudentDataQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
+  // Ensure all necessary data is loaded before enabling the query.
+  const isQueryEnabled = computed(() => {
+    const enabled = queryOptions?.enabled;
+    return !!roarUid.value && (enabled === undefined ? true : enabled);
+  });
+
+  // Remove the enabled property from the query options to avoid overriding the computed value.
+  const options = queryOptions ? { ...queryOptions } : {};
+  delete options.enabled;
+
   return useQuery({
-    queryKey: [USER_STUDENT_DATA_QUERY_KEY, roarUid.value],
+    queryKey: [USER_STUDENT_DATA_QUERY_KEY],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, roarUid.value, ['studentData']),
-    placeholderData: keepPreviousData,
-    ...queryOptions,
+    enabled: isQueryEnabled,
+    ...options,
   });
 };
 

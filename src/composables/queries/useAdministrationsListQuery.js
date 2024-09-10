@@ -27,7 +27,14 @@ const useAdministrationsListQuery = (orderBy, testAdministrationsOnly = false, q
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const isQueryEnabled = computed(() => claimsLoaded.value && (queryOptions?.enabled ?? true));
+  const isQueryEnabled = computed(() => {
+    const enabled = queryOptions?.enabled;
+    return claimsLoaded.value && (enabled === undefined ? true : enabled);
+  });
+
+  // Remove the enabled property from the query options to avoid overriding the computed value.
+  const options = queryOptions ? { ...queryOptions } : {};
+  delete options.enabled;
 
   // Set pagination data to fetch all administrations since pagination is not yet supported.
   const currentPage = ref(0);
@@ -53,7 +60,7 @@ const useAdministrationsListQuery = (orderBy, testAdministrationsOnly = false, q
         testAdministrationsOnly,
       ),
     enabled: isQueryEnabled,
-    ...queryOptions,
+    ...options,
   });
 };
 
