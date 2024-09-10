@@ -49,9 +49,11 @@ describe('useUserDataQuery', () => {
       queryKey: ['user', authStore.roarUid, authStore.userQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
-        _value: false,
-        __v_isRef: true,
-        __v_isReadonly: true,
+        _value: expect.objectContaining({
+          _object: expect.objectContaining({
+            enabled: false,
+          }),
+        }),
       }),
     });
   });

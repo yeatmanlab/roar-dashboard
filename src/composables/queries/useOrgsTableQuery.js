@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { orgPageFetcher } from '@/helpers/query/orgs';
 import { ORGS_TABLE_QUERY_KEY } from '@/constants/queryKeys';
 /**
@@ -29,14 +30,8 @@ const useOrgsTableQuery = (activeOrgType, selectedDistrict, selectedSchool, orde
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const isQueryEnabled = computed(() => {
-    const enabled = queryOptions?.enabled;
-    return claimsLoaded.value && (enabled === undefined ? true : enabled);
-  });
-
-  // Remove the enabled property from the query options to avoid overriding the computed value.
-  const options = queryOptions ? { ...queryOptions } : {};
-  delete options.enabled;
+  const queryConditions = [() => claimsLoaded.value];
+  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
     queryKey: [ORGS_TABLE_QUERY_KEY, activeOrgType, selectedDistrict, selectedSchool, orderBy],

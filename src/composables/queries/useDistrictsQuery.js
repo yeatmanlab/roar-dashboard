@@ -1,6 +1,7 @@
 import { computed } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { orgFetcher } from '@/helpers/query/orgs';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUserType from '@/composables/useUserType';
@@ -25,13 +26,8 @@ const useDistrictsQuery = (queryOptions = undefined) => {
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const isQueryEnabled = computed(() => {
-    const enabled = queryOptions?.enabled;
-    return claimsLoaded.value && (enabled === undefined ? true : enabled);
-  });
-  // Remove the enabled property from the query options to avoid overriding the computed value.
-  const options = queryOptions ? { ...queryOptions } : {};
-  delete options.enabled;
+  const queryConditions = [() => claimsLoaded.value];
+  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
     queryKey: [DISTRICTS_QUERY_KEY],
