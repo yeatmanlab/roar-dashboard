@@ -30,6 +30,7 @@ jobs:
       PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -88,6 +89,7 @@ jobs:
       PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
       PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -126,6 +128,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+
+      # Inject the App Check Debug Token into the .env file at build time
+      # This is necessary to initialize App Check within roar-firekit
+      - name: Create .env file with App Check Debug Token
+        run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
+
       - name: 'vite production build'
         env:
           NODE_OPTIONS: '--max_old_space_size=8192'

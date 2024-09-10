@@ -45,6 +45,7 @@ jobs:
         run: npm ci
 
       # Inject the App Check Debug Token into the .env file at build time
+      # This is necessary to initialize App Check within roar-firekit
       - name: Create .env file with App Check Debug Token
         run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
 
