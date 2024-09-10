@@ -30,9 +30,9 @@
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
                 <PvDropdown
-                  v-if="userAdministrations.every((admin) => admin.publicName)"
+                  v-if="userAdministrations.every((administration) => administration.publicName)"
                   v-model="selectedAdmin"
-                  :options="sortedAdminInfo ?? []"
+                  :options="sortedUserAdministrations ?? []"
                   option-label="publicName"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
@@ -41,7 +41,7 @@
                 <PvDropdown
                   v-else
                   v-model="selectedAdmin"
-                  :options="sortedAdminInfo ?? []"
+                  :options="sortedUserAdministrations ?? []"
                   option-label="name"
                   input-id="dd-assignment"
                   data-cy="dropdown-select-administration"
@@ -146,9 +146,9 @@ const gameStore = useGameStore();
 const { selectedAdmin } = storeToRefs(gameStore);
 
 const {
-  data: userData,
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
+  data: userData,
 } = useUserDataQuery({
   enabled: initialized,
 });
@@ -172,14 +172,46 @@ const {
   enabled: administrationQueryEnabled,
 });
 
-const sortedAdminInfo = computed(() => {
+const sortedUserAdministrations = computed(() => {
   return [...(userAdministrations.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
+const tasksQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(taskIds.value));
+
+const {
+  isLoading: isLoadingTasks,
+  isFetching: isFetchingTasks,
+  data: userTasks,
+} = useTasksQuery(false, taskIds, {
+  enabled: tasksQueryEnabled,
+});
+
+const { data: surveyResponsesData } = useQuery({
+  queryKey: ['surveyResponses', uid],
+  queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
+  keepPreviousData: true,
+  enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
+  staleTime: 5 * 60 * 1000,
+});
+
+const isLoading = computed(() => {
+  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
+});
+
+const isFetching = computed(() => {
+  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingAdmins.value || isFetchingTasks.value;
+});
+
+const noGamesAvailable = computed(() => {
+  if (isFetching.value || isLoading.value) return false;
+  return assessments.value.length === 0;
 });
 
 async function checkConsent() {
   showConsent.value = false;
   const dob = new Date(userData.value?.studentData?.dob);
-  const grade = userData.value?.studentData.grade;
+  const grade = userData.value?.studentData?.grade;
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
@@ -266,44 +298,13 @@ async function updateConsent() {
   }
 }
 
-const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
-
-const {
-  isLoading: isLoadingTasks,
-  isFetching: isFetchingTasks,
-  data: userTasks,
-} = useTasksQuery(false, taskIds, {
-  enabled: initialized,
-});
-
-const { data: surveyResponsesData } = useQuery({
-  queryKey: ['surveyResponses', uid],
-  queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
-  keepPreviousData: true,
-  enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
-  staleTime: 5 * 60 * 1000,
-});
-
-const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
-});
-
-const isFetching = computed(() => {
-  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingAdmins.value || isFetchingTasks.value;
-});
-
-const noGamesAvailable = computed(() => {
-  if (isFetching.value || isLoading.value) return false;
-  return assessments.value.length === 0;
-});
-
 const toggleShowOptionalAssessments = async () => {
   await checkConsent();
   showOptionalAssessments.value = null;
 };
 
 // Assessments to populate the game tabs.
-// Generated based on the current selected admin Id
+// Generated based on the current selected administration Id
 const assessments = computed(() => {
   if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
     const fetchedAssessments = _without(
@@ -356,12 +357,12 @@ const optionalAssessments = computed(() => {
   return _filter(assessments.value, (assessment) => assessment.optional);
 });
 
-// Grab the sequential key from the current admin's data object
+// Grab the sequential key from the current administration's data object
 const isSequential = computed(() => {
   return (
     _get(
-      _find(userAdministrations.value, (admin) => {
-        return admin.id === selectedAdmin.value.id;
+      _find(userAdministrations.value, (administration) => {
+        return administration.id === selectedAdmin.value.id;
       }),
       'sequential',
     ) ?? true
@@ -395,12 +396,12 @@ watch(
       await checkConsent();
     }
     const selectedAdminId = selectedAdmin.value?.id;
-    const allAdminIds = (userAdministrations.value ?? []).map((admin) => admin.id);
-    // If there is no selected admin or if the selected admin is not in the list
+    const allAdminIds = (userAdministrations.value ?? []).map((administration) => administration.id);
+    // If there is no selected administration or if the selected administration is not in the list
     // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
       // Choose the first sorted administration
-      selectedAdmin.value = sortedAdminInfo.value[0];
+      selectedAdmin.value = sortedUserAdministrations.value[0];
     }
   },
   { immediate: true },

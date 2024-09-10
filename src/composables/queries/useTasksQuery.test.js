@@ -23,7 +23,6 @@ describe('useTasksQuery', () => {
 
   beforeEach(() => {
     queryClient = new VueQuery.QueryClient();
-    // vi.resetAllMocks();
   });
 
   afterEach(() => {
