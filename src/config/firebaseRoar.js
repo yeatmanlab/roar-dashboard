@@ -9,17 +9,15 @@ const useSandbox = import.meta.env.VITE_FIREBASE_DATA_SOURCE === 'sandbox';
 const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
 
 function setDebugToken(config) {
-  // If the NODE_ENV = test, use the debug token from the Cypress config (NODE_ENV is set to test in the Cypress test GitHub action)
-  // Otherwise, use the VITE_APPCHECK_DEBUG_TOKEN environment variable (set as a local environment variable in the .env file and in the GitHub action for preview builds)
-  // If neither are set, create a new debug token which will be inactive until it is set in the Firebase App Check console
-  const debugToken =
-    import.meta.env.NODE_ENV === 'test'
-      ? Cypress.env('appCheckDebugToken')
-      : import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || (self.FIREBASE_APPCHECK_DEBUG_TOKEN = true);
+  // For Cypress tests, use the debug token from the Cypress config. Otherwise, use the VITE_APPCHECK_DEBUG_TOKEN
+  // environment variable (set as a local environment variable in the .env file and in the GitHub action for preview
+  // builds). If neither are set, create a new debug token which will be inactive until it is set in the Firebase App
+  // Check console
+  const debugToken = window?.Cypress
+    ? Cypress.env('appCheckDebugToken')
+    : import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || (self.FIREBASE_APPCHECK_DEBUG_TOKEN = true);
 
-  if (debugToken) {
-    config.debugToken = debugToken;
-  }
+  if (debugToken) config.debugToken = debugToken;
 }
 
 if (isEmulated) {
