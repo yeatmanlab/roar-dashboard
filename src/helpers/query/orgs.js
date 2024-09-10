@@ -369,6 +369,7 @@ export const orgPageFetcher = async (
     }
 
     const orgIds = adminOrgs.value[activeOrgType.value] ?? [];
+    // @TODO: Refactor to a single query for all orgs instead of multiple parallel queries.
     const promises = orgIds.map((orgId) => fetchDocById(activeOrgType.value, orgId));
     const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
     const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
