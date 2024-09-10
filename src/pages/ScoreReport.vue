@@ -131,6 +131,7 @@
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
             :groupheaders="true"
+            :lazy-pre-sorting="orderBy"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
             @export-all="exportData({ includeProgress: false })"
@@ -427,25 +428,19 @@ const handleExportToPdf = async () => {
 
 const orderBy = ref([
   {
-    direction: 'ASCENDING',
-    field: {
-      fieldPath: 'userData.grade',
-    },
+    field: 'user.grade',
+    order: '1',
   },
   {
-    direction: 'ASCENDING',
-    field: {
-      fieldPath: 'userData.name.last',
-    },
+    field: 'user.lastName',
+    order: '1',
   },
 ]);
 // If this is a district report, make the schools column first sorted.
 if (props.orgType === 'district') {
   orderBy.value.unshift({
-    direction: 'ASCENDING',
-    field: {
-      fieldPath: 'readOrgs.schools',
-    },
+    order: '1',
+    field: 'user.schoolName',
   });
 }
 const filterSchools = ref([]);
@@ -654,15 +649,19 @@ const computeAssignmentAndRunData = computed(() => {
         schoolName = schoolNameDictionary.value[schoolId];
       }
 
-      const firstNameOrUsername = user.name.first ?? user.username;
+      const firstName = user.name?.first;
+      const lastName = user.name?.last;
+      const username = user.username;
+
+      const firstNameOrUsername = firstName ?? username;
 
       const currRow = {
         user: {
-          username: user.username,
+          username: username,
           email: user.email,
           userId: user.userId,
-          firstName: user.name.first,
-          lastName: user.name.last,
+          firstName: firstName,
+          lastName: lastName,
           grade: grade,
           assessmentPid: user.assessmentPid,
           schoolName: schoolName,

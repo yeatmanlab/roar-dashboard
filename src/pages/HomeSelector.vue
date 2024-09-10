@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, toRaw } from 'vue';
+import { computed, onMounted, ref, toRaw, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
@@ -112,6 +112,7 @@ async function checkConsent() {
     // skip the consent for levante
     return;
   }
+
   // Check for consent
   if (isAdmin.value) {
     const consentStatus = _get(userData.value, `legal.${consentType.value}`);
@@ -139,6 +140,13 @@ function isSignedBeforeAugustFirst(signedDate) {
   return new Date(signedDate) < augustFirstThisYear;
 }
 
+// Only check consent if the user data is loaded
+watch(userData, async (newValue) => {
+  if (!_isEmpty(newValue)) {
+    await checkConsent();
+  }
+});
+
 onMounted(async () => {
   HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
   HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
@@ -151,9 +159,6 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
   if (!isLoading.value) {
     refreshDocs();
-    if (isAdmin.value) {
-      await checkConsent();
-    }
   }
 });
 </script>
