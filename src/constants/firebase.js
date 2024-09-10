@@ -18,6 +18,7 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
   GROUPS: 'groups',
   LEGAL: 'legal',
   SCHOOLS: 'schools',
+  TASKS: 'tasks',
   USER_CLAIMS: 'userClaims',
   USERS: 'users',
 });

@@ -3,7 +3,7 @@ import _mapValues from 'lodash/mapValues';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
 import { convertValues, getAxiosInstance, mapFields, fetchDocsById } from './utils';
-import { FIRESTORE_DATABASES } from '../../constants/firebase';
+import { FIRESTORE_DATABASES, FIRESTORE_COLLECTIONS } from '../../constants/firebase';
 
 export const getTasksRequestBody = ({
   registered = true,
