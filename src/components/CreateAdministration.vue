@@ -188,7 +188,7 @@ import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
-import useAdministrationVariantsQuery from '@/composables/queries/useAdministrationVariantsQuery';
+import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import TaskPicker from './TaskPicker.vue';
 import ConsentPicker from './ConsentPicker.vue';
 import OrgPicker from '@/components/OrgPicker.vue';
@@ -242,7 +242,7 @@ const findVariantWithParams = (variants, params) => {
   });
 };
 
-const { data: allVariants } = useAdministrationVariantsQuery(true, {
+const { data: allVariants } = useTaskVariantsQuery(true, {
   enabled: initialized,
 });
 
