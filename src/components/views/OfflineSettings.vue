@@ -148,8 +148,8 @@
       <div class="mr-2">
         <PvButton
           class="m-0 bg-primary text-white border-none border-round h-2rem text-md hover:bg-red-900"
-          @click="saveOfflineSettings"
           :disabled="isSubmitting"
+          @click="saveOfflineSettings"
         >
           <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2" />
           Save Settings
@@ -165,7 +165,7 @@ import { useAuthStore } from '@/store/auth';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
 import { orderByDefault } from '@/helpers/query/utils';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useUpdateUserMutation from '@/composables/mutations/useUpdateUserMutation';
@@ -194,11 +194,11 @@ const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery({
 const offlineEnabled = ref(userData?.offlineEnabled ?? false);
 
 const { data: tasks } = useTasksQuery(false, {
-  enabled: initialized && offlineEnabled,
+  enabled: initialized.value && offlineEnabled,
 });
 
-const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsQuery(orderBy, {
-  enabled: initialized && offlineEnabled,
+const { isLoading: isLoadingAdministrations, data: administrations } = useAdministrationsListQuery(orderBy, {
+  enabled: initialized.value && offlineEnabled,
 });
 
 const formattedTasks = computed(() => {

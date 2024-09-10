@@ -56,12 +56,17 @@
           <ParticipantSidebar :total-games="totalGames" :completed-games="completeGames" :student-info="studentInfo" />
           <Transition name="fade" mode="out-in">
             <GameTabs
-              v-if="showOptionalAssessments"
+              v-if="showOptionalAssessments && userData"
               :games="optionalAssessments"
               :sequential="isSequential"
               :user-data="userData"
             />
-            <GameTabs v-else :games="requiredAssessments" :sequential="isSequential" :user-data="userData" />
+            <GameTabs
+              v-else-if="requiredAssessments && userData"
+              :games="requiredAssessments"
+              :sequential="isSequential"
+              :user-data="userData"
+            />
           </Transition>
         </div>
       </div>
@@ -95,6 +100,7 @@ import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
 import _forEach from 'lodash/forEach';
+import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
@@ -102,6 +108,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { fetchDocsById, fetchSubcollection } from '@/helpers/query/utils';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
@@ -153,28 +160,15 @@ const {
   enabled: initialized,
 });
 
-const administrationIds = computed(() => (userAssignments?.value ?? []).map((assignment) => assignment.id));
-const administrationQueryEnabled = computed(() => !isLoadingAssignments.value);
+const administrationIds = computed(() => (userAssignments.value ?? []).map((assignment) => assignment.id));
+const administrationQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(administrationIds.value));
 
 const {
   isLoading: isLoadingAdmins,
   isFetching: isFetchingAdmins,
   data: userAdministrations,
-} = useQuery({
-  queryKey: ['administrations', uid, administrationIds],
-  queryFn: () =>
-    fetchDocsById(
-      administrationIds.value.map((administrationId) => {
-        return {
-          collection: 'administrations',
-          docId: administrationId,
-          select: ['name', 'publicName', 'sequential', 'assessments', 'legal'],
-        };
-      }),
-    ),
-  keepPreviousData: true,
+} = useAdministrationsQuery(administrationIds, {
   enabled: administrationQueryEnabled,
-  staleTime: 5 * 60 * 1000,
 });
 
 const sortedAdminInfo = computed(() => {

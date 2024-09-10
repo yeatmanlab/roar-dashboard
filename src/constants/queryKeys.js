@@ -1,4 +1,5 @@
 export const ADMINISTRATIONS_QUERY_KEY = 'administrations';
+export const ADMINISTRATIONS_LIST_QUERY_KEY = 'administrations-list';
 export const DISTRICTS_QUERY_KEY = 'districts';
 export const DISTRICT_SCHOOLS_QUERY_KEY = 'district-schools';
 export const DSGF_ORGS_QUERY_KEY = 'dsgf-orgs';
