@@ -104,12 +104,12 @@ import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { fetchSubcollection } from '@/helpers/query/utils';
+import { useQueryClient } from '@tanstack/vue-query';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
+import useSurveyReponsesQuery from '@/composables/queries/useSurveyResponsesQuery';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
@@ -131,8 +131,7 @@ const init = () => {
 const queryClient = useQueryClient();
 
 const authStore = useAuthStore();
-const { roarfirekit, roarUid, uid, consentSpinner, showOptionalAssessments, userQueryKeyIndex } =
-  storeToRefs(authStore);
+const { roarfirekit, roarUid, consentSpinner, showOptionalAssessments, userQueryKeyIndex } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -187,12 +186,8 @@ const {
   enabled: tasksQueryEnabled,
 });
 
-const { data: surveyResponsesData } = useQuery({
-  queryKey: ['surveyResponses', uid],
-  queryFn: () => fetchSubcollection(`users/${uid.value}`, 'surveyResponses'),
-  keepPreviousData: true,
+const { data: surveyResponsesData } = useSurveyReponsesQuery({
   enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
-  staleTime: 5 * 60 * 1000,
 });
 
 const isLoading = computed(() => {
