@@ -6,8 +6,8 @@
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
       <div v-else>
-        <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
-          {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
+        <h2 v-if="userAdministrations?.length == 1" class="p-float-label dropdown-container">
+          {{ userAdministrations.at(0).publicName || userAdministrations.at(0).name }}
         </h2>
         <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
           <div
@@ -24,13 +24,13 @@
             }}</label>
           </div>
           <div
-            v-if="adminInfo?.length > 0"
+            v-if="userAdministrations?.length > 0"
             class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
                 <PvDropdown
-                  v-if="adminInfo.every((admin) => admin.publicName)"
+                  v-if="userAdministrations.every((admin) => admin.publicName)"
                   v-model="selectedAdmin"
                   :options="sortedAdminInfo ?? []"
                   option-label="publicName"
@@ -148,18 +148,18 @@ const {
 const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
-  data: assignmentInfo,
+  data: userAssignments,
 } = useUserAssignmentsQuery({
   enabled: initialized,
 });
 
-const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));
+const administrationIds = computed(() => (userAssignments?.value ?? []).map((assignment) => assignment.id));
 const administrationQueryEnabled = computed(() => !isLoadingAssignments.value);
 
 const {
   isLoading: isLoadingAdmins,
   isFetching: isFetchingAdmins,
-  data: adminInfo,
+  data: userAdministrations,
 } = useQuery({
   queryKey: ['administrations', uid, administrationIds],
   queryFn: () =>
@@ -178,7 +178,7 @@ const {
 });
 
 const sortedAdminInfo = computed(() => {
-  return [...(adminInfo.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  return [...(userAdministrations.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 });
 
 async function checkConsent() {
@@ -325,8 +325,8 @@ const assessments = computed(() => {
   if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
     const fetchedAssessments = _without(
       selectedAdmin.value.assessments.map((assessment) => {
-        // Get the matching assessment from assignmentInfo
-        const matchingAssignment = _find(assignmentInfo.value, { id: selectedAdmin.value.id });
+        // Get the matching assessment from userAssignments
+        const matchingAssignment = _find(userAssignments.value, { id: selectedAdmin.value.id });
         const matchingAssessments = matchingAssignment?.assessments ?? [];
         const matchingAssessment = _find(matchingAssessments, { taskId: assessment.taskId });
 
@@ -377,7 +377,7 @@ const optionalAssessments = computed(() => {
 const isSequential = computed(() => {
   return (
     _get(
-      _find(adminInfo.value, (admin) => {
+      _find(userAdministrations.value, (admin) => {
         return admin.id === selectedAdmin.value.id;
       }),
       'sequential',
@@ -406,13 +406,13 @@ const studentInfo = computed(() => {
 });
 
 watch(
-  [selectedAdmin, adminInfo],
+  [selectedAdmin, userAdministrations],
   async ([updateSelectedAdmin]) => {
     if (updateSelectedAdmin) {
       await checkConsent();
     }
     const selectedAdminId = selectedAdmin.value?.id;
-    const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
+    const allAdminIds = (userAdministrations.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list
     // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
