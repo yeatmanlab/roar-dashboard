@@ -140,9 +140,9 @@ function isSignedBeforeAugustFirst(signedDate) {
   return new Date(signedDate) < augustFirstThisYear;
 }
 
-// Watch for when the user data and claims are fully loaded, then check consent
-watch(isLoading, async (newValue) => {
-  if (newValue) {
+// Only check consent if the user data is loaded
+watch(userClaims, async (newValue) => {
+  if (!_isEmpty(newValue)) {
     await checkConsent();
   }
 });
