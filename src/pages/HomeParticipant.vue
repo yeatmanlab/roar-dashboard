@@ -100,8 +100,8 @@ import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { fetchDocsById, fetchSubcollection } from '@/helpers/query/utils';
-import { getUserAssignments } from '@/helpers/query/assignments';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
@@ -123,15 +123,8 @@ const init = () => {
 const queryClient = useQueryClient();
 
 const authStore = useAuthStore();
-const {
-  roarfirekit,
-  roarUid,
-  uid,
-  consentSpinner,
-  showOptionalAssessments,
-  userQueryKeyIndex,
-  assignmentQueryKeyIndex,
-} = storeToRefs(authStore);
+const { roarfirekit, roarUid, uid, consentSpinner, showOptionalAssessments, userQueryKeyIndex } =
+  storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -156,14 +149,8 @@ const {
   isLoading: isLoadingAssignments,
   isFetching: isFetchingAssignments,
   data: assignmentInfo,
-} = useQuery({
-  queryKey: ['assignments', uid, assignmentQueryKeyIndex],
-  queryFn: () => getUserAssignments(roarUid.value),
-  keepPreviousData: true,
+} = useUserAssignmentsQuery({
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 min
-  // For MEFS, since it is opened in a separate tab
-  refetchOnWindowFocus: 'always',
 });
 
 const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));

@@ -10,5 +10,6 @@ export const SCHOOL_CLASSES_QUERY_KEY = 'school-classes';
 export const TASKS_QUERY_KEY = 'tasks';
 export const TASK_VARIANTS_QUERY_KEY = 'task-variants';
 export const USER_DATA_QUERY_KEY = 'user';
-export const USER_STUDENT_DATA_QUERY_KEY = 'user-student';
+export const USER_ASSIGNMENTS_QUERY_KEY = 'user-assignments';
 export const USER_CLAIMS_QUERY_KEY = 'user-claims';
+export const USER_STUDENT_DATA_QUERY_KEY = 'user-student';
