@@ -38,7 +38,6 @@ jobs:
       PARTICIPANT_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
       PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      VITE_APPCHECK_DEBUG_TOKEN: ${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}
     steps:
       # For workflows triggered by pull requests
       - name: Checkout PR code

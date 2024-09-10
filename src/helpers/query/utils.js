@@ -74,17 +74,6 @@ export const getAxiosInstance = (db = 'admin', unauthenticated = false) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
-
-  // Add appCheckToken to the headers if it exists in the firekit config
-  const appCheckToken = roarfirekit.value[db]?.appCheckToken;
-
-  if (appCheckToken) {
-    axiosOptions.headers = {
-      ...axiosOptions.headers,
-      'X-Firebase-AppCheck': appCheckToken,
-    };
-  }
-
   if (unauthenticated) {
     delete axiosOptions.headers;
   }
