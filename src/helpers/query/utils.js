@@ -11,6 +11,7 @@ import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { flattenObj } from '@/helpers';
+import { FIRESTORE_DATABASES } from '@/constants/firebase';
 
 export const convertValues = (value) => {
   const passThroughKeys = [
@@ -70,7 +71,7 @@ export const getProjectId = (project = 'admin') => {
   return roarfirekit.value.roarConfig?.[project]?.projectId;
 };
 
-export const getAxiosInstance = (db = 'admin', unauthenticated = false) => {
+export const getAxiosInstance = (db = FIRESTORE_DATABASES.ADMIN, unauthenticated = false) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
@@ -111,7 +112,7 @@ export const fetchDocById = async (
   collection,
   docId,
   select,
-  db = 'admin',
+  db = FIRESTORE_DATABASES.ADMIN,
   unauthenticated = false,
   swallowErrors = false,
 ) => {
@@ -144,7 +145,7 @@ export const fetchDocById = async (
     });
 };
 
-export const fetchDocsById = async (documents, db = 'admin') => {
+export const fetchDocsById = async (documents, db = FIRESTORE_DATABASES.ADMIN) => {
   if (_isEmpty(documents)) {
     console.warn('FetchDocsById: No documents provided!');
     return [];
@@ -168,7 +169,7 @@ export const fetchDocsById = async (documents, db = 'admin') => {
   return Promise.all(promises);
 };
 
-export const batchGetDocs = async (docPaths, select = [], db = 'admin') => {
+export const batchGetDocs = async (docPaths, select = [], db = FIRESTORE_DATABASES.ADMIN) => {
   if (_isEmpty(docPaths)) {
     console.warn('BatchGetDocs: No document paths provided!');
     return [];
@@ -211,7 +212,12 @@ export const matchMode2Op = {
   notEquals: 'NOT_EQUAL',
 };
 
-export const fetchSubcollection = async (collectionPath, subcollectionName, select = [], db = 'admin') => {
+export const fetchSubcollection = async (
+  collectionPath,
+  subcollectionName,
+  select = [],
+  db = FIRESTORE_DATABASES.ADMIN,
+) => {
   const axiosInstance = getAxiosInstance(db);
   // Construct the path to the subcollection
   const subcollectionPath = `/${collectionPath}/${subcollectionName}`;
