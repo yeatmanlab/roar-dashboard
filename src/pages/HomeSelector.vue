@@ -77,9 +77,6 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-// Wait until both user data and claims are fully loaded
-const isUserLoaded = computed(() => !isLoadingUserData.value && !isLoadingClaims.value);
-
 const isLoading = computed(() => isLoadingClaims.value || isLoadingUserData.value);
 
 const isAdmin = computed(() => {
@@ -144,7 +141,7 @@ function isSignedBeforeAugustFirst(signedDate) {
 }
 
 // Watch for when the user data and claims are fully loaded, then check consent
-watch(isUserLoaded, async (newValue) => {
+watch(isLoading, async (newValue) => {
   if (newValue) {
     await checkConsent();
   }
