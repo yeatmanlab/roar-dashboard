@@ -1,4 +1,4 @@
-import { computed, toRefs } from 'vue';
+import { computed, reactive, toRefs } from 'vue';
 
 /**
  * Computes the isQueryEnabled value and the options with the enabled property removed.
@@ -8,7 +8,8 @@ import { computed, toRefs } from 'vue';
  * @returns {{ isQueryEnabled: ComputedRef<boolean>, options: QueryOptions }} The response object.
  */
 export const computeQueryOverrides = (conditions, queryOptions) => {
-  const { enabled } = toRefs(queryOptions || {});
+  const reactiveQueryOptions = reactive(queryOptions || {});
+  const enabled = reactiveQueryOptions.enabled ? toRefs(reactiveQueryOptions).enabled : undefined;
 
   const isQueryEnabled = computed(() => {
     // Check if the query composable was initialized with a queryOptions object.
