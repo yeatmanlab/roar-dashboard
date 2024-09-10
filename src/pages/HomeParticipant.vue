@@ -105,10 +105,11 @@ import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { fetchDocsById, fetchSubcollection } from '@/helpers/query/utils';
+import { fetchSubcollection } from '@/helpers/query/utils';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useTasksQuery from '@/composables/queries/useTasksQuery';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
@@ -270,21 +271,9 @@ const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((ass
 const {
   isLoading: isLoadingTasks,
   isFetching: isFetchingTasks,
-  data: taskInfo,
-} = useQuery({
-  queryKey: ['tasks', uid, taskIds],
-  queryFn: () => {
-    return fetchDocsById(
-      taskIds.value.map((taskId) => ({
-        collection: 'tasks',
-        docId: taskId,
-      })),
-      'app',
-    );
-  },
-  keepPreviousData: true,
+  data: userTasks,
+} = useTasksQuery(false, taskIds, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000,
 });
 
 const { data: surveyResponsesData } = useQuery({
@@ -316,7 +305,7 @@ const toggleShowOptionalAssessments = async () => {
 // Assessments to populate the game tabs.
 // Generated based on the current selected admin Id
 const assessments = computed(() => {
-  if (!isFetching.value && selectedAdmin.value && (taskInfo.value ?? []).length > 0) {
+  if (!isFetching.value && selectedAdmin.value && (userTasks.value ?? []).length > 0) {
     const fetchedAssessments = _without(
       selectedAdmin.value.assessments.map((assessment) => {
         // Get the matching assessment from userAssignments
@@ -334,7 +323,7 @@ const assessments = computed(() => {
           ...optionalAssessment,
           ...assessment,
           taskData: {
-            ..._find(taskInfo.value ?? [], { id: assessment.taskId }),
+            ..._find(userTasks.value ?? [], { id: assessment.taskId }),
             variantURL: _get(assessment, 'params.variantURL'),
           },
         };

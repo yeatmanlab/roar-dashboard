@@ -193,7 +193,7 @@ const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery({
 
 const offlineEnabled = ref(userData?.offlineEnabled ?? false);
 
-const { data: tasks } = useTasksQuery(false, {
+const { data: tasks } = useTasksQuery(false, null, {
   enabled: initialized.value && offlineEnabled,
 });
 
