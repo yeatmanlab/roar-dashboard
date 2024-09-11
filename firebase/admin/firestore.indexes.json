@@ -2999,6 +2999,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "schoolId",
           "order": "ASCENDING"
         },
@@ -3013,6 +3017,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "schoolId",
           "order": "ASCENDING"
         },
@@ -3023,9 +3031,27 @@
       ]
     },
     {
+      "collectionGroup": "districts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "schools",
       "queryScope": "COLLECTION",
       "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
         {
           "fieldPath": "districtId",
           "order": "ASCENDING"
@@ -3041,6 +3067,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "districtId",
           "order": "ASCENDING"
         },
@@ -3055,6 +3085,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "districtId",
           "order": "ASCENDING"
         },
@@ -3068,6 +3102,10 @@
       "collectionGroup": "schools",
       "queryScope": "COLLECTION",
       "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
         {
           "fieldPath": "districtId",
           "order": "ASCENDING"
@@ -3082,6 +3120,10 @@
       "collectionGroup": "schools",
       "queryScope": "COLLECTION",
       "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
         {
           "fieldPath": "districtId",
           "order": "ASCENDING"
@@ -3096,6 +3138,10 @@
       "collectionGroup": "schools",
       "queryScope": "COLLECTION",
       "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
         {
           "fieldPath": "districtId",
           "order": "ASCENDING"
