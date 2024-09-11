@@ -37,7 +37,7 @@ describe('useSurveyResponsesQuery', () => {
     const mockUserId = nanoid();
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = mockUserId;
+    authStore.roarUid = mockUserId;
     authStore.userQueryKeyIndex = 1;
 
     vi.spyOn(VueQuery, 'useQuery');
@@ -61,7 +61,7 @@ describe('useSurveyResponsesQuery', () => {
     const mockUserId = nanoid();
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = mockUserId;
+    authStore.roarUid = mockUserId;
     authStore.userQueryKeyIndex = 1;
 
     const enableQuery = ref(false);
@@ -91,11 +91,11 @@ describe('useSurveyResponsesQuery', () => {
     expect(fetchSubcollection).toHaveBeenCalledWith(`users/${mockUserId}`, 'surveyResponses');
   });
 
-  it('should only fetch data if the uid is available', async () => {
+  it('should only fetch data if the roarUid is available', async () => {
     const mockUserId = nanoid();
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = null;
+    authStore.roarUid = null;
     authStore.userQueryKeyIndex = 1;
 
     const queryOptions = { enabled: true };
@@ -115,7 +115,7 @@ describe('useSurveyResponsesQuery', () => {
 
     expect(fetchSubcollection).not.toHaveBeenCalled();
 
-    authStore.uid = mockUserId;
+    authStore.roarUid = mockUserId;
     await nextTick();
 
     expect(fetchSubcollection).toHaveBeenCalledWith(`users/${mockUserId}`, 'surveyResponses');
@@ -123,7 +123,7 @@ describe('useSurveyResponsesQuery', () => {
 
   it('should not let queryOptions override the internally computed value', async () => {
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = null;
+    authStore.roarUid = null;
     authStore.userQueryKeyIndex = 1;
 
     const queryOptions = { enabled: true };
