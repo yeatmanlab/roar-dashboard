@@ -10,8 +10,8 @@ const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
 
 function setDebugToken(config) {
   // For Cypress tests, use the debug token from the Cypress config. If running on localhost, use the VITE_APPCHECK_DEBUG_TOKEN
-  // environment variable (set as a local environment variable in the .env file). If neither are set, create a new debug token which will be inactive until it is set in the Firebase App
-  // Check console for debug token
+  // environment variable (set as a local environment variable in the .env file). If neither are set, create a new debug token which will be inactive until it is set in the
+  // Firebase App Check console
   config.debugToken = window.Cypress
     ? Cypress.env('appCheckDebugToken')
     : window.location.hostname === 'localhost'
