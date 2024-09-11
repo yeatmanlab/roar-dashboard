@@ -44,10 +44,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Inject the App Check Debug Token into the .env file at build time
-      - name: Create .env file with App Check Debug Token
-        run: echo "VITE_APPCHECK_DEBUG_TOKEN=${{ secrets.VITE_APPCHECK_DEBUG_TOKEN }}" >> .env
-
       - name: Build project
         run: npm run build
 
