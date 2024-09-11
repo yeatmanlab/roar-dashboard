@@ -14,7 +14,7 @@ function setDebugToken(config) {
   // Check console for debug token
   config.debugToken = window.Cypress
     ? Cypress.env('appCheckDebugToken')
-    : window.hostname === 'localhost'
+    : window.location.hostname === 'localhost'
     ? import.meta.env.VITE_APPCHECK_DEBUG_TOKEN || (self.FIREBASE_APPCHECK_DEBUG_TOKEN = true)
     : undefined;
 }
