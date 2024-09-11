@@ -3031,6 +3031,20 @@
       ]
     },
     {
+      "collectionGroup": "classes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districtId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastRoarSync",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "districts",
       "queryScope": "COLLECTION",
       "fields": [
@@ -3177,6 +3191,20 @@
         {
           "fieldPath": "name",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "schools",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districtId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastRoarSync",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -3423,6 +3451,20 @@
         {
           "fieldPath": "userType",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districts.current",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
         }
       ]
     },
