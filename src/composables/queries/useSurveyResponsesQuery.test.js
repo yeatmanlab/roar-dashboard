@@ -1,7 +1,8 @@
-import { computed, ref, nextTick } from 'vue';
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
+import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
 import { fetchSubcollection } from '@/helpers/query/utils';
@@ -32,9 +33,12 @@ describe('useSurveyResponsesQuery', () => {
     queryClient?.clear();
   });
 
-  it('should call useQuery with correct parameters', () => {
+  it('should call query with correct parameters', () => {
+    const mockUserId = nanoid();
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
+    authStore.uid = mockUserId;
+    authStore.userQueryKeyIndex = 1;
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -47,31 +51,23 @@ describe('useSurveyResponsesQuery', () => {
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
-        __v_isRef: true,
-        __v_isReadonly: true,
       }),
     });
-  });
 
-  it('should call fetchSubcollection with correct parameters', () => {
-    const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
-
-    withSetup(() => useSurveyResponsesQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    expect(fetchSubcollection).toHaveBeenCalledWith('users/mock-uid-1', 'surveyResponses');
+    expect(fetchSubcollection).toHaveBeenCalledWith(`users/${mockUserId}`, 'surveyResponses');
   });
 
   it('should correctly control the enabled state of the query', async () => {
+    const mockUserId = nanoid();
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
+    authStore.uid = mockUserId;
+    authStore.userQueryKeyIndex = 1;
 
     const enableQuery = ref(false);
 
     const queryOptions = {
-      enabled: computed(() => enableQuery.value),
+      enabled: enableQuery,
     };
 
     withSetup(() => useSurveyResponsesQuery(queryOptions), {
@@ -82,9 +78,8 @@ describe('useSurveyResponsesQuery', () => {
       queryKey: ['survey-responses'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
-        _value: expect.objectContaining({
-          _value: false,
-        }),
+        _value: false,
+        __v_isRef: true,
       }),
     });
 
@@ -93,6 +88,59 @@ describe('useSurveyResponsesQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchSubcollection).toHaveBeenCalled();
+    expect(fetchSubcollection).toHaveBeenCalledWith(`users/${mockUserId}`, 'surveyResponses');
+  });
+
+  it('should only fetch data if the uid is available', async () => {
+    const mockUserId = nanoid();
+
+    const authStore = useAuthStore(piniaInstance);
+    authStore.uid = null;
+    authStore.userQueryKeyIndex = 1;
+
+    const queryOptions = { enabled: true };
+
+    withSetup(() => useSurveyResponsesQuery(queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['survey-responses'],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+    });
+
+    expect(fetchSubcollection).not.toHaveBeenCalled();
+
+    authStore.uid = mockUserId;
+    await nextTick();
+
+    expect(fetchSubcollection).toHaveBeenCalledWith(`users/${mockUserId}`, 'surveyResponses');
+  });
+
+  it('should not let queryOptions override the internally computed value', async () => {
+    const authStore = useAuthStore(piniaInstance);
+    authStore.uid = null;
+    authStore.userQueryKeyIndex = 1;
+
+    const queryOptions = { enabled: true };
+
+    withSetup(() => useSurveyResponsesQuery(queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['survey-responses'],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+    });
+
+    expect(fetchSubcollection).not.toHaveBeenCalled();
   });
 });
