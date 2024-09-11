@@ -2,6 +2,7 @@ import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
+import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
@@ -32,48 +33,36 @@ describe('useUserDataQuery', () => {
     queryClient?.clear();
   });
 
-  it('should call useQuery with correct parameters', () => {
+  it('should call query with correct parameters', () => {
+    const mockUserId = nanoid();
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = 'mock-roar-uid-1';
+    authStore.roarUid = mockUserId;
     authStore.userQueryKeyIndex = 1;
 
-    const queryOptions = { enabled: false };
-
     vi.spyOn(VueQuery, 'useQuery');
-
-    withSetup(() => useUserDataQuery(queryOptions), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', authStore.roarUid, authStore.userQueryKeyIndex],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: expect.objectContaining({
-          _object: expect.objectContaining({
-            enabled: false,
-          }),
-        }),
-      }),
-    });
-  });
-
-  it('should call fetchDocById with correct parameters', async () => {
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = 'mock-roar-uid-2';
-    authStore.userQueryKeyIndex = 2;
 
     withSetup(() => useUserDataQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', 'mock-roar-uid-2');
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', mockUserId, 1],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: true,
+      }),
+    });
+
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
   });
 
   it('should correctly control the enabled state of the query', async () => {
+    const mockUserId = nanoid();
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = 'mock-roar-uid-3';
-    authStore.userQueryKeyIndex = 3;
+    authStore.roarUid = mockUserId;
+    authStore.userQueryKeyIndex = 1;
 
     const enableQuery = ref(false);
 
@@ -86,12 +75,11 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', 'mock-roar-uid-3', 3],
+      queryKey: ['user', mockUserId, 1],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
-        _value: expect.objectContaining({
-          _value: false,
-        }),
+        _value: false,
+        __v_isRef: true,
       }),
     });
 
@@ -100,6 +88,59 @@ describe('useUserDataQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', 'mock-roar-uid-3');
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
+  });
+
+  it('should only fetch data if the roarUid is available', async () => {
+    const mockUserId = nanoid();
+
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = null;
+    authStore.userQueryKeyIndex = 1;
+
+    const queryOptions = { enabled: true };
+
+    withSetup(() => useUserDataQuery(queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', null, 1],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+    });
+
+    expect(fetchDocById).not.toHaveBeenCalled();
+
+    authStore.roarUid = mockUserId;
+    await nextTick();
+
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
+  });
+
+  it('should not let queryOptions override the internally computed value', async () => {
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = null;
+    authStore.userQueryKeyIndex = 1;
+
+    const queryOptions = { enabled: true };
+
+    withSetup(() => useUserDataQuery(queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', null, 1],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+    });
+
+    expect(fetchDocById).not.toHaveBeenCalled();
   });
 });

@@ -1,14 +1,12 @@
-import { ref, nextTick, computed } from 'vue';
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
-import { storeToRefs } from 'pinia';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import useUserStudentDataQuery from './useUserStudentDataQuery';
-import _ from 'lodash';
 
 vi.mock('@/helpers/query/utils', () => ({
   fetchDocById: vi.fn().mockImplementation(() => []),
@@ -33,23 +31,6 @@ describe('useUserStudentDataQuery', () => {
 
   afterEach(() => {
     queryClient?.clear();
-  });
-
-  it('should call useQuery with correct parameters', async () => {
-    const mockFirstUserId = nanoid();
-    const mockSecondUserId = nanoid();
-
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockFirstUserId;
-
-    expect(authStore.roarUid).toBe(mockFirstUserId);
-    const { roarUid } = storeToRefs(authStore);
-
-    authStore.roarUid = mockSecondUserId;
-
-    await nextTick();
-
-    expect(roarUid.value).toBe(mockSecondUserId);
   });
 
   it('should call query with correct parameters', () => {
