@@ -29,7 +29,7 @@ describe('useTasksQuery', () => {
     queryClient?.clear();
   });
 
-  it('should call useQuery with correct parameters when fetching all tasks', () => {
+  it('should call query with correct parameters when fetching all tasks', () => {
     vi.spyOn(VueQuery, 'useQuery');
 
     withSetup(() => useTasksQuery(), {
@@ -44,7 +44,7 @@ describe('useTasksQuery', () => {
     expect(taskFetcher).toHaveBeenCalledWith(false, true);
   });
 
-  it('should call useQuery with correct parameters when fetching registered tasks', () => {
+  it('should call query with correct parameters when fetching registered tasks', () => {
     const fetchRegisteredTasks = true;
     const taskIds = null;
     const queryOptions = { enabled: true };
@@ -64,7 +64,7 @@ describe('useTasksQuery', () => {
     expect(taskFetcher).toHaveBeenCalledWith(true, true);
   });
 
-  it('should call useQuery with correct parameters when fetching specific tasks', () => {
+  it('should call query with correct parameters when fetching specific tasks', () => {
     const fetchRegisteredTasks = false;
     const taskIds = ref(['mock-task-1', 'mock-task-2']);
     const queryOptions = { enabled: true };
