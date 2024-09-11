@@ -14,16 +14,16 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  */
 const useSurveyResponsesQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
-  const { uid } = storeToRefs(authStore);
+  const { roarUid } = storeToRefs(authStore);
 
-  const isQueryEnabled = computed(() => !!uid.value && (toValue(queryOptions?.enabled) ?? true));
+  const isQueryEnabled = computed(() => !!roarUid.value && (toValue(queryOptions?.enabled) ?? true));
 
   const options = queryOptions ? { ...queryOptions } : {};
   delete options.enabled;
 
   return useQuery({
     queryKey: [SURVEY_RESPONSES_QUERY_KEY],
-    queryFn: () => fetchSubcollection(`${FIRESTORE_COLLECTIONS.USERS}/${uid.value}`, 'surveyResponses'),
+    queryFn: () => fetchSubcollection(`${FIRESTORE_COLLECTIONS.USERS}/${roarUid.value}`, 'surveyResponses'),
     enabled: isQueryEnabled,
     ...options,
   });

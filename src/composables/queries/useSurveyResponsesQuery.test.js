@@ -34,7 +34,7 @@ describe('useSurveyResponsesQuery', () => {
 
   it('should call useQuery with correct parameters', () => {
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
+    authStore.roarUid = 'mock-roarUid-1';
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -55,18 +55,18 @@ describe('useSurveyResponsesQuery', () => {
 
   it('should call fetchSubcollection with correct parameters', () => {
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
+    authStore.roarUid = 'mock-roarUid-1';
 
     withSetup(() => useSurveyResponsesQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(fetchSubcollection).toHaveBeenCalledWith('users/mock-uid-1', 'surveyResponses');
+    expect(fetchSubcollection).toHaveBeenCalledWith('users/mock-roarUid-1', 'surveyResponses');
   });
 
   it('should correctly control the enabled state of the query', async () => {
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = 'mock-uid-1';
+    authStore.roarUid = 'mock-roarUid-1';
 
     const enableQuery = ref(false);
 
