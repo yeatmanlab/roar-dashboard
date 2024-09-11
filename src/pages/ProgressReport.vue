@@ -411,15 +411,17 @@ const computedProgressData = computed(() => {
 const computeAssignmentAndRunData = computed(() => {
   return assignmentScoreData.value.map((item) => {
     return {
-      username: item.assignment.userData.username,
-      firstName: item.assignment.userData.name.first,
-      lastName: item.assignment.userData.name.last,
-      grade: item.assignment.userData.grade,
-      email: item.assignment.userData.email,
-      scores: item.assignment.assessments,
+      username: item.assignment.userData?.username ?? '', // Default to empty string if undefined
+      firstName: item.assignment.userData?.name?.first ?? '', // Handle missing name or first property
+      lastName: item.assignment.userData?.name?.last ?? '', // Handle missing last property
+      grade: item.assignment.userData?.grade ?? 'N/A', // Provide 'N/A' for missing grade
+      email: item.assignment.userData?.email ?? '', // Default to empty string if email is undefined
+      scores: item.assignment?.assessments ?? [], // Default to an empty array if assessments are missing
     };
   });
 });
+
+console.log('computeAssignmentAndRunData: ', computeAssignmentAndRunData.value);
 
 const resetFilters = () => {
   filterSchools.value = [];
@@ -480,11 +482,11 @@ const exportAll = async () => {
 };
 
 const createExportData = ({ rows, includeProgress = false }) => {
-  console.log('rows:', rows);
-  const computedExportData = _map(rows, (user) => {
+  // console.log('rows:', rows);
+  const assignmentScoreData = _map(rows, (user) => {
     let tableRow = {
       Username: _get(user, 'username'),
-      Email: _get(user, 'email'), // This will only be used when exporting all rows
+      Email: _get(user, 'email'),
       First: _get(user, 'firstName'),
       Last: _get(user, 'lastName'),
       Grade: _get(user, 'grade'),
@@ -498,31 +500,38 @@ const createExportData = ({ rows, includeProgress = false }) => {
       tableRow['School'] = _get(user, 'schoolName');
     }
 
-    for (const taskId in user.scores) {
-      const score = user.scores[taskId];
-      // console.log('score:', score);
+    // Check if user.scores exists and is an array or object
+    const userScores = _get(user, 'scores', []);
+
+    console.log('userScores:', userScores);
+
+    userScores.forEach((scoreData) => {
+      const taskId = _get(scoreData, 'taskId');
+      const score = _get(scoreData, 'scores', {});
+
       const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
 
-      console.log('Percent Correct:', score.scores?.computed?.composite?.totalPercentCorrect ?? '');
+      // Use score.scores?.computed?.composite?.totalPercentCorrect to get percent correct or fallback
+      const percentCorrect = _get(score, 'computed.composite.totalPercentCorrect', '');
 
       if (tasksToDisplayPercentCorrect.includes(taskId)) {
-        tableRow[`${taskName} - Percent Correct`] = score.scores.computed.composite.totalPercentCorrect;
-        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskName} - Percent Correct`] = percentCorrect;
+        tableRow[`${taskName} - Num Attempted`] = _get(score, 'numAttempted', 0);
+        tableRow[`${taskName} - Num Correct`] = _get(score, 'numCorrect', 0);
       } else if (tasksToDisplayCorrectIncorrectDifference.includes(taskId)) {
-        tableRow[`${taskName} - Correct/Incorrect Difference`] = score.correctIncorrectDifference;
-        tableRow[`${taskName} - Num Incorrect`] = score.numIncorrect;
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
+        tableRow[`${taskName} - Correct/Incorrect Difference`] = _get(score, 'correctIncorrectDifference', 0);
+        tableRow[`${taskName} - Num Incorrect`] = _get(score, 'numIncorrect', 0);
+        tableRow[`${taskName} - Num Correct`] = _get(score, 'numCorrect', 0);
       } else if (tasksToDisplayTotalCorrect.includes(taskId)) {
-        tableRow[`${taskName} - Num Correct`] = score.numCorrect;
-        tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
+        tableRow[`${taskName} - Num Correct`] = _get(score, 'numCorrect', 0);
+        tableRow[`${taskName} - Num Attempted`] = _get(score, 'numAttempted', 0);
       } else if (rawOnlyTasks.includes(taskId)) {
-        tableRow[`${taskName} - Raw`] = score.rawScore;
+        tableRow[`${taskName} - Raw`] = _get(score, 'rawScore', 0);
       } else {
-        tableRow[`${taskName} - Percentile`] = score.percentileString;
-        tableRow[`${taskName} - Standard`] = score.standardScore;
-        tableRow[`${taskName} - Raw`] = score.rawScore;
-        tableRow[`${taskName} - Support Level`] = score.supportLevel;
+        tableRow[`${taskName} - Percentile`] = _get(score, 'percentileString', '');
+        tableRow[`${taskName} - Standard`] = _get(score, 'standardScore', 0);
+        tableRow[`${taskName} - Raw`] = _get(score, 'rawScore', 0);
+        tableRow[`${taskName} - Support Level`] = _get(score, 'supportLevel', '');
       }
 
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
@@ -543,13 +552,13 @@ const createExportData = ({ rows, includeProgress = false }) => {
       } else {
         tableRow[`${taskName} - Reliability`] = 'Reliable';
       }
-    }
+    });
 
     return tableRow;
   });
 
   if (includeProgress) {
-    const combinedData = computedExportData.map((exportRow) => {
+    const combinedData = assignmentScoreData.map((exportRow) => {
       const progressRow = computedProgressData.value.find((progress) => progress.user.username === exportRow.Username);
 
       if (progressRow) {
