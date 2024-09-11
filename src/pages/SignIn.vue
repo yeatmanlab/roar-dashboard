@@ -213,7 +213,7 @@ const modalPassword = ref('');
 
 const authWithClever = () => {
   console.log('---> authWithClever');
-  authStore.signInWithCleverRedirect();
+  authStore.signInWithCleverPopup();
   spinner.value = true;
   // }
 };
@@ -225,7 +225,6 @@ const authWithClassLink = () => {
     spinner.value = true;
   } else {
     authStore.signInWithClassLinkRedirect();
-    // authStore.signInWithCleverPopup();
     spinner.value = true;
   }
 };
