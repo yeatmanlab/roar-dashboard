@@ -304,7 +304,7 @@ import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useDistrictQuery from '@/composables/queries/useDistrictQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -466,7 +466,7 @@ const orgQuery = computed(() => {
   const queryOptions = { enabled: initialized };
   switch (props.orgType) {
     case SINGULAR_ORG_TYPES.DISTRICTS:
-      return useDistrictsQuery(props.orgId, queryOptions);
+      return useDistrictQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.SCHOOLS:
       return useDistrictSchoolsQuery(props.orgId, queryOptions); // @TODO: Test this
     case SINGULAR_ORG_TYPES.CLASSES:
