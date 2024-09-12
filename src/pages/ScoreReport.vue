@@ -306,6 +306,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useDistrictQuery from '@/composables/queries/useDistrictQuery';
 import useSchoolQuery from '@/composables/queries/useSchoolQuery';
+import useClassQuery from '@/composables/queries/useClassQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
@@ -471,7 +472,7 @@ const orgQuery = computed(() => {
     case SINGULAR_ORG_TYPES.SCHOOLS:
       return useSchoolQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.CLASSES:
-      return useSchoolClassesQuery(props.orgId, queryOptions); // @TODO: Test this
+      return useClassQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.GROUPS:
       throw new Error('Groups are not yet supported in this report.');
     // return useGroupsQuery(props.orgId, queryOptions)
