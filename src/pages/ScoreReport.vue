@@ -39,7 +39,7 @@
                   >
                   </PvSelectButton>
                 </div>
-                <div v-if="!isLoadingScores">
+                <div v-if="!isLoadingAssignments">
                   <PvButton
                     class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
@@ -51,7 +51,7 @@
                 </div>
               </div>
             </div>
-            <div v-if="isLoadingScores" class="loading-wrapper">
+            <div v-if="isLoadingAssignments" class="loading-wrapper">
               <AppSpinner style="margin: 1rem 0rem" />
               <div class="uppercase text-sm text-gray-600 font-light">Loading Overview Charts</div>
             </div>
@@ -83,7 +83,7 @@
                 </div>
               </div>
               <div
-                v-if="!isLoadingScores && sortedAndFilteredTaskIds?.length > 0"
+                v-if="!isLoadingAssignments && sortedAndFilteredTaskIds?.length > 0"
                 class="legend-container flex flex-column align-items-center rounded"
               >
                 <div class="flex align-items-center">
@@ -112,7 +112,7 @@
           </div>
         </div>
         <!-- Loading data spinner -->
-        <div v-if="isLoadingScores || isFetchingScores" class="loading-container my-4">
+        <div v-if="isLoadingAssignments || isFetchingAssignments" class="loading-container my-4">
           <AppSpinner style="margin-bottom: 1rem" />
           <span class="text-sm text-gray-600 uppercase font-light">Loading Administration Datatable</span>
         </div>
@@ -124,7 +124,7 @@
             :columns="scoreReportColumns"
             :total-records="filteredTableData?.length"
             :page-limit="pageLimit"
-            :loading="isLoadingScores || isFetchingScores"
+            :loading="isLoadingAssignments || isFetchingAssignments"
             :groupheaders="true"
             :lazy-pre-sorting="orderBy"
             data-cy="roar-data-table"
@@ -181,7 +181,7 @@
             </span>
           </RoarDataTable>
         </div>
-        <div v-if="!isLoadingScores" class="legend-container">
+        <div v-if="!isLoadingAssignments" class="legend-container">
           <div class="legend-entry">
             <div class="circle tooltip" :style="`background-color: ${supportLevelColors.below};`" />
             <div>
@@ -214,7 +214,7 @@
           quickly or the assessment was incomplete.
         </div>
         <!-- Subscores tables -->
-        <div v-if="isLoadingScores" class="loading-wrapper">
+        <div v-if="isLoadingAssignments" class="loading-wrapper">
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm font-light text-gray-600">Loading Task Reports</div>
         </div>
@@ -299,16 +299,15 @@ import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
 import _lowerCase from 'lodash/lowerCase';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
 import { getGrade } from '@bdelab/roar-utils';
 import { exportCsv } from '@/helpers/query/utils';
-import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { getTitle } from '@/helpers/query/administrations';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
+import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 import {
   taskDisplayNames,
@@ -331,8 +330,7 @@ import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 let TaskReport, DistributionChartOverview, NextSteps;
 
 const authStore = useAuthStore();
-
-const { roarfirekit, uid, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -486,6 +484,14 @@ const orgQuery = computed(() => {
 
 const { data: orgInfo, isLoading: isLoadingOrgInfo } = orgQuery.value;
 
+const {
+  isLoading: isLoadingAssignments,
+  isFetching: isFetchingAssignments,
+  data: assignmentData,
+} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, {
+  enabled: initialized,
+});
+
 const schoolsDictWithGrade = computed(() => {
   return (
     districtSchoolsData.value?.reduce((acc, school) => {
@@ -502,21 +508,6 @@ const schoolNameDictionary = computed(() => {
       return acc;
     }, {}) || {}
   );
-});
-
-const scoresQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
-
-// Scores Query
-const {
-  isLoading: isLoadingScores,
-  isFetching: isFetchingScores,
-  data: assignmentData,
-} = useQuery({
-  queryKey: ['scores', uid, props.administrationId, props.orgId],
-  queryFn: () => assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true),
-  keepPreviousData: true,
-  enabled: scoresQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 mins
 });
 
 // Return a faded color if assessment is not reliable
