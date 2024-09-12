@@ -1,4 +1,12 @@
 /**
+ * Firestore databases
+ */
+export const FIRESTORE_DATABASES = Object.freeze({
+  ADMIN: 'admin',
+  APP: 'app',
+});
+
+/**
  * Firestore database collections
  */
 export const FIRESTORE_COLLECTIONS = Object.freeze({
@@ -10,6 +18,7 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
   GROUPS: 'groups',
   LEGAL: 'legal',
   SCHOOLS: 'schools',
+  TASKS: 'tasks',
   USER_CLAIMS: 'userClaims',
   USERS: 'users',
 });

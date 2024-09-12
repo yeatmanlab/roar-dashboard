@@ -129,7 +129,7 @@ import { orderByDefault } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationsListQuery from '@/composables/queries/useAdministrationsListQuery';
 import CardAdministration from '@/components/CardAdministration.vue';
 
 const initialized = ref(false);
@@ -196,7 +196,7 @@ const {
   isLoading: isLoadingAdministrations,
   isFetching: isFetchingAdministrations,
   data: administrations,
-} = useAdministrationsQuery(orderBy, fetchTestAdministrations, {
+} = useAdministrationsListQuery(orderBy, fetchTestAdministrations, {
   enabled: initialized,
 });
 

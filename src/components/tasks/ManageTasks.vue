@@ -505,7 +505,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const { data: tasks } = useTasksQuery(registeredTasksOnly, {
+const { data: tasks } = useTasksQuery(registeredTasksOnly, null, {
   enabled: initialized,
 });
 

@@ -1,7 +1,9 @@
+import { toValue } from 'vue';
 import _mapValues from 'lodash/mapValues';
 import _uniq from 'lodash/uniq';
 import _without from 'lodash/without';
-import { convertValues, getAxiosInstance, mapFields } from './utils';
+import { convertValues, getAxiosInstance, mapFields, fetchDocsById } from './utils';
+import { FIRESTORE_DATABASES, FIRESTORE_COLLECTIONS } from '../../constants/firebase';
 
 export const getTasksRequestBody = ({
   registered = true,
@@ -77,6 +79,21 @@ export const taskFetcher = async (registered = true, allData = false, select = [
   });
 
   return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
+};
+
+/**
+ * Fetch task documents by their IDs.
+ *
+ * @param {Array<String>} taskIds – The array of task IDs to fetch.
+ * @returns {Promise<Array<Object>>} The array of task documents.
+ */
+export const fetchByTaskId = async (taskIds) => {
+  const taskDocs = toValue(taskIds).map((taskId) => ({
+    collection: FIRESTORE_COLLECTIONS.TASKS,
+    docId: taskId,
+  }));
+
+  return fetchDocsById(taskDocs, FIRESTORE_DATABASES.APP);
 };
 
 export const getVariantsRequestBody = ({ registered = false, aggregationQuery, pageLimit, page, paginate = false }) => {

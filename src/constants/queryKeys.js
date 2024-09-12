@@ -1,4 +1,5 @@
 export const ADMINISTRATIONS_QUERY_KEY = 'administrations';
+export const ADMINISTRATIONS_LIST_QUERY_KEY = 'administrations-list';
 export const DISTRICTS_QUERY_KEY = 'districts';
 export const DISTRICT_SCHOOLS_QUERY_KEY = 'district-schools';
 export const DSGF_ORGS_QUERY_KEY = 'dsgf-orgs';
@@ -7,8 +8,10 @@ export const LEGAL_DOCS_QUERY_KEY = 'legal-docs';
 export const ORG_USERS_QUERY_KEY = 'org-users';
 export const ORGS_TABLE_QUERY_KEY = 'orgs-table';
 export const SCHOOL_CLASSES_QUERY_KEY = 'school-classes';
+export const SURVEY_RESPONSES_QUERY_KEY = 'survey-responses';
 export const TASKS_QUERY_KEY = 'tasks';
 export const TASK_VARIANTS_QUERY_KEY = 'task-variants';
 export const USER_DATA_QUERY_KEY = 'user';
-export const USER_STUDENT_DATA_QUERY_KEY = 'user-student';
+export const USER_ASSIGNMENTS_QUERY_KEY = 'user-assignments';
 export const USER_CLAIMS_QUERY_KEY = 'user-claims';
+export const USER_STUDENT_DATA_QUERY_KEY = 'user-student';
