@@ -6,6 +6,7 @@ export const DISTRICT_QUERY_KEY = 'district';
 export const DISTRICTS_QUERY_KEY = 'districts';
 export const DISTRICT_SCHOOLS_QUERY_KEY = 'district-schools';
 export const DSGF_ORGS_QUERY_KEY = 'dsgf-orgs';
+export const FAMILY_QUERY_KEY = 'family';
 export const GROUP_QUERY_KEY = 'group';
 export const GROUPS_QUERY_KEY = 'groups';
 export const LEGAL_DOCS_QUERY_KEY = 'legal-docs';

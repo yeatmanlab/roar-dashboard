@@ -3,18 +3,18 @@
     <section class="main-body">
       <div>
         <div class="">
-          <div v-if="isLoadingOrgInfo" class="loading-wrapper">
+          <div v-if="isLoadingOrgData" class="loading-wrapper">
             <AppSpinner style="margin: 0.3rem 0rem" />
             <div class="uppercase text-sm text-gray-600 font-light">Loading Org Info</div>
           </div>
 
-          <div v-if="orgInfo && administrationData" id="at-a-glance-charts">
+          <div v-if="orgData && administrationData" id="at-a-glance-charts">
             <div class="flex justify-content-between align-items-center">
               <div class="flex flex-column align-items-start gap-2">
                 <div>
                   <div class="uppercase font-light text-gray-500 text-xs">{{ props.orgType }} Score Report</div>
                   <div class="report-title">
-                    {{ _toUpper(orgInfo?.name) }}
+                    {{ _toUpper(orgData?.name) }}
                   </div>
                 </div>
                 <div>
@@ -234,7 +234,7 @@
                 :runs="computeAssignmentAndRunData.runsByTaskId[taskId]"
                 :org-type="orgType"
                 :org-id="orgId"
-                :org-info="orgInfo"
+                :org-info="orgData"
                 :administration-info="administrationData"
               />
             </div>
@@ -302,12 +302,14 @@ import { useAuthStore } from '@/store/auth';
 import { getGrade } from '@bdelab/roar-utils';
 import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
+import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useDistrictQuery from '@/composables/queries/useDistrictQuery';
 import useSchoolQuery from '@/composables/queries/useSchoolQuery';
 import useClassQuery from '@/composables/queries/useClassQuery';
 import useGroupQuery from '@/composables/queries/useGroupQuery';
+import useFamilyQuery from '@/composables/queries/useFamilyQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import {
@@ -416,7 +418,7 @@ const handleExportToPdf = async () => {
   }
   doc.save(
     `roar-scores-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
-      orgInfo.value.name,
+      orgData.value.name,
     )}.pdf`,
   );
   exportLoading.value = false;
@@ -447,12 +449,11 @@ const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
 
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
+const { isSuperAdmin } = useUserType(userClaims);
 
 const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
@@ -475,14 +476,13 @@ const orgQuery = computed(() => {
     case SINGULAR_ORG_TYPES.GROUPS:
       return useGroupQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.FAMILIES:
-      throw new Error('Families are not yet supported in this report.');
-    // return useFamiliesQuery(props.orgId, queryOptions)
+      return useFamilyQuery(props.orgId, queryOptions);
     default:
-      return null;
+      throw new Error(`Unsupported org type: ${props.orgType}`);
   }
 });
 
-const { data: orgInfo, isLoading: isLoadingOrgInfo } = orgQuery.value;
+const { data: orgData, isLoading: isLoadingOrgData } = orgQuery.value;
 
 const {
   isLoading: isLoadingAssignments,
@@ -944,7 +944,7 @@ const exportSelected = (selectedRows) => {
   exportCsv(
     computedExportData,
     `roar-scores-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
-      orgInfo.value.name,
+      orgData.value.name,
     )}-selected.csv`,
   );
   return;
@@ -1018,7 +1018,7 @@ const exportAll = async () => {
   exportCsv(
     computedExportData,
     `roar-scores-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
-      orgInfo.value.name,
+      orgData.value.name,
     )}.csv`,
   );
   return;
