@@ -1,3 +1,4 @@
+import { toValue } from 'vue';
 import _intersection from 'lodash/intersection';
 import _uniq from 'lodash/uniq';
 import _flattenDeep from 'lodash/flattenDeep';
@@ -250,11 +251,13 @@ export const orgFetcher = async (
   adminOrgs,
   select = ['name', 'id', 'tags', 'currentActivationCode'],
 ) => {
+  const districtId = toValue(selectedDistrict);
+
   if (isSuperAdmin.value) {
     const axiosInstance = getAxiosInstance();
     const requestBody = getOrgsRequestBody({
       orgType: orgType,
-      parentDistrict: orgType === 'schools' ? selectedDistrict.value : null,
+      parentDistrict: orgType === 'schools' ? districtId : null,
       aggregationQuery: false,
       paginate: false,
       select: select,
@@ -263,7 +266,7 @@ export const orgFetcher = async (
     if (orgType === 'districts') {
       console.log(`Fetching ${orgType}`);
     } else if (orgType === 'schools') {
-      console.log(`Fetching ${orgType} for ${selectedDistrict.value}`);
+      console.log(`Fetching ${orgType} for ${districtId}`);
     }
 
     return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
@@ -299,8 +302,8 @@ export const orgFetcher = async (
 
       return Promise.all(promises);
     } else if (orgType === 'schools') {
-      const districtDoc = await fetchDocById('districts', selectedDistrict.value, ['schools']);
-      if ((adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {
+      const districtDoc = await fetchDocById('districts', districtId, ['schools']);
+      if ((adminOrgs.value['districts'] ?? []).includes(districtId)) {
         const promises = (districtDoc.schools ?? []).map((schoolId) => {
           return fetchDocById('schools', schoolId, select);
         });

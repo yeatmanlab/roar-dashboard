@@ -1,3 +1,4 @@
+import { toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchDocsById } from '@/helpers/query/utils';
 import { ADMINISTRATIONS_QUERY_KEY } from '@/constants/queryKeys';
@@ -12,10 +13,10 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  */
 const useAdministrationsQuery = (administrationIds, queryOptions = undefined) => {
   return useQuery({
-    queryKey: [ADMINISTRATIONS_QUERY_KEY, administrationIds],
+    queryKey: [ADMINISTRATIONS_QUERY_KEY, toValue(administrationIds)],
     queryFn: () =>
       fetchDocsById(
-        administrationIds?.value.map((administrationId) => {
+        toValue(administrationIds)?.map((administrationId) => {
           return {
             collection: FIRESTORE_COLLECTIONS.ADMINISTRATIONS,
             docId: administrationId,

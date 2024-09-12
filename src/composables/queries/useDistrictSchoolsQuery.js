@@ -32,9 +32,12 @@ const useDistrictSchoolsQuery = (districtId, queryOptions = undefined) => {
   const queryConditions = [() => !!toValue(districtId), () => claimsLoaded.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
+  // Fields to select for the query.
+  const select = ['name', 'id', 'tags', 'currentActivationCode', 'lowGrade'];
+
   return useQuery({
     queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, districtId],
-    queryFn: () => orgFetcher(FIRESTORE_COLLECTIONS.SCHOOLS, districtId, isSuperAdmin, administrationOrgs),
+    queryFn: () => orgFetcher(FIRESTORE_COLLECTIONS.SCHOOLS, districtId, isSuperAdmin, administrationOrgs, select),
     enabled: isQueryEnabled,
     ...options,
   });
