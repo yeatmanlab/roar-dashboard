@@ -8,6 +8,7 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 /**
  * District query.
  *
+ * @param {String} districtId – The ID of the district to fetch.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */

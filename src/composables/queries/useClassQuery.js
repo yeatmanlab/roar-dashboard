@@ -10,7 +10,7 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  *
  * Query designed to fetch a single class record by its ID.
  *
- * @param {ref<String>} classId – The ID of the school to fetch.
+ * @param {String} classId – The ID of the class to fetch.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */

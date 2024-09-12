@@ -10,7 +10,7 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  *
  * Query designed to fetch a single group record by its ID.
  *
- * @param {ref<String>} groupId – The ID of the group to fetch.
+ * @param {String} groupId – The ID of the group to fetch.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.
  * @returns {UseQueryResult} The TanStack query result.
  */
