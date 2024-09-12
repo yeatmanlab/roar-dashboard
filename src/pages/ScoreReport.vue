@@ -307,10 +307,9 @@ import useAdministrationsQuery from '@/composables/queries/useAdministrationsQue
 import useDistrictQuery from '@/composables/queries/useDistrictQuery';
 import useSchoolQuery from '@/composables/queries/useSchoolQuery';
 import useClassQuery from '@/composables/queries/useClassQuery';
+import useGroupQuery from '@/composables/queries/useGroupQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
-import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
-import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -474,8 +473,7 @@ const orgQuery = computed(() => {
     case SINGULAR_ORG_TYPES.CLASSES:
       return useClassQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.GROUPS:
-      throw new Error('Groups are not yet supported in this report.');
-    // return useGroupsQuery(props.orgId, queryOptions)
+      return useGroupQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.FAMILIES:
       throw new Error('Families are not yet supported in this report.');
     // return useFamiliesQuery(props.orgId, queryOptions)
