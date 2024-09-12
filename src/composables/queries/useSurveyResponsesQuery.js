@@ -1,8 +1,8 @@
-import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
 import { fetchSubcollection } from '@/helpers/query/utils';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { SURVEY_RESPONSES_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
@@ -16,10 +16,8 @@ const useSurveyResponsesQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
-  const isQueryEnabled = computed(() => !!roarUid.value && (toValue(queryOptions?.enabled) ?? true));
-
-  const options = queryOptions ? { ...queryOptions } : {};
-  delete options.enabled;
+  const queryConditions = [() => !!roarUid.value];
+  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
     queryKey: [SURVEY_RESPONSES_QUERY_KEY],

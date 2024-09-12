@@ -1,7 +1,7 @@
-import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { getUserAssignments } from '@/helpers/query/assignments';
 import { USER_ASSIGNMENTS_QUERY_KEY } from '@/constants/queryKeys';
 
@@ -15,10 +15,8 @@ const useUserAssignmentsQuery = (queryOptions = undefined) => {
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
 
-  const isQueryEnabled = computed(() => !!roarUid.value && (toValue(queryOptions?.enabled) ?? true));
-
-  const options = queryOptions ? { ...queryOptions } : {};
-  delete options.enabled;
+  const queryConditions = [() => !!roarUid.value];
+  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
     queryKey: [USER_ASSIGNMENTS_QUERY_KEY],

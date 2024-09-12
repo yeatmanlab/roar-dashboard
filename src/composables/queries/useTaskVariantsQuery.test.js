@@ -27,9 +27,9 @@ describe('useTasksQuery', () => {
     queryClient?.clear();
   });
 
-  it('should call useQuery with correct parameters', () => {
+  it('should call query with correct parameters', () => {
     const fetchRegisteredVariants = false;
-    const queryOptions = { enabled: false };
+    const queryOptions = { enabled: true };
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -40,8 +40,10 @@ describe('useTasksQuery', () => {
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
       queryKey: ['task-variants'],
       queryFn: expect.any(Function),
-      enabled: false,
+      enabled: true,
     });
+
+    expect(variantsFetcher).toHaveBeenCalledWith(fetchRegisteredVariants);
   });
 
   it('should set the alternate query key if fetching registered variants only', () => {
@@ -59,15 +61,5 @@ describe('useTasksQuery', () => {
       queryFn: expect.any(Function),
       enabled: false,
     });
-  });
-
-  it('should call useTasksQuery with correct parameters', async () => {
-    const fetchRegisteredVariants = false;
-
-    withSetup(() => useTaskVariantsQuery(fetchRegisteredVariants), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    expect(variantsFetcher).toHaveBeenCalledWith(fetchRegisteredVariants);
   });
 });

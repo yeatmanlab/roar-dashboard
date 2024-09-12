@@ -1,7 +1,8 @@
-import { computed, ref, nextTick } from 'vue';
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
+import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import { useAuthStore } from '@/store/auth';
 import { getUserAssignments } from '@/helpers/query/assignments';
@@ -32,9 +33,12 @@ describe('useUserAssignmentsQuery', () => {
     queryClient?.clear();
   });
 
-  it('should call useQuery with correct parameters', () => {
+  it('should call query with correct parameters', () => {
+    const mockUserId = nanoid();
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = 'mock-roar-id-1';
+    authStore.roarUid = mockUserId;
+    authStore.userQueryKeyIndex = 1;
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -47,32 +51,24 @@ describe('useUserAssignmentsQuery', () => {
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
-        __v_isRef: true,
-        __v_isReadonly: true,
       }),
       refetchOnWindowFocus: 'always',
     });
-  });
 
-  it('should call getUserAssignments with correct parameters', () => {
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = 'mock-roar-id-1';
-
-    withSetup(() => useUserAssignmentsQuery(), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    expect(getUserAssignments).toHaveBeenCalledWith('mock-roar-id-1');
+    expect(getUserAssignments).toHaveBeenCalledWith(mockUserId);
   });
 
   it('should correctly control the enabled state of the query', async () => {
+    const mockUserId = nanoid();
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = 'mock-roar-id-1';
+    authStore.roarUid = mockUserId;
+    authStore.userQueryKeyIndex = 1;
 
     const enableQuery = ref(false);
 
     const queryOptions = {
-      enabled: computed(() => enableQuery.value),
+      enabled: enableQuery,
     };
 
     withSetup(() => useUserAssignmentsQuery(queryOptions), {
@@ -85,7 +81,6 @@ describe('useUserAssignmentsQuery', () => {
       enabled: expect.objectContaining({
         _value: false,
         __v_isRef: true,
-        __v_isReadonly: true,
       }),
       refetchOnWindowFocus: 'always',
     });
@@ -95,6 +90,61 @@ describe('useUserAssignmentsQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(getUserAssignments).toHaveBeenCalled();
+    expect(getUserAssignments).toHaveBeenCalledWith(mockUserId);
+  });
+
+  it('should only fetch data if the uid is available', async () => {
+    const mockUserId = nanoid();
+
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = null;
+    authStore.userQueryKeyIndex = 1;
+
+    const queryOptions = { enabled: true };
+
+    withSetup(() => useUserAssignmentsQuery(queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user-assignments'],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+      refetchOnWindowFocus: 'always',
+    });
+
+    expect(getUserAssignments).not.toHaveBeenCalled();
+
+    authStore.roarUid = mockUserId;
+    await nextTick();
+
+    expect(getUserAssignments).toHaveBeenCalledWith(mockUserId);
+  });
+
+  it('should not let queryOptions override the internally computed value', async () => {
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = null;
+    authStore.userQueryKeyIndex = 1;
+
+    const queryOptions = { enabled: true };
+
+    withSetup(() => useUserAssignmentsQuery(queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user-assignments'],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+        __v_isRef: true,
+      }),
+      refetchOnWindowFocus: 'always',
+    });
+
+    expect(getUserAssignments).not.toHaveBeenCalled();
   });
 });

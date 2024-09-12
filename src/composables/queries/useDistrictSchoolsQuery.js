@@ -2,6 +2,7 @@ import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { orgFetcher } from '@/helpers/query/orgs';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import { DISTRICT_SCHOOLS_QUERY_KEY } from '@/constants/queryKeys';
@@ -28,13 +29,14 @@ const useDistrictSchoolsQuery = (districtId, queryOptions = undefined) => {
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const isQueryEnabled = computed(() => !!toValue(districtId) && claimsLoaded.value && (queryOptions?.enabled ?? true));
+  const queryConditions = [() => !!toValue(districtId), () => claimsLoaded.value];
+  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
     queryKey: [DISTRICT_SCHOOLS_QUERY_KEY, districtId],
     queryFn: () => orgFetcher(FIRESTORE_COLLECTIONS.SCHOOLS, districtId, isSuperAdmin, administrationOrgs),
     enabled: isQueryEnabled,
-    ...queryOptions,
+    ...options,
   });
 };
 

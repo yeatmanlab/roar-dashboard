@@ -1,6 +1,7 @@
 import { computed, ref, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { administrationPageFetcher } from '@/helpers/query/administrations';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUserType from '@/composables/useUserType';
@@ -27,7 +28,8 @@ const useAdministrationsListQuery = (orderBy, testAdministrationsOnly = false, q
 
   // Ensure all necessary data is loaded before enabling the query.
   const claimsLoaded = computed(() => !_isEmpty(userClaims?.value?.claims));
-  const isQueryEnabled = computed(() => claimsLoaded.value && (queryOptions?.enabled ?? true));
+  const queryConditions = [() => claimsLoaded.value];
+  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   // Set pagination data to fetch all administrations since pagination is not yet supported.
   const currentPage = ref(0);
@@ -53,7 +55,7 @@ const useAdministrationsListQuery = (orderBy, testAdministrationsOnly = false, q
         testAdministrationsOnly,
       ),
     enabled: isQueryEnabled,
-    ...queryOptions,
+    ...options,
   });
 };
 
