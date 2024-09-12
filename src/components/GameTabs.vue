@@ -31,6 +31,25 @@
             <div class="roar-game-description">
               <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
             </div>
+            
+            <div class="mt-4">
+              <div class="flex align-items-center mb-2">
+                <span class="mr-2 w-4">General</span>
+                <PvProgressBar :value="50" class="flex-grow-1" />
+              </div>
+
+              <div class="flex align-items-center mb-2">
+                <span class="mr-2 w-4">Child A</span>
+                <PvProgressBar :value="50" class="flex-grow-1" />
+              </div>
+
+              <div class="flex align-items-center mb-2">
+                <span class="mr-2 w-4">Child B</span>
+                <PvProgressBar :value="50" class="flex-grow-1" />
+              </div>
+            </div>
+
+
             <div class="roar-game-meta">
               <PvTag
                 v-for="(items, metaIndex) in game.taskData.meta"

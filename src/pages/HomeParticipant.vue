@@ -108,6 +108,9 @@ import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import { isLevante } from '@/helpers';
 import useSurveyResponses from '@/composables/useSurveyResponses/useSurveyResponses';
 import { useI18n } from 'vue-i18n';
+import axios from 'axios';
+import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
+import { Model } from 'survey-core';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -312,8 +315,70 @@ const {
 
 const { data: surveyResponsesData } = useSurveyResponses(undefined, isLevante);
 
+
+
+const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyData } = useQuery({
+  queryKey: ['surveys'],
+  queryFn: async () => {
+    const userType = userData.value.userType;
+
+    if (userType === 'student') {
+      const res = await axios.get(`${LEVANTE_BUCKET_URL}/child_survey.json`);
+      return {
+        general: res.data,
+      };
+    } else if (userType === 'teacher') {
+      const resGeneral = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_general.json`);
+      const resClassroom = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_classroom.json`);
+      return {
+        general: resGeneral.data,
+        specific: resClassroom.data,
+      };
+    } else {
+      // parent
+      const resFamily = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_family.json`);
+      const resChild = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_child.json`);
+      return {
+        general: resFamily.data,
+        specific: resChild.data,
+      };
+    }
+  },
+  enabled: initialized && isLevante && userData,
+  staleTime: Infinity,
+});
+
+watch(surveyData, (newVal) => {
+  if (newVal) {
+    const surveyInstance = new Model(newVal.general);
+
+    if (userData.value.userType === 'parent') {
+      // add on the child specific questions
+      userData.value.childIds.forEach((childId) => {
+        // Figure out how to insert the child specific info into the survey
+        // Need to fetch child data
+        surveyInstance.addPanel(newVal.specific[childId]);
+      });
+
+
+    } else if (userData.value.userType === 'teacher') {
+      gameStore.setSurveys(newVal);
+    }
+
+    gameStore.setSurveys(newVal);
+
+
+  }
+});
+
 const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
+  const commonLoading = isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
+
+  if (isLevante) {
+    return commonLoading || isLoadingSurvey.value;
+  } else {
+    return commonLoading;
+  }
 });
 
 const isFetching = computed(() => {

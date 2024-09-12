@@ -10,6 +10,7 @@ export const useGameStore = () => {
         requireRefresh: false,
         // LEVANTE
         isSurveyCompleted: false,
+        surveys: {},
       };
     },
     actions: {
@@ -18,6 +19,9 @@ export const useGameStore = () => {
       },
       setSurveyCompleted() {
         this.isSurveyCompleted = true;
+      },
+      setSurveys(surveys) {
+        this.surveys = surveys;
       },
     },
     persist: {
