@@ -9,6 +9,7 @@ export const GROUPS_QUERY_KEY = 'groups';
 export const LEGAL_DOCS_QUERY_KEY = 'legal-docs';
 export const ORG_USERS_QUERY_KEY = 'org-users';
 export const ORGS_TABLE_QUERY_KEY = 'orgs-table';
+export const SCHOOL_QUERY_KEY = 'school';
 export const SCHOOL_CLASSES_QUERY_KEY = 'school-classes';
 export const SURVEY_RESPONSES_QUERY_KEY = 'survey-responses';
 export const TASKS_QUERY_KEY = 'tasks';
