@@ -307,7 +307,7 @@ import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useDistrictQuery from '@/composables/queries/useDistrictQuery';
 import useSchoolQuery from '@/composables/queries/useSchoolQuery';
-import useClassQuery from '@/composables/queries/useClassQuery';
+import useClassesQuery from '@/composables/queries/useClassesQuery';
 import useGroupQuery from '@/composables/queries/useGroupQuery';
 import useFamilyQuery from '@/composables/queries/useFamilyQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
@@ -472,7 +472,10 @@ const orgQuery = computed(() => {
     case SINGULAR_ORG_TYPES.SCHOOLS:
       return useSchoolQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.CLASSES:
-      return useClassQuery(props.orgId, queryOptions);
+      return useClassesQuery([props.orgId], {
+        ...queryOptions,
+        select: (data) => data[0],
+      });
     case SINGULAR_ORG_TYPES.GROUPS:
       return useGroupQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.FAMILIES:
