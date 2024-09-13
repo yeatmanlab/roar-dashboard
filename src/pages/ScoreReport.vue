@@ -46,7 +46,7 @@
                     @click="exportData({ includeProgress: true })"
                   />
                   <PvButton
-                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+                    class="flex flex-row p-2 text-sm bg-primary text-white border-none border-round mb-2 h-2rem text-sm hover:bg-red-900"
                     :icon="!exportLoading ? 'pi pi-download mr-2' : 'pi pi-spin pi-spinner mr-2'"
                     :disabled="exportLoading"
                     label="Export To Pdf"
@@ -604,7 +604,6 @@ const getScoresAndSupportFromAssessment = ({
   };
 };
 
-// This function returns the progress data of a user
 const computedProgressData = computed(() => {
   if (!assignmentData.value) return [];
   return assignmentData.value.map(({ assignment, user }) => {
@@ -621,7 +620,7 @@ const computedProgressData = computed(() => {
       return acc;
     }, {});
     return {
-      user: { username: user.username },
+      username: user.username, // Assuming user contains a `username` property
       progress,
     };
   });
@@ -913,19 +912,27 @@ const viewOptions = ref([
 ]);
 
 /**
- * Creates and formats the data for exporting user and score information to a CSV file.
+ * Creates and formats the data for exporting user, score, and optionally, progress information to a CSV file.
  *
  * @NOTE This function generates a structured dataset based on user and score data, with optional inclusion of progress
- * data. It ensures that the data is organized appropriately for export, with reliability checks and task-specific
- * formatting.
+ * data. It ensures that the data is organized appropriately for export, including task-specific formatting and reliability checks.
+ * If progress data is included, it appends relevant progress information per task.
  *
  * @param {Object[]} rows - The array of user data and associated scores.
- * @param {Object} rows[].user - The user object containing user details.
- * @param {Object} rows[].scores - The scores object containing task-related score data for the user.
- * @param {boolean} [includeProgress=false] - Flag indicating whether to include progress data in the export.
+ * @param {Object} rows[].user - The user object containing user details such as username, email, first name, and last name.
+ * @param {Object} rows[].scores - The scores object containing task-related score data for the user. It supports different
+ * score types (percent correct, raw scores, standard scores, etc.) based on task configuration.
+ * @param {boolean} [includeProgress=false] - Flag indicating whether to include task progress data in the export. If true,
+ * progress data will be fetched and appended for each task per user.
  *
- * @returns {Object[]} - The formatted data ready for CSV export, optionally including progress information.
+ * @returns {Object[]} - The formatted data array, where each object represents a user and their associated scores.
+ * This data is ready for CSV export and optionally includes progress information.
+ *
+ * @NOTE This function also checks for the user's role (e.g., super admin) to determine additional fields (such as PID),
+ * handles task-specific score presentation based on configuration, and validates task reliability using engagement flags.
+ * If scores are found unreliable, the reliability reason is included. If the task is incomplete, it is marked as such.
  */
+
 const createExportData = ({ rows, includeProgress = false }) => {
   const computedExportData = _map(rows, ({ user, scores }) => {
     let tableRow = {
@@ -948,6 +955,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
       const score = scores[taskId];
       const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
 
+      // Add task-specific score information
       if (tasksToDisplayPercentCorrect.includes(taskId)) {
         tableRow[`${taskName} - Percent Correct`] = score.percentCorrect;
         tableRow[`${taskName} - Num Attempted`] = score.numAttempted;
@@ -968,6 +976,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
         tableRow[`${taskName} - Support Level`] = score.supportLevel;
       }
 
+      // Add reliability information
       if (score.reliable !== undefined && !score.reliable && score.engagementFlags !== undefined) {
         const engagementFlags = Object.keys(score.engagementFlags);
         if (engagementFlags.length > 0) {
@@ -986,44 +995,18 @@ const createExportData = ({ rows, includeProgress = false }) => {
       } else {
         tableRow[`${taskName} - Reliability`] = 'Reliable';
       }
+
+      // Add progress immediately after reliability if includeProgress is true
+      if (includeProgress) {
+        const progressRow = computedProgressData.value.find((progress) => progress.username === tableRow.Username);
+        if (progressRow && progressRow.progress[taskId]) {
+          tableRow[`${taskName} - Progress`] = progressRow.progress[taskId].value;
+        }
+      }
     }
 
     return tableRow;
   });
-
-  if (includeProgress) {
-    const combinedData = computedExportData.map((exportRow) => {
-      const progressRow = computedProgressData.value.find((progress) => progress.user.username === exportRow.Username);
-
-      if (progressRow) {
-        for (const taskId in progressRow.progress) {
-          const taskName = tasksDictionary.value[taskId]?.publicName ?? taskId;
-          exportRow[`${taskName} - Progress`] = progressRow.progress[taskId].value;
-        }
-      }
-
-      return exportRow;
-    });
-
-    const sortedCombinedData = combinedData.map((row) => {
-      const sortedRow = {};
-      const taskKeys = Object.keys(row)
-        .filter((key) => key.includes('-'))
-        .sort();
-      const nonTaskKeys = Object.keys(row).filter((key) => !key.includes('-'));
-
-      nonTaskKeys.forEach((key) => {
-        sortedRow[key] = row[key];
-      });
-      taskKeys.forEach((key) => {
-        sortedRow[key] = row[key];
-      });
-
-      return sortedRow;
-    });
-
-    return sortedCombinedData;
-  }
 
   return computedExportData;
 };
