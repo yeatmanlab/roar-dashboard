@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, toValue } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
@@ -46,7 +46,7 @@ describe('useAdministrationsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['administrations', mockAdministrationIds],
+      queryKey: ['administrations', toValue(mockAdministrationIds)],
       queryFn: expect.any(Function),
     });
 
