@@ -111,6 +111,11 @@ import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import { Model } from 'survey-core';
+import { Converter } from 'showdown';
+import { restoreSurveyData, saveSurveyData, saveFinalSurveyData, showAndPlaceAudioButton, fetchAudioLinks, getParsedLocale, fetchBuffer } from '@/helpers/survey';
+import { useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import { useQueryClient } from '@tanstack/vue-query';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -118,6 +123,9 @@ const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
 const { locale } = useI18n();
+const router = useRouter();
+const toast = useToast();
+const queryClient = useQueryClient();
 
 let unsubscribe;
 const initialized = ref(false);
@@ -316,6 +324,7 @@ const {
 const { data: surveyResponsesData } = useSurveyResponses(undefined, isLevante);
 
 
+const audioLinkMap = ref({});
 
 const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyData } = useQuery({
   queryKey: ['surveys'],
@@ -324,6 +333,7 @@ const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyDa
 
     if (userType === 'student') {
       const res = await axios.get(`${LEVANTE_BUCKET_URL}/child_survey.json`);
+      audioLinkMap.value = await fetchAudioLinks('child-survey');
       return {
         general: res.data,
       };
@@ -344,30 +354,94 @@ const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyDa
       };
     }
   },
-  enabled: initialized && isLevante && userData,
-  staleTime: Infinity,
+  enabled: initialized && isLevante && userData?.value?.userType !== 'admin',
+  staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 
-watch(surveyData, (newVal) => {
+watch(surveyData, async (newVal) => {
   if (newVal) {
     const surveyInstance = new Model(newVal.general);
 
+    // get total number of questions in the survey
+    const numGeneralQuestions = surveyInstance.getAllQuestions().length;
+
     if (userData.value.userType === 'parent') {
       // add on the child specific questions
-      userData.value.childIds.forEach((childId) => {
-        // Figure out how to insert the child specific info into the survey
-        // Need to fetch child data
-        surveyInstance.addPanel(newVal.specific[childId]);
+      const childSpecificQuestions = JSON.parse(newVal.specific);
+      
+      const numberOfChildSpecificPages = childSpecificQuestions.pages.length;
+
+      // add on the child specific questions
+      userData.value.childIds.forEach(() => {
+        // TODO: add in child data
+        childSpecificQuestions.pages.forEach((page, i) => {
+          surveyInstance.addNewPage(page);
+
+          // after adding the last page, calculate the number of questions for the child specific questions
+          if (i === numberOfChildSpecificPages - 1) {
+            const numberOfChildSpecificQuestions = surveyInstance.getAllQuestions().length - numGeneralQuestions;
+            gameStore.setSurveyQuestions(numGeneralQuestions, numberOfChildSpecificQuestions);
+            console.log('Number of child specific questions: ', numberOfChildSpecificQuestions);
+          }
+        });
       });
-
-
     } else if (userData.value.userType === 'teacher') {
-      gameStore.setSurveys(newVal);
+      const classroomSpecificQuestions = JSON.parse(newVal.specific);
+      
+      const numberOfClassroomSpecificPages = classroomSpecificQuestions.pages.length;
+
+      // add on the classroom specific questions
+      classroomSpecificQuestions.pages.forEach((page, i) => {
+        // TODO: Add in class data
+        surveyInstance.addNewPage(page);
+
+        // after adding the last page, calculate the number of questions for the classroom specific questions
+        if (i === numberOfClassroomSpecificPages - 1) {
+          const numberOfClassroomSpecificQuestions = surveyInstance.getAllQuestions().length - numGeneralQuestions;
+          gameStore.setSurveyQuestions(numGeneralQuestions, numberOfClassroomSpecificQuestions);
+          console.log('Number of classroom specific questions: ', numberOfClassroomSpecificQuestions);
+        }
+      });
     }
 
-    gameStore.setSurveys(newVal);
+    surveyInstance.locale = locale.value;
+    fetchBuffer(getParsedLocale(locale.value));
+    
+    const converter = new Converter();
+    surveyInstance.onTextMarkdown.add(function (survey, options) {
+      // Convert Markdown to HTML
+      let str = converter.makeHtml(options.text);
+      // Remove root paragraphs <p></p>
+      str = str.substring(3);
+      str = str.substring(0, str.length - 4);
+      // Set HTML markup to render
+      options.html = str;
+    });
 
+    surveyInstance.onAfterRenderPage.add((__, { htmlElement }) => {
+      const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
+      if (gameStore.currentSurveyAudioSource) {
+        gameStore.currentSurveyAudioSource.stop();
+      }
+      questionElements.forEach((el) => {
+        const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
+        showAndPlaceAudioButton({playAudioButton, el});
+      });
+    });
 
+    // Restore survey data from localStorage
+    // uid, selectedAdmin, surveyResponsesData
+    console.log('surveyResponsesData', surveyResponsesData.value);
+    await restoreSurveyData({ surveyInstance, uid: uid.value, selectedAdmin: selectedAdmin.value.id, surveyResponsesData: surveyResponsesData.value });
+    // Save survey results when users change a question value or switch to the next page
+    console.log('uid', uid.value);
+    surveyInstance.onValueChanged.add(() => saveSurveyData({ survey: surveyInstance, roarfirekit, uid: uid.value, selectedAdmin: selectedAdmin.value.id }));
+    surveyInstance.onCurrentPageChanged.add(() => saveSurveyData({ survey: surveyInstance, roarfirekit, uid: uid.value, selectedAdmin: selectedAdmin.value.id }));
+    // Need to have this as well to save all the responses, even if the user doesn't respond to all the questions
+    surveyInstance.onComplete.add((sender) => saveFinalSurveyData({ sender, roarfirekit, uid: uid.value, gameStore, router, toast, queryClient }));
+
+    gameStore.setSurvey(surveyInstance);
+    if (userData.value.userType === 'student') gameStore.setSurveyQuestions(numGeneralQuestions);
   }
 });
 
@@ -428,17 +502,17 @@ const assessments = computed(() => {
 
     if (authStore?.userData.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
-      if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
-        // Find survey doc for the current administration
-        const surveyResponse = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
-        if (surveyResponse) {
-          fetchedAssessments.forEach((assessment) => {
-            if (assessment.taskId === 'survey') {
-            assessment.completedOn = new Date();
-          }
-          });
-        }
-      }
+      // if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
+      //   // Find survey doc for the current administration
+      //   const surveyResponse = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
+      //   if (surveyResponse) {
+      //     fetchedAssessments.forEach((assessment) => {
+      //       if (assessment.taskId === 'survey') {
+      //       assessment.completedOn = new Date();
+      //     }
+      //     });
+      //   }
+      // }
     }
 
     return fetchedAssessments;

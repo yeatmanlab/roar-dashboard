@@ -8,9 +8,16 @@ export const useGameStore = () => {
       return {
         selectedAdmin: undefined,
         requireRefresh: false,
-        // LEVANTE
+        // LEVANTE -------------
         isSurveyCompleted: false,
-        surveys: {},
+        // the survey instance
+        survey: null,
+        numSurveyGeneralQuestions: 0,
+        numSurveySpecificQuestions: 0,
+        currentSurveyAudioSource: null,
+        isSavingSurveyResponses: false,
+        surveyAudioPlayerBuffers: {},
+        surveyAudioLoading: false,
       };
     },
     actions: {
@@ -20,8 +27,24 @@ export const useGameStore = () => {
       setSurveyCompleted() {
         this.isSurveyCompleted = true;
       },
-      setSurveys(surveys) {
-        this.surveys = surveys;
+      setSurvey(survey) {
+        this.survey = survey;
+      },
+      setSurveyQuestions(numGeneralQuestions, numSpecificQuestions = 0) {
+        this.numSurveyGeneralQuestions = numGeneralQuestions;
+        this.numSurveySpecificQuestions = numSpecificQuestions;
+      },
+      setCurrentSurveyAudioSource(audioSource) {
+        this.currentSurveyAudioSource = audioSource;
+      },
+      setIsSavingSurveyResponses(isSaving) {
+        this.isSavingSurveyResponses = isSaving;
+      },
+      setSurveyAudioPlayerBuffers(buffers) {
+        this.surveyAudioPlayerBuffers = buffers;
+      },
+      setSurveyAudioLoading(loading) {
+        this.surveyAudioLoading = loading;
       },
     },
     persist: {
