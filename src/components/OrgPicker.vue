@@ -98,7 +98,7 @@ import { useAuthStore } from '@/store/auth';
 import { orgFetcher, orgFetchAll } from '@/helpers/query/orgs';
 import { orderByDefault } from '@/helpers/query/utils';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 
 const initialized = ref(false);
 const authStore = useAuthStore();
@@ -206,7 +206,7 @@ const activeOrgType = computed(() => {
 
 const claimsLoaded = computed(() => initialized.value && !isLoadingClaims.value);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsQuery({
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
   enabled: claimsLoaded,
 });
 

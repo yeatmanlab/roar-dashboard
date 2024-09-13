@@ -7,9 +7,7 @@ import { CLASSES_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 /**
- * Classes Query
- *
- * Query designed to fetch class records by ID.
+ * Classes query.
  *
  * @param {Array} classId – The array of class IDs to fetch.
  * @param {QueryOptions|undefined} queryOptions – Optional TanStack query options.

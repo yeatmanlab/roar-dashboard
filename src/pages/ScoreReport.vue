@@ -305,7 +305,7 @@ import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useDistrictQuery from '@/composables/queries/useDistrictQuery';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useSchoolQuery from '@/composables/queries/useSchoolQuery';
 import useClassesQuery from '@/composables/queries/useClassesQuery';
 import useGroupQuery from '@/composables/queries/useGroupQuery';
@@ -465,17 +465,15 @@ const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
 });
 
 const orgQuery = computed(() => {
-  const queryOptions = { enabled: initialized };
+  const queryOptions = { enabled: initialized, select: (data) => data[0] };
+
   switch (props.orgType) {
     case SINGULAR_ORG_TYPES.DISTRICTS:
-      return useDistrictQuery(props.orgId, queryOptions);
+      return useDistrictsQuery([props.orgId], queryOptions);
     case SINGULAR_ORG_TYPES.SCHOOLS:
       return useSchoolQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.CLASSES:
-      return useClassesQuery([props.orgId], {
-        ...queryOptions,
-        select: (data) => data[0],
-      });
+      return useClassesQuery([props.orgId], queryOptions);
     case SINGULAR_ORG_TYPES.GROUPS:
       return useGroupQuery(props.orgId, queryOptions);
     case SINGULAR_ORG_TYPES.FAMILIES:
