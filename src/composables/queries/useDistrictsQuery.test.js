@@ -28,7 +28,7 @@ describe('useDistrictsQuery', () => {
     queryClient?.clear();
   });
 
-  it('should call query with correct parameters when fetching a specific district', () => {
+  it('should call query with correct parameters', () => {
     const districtIds = nanoid();
 
     vi.spyOn(VueQuery, 'useQuery');

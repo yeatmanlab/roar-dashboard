@@ -309,7 +309,7 @@ import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
 import useClassesQuery from '@/composables/queries/useClassesQuery';
 import useGroupsQuery from '@/composables/queries/useGroupsQuery';
-import useFamilyQuery from '@/composables/queries/useFamilyQuery';
+import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import {
@@ -477,7 +477,7 @@ const orgQuery = computed(() => {
     case SINGULAR_ORG_TYPES.GROUPS:
       return useGroupsQuery([props.orgId], queryOptions);
     case SINGULAR_ORG_TYPES.FAMILIES:
-      return useFamilyQuery(props.orgId, queryOptions);
+      return useFamiliesQuery([props.orgId], queryOptions);
     default:
       throw new Error(`Unsupported org type: ${props.orgType}`);
   }

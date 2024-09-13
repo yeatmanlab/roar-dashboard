@@ -28,7 +28,7 @@ describe('useGroupsQuery', () => {
     queryClient?.clear();
   });
 
-  it('should call query with correct parameters when fetching a specific group', () => {
+  it('should call query with correct parameters', () => {
     const groupIds = [nanoid(), nanoid()];
 
     vi.spyOn(VueQuery, 'useQuery');
