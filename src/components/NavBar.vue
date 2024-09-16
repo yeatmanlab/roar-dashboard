@@ -3,7 +3,7 @@
     <nav class="flex flex-row align-items-center justify-content-between w-full">
       <div id="navBarRightEnd" class="flex flex-row align-items-center justify-content-start w-full gap-1">
         <div class="flex align-items-center justify-content-center w-full">
-          <PvMenubar :model="computedItems" class="w-full">
+          <PvMenubar :model="computedItems" class="w-full" data-cy="menu-bar">
             <template #start>
               <router-link :to="{ path: APP_ROUTES.HOME }">
                 <div class="navbar-logo mx-3">

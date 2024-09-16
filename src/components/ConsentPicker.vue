@@ -29,7 +29,14 @@
       </div>
     </div>
     <div class="flex justify-content-center mt-2">
-      <PvCheckbox v-model="noConsent" :binary="true" input-id="no-consent" class="flex" value="noConsent" />
+      <PvCheckbox
+        v-model="noConsent"
+        :binary="true"
+        input-id="no-consent"
+        class="flex"
+        value="noConsent"
+        data-cy="checkbox-no-consent"
+      />
       <label class="ml-2 flex text-center" for="no-consent"
         >This administration does not require consent or assent forms</label
       >
