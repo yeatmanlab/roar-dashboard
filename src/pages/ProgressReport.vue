@@ -175,6 +175,7 @@ import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationsStatsQuery from '@/composables/queries/useAdministrationsStatsQuery';
 
 const authStore = useAuthStore();
 
@@ -251,15 +252,9 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
   select: (data) => data[0],
 });
 
-const { data: adminStats } = useQuery({
-  queryKey: ['administrationStats', uid, props.administrationId],
-  queryFn: () => fetchDocById('administrations', `${props.administrationId}/stats/total`),
-  keepPreviousData: true,
+const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000,
-  onSuccess: (data) => {
-    console.log(data);
-  },
+  select: (data) => data[0],
 });
 
 const { data: orgInfo } = useQuery({

@@ -1,5 +1,6 @@
 export const ADMINISTRATIONS_QUERY_KEY = 'administrations';
 export const ADMINISTRATIONS_LIST_QUERY_KEY = 'administrations-list';
+export const ADMINISTRATIONS_STATS_QUERY_KEY = 'administrations-stats';
 export const ADMINISTRATION_ASSIGNMENTS_QUERY_KEY = 'administration-assignments';
 export const CLASSES_QUERY_KEY = 'classes';
 export const DISTRICTS_QUERY_KEY = 'districts';
