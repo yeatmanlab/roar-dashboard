@@ -332,10 +332,12 @@ const computedProgressData = computed(() => {
     if (schoolId) {
       schoolName = schoolNameDictionary.value[schoolId];
     }
+
+
     const currRow = {
       user: {
         username: user.username,
-        email: user.email,
+        email: user.email || assignment.userData.email,
         userId: user.userId,
         firstName: user?.name?.first || '',
         lastName: user?.name?.last || '',
@@ -481,7 +483,8 @@ const progressReportColumns = computed(() => {
   }
 
   if (isLevante) {
-    tableColumns.push({ field: 'user.userId', header: 'User ID', dataType: 'text', sort: true, filter: true });
+    tableColumns.push({ field: 'user.userId', header: 'UID', dataType: 'text', sort: true, filter: true });
+    tableColumns.push({ field: 'user.email', header: 'Email', dataType: 'text', sort: true, filter: true });
   }
 
   if (props.orgType === 'district') {
