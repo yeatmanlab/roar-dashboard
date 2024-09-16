@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
@@ -26,6 +26,13 @@ describe('useDistrictsListQuery', () => {
   const mockUserClaims = ref({
     claims: {
       minimalAdminOrgs: ['mock-org-id-1', 'mock-org-id-2'],
+      super_admin: false,
+    },
+  });
+
+  const mockSuperAdminUserClaims = ref({
+    claims: {
+      minimalAdminOrgs: ['mock-org-id-3'],
       super_admin: true,
     },
   });
@@ -58,15 +65,19 @@ describe('useDistrictsListQuery', () => {
     expect(orgFetcher).toHaveBeenCalledWith(
       'districts',
       undefined,
-      expect.objectContaining({ value: true }),
+      expect.objectContaining({ value: false }),
       expect.objectContaining({ value: ['mock-org-id-1', 'mock-org-id-2'] }),
     );
   });
 
   it('should only fetch districts only once user claims are loaded', async () => {
-    vi.mocked(useUserClaimsQuery).mockReturnValue({ data: {}, isLoading: ref(true) });
+    const mockData = ref({});
+    const mockIsLoading = ref(true);
+
+    vi.mocked(useUserClaimsQuery).mockReturnValue({ data: mockData, isLoading: mockIsLoading });
 
     vi.spyOn(VueQuery, 'useQuery');
+    vi.spyOn(orgFetcher, 'mockImplementation');
 
     withSetup(() => useDistrictsListQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
@@ -81,6 +92,18 @@ describe('useDistrictsListQuery', () => {
     });
 
     expect(orgFetcher).not.toHaveBeenCalled();
+
+    mockData.value = mockSuperAdminUserClaims.value;
+    mockIsLoading.value = false;
+
+    await nextTick();
+
+    expect(orgFetcher).toHaveBeenCalledWith(
+      'districts',
+      undefined,
+      expect.objectContaining({ value: true }),
+      expect.objectContaining({ value: ['mock-org-id-3'] }),
+    );
   });
 
   it('should allow the query to be disabled via the passed query options', () => {
