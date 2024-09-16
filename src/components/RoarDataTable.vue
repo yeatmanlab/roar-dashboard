@@ -3,9 +3,9 @@
     <SkeletonTable />
   </div>
   <div v-else>
-    <div class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
+    <div v-if="props.allowFiltering || props.allowColumnSelection || props.allowExport" class="w-full gap-1 pt-1 flex justify-content-center align-items-center flex-wrap mt-3">
       <slot name="filterbar"></slot>
-      <span class="p-float-label my-3">
+      <span v-if="props.allowColumnSelection" class="p-float-label my-3">
         <PvMultiSelect
           id="ms-columns"
           v-tooltip.top="'Show and hide columns'"
@@ -19,7 +19,7 @@
         />
         <label for="ms-columns" class="view-label2">Select Columns</label>
       </span>
-      <span class="p-float-label my-3">
+      <span v-if="props.allowColumnSelection" class="p-float-label my-3">
         <PvMultiSelect
           id="ms-freeze"
           :model-value="frozenColumns"
@@ -33,7 +33,7 @@
         />
         <label for="ms-columns" class="view-label2">Freeze Columns</label>
       </span>
-      <span class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
+      <span v-if="props.allowExport" class="flex flex-row flex-wrap justify-content-end gap-2 max-h-3 export-wrapper">
         <PvButton
           v-tooltip.bottom="'Expand or Compress table rows'"
           text
@@ -42,7 +42,6 @@
           @click="toggleView"
         />
         <PvButton
-          v-if="allowExport"
           v-tooltip.bottom="
             `Export scores for ${selectedRows.length} student${
               selectedRows.length > 1 ? 's' : ''
@@ -55,7 +54,6 @@
           @click="exportCSV(true, $event)"
         />
         <PvButton
-          v-if="allowExport"
           v-tooltip.bottom="'Export all scores for all students to a CSV file for spreadsheet import.'"
           label="Export Whole Table"
           class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
@@ -615,6 +613,8 @@ const props = defineProps({
     default: false,
   },
   groupheaders: { type: Boolean, default: false },
+  allowFiltering: { type: Boolean, default: true },
+  allowColumnSelection: { type: Boolean, default: true },
 });
 
 const inputColumns = ref(props.columns);

@@ -116,6 +116,7 @@
                 />
               </router-link>
               <router-link
+                v-if="!isLevante"
                 :to="{
                   name: 'ScoreReport',
                   params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
@@ -162,6 +163,7 @@ import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import { isLevante } from '@/helpers';
 
 const router = useRouter();
 

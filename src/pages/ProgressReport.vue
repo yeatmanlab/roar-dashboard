@@ -18,7 +18,7 @@
             </div>
           </div>
         </div>
-        <div class="flex flex-row align-items-center gap-4">
+        <div v-if="!isLevante" class="flex flex-row align-items-center gap-4">
           <div class="uppercase text-sm text-gray-600">VIEW</div>
           <PvSelectButton
             v-model="reportView"
@@ -51,8 +51,8 @@
             >
               <div v-if="tasksDictionary[taskId]" class="text-lg font-bold text-gray-600 w-full">
                 {{ tasksDictionary[taskId]?.technicalName ?? taskId }}
-                <span v-if="tasksDictionary[taskId].name" class="font-light uppercase text-sm">
-                  ({{ tasksDictionary[taskId]?.publicName }})
+                <span v-if="tasksDictionary[taskId]?.publicName" class="font-light uppercase text-sm">
+                  ({{ tasksDictionary[taskId].publicName }})
                 </span>
               </div>
               <div v-else class="text-lg font-bold text-gray-600 w-full">
@@ -101,7 +101,7 @@
                 </div>
               </div>
             </div>
-            <div class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
+            <div v-if="!isLevante" class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
           </div>
         </div>
         <RoarDataTable
@@ -112,43 +112,47 @@
           :loading="isLoadingScores || isFetchingScores"
           :page-limit="pageLimit"
           data-cy="roar-data-table"
-          :allow-filtering="true"
+          :allow-filtering="!isLevante"
           :reset-filters="resetFilters"
+          :allow-export="!isLevante"
+          :allow-column-selection="!isLevante"
           @export-selected="exportSelected"
           @export-all="exportAll"
         >
           <template #filterbar>
-            <div v-if="schoolsInfo" class="flex flex-row gap-2">
-              <span class="p-float-label">
-                <PvMultiSelect
-                  id="ms-school-filter"
-                  v-model="filterSchools"
-                  style="width: 20rem; max-width: 25rem"
-                  :options="schoolsInfo"
-                  option-label="name"
-                  option-value="name"
-                  :show-toggle-all="false"
-                  selected-items-label="{0} schools selected"
-                  data-cy="filter-by-school"
-                />
-                <label for="ms-school-filter">Filter by School</label>
-              </span>
-            </div>
-            <div class="flex flex-row gap-2">
-              <span class="p-float-label">
-                <PvMultiSelect
-                  id="ms-grade-filter"
-                  v-model="filterGrades"
-                  style="width: 20rem; max-width: 25rem"
-                  :options="gradeOptions"
-                  option-label="label"
-                  option-value="value"
-                  :show-toggle-all="false"
-                  selected-items-label="{0} grades selected"
-                  data-cy="filter-by-grade"
-                />
-                <label for="ms-school-filter">Filter by Grade</label>
-              </span>
+            <div v-if="!isLevante">
+              <div v-if="schoolsInfo" class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    id="ms-school-filter"
+                    v-model="filterSchools"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="schoolsInfo"
+                    option-label="name"
+                    option-value="name"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} schools selected"
+                    data-cy="filter-by-school"
+                  />
+                  <label for="ms-school-filter">Filter by School</label>
+                </span>
+              </div>
+              <div class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    id="ms-grade-filter"
+                    v-model="filterGrades"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="gradeOptions"
+                    option-label="label"
+                    option-value="value"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} grades selected"
+                    data-cy="filter-by-grade"
+                  />
+                  <label for="ms-school-filter">Filter by Grade</label>
+                </span>
+              </div>
             </div>
           </template>
         </RoarDataTable>
@@ -172,6 +176,7 @@ import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import { isLevante } from '@/helpers';
 
 const authStore = useAuthStore();
 
@@ -332,8 +337,8 @@ const computedProgressData = computed(() => {
         username: user.username,
         email: user.email,
         userId: user.userId,
-        firstName: user.name.first,
-        lastName: user.name.last,
+        firstName: user?.name?.first || '',
+        lastName: user?.name?.last || '',
         grade: grade,
         assessmentPid: user.assessmentPid,
         schoolName: schoolName,
@@ -450,34 +455,34 @@ const progressReportColumns = computed(() => {
   if (assignmentData.value === undefined) return [];
 
   const tableColumns = [];
-  if (assignmentData.value.find((assignment) => assignment.user?.username)) {
-    tableColumns.push({
-      field: 'user.username',
-      header: 'Username',
-      dataType: 'text',
-      pinned: true,
-      sort: true,
-      filter: true,
-    });
-  }
-  if (assignmentData.value.find((assignment) => assignment.user?.email)) {
-    tableColumns.push({
-      field: 'user.email',
-      header: 'Email',
-      dataType: 'text',
-      pinned: true,
-      sort: true,
-      filter: true,
-    });
-  }
-  if (assignmentData.value.find((assignment) => assignment.user?.name?.first)) {
-    tableColumns.push({ field: 'user.firstName', header: 'First Name', dataType: 'text', sort: true, filter: true });
-  }
-  if (assignmentData.value.find((assignment) => assignment.user?.name?.last)) {
-    tableColumns.push({ field: 'user.lastName', header: 'Last Name', dataType: 'text', sort: true, filter: true });
+  const columnDefinitions = [
+    { field: 'user.username', header: 'Username', pinned: true },
+    { field: 'user.email', header: 'Email', pinned: true },
+    { field: 'user.firstName', header: 'First Name' },
+    { field: 'user.lastName', header: 'Last Name' }
+  ];
+
+  columnDefinitions.forEach(({ field, header, pinned }) => {
+    const path = field.split('.');
+    if (assignmentData.value.find(assignment => _get(assignment, path))) {
+      tableColumns.push({
+        field,
+        header,
+        dataType: 'text',
+        sort: true,
+        filter: true,
+        ...(pinned && { pinned: true })
+      });
+    }
+  });
+
+  if (!isLevante) {
+    tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
   }
 
-  tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
+  if (isLevante) {
+    tableColumns.push({ field: 'user.userId', header: 'User ID', dataType: 'text', sort: true, filter: true });
+  }
 
   if (props.orgType === 'district') {
     const schoolsMap = schoolsInfo.value?.reduce((acc, school) => {
@@ -494,7 +499,7 @@ const progressReportColumns = computed(() => {
     });
   }
 
-  if (authStore.isUserSuperAdmin) {
+  if (authStore.isUserSuperAdmin && !isLevante) {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
@@ -651,13 +656,13 @@ onMounted(async () => {
 .select-button .p-button:last-of-type:not(:only-of-type) {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
-  border-top-right-radius: 25rem;
-  border-bottom-right-radius: 25rem;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .select-button .p-button:first-of-type:not(:only-of-type) {
-  border-top-left-radius: 25rem;
-  border-bottom-left-radius: 25rem;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
