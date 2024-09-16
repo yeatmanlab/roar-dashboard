@@ -25,6 +25,11 @@ async function resetAssignmentDoc(assignmentRef, assignmentData) {
   await updateDoc(assignmentRef, assignmentData);
 }
 
+export async function signInAsSuperAdmin(firebaseAuth) {
+  const auth = getAuth(firebaseAuth);
+  await signInWithEmailAndPassword(auth, 'testsuperadmin1@roar-auth.com', '!roartestsuperadmin1');
+}
+
 export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) {
   cy.then(async () => {
     const userId = await getUserId(user, adminFirestore);
@@ -49,9 +54,22 @@ export async function deleteTestRuns(user, adminFirestore, assessmentFirestore) 
   });
 }
 
-export async function signInAsSuperAdmin(firebaseAuth) {
-  const auth = getAuth(firebaseAuth);
-  await signInWithEmailAndPassword(auth, 'testsuperadmin1@roar-auth.com', '!roartestsuperadmin1');
+export async function deleteTestAdmins(adminFirestore) {
+  const administrationsRef = collection(adminFirestore, 'administrations');
+  const q = query(administrationsRef, where('testData', '==', true));
+  const querySnapshot = await getDocs(q);
+  cy.log('Found', querySnapshot.size, 'test administrations.');
+
+  const regexSuper = /^Cypress Super Admin Test Administration \d{10}$/;
+  const regexPartner = /^Cypress Partner Admin Test Administration \d{10}$/;
+
+  for (const doc of querySnapshot.docs) {
+    const docData = doc.data();
+    if (regexSuper.test(docData.name || regexPartner.test(docData.name))) {
+      // await deleteDoc(doc.ref);
+      cy.log('Deleted test administration', doc.id, docData.name);
+    }
+  }
 }
 
 export const getOpenAdministrations = async (db) => {
