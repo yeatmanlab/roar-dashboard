@@ -10,6 +10,8 @@ const adminFirestore = getDevFirebase('admin').db;
 const assessmentAuth = getDevFirebase('assessment').auth;
 const assessmentFirestore = getDevFirebase('assessment').db;
 
+// This test is used to delete all test runs for all test users
+// Leaving this out of CI for now, as it has caused issues in the past with run IDs not being deleted properly
 describe('Delete Test Runs', () => {
   before(() => {
     signInAsSuperAdmin(adminAuth);
