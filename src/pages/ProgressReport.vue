@@ -2,7 +2,7 @@
   <main class="container main">
     <section class="main-body">
       <div class="flex justify-content-between align-items-center">
-        <div v-if="!isLoadingScores">
+        <div v-if="!isLoadingAssignments">
           <div class="flex flex-column align-items-start mb-4 gap-2">
             <div>
               <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
@@ -33,7 +33,7 @@
           </PvSelectButton>
         </div>
       </div>
-      <div v-if="isLoadingScores" class="loading-wrapper">
+      <div v-if="isLoadingAssignments" class="loading-wrapper">
         <AppSpinner style="margin: 1rem 0rem" />
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
@@ -109,7 +109,7 @@
           :data="filteredTableData"
           :columns="progressReportColumns"
           :total-records="filteredTableData?.length"
-          :loading="isLoadingScores || isFetchingScores"
+          :loading="isLoadingAssignments || isFetchingAssignments"
           :page-limit="pageLimit"
           data-cy="roar-data-table"
           :allow-filtering="true"
@@ -119,13 +119,13 @@
           @export-all="exportAll"
         >
           <template #filterbar>
-            <div v-if="schoolsInfo" class="flex flex-row gap-2">
+            <div v-if="districtSchoolsData" class="flex flex-row gap-2">
               <span class="p-float-label">
                 <PvMultiSelect
                   id="ms-school-filter"
                   v-model="filterSchools"
                   style="width: 20rem; max-width: 25rem"
-                  :options="schoolsInfo"
+                  :options="districtSchoolsData"
                   option-label="name"
                   option-value="name"
                   :show-toggle-all="false"
@@ -165,21 +165,22 @@ import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
 import { exportCsv } from '../helpers/query/utils';
-import { assignmentFetchAll } from '@/helpers/query/assignments';
-import { orgFetcher } from '@/helpers/query/orgs';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useAdministrationsStatsQuery from '@/composables/queries/useAdministrationsStatsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -237,15 +238,11 @@ const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
 
-// User Claims
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-// @TODO: Update to use useUserType composable
-const claimsLoaded = computed(() => !isLoadingClaims.value);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const { isSuperAdmin } = useUserType(userClaims);
 
 const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
@@ -257,37 +254,26 @@ const { data: adminStats } = useAdministrationsStatsQuery([props.administrationI
   select: (data) => data[0],
 });
 
+const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
+  enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
+});
+
 const { data: orgData } = useOrgQuery(props.orgType, [props.orgId], {
   enabled: initialized,
   select: (data) => data[0],
 });
 
-// Grab schools if this is a district score report
-const { data: schoolsInfo } = useQuery({
-  queryKey: ['schools', uid, ref(props.orgId)],
-  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
-  keepPreviousData: true,
-  enabled: props.orgType === 'district' && initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const scoreQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
-// Scores Query
 const {
-  isLoading: isLoadingScores,
-  isFetching: isFetchingScores,
+  isLoading: isLoadingAssignments,
+  isFetching: isFetchingAssignments,
   data: assignmentData,
-} = useQuery({
-  queryKey: ['assignments', uid, props.administrationId, props.orgId],
-  queryFn: () => assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true),
-  keepPreviousData: true,
-  enabled: scoreQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 mins
+} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, {
+  enabled: initialized,
 });
 
 const schoolNameDictionary = computed(() => {
-  if (schoolsInfo.value) {
-    return schoolsInfo.value.reduce((acc, school) => {
+  if (districtSchoolsData.value) {
+    return districtSchoolsData.value.reduce((acc, school) => {
       acc[school.id] = school.name;
       return acc;
     }, {});
@@ -463,7 +449,7 @@ const progressReportColumns = computed(() => {
   tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
 
   if (props.orgType === 'district') {
-    const schoolsMap = schoolsInfo.value?.reduce((acc, school) => {
+    const schoolsMap = districtSchoolsData.value?.reduce((acc, school) => {
       acc[school.id] = school.name;
       return acc;
     }, {});
