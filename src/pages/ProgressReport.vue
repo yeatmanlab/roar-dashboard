@@ -161,14 +161,11 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
-import { exportCsv } from '../helpers/query/utils';
-import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
-import { getTitle } from '@/helpers/query/administrations';
-import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
@@ -176,8 +173,15 @@ import useAdministrationsStatsQuery from '@/composables/queries/useAdministratio
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
+import { exportCsv } from '@/helpers/query/utils';
+import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
+import { getTitle } from '@/helpers/query/administrations';
+import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
+import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
+const router = useRouter();
 const authStore = useAuthStore();
 
 const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
@@ -213,7 +217,8 @@ const displayName = computed(() => {
 });
 
 const handleViewChange = () => {
-  window.location.href = `/scores/${props.administrationId}/${props.orgType}/${props.orgId}`;
+  const { administrationId, orgType, orgId } = props;
+  router.push({ path: getDynamicRouterPath(APP_ROUTES.SCORE_REPORT, { administrationId, orgType, orgId }) });
 };
 
 const orderBy = ref([
@@ -226,6 +231,7 @@ const orderBy = ref([
     field: 'user.lastName',
   },
 ]);
+
 // If this is a district report, make the schools column first sorted.
 if (props.orgType === 'district') {
   orderBy.value.unshift({

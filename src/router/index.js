@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
+import { APP_ROUTES } from '@/constants/routes';
 
 function removeQueryParams(to) {
   if (Object.keys(to.query).length) return { path: to.path, query: {}, hash: to.hash };
@@ -226,7 +227,7 @@ const routes = [
     meta: { pageTitle: 'Register Students', requireAdmin: true, requireSuperAdmin: true },
   },
   {
-    path: '/signin',
+    path: APP_ROUTES.SIGN_IN,
     name: 'SignIn',
     component: () => import('../pages/SignIn.vue'),
     meta: {
@@ -336,20 +337,20 @@ const routes = [
   },
   {
     path: '/administration/:administrationId/:orgType/:orgId',
-    name: 'ViewAdministration',
+    name: 'ProgressReport',
     props: true,
     component: () => import('../pages/ProgressReport.vue'),
     meta: { pageTitle: 'View Administration', requireAdmin: true },
   },
   {
-    path: '/scores/:administrationId/:orgType/:orgId',
+    path: APP_ROUTES.SCORE_REPORT,
     name: 'ScoreReport',
     props: true,
     component: () => import('../pages/ScoreReport.vue'),
     meta: { pageTitle: 'View Scores', requireAdmin: true },
   },
   {
-    path: '/scores/:administrationId/:orgType/:orgId/user/:userId',
+    path: APP_ROUTES.STUDENT_REPORT,
     name: 'StudentReport',
     props: true,
     component: () => import('../pages/IndividualReport.vue'),

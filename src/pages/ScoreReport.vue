@@ -289,6 +289,7 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
@@ -299,15 +300,16 @@ import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
 import _lowerCase from 'lodash/lowerCase';
 import { useAuthStore } from '@/store/auth';
-import { getGrade } from '@bdelab/roar-utils';
-import { exportCsv } from '@/helpers/query/utils';
-import { getTitle } from '@/helpers/query/administrations';
+import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import { getGrade } from '@bdelab/roar-utils';
+import { exportCsv } from '@/helpers/query/utils';
+import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -323,11 +325,13 @@ import {
   gradeOptions,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
-} from '@/helpers/reports.js';
+} from '@/helpers/reports';
+import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 let TaskReport, DistributionChartOverview, NextSteps;
 
+const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
 
@@ -362,7 +366,8 @@ const reportViews = [
 ];
 
 const handleViewChange = () => {
-  window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
+  const { administrationId, orgType, orgId } = props;
+  router.push({ path: getDynamicRouterPath(APP_ROUTES.PROGRESS_REPORT, { administrationId, orgType, orgId }) });
 };
 
 const exportLoading = ref(false);
