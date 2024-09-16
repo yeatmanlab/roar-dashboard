@@ -606,7 +606,7 @@ const getScoresAndSupportFromAssessment = ({
 
 const computedProgressData = computed(() => {
   if (!assignmentData.value) return [];
-  return assignmentData.value.map(({ assignment, user }) => {
+  return assignmentData.value.map(({ assignment }) => {
     const progress = assignment.assessments.reduce((acc, assessment) => {
       const status = assessment.optional
         ? 'optional'
@@ -620,7 +620,7 @@ const computedProgressData = computed(() => {
       return acc;
     }, {});
     return {
-      username: user.username, // Assuming user contains a `username` property
+      userPid: assignment.userData?.assessmentPid, // Assuming user contains a `username` property
       progress,
     };
   });
@@ -998,10 +998,10 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
       // Add progress immediately after reliability if includeProgress is true
       if (includeProgress) {
-        const progressRow = computedProgressData.value.find((progress) => progress.username === tableRow.Username);
-        if (progressRow && progressRow.progress[taskId]) {
-          tableRow[`${taskName} - Progress`] = progressRow.progress[taskId].value;
-        }
+        const progressRow = computedProgressData.value.find(
+          (progress) => progress.userPid === _get(user, 'assessmentPid'),
+        );
+        tableRow[`${taskName} - Progress`] = progressRow?.progress[taskId]?.value || 'not assigned';
       }
     }
 
