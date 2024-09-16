@@ -305,11 +305,7 @@ import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
-import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
-import useClassesQuery from '@/composables/queries/useClassesQuery';
-import useGroupsQuery from '@/composables/queries/useGroupsQuery';
-import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
+import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import {
@@ -464,26 +460,10 @@ const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
   enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
 });
 
-const orgQuery = computed(() => {
-  const queryOptions = { enabled: initialized, select: (data) => data[0] };
-
-  switch (props.orgType) {
-    case SINGULAR_ORG_TYPES.DISTRICTS:
-      return useDistrictsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.SCHOOLS:
-      return useSchoolsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.CLASSES:
-      return useClassesQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.GROUPS:
-      return useGroupsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.FAMILIES:
-      return useFamiliesQuery([props.orgId], queryOptions);
-    default:
-      throw new Error(`Unsupported org type: ${props.orgType}`);
-  }
+const { data: orgData, isLoading: isLoadingOrgData } = useOrgQuery(props.orgType, [props.orgId], {
+  enabled: initialized,
+  select: (data) => data[0],
 });
-
-const { data: orgData, isLoading: isLoadingOrgData } = orgQuery.value;
 
 const {
   isLoading: isLoadingAssignments,

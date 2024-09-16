@@ -175,11 +175,7 @@ import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useAdministrationsStatsQuery from '@/composables/queries/useAdministrationsStatsQuery';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
-import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
-import useClassesQuery from '@/composables/queries/useClassesQuery';
-import useGroupsQuery from '@/composables/queries/useGroupsQuery';
-import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
+import useOrgQuery from '@/composables/queries/useOrgQuery';
 
 const authStore = useAuthStore();
 
@@ -261,26 +257,10 @@ const { data: adminStats } = useAdministrationsStatsQuery([props.administrationI
   select: (data) => data[0],
 });
 
-const orgQuery = computed(() => {
-  const queryOptions = { enabled: initialized, select: (data) => data[0] };
-
-  switch (props.orgType) {
-    case SINGULAR_ORG_TYPES.DISTRICTS:
-      return useDistrictsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.SCHOOLS:
-      return useSchoolsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.CLASSES:
-      return useClassesQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.GROUPS:
-      return useGroupsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.FAMILIES:
-      return useFamiliesQuery([props.orgId], queryOptions);
-    default:
-      throw new Error(`Unsupported org type: ${props.orgType}`);
-  }
+const { data: orgData } = useOrgQuery(props.orgType, [props.orgId], {
+  enabled: initialized,
+  select: (data) => data[0],
 });
-
-const { data: orgData } = orgQuery.value;
 
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
