@@ -1,33 +1,50 @@
-import { loginAndNavigateToOrgs, checkOrgExists } from './commands';
-
 const timeout = Cypress.env('timeout');
+const orgs = [
+  { tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') },
+  { tabName: 'Schools', orgName: Cypress.env('testPartnerSchoolName') },
+  { tabName: 'Classes', orgName: Cypress.env('testPartnerClassName') },
+  { tabName: 'Groups', orgName: Cypress.env('testPartnerGroupName') },
+];
 
-// The specific organization to select
-const selectedOrg = { tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') };
+const listOrgsUrl = '/list-orgs';
 
-// Function to locate and click the "Invite Users" button for the specific org
-function clickInviteUsersForOrg(orgName) {
-  // Locate the table row containing the specified orgName
-  cy.contains('td', orgName, { timeout: timeout })
+function checkOrgExists(org) {
+  // Click the tab that contains the org's name
+  cy.get('ul > li', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
+  cy.log('Tab ' + org.tabName + ' found.');
+
+  // Check if the organization exists by confirming the org name in the table
+  cy.get('div', { timeout: timeout }).should('contain.text', org.orgName, {
+    timeout: timeout,
+  });
+  cy.log(`${org.orgName} exists.`);
+
+  // Locate the row with the orgName and click the "Invite Users" button specifically for that org
+  cy.contains('td', org.orgName, { timeout: timeout })
     .parents('tr') // Traverse up to the row element
-    .find('button[data-cy="event-button"]') // Locate the "Invite Users" button within the same row
+    .find('button') // Find the button within that row
+    .contains('Invite Users') // Ensure the button contains the text "Invite Users"
     .click(); // Click the button
 
-  cy.log(`Invite Users button clicked for ${orgName}.`);
+  cy.log(`Invite Users button clicked for ${org.orgName}.`);
 }
 
 describe('The partner admin user', () => {
   beforeEach(() => {
-    loginAndNavigateToOrgs(timeout);
+    cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
+    cy.wait(0.2 * timeout);
+    cy.navigateTo('/');
+    cy.wait(0.2 * timeout);
+    cy.navigateTo(listOrgsUrl, { timeout: timeout });
+    // cy.get('button').contains('Organizations').click();
+    // cy.get('button').contains('List Organizations').click();
   });
 
-  context(`when navigating to the ${selectedOrg.tabName} tab`, () => {
-    it(`should see the organization ${selectedOrg.orgName} and click the Invite Users button`, () => {
-      checkOrgExists(selectedOrg, timeout);
-      cy.wait(0.5 * timeout); // Optional wait if needed for UI updates
-
-      // Click the "Invite Users" button for the selected organization
-      clickInviteUsersForOrg(selectedOrg.orgName);
+  orgs.forEach((org) => {
+    context(`when navigating to the ${org.tabName} tab`, () => {
+      it(`should see the organization ${org.orgName} and should click on Invite Users`, () => {
+        checkOrgExists(org);
+      });
     });
   });
 });
