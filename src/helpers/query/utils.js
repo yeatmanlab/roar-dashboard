@@ -156,6 +156,47 @@ export const fetchDocById = async (
     });
 };
 
+/**
+ * Fetch documents by ID
+ *
+ * Helper to query documents of a given collection by their IDs using the Firestore REST API.
+ *
+ * @param {String} collection - The collection to query.
+ * @param {Array<String>} docIds - The array of document IDs to query.
+ * @param {Array<String>} select - The optional array of fields to select from the document.
+ * @param {String} db - The Firestore database to query. Defaults to the roar-admin database.
+ * @returns {Promise<Array<Object>>} The array of document data.
+ */
+export const fetchDocumentsById = async (collection, docIds, select = [], db = FIRESTORE_DATABASES.ADMIN) => {
+  const axiosInstance = getAxiosInstance(db);
+  const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
+  const documents = docIds.map((docId) => `${baseURL}/${collection}/${docId}`);
+
+  const requestBody = {
+    documents,
+  };
+
+  if (select?.length > 0) {
+    requestBody.mask = { fieldPaths: select };
+  }
+
+  const response = await axiosInstance.post(':batchGet', requestBody);
+
+  return response.data
+    .filter(({ found }) => found)
+    .map(({ found }) => {
+      const [, , collectionName, docId] = found.name.split('/');
+      return {
+        id: docId,
+        collection: collectionName,
+        ..._mapValues(found.fields, (value) => convertValues(value)),
+      };
+    });
+};
+
+// @TODO: Depreceate fetchDocsById and use fetchDocumentsById instead once the last queries are updated as well. This
+// existing method fetches documents by emitting a single GET request per document, which is inefficient. The new
+// fetchDocumentsById method fetches documents by emitting a single POST request with all document paths.
 export const fetchDocsById = async (documents, db = FIRESTORE_DATABASES.ADMIN) => {
   if (_isEmpty(documents)) {
     console.warn('FetchDocsById: No documents provided!');
@@ -163,6 +204,7 @@ export const fetchDocsById = async (documents, db = FIRESTORE_DATABASES.ADMIN) =
   }
   const axiosInstance = getAxiosInstance(db);
   const promises = [];
+
   for (const { collection, docId, select } of documents) {
     const docPath = `/${collection}/${docId}`;
     const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);

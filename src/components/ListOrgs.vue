@@ -127,7 +127,7 @@ import { fetchUsersByOrg, countUsersByOrg } from '@/helpers/query/users';
 import { orderByDefault, exportCsv, fetchDocById } from '@/helpers/query/utils';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useOrgsTableQuery from '@/composables/queries/useOrgsTableQuery';
 import { CSV_EXPORT_MAX_RECORD_COUNT } from '@/constants/csvExport';
@@ -200,7 +200,7 @@ const activeOrgType = computed(() => {
 
 const claimsLoaded = computed(() => !!userClaims?.value?.claims);
 
-const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsQuery({
+const { isLoading: isLoadingDistricts, data: allDistricts } = useDistrictsListQuery({
   enabled: claimsLoaded,
 });
 
