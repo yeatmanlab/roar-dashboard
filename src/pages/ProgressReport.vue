@@ -7,7 +7,7 @@
             <div>
               <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
               <div class="report-title uppercase">
-                {{ orgInfo?.name }}
+                {{ orgData?.name }}
               </div>
             </div>
             <div>
@@ -166,16 +166,20 @@ import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, exportCsv } from '../helpers/query/utils';
+import { exportCsv } from '../helpers/query/utils';
 import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
-import { pluralizeFirestoreCollection } from '@/helpers';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useAdministrationsStatsQuery from '@/composables/queries/useAdministrationsStatsQuery';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
+import useClassesQuery from '@/composables/queries/useClassesQuery';
+import useGroupsQuery from '@/composables/queries/useGroupsQuery';
+import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 
 const authStore = useAuthStore();
 
@@ -257,13 +261,26 @@ const { data: adminStats } = useAdministrationsStatsQuery([props.administrationI
   select: (data) => data[0],
 });
 
-const { data: orgInfo } = useQuery({
-  queryKey: ['orgInfo', uid, props.orgId],
-  queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
-  keepPreviousData: true,
-  enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+const orgQuery = computed(() => {
+  const queryOptions = { enabled: initialized, select: (data) => data[0] };
+
+  switch (props.orgType) {
+    case SINGULAR_ORG_TYPES.DISTRICTS:
+      return useDistrictsQuery([props.orgId], queryOptions);
+    case SINGULAR_ORG_TYPES.SCHOOLS:
+      return useSchoolsQuery([props.orgId], queryOptions);
+    case SINGULAR_ORG_TYPES.CLASSES:
+      return useClassesQuery([props.orgId], queryOptions);
+    case SINGULAR_ORG_TYPES.GROUPS:
+      return useGroupsQuery([props.orgId], queryOptions);
+    case SINGULAR_ORG_TYPES.FAMILIES:
+      return useFamiliesQuery([props.orgId], queryOptions);
+    default:
+      throw new Error(`Unsupported org type: ${props.orgType}`);
+  }
 });
+
+const { data: orgData } = orgQuery.value;
 
 // Grab schools if this is a district score report
 const { data: schoolsInfo } = useQuery({
@@ -426,7 +443,7 @@ const exportAll = async () => {
   exportCsv(
     computedExportData,
     `roar-progress-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
-      orgInfo.value.name,
+      orgData.value.name,
     )}.csv`,
   );
   return;
