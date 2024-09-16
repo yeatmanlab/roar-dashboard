@@ -209,10 +209,10 @@ import _without from 'lodash/without';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useDistrictsListQuery from '@/composables/queries/useDistrictsListQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useSchoolClassesQuery from '@/composables/queries/useSchoolClassesQuery';
-import useGroupsQuery from '@/composables/queries/useGroupsQuery';
+import useGroupsListQuery from '@/composables/queries/useGroupsListQuery';
 
 const initialized = ref(false);
 const isTestData = ref(false);
@@ -247,11 +247,11 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) initTable();
 });
 
-const { isLoading: isLoadingDistricts, data: districts } = useDistrictsQuery({
+const { isLoading: isLoadingDistricts, data: districts } = useDistrictsListQuery({
   enabled: initialized,
 });
 
-const { data: groups } = useGroupsQuery({
+const { data: groups } = useGroupsListQuery({
   enabled: initialized,
 });
 

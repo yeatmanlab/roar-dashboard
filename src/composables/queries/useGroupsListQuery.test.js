@@ -1,13 +1,16 @@
+import { ref } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
-import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
-import { fetchDocumentsById } from '@/helpers/query/utils';
-import useDistrictsQuery from './useDistrictsQuery';
+import { orgFetcher } from '@/helpers/query/orgs';
+import useGroupsListQuery from './useGroupsListQuery';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 
-vi.mock('@/helpers/query/utils', () => ({
-  fetchDocumentsById: vi.fn().mockImplementation(() => []),
+vi.mock('@/helpers/query/orgs', () => ({
+  orgFetcher: vi.fn().mockImplementation(() => []),
 }));
+
+vi.mock('@/composables/queries/useUserClaimsQuery');
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
   const original = await getModule();
@@ -17,8 +20,15 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-describe('useDistrictsQuery', () => {
+describe('useGroupsListQuery', () => {
   let queryClient;
+
+  const mockUserClaims = ref({
+    claims: {
+      minimalAdminOrgs: ['mock-org-id-1', 'mock-org-id-2'],
+      super_admin: true,
+    },
+  });
 
   beforeEach(() => {
     queryClient = new VueQuery.QueryClient();
@@ -26,65 +36,68 @@ describe('useDistrictsQuery', () => {
 
   afterEach(() => {
     queryClient?.clear();
+    vi.clearAllMocks();
   });
 
   it('should call query with correct parameters', () => {
-    const districtIds = nanoid();
-
+    vi.mocked(useUserClaimsQuery).mockReturnValue({ data: mockUserClaims });
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useDistrictsQuery(districtIds), {
+    withSetup(() => useGroupsListQuery(), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['districts', districtIds],
+      queryKey: ['groups-list'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchDocumentsById).toHaveBeenCalledWith('districts', districtIds);
+    expect(orgFetcher).toHaveBeenCalledWith(
+      'groups',
+      undefined,
+      expect.objectContaining({ value: true }),
+      expect.objectContaining({ value: ['mock-org-id-1', 'mock-org-id-2'] }),
+    );
+  });
+
+  it('should only fetch groups only once user claims are loaded', async () => {
+    vi.mocked(useUserClaimsQuery).mockReturnValue({ data: {}, isLoading: ref(true) });
+
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useGroupsListQuery(), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['groups-list'],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+      }),
+    });
+
+    expect(orgFetcher).not.toHaveBeenCalled();
   });
 
   it('should allow the query to be disabled via the passed query options', () => {
-    const districtIds = nanoid();
     const queryOptions = { enabled: false };
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useDistrictsQuery(districtIds, queryOptions), {
+    withSetup(() => useGroupsListQuery(queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['districts', districtIds],
+      queryKey: ['groups-list'],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
       }),
     });
-  });
-
-  it('should keep the query disabled if not district IDs are specified', () => {
-    const districtIds = [];
-    const queryOptions = { enabled: true };
-
-    vi.spyOn(VueQuery, 'useQuery');
-
-    withSetup(() => useDistrictsQuery(districtIds, queryOptions), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['districts', districtIds],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: false,
-      }),
-    });
-
-    expect(fetchDocumentsById).not.toHaveBeenCalled();
   });
 });

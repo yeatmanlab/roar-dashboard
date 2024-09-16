@@ -305,11 +305,11 @@ import { getTitle } from '@/helpers/query/administrations';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useDistrictQuery from '@/composables/queries/useDistrictQuery';
-import useSchoolQuery from '@/composables/queries/useSchoolQuery';
-import useClassQuery from '@/composables/queries/useClassQuery';
-import useGroupQuery from '@/composables/queries/useGroupQuery';
-import useFamilyQuery from '@/composables/queries/useFamilyQuery';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
+import useClassesQuery from '@/composables/queries/useClassesQuery';
+import useGroupsQuery from '@/composables/queries/useGroupsQuery';
+import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
 import {
@@ -465,18 +465,19 @@ const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
 });
 
 const orgQuery = computed(() => {
-  const queryOptions = { enabled: initialized };
+  const queryOptions = { enabled: initialized, select: (data) => data[0] };
+
   switch (props.orgType) {
     case SINGULAR_ORG_TYPES.DISTRICTS:
-      return useDistrictQuery(props.orgId, queryOptions);
+      return useDistrictsQuery([props.orgId], queryOptions);
     case SINGULAR_ORG_TYPES.SCHOOLS:
-      return useSchoolQuery(props.orgId, queryOptions);
+      return useSchoolsQuery([props.orgId], queryOptions);
     case SINGULAR_ORG_TYPES.CLASSES:
-      return useClassQuery(props.orgId, queryOptions);
+      return useClassesQuery([props.orgId], queryOptions);
     case SINGULAR_ORG_TYPES.GROUPS:
-      return useGroupQuery(props.orgId, queryOptions);
+      return useGroupsQuery([props.orgId], queryOptions);
     case SINGULAR_ORG_TYPES.FAMILIES:
-      return useFamilyQuery(props.orgId, queryOptions);
+      return useFamiliesQuery([props.orgId], queryOptions);
     default:
       throw new Error(`Unsupported org type: ${props.orgType}`);
   }
