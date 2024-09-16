@@ -45,7 +45,7 @@
           <div class="flex flex-column gap-1 mx-5 mb-5">
             <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
             <div
-              v-for="{ taskId } of administrationInfo.assessments"
+              v-for="{ taskId } of administrationData.assessments"
               :key="taskId"
               class="flex justify-content-between align-items-center"
             >
@@ -174,6 +174,7 @@ import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 
 const authStore = useAuthStore();
 
@@ -203,8 +204,8 @@ const reportViews = [
 ];
 
 const displayName = computed(() => {
-  if (administrationInfo.value) {
-    return getTitle(administrationInfo.value, isSuperAdmin.value);
+  if (administrationData.value) {
+    return getTitle(administrationData.value, isSuperAdmin.value);
   }
   return '';
 });
@@ -240,17 +241,14 @@ const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
+// @TODO: Update to use useUserType composable
 const claimsLoaded = computed(() => !isLoadingClaims.value);
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 
-const { data: administrationInfo } = useQuery({
-  queryKey: ['administrationInfo', uid, props.administrationId],
-  queryFn: () =>
-    fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments'], 'admin'),
-  keepPreviousData: true,
+const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+  select: (data) => data[0],
 });
 
 const { data: adminStats } = useQuery({
@@ -432,7 +430,7 @@ const exportAll = async () => {
   });
   exportCsv(
     computedExportData,
-    `roar-progress-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
+    `roar-progress-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
       orgInfo.value.name,
     )}.csv`,
   );
@@ -491,7 +489,7 @@ const progressReportColumns = computed(() => {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
-  const allTaskIds = administrationInfo.value.assessments?.map((assessment) => assessment.taskId);
+  const allTaskIds = administrationData.value.assessments?.map((assessment) => assessment.taskId);
   const sortedTasks = allTaskIds?.sort((p1, p2) => {
     if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
       return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
