@@ -289,6 +289,7 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import _toUpper from 'lodash/toUpper';
@@ -299,19 +300,16 @@ import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
 import _lowerCase from 'lodash/lowerCase';
 import { useAuthStore } from '@/store/auth';
-import { getGrade } from '@bdelab/roar-utils';
-import { exportCsv } from '@/helpers/query/utils';
-import { getTitle } from '@/helpers/query/administrations';
+import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import useUserType from '@/composables/useUserType';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
-import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
-import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
-import useClassesQuery from '@/composables/queries/useClassesQuery';
-import useGroupsQuery from '@/composables/queries/useGroupsQuery';
-import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
+import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import { getGrade } from '@bdelab/roar-utils';
+import { exportCsv } from '@/helpers/query/utils';
+import { getTitle } from '@/helpers/query/administrations';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -327,11 +325,13 @@ import {
   gradeOptions,
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
-} from '@/helpers/reports.js';
+} from '@/helpers/reports';
+import { APP_ROUTES } from '@/constants/routes';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 let TaskReport, DistributionChartOverview, NextSteps;
 
+const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
 
@@ -366,7 +366,8 @@ const reportViews = [
 ];
 
 const handleViewChange = () => {
-  window.location.href = `/administration/${props.administrationId}/${props.orgType}/${props.orgId}`;
+  const { administrationId, orgType, orgId } = props;
+  router.push({ path: getDynamicRouterPath(APP_ROUTES.PROGRESS_REPORT, { administrationId, orgType, orgId }) });
 };
 
 const exportLoading = ref(false);
@@ -464,26 +465,10 @@ const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
   enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
 });
 
-const orgQuery = computed(() => {
-  const queryOptions = { enabled: initialized, select: (data) => data[0] };
-
-  switch (props.orgType) {
-    case SINGULAR_ORG_TYPES.DISTRICTS:
-      return useDistrictsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.SCHOOLS:
-      return useSchoolsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.CLASSES:
-      return useClassesQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.GROUPS:
-      return useGroupsQuery([props.orgId], queryOptions);
-    case SINGULAR_ORG_TYPES.FAMILIES:
-      return useFamiliesQuery([props.orgId], queryOptions);
-    default:
-      throw new Error(`Unsupported org type: ${props.orgType}`);
-  }
+const { data: orgData, isLoading: isLoadingOrgData } = useOrgQuery(props.orgType, [props.orgId], {
+  enabled: initialized,
+  select: (data) => data[0],
 });
-
-const { data: orgData, isLoading: isLoadingOrgData } = orgQuery.value;
 
 const {
   isLoading: isLoadingAssignments,

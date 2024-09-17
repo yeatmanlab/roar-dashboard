@@ -4,7 +4,7 @@ import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
 import { fetchDocsById } from '@/helpers/query/utils';
-import useAdministrationsQuery from './useAdministrationsQuery';
+import useAdministrationsStatsQuery from './useAdministrationsStatsQuery';
 
 vi.mock('@/helpers/query/utils', () => ({
   fetchDocsById: vi.fn().mockImplementation(() => []),
@@ -21,12 +21,11 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
 const buildCollectionRequestPayload = (id) => {
   return {
     collection: 'administrations',
-    docId: id,
-    select: ['name', 'publicName', 'sequential', 'assessments', 'legal'],
+    docId: `${id}/stats/total`,
   };
 };
 
-describe('useAdministrationsQuery', () => {
+describe('useAdministrationsStatsQuery', () => {
   let queryClient;
 
   beforeEach(() => {
@@ -41,12 +40,12 @@ describe('useAdministrationsQuery', () => {
     const mockAdministrationIds = ref([nanoid(), nanoid(), nanoid()]);
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsQuery(mockAdministrationIds), {
+    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['administrations', toValue(mockAdministrationIds)],
+      queryKey: ['administrations-stats', toValue(mockAdministrationIds)],
       queryFn: expect.any(Function),
     });
 
@@ -61,12 +60,12 @@ describe('useAdministrationsQuery', () => {
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useAdministrationsQuery(mockAdministrationIds, queryOptions), {
+    withSetup(() => useAdministrationsStatsQuery(mockAdministrationIds, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['administrations', toValue(mockAdministrationIds)],
+      queryKey: ['administrations-stats', toValue(mockAdministrationIds)],
       queryFn: expect.any(Function),
       enabled: false,
     });

@@ -97,7 +97,7 @@
             <div class="flex m-0">
               <router-link
                 :to="{
-                  name: 'ViewAdministration',
+                  name: 'ProgressReport',
                   params: { administrationId: props.id, orgId: node.data.id, orgType: node.data.orgType },
                 }"
                 class="no-underline"

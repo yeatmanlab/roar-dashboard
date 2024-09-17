@@ -7,5 +7,8 @@
  * @constant {Object} APP_ROUTES – The individual routes of the application.
  */
 export const APP_ROUTES = {
-  SIGN_IN: '/sign-in',
+  SIGN_IN: '/signin',
+  PROGRESS_REPORT: '/administration/:administrationId/:orgType/:orgId',
+  SCORE_REPORT: '/scores/:administrationId/:orgType/:orgId',
+  STUDENT_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
 };

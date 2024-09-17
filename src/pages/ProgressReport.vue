@@ -2,12 +2,12 @@
   <main class="container main">
     <section class="main-body">
       <div class="flex justify-content-between align-items-center">
-        <div v-if="!isLoadingScores">
+        <div v-if="!isLoadingAssignments">
           <div class="flex flex-column align-items-start mb-4 gap-2">
             <div>
               <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
               <div class="report-title uppercase">
-                {{ orgInfo?.name }}
+                {{ orgData?.name }}
               </div>
             </div>
             <div>
@@ -33,7 +33,7 @@
           </PvSelectButton>
         </div>
       </div>
-      <div v-if="isLoadingScores" class="loading-wrapper">
+      <div v-if="isLoadingAssignments" class="loading-wrapper">
         <AppSpinner style="margin: 1rem 0rem" />
         <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
       </div>
@@ -45,7 +45,7 @@
           <div class="flex flex-column gap-1 mx-5 mb-5">
             <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
             <div
-              v-for="{ taskId } of administrationInfo.assessments"
+              v-for="{ taskId } of administrationData.assessments"
               :key="taskId"
               class="flex justify-content-between align-items-center"
             >
@@ -109,7 +109,7 @@
           :data="filteredTableData"
           :columns="progressReportColumns"
           :total-records="filteredTableData?.length"
-          :loading="isLoadingScores || isFetchingScores"
+          :loading="isLoadingAssignments || isFetchingAssignments"
           :page-limit="pageLimit"
           data-cy="roar-data-table"
           :allow-filtering="true"
@@ -119,13 +119,13 @@
           @export-all="exportAll"
         >
           <template #filterbar>
-            <div v-if="schoolsInfo" class="flex flex-row gap-2">
+            <div v-if="districtSchoolsData" class="flex flex-row gap-2">
               <span class="p-float-label">
                 <PvMultiSelect
                   id="ms-school-filter"
                   v-model="filterSchools"
                   style="width: 20rem; max-width: 25rem"
-                  :options="schoolsInfo"
+                  :options="districtSchoolsData"
                   option-label="name"
                   option-value="name"
                   :show-toggle-all="false"
@@ -161,23 +161,30 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import _get from 'lodash/get';
 import _kebabCase from 'lodash/kebabCase';
 import _map from 'lodash/map';
 import { useAuthStore } from '@/store/auth';
-import { useQuery } from '@tanstack/vue-query';
-import { fetchDocById, exportCsv } from '../helpers/query/utils';
-import { assignmentFetchAll } from '@/helpers/query/assignments';
-import { orgFetcher } from '@/helpers/query/orgs';
-import { pluralizeFirestoreCollection } from '@/helpers';
+import useUserType from '@/composables/useUserType';
+import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useAdministrationsStatsQuery from '@/composables/queries/useAdministrationsStatsQuery';
+import useOrgQuery from '@/composables/queries/useOrgQuery';
+import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
+import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
+import { exportCsv } from '@/helpers/query/utils';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
 import { getTitle } from '@/helpers/query/administrations';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
-import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
+import { APP_ROUTES } from '@/constants/routes';
+import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
+const router = useRouter();
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -203,14 +210,15 @@ const reportViews = [
 ];
 
 const displayName = computed(() => {
-  if (administrationInfo.value) {
-    return getTitle(administrationInfo.value, isSuperAdmin.value);
+  if (administrationData.value) {
+    return getTitle(administrationData.value, isSuperAdmin.value);
   }
   return '';
 });
 
 const handleViewChange = () => {
-  window.location.href = `/scores/${props.administrationId}/${props.orgType}/${props.orgId}`;
+  const { administrationId, orgType, orgId } = props;
+  router.push({ path: getDynamicRouterPath(APP_ROUTES.SCORE_REPORT, { administrationId, orgType, orgId }) });
 };
 
 const orderBy = ref([
@@ -223,6 +231,7 @@ const orderBy = ref([
     field: 'user.lastName',
   },
 ]);
+
 // If this is a district report, make the schools column first sorted.
 if (props.orgType === 'district') {
   orderBy.value.unshift({
@@ -235,69 +244,42 @@ const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
 
-// User Claims
-const { isLoading: isLoadingClaims, data: userClaims } = useUserClaimsQuery({
+const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
 });
 
-const claimsLoaded = computed(() => !isLoadingClaims.value);
-const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
+const { isSuperAdmin } = useUserType(userClaims);
 
-const { data: administrationInfo } = useQuery({
-  queryKey: ['administrationInfo', uid, props.administrationId],
-  queryFn: () =>
-    fetchDocById('administrations', props.administrationId, ['name', 'publicName', 'assessments'], 'admin'),
-  keepPreviousData: true,
+const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+  select: (data) => data[0],
 });
 
-const { data: adminStats } = useQuery({
-  queryKey: ['administrationStats', uid, props.administrationId],
-  queryFn: () => fetchDocById('administrations', `${props.administrationId}/stats/total`),
-  keepPreviousData: true,
+const { data: adminStats } = useAdministrationsStatsQuery([props.administrationId], {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000,
-  onSuccess: (data) => {
-    console.log(data);
-  },
+  select: (data) => data[0],
 });
 
-const { data: orgInfo } = useQuery({
-  queryKey: ['orgInfo', uid, props.orgId],
-  queryFn: () => fetchDocById(pluralizeFirestoreCollection(props.orgType), props.orgId, ['name']),
-  keepPreviousData: true,
+const { data: districtSchoolsData } = useDistrictSchoolsQuery(props.orgId, {
+  enabled: props.orgType === SINGULAR_ORG_TYPES.DISTRICTS && initialized,
+});
+
+const { data: orgData } = useOrgQuery(props.orgType, [props.orgId], {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+  select: (data) => data[0],
 });
 
-// Grab schools if this is a district score report
-const { data: schoolsInfo } = useQuery({
-  queryKey: ['schools', uid, ref(props.orgId)],
-  queryFn: () => orgFetcher('schools', ref(props.orgId), isSuperAdmin, adminOrgs, ['name', 'id', 'lowGrade']),
-  keepPreviousData: true,
-  enabled: props.orgType === 'district' && initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const scoreQueryEnabled = computed(() => initialized.value && claimsLoaded.value);
-// Scores Query
 const {
-  isLoading: isLoadingScores,
-  isFetching: isFetchingScores,
+  isLoading: isLoadingAssignments,
+  isFetching: isFetchingAssignments,
   data: assignmentData,
-} = useQuery({
-  queryKey: ['assignments', uid, props.administrationId, props.orgId],
-  queryFn: () => assignmentFetchAll(props.administrationId, props.orgType, props.orgId, true),
-  keepPreviousData: true,
-  enabled: scoreQueryEnabled,
-  staleTime: 5 * 60 * 1000, // 5 mins
+} = useAdministrationAssignmentsQuery(props.administrationId, props.orgType, props.orgId, {
+  enabled: initialized,
 });
 
 const schoolNameDictionary = computed(() => {
-  if (schoolsInfo.value) {
-    return schoolsInfo.value.reduce((acc, school) => {
+  if (districtSchoolsData.value) {
+    return districtSchoolsData.value.reduce((acc, school) => {
       acc[school.id] = school.name;
       return acc;
     }, {});
@@ -432,8 +414,8 @@ const exportAll = async () => {
   });
   exportCsv(
     computedExportData,
-    `roar-progress-${_kebabCase(getTitle(administrationInfo.value, isSuperAdmin.value))}-${_kebabCase(
-      orgInfo.value.name,
+    `roar-progress-${_kebabCase(getTitle(administrationData.value, isSuperAdmin.value))}-${_kebabCase(
+      orgData.value.name,
     )}.csv`,
   );
   return;
@@ -473,7 +455,7 @@ const progressReportColumns = computed(() => {
   tableColumns.push({ field: 'user.grade', header: 'Grade', dataType: 'text', sort: true, filter: true });
 
   if (props.orgType === 'district') {
-    const schoolsMap = schoolsInfo.value?.reduce((acc, school) => {
+    const schoolsMap = districtSchoolsData.value?.reduce((acc, school) => {
       acc[school.id] = school.name;
       return acc;
     }, {});
@@ -491,7 +473,7 @@ const progressReportColumns = computed(() => {
     tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
   }
 
-  const allTaskIds = administrationInfo.value.assessments?.map((assessment) => assessment.taskId);
+  const allTaskIds = administrationData.value.assessments?.map((assessment) => assessment.taskId);
   const sortedTasks = allTaskIds?.sort((p1, p2) => {
     if (Object.keys(taskDisplayNames).includes(p1) && Object.keys(taskDisplayNames).includes(p2)) {
       return taskDisplayNames[p1].order - taskDisplayNames[p2].order;
