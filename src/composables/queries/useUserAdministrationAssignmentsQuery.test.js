@@ -1,10 +1,8 @@
 import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
-import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
 import useUserAdministrationAssignmentsQuery from './useUserAdministrationAssignmentsQuery';
 
@@ -21,11 +19,9 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
 });
 
 describe('useUserAdministrationAssignmentsQuery', () => {
-  let piniaInstance;
   let queryClient;
 
   beforeEach(() => {
-    piniaInstance = createTestingPinia();
     queryClient = new VueQuery.QueryClient();
   });
 
@@ -118,7 +114,7 @@ describe('useUserAdministrationAssignmentsQuery', () => {
 
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', `${mockUserId}/assignments/${mockAdministrationId}`);
+    expect(fetchDocById).toHaveBeenCalledWith('users', `${mockUserId.value}/assignments/${mockAdministrationId.value}`);
   });
 
   it('should not let queryOptions override the internally computed value', async () => {

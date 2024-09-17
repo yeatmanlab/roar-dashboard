@@ -181,7 +181,6 @@ import _startCase from 'lodash/startCase';
 import { getGrade } from '@bdelab/roar-utils';
 import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
-import useUserAdministrationAssignmentsQuery from '@/composables/queries/useUserAdministrationAssignmentsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
@@ -218,17 +217,13 @@ const { data: studentData } = useUserDataQuery(props.userId, {
   enabled: initialized,
 });
 
-const { data: assignmentData } = useUserAdministrationAssignmentsQuery(props.userId, props.administrationId, {
+const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
+  select: (data) => data[0],
 });
 
 const { data: taskData } = useUserRunPageQuery(props.userId, props.administrationId, props.orgType, props.orgId, {
   enabled: initialized,
-});
-
-const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
-  enabled: initialized,
-  select: (data) => data[0],
 });
 
 const expanded = ref(false);
