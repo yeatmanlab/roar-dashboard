@@ -14,14 +14,14 @@ describe(
 
         cy.get('input[type=file]').selectFile('cypress/fixtures/testStudentData.csv', { force: true, timeout: 10000 });
 
-        selectField('pv_id_8', 'Student Username');
-        selectField('pv_id_9', 'Password');
-        selectField('pv_id_10', 'Student Date of Birth');
-        selectField('pv_id_11', 'Grade');
-        selectField('pv_id_12', 'District');
-        selectField('pv_id_13', 'School');
-        selectField('pv_id_14', 'Class');
-        selectField('pv_id_15', 'Group');
+        selectField('pv_id_7', 'Student Username');
+        selectField('pv_id_8', 'Password');
+        selectField('pv_id_9', 'Student Date of Birth');
+        selectField('pv_id_10', 'Grade');
+        selectField('pv_id_11', 'District');
+        selectField('pv_id_12', 'School');
+        selectField('pv_id_13', 'Class');
+        selectField('pv_id_14', 'Group');
 
         cy.get('div').contains('All users are test accounts').click();
         cy.get('[data-cy="button-start-registration"]').click();

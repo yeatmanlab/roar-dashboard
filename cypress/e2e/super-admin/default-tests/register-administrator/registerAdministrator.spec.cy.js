@@ -12,6 +12,7 @@ function inputAdministratorDetails() {
   cy.get('[data-cy="input-administrator-middle-name"]').type(randomAdministratorMiddleName);
   cy.get('[data-cy="input-administrator-last-name"]').type(randomAdministratorLastName);
   cy.get('[data-cy="input-administrator-email"]').type(randomAdministratorEmail);
+  cy.get('[data-cy="checkbox-test-data-administrator"]').click();
 }
 
 function createAdministrator() {
@@ -30,7 +31,11 @@ describe('The admin user can create a new administrator and assign them to a gro
       'creates a new administrator, and assigns the new administrator to a group,',
     () => {
       cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
-      cy.navigateTo('/create-administrator');
+      cy.visit('/');
+      cy.get('.p-menuitem-link').contains('Users').click();
+      cy.get('ul > li', { timeout: 2 * timeout })
+        .contains('Register administrator')
+        .click();
       cy.wait(0.5 * timeout);
       inputAdministratorDetails();
       cy.selectTestOrgs();

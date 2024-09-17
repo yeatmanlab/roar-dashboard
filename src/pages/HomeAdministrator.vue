@@ -16,7 +16,11 @@
               <div class="flex gap-3 align-items-stretch justify-content-start">
                 <div v-if="isSuperAdmin" class="flex flex-column gap-1">
                   <small class="text-gray-400">Show test administrations</small>
-                  <PvInputSwitch v-model="fetchTestAdministrations" class="align-self-center my-auto" />
+                  <PvInputSwitch
+                    v-model="fetchTestAdministrations"
+                    class="align-self-center my-auto"
+                    data-cy="switch-show-test-administrations"
+                  />
                 </div>
                 <div class="flex flex-column gap-1">
                   <small id="search-help" class="text-gray-400">Search by administration name</small>

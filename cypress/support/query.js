@@ -66,8 +66,60 @@ export async function deleteTestAdmins(adminFirestore) {
   for (const doc of querySnapshot.docs) {
     const docData = doc.data();
     if (regexSuper.test(docData.name || regexPartner.test(docData.name))) {
-      // await deleteDoc(doc.ref);
-      cy.log('Deleted test administration', doc.id, docData.name);
+      cy.wrap(deleteDoc(doc.ref)).then(() => {
+        cy.log('Deleted test administration', doc.id, docData.name);
+      });
+    }
+  }
+}
+
+export async function deleteTestOrgs(adminFirestore) {
+  const orgs = ['districts', 'schools', 'classs', 'groups'];
+
+  for (const org of orgs) {
+    const orgsRef = collection(adminFirestore, org);
+    const q = query(orgsRef, where('testData', '==', true));
+    const querySnapshot = await getDocs(q);
+    cy.log('Found', querySnapshot.size, 'test', org);
+
+    const regex = /^Cypress Test (?:District|School|Class|Group) \d{10}$/;
+
+    for (const doc of querySnapshot.docs) {
+      const docData = doc.data();
+      if (regex.test(docData.name)) {
+        await deleteDoc(doc.ref);
+      }
+    }
+  }
+}
+
+export async function deleteTestAdministrators(adminFirestore, assessmentFirestore) {
+  const adminUsersRef = collection(adminFirestore, 'users');
+
+  const q = query(adminUsersRef, where('userType', '==', 'admin'));
+  const querySnapshot = await getDocs(q);
+  const regex = /^Cypress Test Administrator First Name \d{10}$/;
+
+  for (const docSnap of querySnapshot.docs) {
+    const docData = docSnap.data();
+    const userId = docSnap.id;
+    if (docData.name && regex.test(docData.name.first)) {
+      cy.log('Found test administrator', userId, docData?.name.first);
+
+      const adminUserDocRef = doc(adminFirestore, 'users', userId);
+      const adminUserClaimsRef = doc(adminFirestore, 'userClaims', userId);
+      const assessmentUserDocRef = doc(assessmentFirestore, 'users', userId);
+      const assessmentUserClaimsRef = doc(assessmentFirestore, 'userClaims', userId);
+
+      const adminUserDoc = await getDoc(adminUserDocRef);
+      const adminUserClaimsDoc = await getDoc(adminUserClaimsRef);
+      const assessmentUserDoc = await getDoc(assessmentUserDocRef);
+      const assessmentUserClaimsDoc = await getDoc(assessmentUserClaimsRef);
+
+      await deleteDoc(adminUserDoc.ref);
+      await deleteDoc(adminUserClaimsDoc.ref);
+      await deleteDoc(assessmentUserDoc.ref);
+      await deleteDoc(assessmentUserClaimsDoc.ref);
     }
   }
 }
