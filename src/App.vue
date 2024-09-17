@@ -101,11 +101,11 @@ onBeforeMount(async () => {
 
 onMounted(() => {
   const isLocal = import.meta.env.MODE === 'development';
-  const isStaging = import.meta.env.VITE_STAGING_BUILD === 'true';
+  const isDevToolsEnabled = import.meta.env.VITE_QUERY_DEVTOOLS_ENABLED === 'true';
 
   if (isLocal) {
     showDevtools.value = true;
-  } else if (isStaging) {
+  } else if (isDevToolsEnabled) {
     window.toggleDevtools = () => {
       showDevtools.value = !showDevtools.value;
     };
