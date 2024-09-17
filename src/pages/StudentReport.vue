@@ -182,6 +182,7 @@ import _startCase from 'lodash/startCase';
 import { getGrade } from '@bdelab/roar-utils';
 import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useUserAdministrationAssignmentsQuery from '@/composables/queries/useUserAdministrationAssignmentsQuery';
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
 import { fetchDocById } from '@/helpers/query/utils';
 import { runPageFetcher } from '@/helpers/query/runs';
@@ -218,12 +219,8 @@ const { data: studentData } = useUserDataQuery(props.userId, {
   enabled: initialized,
 });
 
-const { data: assignmentData } = useQuery({
-  queryKey: ['assignments', uid, props.userId, props.administrationId],
-  queryFn: () => fetchDocById('users', `${props.userId}/assignments/${props.administrationId}`),
+const { data: assignmentData } = useUserAdministrationAssignmentsQuery(props.userId, props.administrationId, {
   enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
 });
 
 const { data: taskData } = useQuery({
