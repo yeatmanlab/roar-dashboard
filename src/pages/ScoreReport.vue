@@ -1001,13 +1001,39 @@ const createExportData = ({ rows, includeProgress = false }) => {
         const progressRow = computedProgressData.value.find(
           (progress) => progress.userPid === _get(user, 'assessmentPid'),
         );
-        tableRow[`${taskName} - Progress`] = progressRow?.progress[taskId]?.value || 'not assigned';
+
+        if (progressRow) {
+          scoreReportColumns.value.forEach((column) => {
+            const { field, header: taskName } = column; // Use taskName from the column header
+
+            // Ensure field is defined and is a string before calling startsWith
+            if (field && typeof field === 'string' && field.startsWith('scores')) {
+              const scoreKey = field.split('.').slice(-2, -1)[0]; // Extract taskId (e.g., "swr", "sre", etc.)
+
+              // Check if taskId exists in progressRow.progress
+              if (progressRow.progress[scoreKey]) {
+                tableRow[`${taskName} - Progress`] = progressRow.progress[scoreKey].value;
+              } else {
+                tableRow[`${taskName} - Progress`] = 'not assigned';
+              }
+            }
+          });
+        } else {
+          // If no progressRow is found, mark all scores as "not assigned"
+          scoreReportColumns.value.forEach((column) => {
+            const { field, header: taskName } = column; // Use taskName from the column header
+
+            // Ensure field is defined and is a string before calling startsWith
+            if (field && typeof field === 'string' && field.startsWith('scores')) {
+              tableRow[`${taskName} - Progress`] = 'not assigned';
+            }
+          });
+        }
       }
     }
 
     return tableRow;
   });
-
   return computedExportData;
 };
 
