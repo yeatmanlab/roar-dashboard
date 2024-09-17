@@ -256,7 +256,7 @@ function closeForgotPasswordModal() {
 }
 function sendResetEmail() {
   console.log('Submitting forgot password with email', forgotEmail.value);
-  // roarfirekit.value.forgotPassword(forgotEmail.value);
+  roarfirekit.value.sendPasswordResetEmail(forgotEmail.value);
   closeForgotPasswordModal();
 }
 
