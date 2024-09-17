@@ -353,7 +353,7 @@ const routes = [
     path: APP_ROUTES.STUDENT_REPORT,
     name: 'StudentReport',
     props: true,
-    component: () => import('../pages/IndividualReport.vue'),
+    component: () => import('../pages/StudentReport.vue'),
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
   },
   {
