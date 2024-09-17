@@ -118,10 +118,15 @@ describe('The admin user can create an administration and assign it to a distric
         .click();
       cy.wait(0.3 * timeout);
       typeAdministrationName();
+      cy.wait(0.3 * timeout);
       selectStartDate();
+      cy.wait(0.3 * timeout);
       selectEndDate();
+      cy.wait(0.3 * timeout);
       cy.selectTestOrgs();
+      cy.wait(0.3 * timeout);
       selectAndAssignAdministration(variant);
+      cy.wait(0.3 * timeout);
       checkAdministrationCreated();
     },
   );
