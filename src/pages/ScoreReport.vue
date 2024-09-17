@@ -1138,11 +1138,20 @@ const scoreReportColumns = computed(() => {
       dataType: 'text',
       sort: true,
       filter: true,
+      headerStyle: authStore.isUserSuperAdmin
+        ? `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0 `
+        : `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
     });
   }
 
   if (authStore.isUserSuperAdmin) {
-    tableColumns.push({ field: 'user.assessmentPid', header: 'PID', dataType: 'text', sort: false });
+    tableColumns.push({
+      field: 'user.assessmentPid',
+      header: 'PID',
+      dataType: 'text',
+      sort: false,
+      headerStyle: `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0; border-right-width:2px; border-right-style:solid; border-right-color:#ffffff;`,
+    });
   }
 
   const sortedTasks = allTasks.value.toSorted((p1, p2) => {

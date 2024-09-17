@@ -396,7 +396,7 @@ const fetchTreeOrgs = async () => {
   treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'group'));
   treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'family'));
 
-  treeTableOrgs.forEach((node) => {
+  (treeTableOrgs ?? []).forEach((node) => {
     // Sort the schools by existance of stats then alphabetically
     if (node.children) {
       node.children.sort((a, b) => {
@@ -499,8 +499,8 @@ const onExpand = async (node) => {
     });
 
     // Sort the classes by existance of stats then alphabetically
-    newNodes.forEach((districtNode) => {
-      districtNode.children.forEach((schoolNode) => {
+    (newNodes ?? []).forEach((districtNode) => {
+      (districtNode?.children ?? []).forEach((schoolNode) => {
         if (schoolNode.children) {
           schoolNode.children.sort((a, b) => {
             if (!a.data.stats) return 1;
