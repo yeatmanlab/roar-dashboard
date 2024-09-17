@@ -183,8 +183,8 @@ import { getGrade } from '@bdelab/roar-utils';
 import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAdministrationAssignmentsQuery from '@/composables/queries/useUserAdministrationAssignmentsQuery';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
-import { fetchDocById } from '@/helpers/query/utils';
 import { runPageFetcher } from '@/helpers/query/runs';
 import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
 import AppSpinner from '@/components/AppSpinner.vue';
@@ -240,12 +240,9 @@ const { data: taskData } = useQuery({
   staleTime: 5 * 60 * 1000,
 });
 
-const { data: administrationData } = useQuery({
-  queryKey: ['administrations', uid, props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId),
+const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
+  select: (data) => data[0],
 });
 
 const expanded = ref(false);
