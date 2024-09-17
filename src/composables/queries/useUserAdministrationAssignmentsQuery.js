@@ -19,7 +19,8 @@ const useUserAdministrationAssignmentsQuery = (userId, administrationId, queryOp
 
   return useQuery({
     queryKey: [USER_ADMINISTRATION_ASSIGNMENTS_QUERY_KEY, userId, administrationId],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, `${userId}/assignments/${administrationId}`),
+    queryFn: () =>
+      fetchDocById(FIRESTORE_COLLECTIONS.USERS, `${toValue(userId)}/assignments/${toValue(administrationId)}`),
     enabled: isQueryEnabled,
     ...options,
   });
