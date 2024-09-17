@@ -9,7 +9,6 @@ const assignedvalue2 = 'postsecondary';
 const randomAdministrationName = randomizeName(Cypress.env('testAdministrationName'));
 
 function typeAdministrationName() {
-  console.log('Typing administration name: ', randomAdministrationName);
   cy.get('[data-cy="input-administration-name"]', { timeout: Cypress.env('timeout') }).type(randomAdministrationName);
   cy.get('[data-cy="input-administration-name-public"]', { timeout: Cypress.env('timeout') }).type(
     `Public ${randomAdministrationName}`,
@@ -74,8 +73,8 @@ function selectVariantCard(variant) {
 }
 
 function selectOptions() {
-  cy.get('[data-cy="radio-button-not-sequential"]', { timeout: Cypress.env('timeout') }).type(variant);
-  cy.get('[data-cy="checkbutton-test-data"]', { timeout: Cypress.env('timeout') }).type(variant);
+  cy.get('[data-cy="radio-button-not-sequential"]', { timeout: Cypress.env('timeout') }).click();
+  cy.get('[data-cy="checkbutton-test-data"]', { timeout: Cypress.env('timeout') }).click();
   cy.get('[data-cy="checkbox-no-consent"]', { timeout: Cypress.env('timeout') }).click();
 }
 
@@ -84,16 +83,20 @@ function selectAndAssignAdministration(variant) {
   cy.wait(0.3 * timeout);
   selectVariantCard(variant);
   selectOptions();
+  cy.wait(0.3 * timeout);
   cy.get('[data-cy="button-create-administration"]', { timeout: Cypress.env('timeout') }).click();
 }
 
 function checkAdministrationCreated() {
-  cy.visit('/');
   cy.url({ timeout: 3 * Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/`);
+  cy.wait(timeout);
+  cy.switchToTestAdministrations();
+  cy.wait(0.5 * timeout);
   cy.get('[data-cy="dropdown-sort-administrations"]', { timeout: 2 * Cypress.env('timeout') }).click();
   cy.get('ul > li', { timeout: Cypress.env('timeout') })
     .contains('Creation date (descending)')
     .click();
+  cy.log(`Looking for ${randomAdministrationName}...`);
   cy.get('[data-cy="h2-card-admin-title"]', { timeout: 2 * Cypress.env('timeout') }).should(
     'contain.text',
     randomAdministrationName,
@@ -109,7 +112,6 @@ describe('The admin user can create an administration and assign it to a distric
       cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
       cy.navigateTo('/');
       cy.wait(0.3 * timeout);
-      // cy.navigateTo('/create-administration');
       cy.get('.p-menuitem-link').contains('Administrations').click();
       cy.get('ul > li', { timeout: 2 * timeout })
         .contains('Create administration')
