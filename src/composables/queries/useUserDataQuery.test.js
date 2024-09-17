@@ -57,6 +57,31 @@ describe('useUserDataQuery', () => {
     expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
   });
 
+  it('should allow the use of a manual user ID', async () => {
+    const mockUserId = nanoid();
+    const mockStudentUserId = nanoid();
+
+    const authStore = useAuthStore(piniaInstance);
+    authStore.roarUid = mockUserId;
+    authStore.userQueryKeyIndex = 1;
+
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useUserDataQuery(mockStudentUserId), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['user', mockStudentUserId, 1],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: true,
+      }),
+    });
+
+    expect(fetchDocById).toHaveBeenCalledWith('users', mockStudentUserId);
+  });
+
   it('should correctly control the enabled state of the query', async () => {
     const mockUserId = nanoid();
 
@@ -70,7 +95,7 @@ describe('useUserDataQuery', () => {
       enabled: enableQuery,
     };
 
-    withSetup(() => useUserDataQuery(queryOptions), {
+    withSetup(() => useUserDataQuery(null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -100,7 +125,7 @@ describe('useUserDataQuery', () => {
 
     const queryOptions = { enabled: true };
 
-    withSetup(() => useUserDataQuery(queryOptions), {
+    withSetup(() => useUserDataQuery(null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
@@ -128,7 +153,7 @@ describe('useUserDataQuery', () => {
 
     const queryOptions = { enabled: true };
 
-    withSetup(() => useUserDataQuery(queryOptions), {
+    withSetup(() => useUserDataQuery(null, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 

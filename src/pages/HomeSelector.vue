@@ -67,7 +67,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
 });
 
-const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery({
+const { isLoading: isLoadingUserData, data: userData } = useUserDataQuery(null, {
   enabled: initialized,
 });
 

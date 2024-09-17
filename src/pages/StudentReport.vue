@@ -174,19 +174,20 @@
 </template>
 
 <script setup>
-import { fetchDocById } from '../helpers/query/utils';
-import { runPageFetcher } from '../helpers/query/runs';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useQuery, useQueryClient } from '@tanstack/vue-query';
 import { storeToRefs } from 'pinia';
-import { useAuthStore } from '../store/auth';
-import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
-import IndividualScoreReportTask from '../components/reports/IndividualScoreReportTask.vue';
-import AppSpinner from '../components/AppSpinner.vue';
-import { getGrade } from '@bdelab/roar-utils';
-import NextSteps from '@/assets/NextSteps.pdf';
 import jsPDF from 'jspdf';
 import _startCase from 'lodash/startCase';
+import { getGrade } from '@bdelab/roar-utils';
+import { useAuthStore } from '@/store/auth';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
+import { fetchDocById } from '@/helpers/query/utils';
+import { runPageFetcher } from '@/helpers/query/runs';
+import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
+import AppSpinner from '@/components/AppSpinner.vue';
+import NextSteps from '@/assets/NextSteps.pdf';
 
 const authStore = useAuthStore();
 
@@ -213,12 +214,8 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const { data: studentData } = useQuery({
-  queryKey: ['users', uid, props.userId],
-  queryFn: () => fetchDocById('users', props.userId),
+const { data: studentData } = useUserDataQuery(props.userId, {
   enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
 });
 
 const { data: assignmentData } = useQuery({

@@ -187,7 +187,7 @@ const init = () => {
 
 const { mutate: updateUser } = useUpdateUserMutation();
 
-const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery({
+const { data: userData, isLoading: isLoadingUserData } = useUserDataQuery(null, {
   enabled: initialized,
 });
 

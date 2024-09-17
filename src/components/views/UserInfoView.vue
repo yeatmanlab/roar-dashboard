@@ -73,7 +73,7 @@ onMounted(() => {
 // +---------+
 // | Queries |
 // +---------+
-const { data: userData } = useUserDataQuery({
+const { data: userData } = useUserDataQuery(null, {
   enabled: initialized,
 });
 
