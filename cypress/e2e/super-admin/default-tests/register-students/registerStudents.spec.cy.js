@@ -1,7 +1,13 @@
 const timeout = Cypress.env('timeout');
-
-function selectField(id, fieldName) {
-  cy.get(`#${id} > .p-dropdown-label`).should('exist').click().get('li').contains(fieldName).click();
+const selector = '.p-datatable-thead > tr > :nth-child';
+function selectField(int, fieldName) {
+  // cy.get(`.p-dropdown-label`).should('exist').click().get('li').contains(fieldName).click();
+  cy.get(selector + `(${int})`)
+    .should('exist')
+    .click()
+    .get('li')
+    .contains(fieldName)
+    .click();
 }
 
 describe(
@@ -21,17 +27,18 @@ describe(
 
         cy.get('input[type=file]').selectFile('cypress/fixtures/testStudentData.csv', { force: true, timeout: 10000 });
 
-        selectField('pv_id_11', 'Student Username');
-        selectField('pv_id_12', 'Password');
-        selectField('pv_id_13', 'Student Date of Birth');
-        selectField('pv_id_14', 'Grade');
-        selectField('pv_id_15', 'District');
-        selectField('pv_id_16', 'School');
-        selectField('pv_id_17', 'Class');
-        selectField('pv_id_18', 'Group');
+        selectField(1, 'Student Username');
+        selectField(2, 'Password');
+        selectField(3, 'Student Date of Birth');
+        selectField(4, 'Grade');
+        selectField(5, 'District');
+        selectField(6, 'School');
+        selectField(7, 'Class');
+        selectField(8, 'Group');
 
         cy.get('div').contains('All users are test accounts').click();
         cy.get('[data-cy="button-start-registration"]').click();
+        cy.get('body', { timeout: timeout }).should('contain', 'Success');
       },
     );
   },
