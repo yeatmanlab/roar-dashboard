@@ -1309,7 +1309,7 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 watch(tasksDictionary, (newData) => {
   if (newData) {
-    tasksDictionary.value = newData;
+    tasksDictionary.value = newData.value;
   }
 });
 

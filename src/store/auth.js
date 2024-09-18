@@ -80,7 +80,7 @@ export const useAuthStore = () => {
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
-            this.updateTasksDictionary();
+            await this.updateTasksDictionary();
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
