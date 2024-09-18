@@ -14,6 +14,8 @@ describe(
   () => {
     it('Activates the admin sidebar, clicks List Orgs, then clicks through the various tabs.', () => {
       cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+      cy.visit('/');
+      cy.wait(0.3 * Cypress.env('timeout'));
       cy.get('.p-menuitem-link').contains('Organizations').click();
       cy.get('ul > li', { timeout: 2 * timeout })
         .contains('List organizations')
