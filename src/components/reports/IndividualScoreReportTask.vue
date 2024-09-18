@@ -155,10 +155,6 @@ import { storeToRefs } from 'pinia';
 const authStore = useAuthStore();
 const { tasksDictionary } = storeToRefs(authStore);
 
-const computedTaskDictionary = computed(() => {
-  return tasksDictionary.value;
-});
-
 const props = defineProps({
   studentData: {
     type: Object,
@@ -175,6 +171,10 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+
+const computedTaskDictionary = computed(() => {
+  return tasksDictionary.value;
+});
 
 const studentFirstName = computed(() => {
   if (props.studentData?.name && props.studentData?.name?.first) return props.studentData.name.first;
