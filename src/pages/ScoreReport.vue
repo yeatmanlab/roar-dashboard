@@ -221,7 +221,7 @@
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
-            :header="tasksDictionary[taskId]?.publicName ?? taskId"
+            :header="computedTaskDictionary[taskId]?.publicName ?? taskId"
           >
             <div :id="'tab-view-' + taskId">
               <TaskReport
@@ -327,6 +327,10 @@ let TaskReport, DistributionChartOverview, NextSteps;
 const authStore = useAuthStore();
 
 const { roarfirekit, uid, userQueryKeyIndex, tasksDictionary } = storeToRefs(authStore);
+
+const computedTaskDictionary = computed(() => {
+  return tasksDictionary.value;
+});
 
 const props = defineProps({
   administrationId: {
