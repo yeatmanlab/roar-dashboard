@@ -314,10 +314,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 const { roarfirekit } = storeToRefs(authStore);
 
-const computedTaskDictionary = computed(() => {
-  return tasksDictionary.value;
-});
-
 const props = defineProps({
   administrationId: {
     type: String,
