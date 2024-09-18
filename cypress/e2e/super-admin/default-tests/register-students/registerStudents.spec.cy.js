@@ -12,6 +12,8 @@ describe(
         'assigns the data to the appropriate field, and submits the data for registration.',
       () => {
         cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+        cy.visit('/');
+        cy.wait(0.3 * Cypress.env('timeout'));
         cy.get('.p-menuitem-link').contains('Users').click();
         cy.get('ul > li', { timeout: 2 * timeout }).contains('Register students');
 
