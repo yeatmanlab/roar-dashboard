@@ -198,7 +198,7 @@
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
             :key="taskId"
-            :header="tasksDictionary[taskId]?.publicName ?? taskId"
+            :header="computedTaskDictionary[taskId]?.publicName ?? taskId"
           >
             <div :id="'tab-view-' + taskId">
               <TaskReport
@@ -330,6 +330,10 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
+
+const computedTaskDictionary = computed(() => {
+  return tasksDictionary.value;
+});
 
 const displayName = computed(() => {
   if (administrationData.value) {
