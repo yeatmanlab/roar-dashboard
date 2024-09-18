@@ -326,10 +326,10 @@ let TaskReport, DistributionChartOverview, NextSteps;
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, userQueryKeyIndex, computedTaskDictionary } = storeToRefs(authStore);
+const { roarfirekit, uid, userQueryKeyIndex, tasksDictionary } = storeToRefs(authStore);
 
 const computedTaskDictionary = computed(() => {
-  return computedTaskDictionary.value;
+  return tasksDictionary.value;
 });
 
 const props = defineProps({
