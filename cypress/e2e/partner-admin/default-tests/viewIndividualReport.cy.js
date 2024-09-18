@@ -25,6 +25,7 @@ function checkIndividualScoreReport() {
   cy.get('[data-cy="route-button"]', { timeout: 3 * timeout })
     .first()
     .click();
+  cy.wait(0.3 * timeout);
   cy.get('div', { timeout: 3 * timeout }).should('contain', 'Individual Score Report');
   cy.get('button', { timeout: 3 * timeout })
     .contains('Expand All Sections')

@@ -3,7 +3,7 @@
     <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
       <div class="flex flex-column md:flex-row align-items-center justify-content-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
-          <div class="header-task-name">{{ computedTaskDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
+          <div class="header-task-name">{{ tasksDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
           <div class="text-xs uppercase font-thin text-gray-400">
             {{ task[task.scoreToDisplay].name }}
           </div>
@@ -134,7 +134,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
 import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
@@ -171,10 +171,6 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
-
-const computedTaskDictionary = computed(() => {
-  return tasksDictionary.value;
-});
 
 const studentFirstName = computed(() => {
   if (props.studentData?.name && props.studentData?.name?.first) return props.studentData.name.first;
@@ -386,6 +382,12 @@ function getPercentileSuffix(percentile) {
     return '{value}th';
   }
 }
+
+watch(tasksDictionary, (newData) => {
+  if (newData) {
+    tasksDictionary.value = newData;
+  }
+});
 </script>
 
 <style scoped>
