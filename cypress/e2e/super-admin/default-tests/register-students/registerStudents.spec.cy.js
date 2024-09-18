@@ -1,3 +1,5 @@
+const timeout = Cypress.env('timeout');
+
 function selectField(id, fieldName) {
   cy.get(`#${id} > .p-dropdown-label`).should('exist').click().get('li').contains(fieldName).click();
 }
@@ -10,7 +12,8 @@ describe(
         'assigns the data to the appropriate field, and submits the data for registration.',
       () => {
         cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
-        cy.navigateTo('/register-students');
+        cy.get('.p-menuitem-link').contains('Users').click();
+        cy.get('ul > li', { timeout: 2 * timeout }).contains('Register students');
 
         cy.get('input[type=file]').selectFile('cypress/fixtures/testStudentData.csv', { force: true, timeout: 10000 });
 
