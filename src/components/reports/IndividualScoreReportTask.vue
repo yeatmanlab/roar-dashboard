@@ -3,7 +3,7 @@
     <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
       <div class="flex flex-column md:flex-row align-items-center justify-content-center">
         <div class="flex flex-column justify-content-center align-items-center mt-2">
-          <div class="header-task-name">{{ tasksDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
+          <div class="header-task-name">{{ computedTaskDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
           <div class="text-xs uppercase font-thin text-gray-400">
             {{ task[task.scoreToDisplay].name }}
           </div>
@@ -154,6 +154,10 @@ import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
 const { tasksDictionary } = storeToRefs(authStore);
+
+const computedTaskDictionary = computed(() => {
+  return tasksDictionary.value;
+});
 
 const props = defineProps({
   studentData: {
