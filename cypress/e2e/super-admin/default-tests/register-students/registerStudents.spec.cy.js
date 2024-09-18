@@ -15,18 +15,20 @@ describe(
         cy.visit('/');
         cy.wait(0.3 * Cypress.env('timeout'));
         cy.get('.p-menuitem-link').contains('Users').click();
-        cy.get('ul > li', { timeout: 2 * timeout }).contains('Register students');
+        cy.get('ul > li', { timeout: 2 * timeout })
+          .contains('Register students')
+          .click();
 
         cy.get('input[type=file]').selectFile('cypress/fixtures/testStudentData.csv', { force: true, timeout: 10000 });
 
-        selectField('pv_id_7', 'Student Username');
-        selectField('pv_id_8', 'Password');
-        selectField('pv_id_9', 'Student Date of Birth');
-        selectField('pv_id_10', 'Grade');
-        selectField('pv_id_11', 'District');
-        selectField('pv_id_12', 'School');
-        selectField('pv_id_13', 'Class');
-        selectField('pv_id_14', 'Group');
+        selectField('pv_id_11', 'Student Username');
+        selectField('pv_id_12', 'Password');
+        selectField('pv_id_13', 'Student Date of Birth');
+        selectField('pv_id_14', 'Grade');
+        selectField('pv_id_15', 'District');
+        selectField('pv_id_16', 'School');
+        selectField('pv_id_17', 'Class');
+        selectField('pv_id_18', 'Group');
 
         cy.get('div').contains('All users are test accounts').click();
         cy.get('[data-cy="button-start-registration"]').click();
