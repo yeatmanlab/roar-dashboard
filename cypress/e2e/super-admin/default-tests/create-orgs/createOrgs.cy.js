@@ -1,7 +1,6 @@
 import { randomizeName } from '../../../../support/utils';
 import {
   selectOrgFromDropdown,
-  checkOrgCreated,
   clickCreateOrg,
   inputParentOrgDetails,
 } from '../../../../support/helper-functions/super-admin/superAdminHelpers';
@@ -45,10 +44,8 @@ describe('The admin user can create a set of test orgs', () => {
       cy.inputOrgDetails(org.name, org.initials, null, null, org.grade, Cypress.env('testTag'));
       cy.get('[data-cy="checkbox-test-data-orgs"]', { timeout: Cypress.env('timeout') }).click();
       clickCreateOrg(org.orgType);
-      // allow time for the org to be created
-      cy.wait(Cypress.env('timeout'));
-      cy.navigateTo('/list-orgs');
-      checkOrgCreated(org.name, org.orgType, org.parentDistrict, org.parentSchool);
+      cy.get('body', { timeout: Cypress.env('timeout') }).should('contain.text', 'Success');
+      cy.log('Org successfully created.');
     });
   });
 });

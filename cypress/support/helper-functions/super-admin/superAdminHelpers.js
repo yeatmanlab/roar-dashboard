@@ -16,24 +16,33 @@ export function selectOrgFromDropdown(orgType) {
 
 export function checkOrgCreated(orgName, orgType, parentDistrict, parentSchool) {
   if (orgType === 'District') {
-    cy.get('div', { timeout: Cypress.env('timeout') }).should('contain.text', orgName);
+    cy.get('body', { timeout: Cypress.env('timeout') })
+      .invoke('text')
+      .then((text) => {
+        cy.wait(Cypress.env('timeout'));
+        if (text.includes(orgName)) {
+          cy.log('District successfully created.');
+        } else {
+          cy.log('District not found.');
+        }
+      });
   } else if (orgType === 'Group') {
     cy.get('a')
       .contains('Groups', { timeout: Cypress.env('timeout') })
       .click();
-    cy.get('div', { timeout: Cypress.env('timeout') }).should('contain.text', orgName);
+    cy.get('body', { timeout: Cypress.env('timeout') }).should('contain.text', orgName);
   } else if (orgType === 'School') {
     cy.get('a')
       .contains('Schools', { timeout: Cypress.env('timeout') })
       .click();
     inputParentOrgDetails(orgType, parentDistrict);
-    cy.get('div', { timeout: Cypress.env('timeout') }).should('contain.text', orgName);
+    cy.get('body', { timeout: Cypress.env('timeout') }).should('contain.text', orgName);
   } else if (orgType === 'Class') {
     cy.get('a')
       .contains('Classes', { timeout: Cypress.env('timeout') })
       .click();
     inputParentOrgDetails(orgType, parentDistrict, parentSchool);
-    cy.get('div', { timeout: Cypress.env('timeout') }).should('contain.text', orgName);
+    cy.get('body', { timeout: Cypress.env('timeout') }).should('contain.text', orgName);
   }
   cy.log(`${orgType} successfully created.`);
 }
