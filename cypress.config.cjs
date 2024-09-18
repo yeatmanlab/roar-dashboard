@@ -117,7 +117,7 @@ module.exports = defineConfig({
       'ROAR - Sentence',
       'ROAR - Morphology',
     ],
-    testPartnerAdministrationName: 'Cypress Partner Admin Test Administration',
+    testPartnerAdministrationName: 'Partner Test Administration',
     testPartnerAdministrationId: 'kKUSypkMc36mPEzleDE6',
     testPartnerDistrictName: 'Cypress Test District',
     testPartnerDistrictInitials: 'CTD',
