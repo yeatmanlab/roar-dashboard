@@ -328,10 +328,6 @@ const authStore = useAuthStore();
 
 const { roarfirekit, uid, userQueryKeyIndex, tasksDictionary } = storeToRefs(authStore);
 
-const computedTaskDictionary = computed(() => {
-  return tasksDictionary.value;
-});
-
 const props = defineProps({
   administrationId: {
     type: String,

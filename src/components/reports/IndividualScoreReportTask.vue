@@ -155,10 +155,6 @@ import { storeToRefs } from 'pinia';
 const authStore = useAuthStore();
 const { tasksDictionary } = storeToRefs(authStore);
 
-const computedTaskDictionary = computed(() => {
-  return tasksDictionary.value;
-});
-
 const props = defineProps({
   studentData: {
     type: Object,
