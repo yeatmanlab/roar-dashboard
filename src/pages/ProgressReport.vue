@@ -534,6 +534,12 @@ const progressReportColumns = computed(() => {
 
 const filteredTableData = ref(computedProgressData.value);
 
+watch(tasksDictionary, (newData) => {
+  if (newData) {
+    tasksDictionary.value = newData;
+  }
+});
+
 watch(computedProgressData, (newValue) => {
   // Update filteredTableData when computedProgressData changes
   filteredTableData.value = newValue;
