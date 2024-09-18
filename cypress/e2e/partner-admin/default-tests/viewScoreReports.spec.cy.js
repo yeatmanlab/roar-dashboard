@@ -7,6 +7,7 @@ const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
 const testUserList = Cypress.env('testUserList');
 const testAssignments = Cypress.env('testAssignmentsList');
+const timeout = Cypress.env('timeout');
 
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
@@ -35,9 +36,13 @@ function checkAssignmentColumns() {
 describe('The partner admin can view score reports for a given administration.', () => {
   it('Selects an administration and views its score report.', () => {
     checkUrl();
+    cy.wait(0.3 * timeout);
     cy.getAdministrationCard(testPartnerAdministrationName);
+    cy.wait(0.3 * timeout);
     clickScoreButton();
+    cy.wait(0.3 * timeout);
     cy.checkUserList(testUserList);
+    cy.wait(0.3 * timeout);
     checkAssignmentColumns(testAssignments);
   });
 });
