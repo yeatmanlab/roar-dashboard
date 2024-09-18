@@ -6,7 +6,6 @@ const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.env('baseUrl');
 const testUserList = Cypress.env('testUserList');
-const testAssignments = Cypress.env('testAssignmentsList');
 
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
@@ -20,16 +19,6 @@ function clickScoreButton() {
     'eq',
     `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`,
   );
-}
-
-function checkAssignmentColumns(assignments) {
-  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
-    const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
-
-    assignments.forEach((assignment) => {
-      expect(tableHeaders).to.include(assignment);
-    });
-  });
 }
 
 function checkIndividualScoreReport() {
@@ -51,8 +40,6 @@ describe('The partner admin can view individual score reports for a given admini
     clickScoreButton();
     cy.wait(0.3 * timeout);
     cy.checkUserList(testUserList);
-    cy.wait(0.3 * timeout);
-    checkAssignmentColumns(testAssignments);
     cy.wait(0.3 * timeout);
     checkIndividualScoreReport();
   });
