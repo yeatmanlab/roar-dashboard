@@ -359,8 +359,8 @@ const onExpand = async (node) => {
     });
 
     // Sort the classes by existance of stats then alphabetically
-    newNodes.forEach((districtNode) => {
-      districtNode.children.forEach((schoolNode) => {
+    (newNodes ?? []).forEach((districtNode) => {
+      (districtNode?.children ?? []).forEach((schoolNode) => {
         if (schoolNode.children) {
           schoolNode.children.sort((a, b) => {
             if (!a.data.stats) return 1;
