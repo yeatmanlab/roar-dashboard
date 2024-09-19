@@ -1,3 +1,5 @@
+import { navigateToPageFromMenubar } from '../../../../support/helper-functions/super-admin/superAdminHelpers.js';
+
 const timeout = Cypress.env('timeout');
 const selector = '.p-datatable-thead > tr > :nth-child';
 
@@ -21,10 +23,8 @@ describe(
         cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
         cy.visit('/');
         cy.wait(0.3 * Cypress.env('timeout'));
-        cy.get('.p-menuitem-link').contains('Users').click();
-        cy.get('ul > li', { timeout: 2 * timeout })
-          .contains('Register students')
-          .click();
+
+        navigateToPageFromMenubar('Users', 'Register students');
 
         cy.get('input[type=file]').selectFile('cypress/fixtures/testStudentData.csv', { force: true, timeout: 10000 });
 
