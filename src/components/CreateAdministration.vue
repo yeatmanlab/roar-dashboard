@@ -109,7 +109,7 @@
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
-          :pre-existing-assessment-info="preExistingAssessmentInfo"
+          :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
         />
         <div v-if="!isLevante" class="mt-2 flex w-full">
@@ -189,6 +189,8 @@ import { required, requiredIf } from '@vuelidate/validators';
 import { fetchDocsById } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import TaskPicker from './TaskPicker.vue';
 import ConsentPicker from './ConsentPicker.vue';
@@ -231,9 +233,9 @@ const submitLabel = computed(() => {
   return 'Create Administration';
 });
 
-//      +------------------------------------------+
-// -----| Queries for grabbing variants |-----
-//      +------------------------------------------+
+// +------------------------------------------------------------------------------------------------------------------+
+// | Fetch Variants with Params
+// +------------------------------------------------------------------------------------------------------------------+
 const findVariantWithParams = (variants, params) => {
   // TODO: implement tie breakers if found.length > 1
   return _find(variants, (variant) => {
@@ -247,9 +249,9 @@ const { data: allVariants } = useTaskVariantsQuery(true, {
   enabled: initialized,
 });
 
-// +------------------------------------------------------+
-// | Queries for grabbing pre-existing adminitration data |
-// +------------------------------------------------------+
+// +------------------------------------------------------------------------------------------------------------------+
+// | Fetch pre-existing administration data when editing an administration
+// +------------------------------------------------------------------------------------------------------------------+
 
 // @TODO: Remove the following queryKeys array and reset/invalidate functions in favour of query mutations that
 // automatically invalidate the necessary relevant queries.
@@ -275,48 +277,32 @@ const invalidateAllQueries = async () => {
   }
 };
 
+// Fetch the data of the currently being edited administration, incl. its assigned assessments.
 const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
-  enabled: initialized && props.adminId,
+  enabled: initialized && !!props.adminId,
   select: (data) => data[0],
 });
 
-const preExistingAssessmentInfo = computed(() => {
-  return _get(existingAdministrationData.value, 'assessments', []);
+const existingAssessments = computed(() => {
+  return existingAdministrationData?.value?.assessments ?? [];
 });
 
-// Grab districts from existingAdministrationData.minimalOrgs.districts
-const districtsToGrab = computed(() => {
-  const districtIds = _get(existingAdministrationData.value, 'minimalOrgs.districts', []);
-  return districtIds.map((districtId) => {
-    return {
-      collection: 'districts',
-      docId: districtId,
-      select: ['name'],
-    };
-  });
+// Fetch the districts assigned to the administration.
+const districtIds = computed(() => existingAdministrationData?.value?.minimalOrgs?.districts ?? []);
+
+const { data: existingDistrictsData } = useDistrictsQuery(districtIds, {
+  enabled: initialized && districtIds.value.length > 0,
 });
 
-const shouldGrabDistricts = computed(() => {
-  return initialized.value && districtsToGrab.value.length > 0;
-});
+// Fetch the schools assigned to the administration.
+const schoolIds = computed(() => existingAdministrationData.value?.minimalOrgs?.schools ?? []);
 
-// grab schools from existingAdministrationData.minimalOrgs.schools
-const schoolsToGrab = computed(() => {
-  const schoolIds = _get(existingAdministrationData.value, 'minimalOrgs.schools', []);
-  return schoolIds.map((schoolId) => {
-    return {
-      collection: 'schools',
-      docId: schoolId,
-      select: ['name'],
-    };
-  });
-});
-
-const shouldGrabSchools = computed(() => {
-  return initialized.value && schoolsToGrab.value.length > 0;
+const { data: existingSchoolsData } = useSchoolsQuery(schoolIds, {
+  enabled: initialized && schoolIds.value.length > 0,
 });
 
 // Grab classes from existingAdministrationData.minimalOrgs.classes
+// Fetch classes assigned to the administration.
 const classesToGrab = computed(() => {
   const classIds = _get(existingAdministrationData.value, 'minimalOrgs.classes', []);
   return classIds.map((classId) => {
@@ -362,22 +348,6 @@ const familiesToGrab = computed(() => {
 
 const shouldGrabFamilies = computed(() => {
   return initialized.value && familiesToGrab.value.length > 0;
-});
-
-const { data: preDistricts } = useQuery({
-  queryKey: ['districts', props.adminId],
-  queryFn: () => fetchDocsById(districtsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabDistricts,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: preSchools } = useQuery({
-  queryKey: ['schools', 'minimalOrgs', props.adminId],
-  queryFn: () => fetchDocsById(schoolsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabSchools,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const { data: preClasses } = useQuery({
@@ -463,8 +433,8 @@ const minEndDate = computed(() => {
 //      +---------------------------------+
 const orgsList = computed(() => {
   return {
-    districts: preDistricts.value,
-    schools: preSchools.value,
+    districts: existingDistrictsData.value,
+    schools: existingSchoolsData.value,
     classes: preClasses.value,
     groups: preGroups.value,
     families: preFamilies.value,
@@ -675,7 +645,7 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 });
 
 // Set up watchers for changes to orgs as a result of editing an administration
-watch(districtsToGrab, async (updatedValue) => {
+watch(districtIds, async (updatedValue) => {
   if (updatedValue.length !== 0) {
     // Invalidate the districts query and re-fetch the data based on the updated value
     await queryClient.invalidateQueries(['districts', props.adminId]);
@@ -686,7 +656,7 @@ watch(districtsToGrab, async (updatedValue) => {
   }
 });
 
-watch(schoolsToGrab, async (updatedValue) => {
+watch(schoolIds, async (updatedValue) => {
   if (updatedValue.length !== 0) {
     // Invalidate the schools query and re-fetch the data based on the updated value
     await queryClient.invalidateQueries(['schools', 'minimalOrgs', props.adminId]);
