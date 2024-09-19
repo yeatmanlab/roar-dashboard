@@ -134,7 +134,7 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
 import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
@@ -382,12 +382,6 @@ function getPercentileSuffix(percentile) {
     return '{value}th';
   }
 }
-
-watch(tasksDictionary, (newData) => {
-  if (newData) {
-    tasksDictionary.value = newData;
-  }
-});
 </script>
 
 <style scoped>
