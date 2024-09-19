@@ -270,7 +270,7 @@ const props = defineProps({
   },
   updateVariant: {
     type: Function,
-    required: false,
+    required: true,
   },
   preExistingAssessmentInfo: {
     type: Array,
