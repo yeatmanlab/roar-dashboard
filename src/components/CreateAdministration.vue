@@ -186,8 +186,9 @@ import _groupBy from 'lodash/groupBy';
 import _values from 'lodash/values';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
-import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
+import { fetchDocsById } from '@/helpers/query/utils';
 import { useAuthStore } from '@/store/auth';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import TaskPicker from './TaskPicker.vue';
 import ConsentPicker from './ConsentPicker.vue';
@@ -246,10 +247,12 @@ const { data: allVariants } = useTaskVariantsQuery(true, {
   enabled: initialized,
 });
 
-//      +------------------------------------------+
-// -----| Queries for grabbing pre-existing admins |-----
-//      +------------------------------------------+
+// +------------------------------------------------------+
+// | Queries for grabbing pre-existing adminitration data |
+// +------------------------------------------------------+
 
+// @TODO: Remove the following queryKeys array and reset/invalidate functions in favour of query mutations that
+// automatically invalidate the necessary relevant queries.
 const queryKeys = [
   ['administration', props.adminId],
   ['variants', 'all'],
@@ -259,94 +262,6 @@ const queryKeys = [
   ['groups', props.adminId],
   ['families', props.adminId],
 ];
-
-const shouldGrabAdminInfo = computed(() => {
-  return initialized.value && Boolean(props.adminId);
-});
-
-const preExistingAssessmentInfo = computed(() => {
-  return _get(preExistingAdminInfo.value, 'assessments', []);
-});
-
-// Grab districts from preExistingAdminInfo.minimalOrgs.districts
-const districtsToGrab = computed(() => {
-  const districtIds = _get(preExistingAdminInfo.value, 'minimalOrgs.districts', []);
-  return districtIds.map((districtId) => {
-    return {
-      collection: 'districts',
-      docId: districtId,
-      select: ['name'],
-    };
-  });
-});
-
-const shouldGrabDistricts = computed(() => {
-  return initialized.value && districtsToGrab.value.length > 0;
-});
-
-// grab schools from preExistingAdminInfo.minimalOrgs.schools
-const schoolsToGrab = computed(() => {
-  const schoolIds = _get(preExistingAdminInfo.value, 'minimalOrgs.schools', []);
-  return schoolIds.map((schoolId) => {
-    return {
-      collection: 'schools',
-      docId: schoolId,
-      select: ['name'],
-    };
-  });
-});
-
-const shouldGrabSchools = computed(() => {
-  return initialized.value && schoolsToGrab.value.length > 0;
-});
-
-// Grab classes from preExistingAdminInfo.minimalOrgs.classes
-const classesToGrab = computed(() => {
-  const classIds = _get(preExistingAdminInfo.value, 'minimalOrgs.classes', []);
-  return classIds.map((classId) => {
-    return {
-      collection: 'classes',
-      docId: classId,
-      select: ['name'],
-    };
-  });
-});
-
-const shouldGrabClasses = computed(() => {
-  return initialized.value && classesToGrab.value.length > 0;
-});
-
-// Grab groups from preExistingAdminInfo.minimalOrgs.groups
-const groupsToGrab = computed(() => {
-  const groupIds = _get(preExistingAdminInfo.value, 'minimalOrgs.groups', []);
-  return groupIds.map((id) => {
-    return {
-      collection: 'groups',
-      docId: id,
-      select: ['name'],
-    };
-  });
-});
-
-const shouldGrabGroups = computed(() => {
-  return initialized.value && groupsToGrab.value.length > 0;
-});
-
-// Grab families from preExistingAdminInfo.families
-const familiesToGrab = computed(() => {
-  const familyIds = _get(preExistingAdminInfo.value, 'minimalOrgs.families', []);
-  return familyIds.map((id) => {
-    return {
-      collection: 'families',
-      docId: id,
-      select: ['name'],
-    };
-  });
-});
-
-const shouldGrabFamilies = computed(() => {
-  return initialized.value && familiesToGrab.value.length > 0;
-});
 
 const resetAllQueries = async () => {
   for (const key of queryKeys) {
@@ -360,12 +275,93 @@ const invalidateAllQueries = async () => {
   }
 };
 
-const { data: preExistingAdminInfo } = useQuery({
-  queryKey: ['administration', props.adminId],
-  queryFn: () => fetchDocById('administrations', props.adminId),
-  keepPreviousData: true,
-  enabled: shouldGrabAdminInfo,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
+  enabled: initialized && props.adminId,
+  select: (data) => data[0],
+});
+
+const preExistingAssessmentInfo = computed(() => {
+  return _get(existingAdministrationData.value, 'assessments', []);
+});
+
+// Grab districts from existingAdministrationData.minimalOrgs.districts
+const districtsToGrab = computed(() => {
+  const districtIds = _get(existingAdministrationData.value, 'minimalOrgs.districts', []);
+  return districtIds.map((districtId) => {
+    return {
+      collection: 'districts',
+      docId: districtId,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabDistricts = computed(() => {
+  return initialized.value && districtsToGrab.value.length > 0;
+});
+
+// grab schools from existingAdministrationData.minimalOrgs.schools
+const schoolsToGrab = computed(() => {
+  const schoolIds = _get(existingAdministrationData.value, 'minimalOrgs.schools', []);
+  return schoolIds.map((schoolId) => {
+    return {
+      collection: 'schools',
+      docId: schoolId,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabSchools = computed(() => {
+  return initialized.value && schoolsToGrab.value.length > 0;
+});
+
+// Grab classes from existingAdministrationData.minimalOrgs.classes
+const classesToGrab = computed(() => {
+  const classIds = _get(existingAdministrationData.value, 'minimalOrgs.classes', []);
+  return classIds.map((classId) => {
+    return {
+      collection: 'classes',
+      docId: classId,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabClasses = computed(() => {
+  return initialized.value && classesToGrab.value.length > 0;
+});
+
+// Grab groups from existingAdministrationData.minimalOrgs.groups
+const groupsToGrab = computed(() => {
+  const groupIds = _get(existingAdministrationData.value, 'minimalOrgs.groups', []);
+  return groupIds.map((id) => {
+    return {
+      collection: 'groups',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabGroups = computed(() => {
+  return initialized.value && groupsToGrab.value.length > 0;
+});
+
+// Grab families from existingAdministrationData.families
+const familiesToGrab = computed(() => {
+  const familyIds = _get(existingAdministrationData.value, 'minimalOrgs.families', []);
+  return familyIds.map((id) => {
+    return {
+      collection: 'families',
+      docId: id,
+      select: ['name'],
+    };
+  });
+});
+
+const shouldGrabFamilies = computed(() => {
+  return initialized.value && familiesToGrab.value.length > 0;
 });
 
 const { data: preDistricts } = useQuery({
@@ -449,8 +445,8 @@ const rules = {
 const v$ = useVuelidate(rules, state);
 
 const minStartDate = computed(() => {
-  if (props.adminId && preExistingAdminInfo.value?.dateOpened) {
-    return new Date(preExistingAdminInfo.value.dateOpened);
+  if (props.adminId && existingAdministrationData.value?.dateOpened) {
+    return new Date(existingAdministrationData.value.dateOpened);
   }
   return new Date();
 });
@@ -651,7 +647,7 @@ onUnmounted(async () => {
   }
 });
 
-watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
+watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
     state.administrationName = adminInfo.name;
     state.administrationPublicName = adminInfo.publicName;

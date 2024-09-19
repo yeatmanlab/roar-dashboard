@@ -20,7 +20,6 @@ const useAdministrationsQuery = (administrationIds, queryOptions = undefined) =>
           return {
             collection: FIRESTORE_COLLECTIONS.ADMINISTRATIONS,
             docId: administrationId,
-            select: ['name', 'publicName', 'sequential', 'assessments', 'legal'],
           };
         }),
       ),
