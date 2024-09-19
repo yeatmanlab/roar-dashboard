@@ -134,7 +134,7 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import _lowerCase from 'lodash/lowerCase';
 import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
