@@ -382,12 +382,6 @@ function getPercentileSuffix(percentile) {
     return '{value}th';
   }
 }
-
-watch(tasksDictionary, (newData) => {
-  if (newData) {
-    tasksDictionary.value = newData;
-  }
-});
 </script>
 
 <style scoped>
