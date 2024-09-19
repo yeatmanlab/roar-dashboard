@@ -1307,12 +1307,6 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) refresh();
 });
 
-watch(tasksDictionary, (newData) => {
-  if (newData) {
-    tasksDictionary.value = newData.value;
-  }
-});
-
 onMounted(async () => {
   TaskReport = (await import('@/components/reports/tasks/TaskReport.vue')).default;
   DistributionChartOverview = (await import('@/components/reports/DistributionChartOverview.vue')).default;
