@@ -32,6 +32,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
 
 let HomeParticipant, HomeAdministrator, ConsentModal;
+
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const { roarfirekit, roarUid, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
@@ -148,9 +149,11 @@ watch(userData, async (newValue) => {
 });
 
 onMounted(async () => {
-  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
+  [HomeParticipant, HomeAdministrator, ConsentModal] = await Promise.all([
+    import('@/pages/HomeParticipant.vue').then((module) => module.default),
+    import('@/pages/HomeAdministrator.vue').then((module) => module.default),
+    import('@/components/ConsentModal.vue').then((module) => module.default),
+  ]);
 
   if (requireRefresh.value) {
     requireRefresh.value = false;
