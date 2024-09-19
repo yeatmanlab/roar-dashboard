@@ -1,4 +1,5 @@
 import { randomizeName } from '../../../../support/utils';
+import { navigateToPageFromMenubar } from '../../../../support/helper-functions/super-admin/superAdminHelpers.js';
 
 const timeout = Cypress.env('timeout');
 const randomTenDigitNumber = Math.floor(1000000000 + Math.random() * 9000000000);
@@ -32,10 +33,7 @@ describe('The admin user can create a new administrator and assign them to a gro
     () => {
       cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
       cy.visit('/');
-      cy.get('.p-menuitem-link').contains('Users').click();
-      cy.get('ul > li', { timeout: 2 * timeout })
-        .contains('Register administrator')
-        .click();
+      navigateToPageFromMenubar('Users', 'Create administrator');
       cy.wait(0.5 * timeout);
       inputAdministratorDetails();
       cy.selectTestOrgs();

@@ -1,3 +1,5 @@
+import { navigateToPageFromMenubar } from '../../../support/helper-functions/super-admin/superAdminHelpers.js';
+
 const timeout = Cypress.env('timeout');
 
 function clickOrgTabs() {
@@ -16,10 +18,9 @@ describe(
       cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
       cy.visit('/');
       cy.wait(0.3 * Cypress.env('timeout'));
-      cy.get('.p-menuitem-link').contains('Organizations').click();
-      cy.get('ul > li', { timeout: 2 * timeout })
-        .contains('List organizations')
-        .click();
+
+      navigateToPageFromMenubar('Organizations', 'List organizations');
+
       clickOrgTabs();
     });
   },

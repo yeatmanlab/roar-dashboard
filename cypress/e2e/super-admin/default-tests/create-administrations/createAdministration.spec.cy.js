@@ -1,4 +1,5 @@
 import { randomizeName } from '../../../../support/utils';
+import { navigateToPageFromMenubar } from '../../../../support/helper-functions/super-admin/superAdminHelpers.js';
 
 const timeout = Cypress.env('timeout');
 const today = new Date().getDate();
@@ -112,10 +113,9 @@ describe('The admin user can create an administration and assign it to a distric
       cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
       cy.navigateTo('/');
       cy.wait(0.3 * timeout);
-      cy.get('.p-menuitem-link').contains('Administrations').click();
-      cy.get('ul > li', { timeout: 2 * timeout })
-        .contains('Create administration')
-        .click();
+
+      navigateToPageFromMenubar('Administrations', 'Create administration');
+
       cy.wait(0.3 * timeout);
       typeAdministrationName();
       cy.wait(0.3 * timeout);

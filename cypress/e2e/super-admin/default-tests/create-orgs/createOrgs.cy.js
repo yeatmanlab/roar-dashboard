@@ -3,6 +3,7 @@ import {
   selectOrgFromDropdown,
   clickCreateOrg,
   inputParentOrgDetails,
+  navigateToPageFromMenubar,
 } from '../../../../support/helper-functions/super-admin/superAdminHelpers';
 
 const timeout = Cypress.env('timeout');
@@ -26,6 +27,14 @@ const randomOrgs = [
   { orgType: 'Group', name: randomGroupName, initials: 'CTG' },
 ];
 
+function checkTestData() {
+  cy.get('[data-cy="checkbox-test-data-orgs"]', { timeout: Cypress.env('timeout') }).click();
+}
+
+function checkSuccess() {
+  cy.get('body', { timeout: Cypress.env('timeout') }).should('contain.text', 'Success');
+}
+
 describe('The admin user can create a set of test orgs', () => {
   randomOrgs.forEach((org) => {
     it(`Creates a test ${org.orgType}`, () => {
@@ -33,18 +42,15 @@ describe('The admin user can create a set of test orgs', () => {
       cy.visit('/');
       cy.wait(0.3 * Cypress.env('timeout'));
 
-      cy.get('.p-menuitem-link').contains('Organizations').click();
-      cy.get('ul > li', { timeout: 2 * timeout })
-        .contains('Create organization')
-        .click();
+      navigateToPageFromMenubar('Organizations', 'Create organization');
 
       cy.log(`Creating a ${org.orgType.toLowerCase()} named ${org.name}`);
       selectOrgFromDropdown(org.orgType.toLowerCase());
       inputParentOrgDetails(org.orgType, org?.parentDistrict, org?.parentSchool);
       cy.inputOrgDetails(org.name, org.initials, null, null, org.grade, Cypress.env('testTag'));
-      cy.get('[data-cy="checkbox-test-data-orgs"]', { timeout: Cypress.env('timeout') }).click();
+      checkTestData();
       clickCreateOrg(org.orgType);
-      cy.get('body', { timeout: Cypress.env('timeout') }).should('contain.text', 'Success');
+      checkSuccess();
       cy.log('Org successfully created.');
     });
   });
