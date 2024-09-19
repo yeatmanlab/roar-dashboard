@@ -15,6 +15,8 @@ import { useToast } from 'primevue/usetoast';
 import { useQueryClient } from '@tanstack/vue-query';
 import _merge from 'lodash/merge';
 import useSurveyResponses from '@/composables/useSurveyResponses/useSurveyResponses';
+import { getParsedLocale } from '@/helpers/survey';
+
 
 
 const authStore = useAuthStore();
@@ -204,17 +206,17 @@ const { isLoading, data: surveyResponsesData, refetch: refetchSurveyResponses } 
 //   },
 // );
 
-// async function playAudio(name) {
-//   const currentLocale = getParsedLocale(locale.value);
-//   if (currentAudioSource) {
-//     await currentAudioSource.stop();
-//   }
-//   const source = context.createBufferSource();
-//   currentAudioSource = source;
-//   source.buffer = audioPlayerBuffers.value[currentLocale][name];
-//   source.connect(context.destination);
-//   source.start(0);
-// }
+async function playAudio(name) {
+  const currentLocale = getParsedLocale(locale.value);
+  if (gameStore.currentSurveyAudioSource) {
+    await gameStore.currentSurveyAudioSource.stop();
+  }
+  const source = context.createBufferSource();
+  gameStore.currentSurveyAudioSource = source;
+  source.buffer = gameStore.surveyAudioPlayerBuffers[currentLocale][name];
+  source.connect(context.destination);
+  source.start(0);
+}
 
 // async function saveResults(sender) {
 //   const allQuestions = sender.getAllQuestions();

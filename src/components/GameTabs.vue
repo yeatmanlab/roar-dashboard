@@ -32,20 +32,27 @@
               <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
             </div>
             
-            <div class="mt-4">
+            <div v-if="game.taskId === 'survey'" class="mt-4">
               <div class="flex align-items-center mb-2">
-                <span class="mr-2 w-4">General</span>
-                <PvProgressBar :value="50" class="flex-grow-1" />
+                <span class="mr-2 w-4">General {{ 
+                  props.userData.userType === 'teacher' || props.userData.userType === 'parent' ? 
+                  props.userData.userType === 'teacher' ? '- Teacher' : '- Family' : '' }}
+                </span>
+                <PvProgressBar :value="generalSurveyProgress" class="flex-grow-1" />
               </div>
 
-              <div class="flex align-items-center mb-2">
-                <span class="mr-2 w-4">Child A</span>
-                <PvProgressBar :value="50" class="flex-grow-1" />
+              <div v-if="props.userData.userType === 'parent'">
+                <div v-for="(child, i) in props.userData?.childIds" :key="child" class="flex align-items-center mb-2">
+                  <span class="mr-2 w-4">Child - {{ child }}</span>
+                  <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1" />
+                </div>
               </div>
 
-              <div class="flex align-items-center mb-2">
-                <span class="mr-2 w-4">Child B</span>
-                <PvProgressBar :value="50" class="flex-grow-1" />
+              <div v-if="props.userData.userType === 'teacher'">
+                <div v-for="(classroom, i) in props.userData?.classes?.current" :key="classroom" class="flex align-items-center mb-2">
+                  <span class="mr-2 w-4">Classroom - {{ classroom }}</span>
+                  <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1" />
+                </div>
               </div>
             </div>
 
@@ -114,6 +121,40 @@ const props = defineProps({
   sequential: { type: Boolean, required: false, default: true },
   userData: { type: Object, required: true },
 });
+
+const authStore = useAuthStore();
+const gameStore = useGameStore();
+
+const generalSurveyProgress = computed(() => {
+  if (gameStore.numGeneralPages > 0) {
+    console.log('gameStore.survey.currentPageNo', gameStore.survey.currentPageNo);
+    console.log('gameStore.numGeneralPages', gameStore.numGeneralPages);
+    if (gameStore.survey.currentPageNo < gameStore.numGeneralPages + 1) {
+      return Math.round((gameStore.survey.currentPageNo / 6) * 100);
+    } else {
+      return 100;
+    }
+  }
+  return 0;
+});
+
+const getSpecificSurveyProgress = (loopIndex) => {
+  // haven't started the specific survey yet
+  if (gameStore.survey.currentPageNo <= gameStore.numGeneralPages) return 0;
+
+  console.log('gameStore.numSpecificPages', gameStore.numSpecificPages);
+
+  const specificStartPage = gameStore.numGeneralPages + 1;
+  const loopStartPage = specificStartPage + (loopIndex * gameStore.numSpecificPages);
+  const loopEndPage = loopStartPage + gameStore.numSpecificPages - 1;
+
+  if (gameStore.survey.currentPageNo < loopStartPage) return 0;
+  if (gameStore.survey.currentPageNo > loopEndPage) return 100;
+
+  const progress = ((gameStore.survey.currentPageNo - loopStartPage + 1) / gameStore.numSpecificPages) * 100;
+  console.log('specific progress', progress);
+  return Math.round(progress);
+};
 
 const { t, locale } = useI18n();
 
@@ -231,9 +272,6 @@ const gameIndex = computed(() =>
 const displayGameIndex = computed(() => (gameIndex.value === -1 ? 0 : gameIndex.value));
 const allGamesComplete = computed(() => gameIndex.value === -1);
 
-const authStore = useAuthStore();
-const gameStore = useGameStore();
-
 const { selectedAdmin } = storeToRefs(gameStore);
 
 async function routeExternalTask(game) {
@@ -297,4 +335,5 @@ const returnVideoOptions = (videoURL) => {
     min-width: 250px;
   }
 }
+
 </style>

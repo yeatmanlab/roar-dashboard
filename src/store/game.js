@@ -14,6 +14,8 @@ export const useGameStore = () => {
         survey: null,
         numSurveyGeneralQuestions: 0,
         numSurveySpecificQuestions: 0,
+        numGeneralPages:0,
+        numSpecificPages:0,
         currentSurveyAudioSource: null,
         isSavingSurveyResponses: false,
         surveyAudioPlayerBuffers: {},
@@ -30,6 +32,10 @@ export const useGameStore = () => {
       setSurvey(survey) {
         this.survey = survey;
       },
+      setSurveyPages(numGeneralPages, numSpecificPages) {
+        this.numGeneralPages = numGeneralPages;
+        this.numSpecificPages = numSpecificPages;
+      },
       setSurveyQuestions(numGeneralQuestions, numSpecificQuestions = 0) {
         this.numSurveyGeneralQuestions = numGeneralQuestions;
         this.numSurveySpecificQuestions = numSpecificQuestions;
@@ -40,8 +46,8 @@ export const useGameStore = () => {
       setIsSavingSurveyResponses(isSaving) {
         this.isSavingSurveyResponses = isSaving;
       },
-      setSurveyAudioPlayerBuffers(buffers) {
-        this.surveyAudioPlayerBuffers = buffers;
+      setSurveyAudioPlayerBuffers(parsedLocale, bufferList) {
+        this.surveyAudioPlayerBuffers[parsedLocale] = bufferList;
       },
       setSurveyAudioLoading(loading) {
         this.surveyAudioLoading = loading;

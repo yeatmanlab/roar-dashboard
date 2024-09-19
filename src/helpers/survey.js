@@ -1,6 +1,8 @@
 import axios from 'axios';
 import _merge from 'lodash/merge';
+import { BufferLoader, AudioContext } from '@/helpers/audio';
 
+const context = new AudioContext();
 const STORAGE_ITEM_KEY = 'levante-survey';
 
 export const fetchAudioLinks = async (surveyType) => {
@@ -22,26 +24,24 @@ export const fetchAudioLinks = async (surveyType) => {
   };
   
   
-  let currentAudioSource = null;
-  
 export function getParsedLocale(locale) {
     return (locale || '').split('-')?.[0] || 'en';
   }
   
-  function finishedLoading({ bufferList, parsedLocale, audioPlayerBuffers, audioLoading }) {
-    audioPlayerBuffers.value[parsedLocale] = bufferList;
-    audioLoading.value = false;
+  function finishedLoading({ bufferList, parsedLocale, setSurveyAudioLoading, setSurveyAudioPlayerBuffers }) {
+    setSurveyAudioPlayerBuffers(parsedLocale, bufferList);
+    setSurveyAudioLoading(false);
   }
   
   // Function to fetch buffer or return from the cache
-  export const fetchBuffer = ({ parsedLocale, audioPlayerBuffers, audioLoading, audioLinks, context }) => {
+  export const fetchBuffer = ({ parsedLocale, setSurveyAudioLoading, audioLinks, surveyAudioBuffers, setSurveyAudioPlayerBuffers }) => {
     // buffer already exists for the given local
-    if (audioPlayerBuffers.value[parsedLocale]) {
+    if (surveyAudioBuffers[parsedLocale]) {
       return;
     }
-    audioLoading.value = true;
-    const bufferLoader = new BufferLoader(context, audioLinks.value[parsedLocale], (bufferList) =>
-      finishedLoading(bufferList, parsedLocale),
+    setSurveyAudioLoading(true);
+    const bufferLoader = new BufferLoader(context, audioLinks[parsedLocale], (bufferList) =>
+      finishedLoading({ bufferList, parsedLocale, setSurveyAudioLoading, setSurveyAudioPlayerBuffers }),
     );
   
     bufferLoader.load();
@@ -58,12 +58,17 @@ export function getParsedLocale(locale) {
   
   export async function saveSurveyData({ survey, roarfirekit, uid, selectedAdmin }) {
     console.log('uid in saveSurveyData:', uid);
+    console.log('survey in saveSurveyData:', survey);
+
+    // const plainData = survey.getPlainData();
+    // console.log('plainData :', plainData);
 
     const data = survey.data;
     data.pageNo = survey.currentPageNo;
     window.localStorage.setItem(`${STORAGE_ITEM_KEY}-${uid}`, JSON.stringify(data));
     await roarfirekit.value.saveSurveyResponses({
       responses: data,
+      // userType: userType,
       administrationId: selectedAdmin ?? null,
     });
   }
@@ -91,18 +96,6 @@ export function getParsedLocale(locale) {
       // If there's no data in localStorage and no data from the server,
       // the survey has never been started, so we continue with an empty survey
     }
-  }
-
-  export async function playAudio({ name, locale, audioPlayerBuffers }) {
-    const currentLocale = getParsedLocale(locale.value);
-    if (currentAudioSource) {
-      await currentAudioSource.stop();
-    }
-    const source = context.createBufferSource();
-    currentAudioSource = source;
-    source.buffer = audioPlayerBuffers.value[currentLocale][name];
-    source.connect(context.destination);
-    source.start(0);
   }
   
   export async function saveFinalSurveyData({ sender, roarfirekit, uid, gameStore, router, toast, queryClient }) {
