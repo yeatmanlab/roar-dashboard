@@ -543,7 +543,7 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
   treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'group'));
   treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'family'));
 
-  treeTableOrgs.forEach((node) => {
+  (treeTableOrgs ?? []).forEach((node) => {
     // Sort the schools by existance of stats then alphabetically
     if (node.children) {
       node.children.sort((a, b) => {
