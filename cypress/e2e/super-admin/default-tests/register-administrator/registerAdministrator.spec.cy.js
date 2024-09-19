@@ -33,7 +33,7 @@ describe('The admin user can create a new administrator and assign them to a gro
     () => {
       cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
       cy.visit('/');
-      navigateToPageFromMenubar('Users', 'Create administrator');
+      navigateToPageFromMenubar('Users', 'Register administrator');
       cy.wait(0.5 * timeout);
       inputAdministratorDetails();
       cy.selectTestOrgs();
