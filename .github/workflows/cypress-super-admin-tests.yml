@@ -96,7 +96,7 @@ jobs:
 
   cypress-clean-up:
     needs: cypress-run
-    name: Run Cypress clean-up tests
+    name: Run Cypress Clean-Up tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -142,6 +142,7 @@ jobs:
           fetch-depth: 0
 
       - name: Restore node modules cache
+        id: restore-node-modules
         uses: actions/cache@v3
         with:
           path: node_modules
@@ -151,9 +152,10 @@ jobs:
 
       - name: Install dependencies (if not cached)
         run: npm ci
+        if: steps.restore-node-modules.outputs.cache-hit != 'true'
 
       - name: Restore build output cache
-        id: restore-build-output # Add this id for cache-hit reference
+        id: restore-build-output
         uses: actions/cache@v3
         with:
           path: dist
@@ -163,7 +165,7 @@ jobs:
 
       - name: Build project (if cache is not found)
         run: npm run build
-        if: steps.restore-build-output.outputs.cache-hit != 'true' # Correct cache-hit check
+        if: steps.restore-build-output.outputs.cache-hit != 'true'
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
