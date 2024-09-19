@@ -117,7 +117,7 @@
               >
                 <template #header>
                   <div class="flex flex-row">
-                    <div>Foundational</div>
+                    <div>Foundational Reading Skills</div>
                     <div class="ml-2">
                       <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'primary')"
                         ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
@@ -191,7 +191,7 @@
               >
                 <template #header>
                   <div class="flex flex-row">
-                    <div>Math<br />(In Development)</div>
+                    <div>Mathematics<br />(In Development)</div>
                     <div class="mt-1 ml-2">
                       <PvButton class="p-0 border-none border-circle bg-primary" @click="toggle($event, 'math')"
                         ><i v-tooltip.top="'Learn more'" class="pi pi-info-circle text-white p-1 border-circle"></i
@@ -241,7 +241,10 @@
                 :frozen="col.pinned"
                 :style="col.style"
                 align-frozen="left"
-                header-style="background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0"
+                :header-style="
+                  col.headerStyle ||
+                  `background:var(--primary-color); color:white; padding-top:0; margin-top:0; padding-bottom:0; margin-bottom:0; border:0; margin-left:0`
+                "
               >
                 <template #header>
                   <div
@@ -379,7 +382,7 @@
           </PvColumnGroup>
           <PvOverlayPanel ref="op" append-to="body" class="overflow-y-scroll" style="width: 60vh; max-height: 30vh">
             <template v-if="selectedColumn === 'primary'">
-              <h3 class="font-bold">Foundational</h3>
+              <h3 class="font-bold">Foundational Reading Skills</h3>
               <div>
                 <h4 class="font-bold">Word</h4>
                 Word indicates which students are in need of support in word-level decoding and automaticity. Word has
@@ -408,7 +411,7 @@
               </div>
             </template>
             <template v-if="selectedColumn === 'spanishmath'">
-              <h3 class="font-bold">Spanish Math</h3>
+              <h3 class="font-bold">Spanish Mathematics</h3>
               <div>
                 Spanish-language mathematics assessments provide additional insight into areas such as arithmetic
                 fluency, calculation ability, and mathematical procedures based on common core standards <br />
@@ -428,7 +431,7 @@
               </div>
             </template>
             <template v-else-if="selectedColumn === 'math'">
-              <h3 class="font-bold">Math</h3>
+              <h3 class="font-bold">Mathematics</h3>
               <div>
                 Mathematics assessments provide additional insight into areas such as arithmetic fluency, calculation
                 ability, and mathematical procedures based on common core standards<br />
@@ -837,6 +840,8 @@ const roamTasks = [
   'scores.fluency-calf.numCorrect',
   'scores.roam-alpaca.percentCorrect',
   'scores.egma-math.percentCorrect',
+  'scores.fluency-calf.percentile',
+  'scores.fluency-arf.percentile',
 ];
 
 const roavTasks = [
