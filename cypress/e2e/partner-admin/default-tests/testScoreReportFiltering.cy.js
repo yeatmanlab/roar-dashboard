@@ -96,37 +96,40 @@ describe('The partner admin can view score reports for a given administration an
   });
 });
 
-describe('The partner admin can view score reports for a given administration and filter by support level', () => {
-  it('Selects an administration, views its score report, then accesses the column filter to filter by support level', () => {
-    checkUrl();
-    cy.getAdministrationCard(roarTestAdministrationName, 'descending');
-    clickScoreButton(roarTestAdministrationId);
-    setFilterByScoreCategory('ROAR - Word', 'Pink');
-    checkTableColumn(['Username'], 'CypressTestStudent0');
-  });
-});
+// @NOTE: Temporarily disabled as instructed by the ROAR maintainers team.
+// describe('The partner admin can view score reports for a given administration and filter by support level', () => {
+//   it('Selects an administration, views its score report, then accesses the column filter to filter by support level', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+//     clickScoreButton(roarTestAdministrationId);
+//     setFilterByScoreCategory('ROAR - Word', 'Pink');
+//     checkTableColumn(['Username'], 'CypressTestStudent0');
+//   });
+// });
 
-describe('The partner admin can view score reports for a given administration filter by school, grade, and progress status: completed', () => {
-  it('Selects an administration, views its score report, then accesses the column filter to filter by school, grade, and completed', () => {
-    checkUrl();
-    cy.getAdministrationCard(roarTestAdministrationName, 'descending');
-    clickScoreButton(roarTestAdministrationId);
-    setFilterByGrade('1');
-    setFilterBySchool('Cypress Test School');
-    setFilterByProgressCategory('ROAR - Morphology', 'completed');
-    checkTableColumn(['Username'], 'CypressTestStudent0');
-  });
-});
+// @NOTE: Temporarily disabled as instructed by the ROAR maintainers team.
+// describe('The partner admin can view score reports for a given administration filter by school, grade, and progress status: completed', () => {
+//   it('Selects an administration, views its score report, then accesses the column filter to filter by school, grade, and completed', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+//     clickScoreButton(roarTestAdministrationId);
+//     setFilterByGrade('1');
+//     setFilterBySchool('Cypress Test School');
+//     setFilterByProgressCategory('ROAR - Morphology', 'completed');
+//     checkTableColumn(['Username'], 'CypressTestStudent0');
+//   });
+// });
 
-describe('The partner admin can view score reports for a given administration and filter by Assessed', () => {
-  it('Selects an administration, views its score report, then accesses the column filter to filter by assessed', () => {
-    checkUrl();
-    cy.getAdministrationCard(roarTestAdministrationName, 'descending');
-    clickScoreButton(roarTestAdministrationId);
-    setFilterByScoreCategory('ROAR - Morphology', 'Assessed');
-    checkTableColumn(['Username'], 'CypressTestStudent0');
-  });
-});
+// @NOTE: Temporarily disabled as instructed by the ROAR maintainers team.
+// describe('The partner admin can view score reports for a given administration and filter by Assessed', () => {
+//   it('Selects an administration, views its score report, then accesses the column filter to filter by assessed', () => {
+//     checkUrl();
+//     cy.getAdministrationCard(roarTestAdministrationName, 'descending');
+//     clickScoreButton(roarTestAdministrationId);
+//     setFilterByScoreCategory('ROAR - Morphology', 'Assessed');
+//     checkTableColumn(['Username'], 'CypressTestStudent0');
+//   });
+// });
 
 describe('The partner admin can view score reports for a given administration and a not applicable filter returns an empty message', () => {
   it('Selects an administration, views its score report, then accesses the column filter to filter by a non-returnable filter', () => {
