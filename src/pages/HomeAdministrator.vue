@@ -326,7 +326,6 @@ const clearSearch = () => {
   search.value = '';
   searchInput.value = '';
   filteredAdministrations.value = administrations.value;
-  fetchTestAdministrations.value = false;
 };
 
 /**
@@ -335,17 +334,11 @@ const clearSearch = () => {
  */
 const onSearch = () => {
   search.value = searchInput.value;
-  if (!search.value) {
-    filteredAdministrations.value = administrations.value;
-  } else {
-    fetchTestAdministrations.value
-      ? (filteredAdministrations.value = filteredAdministrations.value.filter((item) =>
-          item.name.toLowerCase().includes(search.value.toLowerCase()),
-        ))
-      : (filteredAdministrations.value = administrations.value.filter((item) =>
-          item.name.toLowerCase().includes(search.value.toLowerCase()),
-        ));
-  }
+  if (!search.value) filteredAdministrations.value = administrations.value;
+  else {
+    filteredAdministrations.value = administrations.value.filter((item) =>
+      item.name.toLowerCase().includes(search.value.toLowerCase()),
+    )
 };
 
 /**

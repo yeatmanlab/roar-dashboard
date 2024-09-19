@@ -1,7 +1,8 @@
 const timeout = Cypress.env('timeout');
 const selector = '.p-datatable-thead > tr > :nth-child';
+
+// This function clicks the dropdown menu, which is indexed by int, then clicks the field.
 function selectField(int, fieldName) {
-  // cy.get(`.p-dropdown-label`).should('exist').click().get('li').contains(fieldName).click();
   cy.get(selector + `(${int})`)
     .should('exist')
     .click()
