@@ -350,34 +350,35 @@ const onSearch = () => {
   else {
     filteredAdministrations.value = administrations.value.filter((item) =>
       item.name.toLowerCase().includes(search.value.toLowerCase()),
-    )
-};
-
-const autocomplete = () => {
-  searchSuggestions.value = adminSearchTokens.value.filter((item) =>
-    item.toLowerCase().includes(searchInput.value.toLowerCase()),
-  );
-};
-
-const onSortChange = (event) => {
-  dataViewKey.value += 1;
-  page.value = 0;
-  const value = event.value.value;
-  const sortValue = event.value;
-
-  if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
-    // catches edge case where a partner admin should sort by the public name attribute
-    sortField.value = 'publicName';
-  } else {
-    sortField.value = value[0].field?.fieldPath;
-  }
-  if (value[0].direction === 'DESCENDING') {
-    sortOrder.value = -1;
-  } else {
-    sortOrder.value = 1;
+    );
   }
 
-  sortKey.value = sortValue;
+  const autocomplete = () => {
+    searchSuggestions.value = adminSearchTokens.value.filter((item) =>
+      item.toLowerCase().includes(searchInput.value.toLowerCase()),
+    );
+  };
+
+  const onSortChange = (event) => {
+    dataViewKey.value += 1;
+    page.value = 0;
+    const value = event.value.value;
+    const sortValue = event.value;
+
+    if (!isSuperAdmin.value && sortValue[0].field.fieldPath === 'name') {
+      // catches edge case where a partner admin should sort by the public name attribute
+      sortField.value = 'publicName';
+    } else {
+      sortField.value = value[0].field?.fieldPath;
+    }
+    if (value[0].direction === 'DESCENDING') {
+      sortOrder.value = -1;
+    } else {
+      sortOrder.value = 1;
+    }
+
+    sortKey.value = sortValue;
+  };
 };
 </script>
 

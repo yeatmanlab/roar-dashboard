@@ -34,7 +34,6 @@ import HomeParticipant from './HomeParticipant.vue';
 import HomeAdministrator from './HomeAdministrator.vue';
 import ConsentModal from '@/components/ConsentModal.vue';
 
-let HomeParticipant, HomeAdministrator, ConsentModal;
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const { roarfirekit, roarUid, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
