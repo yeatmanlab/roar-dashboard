@@ -93,6 +93,7 @@ export function setupSurveyEventHandlers({
   router,
   toast,
   queryClient,
+  userData,
 }) {
   surveyInstance.onValueChanged.add((sender, options) => 
     saveSurveyData({ 

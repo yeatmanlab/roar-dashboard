@@ -359,10 +359,10 @@ const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyDa
   staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 
-// New computed properties
-const surveyDependenciesLoaded = computed(() => 
-  surveyData.value && userData.value && selectedAdmin.value
-);
+
+const surveyDependenciesLoaded = computed(() => {
+  return !isFetchingSurvey.value && surveyData.value && userData.value && selectedAdmin.value
+});
 
 const userType = computed(() => userData.value?.userType);
 
@@ -371,7 +371,6 @@ const specificSurveyData = computed(() => {
   return userType.value === 'student' ? null : surveyData.value.specific;
 });
 
-// New functions
 function createSurveyInstance() {
   const surveyInstance = new Model(surveyData.value.general);
   surveyInstance.locale = locale.value;
@@ -387,8 +386,10 @@ function setupMarkdownConverter(surveyInstance) {
   });
 }
 
-// Watchers
 watch(surveyDependenciesLoaded, async (isLoaded) => {
+
+  console.log('survey dependencies loaded: ', isLoaded);
+  console.log('game store survey: ', gameStore.survey);
   if (!isLoaded || gameStore.survey) return;
 
   const surveyInstance = createSurveyInstance();
@@ -414,9 +415,12 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
     router,
     toast,
     queryClient,
+    userData: userData.value,
   });
 
   gameStore.setSurvey(surveyInstance);
+
+  console.log('survey in game store: ', gameStore.survey);
 }, { immediate: true });
 
 const isLoading = computed(() => {

@@ -262,7 +262,7 @@ async function playAudio(name) {
 </script>
 
 <template>
-  <div v-if="gameStore.survey && !gameStore.isSavingSurveyResponses && !audioLoading">
+  <div v-if="gameStore.survey && !gameStore.isSavingSurveyResponses && !gameStore.surveyAudioLoading">
     <SurveyComponent :model="gameStore.survey" />
 
     <div v-if="authStore.userData.userType === 'student'">
@@ -278,7 +278,7 @@ async function playAudio(name) {
       </div>
     </div>
   </div>
-  <AppSpinner v-if="!gameStore.survey || isSavingResponses || audioLoading" />
+  <AppSpinner v-if="!gameStore.survey || !gameStore.isSavingSurveyResponses || gameStore.surveyAudioLoading" />
   <!-- <SurveyComponent :model="gameStore.survey" /> -->
 </template>
 

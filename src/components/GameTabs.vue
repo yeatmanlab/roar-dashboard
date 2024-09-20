@@ -137,6 +137,7 @@ const getGeneralSurveyProgress = computed(() => {
 });
 
 const getSpecificSurveyProgress = (loopIndex) => {
+  if (!gameStore.survey) return 0;
   // haven't started the specific survey yet
   if (gameStore.survey.currentPageNo <= gameStore.numGeneralPages) return 0;
 
