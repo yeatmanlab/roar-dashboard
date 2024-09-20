@@ -116,6 +116,7 @@ import { restoreSurveyData, saveSurveyData, saveFinalSurveyData, showAndPlaceAud
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient } from '@tanstack/vue-query';
+import { initializeSurvey, setupSurveyEventHandlers } from '@/helpers/surveyInitialization';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -354,118 +355,68 @@ const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyDa
       };
     }
   },
-  enabled: initialized && isLevante && userData?.value?.userType !== 'admin',
+  enabled: initialized.value && isLevante && userData?.value?.userType !== 'admin',
   staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 
-watch([surveyData, userData, selectedAdmin], async ([newVal, userDataValue, selectedAdminValue]) => {
-  if (gameStore.survey) return;
-  
-  // Check if all dependencies are loaded
-  if (newVal && userDataValue && selectedAdminValue) {
-    const surveyInstance = new Model(newVal.general);
+// New computed properties
+const surveyDependenciesLoaded = computed(() => 
+  surveyData.value && userData.value && selectedAdmin.value
+);
 
-    const numGeneralQuestions = surveyInstance.getAllQuestions().length;
+const userType = computed(() => userData.value?.userType);
 
-    if (userDataValue.userType === 'parent' || userDataValue.userType === 'teacher') {
-      const specificQuestions = toRaw(newVal.specific);
-      const numberOfSpecificPages = specificQuestions.pages.length;
-      gameStore.setSurveyPages(surveyInstance.pages.length, numberOfSpecificPages);
-      
-      const addSpecificPages = (prefix, count = 1) => {
-        for (let i = 0; i < count; i++) {
-          specificQuestions.pages.forEach((page, pageIndex) => {
-            const newPageName = `${page.name}_${prefix}${i + 1}`;
-            const newPage = surveyInstance.createNewPage(newPageName);
-            
-            const clonedPage = JSON.parse(JSON.stringify(page));
-            clonedPage.elements.forEach(element => {
-              element.name = `${element.name}_${prefix}${i + 1}`;
-            });
-            
-            newPage.fromJSON(clonedPage);
-            surveyInstance.addPage(newPage);
+const specificSurveyData = computed(() => {
+  if (!surveyData.value) return null;
+  return userType.value === 'student' ? null : surveyData.value.specific;
+});
 
-            if (i === count - 1 && pageIndex === numberOfSpecificPages - 1) {
-              const totalQuestions = surveyInstance.getAllQuestions().length;
-              const numberOfSpecificQuestions = totalQuestions - numGeneralQuestions;
-              gameStore.setSurveyQuestions(numGeneralQuestions, numberOfSpecificQuestions);
-              // console.log(`Number of ${prefix} specific questions: `, numberOfSpecificQuestions);
-            }
-          });
-        }
-      };
+// New functions
+function createSurveyInstance() {
+  const surveyInstance = new Model(surveyData.value.general);
+  surveyInstance.locale = locale.value;
+  return surveyInstance;
+}
 
-      if (userDataValue.userType === 'parent') {
-        addSpecificPages('child', userDataValue.childIds.length);
-      } else {
-        addSpecificPages('class', userDataValue.classes.current.length);
-      }
-    }
+function setupMarkdownConverter(surveyInstance) {
+  const converter = new Converter();
+  surveyInstance.onTextMarkdown.add((survey, options) => {
+    let str = converter.makeHtml(options.text);
+    str = str.substring(3, str.length - 4);
+    options.html = str;
+  });
+}
 
-    surveyInstance.locale = locale.value;
-    
-    const converter = new Converter();
-    surveyInstance.onTextMarkdown.add(function (survey, options) {
-      // Convert Markdown to HTML
-      let str = converter.makeHtml(options.text);
-      // Remove root paragraphs <p></p>
-      str = str.substring(3);
-      str = str.substring(0, str.length - 4);
-      // Set HTML markup to render
-      options.html = str;
-    });
+// Watchers
+watch(surveyDependenciesLoaded, async (isLoaded) => {
+  if (!isLoaded || gameStore.survey) return;
 
-    if (userDataValue.userType === 'student') {
-      const parsedLocale = getParsedLocale(locale.value);
-      fetchBuffer({ 
-        parsedLocale, 
-        setSurveyAudioLoading: gameStore.setSurveyAudioLoading, 
-        audioLinks: audioLinkMap.value, 
-        surveyAudioBuffers: gameStore.surveyAudioPlayerBuffers, 
-        setSurveyAudioPlayerBuffers: gameStore.setSurveyAudioPlayerBuffers 
-      });
+  const surveyInstance = createSurveyInstance();
+  setupMarkdownConverter(surveyInstance);
 
-      surveyInstance.onAfterRenderPage.add((__, { htmlElement }) => {
-        const questionElements = htmlElement.querySelectorAll('div[id^=sq_]');
-        if (gameStore.currentSurveyAudioSource) {
-          gameStore.currentSurveyAudioSource.stop();
-        }
-        questionElements.forEach((el) => {
-          const playAudioButton = document.getElementById('audio-button-' + el.dataset.name);
-          showAndPlaceAudioButton({playAudioButton, el});
-        });
-      });
-    }
-    // Restore survey data from localStorage
-    // uid, selectedAdmin, surveyResponsesData
-    console.log('surveyResponsesData', surveyResponsesData.value);
-    await restoreSurveyData({ surveyInstance, uid: uid?.value, selectedAdmin: selectedAdminValue.id, surveyResponsesData: surveyResponsesData.value });
-    // Save survey results when users change a question value or switch to the next page
-    surveyInstance.onValueChanged.add((sender, options) => 
-      saveSurveyData({ 
-        survey: sender, 
-        roarfirekit, 
-        uid: uid.value, 
-        selectedAdmin: selectedAdminValue.id, 
-        questionName: options.name, 
-        responseValue: options.value,
-        userType: userDataValue.userType,
-        numGeneralPages: gameStore.numGeneralPages,
-        numSpecificPages: gameStore.numSpecificPages,
-        specificIds: userDataValue.childIds || userDataValue.classes.current,
-        saveSurveyResponses: roarfirekit.value.saveSurveyResponses
-      })
-    );
-    surveyInstance.onCurrentPageChanged.add(() => saveSurveyData({ survey: surveyInstance, roarfirekit, uid: uid.value, selectedAdmin: selectedAdminValue.id }));
-    // Need to have this as well to save all the responses, even if the user doesn't respond to all the questions
-    surveyInstance.onComplete.add((sender) => saveFinalSurveyData({ sender, roarfirekit, uid: uid.value, gameStore, router, toast, queryClient }));
- 
-    surveyInstance.onGetResult.add((sender) => console.log('result:', sender));
+  await initializeSurvey({
+    surveyInstance,
+    userType: userType.value,
+    specificSurveyData: specificSurveyData.value,
+    userData: userData.value,
+    gameStore,
+    locale: locale.value,
+    audioLinkMap: audioLinkMap.value,
+  });
 
-    gameStore.setSurvey(surveyInstance);
-    if (userDataValue.userType === 'student') gameStore.setSurveyQuestions(numGeneralQuestions);
-  }
+  setupSurveyEventHandlers({
+    surveyInstance,
+    userType: userType.value,
+    roarfirekit: roarfirekit.value,
+    uid: uid.value,
+    selectedAdminId: selectedAdmin.value.id,
+    gameStore,
+    router,
+    toast,
+    queryClient,
+  });
+
+  gameStore.setSurvey(surveyInstance);
 }, { immediate: true });
 
 const isLoading = computed(() => {
@@ -523,19 +474,19 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore?.userData.userType === 'student' && isLevante) {
-      // This is just to mark the card as complete
-      // if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
-      //   // Find survey doc for the current administration
-      //   const surveyResponse = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
-      //   if (surveyResponse) {
-      //     fetchedAssessments.forEach((assessment) => {
-      //       if (assessment.taskId === 'survey') {
-      //       assessment.completedOn = new Date();
-      //     }
-      //     });
-      //   }
-      // }
+    if (isLevante) {
+      // Mark the survey as complete as if it was a task
+      if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
+        // Find survey doc for the current administration
+        const surveyDoc = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
+        if (surveyDoc.isComplete) {
+          fetchedAssessments.forEach((assessment) => {
+            if (assessment.taskId === 'survey') {
+            assessment.completedOn = new Date();
+          }
+          });
+        }
+      }
     }
 
     return fetchedAssessments;

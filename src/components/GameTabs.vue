@@ -38,7 +38,7 @@
                   props.userData.userType === 'teacher' || props.userData.userType === 'parent' ? 
                   props.userData.userType === 'teacher' ? '- Teacher' : '- Family' : '' }}
                 </span>
-                <PvProgressBar :value="generalSurveyProgress" class="flex-grow-1" />
+                <PvProgressBar :value="getGeneralSurveyProgress" class="flex-grow-1" />
               </div>
 
               <div v-if="props.userData.userType === 'parent'">
@@ -125,10 +125,8 @@ const props = defineProps({
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 
-const generalSurveyProgress = computed(() => {
+const getGeneralSurveyProgress = computed(() => {
   if (gameStore.numGeneralPages > 0) {
-    console.log('gameStore.survey.currentPageNo', gameStore.survey.currentPageNo);
-    console.log('gameStore.numGeneralPages', gameStore.numGeneralPages);
     if (gameStore.survey.currentPageNo < gameStore.numGeneralPages + 1) {
       return Math.round((gameStore.survey.currentPageNo / 6) * 100);
     } else {

@@ -67,7 +67,8 @@ export function getParsedLocale(locale) {
     numSpecificPages,
     specificIds,
     userType,
-    saveSurveyResponses 
+    saveSurveyResponses,
+    gameStore
   }) {
     const currentPageNo = survey.currentPageNo;
   
@@ -75,7 +76,10 @@ export function getParsedLocale(locale) {
       const prevData = JSON.parse(window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid}`));
 
       // Update the page number at the top level
-      prevData.pageNo = currentPageNo;
+      prevData.pageNo = currentPageNo + 1;
+
+      console.log('game store in save survey data: ', gameStore);
+      console.log('num general pages from game store: ', gameStore.numGeneralPages);
 
       if (currentPageNo < numGeneralPages) {
         // General survey
@@ -85,8 +89,13 @@ export function getParsedLocale(locale) {
         // Specific survey
         const relationKey = userType === 'parent' ? 'childId' : 'classId';
         if (!prevData.specific) prevData.specific = [];
-        
+
+        console.log('currentPageNo', currentPageNo);
+        console.log('numGeneralPages', numGeneralPages);
+        console.log('numSpecificPages', numSpecificPages);
+
         const specificIndex = Math.floor((currentPageNo - numGeneralPages) / numSpecificPages);
+        console.log('specificIndex', specificIndex);
 
         if (!prevData.specific[specificIndex]) {
           prevData.specific[specificIndex] = {
@@ -106,11 +115,12 @@ export function getParsedLocale(locale) {
     } else {
       // Initialize the structure if it doesn't exist
       const newData = {
-        pageNo: currentPageNo,
+        pageNo: currentPageNo + 1,
         general: {
           responses: {}
         },
-        specific: []
+        specific: [],
+        isComplete: false,
       };
 
       if (currentPageNo < numGeneralPages) {
@@ -183,32 +193,65 @@ export function getParsedLocale(locale) {
   export async function saveFinalSurveyData({ sender, roarfirekit, uid, gameStore, router, toast, queryClient }) {
     const allQuestions = sender.getAllQuestions();
     const unansweredQuestions = {};
-  
+
     allQuestions.forEach((question) => (unansweredQuestions[question.name] = null));
-  
-    // Values from the second object overwrite values from the first
+
+    // NOTE: Values from the second object overwrite values from the first
     const responsesWithAllQuestions = _merge(unansweredQuestions, sender.data);
-    // remove pageNo, used for continuing incomplete survey, from the responses
-    delete responsesWithAllQuestions.pageNo;
-  
+
+
+    // Structure the data
+    const structuredResponses = {
+      general: { responses: {} },
+      specific: [],
+      isComplete: true,
+    };
+
+    // Determine the number of general and specific pages
+    const numGeneralPages = gameStore.numGeneralPages;
+    const numSpecificPages = gameStore.numSpecificPages;
+    const specificIds = gameStore.specificIds;
+    const userType = gameStore.userType;
+
+    Object.entries(responsesWithAllQuestions).forEach(([questionName, responseValue]) => {
+      const pageNo = sender.getQuestionByName(questionName)?.page?.visibleIndex;
+      
+      if (pageNo < numGeneralPages) {
+        // General survey
+        structuredResponses.general.responses[questionName] = responseValue;
+      } else {
+        // Specific survey
+        const relationKey = userType === 'parent' ? 'childId' : 'classId';
+        const specificIndex = Math.floor((pageNo - numGeneralPages) / numSpecificPages);
+        
+        if (!structuredResponses.specific[specificIndex]) {
+          structuredResponses.specific[specificIndex] = {
+            [relationKey]: specificIds[specificIndex],
+            responses: {}
+          };
+        }
+        
+        structuredResponses.specific[specificIndex].responses[questionName] = responseValue;
+      }
+    });
+
     // turn on loading state
     gameStore.setIsSavingSurveyResponses(true);
-  
+
     // call cloud function to save the survey results
-    // TODO: Use tanstack-query mutation for automaitic retries.
     try {
       await roarfirekit.value.saveSurveyResponses({
-        responses: responsesWithAllQuestions,
+        responses: structuredResponses,
         administrationId: gameStore?.selectedAdmin?.id ?? null,
       });
-  
+
       // update game store to let game tabs know
       gameStore.setSurveyCompleted();
       queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
-  
+
       // Clear localStorage after successful submission
       window.localStorage.removeItem(`${STORAGE_ITEM_KEY}-${uid.value}`);
-  
+
       gameStore.requireHomeRefresh();
       router.push({ name: 'Home' });
     } catch (error) {
@@ -221,5 +264,3 @@ export function getParsedLocale(locale) {
       });
     }
   }
-
-  
