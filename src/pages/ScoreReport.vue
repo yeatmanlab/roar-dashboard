@@ -1037,18 +1037,71 @@ const createExportData = ({ rows, includeProgress = false }) => {
   return computedExportData;
 };
 
+/**
+ * Exports data to a CSV file with dynamic columns based on selected rows and tasks.
+ *
+ * @param {Object} options - Options for exporting data.
+ * @param {Array} options.selectedRows - The selected rows to export. If null, will export all rows.
+ * @param {boolean} options.includeProgress - Determines if progress columns should be included in the export.
+ */
 const exportData = async ({ selectedRows = null, includeProgress = false }) => {
   const rows = selectedRows || computeAssignmentAndRunData.value.assignmentTableData;
-  const exportData = createExportData({ rows, includeProgress });
+  let exportData = createExportData({ rows, includeProgress });
 
+  // Analyze all rows to determine which columns are present in the data
+  const allColumns = new Set();
+  exportData.forEach((row) => {
+    Object.keys(row).forEach((column) => {
+      allColumns.add(column);
+    });
+  });
+
+  // Convert Set to Array for sorting
+  const allColumnsArray = Array.from(allColumns);
+
+  // Define the static columns
+  const staticColumns = ['Username', 'Email', 'First', 'Last', 'Grade', 'PID', 'School'];
+
+  // Automatically detect task names by splitting column names and excluding static columns
+  const taskBases = Array.from(
+    new Set(
+      allColumnsArray.filter((col) => !staticColumns.includes(col)).map((col) => col.split(' - ')[1]), // Extract the task name part
+    ),
+  );
+
+  // Group task columns and place 'Reliability' and 'Progress' last for each task
+  const finalColumns = [
+    ...staticColumns,
+    ...taskBases.reduce((acc, taskBase) => {
+      const taskCols = allColumnsArray.filter(
+        (col) => col.includes(` - ${taskBase} -`) && !col.endsWith('Reliability') && !col.endsWith('Progress'),
+      );
+      const reliabilityCol = allColumnsArray.filter(
+        (col) => col.includes(` - ${taskBase} -`) && col.endsWith('Reliability'),
+      );
+      const progressCol = allColumnsArray.filter((col) => col.includes(` - ${taskBase} -`) && col.endsWith('Progress'));
+      return [...acc, ...taskCols, ...reliabilityCol, ...progressCol];
+    }, []),
+  ];
+
+  // Reorder exportData according to finalColumns
+  exportData = exportData.map((row) => {
+    const reorderedRow = {};
+    finalColumns.forEach((col) => {
+      reorderedRow[col] = row[col] !== undefined ? row[col] : null;
+    });
+    return reorderedRow;
+  });
+
+  // Create the file name for export
   const fileNameSuffix = includeProgress ? '-scores-progress' : '-scores';
   const selectedSuffix = selectedRows ? '-selected' : '';
   const fileName = `roar${fileNameSuffix}${selectedSuffix}-${_kebabCase(
     getTitle(administrationInfo.value, isSuperAdmin.value),
   )}-${_kebabCase(orgInfo.value.name)}.csv`;
 
+  // Export CSV
   exportCsv(exportData, fileName);
-  return;
 };
 
 function getScoreKeysByRow(row, grade) {
