@@ -94,6 +94,13 @@ const routes = [
     meta: { pageTitle: 'Letter-ES' },
   },
   {
+    path: '/game/letter-en-CA',
+    name: 'Letter-EN-CA',
+    component: () => import('../components/tasks/TaskLetter.vue'),
+    props: { taskId: 'letter-en-CA', language: 'en-CA' },
+    meta: { pageTitle: 'Letter-EN-CA' },
+  },
+  {
     path: '/game/multichoice',
     name: 'Multichoice',
     component: () => import('../components/tasks/TaskMultichoice.vue'),
