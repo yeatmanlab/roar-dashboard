@@ -390,7 +390,7 @@ watch([surveyData, userData, selectedAdmin], async ([newVal, userDataValue, sele
               const totalQuestions = surveyInstance.getAllQuestions().length;
               const numberOfSpecificQuestions = totalQuestions - numGeneralQuestions;
               gameStore.setSurveyQuestions(numGeneralQuestions, numberOfSpecificQuestions);
-              console.log(`Number of ${prefix} specific questions: `, numberOfSpecificQuestions);
+              // console.log(`Number of ${prefix} specific questions: `, numberOfSpecificQuestions);
             }
           });
         }
@@ -402,10 +402,6 @@ watch([surveyData, userData, selectedAdmin], async ([newVal, userDataValue, sele
         addSpecificPages('class', userDataValue.classes.current.length);
       }
     }
-
-    console.log('survey after adding pages: ', surveyInstance.pages);
-
-    console.log('questions prop: ', surveyInstance.pages[1].questions);
 
     surveyInstance.locale = locale.value;
     
@@ -446,11 +442,26 @@ watch([surveyData, userData, selectedAdmin], async ([newVal, userDataValue, sele
     console.log('surveyResponsesData', surveyResponsesData.value);
     await restoreSurveyData({ surveyInstance, uid: uid?.value, selectedAdmin: selectedAdminValue.id, surveyResponsesData: surveyResponsesData.value });
     // Save survey results when users change a question value or switch to the next page
-    console.log('uid', uid.value);
-    surveyInstance.onValueChanged.add(() => saveSurveyData({ survey: surveyInstance, roarfirekit, uid: uid.value, selectedAdmin: selectedAdminValue.id }));
+    surveyInstance.onValueChanged.add((sender, options) => 
+      saveSurveyData({ 
+        survey: sender, 
+        roarfirekit, 
+        uid: uid.value, 
+        selectedAdmin: selectedAdminValue.id, 
+        questionName: options.name, 
+        responseValue: options.value,
+        userType: userDataValue.userType,
+        numGeneralPages: gameStore.numGeneralPages,
+        numSpecificPages: gameStore.numSpecificPages,
+        specificIds: userDataValue.childIds || userDataValue.classes.current,
+        saveSurveyResponses: roarfirekit.value.saveSurveyResponses
+      })
+    );
     surveyInstance.onCurrentPageChanged.add(() => saveSurveyData({ survey: surveyInstance, roarfirekit, uid: uid.value, selectedAdmin: selectedAdminValue.id }));
     // Need to have this as well to save all the responses, even if the user doesn't respond to all the questions
     surveyInstance.onComplete.add((sender) => saveFinalSurveyData({ sender, roarfirekit, uid: uid.value, gameStore, router, toast, queryClient }));
+ 
+    surveyInstance.onGetResult.add((sender) => console.log('result:', sender));
 
     gameStore.setSurvey(surveyInstance);
     if (userDataValue.userType === 'student') gameStore.setSurveyQuestions(numGeneralQuestions);

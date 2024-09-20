@@ -56,46 +56,128 @@ export function getParsedLocale(locale) {
     }
   };
   
-  export async function saveSurveyData({ survey, roarfirekit, uid, selectedAdmin }) {
-    console.log('uid in saveSurveyData:', uid);
-    console.log('survey in saveSurveyData:', survey);
+  export async function saveSurveyData({ 
+    survey, 
+    roarfirekit, 
+    uid, 
+    selectedAdmin, 
+    questionName, 
+    responseValue, 
+    numGeneralPages, 
+    numSpecificPages,
+    specificIds,
+    userType,
+    saveSurveyResponses 
+  }) {
+    const currentPageNo = survey.currentPageNo;
+  
+    if (window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid}`)) {
+      const prevData = JSON.parse(window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid}`));
 
-    // const plainData = survey.getPlainData();
-    // console.log('plainData :', plainData);
+      // Update the page number at the top level
+      prevData.pageNo = currentPageNo;
 
-    const data = survey.data;
-    data.pageNo = survey.currentPageNo;
-    window.localStorage.setItem(`${STORAGE_ITEM_KEY}-${uid}`, JSON.stringify(data));
-    await roarfirekit.value.saveSurveyResponses({
-      responses: data,
-      // userType: userType,
-      administrationId: selectedAdmin ?? null,
-    });
+      if (currentPageNo < numGeneralPages) {
+        // General survey
+        if (!prevData.general) prevData.general = { responses: {} };
+        prevData.general.responses[questionName] = responseValue;
+      } else {
+        // Specific survey
+        const relationKey = userType === 'parent' ? 'childId' : 'classId';
+        if (!prevData.specific) prevData.specific = [];
+        
+        const specificIndex = Math.floor((currentPageNo - numGeneralPages) / numSpecificPages);
+
+        if (!prevData.specific[specificIndex]) {
+          prevData.specific[specificIndex] = {
+            [relationKey]: specificIds[specificIndex],
+            responses: {}
+          };
+        }
+        
+        prevData.specific[specificIndex].responses[questionName] = responseValue;
+      }
+
+      window.localStorage.setItem(`${STORAGE_ITEM_KEY}-${uid}`, JSON.stringify(prevData));
+      await roarfirekit.value.saveSurveyResponses({
+        responses: prevData,
+        administrationId: selectedAdmin ?? null,
+      });
+    } else {
+      // Initialize the structure if it doesn't exist
+      const newData = {
+        pageNo: currentPageNo,
+        general: {
+          responses: {}
+        },
+        specific: []
+      };
+
+      if (currentPageNo < numGeneralPages) {
+        newData.general.responses[questionName] = responseValue;
+      } else {
+        const relationKey = userType === 'parent' ? 'childId' : 'classId';
+        const specificIndex = Math.floor((currentPageNo - numGeneralPages) / numSpecificPages);
+        newData.specific[specificIndex] = {
+          [relationKey]: specificIds[specificIndex],
+          responses: {
+            [questionName]: responseValue
+          }
+        };
+      }
+
+      window.localStorage.setItem(`${STORAGE_ITEM_KEY}-${uid}`, JSON.stringify(newData));
+      await roarfirekit.value.saveSurveyResponses({
+        responses: newData,
+        administrationId: selectedAdmin ?? null,
+      });
+    }
   }
   
   export async function restoreSurveyData({ surveyInstance, uid, selectedAdmin, surveyResponsesData }) {
-    const prevData = window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid}`) || null;
+    let data = null;
+
+    // Try to get data from localStorage first
+    const prevData = window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid}`);
     if (prevData) {
-      const data = JSON.parse(prevData);
-      surveyInstance.data = data;
+      data = JSON.parse(prevData);
+    } else if (surveyResponsesData) {
+      // If not in localStorage, try to find data from the server
+      const surveyResponse = surveyResponsesData.find((doc) => doc?.administrationId === selectedAdmin);
+      if (surveyResponse) {
+        data = surveyResponse;
+      }
+    }
+
+    if (data) {
+      // Flatten the data structure
+      const flattenedData = {};
+
+      // Process general responses
+      if (data.general && data.general.responses) {
+        Object.assign(flattenedData, data.general.responses);
+      }
+
+      // Process specific responses
+      if (data.specific && Array.isArray(data.specific)) {
+        data.specific.forEach((specificData) => {
+          if (specificData.responses) {
+            Object.assign(flattenedData, specificData.responses);
+          }
+        });
+      }
+
+      // Restore the flattened data to the survey instance
+      surveyInstance.data = flattenedData;
+
+      // Restore the page number if available
       if (data.pageNo) {
         surveyInstance.currentPageNo = data.pageNo;
       }
-    } else {
-      if (surveyResponsesData) {
-        // find the survey response doc with the correspoding administrationId
-        const surveyResponse = surveyResponsesData.find((doc) => doc?.administrationId === selectedAdmin);
-        if (surveyResponse) {
-          surveyInstance.data = surveyResponse;
-  
-          if (surveyResponse.pageNo) {
-            surveyInstance.currentPageNo = surveyResponse.pageNo;
-          }
-        }
-      }
-      // If there's no data in localStorage and no data from the server,
-      // the survey has never been started, so we continue with an empty survey
     }
+
+    // If there's no data in localStorage and no data from the server,
+    // the survey has never been started, so we continue with an empty survey
   }
   
   export async function saveFinalSurveyData({ sender, roarfirekit, uid, gameStore, router, toast, queryClient }) {
