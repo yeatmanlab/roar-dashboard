@@ -21,9 +21,12 @@ const devFirebaseConfig = {
 };
 
 const initializeAndGetFirebase = (config, name) => {
+  const app = initializeApp(config, name);
+  const db = getFirestore(app);
   return {
-    auth: initializeApp(config, name),
-    db: getFirestore(initializeApp(config, name)),
+    // Change this to app
+    auth: app,
+    db: db,
   };
 };
 
