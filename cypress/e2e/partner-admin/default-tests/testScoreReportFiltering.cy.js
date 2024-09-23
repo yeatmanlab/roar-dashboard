@@ -1,3 +1,9 @@
+
+// *** ================================================================================================ ***
+// *** Commenting out this test until it can be transitioned to a more comprehensive, independent component test. ***
+// *** ================================================================================================ ***
+
+
 // const roarDemoDistrictId = Cypress.env('testDistrictId');
 // const roarDemoAdministrationName = Cypress.env('testPartnerAdministrationName');
 // const roarTestAdministrationName = Cypress.env('testRoarAppsAdministration');
@@ -9,22 +15,30 @@
 // const baseUrl = Cypress.env('baseUrl');
 // const headers = ['School'];
 
+//
+
 // function checkUrl() {
 //   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 //   cy.navigateTo('/');
 //   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
 // }
 
+//
+
 // function clickScoreButton(adminId) {
 //   cy.get('button', { timeout: timeout }).contains('Scores').first().click();
 //   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/scores/${adminId}/district/${roarDemoDistrictId}`);
 // }
+
+//
 
 // function setFilterBySchool(school) {
 //   cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
 //   cy.get('ul > li', { timeout: timeout }).contains(school).click();
 //   cy.wait(0.05 * timeout);
 // }
+
+//
 
 // function setFilterByGrade(grade) {
 //   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
@@ -40,6 +54,8 @@
 //   cy.wait(0.05 * timeout);
 // }
 
+//
+
 // function setFilterByScoreCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
 //   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
@@ -48,12 +64,14 @@
 //   cy.wait(0.05 * timeout);
 // }
 
+//
 // function checkTableColumn(headers, value) {
 //   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
 //     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
-
+//
 //     headers.forEach((header) => {
 //       const headerIndex = tableHeaders.indexOf(header);
+//
 
 //       if (headerIndex !== -1) {
 //         cy.get('[data-cy="roar-data-table"] tbody').each(($row) => {
