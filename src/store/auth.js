@@ -1,10 +1,11 @@
-import { defineStore, acceptHMRUpdate } from 'pinia';
+import { acceptHMRUpdate, defineStore } from 'pinia';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
 import { useGameStore } from '@/store/game';
+import { taskFetcher } from '../helpers/query/tasks.js';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -80,7 +81,7 @@ export const useAuthStore = () => {
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
-            this.updateTasksDictionary();
+            await this.updateTasksDictionary();
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
@@ -96,11 +97,14 @@ export const useAuthStore = () => {
       },
       async updateTasksDictionary() {
         if (this.isFirekitInit) {
-          const tasksDictionary = await this.roarfirekit.getTasksDictionary();
-          this.tasksDictionary = tasksDictionary;
-          return;
+          const taskDocs = await taskFetcher(true, true);
+          this.tasksDictionary = taskDocs.reduce((acc, doc) => {
+            acc[doc.id] = doc;
+            return acc;
+          });
+        } else {
+          console.warn('Initialize Firekit before updating tasks dictionary.');
         }
-        return;
       },
       async updateConsentStatus(docName, consentVersion, params = {}) {
         return await this.roarfirekit.updateConsentStatus(docName, consentVersion, params);

@@ -30,8 +30,10 @@ import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
 import { fetchDocById } from '@/helpers/query/utils';
 import { useI18n } from 'vue-i18n';
+import HomeParticipant from './HomeParticipant.vue';
+import HomeAdministrator from './HomeAdministrator.vue';
+import ConsentModal from '@/components/ConsentModal.vue';
 
-let HomeParticipant, HomeAdministrator, ConsentModal;
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const { roarfirekit, roarUid, uid, userQueryKeyIndex, authFromClever, authFromClassLink } = storeToRefs(authStore);
@@ -148,10 +150,6 @@ watch(userData, async (newValue) => {
 });
 
 onMounted(async () => {
-  HomeParticipant = (await import('@/pages/HomeParticipant.vue')).default;
-  HomeAdministrator = (await import('@/pages/HomeAdministrator.vue')).default;
-  ConsentModal = (await import('@/components/ConsentModal.vue')).default;
-
   if (requireRefresh.value) {
     requireRefresh.value = false;
     router.go(0);
