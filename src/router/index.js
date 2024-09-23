@@ -94,10 +94,10 @@ const routes = [
     meta: { pageTitle: 'Letter-ES' },
   },
   {
-    path: '/game/letter-en-CA',
+    path: '/game/letter-en-ca',
     name: 'Letter-EN-CA',
     component: () => import('../components/tasks/TaskLetter.vue'),
-    props: { taskId: 'letter-en-CA', language: 'en-CA' },
+    props: { taskId: 'letter-en-ca', language: 'en-CA' },
     meta: { pageTitle: 'Letter-EN-CA' },
   },
   {

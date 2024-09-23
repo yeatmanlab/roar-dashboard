@@ -1,4 +1,3 @@
-
 // *** ================================================================================================ ***
 // *** Commenting out this test until it can be transitioned to a more comprehensive, independent component test. ***
 // *** ================================================================================================ ***
@@ -82,7 +81,6 @@
 //     });
 //   });
 // }
-
 
 //
 // function checkProgressTags(headers) {
