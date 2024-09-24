@@ -193,6 +193,7 @@ import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
 import useClassesQuery from '@/composables/queries/useClassesQuery';
 import useGroupsQuery from '@/composables/queries/useGroupsQuery';
+import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import TaskPicker from './TaskPicker.vue';
 import ConsentPicker from './ConsentPicker.vue';
@@ -317,28 +318,11 @@ const { data: existingGroupData } = useGroupsQuery(groupIds, {
   enabled: initialized,
 });
 
-// Grab families from existingAdministrationData.families
-const familiesToGrab = computed(() => {
-  const familyIds = _get(existingAdministrationData.value, 'minimalOrgs.families', []);
-  return familyIds.map((id) => {
-    return {
-      collection: 'families',
-      docId: id,
-      select: ['name'],
-    };
-  });
-});
+// Fetch the families assigned to the administration.
+const familyIds = computed(() => existingAdministrationData.value?.minimalOrgs?.families ?? []);
 
-const shouldGrabFamilies = computed(() => {
-  return initialized.value && familiesToGrab.value.length > 0;
-});
-
-const { data: preFamilies } = useQuery({
-  queryKey: ['families', props.adminId],
-  queryFn: () => fetchDocsById(familiesToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabFamilies,
-  staleTime: 5 * 60 * 1000, // 5 minutes
+const { data: existingFamiliesData } = useFamiliesQuery(familyIds, {
+  enabled: initialized,
 });
 
 //      +---------------------------------+
@@ -404,7 +388,7 @@ const orgsList = computed(() => {
     schools: existingSchoolsData.value,
     classes: existingClassesData.value,
     groups: existingGroupData.value,
-    families: preFamilies.value,
+    families: existingFamiliesData.value,
   };
 });
 
