@@ -1,4 +1,8 @@
-// THIS SHOULD BE A COMPONENT TEST
+
+// *** ================================================================================================ ***
+// *** Commenting out this test until it can be transitioned to a more comprehensive, independent component test. ***
+// *** ================================================================================================ ***
+
 
 // const testDistrictId = Cypress.env('testDistrictId');
 // const roarDemoDistrictId = Cypress.env('testDistrictId');
@@ -49,12 +53,14 @@
 //   cy.wait(0.05 * timeout);
 // }
 
+//
 // function checkTableColumn(headers, value) {
 //   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
 //     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
-
+//
 //     headers.forEach((header) => {
 //       const headerIndex = tableHeaders.indexOf(header);
+//
 
 //       if (headerIndex !== -1) {
 //         cy.get('[data-cy="roar-data-table"] tbody tr').each(($row) => {
@@ -70,12 +76,14 @@
 //   });
 // }
 
+//
 // function checkProgressTags(headers) {
 //   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
 //     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
-
+//
 //     headers.forEach((header) => {
 //       const headerIndex = tableHeaders.indexOf(header);
+//
 
 //       if (headerIndex !== -1) {
 //         cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: timeout }).each(($row) => {
