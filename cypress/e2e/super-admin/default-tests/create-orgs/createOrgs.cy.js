@@ -6,8 +6,6 @@ import {
   navigateToPageFromMenubar,
 } from '../../../../support/helper-functions/super-admin/superAdminHelpers';
 
-const timeout = Cypress.env('timeout');
-
 const randomDistrictName = randomizeName(Cypress.env('testDistrictName'));
 const randomSchoolName = randomizeName(Cypress.env('testSchoolName'));
 const randomClassName = randomizeName(Cypress.env('testClassName'));

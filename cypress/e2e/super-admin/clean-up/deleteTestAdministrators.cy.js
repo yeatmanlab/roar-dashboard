@@ -1,12 +1,8 @@
-import { signInAsSuperAdmin } from '../../../support/helper-functions/super-admin/superAdminHelpers';
-import { getDevFirebase } from '../../../support/devFirebase';
 import { deleteTestAdministrators } from '../../../support/query.js';
+import { useDevFirebase, signInAsSuperAdmin } from '../../../support/utils.js';
 
-const adminFirestore = getDevFirebase('admin').db;
-const adminAuth = getDevFirebase('admin').auth;
-
-const assessmentFirestore = getDevFirebase('assessment').db;
-const assessmentAuth = getDevFirebase('assessment').auth;
+const { auth: adminAuth, db: adminDb } = useDevFirebase('adminDev');
+const { auth: assessmentAuth, db: assessmentDb } = useDevFirebase('assessmentDev');
 
 describe('Delete Test Administrations', () => {
   before(() => {
@@ -15,6 +11,6 @@ describe('Delete Test Administrations', () => {
   });
 
   it('should delete all test administrations for super and partner administrators', () => {
-    deleteTestAdministrators(adminFirestore, assessmentFirestore);
+    cy.wrap(deleteTestAdministrators(adminDb, assessmentDb), { timeout: 6 * Cypress.env('timeout') });
   });
 });

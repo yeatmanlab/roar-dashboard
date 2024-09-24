@@ -76,6 +76,7 @@ module.exports = defineConfig({
     sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
     superAdminUsername: process.env.SUPER_ADMIN_USERNAME,
     superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
+    superAdminEmail: process.env.SUPER_ADMIN_EMAIL,
     superAdminId: process.env.SUPER_ADMIN_ID,
     partnerAdminUsername: process.env.PARTNER_ADMIN_USERNAME,
     partnerAdminPassword: process.env.PARTNER_ADMIN_PASSWORD,
