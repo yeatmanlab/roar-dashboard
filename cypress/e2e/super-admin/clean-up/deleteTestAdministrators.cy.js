@@ -4,7 +4,7 @@ import { useDevFirebase, signInAsSuperAdmin } from '../../../support/utils.js';
 const { auth: adminAuth, db: adminDb } = useDevFirebase('adminDev');
 const { auth: assessmentAuth, db: assessmentDb } = useDevFirebase('assessmentDev');
 
-describe('Delete Test Administrations', () => {
+describe('Remove Test Administrators from admin and assessment Firestores', () => {
   before(() => {
     signInAsSuperAdmin(adminAuth);
     signInAsSuperAdmin(assessmentAuth);
