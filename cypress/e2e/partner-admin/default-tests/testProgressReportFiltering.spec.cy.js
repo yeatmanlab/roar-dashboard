@@ -1,8 +1,6 @@
-
 // *** ================================================================================================ ***
 // *** Commenting out this test until it can be transitioned to a more comprehensive, independent component test. ***
 // *** ================================================================================================ ***
-
 
 // const testDistrictId = Cypress.env('testDistrictId');
 // const roarDemoDistrictId = Cypress.env('testDistrictId');
