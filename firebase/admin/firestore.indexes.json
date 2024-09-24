@@ -2999,6 +2999,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "schoolId",
           "order": "ASCENDING"
         },
@@ -3013,6 +3017,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "schoolId",
           "order": "ASCENDING"
         },
@@ -3023,9 +3031,69 @@
       ]
     },
     {
+      "collectionGroup": "classes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districtId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastRoarSync",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "districts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "families",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "groups",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "schools",
       "queryScope": "COLLECTION",
       "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
         {
           "fieldPath": "districtId",
           "order": "ASCENDING"
@@ -3041,6 +3109,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "districtId",
           "order": "ASCENDING"
         },
@@ -3055,6 +3127,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "districtId",
           "order": "ASCENDING"
         },
@@ -3068,6 +3144,10 @@
       "collectionGroup": "schools",
       "queryScope": "COLLECTION",
       "fields": [
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
         {
           "fieldPath": "districtId",
           "order": "ASCENDING"
@@ -3083,6 +3163,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "districtId",
           "order": "ASCENDING"
         },
@@ -3097,12 +3181,30 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "districtId",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "name",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "schools",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districtId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastRoarSync",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -3349,6 +3451,20 @@
         {
           "fieldPath": "userType",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "districts.current",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "archived",
+          "order": "ASCENDING"
         }
       ]
     },

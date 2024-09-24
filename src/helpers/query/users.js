@@ -10,6 +10,7 @@ export const getUsersRequestBody = ({
   paginate = true,
   select = ['name'],
   orderBy,
+  restrictToActiveUsers = false,
 }) => {
   const requestBody = {
     structuredQuery: {},
@@ -39,17 +40,19 @@ export const getUsersRequestBody = ({
   requestBody.structuredQuery.where = {
     compositeFilter: {
       op: 'AND',
-      filters: [
-        {
-          fieldFilter: {
-            field: { fieldPath: 'archived' },
-            op: 'EQUAL',
-            value: { booleanValue: false },
-          },
-        },
-      ],
+      filters: [],
     },
   };
+
+  if (restrictToActiveUsers) {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
+      fieldFilter: {
+        field: { fieldPath: 'archived' },
+        op: 'EQUAL',
+        value: { booleanValue: false },
+      },
+    });
+  }
 
   if (userIds.length > 0) {
     requestBody.structuredQuery.where.compositeFilter.filters.push({
@@ -96,21 +99,7 @@ export const getUsersRequestBody = ({
   return requestBody;
 };
 
-export const usersPageFetcher = async (userIds, pageLimit, page) => {
-  const axiosInstance = getAxiosInstance();
-  const requestBody = getUsersRequestBody({
-    userIds,
-    aggregationQuery: false,
-    pageLimit: pageLimit.value,
-    page: page.value,
-    paginate: true,
-  });
-
-  console.log(`Fetching page ${page.value} for ${userIds}`);
-  return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
-};
-
-export const fetchUsersByOrg = async (orgType, orgId, pageLimit, page, orderBy) => {
+export const fetchUsersByOrg = async (orgType, orgId, pageLimit, page, orderBy, restrictToActiveUsers = false) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getUsersRequestBody({
     orgType,
@@ -119,15 +108,16 @@ export const fetchUsersByOrg = async (orgType, orgId, pageLimit, page, orderBy) 
     pageLimit: pageLimit.value,
     page: page.value,
     paginate: true,
-    select: ['username', 'name', 'studentData', 'userType'],
+    select: ['username', 'name', 'studentData', 'userType', 'archived'],
     orderBy: orderBy.value,
+    restrictToActiveUsers: restrictToActiveUsers,
   });
 
   console.log(`Fetching users page ${page.value} for ${orgType} ${orgId}`);
   return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
 };
 
-export const countUsersByOrg = async (orgType, orgId, orderBy) => {
+export const countUsersByOrg = async (orgType, orgId, orderBy, restrictToActiveUsers = false) => {
   const axiosInstance = getAxiosInstance();
   const requestBody = getUsersRequestBody({
     orgType,
@@ -135,6 +125,7 @@ export const countUsersByOrg = async (orgType, orgId, orderBy) => {
     aggregationQuery: true,
     paginate: false,
     orderBy: orderBy.value,
+    restrictToActiveUsers: restrictToActiveUsers,
   });
 
   return axiosInstance.post(':runAggregationQuery', requestBody).then(({ data }) => {

@@ -223,6 +223,12 @@ const columns = ref([
     sort: false,
   },
   {
+    field: 'archived',
+    header: 'Archived',
+    dataType: 'boolean',
+    sort: false,
+  },
+  {
     header: 'Edit',
     button: true,
     eventName: 'edit-button',
