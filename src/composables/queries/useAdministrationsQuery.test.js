@@ -1,4 +1,4 @@
-import { ref, toValue, nextTick } from 'vue';
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
@@ -17,13 +17,6 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
     useQuery: vi.fn().mockImplementation(original.useQuery),
   };
 });
-
-const buildCollectionRequestPayload = (id) => {
-  return {
-    collection: 'administrations',
-    docId: id,
-  };
-};
 
 describe('useAdministrationsQuery', () => {
   let queryClient;
