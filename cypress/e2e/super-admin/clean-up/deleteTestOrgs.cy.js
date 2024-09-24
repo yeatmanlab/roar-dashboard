@@ -3,7 +3,7 @@ import { useDevFirebase, signInAsSuperAdmin } from '../../../support/utils.js';
 
 const { auth: adminAuth, db: adminDb } = useDevFirebase('adminDev');
 
-describe('Delete Test Administrations', () => {
+describe('Remove Test Organizations from Firestore.', () => {
   before(() => {
     signInAsSuperAdmin(adminAuth);
   });

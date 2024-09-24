@@ -6,8 +6,7 @@ async function getUserId(user, adminFirestore) {
   const userQuery = await query(adminUsersRef, where('username', '==', user));
   const userSnapshot = await getDocs(userQuery);
   const userIds = userSnapshot.docs.map((doc) => doc.id);
-  console.log(user, userIds);
-  return userIds[0]; // return the first user ID
+  return userIds[0];
 }
 
 async function resetAssignmentDoc(assignmentRef, assignmentData) {

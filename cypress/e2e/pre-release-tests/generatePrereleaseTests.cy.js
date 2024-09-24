@@ -8,7 +8,6 @@ const testDirName = 'cypress/e2e/pre-release-tests/generated-tests';
 const { auth, db } = useDevFirebase('adminDev');
 
 async function getOpenAdmins() {
-  // const adminFirestore = getDevFirebase('admin').db;
   const openAdmins = await getOpenAdministrations(db);
 
   return openAdmins.filter((admin) => admin.includes('Synced Administration'));
