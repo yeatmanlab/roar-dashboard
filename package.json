@@ -111,7 +111,6 @@
     "vite-plugin-favicons-inject": "^2.2.0",
     "vite-plugin-mkcert": "^1.17.5",
     "vite-plugin-node-polyfills": "^0.22.0",
-    "vite-plugin-pwa": "^0.20.0",
     "vitest": "^2.0.5",
     "workbox-build": "^7.1.1",
     "workbox-core": "^7.1.0",
