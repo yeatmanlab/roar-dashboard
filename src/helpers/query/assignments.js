@@ -23,6 +23,9 @@ const assignmentSelectFields = [
   'readOrgs',
   'started',
   'id',
+  'sequential',
+  'name',
+  'publicName',
 ];
 
 export const getAssignmentsRequestBody = ({
