@@ -17,6 +17,12 @@ module.exports = defineConfig({
     experimentalMemoryManagement: true,
     retries: 2,
     setupNodeEvents(on, config) {
+      on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        },
+      });
       on('file:preprocessor', vitePreprocessor());
       return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
     },
