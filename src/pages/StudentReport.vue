@@ -174,23 +174,23 @@
 </template>
 
 <script setup>
-import { fetchDocById } from '../helpers/query/utils';
-import { runPageFetcher } from '../helpers/query/runs';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useAuthStore } from '../store/auth';
-import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
-import IndividualScoreReportTask from '../components/reports/IndividualScoreReportTask.vue';
-import AppSpinner from '../components/AppSpinner.vue';
-import { getGrade } from '@bdelab/roar-utils';
-import NextSteps from '@/assets/NextSteps.pdf';
 import jsPDF from 'jspdf';
 import _startCase from 'lodash/startCase';
+import { getGrade } from '@bdelab/roar-utils';
+import { useAuthStore } from '@/store/auth';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
+import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
+import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
+import AppSpinner from '@/components/AppSpinner.vue';
+import NextSteps from '@/assets/NextSteps.pdf';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, uid, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -213,45 +213,17 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const { data: studentData } = useQuery({
-  queryKey: ['users', uid, props.userId],
-  queryFn: () => fetchDocById('users', props.userId),
+const { data: studentData } = useUserDataQuery(props.userId, {
   enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
 });
 
-const { data: assignmentData } = useQuery({
-  queryKey: ['assignments', uid, props.userId, props.administrationId],
-  queryFn: () => fetchDocById('users', `${props.userId}/assignments/${props.administrationId}`),
+const { data: administrationData } = useAdministrationsQuery([props.administrationId], {
   enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
+  select: (data) => data[0],
 });
 
-const { data: taskData } = useQuery({
-  queryKey: ['runs', uid, props.administrationId, props.userId, props.orgType, props.orgId],
-  queryFn: () =>
-    runPageFetcher({
-      administrationId: props.administrationId,
-      orgType: props.orgType,
-      orgId: props.orgId,
-      userId: props.userId,
-      select: ['scores.computed', 'taskId', 'reliable', 'engagementFlags', 'optional'],
-      scoreKey: 'scores.computed',
-      paginate: false,
-    }),
+const { data: taskData } = useUserRunPageQuery(props.userId, props.administrationId, props.orgType, props.orgId, {
   enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
-});
-
-const { data: administrationData } = useQuery({
-  queryKey: ['administrations', uid, props.administrationId],
-  queryFn: () => fetchDocById('administrations', props.administrationId),
-  enabled: initialized,
-  keepPreviousData: true,
-  staleTime: 5 * 60 * 1000,
 });
 
 const expanded = ref(false);
@@ -308,31 +280,6 @@ const exportToPdf = async () => {
     (exportLoading.value = false);
 };
 
-const optionalAssessments = computed(() => {
-  return assignmentData?.value?.assessments.filter((assessment) => assessment.optional);
-});
-
-// Calling the query client to update the cached taskData with the new optional tasks
-const queryClient = useQueryClient();
-
-const updateTaskData = () => {
-  const updatedTasks = taskData?.value?.map((task) => {
-    const isOptional = optionalAssessments?.value?.some((assessment) => assessment.taskId === task.taskId);
-    return isOptional ? { ...task, optional: true } : task;
-  });
-
-  queryClient.setQueryData(['runs', props.administrationId, props.userId, props.orgType, props.orgId], updatedTasks);
-};
-
-// Watch for changes in taskData and update the taskData with the new optional tasks
-watch(
-  () => taskData.value,
-  () => {
-    updateTaskData();
-  },
-  { deep: true },
-);
-
 const tasks = computed(() => taskData?.value?.map((assignment) => assignment.taskId));
 
 const formattedTasks = computed(() => {
@@ -380,6 +327,7 @@ function getGradeWithSuffix(grade) {
 
 const refreshing = ref(false);
 let unsubscribe;
+
 const refresh = () => {
   refreshing.value = true;
   if (unsubscribe) unsubscribe();
@@ -396,7 +344,6 @@ onMounted(async () => {
   if (roarfirekit.value.restConfig) {
     refresh();
   }
-  updateTaskData();
 });
 </script>
 

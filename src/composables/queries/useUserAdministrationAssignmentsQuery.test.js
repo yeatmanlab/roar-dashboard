@@ -1,12 +1,10 @@
 import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createTestingPinia } from '@pinia/testing';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
-import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
-import useUserDataQuery from './useUserDataQuery';
+import useUserAdministrationAssignmentsQuery from './useUserAdministrationAssignmentsQuery';
 
 vi.mock('@/helpers/query/utils', () => ({
   fetchDocById: vi.fn().mockImplementation(() => []),
@@ -20,12 +18,10 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
   };
 });
 
-describe('useUserDataQuery', () => {
-  let piniaInstance;
+describe('useUserAdministrationAssignmentsQuery', () => {
   let queryClient;
 
   beforeEach(() => {
-    piniaInstance = createTestingPinia();
     queryClient = new VueQuery.QueryClient();
   });
 
@@ -35,72 +31,43 @@ describe('useUserDataQuery', () => {
 
   it('should call query with correct parameters', () => {
     const mockUserId = nanoid();
-
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserId;
-    authStore.userQueryKeyIndex = 1;
+    const mockAdministrationId = nanoid();
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useUserDataQuery(), {
+    withSetup(() => useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', mockUserId, 1],
+      queryKey: ['user-administration-assignments', mockUserId, mockAdministrationId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
-  });
-
-  it('should allow the use of a manual user ID', async () => {
-    const mockUserId = nanoid();
-    const mockStudentUserId = nanoid();
-
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserId;
-    authStore.userQueryKeyIndex = 1;
-
-    vi.spyOn(VueQuery, 'useQuery');
-
-    withSetup(() => useUserDataQuery(mockStudentUserId), {
-      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
-    });
-
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', mockStudentUserId, 1],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: true,
-      }),
-    });
-
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockStudentUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('users', `${mockUserId}/assignments/${mockAdministrationId}`);
   });
 
   it('should correctly control the enabled state of the query', async () => {
     const mockUserId = nanoid();
-
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserId;
-    authStore.userQueryKeyIndex = 1;
+    const mockAdministrationId = nanoid();
 
     const enableQuery = ref(false);
+
+    vi.spyOn(VueQuery, 'useQuery');
 
     const queryOptions = {
       enabled: enableQuery,
     };
 
-    withSetup(() => useUserDataQuery(null, queryOptions), {
+    withSetup(() => useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', mockUserId, 1],
+      queryKey: ['user-administration-assignments', mockUserId, mockAdministrationId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -113,24 +80,21 @@ describe('useUserDataQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('users', `${mockUserId}/assignments/${mockAdministrationId}`);
   });
 
-  it('should only fetch data if the roarUid is available', async () => {
-    const mockUserId = nanoid();
-
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = null;
-    authStore.userQueryKeyIndex = 1;
+  it('should only fetch data if the params are set', async () => {
+    const mockUserId = ref(null);
+    const mockAdministrationId = ref(null);
 
     const queryOptions = { enabled: true };
 
-    withSetup(() => useUserDataQuery(null, queryOptions), {
+    withSetup(() => useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', null, 1],
+      queryKey: ['user-administration-assignments', mockUserId, mockAdministrationId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -140,25 +104,31 @@ describe('useUserDataQuery', () => {
 
     expect(fetchDocById).not.toHaveBeenCalled();
 
-    authStore.roarUid = mockUserId;
+    mockUserId.value = nanoid();
+
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
+    expect(fetchDocById).not.toHaveBeenCalled();
+
+    mockAdministrationId.value = nanoid();
+
+    await nextTick();
+
+    expect(fetchDocById).toHaveBeenCalledWith('users', `${mockUserId.value}/assignments/${mockAdministrationId.value}`);
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
-    const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = null;
-    authStore.userQueryKeyIndex = 1;
+    const mockUserId = ref(null);
+    const mockAdministrationId = ref(nanoid());
 
     const queryOptions = { enabled: true };
 
-    withSetup(() => useUserDataQuery(null, queryOptions), {
+    withSetup(() => useUserAdministrationAssignmentsQuery(mockUserId, mockAdministrationId, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', null, 1],
+      queryKey: ['user-administration-assignments', mockUserId, mockAdministrationId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,

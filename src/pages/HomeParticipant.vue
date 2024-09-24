@@ -148,7 +148,7 @@ const {
   isLoading: isLoadingUserData,
   isFetching: isFetchingUserData,
   data: userData,
-} = useUserDataQuery({
+} = useUserDataQuery(null, {
   enabled: initialized,
 });
 
