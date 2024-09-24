@@ -24,10 +24,14 @@
 //   cy.url({ timeout: 3 * timeout }).should('eq', `${baseUrl}/`);
 // }
 
+//
+
 // function clickProgressButton(adminId) {
 //   cy.get('button', { timeout: timeout }).contains('Progress').first().click();
 //   cy.url({ timeout: 3 * timeout }).should('eq', `${baseUrl}/administration/${adminId}/district/${testDistrictId}`);
 // }
+
+//
 
 // function setFilterBySchool(school) {
 //   cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
@@ -35,12 +39,16 @@
 //   cy.wait(0.05 * timeout);
 // }
 
+//
+
 // function setFilterByGrade(grade) {
 //   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
 //   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
 //   cy.get('body').type('{esc}');
 //   cy.wait(0.05 * timeout);
 // }
+
+//
 
 // function setFilterByProgressCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
@@ -97,6 +105,8 @@
 //   });
 // }
 
+//
+
 // describe('The partner admin can view progress reports for a given administration and filter by school.', () => {
 //   it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {
 //     checkUrl();
@@ -107,6 +117,8 @@
 //   });
 // });
 
+//
+
 // describe('The partner admin can view progress reports for a given administration and filter by grade', () => {
 //   it('Selects an administration, views its progress report, then accesses the filter bar to filter by grade', () => {
 //     checkUrl();
@@ -116,6 +128,8 @@
 //     checkTableColumn(['Grade'], '1');
 //   });
 // });
+
+//
 
 // describe('The partner admin can view progress reports for a given administration and filter by both school and grade', () => {
 //   it('Selects an administration, views its progress report, then accesses the filter bar to filter by both school grade', () => {
@@ -129,6 +143,8 @@
 //   });
 // });
 
+//
+
 // describe('The partner admin can view progress reports for a given administration and filter by progress status', () => {
 //   it('Selects an administration, views its score report, then accesses the column filter to filter by progress status', () => {
 //     checkUrl();
@@ -138,6 +154,8 @@
 //     checkTableColumn(['Username'], 'CypressTestStudent0');
 //   });
 // });
+
+//
 
 // describe('The partner admin can view progress reports for a given administration and filter by grade and progress status', () => {
 //   it('Selects an administration, views its score report, then accesses the column filter to filter by grade and support level', () => {
@@ -149,6 +167,8 @@
 //     checkTableColumn(['Username'], 'CypressTestStudent0');
 //   });
 // });
+
+//
 
 // describe('The partner admin can view progress reports for a given administration and a not applicable filter returns an empty message', () => {
 //   it('Selects an administration, views its score report, then accesses the column filter to filter by a non-returnable filter', () => {
