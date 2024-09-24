@@ -6,8 +6,8 @@
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
       </div>
       <div v-else>
-        <h2 v-if="adminInfo?.length == 1" class="p-float-label dropdown-container">
-          {{ adminInfo.at(0).publicName || adminInfo.at(0).name }}
+        <h2 v-if="assignmentInfo?.length == 1" class="p-float-label dropdown-container">
+          {{ assignmentInfo.at(0).publicName || assignmentInfo.at(0).name }}
         </h2>
         <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
           <div
@@ -24,13 +24,13 @@
             }}</label>
           </div>
           <div
-            v-if="adminInfo?.length > 0"
+            v-if="assignmentInfo?.length > 0"
             class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
                 <PvDropdown
-                  v-if="adminInfo.every((admin) => admin.publicName)"
+                  v-if="assignmentInfo.every((admin) => admin.publicName)"
                   v-model="selectedAdmin"
                   :options="sortedAdminInfo ?? []"
                   option-label="publicName"
@@ -172,29 +172,8 @@ const {
 const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));
 const administrationQueryEnabled = computed(() => !isLoadingAssignments.value);
 
-const {
-  isLoading: isLoadingAdmins,
-  isFetching: isFetchingAdmins,
-  data: adminInfo,
-} = useQuery({
-  queryKey: ['administrations', uid, administrationIds],
-  queryFn: () =>
-    fetchDocsById(
-      administrationIds.value.map((administrationId) => {
-        return {
-          collection: 'administrations',
-          docId: administrationId,
-          select: ['name', 'publicName', 'sequential', 'assessments', 'legal'],
-        };
-      }),
-    ),
-  keepPreviousData: true,
-  enabled: administrationQueryEnabled,
-  staleTime: 5 * 60 * 1000,
-});
-
 const sortedAdminInfo = computed(() => {
-  return [...(adminInfo.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  return [...(assignmentInfo.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 });
 
 async function checkConsent() {
@@ -318,11 +297,11 @@ const { data: surveyResponsesData } = useQuery({
 });
 
 const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
+  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
 });
 
 const isFetching = computed(() => {
-  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingAdmins.value || isFetchingTasks.value;
+  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingTasks.value;
 });
 
 const noGamesAvailable = computed(() => {
@@ -393,7 +372,7 @@ const optionalAssessments = computed(() => {
 const isSequential = computed(() => {
   return (
     _get(
-      _find(adminInfo.value, (admin) => {
+      _find(assignmentInfo.value, (admin) => {
         return admin.id === selectedAdmin.value.id;
       }),
       'sequential',
@@ -422,13 +401,13 @@ const studentInfo = computed(() => {
 });
 
 watch(
-  [selectedAdmin, adminInfo],
+  [selectedAdmin, assignmentInfo],
   async ([updateSelectedAdmin]) => {
     if (updateSelectedAdmin) {
       await checkConsent();
     }
     const selectedAdminId = selectedAdmin.value?.id;
-    const allAdminIds = (adminInfo.value ?? []).map((admin) => admin.id);
+    const allAdminIds = (assignmentInfo.value ?? []).map((admin) => admin.id);
     // If there is no selected admin or if the selected admin is not in the list
     // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
