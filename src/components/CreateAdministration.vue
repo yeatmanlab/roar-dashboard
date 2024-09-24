@@ -191,6 +191,7 @@ import { useAuthStore } from '@/store/auth';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
+import useClassesQuery from '@/composables/queries/useClassesQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import TaskPicker from './TaskPicker.vue';
 import ConsentPicker from './ConsentPicker.vue';
@@ -291,31 +292,21 @@ const existingAssessments = computed(() => {
 const districtIds = computed(() => existingAdministrationData?.value?.minimalOrgs?.districts ?? []);
 
 const { data: existingDistrictsData } = useDistrictsQuery(districtIds, {
-  enabled: initialized && districtIds.value.length > 0,
+  enabled: initialized,
 });
 
 // Fetch the schools assigned to the administration.
 const schoolIds = computed(() => existingAdministrationData.value?.minimalOrgs?.schools ?? []);
 
 const { data: existingSchoolsData } = useSchoolsQuery(schoolIds, {
-  enabled: initialized && schoolIds.value.length > 0,
+  enabled: initialized,
 });
 
-// Grab classes from existingAdministrationData.minimalOrgs.classes
-// Fetch classes assigned to the administration.
-const classesToGrab = computed(() => {
-  const classIds = _get(existingAdministrationData.value, 'minimalOrgs.classes', []);
-  return classIds.map((classId) => {
-    return {
-      collection: 'classes',
-      docId: classId,
-      select: ['name'],
-    };
-  });
-});
+// Fetch the classes assigned to the administration.
+const classIds = computed(() => existingAdministrationData.value?.minimalOrgs?.classes ?? []);
 
-const shouldGrabClasses = computed(() => {
-  return initialized.value && classesToGrab.value.length > 0;
+const { data: existingClassesData } = useClassesQuery(classIds, {
+  enabled: initialized && classIds.value.length > 0,
 });
 
 // Grab groups from existingAdministrationData.minimalOrgs.groups
@@ -348,14 +339,6 @@ const familiesToGrab = computed(() => {
 
 const shouldGrabFamilies = computed(() => {
   return initialized.value && familiesToGrab.value.length > 0;
-});
-
-const { data: preClasses } = useQuery({
-  queryKey: ['classes', 'minimal', props.adminId],
-  queryFn: () => fetchDocsById(classesToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabClasses,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const { data: preGroups } = useQuery({
@@ -435,7 +418,7 @@ const orgsList = computed(() => {
   return {
     districts: existingDistrictsData.value,
     schools: existingSchoolsData.value,
-    classes: preClasses.value,
+    classes: existingClassesData.value,
     groups: preGroups.value,
     families: preFamilies.value,
   };
@@ -512,6 +495,7 @@ const submit = async () => {
   pickListError.value = '';
   submitted.value = true;
   const isFormValid = await v$.value.$validate();
+
   if (isFormValid) {
     const submittedAssessments = variants.value.map((assessment) =>
       removeUndefined({
@@ -555,6 +539,8 @@ const submit = async () => {
           },
         };
         if (props.adminId) args.administrationId = props.adminId;
+
+        console.log('[debug] submitting with args:', args);
 
         await roarfirekit.value
           .createAdministration(args)
@@ -667,7 +653,7 @@ watch(schoolIds, async (updatedValue) => {
   }
 });
 
-watch(classesToGrab, async (updatedValue) => {
+watch(classIds, async (updatedValue) => {
   if (updatedValue.length !== 0) {
     // Invalidate the classes query and re-fetch the data based on the updated value
     await queryClient.invalidateQueries(['classes', 'minimal', props.adminId]);
