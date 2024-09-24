@@ -380,12 +380,6 @@ const routes = [
         component: () => import('../components/views/LinkAccountsView.vue'),
         meta: { requireAdmin: true },
       },
-      {
-        path: 'offline',
-        name: 'OfflineSettings',
-        component: () => import('../components/views/OfflineSettings.vue'),
-        meta: { requireAdmin: true },
-      },
     ],
     meta: { pageTitle: 'Profile' },
   },
