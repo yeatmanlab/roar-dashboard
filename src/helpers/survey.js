@@ -56,7 +56,7 @@ export function getParsedLocale(locale) {
     }
   };
   
-  export async function saveSurveyData({ 
+  export function saveSurveyData({ 
     survey, 
     roarfirekit, 
     uid, 
@@ -67,7 +67,6 @@ export function getParsedLocale(locale) {
     numSpecificPages,
     specificIds,
     userType,
-    saveSurveyResponses,
     gameStore
   }) {
     const currentPageNo = survey.currentPageNo;
@@ -78,8 +77,8 @@ export function getParsedLocale(locale) {
       // Update the page number at the top level
       prevData.pageNo = currentPageNo + 1;
 
-      console.log('game store in save survey data: ', gameStore);
-      console.log('num general pages from game store: ', gameStore.numGeneralPages);
+      // console.log('game store in save survey data: ', gameStore);
+      // console.log('num general pages from game store: ', gameStore.numGeneralPages);
 
       if (currentPageNo < numGeneralPages) {
         // General survey
@@ -108,10 +107,15 @@ export function getParsedLocale(locale) {
       }
 
       window.localStorage.setItem(`${STORAGE_ITEM_KEY}-${uid}`, JSON.stringify(prevData));
-      await roarfirekit.value.saveSurveyResponses({
-        responses: prevData,
+
+      try {
+        roarfirekit.saveSurveyResponses({
+          responses: prevData,
         administrationId: selectedAdmin ?? null,
       });
+      } catch (error) {
+        console.error('Error saving survey responses: ', error);
+      }
     } else {
       // Initialize the structure if it doesn't exist
       const newData = {
@@ -137,14 +141,19 @@ export function getParsedLocale(locale) {
       }
 
       window.localStorage.setItem(`${STORAGE_ITEM_KEY}-${uid}`, JSON.stringify(newData));
-      await roarfirekit.value.saveSurveyResponses({
-        responses: newData,
+
+      try {
+        roarfirekit.saveSurveyResponses({
+          responses: newData,
         administrationId: selectedAdmin ?? null,
       });
+      } catch (error) {
+        console.error('Error saving survey responses: ', error);
+      }
     }
   }
   
-  export async function restoreSurveyData({ surveyInstance, uid, selectedAdmin, surveyResponsesData }) {
+  export function restoreSurveyData({ surveyInstance, uid, selectedAdmin, surveyResponsesData }) {
     let data = null;
 
     // Try to get data from localStorage first
@@ -182,12 +191,16 @@ export function getParsedLocale(locale) {
 
       // Restore the page number if available
       if (data.pageNo) {
-        surveyInstance.currentPageNo = data.pageNo;
+        const pageIndex = Math.min(data.pageNo, surveyInstance.pages.length - 1);
+        surveyInstance.currentPageNo = pageIndex;
       }
+
+      return true
     }
 
     // If there's no data in localStorage and no data from the server,
     // the survey has never been started, so we continue with an empty survey
+    return false
   }
   
   export async function saveFinalSurveyData({ sender, roarfirekit, uid, gameStore, router, toast, queryClient }) {

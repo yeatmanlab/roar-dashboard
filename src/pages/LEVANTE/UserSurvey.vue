@@ -36,6 +36,7 @@ const toast = useToast();
 const queryClient = useQueryClient();
 let shouldFetchSurveyResponses = false;
 
+
 // const STORAGE_ITEM_KEY = 'levante-survey';
 
 // Fetch the survey on component mount
@@ -189,22 +190,22 @@ const { isLoading, data: surveyResponsesData, refetch: refetchSurveyResponses } 
 // }
 
 // Watch for changes in vue-i18n locale and update SurveyJS
-// watch(
-//   () => locale.value,
-//   (newLocale) => {
-//     const surveyInstance = gameStore.survey;
-//     surveyInstance.locale = newLocale;
+watch(
+  () => locale.value,
+  (newLocale) => {
+    const surveyInstance = gameStore.survey;
+    surveyInstance.locale = newLocale;
 
-//     gameStore.setSurvey(surveyInstance);
+    gameStore.setSurvey(surveyInstance);
 
-//     // stop any current audio playing
-//     if (gameStore.currentSurveyAudioSource) {
-//       gameStore.currentSurveyAudioSource.stop();
-//     }
+    // stop any current audio playing
+    if (gameStore.currentSurveyAudioSource) {
+      gameStore.currentSurveyAudioSource.stop();
+    }
 
-//     fetchBuffer(getParsedLocale(newLocale));
-//   },
-// );
+    fetchBuffer(getParsedLocale(newLocale));
+  },
+);
 
 async function playAudio(name) {
   const currentLocale = getParsedLocale(locale.value);
@@ -262,7 +263,7 @@ async function playAudio(name) {
 </script>
 
 <template>
-  <div v-if="gameStore.survey && !gameStore.isSavingSurveyResponses && !gameStore.surveyAudioLoading">
+  <div v-if="gameStore.survey && !gameStore.isSavingSurveyResponses && (!gameStore.surveyAudioLoading || authStore.userData.userType === 'student')">
     <SurveyComponent :model="gameStore.survey" />
 
     <div v-if="authStore.userData.userType === 'student'">
@@ -278,8 +279,7 @@ async function playAudio(name) {
       </div>
     </div>
   </div>
-  <AppSpinner v-if="!gameStore.survey || !gameStore.isSavingSurveyResponses || gameStore.surveyAudioLoading" />
-  <!-- <SurveyComponent :model="gameStore.survey" /> -->
+  <AppSpinner v-if="!gameStore.survey || gameStore.isSavingSurveyResponses || (gameStore.surveyAudioLoading && authStore.userData.userType !== 'student')" />
 </template>
 
 <style>

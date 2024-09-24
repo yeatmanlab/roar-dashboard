@@ -1,4 +1,11 @@
-import { getParsedLocale, fetchBuffer, showAndPlaceAudioButton, restoreSurveyData, saveSurveyData, saveFinalSurveyData } from '@/helpers/survey';
+import { 
+  getParsedLocale, 
+  fetchBuffer, 
+  showAndPlaceAudioButton, 
+  restoreSurveyData, 
+  saveSurveyData, 
+  saveFinalSurveyData 
+} from '@/helpers/survey';
 
 export async function initializeSurvey({
   surveyInstance,
@@ -8,31 +15,43 @@ export async function initializeSurvey({
   gameStore,
   locale,
   audioLinkMap,
+  generalSurveyData, // Add this parameter
 }) {
-  const numGeneralQuestions = surveyInstance.getAllQuestions().length;
-
-  if (userType === 'parent' || userType === 'teacher') {
-    addSpecificPages(surveyInstance, specificSurveyData, userType, userData, gameStore, numGeneralQuestions);
-  }
-
-  if (userType === 'student') {
-    await setupStudentAudio(surveyInstance, locale, audioLinkMap, gameStore);
-  }
-
-  await restoreSurveyData({
+  const isRestored = restoreSurveyData({
     surveyInstance,
     uid: userData.id,
     selectedAdmin: userData.selectedAdminId,
     surveyResponsesData: userData.surveyResponsesData,
   });
 
+  if (isRestored) return;
+
+  // Store all pages from the survey JSON
+  const allPages = generalSurveyData.pages;
+  gameStore.setAllSurveyPages(allPages);
+
+  // Add initial 3 pages manually
+  for (let i = 0; i < Math.min(3, allPages.length); i++) {
+    const newPage = surveyInstance.addNewPage(allPages[i].name);
+    newPage.fromJSON(allPages[i]);
+  }
+
+  gameStore.setCurrentPageIndex(0);
+
+  if (userType === 'parent' || userType === 'teacher') {
+    addSpecificPages(surveyInstance, specificSurveyData, userType, userData, gameStore);
+  }
+
   if (userType === 'student') {
-    gameStore.setSurveyQuestions(numGeneralQuestions, 0);
+    await setupStudentAudio(surveyInstance, locale, audioLinkMap, gameStore);
+  }
+
+  if (userType === 'student') {
     gameStore.setSurveyPages(surveyInstance.pages.length, 0);
   }
 }
 
-function addSpecificPages(surveyInstance, specificSurveyData, userType, userData, gameStore, numGeneralQuestions) {
+function addSpecificPages(surveyInstance, specificSurveyData, userType, userData, gameStore) {
   const numberOfSpecificPages = specificSurveyData.pages.length;
   gameStore.setSurveyPages(surveyInstance.pages.length, numberOfSpecificPages);
 
@@ -40,7 +59,7 @@ function addSpecificPages(surveyInstance, specificSurveyData, userType, userData
   const prefix = userType === 'parent' ? 'child' : 'class';
 
   for (let i = 0; i < count; i++) {
-    specificSurveyData.pages.forEach((page, pageIndex) => {
+    specificSurveyData.pages.forEach((page) => {
       const newPageName = `${page.name}_${prefix}${i + 1}`;
       const newPage = surveyInstance.createNewPage(newPageName);
       
@@ -51,12 +70,6 @@ function addSpecificPages(surveyInstance, specificSurveyData, userType, userData
       
       newPage.fromJSON(clonedPage);
       surveyInstance.addPage(newPage);
-
-      if (i === count - 1 && pageIndex === numberOfSpecificPages - 1) {
-        const totalQuestions = surveyInstance.getAllQuestions().length;
-        const numberOfSpecificQuestions = totalQuestions - numGeneralQuestions;
-        gameStore.setSurveyQuestions(numGeneralQuestions, numberOfSpecificQuestions);
-      }
     });
   }
 }
@@ -95,31 +108,39 @@ export function setupSurveyEventHandlers({
   queryClient,
   userData,
 }) {
-  surveyInstance.onValueChanged.add((sender, options) => 
-    saveSurveyData({ 
-      survey: sender, 
-      roarfirekit, 
-      uid, 
-      selectedAdmin: selectedAdminId, 
-      questionName: options.name, 
-      responseValue: options.value,
-      userType,
-      numGeneralPages: gameStore.numGeneralPages,
-      numSpecificPages: gameStore.numSpecificPages,
-      gameStore,
-      specificIds: userType === 'parent' ? userData.childIds : userData.classes.current,
-      saveSurveyResponses: roarfirekit.saveSurveyResponses
-    })
-  );
+  // surveyInstance.onValueChanged.add((sender, options) => 
+  //   saveSurveyData({ 
+  //     survey: sender, 
+  //     roarfirekit, 
+  //     uid, 
+  //     selectedAdmin: selectedAdminId, 
+  //     questionName: options.name, 
+  //     responseValue: options.value,
+  //     userType,
+  //     numGeneralPages: gameStore.numGeneralPages,
+  //     numSpecificPages: gameStore.numSpecificPages,
+  //     gameStore,
+  //     specificIds: userType === 'parent' ? userData.childIds : userData.classes.current,
+  //     saveSurveyResponses: roarfirekit.saveSurveyResponses
+  //   })
+  // );
 
-  surveyInstance.onCurrentPageChanged.add(() => 
-    saveSurveyData({ 
-      survey: surveyInstance, 
-      roarfirekit, 
-      uid, 
-      selectedAdmin: selectedAdminId 
-    })
-  );
+  // surveyInstance.onCurrentPageChanged.add((sender) => 
+  //   saveSurveyData({ 
+  //     survey: sender, 
+  //     roarfirekit, 
+  //     uid, 
+  //     selectedAdmin: selectedAdminId,
+  //     questionName: options.name, 
+  //     responseValue: options.value,
+  //     userType,
+  //     numGeneralPages: gameStore.numGeneralPages,
+  //     numSpecificPages: gameStore.numSpecificPages,
+  //     gameStore,
+  //     specificIds: userType === 'parent' ? userData.childIds : userData.classes.current,
+  //     saveSurveyResponses: roarfirekit.saveSurveyResponses 
+  //   })
+  // );
 
   surveyInstance.onComplete.add((sender) => 
     saveFinalSurveyData({ 
@@ -132,4 +153,37 @@ export function setupSurveyEventHandlers({
       queryClient 
     })
   );
+
+  let previousPage = null;
+
+  surveyInstance.onCurrentPageChanged.add((sender, options) => {
+    const currentPageIndex = gameStore.currentPageIndex;
+    const allPages = gameStore.allSurveyPages;
+
+    if (options.newCurrentPage === surveyInstance.pages[2] && currentPageIndex + 3 < allPages.length) {
+      // Add next page
+      const newPage = surveyInstance.addNewPage(allPages[currentPageIndex + 3].name);
+      newPage.fromJSON(allPages[currentPageIndex + 3]);
+      surveyInstance.addPage(newPage);
+
+      // Remove first page
+      if (previousPage) {
+        surveyInstance.removePage(previousPage);
+      }
+
+      gameStore.setCurrentPageIndex(currentPageIndex + 1);
+    } else if (options.oldCurrentPage === surveyInstance.pages[0] && currentPageIndex > 0) {
+      // Add previous page
+      const newPage = surveyInstance.addNewPage(allPages[currentPageIndex - 1].name);
+      newPage.fromJSON(allPages[currentPageIndex - 1]);
+      surveyInstance.pages.unshift(newPage);
+
+      // Remove last page
+      surveyInstance.removePage(surveyInstance.pages[surveyInstance.pages.length - 1]);
+
+      gameStore.setCurrentPageIndex(currentPageIndex - 1);
+    }
+
+    previousPage = options.oldCurrentPage;
+  });
 }

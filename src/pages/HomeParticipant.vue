@@ -110,7 +110,7 @@ import useSurveyResponses from '@/composables/useSurveyResponses/useSurveyRespon
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
-import { Model } from 'survey-core';
+import { Model, settings } from 'survey-core';
 import { Converter } from 'showdown';
 import { restoreSurveyData, saveSurveyData, saveFinalSurveyData, showAndPlaceAudioButton, fetchAudioLinks, getParsedLocale, fetchBuffer } from '@/helpers/survey';
 import { useRouter } from 'vue-router';
@@ -355,13 +355,13 @@ const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyDa
       };
     }
   },
-  enabled: initialized.value && isLevante && userData?.value?.userType !== 'admin',
+  enabled: initialized && isLevante && userData?.value?.userType !== 'admin',
   staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 
 
 const surveyDependenciesLoaded = computed(() => {
-  return !isFetchingSurvey.value && surveyData.value && userData.value && selectedAdmin.value
+  return surveyData.value && userData.value && selectedAdmin.value
 });
 
 const userType = computed(() => userData.value?.userType);
@@ -372,7 +372,8 @@ const specificSurveyData = computed(() => {
 });
 
 function createSurveyInstance() {
-  const surveyInstance = new Model(surveyData.value.general);
+  settings.lazyRender = true;
+  const surveyInstance = new Model();
   surveyInstance.locale = locale.value;
   return surveyInstance;
 }
@@ -387,9 +388,6 @@ function setupMarkdownConverter(surveyInstance) {
 }
 
 watch(surveyDependenciesLoaded, async (isLoaded) => {
-
-  console.log('survey dependencies loaded: ', isLoaded);
-  console.log('game store survey: ', gameStore.survey);
   if (!isLoaded || gameStore.survey) return;
 
   const surveyInstance = createSurveyInstance();
@@ -403,6 +401,7 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
     gameStore,
     locale: locale.value,
     audioLinkMap: audioLinkMap.value,
+    generalSurveyData: surveyData.value.general,
   });
 
   setupSurveyEventHandlers({
@@ -420,7 +419,6 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
 
   gameStore.setSurvey(surveyInstance);
 
-  console.log('survey in game store: ', gameStore.survey);
 }, { immediate: true });
 
 const isLoading = computed(() => {
