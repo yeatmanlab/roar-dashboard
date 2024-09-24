@@ -1,17 +1,14 @@
-import { signInAsSuperAdmin } from '../../../support/helper-functions/super-admin/superAdminHelpers';
 import { deleteTestRuns } from '../../../support/query';
-import { getDevFirebase } from '../../../support/devFirebase';
+import { useDevFirebase, signInAsSuperAdmin } from '../../../support/utils.js';
+
+const { auth: adminAuth, db: adminDb } = useDevFirebase('adminDev');
+const { auth: assessmentAuth, db: assessmentDb } = useDevFirebase('assessmentDev');
 
 const testUsers = Cypress.env('testUserList');
 
-const adminAuth = getDevFirebase('admin').auth;
-const adminFirestore = getDevFirebase('admin').db;
-
-const assessmentAuth = getDevFirebase('assessment').auth;
-const assessmentFirestore = getDevFirebase('assessment').db;
-
 // This test is used to delete all test runs for all test users
 // Leaving this out of CI for now, as it has caused issues in the past with run IDs not being deleted properly
+
 describe('Delete Test Runs', () => {
   before(() => {
     signInAsSuperAdmin(adminAuth);

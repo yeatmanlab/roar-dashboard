@@ -1,12 +1,15 @@
 import { generatedSpecTemplate } from '../../fixtures/generatedTestTemplate';
-import { getDevFirebase } from '../../support/devFirebase';
 import { getOpenAdministrations } from '../../support/query';
+import { signInAsSuperAdmin, useDevFirebase } from '../../support/utils.js';
 
 const timeout = Cypress.env('timeout');
 const testDirName = 'cypress/e2e/pre-release-tests/generated-tests';
+
+const { auth, db } = useDevFirebase('adminDev');
+
 async function getOpenAdmins() {
-  const adminFirestore = getDevFirebase('admin').db;
-  const openAdmins = await getOpenAdministrations(adminFirestore);
+  // const adminFirestore = getDevFirebase('admin').db;
+  const openAdmins = await getOpenAdministrations(db);
 
   return openAdmins.filter((admin) => admin.includes('Synced Administration'));
 }
@@ -23,6 +26,7 @@ describe('Fetches all open administrations and generates test spec files for eac
 
   beforeEach(() => {
     // Log in as a super admin and fetch all open administrations from Firestore
+    signInAsSuperAdmin(auth);
     cy.then(async () => {
       openAdmins = await getOpenAdmins();
       cy.wrap(openAdmins).as('openAdmins');

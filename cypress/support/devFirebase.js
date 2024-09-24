@@ -1,44 +1,56 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getApps, initializeApp } from 'firebase/app';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import devFirebaseConfig from './devFirebaseConfig';
 
-const devFirebaseConfig = {
-  admin: {
-    apiKey: 'AIzaSyCl-JsYraUfofQZXpzshQ6s-E0nYzlCvvg',
-    authDomain: 'gse-roar-admin-dev.firebaseapp.com',
-    projectId: 'gse-roar-admin-dev',
-    storageBucket: 'gse-roar-admin-dev.appspot.com',
-    messagingSenderId: '401455396681',
-    appId: '1:401455396681:web:859ea073a116d0aececc98',
-  },
-  assessment: {
-    apiKey: 'AIzaSyCEUxEgYMp4fg2zORT0lsgn4Q6CCoMVzjU',
-    authDomain: 'gse-roar-assessment-dev.firebaseapp.com',
-    projectId: 'gse-roar-assessment-dev',
-    storageBucket: 'gse-roar-assessment-dev.appspot.com',
-    messagingSenderId: '26086061121',
-    appId: '1:26086061121:web:262163d6c145b7a80bc2c0',
-  },
-};
+/**
+ * Initializes a Firebase app and retrieves the Auth and Firestore services.
+ * If the app with the specified name already exists, it reuses the existing app.
+ * Optionally connects to the Firestore emulator if `useEmulator` is true.
+ *
+ * @param {Object} config - The Firebase configuration object.
+ * @param {string} name - The name of the Firebase app instance.
+ * @param {boolean} useEmulator - A flag indicating whether to connect to the Firestore emulator.
+ * @returns {Object} - An object containing the Firebase app, Auth, and Firestore services.
+ */
+const initializeAndGetFirebase = (config, name, useEmulator) => {
+  const existingApp = getApps().find((app) => app.name === name);
 
-const initializeAndGetFirebase = (config, name) => {
-  const app = initializeApp(config, name);
+  if (existingApp) {
+    console.log('Found existing app:', existingApp);
+  }
+  const app = existingApp || initializeApp(config, name);
+  const auth = getAuth(app);
   const db = getFirestore(app);
+
+  if (useEmulator) {
+    console.log('Connecting to Firestore emulator...');
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    console.log('Connected to Firestore emulator.');
+  }
+
   return {
-    // Change this to app
-    auth: app,
-    db: db,
+    app,
+    auth,
+    db,
   };
 };
 
-const getAdminDevFirebase = () => initializeAndGetFirebase(devFirebaseConfig.admin, 'admin');
-
-const getAssessmentDevFirebase = () => initializeAndGetFirebase(devFirebaseConfig.assessment, 'assessment');
-
-export const getDevFirebase = (config) => {
+/**
+ * Retrieves the Firebase app, Auth, and Firestore services based on the given config key.
+ * It supports multiple environments (e.g., adminDev, assessmentDev) and connects to the Firestore emulator
+ * if `useEmulator` is true. Returns null if the specified config is not found.
+ *
+ * @param {string} config - The key for selecting the Firebase configuration (e.g., 'adminDev', 'assessmentDev').
+ * @param {boolean} [useEmulator=true] - A flag indicating whether to connect to the Firestore emulator.
+ * @returns {Object|null} - An object containing the Firebase app, Auth, and Firestore services, or null if no config is found.
+ */
+export const getDevFirebase = (config, useEmulator = false) => {
   const configMap = {
-    admin: getAdminDevFirebase,
-    assessment: getAssessmentDevFirebase,
+    adminDev: devFirebaseConfig.adminDev,
+    assessmentDev: devFirebaseConfig.assessmentDev,
   };
 
-  return configMap[config] ? configMap[config]() : null;
+  const firebaseConfig = configMap[config];
+  return firebaseConfig ? initializeAndGetFirebase(firebaseConfig, config, useEmulator) : null;
 };
