@@ -20,21 +20,20 @@
     <SessionTimer v-if="loadSessionTimeoutHandler" />
   </div>
 
-  <VueQueryDevtools />
+  <VueQueryDevtools v-if="showDevtools" />
 </template>
 
 <script setup>
-// @TODO: Make conditional import for local dev environment only.
-import { VueQueryDevtools } from '@tanstack/vue-query-devtools';
-
-import { computed, onBeforeMount, ref, defineAsyncComponent, onUpdated } from 'vue';
+import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent, onUpdated } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
-
 import NavBar from '@/components/NavBar.vue';
 
 const SessionTimer = defineAsyncComponent(() => import('@/containers/SessionTimer/SessionTimer.vue'));
+const VueQueryDevtools = defineAsyncComponent(() =>
+  import('@tanstack/vue-query-devtools').then((module) => module.VueQueryDevtools),
+);
 
 import { useAuthStore } from '@/store/auth';
 import { fetchDocById } from '@/helpers/query/utils';
@@ -42,6 +41,7 @@ import { i18n } from '@/translations/i18n';
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const isAuthStoreReady = ref(false);
+const showDevtools = ref(false);
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -100,5 +100,18 @@ onBeforeMount(async () => {
     }
   });
   isAuthStoreReady.value = true;
+});
+
+onMounted(() => {
+  const isLocal = import.meta.env.MODE === 'development';
+  const isDevToolsEnabled = import.meta.env.VITE_QUERY_DEVTOOLS_ENABLED === 'true';
+
+  if (isLocal) {
+    showDevtools.value = true;
+  } else if (isDevToolsEnabled) {
+    window.toggleDevtools = () => {
+      showDevtools.value = !showDevtools.value;
+    };
+  }
 });
 </script>
