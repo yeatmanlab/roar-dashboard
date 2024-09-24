@@ -36,7 +36,7 @@ const useUserRunPageQuery = (userId, administrationId, orgType, orgId, queryOpti
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [USER_RUN_PAGE_QUERY_KEY, toValue(userId), toValue(administrationId), toValue(orgType), toValue(orgId)],
+    queryKey: [USER_RUN_PAGE_QUERY_KEY, userId, administrationId, orgType, orgId],
     queryFn: async () => {
       const runPageData = await runPageFetcher({
         administrationId: administrationId,

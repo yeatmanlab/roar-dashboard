@@ -1,7 +1,6 @@
-import { toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import _isEmpty from 'lodash/isEmpty';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { hasArrayEntries } from '@/helpers/hasArrayEntries';
 import { fetchDocumentsById } from '@/helpers/query/utils';
 import { FAMILIES_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
@@ -14,13 +13,13 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useFamiliesQuery = (familyIds, queryOptions = undefined) => {
-  // Ensure all necessary data is loaded before enabling the query.
-  const conditions = [() => !_isEmpty(familyIds)];
+  // Ensure all necessary data is available before enabling the query.
+  const conditions = [() => hasArrayEntries(familyIds)];
   const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
     queryKey: [FAMILIES_QUERY_KEY, familyIds],
-    queryFn: () => fetchDocumentsById(FIRESTORE_COLLECTIONS.FAMILIES, toValue(familyIds)),
+    queryFn: () => fetchDocumentsById(FIRESTORE_COLLECTIONS.FAMILIES, familyIds),
     enabled: isQueryEnabled,
     ...options,
   });

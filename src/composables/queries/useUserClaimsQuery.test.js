@@ -34,11 +34,12 @@ describe('useUserClaimsQuery', () => {
   });
 
   it('should call query with correct parameters', () => {
-    const mockUserId = nanoid();
+    const mockUserId = ref(nanoid());
+    const mockUserQueryKeyIndex = ref(1);
 
     const authStore = useAuthStore(piniaInstance);
     authStore.uid = mockUserId;
-    authStore.userQueryKeyIndex = 1;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -47,7 +48,7 @@ describe('useUserClaimsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId, 1],
+      queryKey: ['user-claims', mockUserId, mockUserQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
@@ -58,11 +59,12 @@ describe('useUserClaimsQuery', () => {
   });
 
   it('should correctly control the enabled state of the query', async () => {
-    const mockUserId = nanoid();
+    const mockUserId = ref(nanoid());
+    const mockUserQueryKeyIndex = ref(5);
 
     const authStore = useAuthStore(piniaInstance);
     authStore.uid = mockUserId;
-    authStore.userQueryKeyIndex = 1;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     const enableQuery = ref(false);
 
@@ -75,7 +77,7 @@ describe('useUserClaimsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', mockUserId, 1],
+      queryKey: ['user-claims', mockUserId, mockUserQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -91,12 +93,13 @@ describe('useUserClaimsQuery', () => {
     expect(fetchDocById).toHaveBeenCalledWith('userClaims', mockUserId);
   });
 
-  it('should only fetch data if the uid is available', async () => {
-    const mockUserId = nanoid();
+  it('should only fetch data if once uid is available', async () => {
+    const mockUserId = ref(null);
+    const mockUserQueryKeyIndex = ref(5);
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = null;
-    authStore.userQueryKeyIndex = 1;
+    authStore.uid = mockUserId;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     const queryOptions = { enabled: true };
 
@@ -105,7 +108,7 @@ describe('useUserClaimsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', null, 1],
+      queryKey: ['user-claims', mockUserId, mockUserQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -115,16 +118,19 @@ describe('useUserClaimsQuery', () => {
 
     expect(fetchDocById).not.toHaveBeenCalled();
 
-    authStore.uid = mockUserId;
+    mockUserId.value = nanoid();
     await nextTick();
 
     expect(fetchDocById).toHaveBeenCalledWith('userClaims', mockUserId);
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
+    const mockUserId = ref(null);
+    const mockUserQueryKeyIndex = ref(5);
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.uid = null;
-    authStore.userQueryKeyIndex = 1;
+    authStore.uid = mockUserId;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     const queryOptions = { enabled: true };
 
@@ -133,7 +139,7 @@ describe('useUserClaimsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-claims', null, 1],
+      queryKey: ['user-claims', mockUserId, mockUserQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,

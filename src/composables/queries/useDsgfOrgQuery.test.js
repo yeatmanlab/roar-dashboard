@@ -93,13 +93,9 @@ describe('useDsgfOrgQuery', () => {
     expect(fetchTreeOrgs).toHaveBeenCalledWith(mockAdministrationId, mockAssignedOrgs);
   });
 
-  it('should only fetch data if the user ID is available', async () => {
-    const mockUserId = nanoid();
-    const mockAdministrationId = nanoid();
+  it('should only fetch data if the administration ID is available', async () => {
+    const mockAdministrationId = ref();
     const mockAssignedOrgs = [nanoid()];
-
-    const authStore = useAuthStore(piniaInstance);
-    authStore.uid = null;
 
     const queryOptions = { enabled: true };
 
@@ -118,18 +114,15 @@ describe('useDsgfOrgQuery', () => {
 
     expect(fetchTreeOrgs).not.toHaveBeenCalled();
 
-    authStore.uid = mockUserId;
+    mockAdministrationId.value = nanoid();
     await nextTick();
 
     expect(fetchTreeOrgs).toHaveBeenCalledWith(mockAdministrationId, mockAssignedOrgs);
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
-    const mockAdministrationId = nanoid();
+    const mockAdministrationId = null;
     const mockAssignedOrgs = [nanoid()];
-
-    const authStore = useAuthStore(piniaInstance);
-    authStore.uid = null;
 
     const queryOptions = { enabled: true };
 

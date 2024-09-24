@@ -1,13 +1,13 @@
-import { ref, toValue } from 'vue';
+import { ref, toValue, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
 import { withSetup } from '@/test-support/withSetup.js';
-import { fetchDocsById } from '@/helpers/query/utils';
+import { fetchDocumentsById } from '@/helpers/query/utils';
 import useAdministrationsQuery from './useAdministrationsQuery';
 
 vi.mock('@/helpers/query/utils', () => ({
-  fetchDocsById: vi.fn().mockImplementation(() => []),
+  fetchDocumentsById: vi.fn().mockImplementation(() => []),
 }));
 
 vi.mock('@tanstack/vue-query', async (getModule) => {
@@ -22,7 +22,6 @@ const buildCollectionRequestPayload = (id) => {
   return {
     collection: 'administrations',
     docId: id,
-    select: ['name', 'publicName', 'sequential', 'assessments', 'legal'],
   };
 };
 
@@ -46,13 +45,14 @@ describe('useAdministrationsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['administrations', toValue(mockAdministrationIds)],
+      queryKey: ['administrations', mockAdministrationIds],
       queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: true,
+      }),
     });
 
-    const expectedPayload = mockAdministrationIds.value.map((id) => buildCollectionRequestPayload(id));
-
-    expect(fetchDocsById).toHaveBeenCalledWith(expectedPayload);
+    expect(fetchDocumentsById).toHaveBeenCalledWith('administrations', mockAdministrationIds);
   });
 
   it('should allow the query to be disabled via the passed query options', () => {
@@ -66,9 +66,60 @@ describe('useAdministrationsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['administrations', toValue(mockAdministrationIds)],
+      queryKey: ['administrations', mockAdministrationIds],
       queryFn: expect.any(Function),
-      enabled: false,
+      enabled: expect.objectContaining({
+        _value: false,
+      }),
     });
+
+    expect(fetchDocumentsById).not.toHaveBeenCalled();
+  });
+
+  it('should only fetch data if the administration IDs are available', async () => {
+    const mockAdministrationIds = ref(null);
+    const queryOptions = { enabled: true };
+
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useAdministrationsQuery(mockAdministrationIds, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['administrations', mockAdministrationIds],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+      }),
+    });
+
+    expect(fetchDocumentsById).not.toHaveBeenCalled();
+
+    mockAdministrationIds.value = [nanoid(), nanoid()];
+    await nextTick();
+
+    expect(fetchDocumentsById).toHaveBeenCalledWith('administrations', mockAdministrationIds);
+  });
+
+  it('should not let queryOptions override the internally computed value', async () => {
+    const mockAdministrationIds = ref(null);
+    const queryOptions = { enabled: true };
+
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useAdministrationsQuery(mockAdministrationIds, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['administrations', mockAdministrationIds],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+      }),
+    });
+
+    expect(fetchDocumentsById).not.toHaveBeenCalled();
   });
 });

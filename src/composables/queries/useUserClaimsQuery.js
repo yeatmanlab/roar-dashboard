@@ -19,8 +19,8 @@ const useUserClaimsQuery = (queryOptions = undefined) => {
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [USER_CLAIMS_QUERY_KEY, uid.value, userQueryKeyIndex.value],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USER_CLAIMS, uid.value),
+    queryKey: [USER_CLAIMS_QUERY_KEY, uid, userQueryKeyIndex],
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USER_CLAIMS, uid),
     enabled: isQueryEnabled,
     ...options,
   });

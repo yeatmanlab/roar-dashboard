@@ -1,3 +1,4 @@
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
@@ -29,37 +30,37 @@ describe('useGroupsQuery', () => {
   });
 
   it('should call query with correct parameters', () => {
-    const groupIds = [nanoid(), nanoid()];
+    const mockGroupIds = ref([nanoid(), nanoid()]);
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useGroupsQuery(groupIds), {
+    withSetup(() => useGroupsQuery(mockGroupIds), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['groups', groupIds],
+      queryKey: ['groups', mockGroupIds],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchDocumentsById).toHaveBeenCalledWith('groups', groupIds);
+    expect(fetchDocumentsById).toHaveBeenCalledWith('groups', mockGroupIds);
   });
 
   it('should allow the query to be disabled via the passed query options', () => {
-    const groupIds = [nanoid(), nanoid()];
+    const mockGroupIds = ref([nanoid(), nanoid()]);
     const queryOptions = { enabled: false };
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useGroupsQuery(groupIds, queryOptions), {
+    withSetup(() => useGroupsQuery(mockGroupIds, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['groups', groupIds],
+      queryKey: ['groups', mockGroupIds],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -69,18 +70,44 @@ describe('useGroupsQuery', () => {
     expect(fetchDocumentsById).not.toHaveBeenCalled();
   });
 
-  it('should keep the query disabled if not group IDs are specified', () => {
-    const groupIds = [];
+  it('should only fetch data if the administration ID is available', async () => {
+    const mockGroupIds = ref([]);
     const queryOptions = { enabled: true };
 
     vi.spyOn(VueQuery, 'useQuery');
 
-    withSetup(() => useGroupsQuery(groupIds, queryOptions), {
+    withSetup(() => useGroupsQuery(mockGroupIds, queryOptions), {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['groups', groupIds],
+      queryKey: ['groups', mockGroupIds],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+      }),
+    });
+
+    expect(fetchDocumentsById).not.toHaveBeenCalled();
+
+    mockGroupIds.value = [nanoid()];
+    await nextTick();
+
+    expect(fetchDocumentsById).toHaveBeenCalledWith('groups', mockGroupIds);
+  });
+
+  it('should not let queryOptions override the internally computed value', async () => {
+    const mockGroupIds = ref([]);
+    const queryOptions = { enabled: true };
+
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useGroupsQuery(mockGroupIds, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['groups', mockGroupIds],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
