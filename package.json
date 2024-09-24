@@ -33,7 +33,7 @@
   "dependencies": {
     "@bdelab/roam-fluency": "1.11.26",
     "@bdelab/roar-firekit": "^8.0.8",
-    "@bdelab/roar-letter": "1.11.5",
+    "@bdelab/roar-letter": "1.11.8",
     "@bdelab/roar-multichoice": "^1.11.3",
     "@bdelab/roar-pa": "2.2.4",
     "@bdelab/roar-sre": "1.15.9",
@@ -111,7 +111,6 @@
     "vite-plugin-favicons-inject": "^2.2.0",
     "vite-plugin-mkcert": "^1.17.5",
     "vite-plugin-node-polyfills": "^0.22.0",
-    "vite-plugin-pwa": "^0.20.0",
     "vitest": "^2.0.5",
     "workbox-build": "^7.1.1",
     "workbox-core": "^7.1.0",
