@@ -192,6 +192,7 @@ import useAdministrationsQuery from '@/composables/queries/useAdministrationsQue
 import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
 import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
 import useClassesQuery from '@/composables/queries/useClassesQuery';
+import useGroupsQuery from '@/composables/queries/useGroupsQuery';
 import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
 import TaskPicker from './TaskPicker.vue';
 import ConsentPicker from './ConsentPicker.vue';
@@ -309,20 +310,11 @@ const { data: existingClassesData } = useClassesQuery(classIds, {
   enabled: initialized && classIds.value.length > 0,
 });
 
-// Grab groups from existingAdministrationData.minimalOrgs.groups
-const groupsToGrab = computed(() => {
-  const groupIds = _get(existingAdministrationData.value, 'minimalOrgs.groups', []);
-  return groupIds.map((id) => {
-    return {
-      collection: 'groups',
-      docId: id,
-      select: ['name'],
-    };
-  });
-});
+// Fetch the groups assigned to the administration.
+const groupIds = computed(() => existingAdministrationData.value?.minimalOrgs?.groups ?? []);
 
-const shouldGrabGroups = computed(() => {
-  return initialized.value && groupsToGrab.value.length > 0;
+const { data: existingGroupData } = useGroupsQuery(groupIds, {
+  enabled: initialized,
 });
 
 // Grab families from existingAdministrationData.families
@@ -339,14 +331,6 @@ const familiesToGrab = computed(() => {
 
 const shouldGrabFamilies = computed(() => {
   return initialized.value && familiesToGrab.value.length > 0;
-});
-
-const { data: preGroups } = useQuery({
-  queryKey: ['groups', props.adminId],
-  queryFn: () => fetchDocsById(groupsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabGroups,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const { data: preFamilies } = useQuery({
@@ -419,7 +403,7 @@ const orgsList = computed(() => {
     districts: existingDistrictsData.value,
     schools: existingSchoolsData.value,
     classes: existingClassesData.value,
-    groups: preGroups.value,
+    groups: existingGroupData.value,
     families: preFamilies.value,
   };
 });
