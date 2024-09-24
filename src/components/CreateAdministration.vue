@@ -280,7 +280,7 @@ const invalidateAllQueries = async () => {
 
 // Fetch the data of the currently being edited administration, incl. its assigned assessments.
 const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
-  enabled: initialized.value && !!props.adminId,
+  enabled: initialized && !!props.adminId,
   select: (data) => data[0],
 });
 
@@ -306,7 +306,7 @@ const { data: existingSchoolsData } = useSchoolsQuery(schoolIds, {
 const classIds = computed(() => existingAdministrationData.value?.minimalOrgs?.classes ?? []);
 
 const { data: existingClassesData } = useClassesQuery(classIds, {
-  enabled: initialized.value && classIds.value.length > 0,
+  enabled: initialized && classIds.value.length > 0,
 });
 
 // Grab groups from existingAdministrationData.minimalOrgs.groups
