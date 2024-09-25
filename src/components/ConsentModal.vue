@@ -24,6 +24,7 @@ import * as Sentry from '@sentry/vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import _lowerCase from 'lodash/lowerCase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
@@ -42,7 +43,8 @@ const dialogVisible = ref(false);
 const isSubmitting = ref(false);
 
 const markdownToHtml = computed(() => {
-  return marked(props.consentText);
+  const sanitizedHtml = DOMPurify.sanitize(marked(props.consentText));
+  return sanitizedHtml;
 });
 
 onMounted(() => {
