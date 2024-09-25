@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="!noGamesAvailable || consentSpinner">
+    <div v-if="!noGamesAvailable">
       <div v-if="isFetching" class="loading-container">
         <AppSpinner style="margin-bottom: 1rem" />
         <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
@@ -131,7 +131,7 @@ const init = () => {
 const queryClient = useQueryClient();
 
 const authStore = useAuthStore();
-const { roarfirekit, roarUid, consentSpinner, showOptionalAssessments, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, roarUid, showOptionalAssessments, userQueryKeyIndex } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();

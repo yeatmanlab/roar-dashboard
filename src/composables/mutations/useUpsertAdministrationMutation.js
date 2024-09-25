@@ -32,7 +32,6 @@ const useUpsertAdministrationMutation = () => {
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATIONS_LIST_QUERY_KEY] });
       queryClient.invalidateQueries({ queryKey: [ADMINISTRATION_ASSIGNMENTS_QUERY_KEY] });
-      console.warn('Administration upserted successfully.');
     },
   });
 };

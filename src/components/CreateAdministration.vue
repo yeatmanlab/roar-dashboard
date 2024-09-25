@@ -263,7 +263,7 @@ const { data: allVariants } = useTaskVariantsQuery(true, {
 // +------------------------------------------------------------------------------------------------------------------+
 // Fetch the data of the currently being edited administration, incl. its assigned assessments.
 const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
-  enabled: initialized && !!props.adminId,
+  enabled: initialized.value && !!props.adminId,
   select: (data) => data[0],
 });
 

@@ -13,7 +13,6 @@ export const useAuthStore = () => {
     state: () => {
       return {
         spinner: false,
-        consentSpinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
