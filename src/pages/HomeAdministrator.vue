@@ -125,7 +125,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
+import { fetchDocById } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
@@ -154,11 +154,9 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
-const orderBy = ref(orderByDefault);
 const fetchTestAdministrations = ref(false);
 const testAdminsCached = ref(false);
 
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const canQueryAdministrations = computed(() => {
@@ -176,16 +174,7 @@ const getAdministrations = async (queryKey) => {
   if (!cachedData) {
     cachedData = await queryClient.fetchQuery({
       queryKey,
-      queryFn: () =>
-        administrationPageFetcher(
-          orderBy,
-          ref(10000),
-          ref(0),
-          isSuperAdmin,
-          adminOrgs,
-          exhaustiveAdminOrgs,
-          fetchTestAdministrations.value,
-        ),
+      queryFn: () => administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value),
       keepPreviousData: true,
       enabled: canQueryAdministrations,
       staleTime: 5 * 60 * 1000, // 5 minutes
@@ -210,17 +199,8 @@ const {
   isFetching: isFetchingAdministrations,
   data: administrations,
 } = useQuery({
-  queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () =>
-    administrationPageFetcher(
-      orderBy,
-      ref(10000),
-      ref(0),
-      isSuperAdmin,
-      adminOrgs,
-      exhaustiveAdminOrgs,
-      fetchTestAdministrations,
-    ),
+  queryKey: ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex],
+  queryFn: () => administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -244,8 +224,8 @@ const filteredAdministrations = ref(administrations.value);
 
 watch(fetchTestAdministrations, async (newState) => {
   const queryKey = newState
-    ? ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex]
-    : ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex];
+    ? ['testAdministrations', uid, isSuperAdmin, administrationQueryKeyIndex]
+    : ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex];
 
   filteredAdministrations.value = await getAdministrations(queryKey);
 });
