@@ -262,17 +262,14 @@ const { data: allVariants } = useTaskVariantsQuery(true, {
 // | Fetch pre-existing administration data when editing an administration
 // +------------------------------------------------------------------------------------------------------------------+
 // Fetch the data of the currently being edited administration, incl. its assigned assessments.
+const fetchAdminitrations = computed(() => initialized.value && !!props.adminId);
 const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
-  enabled: initialized && !!props.adminId,
+  enabled: fetchAdminitrations,
   select: (data) => data[0],
 });
 
 const existingAssessments = computed(() => {
   return existingAdministrationData?.value?.assessments ?? [];
-});
-
-watch(existingAssessments, (existingAssessments) => {
-  console.log('debug: existingAssessments', existingAssessments.value);
 });
 
 // Fetch the districts assigned to the administration.
