@@ -104,9 +104,6 @@ export const useAuthStore = () => {
           console.warn('Initialize Firekit before updating tasks dictionary.');
         }
       },
-      async updateConsentStatus(docName, consentVersion, params = {}) {
-        return await this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
-      },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);
       },

@@ -271,10 +271,6 @@ const existingAssessments = computed(() => {
   return existingAdministrationData?.value?.assessments ?? [];
 });
 
-watch(existingAssessments, (existingAssessments) => {
-  console.log('debug: existingAssessments', existingAssessments.value);
-});
-
 // Fetch the districts assigned to the administration.
 const districtIds = computed(() => existingAdministrationData?.value?.minimalOrgs?.districts ?? []);
 
