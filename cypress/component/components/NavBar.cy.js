@@ -46,7 +46,7 @@ describe('<NavBar />', () => {
     // Check that the component is mounted and the expected elements are present
     cy.get('nav').should('exist');
     cy.get('[data-cy=button-sign-out]').should('exist');
-    cy.get('[data-cy=button-profile-info]').should('exist');
+    // @NOTE the students not longer have button-profile-info
   });
 
   it('mounts using a desktop viewport', () => {
