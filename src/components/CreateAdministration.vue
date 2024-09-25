@@ -704,11 +704,11 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
 }
 .p-radiobutton.p-component.p-radiobutton-checked {
   position: relative;
-  width: 20px; /* adjust as needed */
-  height: 20px; /* adjust as needed */
+  width: 20px;
+  height: 20px;
   background-color: var(--primary-color);
   border-color: var(--primary-color) !important;
-  border-radius: 50%; /* make the element itself circular */
+  border-radius: 50%;
 }
 
 .p-radiobutton.p-component.p-radiobutton-checked::before {
@@ -716,10 +716,10 @@ watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) =
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 5px; /* adjust size of the inner circle as needed */
-  height: 5px; /* adjust size of the inner circle as needed */
-  background-color: white; /* color of the inner circle */
-  border-radius: 50%; /* make the inner element circular */
-  transform: translate(-50%, -50%); /* center the inner circle */
+  width: 5px;
+  height: 5px;
+  background-color: white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>
