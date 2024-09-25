@@ -20,11 +20,14 @@ function createAdministrator() {
   cy.get('[data-cy="button-create-administrator"]').click();
 }
 
-function checkAdministratorCreated() {
-  cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/`);
-  cy.log('Administrator successfully created.');
-  //   Need to expand the checks on this spec
+function checkSuccess() {
+  cy.get('body', { timeout: Cypress.env('timeout') }).should('contain.text', 'Success');
 }
+
+// function checkAdministratorCreated() {
+//   cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/`);
+//   cy.log('Administrator successfully created.');
+// }
 
 describe('The admin user can create a new administrator and assign them to a group(s).', () => {
   it(
@@ -37,8 +40,10 @@ describe('The admin user can create a new administrator and assign them to a gro
       cy.wait(0.5 * timeout);
       inputAdministratorDetails();
       cy.selectTestOrgs();
+      cy.wait(0.3 * timeout);
       createAdministrator();
-      checkAdministratorCreated();
+      checkSuccess();
+      // checkAdministratorCreated();
     },
   );
 });
