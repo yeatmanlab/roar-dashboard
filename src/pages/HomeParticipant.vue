@@ -169,9 +169,6 @@ const {
   refetchOnWindowFocus: 'always',
 });
 
-const administrationIds = computed(() => (assignmentInfo.value ?? []).map((assignment) => assignment.id));
-const administrationQueryEnabled = computed(() => !isLoadingAssignments.value);
-
 const sortedAdminInfo = computed(() => {
   return [...(assignmentInfo.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 });
