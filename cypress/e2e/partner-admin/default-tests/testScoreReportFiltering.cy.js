@@ -12,30 +12,38 @@
 // const timeout = Cypress.env('timeout');
 // const baseUrl = Cypress.env('baseUrl');
 // const headers = ['School'];
+
 //
+
 // function checkUrl() {
 //   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
 //   cy.navigateTo('/');
 //   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/`);
 // }
+
 //
+
 // function clickScoreButton(adminId) {
 //   cy.get('button', { timeout: timeout }).contains('Scores').first().click();
 //   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/scores/${adminId}/district/${roarDemoDistrictId}`);
 // }
+
 //
+
 // function setFilterBySchool(school) {
 //   cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
 //   cy.get('ul > li', { timeout: timeout }).contains(school).click();
 //   cy.wait(0.05 * timeout);
 // }
+
 //
+
 // function setFilterByGrade(grade) {
 //   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
 //   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
 //   cy.wait(0.05 * timeout);
 // }
-//
+
 // function setFilterByProgressCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
 //   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
@@ -43,7 +51,9 @@
 //   cy.get('button').contains('Apply').click();
 //   cy.wait(0.05 * timeout);
 // }
+
 //
+
 // function setFilterByScoreCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
 //   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
@@ -51,6 +61,7 @@
 //   cy.get('button').contains('Apply').click();
 //   cy.wait(0.05 * timeout);
 // }
+
 //
 // function checkTableColumn(headers, value) {
 //   cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
@@ -59,6 +70,7 @@
 //     headers.forEach((header) => {
 //       const headerIndex = tableHeaders.indexOf(header);
 //
+
 //       if (headerIndex !== -1) {
 //         cy.get('[data-cy="roar-data-table"] tbody').each(($row) => {
 //           cy.wrap($row).find('tr').should('contain', value);
@@ -67,7 +79,7 @@
 //     });
 //   });
 // }
-//
+
 // describe('The partner admin can view score reports for a given administration and filter by school.', () => {
 //   it('Selects an administration and views its score report, then accesses the filter bar to filter by school.', () => {
 //     checkUrl();
@@ -77,7 +89,7 @@
 //     checkTableColumn(headers, 'Cypress Test School');
 //   });
 // });
-//
+
 // describe('The partner admin can view score reports for a given administration and filter by grade', () => {
 //   it('Selects an administration, views its score report, then accesses the filter bar to filter by grade', () => {
 //     checkUrl();
@@ -87,7 +99,7 @@
 //     checkTableColumn(['Grade'], '3');
 //   });
 // });
-//
+
 // describe('The partner admin can view score reports for a given administration and filter by both school and grade', () => {
 //   it('Selects an administration, views its score report, then accesses the filter bar to filter by both school grade', () => {
 //     checkUrl();
@@ -99,7 +111,7 @@
 //     checkTableColumn(['Grade'], '5');
 //   });
 // });
-//
+
 // describe('The partner admin can view score reports for a given administration and filter by support level', () => {
 //   it('Selects an administration, views its score report, then accesses the column filter to filter by support level', () => {
 //     checkUrl();
@@ -109,7 +121,7 @@
 //     checkTableColumn(['Username'], 'CypressTestStudent0');
 //   });
 // });
-//
+
 // describe('The partner admin can view score reports for a given administration filter by school, grade, and progress status: completed', () => {
 //   it('Selects an administration, views its score report, then accesses the column filter to filter by school, grade, and completed', () => {
 //     checkUrl();
@@ -121,7 +133,7 @@
 //     checkTableColumn(['Username'], 'CypressTestStudent0');
 //   });
 // });
-//
+
 // describe('The partner admin can view score reports for a given administration and filter by Assessed', () => {
 //   it('Selects an administration, views its score report, then accesses the column filter to filter by assessed', () => {
 //     checkUrl();
@@ -131,7 +143,7 @@
 //     checkTableColumn(['Username'], 'CypressTestStudent0');
 //   });
 // });
-//
+
 // describe('The partner admin can view score reports for a given administration and a not applicable filter returns an empty message', () => {
 //   it('Selects an administration, views its score report, then accesses the column filter to filter by a non-returnable filter', () => {
 //     checkUrl();
