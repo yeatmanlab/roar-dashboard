@@ -225,7 +225,6 @@ export const fetchOrgByName = async (orgType, orgName, selectedDistrict, selecte
     aggregationQuery: false,
     orgName,
     paginate: false,
-    select: ['id', 'abbreviation'],
   });
 
   return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));

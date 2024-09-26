@@ -202,10 +202,11 @@ const dropdown_options = ref([
   {
     label: 'Organizations',
     items: [
-      { label: 'District', value: 'district' },
-      { label: 'School', value: 'school' },
-      { label: 'Class', value: 'uClass' }, // 'class' is a javascript keyword.
-      { label: 'Group', value: 'group' },
+      { label: 'District Name', value: 'district' },
+      { label: 'School Name', value: 'school' },
+      { label: 'Class Name', value: 'uClass' }, // 'class' is a javascript keyword.
+      { label: 'Class Id', value: 'classId' },
+      { label: 'Group Name', value: 'group' },
     ],
   },
 ]);
@@ -350,8 +351,20 @@ async function submitStudents() {
   const usersToSend = [];
   for (const user of submitObject) {
     // Handle Email Registration
-    const { email, username, password, firstName, middleName, lastName, district, school, uClass, group, ...userData } =
-      user;
+    const {
+      email,
+      username,
+      password,
+      firstName,
+      middleName,
+      lastName,
+      district,
+      school,
+      uClass,
+      classId,
+      group,
+      ...userData
+    } = user;
     const computedEmail = email || `${username}@roar-auth.com`;
     let sendObject = {
       email: computedEmail,
@@ -368,13 +381,14 @@ async function submitStudents() {
       school: school,
       class: uClass,
       group: group,
+      classId: classId,
     };
 
     // If orgType is a given column, check if the name is
     //   associated with a valid id. If so, add the id to
     //   the sendObject. If not, reject user
     for (const [orgType, orgName] of Object.entries(orgNameMap)) {
-      if (orgName) {
+      if (orgName && orgName !== 'NA') {
         let orgInfo;
         if (orgType === 'school') {
           const { id: districtId } = await getOrgId('districts', district);
@@ -383,12 +397,20 @@ async function submitStudents() {
           const { id: districtId } = await getOrgId('districts', district);
           const { id: schoolId } = await getOrgId('schools', school);
           orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(districtId), ref(schoolId));
+        } else if (orgType === 'classId') {
+          // When uploading classId, we don't need to fetch the id via name.
+          orgInfo = { id: `S26kTBY7p9o-3D--${String(orgName)}` };
         } else {
           orgInfo = await getOrgId(pluralizeFirestoreCollection(orgType), orgName, ref(undefined), ref(undefined));
         }
 
         if (!_isEmpty(orgInfo)) {
-          _set(sendObject, `userData.${orgType}`, orgInfo);
+          // Hacky, replace soon
+          if (orgType === 'classId') {
+            _set(sendObject, `userData.class`, orgInfo);
+          } else {
+            _set(sendObject, `userData.${orgType}`, orgInfo);
+          }
         } else {
           addErrorUser(user, `Error: ${orgType} '${orgName}' is invalid`);
           return;
@@ -398,6 +420,7 @@ async function submitStudents() {
 
     usersToSend.push(sendObject);
   }
+  console.log('Users to send:', usersToSend);
   await roarfirekit.value.createUpdateUsers(usersToSend).then((results) => {
     activeSubmit.value = false;
     for (const result of results.data) {
