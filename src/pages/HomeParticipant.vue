@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed, toRaw } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
