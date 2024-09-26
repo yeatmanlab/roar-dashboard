@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, ref, watch, computed, toRaw } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
@@ -247,20 +247,23 @@ async function checkConsent() {
     let found = false;
     let signedBeforeAugFirst = false;
 
+    const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+
     for (const document of legalDocs) {
       const signedDate = new Date(document.dateSigned);
-      const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
 
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
 
         if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
           signedBeforeAugFirst = true;
+          break;
         }
       }
 
       if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
         signedBeforeAugFirst = true;
+        break;
       }
     }
 
