@@ -34,7 +34,7 @@ async function checkForUserType() {
         console.log('Routing to Home');
         clearInterval(userDataCheckInterval);
         authStore.refreshQueryKeys();
-        router.push({ name: 'Home' });
+        await router.push({ name: 'Home' });
       } else {
         console.log(`User ${roarUid.value} found with userType ${userType} but no assignments. Retrying...`);
       }
@@ -43,7 +43,7 @@ async function checkForUserType() {
       console.log('Routing to Home');
       clearInterval(userDataCheckInterval);
       authStore.refreshQueryKeys();
-      router.push({ name: 'Home' });
+      await router.push({ name: 'Home' });
     } else {
       console.log(`User ${roarUid.value} found with userType ${userType}. Retrying...`);
     }

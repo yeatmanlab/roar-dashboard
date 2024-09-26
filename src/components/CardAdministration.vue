@@ -19,7 +19,6 @@
             button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
             :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
-            data-cy="button-speed-dial"
           />
           <PvConfirmPopup />
         </div>
