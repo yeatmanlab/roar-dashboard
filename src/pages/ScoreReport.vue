@@ -944,7 +944,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
     };
 
     if (authStore.isUserSuperAdmin) {
-      tableRow['PID'] = _get(user, 'assessmentPid');
+      tableRow['PID'] = user?.assessmentPid
     }
 
     if (props.orgType === 'district') {
