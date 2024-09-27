@@ -146,13 +146,14 @@ import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { fetchDocById } from '../helpers/query/utils';
 import RoarModal from '../components/modals/RoarModal.vue';
+import { APP_ROUTES } from '@/constants/routes';
 
 const incorrect = ref(false);
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
 const router = useRouter();
 
-const { spinner, authFromClever, authFromClassLink, routeToProfile, roarfirekit } = storeToRefs(authStore);
+const { spinner, authFromSSO, routeToProfile, roarfirekit } = storeToRefs(authStore);
 const warningModalOpen = ref(false);
 
 authStore.$subscribe(() => {
@@ -167,14 +168,12 @@ authStore.$subscribe(() => {
       }
     }
 
-    if (authFromClever.value) {
-      router.push({ name: 'CleverLanding' });
-    } else if (authFromClassLink.value) {
-      router.push({ name: 'ClassLinkLanding' });
+    if (authFromSSO.value) {
+      router.push({ path: APP_ROUTES.SSO });
     } else if (routeToProfile.value) {
-      router.push({ name: 'ProfileAccounts' });
+      router.push({ path: APP_ROUTES.ACCOUNT_PROFILE });
     } else {
-      router.push({ name: 'Home' });
+      router.push({ path: APP_ROUTES.HOME });
     }
   }
 });
@@ -214,8 +213,8 @@ const modalPassword = ref('');
 const authWithClever = () => {
   console.log('---> authWithClever');
   authStore.signInWithCleverRedirect();
+  // authStore.signInWithCleverPopup();
   spinner.value = true;
-  // }
 };
 
 const authWithClassLink = () => {
@@ -225,7 +224,6 @@ const authWithClassLink = () => {
     spinner.value = true;
   } else {
     authStore.signInWithClassLinkRedirect();
-    // authStore.signInWithCleverPopup();
     spinner.value = true;
   }
 };

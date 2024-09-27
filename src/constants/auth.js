@@ -16,8 +16,10 @@ export const AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION =
  *
  * @constant {Object} AUTH_USER_TYPE - User type, admin or participant.
  */
-export const AUTH_USER_TYPE = {
+export const AUTH_USER_TYPE = Object.freeze({
   ADMIN: 'admin',
+  GUEST: 'guest',
   PARTICIPANT: 'participant',
+  STUDENT: 'student',
   SUPER_ADMIN: 'super-admin',
-};
+});

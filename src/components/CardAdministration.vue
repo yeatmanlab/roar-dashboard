@@ -166,7 +166,7 @@ import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 const router = useRouter();
 
 const authStore = useAuthStore();
-const { roarfirekit, administrationQueryKeyIndex, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -193,6 +193,7 @@ const speedDialItems = ref([
         message: 'Are you sure you want to delete this administration?',
         icon: 'pi pi-exclamation-triangle',
         accept: async () => {
+          // @TODO: Move to mutation as we cannot rotate query key indexes anymore.
           await roarfirekit.value.deleteAdministration(props.id).then(() => {
             toast.add({
               severity: 'info',
@@ -200,7 +201,6 @@ const speedDialItems = ref([
               detail: `Deleted administration ${props.title}`,
               life: 3000,
             });
-            administrationQueryKeyIndex.value += 1;
           });
         },
         reject: () => {

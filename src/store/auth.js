@@ -23,11 +23,9 @@ export const useAuthStore = () => {
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
         routeToProfile: false,
+        authFromSSO: false,
         authFromClever: false,
         authFromClassLink: false,
-        userQueryKeyIndex: 0,
-        assignmentQueryKeyIndex: 0,
-        administrationQueryKeyIndex: 0,
         tasksDictionary: {},
         showOptionalAssessments: false,
       };
@@ -63,8 +61,8 @@ export const useAuthStore = () => {
     },
     actions: {
       async completeAssessment(adminId, taskId) {
+        //@TODO: Move to mutation since we cannot rotate query keys anymore.
         await this.roarfirekit.completeAssessment(adminId, taskId);
-        this.assignmentQueryKeyIndex += 1;
       },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
@@ -137,26 +135,30 @@ export const useAuthStore = () => {
           return this.roarfirekit.signInWithPopup('google');
         }
       },
+      async signInWithGoogleRedirect() {
+        return this.roarfirekit.initiateRedirect('google');
+      },
       async signInWithCleverPopup() {
+        this.authFromSSO = true;
         this.authFromClever = true;
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithPopup('clever');
         }
       },
+      async signInWithCleverRedirect() {
+        this.authFromSSO = true;
+        this.authFromClever = true;
+        return this.roarfirekit.initiateRedirect('clever');
+      },
       async signInWithClassLinkPopup() {
-        this.authFromClasslink = true;
+        this.authFromSSO = true;
+        this.authFromClassLink = true;
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithPopup('classlink');
         }
       },
-      async signInWithGoogleRedirect() {
-        return this.roarfirekit.initiateRedirect('google');
-      },
-      async signInWithCleverRedirect() {
-        this.authFromClever = true;
-        return this.roarfirekit.initiateRedirect('clever');
-      },
       async signInWithClassLinkRedirect() {
+        this.authFromSSO = true;
         this.authFromClassLink = true;
         return this.roarfirekit.initiateRedirect('classlink');
       },
@@ -179,12 +181,6 @@ export const useAuthStore = () => {
       },
       async forceIdTokenRefresh() {
         await this.roarfirekit.forceIdTokenRefresh();
-      },
-      refreshQueryKeys() {
-        // @TODO: Check if this manual query invalidation is necessary as this appears to cause unecessary refetching.
-        this.userQueryKeyIndex += 1;
-        this.assignmentQueryKeyIndex += 1;
-        this.administrationQueryKeyIndex += 1;
       },
       async sendMyPasswordResetEmail() {
         if (this.email) {
