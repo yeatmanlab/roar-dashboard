@@ -135,7 +135,7 @@
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
             @export-all="exportData"
-            @export-selected="exportData({ selectedRows: $event, includeProgress: false })"
+            @export-selected="exportData({ selectedRows: $event })"
           >
             <template #filterbar>
               <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">
