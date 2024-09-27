@@ -999,7 +999,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
       // Add progress immediately after reliability if includeProgress is true
       if (includeProgress) {
         const progressRow = computedProgressData.value.find(
-          (progress) => progress.userPid === _get(user, 'assessmentPid'),
+          (progress) => progress.userPid === user?.assessmentPid,
         );
 
         if (progressRow) {
