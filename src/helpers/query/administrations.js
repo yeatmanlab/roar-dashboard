@@ -104,7 +104,6 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
   const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
   const documents = administrationIds.map((id) => `${documentPrefix}/administrations/${id}`);
 
-  console.log('Fetching administrations:', documents);
   const { data } = await axiosInstance.post(':batchGet', { documents });
 
   const administrations = _without(
@@ -122,8 +121,6 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     }),
     undefined,
   );
-
-  console.log('Fetched administrations:', administrations);
 
   return mapAdministrations({ isSuperAdmin, data: administrations, adminOrgs: exhaustiveAdminOrgs });
 };
