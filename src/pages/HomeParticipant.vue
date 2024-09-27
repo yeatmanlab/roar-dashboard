@@ -112,7 +112,7 @@ import axios from 'axios';
 import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
 import { Model, settings } from 'survey-core';
 import { Converter } from 'showdown';
-import { restoreSurveyData, saveSurveyData, saveFinalSurveyData, showAndPlaceAudioButton, fetchAudioLinks, getParsedLocale, fetchBuffer } from '@/helpers/survey';
+import { fetchAudioLinks, } from '@/helpers/survey';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -327,7 +327,7 @@ const { data: surveyResponsesData } = useSurveyResponses(undefined, isLevante);
 
 const audioLinkMap = ref({});
 
-const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyData } = useQuery({
+const { isLoading: isLoadingSurvey, data: surveyData } = useQuery({
   queryKey: ['surveys'],
   queryFn: async () => {
     const userType = userData.value.userType;
@@ -355,7 +355,7 @@ const { isLoading: isLoadingSurvey, isFetching: isFetchingSurvey, data: surveyDa
       };
     }
   },
-  enabled: initialized && isLevante && userData?.value?.userType !== 'admin',
+  enabled: isLevante && userData?.value?.userType !== 'admin' && initialized,
   staleTime: 24 * 60 * 60 * 1000, // 24 hours
 });
 

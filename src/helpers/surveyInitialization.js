@@ -3,8 +3,8 @@ import {
   fetchBuffer, 
   showAndPlaceAudioButton, 
   restoreSurveyData, 
-  saveSurveyData, 
-  saveFinalSurveyData 
+  saveFinalSurveyData,
+  saveSurveyData,
 } from '@/helpers/survey';
 
 export async function initializeSurvey({
@@ -15,62 +15,91 @@ export async function initializeSurvey({
   gameStore,
   locale,
   audioLinkMap,
-  generalSurveyData, // Add this parameter
+  generalSurveyData,
 }) {
-  const isRestored = restoreSurveyData({
+  const { isRestored, pageNo } = restoreSurveyData({
     surveyInstance,
     uid: userData.id,
     selectedAdmin: userData.selectedAdminId,
     surveyResponsesData: userData.surveyResponsesData,
   });
 
-  if (isRestored) return;
-
   // Store all pages from the survey JSON
-  const allPages = generalSurveyData.pages;
-  gameStore.setAllSurveyPages(allPages);
+  const allGeneralPages = generalSurveyData.pages;
+  const allSpecificPages = specificSurveyData?.pages || [];
+  gameStore.setAllSurveyPages(allGeneralPages);
+  gameStore.setAllSpecificPages(allSpecificPages);
 
-  // Add initial 3 pages manually
-  for (let i = 0; i < Math.min(3, allPages.length); i++) {
-    const newPage = surveyInstance.addNewPage(allPages[i].name);
-    newPage.fromJSON(allPages[i]);
+  const numGeneralPages = allGeneralPages.length;
+  const numSpecificPages = allSpecificPages.length;
+  gameStore.setNumberOfSurveyPages(numGeneralPages, numSpecificPages);
+
+  const specificCount = userType === 'parent' ? userData.childIds.length :
+                        userType === 'student' ? 0 : userData.classes.current.length;
+  const totalPages = numGeneralPages + (numSpecificPages * specificCount);
+
+  if (isRestored) {
+    // Add pages around the restored page number
+    const startIndex = Math.max(0, pageNo - 1);
+    const endIndex = Math.min(totalPages, pageNo + 2);
+
+    for (let i = startIndex; i < endIndex; i++) {
+      addPageToSurvey(surveyInstance, i, userType, userData, gameStore);
+    }
+
+    surveyInstance.currentPageNo = 1; // we keep a window of 3 pages so we always want to start from the middle 
+    gameStore.setCurrentPageIndex(pageNo);
+  } else {
+    // Add initial 3 pages manually
+    for (let i = 0; i < Math.min(3, totalPages); i++) {
+      addPageToSurvey(surveyInstance, i, userType, userData, gameStore);
+    }
+
+    gameStore.setCurrentPageIndex(0);
   }
 
-  gameStore.setCurrentPageIndex(0);
-
-  if (userType === 'parent' || userType === 'teacher') {
-    addSpecificPages(surveyInstance, specificSurveyData, userType, userData, gameStore);
-  }
 
   if (userType === 'student') {
     await setupStudentAudio(surveyInstance, locale, audioLinkMap, gameStore);
   }
 
-  if (userType === 'student') {
-    gameStore.setSurveyPages(surveyInstance.pages.length, 0);
-  }
+  gameStore.setNumberOfSurveyPages(numGeneralPages, numSpecificPages);
 }
 
-function addSpecificPages(surveyInstance, specificSurveyData, userType, userData, gameStore) {
-  const numberOfSpecificPages = specificSurveyData.pages.length;
-  gameStore.setSurveyPages(surveyInstance.pages.length, numberOfSpecificPages);
+function addPageToSurvey(surveyInstance, pageIndex, userType, userData, gameStore, isGoingBackward = false) {
+  const numGeneralPages = gameStore.numGeneralPages; // 6
+  const numSpecificPages = gameStore.numSpecificPages; // 8
+  const allGeneralPages = gameStore.allSurveyPages;
+  const allSpecificPages = gameStore.allSpecificPages;
 
-  const count = userType === 'parent' ? userData.childIds.length : userData.classes.current.length;
-  const prefix = userType === 'parent' ? 'child' : 'class';
+  let newPage;
+  if (pageIndex < numGeneralPages) {
+    // If were going backward, we want to add the page to the beginning of the visiblePages array
+    if (isGoingBackward) {
+      newPage = surveyInstance.addNewPage(allGeneralPages[pageIndex].name, 0);
+    } else {
+      newPage = surveyInstance.addNewPage(allGeneralPages[pageIndex].name);
+    }
+    newPage.fromJSON(allGeneralPages[pageIndex]);
+  } else {
+    const specificIndex = Math.floor((pageIndex - numGeneralPages) / numSpecificPages); // 1
+    const specificPageIndex = (pageIndex - numGeneralPages) % numSpecificPages; //(pageIndex - numGeneralPages) % numSpecificPages
+    const prefix = userType === 'parent' ? 'child' : 'class';
+    const specificId = userType === 'parent' ? userData.childIds[specificIndex] : userData.classes.current[specificIndex];
 
-  for (let i = 0; i < count; i++) {
-    specificSurveyData.pages.forEach((page) => {
-      const newPageName = `${page.name}_${prefix}${i + 1}`;
-      const newPage = surveyInstance.createNewPage(newPageName);
-      
-      const clonedPage = JSON.parse(JSON.stringify(page));
-      clonedPage.elements.forEach(element => {
-        element.name = `${element.name}_${prefix}${i + 1}`;
-      });
-      
-      newPage.fromJSON(clonedPage);
-      surveyInstance.addPage(newPage);
+    const specificPage = JSON.parse(JSON.stringify(allSpecificPages[specificPageIndex]));
+    specificPage.name = `${specificPage.name}_${prefix}${specificIndex + 1}`;
+    specificPage.elements.forEach(element => {
+      element.name = `${element.name}_${prefix}${specificIndex + 1}_${specificId}`;
     });
+    
+    if (isGoingBackward) {
+      newPage = surveyInstance.addNewPage(specificPage.name, 0);
+    } else {
+      newPage = surveyInstance.addNewPage(specificPage.name);
+    }
+    console.log('new specific page: ', newPage);
+    newPage.fromJSON(specificPage);
   }
 }
 
@@ -108,39 +137,61 @@ export function setupSurveyEventHandlers({
   queryClient,
   userData,
 }) {
-  // surveyInstance.onValueChanged.add((sender, options) => 
-  //   saveSurveyData({ 
-  //     survey: sender, 
-  //     roarfirekit, 
-  //     uid, 
-  //     selectedAdmin: selectedAdminId, 
-  //     questionName: options.name, 
-  //     responseValue: options.value,
-  //     userType,
-  //     numGeneralPages: gameStore.numGeneralPages,
-  //     numSpecificPages: gameStore.numSpecificPages,
-  //     gameStore,
-  //     specificIds: userType === 'parent' ? userData.childIds : userData.classes.current,
-  //     saveSurveyResponses: roarfirekit.saveSurveyResponses
-  //   })
-  // );
+  surveyInstance.onValueChanged.add((sender, options) => 
+    saveSurveyData({ 
+      survey: sender, 
+      roarfirekit, 
+      uid, 
+      selectedAdmin: selectedAdminId, 
+      questionName: options.name, 
+      responseValue: options.value,
+      userType,
+      numGeneralPages: gameStore.numGeneralPages,
+      numSpecificPages: gameStore.numSpecificPages,
+      gameStore,
+      specificIds: userType === 'parent' ? userData.childIds : 
+                   userType === 'teacher' ? userData.classes.current : 
+                   [],
+      saveSurveyResponses: roarfirekit.saveSurveyResponses
+    })
+  );
 
-  // surveyInstance.onCurrentPageChanged.add((sender) => 
-  //   saveSurveyData({ 
-  //     survey: sender, 
-  //     roarfirekit, 
-  //     uid, 
-  //     selectedAdmin: selectedAdminId,
-  //     questionName: options.name, 
-  //     responseValue: options.value,
-  //     userType,
-  //     numGeneralPages: gameStore.numGeneralPages,
-  //     numSpecificPages: gameStore.numSpecificPages,
-  //     gameStore,
-  //     specificIds: userType === 'parent' ? userData.childIds : userData.classes.current,
-  //     saveSurveyResponses: roarfirekit.saveSurveyResponses 
-  //   })
-  // );
+  surveyInstance.onCurrentPageChanging.add((sender, options) => {
+    const currentPageIndex = gameStore.currentPageIndex;
+    // console.log('current page index: ', currentPageIndex);
+    const numGeneralPages = gameStore.numGeneralPages;
+    const numSpecificPages = gameStore.numSpecificPages;
+    const specificCount = userType === 'parent' ? userData.childIds.length :
+                          userType === 'student' ? 0 : userData.classes.current.length;
+    const totalPages = numGeneralPages + (numSpecificPages * specificCount);
+
+    // console.log('pages before: ', sender.pages);
+
+    if (options.isGoingForward && (currentPageIndex + 2 <= totalPages) && currentPageIndex !== 0) {
+      // Add next page
+      const nextPageIndex = currentPageIndex + 2;
+      addPageToSurvey(sender, nextPageIndex, userType, userData, gameStore);
+
+      // Remove first page
+      surveyInstance.removePage(surveyInstance.pages[0]);
+
+    } else if (options.isGoingBackward && currentPageIndex - 2 >= 0) {
+      // Add previous page
+      const prevPageIndex = currentPageIndex - 2;
+      addPageToSurvey(sender, prevPageIndex, userType, userData, gameStore, options.isGoingBackward);
+
+      // Remove last page
+      surveyInstance.removePage(surveyInstance.pages[surveyInstance.pages.length - 1]);
+    }
+
+    if (options.isGoingForward) {
+      gameStore.setCurrentPageIndex(currentPageIndex + 1);
+    } else if (options.isGoingBackward) {
+      gameStore.setCurrentPageIndex(currentPageIndex - 1);
+    }
+
+    // console.log('pages after: ', sender.pages);
+  });
 
   surveyInstance.onComplete.add((sender) => 
     saveFinalSurveyData({ 
@@ -150,40 +201,10 @@ export function setupSurveyEventHandlers({
       gameStore, 
       router, 
       toast, 
-      queryClient 
+      queryClient,
+      specificIds: userType === 'parent' ? userData.childIds : 
+                   userType === 'teacher' ? userData.classes.current : 
+                   [],
     })
   );
-
-  let previousPage = null;
-
-  surveyInstance.onCurrentPageChanged.add((sender, options) => {
-    const currentPageIndex = gameStore.currentPageIndex;
-    const allPages = gameStore.allSurveyPages;
-
-    if (options.newCurrentPage === surveyInstance.pages[2] && currentPageIndex + 3 < allPages.length) {
-      // Add next page
-      const newPage = surveyInstance.addNewPage(allPages[currentPageIndex + 3].name);
-      newPage.fromJSON(allPages[currentPageIndex + 3]);
-      surveyInstance.addPage(newPage);
-
-      // Remove first page
-      if (previousPage) {
-        surveyInstance.removePage(previousPage);
-      }
-
-      gameStore.setCurrentPageIndex(currentPageIndex + 1);
-    } else if (options.oldCurrentPage === surveyInstance.pages[0] && currentPageIndex > 0) {
-      // Add previous page
-      const newPage = surveyInstance.addNewPage(allPages[currentPageIndex - 1].name);
-      newPage.fromJSON(allPages[currentPageIndex - 1]);
-      surveyInstance.pages.unshift(newPage);
-
-      // Remove last page
-      surveyInstance.removePage(surveyInstance.pages[surveyInstance.pages.length - 1]);
-
-      gameStore.setCurrentPageIndex(currentPageIndex - 1);
-    }
-
-    previousPage = options.oldCurrentPage;
-  });
 }

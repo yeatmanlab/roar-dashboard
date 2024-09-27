@@ -69,16 +69,13 @@ export function getParsedLocale(locale) {
     userType,
     gameStore
   }) {
-    const currentPageNo = survey.currentPageNo;
+    const currentPageNo = gameStore.currentPageIndex;
   
     if (window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid}`)) {
       const prevData = JSON.parse(window.localStorage.getItem(`${STORAGE_ITEM_KEY}-${uid}`));
 
       // Update the page number at the top level
-      prevData.pageNo = currentPageNo + 1;
-
-      // console.log('game store in save survey data: ', gameStore);
-      // console.log('num general pages from game store: ', gameStore.numGeneralPages);
+      prevData.pageNo = currentPageNo;
 
       if (currentPageNo < numGeneralPages) {
         // General survey
@@ -93,6 +90,7 @@ export function getParsedLocale(locale) {
         console.log('numGeneralPages', numGeneralPages);
         console.log('numSpecificPages', numSpecificPages);
 
+        // Specific child or class index
         const specificIndex = Math.floor((currentPageNo - numGeneralPages) / numSpecificPages);
         console.log('specificIndex', specificIndex);
 
@@ -119,7 +117,7 @@ export function getParsedLocale(locale) {
     } else {
       // Initialize the structure if it doesn't exist
       const newData = {
-        pageNo: currentPageNo + 1,
+        pageNo: currentPageNo,
         general: {
           responses: {}
         },
@@ -190,20 +188,20 @@ export function getParsedLocale(locale) {
       surveyInstance.data = flattenedData;
 
       // Restore the page number if available
-      if (data.pageNo) {
-        const pageIndex = Math.min(data.pageNo, surveyInstance.pages.length - 1);
-        surveyInstance.currentPageNo = pageIndex;
-      }
+      // if (data.pageNo) {
+      //   const pageIndex = data.pageNo
+      //   surveyInstance.currentPageNo = pageIndex;
+      // }
 
-      return true
+      return { isRestored: true, pageNo: data.pageNo };
     }
 
-    // If there's no data in localStorage and no data from the server,
+    // If there's no data in localStorage and no data from the server, 
     // the survey has never been started, so we continue with an empty survey
-    return false
+    return { isRestored: false, pageNo: 0 };
   }
   
-  export async function saveFinalSurveyData({ sender, roarfirekit, uid, gameStore, router, toast, queryClient }) {
+  export async function saveFinalSurveyData({ sender, roarfirekit, uid, gameStore, router, toast, queryClient, specificIds }) {
     const allQuestions = sender.getAllQuestions();
     const unansweredQuestions = {};
 
@@ -223,7 +221,6 @@ export function getParsedLocale(locale) {
     // Determine the number of general and specific pages
     const numGeneralPages = gameStore.numGeneralPages;
     const numSpecificPages = gameStore.numSpecificPages;
-    const specificIds = gameStore.specificIds;
     const userType = gameStore.userType;
 
     Object.entries(responsesWithAllQuestions).forEach(([questionName, responseValue]) => {
@@ -253,7 +250,7 @@ export function getParsedLocale(locale) {
 
     // call cloud function to save the survey results
     try {
-      await roarfirekit.value.saveSurveyResponses({
+      await roarfirekit.saveSurveyResponses({
         responses: structuredResponses,
         administrationId: gameStore?.selectedAdmin?.id ?? null,
       });

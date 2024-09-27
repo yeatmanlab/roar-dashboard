@@ -19,6 +19,7 @@ export const useGameStore = () => {
         surveyAudioPlayerBuffers: {},
         surveyAudioLoading: false,
         allSurveyPages: [],
+        allSpecificPages: [],
         currentPageIndex: 0,
       };
     },
@@ -32,7 +33,7 @@ export const useGameStore = () => {
       setSurvey(survey) {
         this.survey = survey;
       },
-      setSurveyPages(numGeneralPages, numSpecificPages) {
+      setNumberOfSurveyPages(numGeneralPages, numSpecificPages) {
         this.numGeneralPages = numGeneralPages;
         this.numSpecificPages = numSpecificPages;
       },
@@ -51,6 +52,10 @@ export const useGameStore = () => {
       setAllSurveyPages(pages) {
         this.allSurveyPages = pages;
       },
+      setAllSpecificPages(pages) {
+        this.allSpecificPages = pages;
+      },
+      // Out of the total pages, the current page index is the index of the page that is currently being displayed
       setCurrentPageIndex(index) {
         this.currentPageIndex = index;
       },

@@ -127,8 +127,8 @@ const gameStore = useGameStore();
 
 const getGeneralSurveyProgress = computed(() => {
   if (gameStore.numGeneralPages > 0) {
-    if (gameStore.survey.currentPageNo < gameStore.numGeneralPages + 1) {
-      return Math.round((gameStore.survey.currentPageNo / 6) * 100);
+    if (gameStore.currentPageIndex < gameStore.numGeneralPages) {
+      return Math.round(((gameStore.currentPageIndex) / (gameStore.numGeneralPages - 1)) * 100);
     } else {
       return 100;
     }
@@ -139,7 +139,7 @@ const getGeneralSurveyProgress = computed(() => {
 const getSpecificSurveyProgress = (loopIndex) => {
   if (!gameStore.survey) return 0;
   // haven't started the specific survey yet
-  if (gameStore.survey.currentPageNo <= gameStore.numGeneralPages) return 0;
+  if (gameStore.currentPageIndex <= gameStore.numGeneralPages) return 0;
 
   // console.log('gameStore.numSpecificPages', gameStore.numSpecificPages);
 
@@ -147,10 +147,10 @@ const getSpecificSurveyProgress = (loopIndex) => {
   const loopStartPage = specificStartPage + (loopIndex * gameStore.numSpecificPages);
   const loopEndPage = loopStartPage + gameStore.numSpecificPages - 1;
 
-  if (gameStore.survey.currentPageNo < loopStartPage) return 0;
-  if (gameStore.survey.currentPageNo > loopEndPage) return 100;
+  if (gameStore.currentPageIndex < loopStartPage) return 0;
+  if (gameStore.currentPageIndex > loopEndPage) return 100;
 
-  const progress = ((gameStore.survey.currentPageNo - loopStartPage + 1) / gameStore.numSpecificPages) * 100;
+  const progress = ((gameStore.currentPageIndex - loopStartPage + 1) / gameStore.numSpecificPages) * 100;
   // console.log('specific progress', progress);
   return Math.round(progress);
 };
