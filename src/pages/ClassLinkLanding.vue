@@ -55,7 +55,7 @@ async function checkForUserType() {
 }
 
 console.log(
-  `Arrived at ClassLinkLanding.vue with uid: ${roarUid.value} and authFromClever: ${authFromClassLink.value} `,
+  `Arrived at ClassLinkLanding.vue with uid: ${roarUid.value} and authFromClassLink: ${authFromClassLink.value} `,
 );
 authFromClassLink.value = false;
 userDataCheckInterval = setInterval(checkForUserType, 500);
