@@ -610,9 +610,9 @@ const computedProgressData = computed(() => {
     const progress = assignment.assessments.reduce((acc, assessment) => {
       const status = assessment.optional
         ? 'optional'
-        : assessment.completedOn !== undefined
+        : assessment.completedOn
         ? 'completed'
-        : assessment.startedOn !== undefined
+        : assessment.startedOn
         ? 'started'
         : 'assigned';
 
