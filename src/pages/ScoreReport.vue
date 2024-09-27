@@ -1007,7 +1007,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
             const { field, header: taskName } = column; // Use taskName from the column header
 
             // Ensure field is defined and is a string before calling startsWith
-            if (field && typeof field === 'string' && field.startsWith('scores')) {
+            if (typeof field === 'string' && field.startsWith('scores')) {
               const scoreKey = field.split('.').slice(-2, -1)[0]; // Extract taskId (e.g., "swr", "sre", etc.)
 
               // Check if taskId exists in progressRow.progress
