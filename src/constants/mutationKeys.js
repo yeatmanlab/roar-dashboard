@@ -1,5 +1,6 @@
 export const ADMINISTRATION_UPSERT_MUTATION_KEY = 'administration-upsert';
 export const CONSENT_UPDATE_MUTATION_KEY = 'consent-update';
+export const SIGN_OUT_MUTATION_KEY = 'sign-out';
 export const TASK_ADD_MUTATION_KEY = 'task-add';
 export const TASK_UPDATE_MUTATION_KEY = 'task-update';
 export const TASK_VARIANT_ADD_MUTATION_KEY = 'task-variant-add';

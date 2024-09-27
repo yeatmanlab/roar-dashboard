@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
 import { useRouter } from 'vue-router';
+import * as Sentry from '@sentry/vue';
 import { useAuthStore } from '@/store/auth';
 import { SIGN_OUT_MUTATION_KEY } from '@/constants/mutationKeys';
 import { APP_ROUTES } from '@/constants/routes';
@@ -17,11 +18,11 @@ const useSignOutMutation = () => {
   return useMutation({
     mutationKey: SIGN_OUT_MUTATION_KEY,
     mutationFn: async () => {
-      await this.roarfirekit.signOut();
+      await authStore.roarfirekit.signOut();
     },
     onSuccess: async () => {
-      // Invalidate all queries.
-      await queryClient.invalidateQueries();
+      // Cancel all actively fetching queries.
+      await queryClient.cancelQueries();
 
       // Reset store and delete persisted data. Persisted data should be cleared via the $reset but to be safe, we also
       // remove it manually from sessionStorage to prevent any issues.
@@ -34,6 +35,9 @@ const useSignOutMutation = () => {
 
       // Clear the query client to remove all cached data.
       queryClient.clear();
+    },
+    onError: (err) => {
+      Sentry.captureException(err);
     },
   });
 };
