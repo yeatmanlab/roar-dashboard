@@ -134,7 +134,7 @@
             :lazy-pre-sorting="orderBy"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
-            @export-all="exportData({ includeProgress: false })"
+            @export-all="exportData"
             @export-selected="exportData({ selectedRows: $event, includeProgress: false })"
           >
             <template #filterbar>
