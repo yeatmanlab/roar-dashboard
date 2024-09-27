@@ -1,9 +1,10 @@
 import _chunk from 'lodash/chunk';
+import _last from 'lodash/last';
 import _mapValues from 'lodash/mapValues';
 import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import { convertValues, getAxiosInstance, mapFields } from './utils';
+import { convertValues, getAxiosInstance } from './utils';
 import { filterAdminOrgs } from '@/helpers';
 
 export function getTitle(item, isSuperAdmin) {
@@ -44,39 +45,41 @@ const processBatchStats = async (axiosInstance, statsPaths, batchSize = 5) => {
 
 const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
   // First format the administration documents
-  const administrationData = mapFields(data).map((a) => {
-    let assignedOrgs = {
-      districts: a.districts,
-      schools: a.schools,
-      classes: a.classes,
-      groups: a.groups,
-      families: a.families,
-    };
-    if (!isSuperAdmin.value) {
-      assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
-    }
-    return {
-      id: a.id,
-      name: a.name,
-      publicName: a.publicName,
-      dates: {
-        start: a.dateOpened,
-        end: a.dateClosed,
-        created: a.dateCreated,
-      },
-      assessments: a.assessments,
-      assignedOrgs,
-      // If testData is not defined, default to false when mapping
-      testData: a.testData ?? false,
-    };
-  });
+  const administrationData = data
+    .map((a) => a.data)
+    .map((a) => {
+      let assignedOrgs = {
+        districts: a.districts,
+        schools: a.schools,
+        classes: a.classes,
+        groups: a.groups,
+        families: a.families,
+      };
+      if (!isSuperAdmin.value) {
+        assignedOrgs = filterAdminOrgs(adminOrgs.value, assignedOrgs);
+      }
+      return {
+        id: a.id,
+        name: a.name,
+        publicName: a.publicName,
+        dates: {
+          start: a.dateOpened,
+          end: a.dateClosed,
+          created: a.dateCreated,
+        },
+        assessments: a.assessments,
+        assignedOrgs,
+        // If testData is not defined, default to false when mapping
+        testData: a.testData ?? false,
+      };
+    });
 
   // Create a list of all the stats document paths we need to get
   const statsPaths = data
     // First filter out any missing administration documents
-    .filter((item) => item.document !== undefined)
+    .filter((item) => item.name !== undefined)
     // Then map to the total stats document
-    .map(({ document }) => `${document.name}/stats/total`);
+    .map(({ name }) => `${name}/stats/total`);
 
   const axiosInstance = getAxiosInstance();
   const batchStatsDocs = await processBatchStats(axiosInstance, statsPaths);
@@ -95,7 +98,32 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
 export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
-  const administrations = roarfirekit.value.getAdministrations({ testData: fetchTestData });
+  const administrationIds = await roarfirekit.value.getAdministrations({ testData: fetchTestData });
+
+  const axiosInstance = getAxiosInstance();
+  const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
+  const documents = administrationIds.map((id) => `${documentPrefix}/administrations/${id}`);
+
+  console.log('Fetching administrations:', documents);
+  const { data } = await axiosInstance.post(':batchGet', { documents });
+
+  const administrations = _without(
+    data.map(({ found }) => {
+      if (found) {
+        return {
+          name: found.name,
+          data: {
+            id: _last(found.name.split('/')),
+            ..._mapValues(found.fields, (value) => convertValues(value)),
+          },
+        };
+      }
+      return undefined;
+    }),
+    undefined,
+  );
+
+  console.log('Fetched administrations:', administrations);
 
   return mapAdministrations({ isSuperAdmin, data: administrations, adminOrgs: exhaustiveAdminOrgs });
 };
