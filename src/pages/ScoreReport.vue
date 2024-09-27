@@ -936,11 +936,11 @@ const viewOptions = ref([
 const createExportData = ({ rows, includeProgress = false }) => {
   const computedExportData = _map(rows, ({ user, scores }) => {
     let tableRow = {
-      Username: _get(user, 'username'),
-      Email: _get(user, 'email'), // This will only be used when exporting all rows
-      First: _get(user, 'firstName'),
-      Last: _get(user, 'lastName'),
-      Grade: _get(user, 'grade'),
+      Username: user?.username,
+      Email: user?.email, // This will only be used when exporting all rows
+      First: user?.firstName,
+      Last: user?.lastName,
+      Grade: user?.grade,
     };
 
     if (authStore.isUserSuperAdmin) {
