@@ -10,13 +10,13 @@
         <div class="col-full text-center py-8">
           <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
           <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
-          <router-link :to="{ name: 'SignOut' }">
-            <PvButton
-              :label="$t('navBar.signOut')"
-              class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
-              icon="pi pi-sign-out"
-            />
-          </router-link>
+
+          <PvButton
+            :label="$t('navBar.signOut')"
+            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
+            icon="pi pi-sign-out"
+            @click="signOut"
+          />
         </div>
       </div>
 
@@ -112,6 +112,7 @@ import useAdministrationsQuery from '@/composables/queries/useAdministrationsQue
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useSurveyReponsesQuery from '@/composables/queries/useSurveyResponsesQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
+import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
@@ -125,6 +126,7 @@ const consentParams = ref({});
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+const { mutate: signOut } = useSignOutMutation();
 
 let unsubscribe;
 const initialized = ref(false);

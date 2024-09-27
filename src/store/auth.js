@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
-import { useGameStore } from '@/store/game';
 import { taskFetcher } from '../helpers/query/tasks.js';
 
 export const useAuthStore = () => {
@@ -186,32 +185,6 @@ export const useAuthStore = () => {
         this.userQueryKeyIndex += 1;
         this.assignmentQueryKeyIndex += 1;
         this.administrationQueryKeyIndex += 1;
-      },
-      async signOut() {
-        if (this.isAuthenticated && this.isFirekitInit) {
-          return this.roarfirekit.signOut().then(() => {
-            this.adminOrgs = null;
-            this.authFromClever = false;
-            this.authFromClassLink = false;
-            this.firebaseUser = {
-              adminFirebaseUser: null,
-              appFirebaseUser: null,
-            };
-            this.spinner = false;
-            this.userClaims = null;
-            this.userData = null;
-
-            this.userQueryKeyIndex += 1;
-            this.assignmentQueryKeyIndex += 1;
-            this.administrationQueryKeyIndex += 1;
-            this.tasksDictionary = {};
-
-            const gameStore = useGameStore();
-            gameStore.selectedAdmin = undefined;
-          });
-        } else {
-          console.log('Cant log out while not logged in');
-        }
       },
       async sendMyPasswordResetEmail() {
         if (this.email) {
