@@ -311,7 +311,7 @@ async function updatePassword() {
   if (!v$.value.$invalid) {
     isSubmitting.value = true;
     await roarfirekit.value
-      .updateUserData(roarUid.value, { password: state.password })
+      .updateUserData(currentEditUser.value.id, { password: state.password })
       .then(() => {
         submitted.value = false;
         isSubmitting.value = false;
