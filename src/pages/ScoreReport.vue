@@ -134,7 +134,7 @@
             :lazy-pre-sorting="orderBy"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
-            @export-all="exportData"
+            @export-all="exportData({ selectedRows: $event })"
             @export-selected="exportData({ selectedRows: $event })"
           >
             <template #filterbar>
@@ -914,23 +914,25 @@ const viewOptions = ref([
 /**
  * Creates and formats the data for exporting user, score, and optionally, progress information to a CSV file.
  *
- * @NOTE This function generates a structured dataset based on user and score data, with optional inclusion of progress
- * data. It ensures that the data is organized appropriately for export, including task-specific formatting and reliability checks.
- * If progress data is included, it appends relevant progress information per task.
+ * This function generates a structured dataset based on user and score data, with optional inclusion of progress
+ * data. It ensures that the data is organized appropriately for export, including task-specific formatting an
+ * reliability checks. If progress data is included, it appends relevant progress information per task.
+ *
+ * This function also checks for the user's role (e.g., super admin) to determine additional fields (such as PID),
+ * handles task-specific score presentation based on configuration, and validates task reliability using engagement
+ * flags. If scores are found unreliable, the reliability reason is included. If the task is incomplete, it is marked as
+ * such.
  *
  * @param {Object[]} rows - The array of user data and associated scores.
- * @param {Object} rows[].user - The user object containing user details such as username, email, first name, and last name.
- * @param {Object} rows[].scores - The scores object containing task-related score data for the user. It supports different
- * score types (percent correct, raw scores, standard scores, etc.) based on task configuration.
- * @param {boolean} [includeProgress=false] - Flag indicating whether to include task progress data in the export. If true,
- * progress data will be fetched and appended for each task per user.
+ * @param {Object} rows[].user - The user object containing user details such as username, email, first name, and last
+ * name.
+ * @param {Object} rows[].scores - The scores object containing task-related score data for the user. It supports
+ * different score types (percent correct, raw scores, standard scores, etc.) based on task configuration.
+ * @param {boolean} [includeProgress=false] - Flag indicating whether to include task progress data in the export. If
+ * true, progress data will be fetched and appended for each task per user.
  *
- * @returns {Object[]} - The formatted data array, where each object represents a user and their associated scores.
+ * @returns {Array<Object>} - The formatted data array, where each object represents a user and their associated scores.
  * This data is ready for CSV export and optionally includes progress information.
- *
- * @NOTE This function also checks for the user's role (e.g., super admin) to determine additional fields (such as PID),
- * handles task-specific score presentation based on configuration, and validates task reliability using engagement flags.
- * If scores are found unreliable, the reliability reason is included. If the task is incomplete, it is marked as such.
  */
 
 const createExportData = ({ rows, includeProgress = false }) => {
@@ -944,11 +946,11 @@ const createExportData = ({ rows, includeProgress = false }) => {
     };
 
     if (authStore.isUserSuperAdmin) {
-      tableRow['PID'] = user?.assessmentPid
+      tableRow['PID'] = user?.assessmentPid;
     }
 
     if (props.orgType === 'district') {
-      tableRow['School'] = user?.schoolName
+      tableRow['School'] = user?.schoolName;
     }
 
     for (const taskId in scores) {
@@ -998,9 +1000,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
 
       // Add progress immediately after reliability if includeProgress is true
       if (includeProgress) {
-        const progressRow = computedProgressData.value.find(
-          (progress) => progress.userPid === user?.assessmentPid,
-        );
+        const progressRow = computedProgressData.value.find((progress) => progress.userPid === user?.assessmentPid);
 
         if (progressRow) {
           scoreReportColumns.value.forEach((column) => {
