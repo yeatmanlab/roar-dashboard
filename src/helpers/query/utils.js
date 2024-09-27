@@ -170,9 +170,9 @@ export const fetchDocsById = async (documents, db = 'admin') => {
 
 export const batchGetDocs = async (docPaths, select = [], db = 'admin') => {
   if (_isEmpty(docPaths)) {
-    console.warn('BatchGetDocs: No document paths provided!');
     return [];
   }
+
   const axiosInstance = getAxiosInstance(db);
   const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
   const documents = docPaths.map((docPath) => `${baseURL}/${docPath}`);
