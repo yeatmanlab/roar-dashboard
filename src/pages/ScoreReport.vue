@@ -948,7 +948,7 @@ const createExportData = ({ rows, includeProgress = false }) => {
     }
 
     if (props.orgType === 'district') {
-      tableRow['School'] = _get(user, 'schoolName');
+      tableRow['School'] = user?.schoolName
     }
 
     for (const taskId in scores) {
