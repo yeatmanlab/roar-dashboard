@@ -30,12 +30,22 @@ export async function initializeSurvey({
   gameStore.setAllSurveyPages(allGeneralPages);
   gameStore.setAllSpecificPages(allSpecificPages);
 
+  console.log('allGeneralPages: ', allGeneralPages);
+  console.log('allSpecificPages: ', allSpecificPages);
+  console.log('num general pages: ', allGeneralPages.length);
+  console.log('num specific pages: ', allSpecificPages.length);
+
   const numGeneralPages = allGeneralPages.length;
   const numSpecificPages = allSpecificPages.length;
   gameStore.setNumberOfSurveyPages(numGeneralPages, numSpecificPages);
 
-  const specificCount = userType === 'parent' ? userData.childIds.length :
-                        userType === 'student' ? 0 : userData.classes.current.length;
+  let specificCount = 0;
+  if (userType === 'parent') {
+    specificCount = userData.childIds.length;
+  } else if (userType === 'teacher') {
+    specificCount = userData.classes.current.length;
+  }
+
   const totalPages = numGeneralPages + (numSpecificPages * specificCount);
 
   if (isRestored) {
@@ -57,6 +67,9 @@ export async function initializeSurvey({
 
     gameStore.setCurrentPageIndex(0);
   }
+
+  console.log('starting page: ', gameStore.currentPageIndex);
+  console.log('pages: ', surveyInstance.pages);
 
 
   if (userType === 'student') {
@@ -82,12 +95,44 @@ function addPageToSurvey(surveyInstance, pageIndex, userType, userData, gameStor
     }
     newPage.fromJSON(allGeneralPages[pageIndex]);
   } else {
-    const specificIndex = Math.floor((pageIndex - numGeneralPages) / numSpecificPages); // 1
+    const specificIndex = Math.min(Math.floor((pageIndex - numGeneralPages) / numSpecificPages), numSpecificPages - 1); // 1
     const specificPageIndex = (pageIndex - numGeneralPages) % numSpecificPages; //(pageIndex - numGeneralPages) % numSpecificPages
     const prefix = userType === 'parent' ? 'child' : 'class';
-    const specificId = userType === 'parent' ? userData.childIds[specificIndex] : userData.classes.current[specificIndex];
+    let specificId = '';
+    if (userType === 'parent') {
+      specificId = userData.childIds[specificIndex];
+    } else if (userType === 'teacher') {
+      specificId = userData.classes.current[specificIndex];
+    }
 
     const specificPage = JSON.parse(JSON.stringify(allSpecificPages[specificPageIndex]));
+
+    console.log('specificSurveyRelationData: ', gameStore.specificSurveyRelationData);
+    console.log('specificIndex: ', specificIndex);
+      
+    // If the page is an introduction page we want to add the specific relation data to the page
+    if (userType === 'parent' || userType === 'teacher') {
+        if (userType === 'parent') {
+          specificPage.description = {
+            default: `This is for child with birth month ${gameStore.specificSurveyRelationData[specificIndex].birthMonth} and birth year ${gameStore.specificSurveyRelationData[specificIndex].birthYear}`,
+            es: `Esta es para el niño con mes de nacimiento ${gameStore.specificSurveyRelationData[specificIndex].birthMonth} y año de nacimiento ${gameStore.specificSurveyRelationData[specificIndex].birthYear}`,
+            de: `Dies ist für das Kind mit Geburtsmonat ${gameStore.specificSurveyRelationData[specificIndex].birthMonth} und Geburtsjahr ${gameStore.specificSurveyRelationData[specificIndex].birthYear}.`,
+          };
+        } else if (userType === 'teacher') {
+          specificPage.description = {
+            default: `This is for classroom ${gameStore.specificSurveyRelationData[specificIndex].name}`,
+            es: `Esta es para el salón ${gameStore.specificSurveyRelationData[specificIndex].name}`,
+            de: `Dies ist für die Klasse ${gameStore.specificSurveyRelationData[specificIndex].name}.`,
+        };
+      }
+    }
+
+    if (specificPage.name.includes('Introduction')) {
+      console.log('specificPage after adding intro: ', specificPage);
+    }
+
+
+
     specificPage.name = `${specificPage.name}_${prefix}${specificIndex + 1}`;
     specificPage.elements.forEach(element => {
       element.name = `${element.name}_${prefix}${specificIndex + 1}_${specificId}`;
@@ -98,7 +143,6 @@ function addPageToSurvey(surveyInstance, pageIndex, userType, userData, gameStor
     } else {
       newPage = surveyInstance.addNewPage(specificPage.name);
     }
-    console.log('new specific page: ', newPage);
     newPage.fromJSON(specificPage);
   }
 }
@@ -137,6 +181,13 @@ export function setupSurveyEventHandlers({
   queryClient,
   userData,
 }) {
+  let specificIds = [];
+  if (userType === 'parent') {
+    specificIds = userData.childIds;
+  } else if (userType === 'teacher') {
+    specificIds = userData.classes.current;
+  }
+  
   surveyInstance.onValueChanged.add((sender, options) => 
     saveSurveyData({ 
       survey: sender, 
@@ -149,20 +200,22 @@ export function setupSurveyEventHandlers({
       numGeneralPages: gameStore.numGeneralPages,
       numSpecificPages: gameStore.numSpecificPages,
       gameStore,
-      specificIds: userType === 'parent' ? userData.childIds : 
-                   userType === 'teacher' ? userData.classes.current : 
-                   [],
+      specificIds: specificIds,
       saveSurveyResponses: roarfirekit.saveSurveyResponses
     })
   );
 
   surveyInstance.onCurrentPageChanging.add((sender, options) => {
     const currentPageIndex = gameStore.currentPageIndex;
-    // console.log('current page index: ', currentPageIndex);
+    console.log('current page index: ', currentPageIndex);
     const numGeneralPages = gameStore.numGeneralPages;
     const numSpecificPages = gameStore.numSpecificPages;
-    const specificCount = userType === 'parent' ? userData.childIds.length :
-                          userType === 'student' ? 0 : userData.classes.current.length;
+    let specificCount = 0;
+    if (userType === 'parent') {
+      specificCount = userData.childIds.length;
+    } else if (userType === 'teacher') {
+      specificCount = userData.classes.current.length;
+    }
     const totalPages = numGeneralPages + (numSpecificPages * specificCount);
 
     // console.log('pages before: ', sender.pages);
@@ -190,7 +243,7 @@ export function setupSurveyEventHandlers({
       gameStore.setCurrentPageIndex(currentPageIndex - 1);
     }
 
-    // console.log('pages after: ', sender.pages);
+    console.log('pages after window slide: ', sender.pages);
   });
 
   surveyInstance.onComplete.add((sender) => 
@@ -202,9 +255,7 @@ export function setupSurveyEventHandlers({
       router, 
       toast, 
       queryClient,
-      specificIds: userType === 'parent' ? userData.childIds : 
-                   userType === 'teacher' ? userData.classes.current : 
-                   [],
+      specificIds: specificIds,
     })
   );
 }

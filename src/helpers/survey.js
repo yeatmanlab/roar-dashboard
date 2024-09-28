@@ -87,8 +87,6 @@ export function getParsedLocale(locale) {
         if (!prevData.specific) prevData.specific = [];
 
         console.log('currentPageNo', currentPageNo);
-        console.log('numGeneralPages', numGeneralPages);
-        console.log('numSpecificPages', numSpecificPages);
 
         // Specific child or class index
         const specificIndex = Math.floor((currentPageNo - numGeneralPages) / numSpecificPages);

@@ -21,6 +21,7 @@ export const useGameStore = () => {
         allSurveyPages: [],
         allSpecificPages: [],
         currentPageIndex: 0,
+        specificSurveyRelationData: [],
       };
     },
     actions: {
@@ -58,6 +59,9 @@ export const useGameStore = () => {
       // Out of the total pages, the current page index is the index of the page that is currently being displayed
       setCurrentPageIndex(index) {
         this.currentPageIndex = index;
+      },
+      setSpecificSurveyRelationData(data) {
+        this.specificSurveyRelationData = data;
       },
     },
     persist: {

@@ -34,7 +34,7 @@
             
             <div v-if="game.taskId === 'survey'" class="mt-4">
               <div class="flex align-items-center mb-2">
-                <span class="mr-2 w-4">General {{ 
+                <span class="mr-2 w-4"><b>General</b> {{ 
                   props.userData.userType === 'teacher' || props.userData.userType === 'parent' ? 
                   props.userData.userType === 'teacher' ? '- Teacher' : '- Family' : '' }}
                 </span>
@@ -42,16 +42,22 @@
               </div>
 
               <div v-if="props.userData.userType === 'parent'">
-                <div v-for="(child, i) in props.userData?.childIds" :key="child" class="flex align-items-center mb-2">
-                  <span class="mr-2 w-4">Child - {{ child }}</span>
-                  <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1" />
+                <div v-for="(child, i) in props.userData?.childIds" :key="child" class="flex flex-wrap align-items-center mb-2">
+                  <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
+                    <b>Child - </b> Birth Month: {{ gameStore.specificSurveyRelationData[i]?.birthMonth }} 
+                    <br class="sm:hidden" />
+                    Birth Year: {{ gameStore.specificSurveyRelationData[i]?.birthYear }}
+                  </span>
+                  <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1 w-full sm:w-auto" />
                 </div>
               </div>
 
               <div v-if="props.userData.userType === 'teacher'">
-                <div v-for="(classroom, i) in props.userData?.classes?.current" :key="classroom" class="flex align-items-center mb-2">
-                  <span class="mr-2 w-4">Classroom - {{ classroom }}</span>
-                  <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1" />
+                <div v-for="(classroom, i) in props.userData?.classes?.current" :key="classroom" class="flex flex-wrap align-items-center mb-2">
+                  <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
+                    <b>Classroom - </b> {{ gameStore.specificSurveyRelationData[i]?.name }}
+                  </span>
+                  <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1 w-full sm:w-auto" />
                 </div>
               </div>
             </div>

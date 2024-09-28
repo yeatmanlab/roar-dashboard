@@ -117,6 +117,7 @@ import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useQueryClient } from '@tanstack/vue-query';
 import { initializeSurvey, setupSurveyEventHandlers } from '@/helpers/surveyInitialization';
+import { usersPageFetcher } from '@/helpers/query/users';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -390,12 +391,47 @@ function setupMarkdownConverter(surveyInstance) {
 watch(surveyDependenciesLoaded, async (isLoaded) => {
   if (!isLoaded || gameStore.survey) return;
 
+  const userType = userData.value?.userType;
+
+  // fetch the child docs for the parent, fetch the class docs for the teacher
+  if (userType === 'parent') {
+    try {
+      const res = await fetchDocsById(userData.value.childIds.map((childId) => {
+        return {
+          collection: 'users',
+          docId: childId,
+          select: ['birthMonth', 'birthYear'],
+        };
+      }));
+      console.log('res', res);
+      gameStore.setSpecificSurveyRelationData(res);
+    } catch (error) {
+      console.log('error', error);
+    }
+  } else if (userType === 'teacher') {
+    try {
+      const classes = toRaw(userData.value.classes.current);
+      const structuredForQuery = classes.map((classId) => {
+        return {
+          collection: 'classes',
+          docId: classId,
+          select: ['name'],
+        };
+      });
+      const res = await fetchDocsById(structuredForQuery);
+      console.log('res', res);
+      gameStore.setSpecificSurveyRelationData(res);
+    } catch (error) {
+      console.log('error', error);
+    }
+  }
+
   const surveyInstance = createSurveyInstance();
   setupMarkdownConverter(surveyInstance);
 
   await initializeSurvey({
     surveyInstance,
-    userType: userType.value,
+    userType: userType,
     specificSurveyData: specificSurveyData.value,
     userData: userData.value,
     gameStore,
@@ -406,7 +442,7 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
 
   setupSurveyEventHandlers({
     surveyInstance,
-    userType: userType.value,
+    userType: userType,
     roarfirekit: roarfirekit.value,
     uid: uid.value,
     selectedAdminId: selectedAdmin.value.id,
