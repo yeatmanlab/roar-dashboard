@@ -1,6 +1,8 @@
-import axios from 'axios';
 import { createPinia, setActivePinia } from 'pinia';
 import { useAuthStore } from '../../src/store/auth.js';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getDevFirebase } from './devFirebase.js';
+import axios from 'axios';
 import featurePackageJson from '../../package.json';
 
 /**
@@ -111,3 +113,32 @@ export const createMockStore = (userType = 'participant') => {
 
   return authStore;
 };
+
+/**
+ * Retrieves the Firebase app, Auth, and Firestore services for the specified environment (e.g., 'adminDev' or 'assessmentDev').
+ * This function abstracts the process of accessing Firebase services based on the provided environment name.
+ *
+ * @param {string} name - The environment name (e.g., 'adminDev', 'assessmentDev') used to get the corresponding Firebase configuration.
+ * @returns {Object} - An object containing the Firebase app, Auth, and Firestore services for the specified environment.
+ */
+export const useDevFirebase = (name) => {
+  const firebase = getDevFirebase(name);
+  return {
+    app: firebase?.app,
+    auth: firebase?.auth,
+    db: firebase?.db,
+  };
+};
+
+/**
+ * Signs in as a Super Admin using Firebase Authentication within a Cypress test.
+ * The credentials (email and password) are pulled from Cypress environment variables.
+ *
+ * @param {Object} auth - The Firebase Auth instance used to sign in.
+ * @returns {Promise<Object>} - A promise that resolves to the authenticated user object after a successful sign-in.
+ */
+export function signInAsSuperAdmin(auth) {
+  cy.then(() =>
+    signInWithEmailAndPassword(auth, Cypress.env('superAdminEmail'), Cypress.env('superAdminPassword')),
+  ).then((userCredential) => userCredential.user);
+}
