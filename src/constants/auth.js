@@ -23,3 +23,13 @@ export const AUTH_USER_TYPE = Object.freeze({
   STUDENT: 'student',
   SUPER_ADMIN: 'super-admin',
 });
+
+/**
+ * Auth SSO Providers
+ *
+ * @constant {Object} AUTH_SSO_PROVIDERS - The sources of SSO authentication.
+ */
+export const AUTH_SSO_PROVIDERS = Object.freeze({
+  CLEVER: 'clever',
+  CLASSLINK: 'classlink',
+});

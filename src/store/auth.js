@@ -5,6 +5,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
 import { taskFetcher } from '../helpers/query/tasks.js';
+import { AUTH_SSO_PROVIDERS } from '../constants/auth';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -23,9 +24,7 @@ export const useAuthStore = () => {
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
         routeToProfile: false,
-        authFromSSO: false,
-        authFromClever: false,
-        authFromClassLink: false,
+        ssoProvider: null,
         tasksDictionary: {},
         showOptionalAssessments: false,
       };
@@ -139,27 +138,23 @@ export const useAuthStore = () => {
         return this.roarfirekit.initiateRedirect('google');
       },
       async signInWithCleverPopup() {
-        this.authFromSSO = true;
-        this.authFromClever = true;
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithPopup('clever');
         }
       },
       async signInWithCleverRedirect() {
-        this.authFromSSO = true;
-        this.authFromClever = true;
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
         return this.roarfirekit.initiateRedirect('clever');
       },
       async signInWithClassLinkPopup() {
-        this.authFromSSO = true;
-        this.authFromClassLink = true;
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
         if (this.isFirekitInit) {
           return this.roarfirekit.signInWithPopup('classlink');
         }
       },
       async signInWithClassLinkRedirect() {
-        this.authFromSSO = true;
-        this.authFromClassLink = true;
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
         return this.roarfirekit.initiateRedirect('classlink');
       },
       async initStateFromRedirect() {
