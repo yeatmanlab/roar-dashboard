@@ -44,7 +44,7 @@
                     >
                   </router-link>
                 </div>
-                <div class="nav-user-wrapper bg-gray-100">
+                <div v-if="authStore.isUserAdmin" class="nav-user-wrapper bg-gray-100">
                   <router-link :to="{ name: 'ProfileInfo' }"
                     ><button
                       data-cy="button-profile-info"

@@ -410,6 +410,10 @@ watch(
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
       // Choose the first sorted administration
       selectedAdmin.value = sortedAdminInfo.value[0];
+    } else {
+      // N.B. Although this seems redundant, we ensure that the selected admin is a fresh instance of the admin.
+      //   This is relevant in the case that the game store does not flush properly.
+      selectedAdmin.value = sortedAdminInfo.value.find((admin) => admin.id === selectedAdminId);
     }
   },
   { immediate: true },
