@@ -187,10 +187,12 @@ const authWithGoogle = () => {
       .signInWithGooglePopup()
       .then(async () => {
         if (authStore.uid) {
-          const userData = await fetchDocById('users', authStore.uid);
           const userClaims = await fetchDocById('userClaims', authStore.uid);
-          authStore.userData = userData;
           authStore.userClaims = userClaims;
+        }
+        if (authStore.roarUid) {
+          const userData = await fetchDocById('users', authStore.roarUid);
+          authStore.userData = userData;
         }
       })
       .catch((e) => {
@@ -247,10 +249,12 @@ const authWithEmail = (state) => {
       .logInWithEmailAndPassword(creds)
       .then(async () => {
         if (authStore.uid) {
-          const userData = await fetchDocById('users', authStore.uid);
           const userClaims = await fetchDocById('userClaims', authStore.uid);
-          authStore.userData = userData;
           authStore.userClaims = userClaims;
+        }
+        if (authStore.roarUid) {
+          const userData = await fetchDocById('users', authStore.roarUid);
+          authStore.userData = userData;
         }
 
         spinner.value = true;
