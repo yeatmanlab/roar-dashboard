@@ -216,7 +216,6 @@ const authWithClever = () => {
   // authStore.signInWithCleverRedirect();
   authStore.signInWithCleverPopup();
   spinner.value = true;
-  // }
 };
 
 const authWithClassLink = () => {
