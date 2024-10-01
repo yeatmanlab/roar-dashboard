@@ -131,31 +131,31 @@ export const useAuthStore = () => {
       },
       async signInWithGooglePopup() {
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('google');
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.GOOGLE);
         }
       },
       async signInWithGoogleRedirect() {
-        return this.roarfirekit.initiateRedirect('google');
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.GOOGLE);
       },
       async signInWithCleverPopup() {
         this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('clever');
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLEVER);
         }
       },
       async signInWithCleverRedirect() {
         this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
-        return this.roarfirekit.initiateRedirect('clever');
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLEVER);
       },
       async signInWithClassLinkPopup() {
         this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('classlink');
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLASSLINK);
         }
       },
       async signInWithClassLinkRedirect() {
         this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
-        return this.roarfirekit.initiateRedirect('classlink');
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLASSLINK);
       },
       async initStateFromRedirect() {
         this.spinner = true;

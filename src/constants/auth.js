@@ -32,4 +32,5 @@ export const AUTH_USER_TYPE = Object.freeze({
 export const AUTH_SSO_PROVIDERS = Object.freeze({
   CLEVER: 'clever',
   CLASSLINK: 'classlink',
+  GOOGLE: 'google',
 });
