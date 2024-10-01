@@ -34,7 +34,7 @@ describe('useUserAssignmentsQuery', () => {
   });
 
   it('should call query with correct parameters', () => {
-    const mockUserId = nanoid();
+    const mockUserId = ref(nanoid());
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserId;
@@ -47,7 +47,7 @@ describe('useUserAssignmentsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-assignments'],
+      queryKey: ['user-assignments', mockUserId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
@@ -59,7 +59,7 @@ describe('useUserAssignmentsQuery', () => {
   });
 
   it('should correctly control the enabled state of the query', async () => {
-    const mockUserId = nanoid();
+    const mockUserId = ref(nanoid());
 
     const authStore = useAuthStore(piniaInstance);
     authStore.roarUid = mockUserId;
@@ -76,7 +76,7 @@ describe('useUserAssignmentsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-assignments'],
+      queryKey: ['user-assignments', mockUserId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -93,11 +93,11 @@ describe('useUserAssignmentsQuery', () => {
     expect(getUserAssignments).toHaveBeenCalledWith(mockUserId);
   });
 
-  it('should only fetch data if the uid is available', async () => {
-    const mockUserId = nanoid();
+  it('should only fetch data once the uid is available', async () => {
+    const mockUserId = ref(null);
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = null;
+    authStore.roarUid = mockUserId;
     authStore.userQueryKeyIndex = 1;
 
     const queryOptions = { enabled: true };
@@ -107,7 +107,7 @@ describe('useUserAssignmentsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-assignments'],
+      queryKey: ['user-assignments', mockUserId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -118,15 +118,17 @@ describe('useUserAssignmentsQuery', () => {
 
     expect(getUserAssignments).not.toHaveBeenCalled();
 
-    authStore.roarUid = mockUserId;
+    mockUserId.value = nanoid();
     await nextTick();
 
     expect(getUserAssignments).toHaveBeenCalledWith(mockUserId);
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
+    const mockUserId = ref(null);
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = null;
+    authStore.roarUid = mockUserId;
     authStore.userQueryKeyIndex = 1;
 
     const queryOptions = { enabled: true };
@@ -136,7 +138,7 @@ describe('useUserAssignmentsQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user-assignments'],
+      queryKey: ['user-assignments', mockUserId],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,

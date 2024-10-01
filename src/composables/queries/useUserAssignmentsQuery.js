@@ -19,8 +19,8 @@ const useUserAssignmentsQuery = (queryOptions = undefined) => {
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [USER_ASSIGNMENTS_QUERY_KEY],
-    queryFn: () => getUserAssignments(roarUid.value),
+    queryKey: [USER_ASSIGNMENTS_QUERY_KEY, roarUid],
+    queryFn: () => getUserAssignments(roarUid),
     // Refetch on window focus for MEFS assessments as those are opened in a separate tab.
     refetchOnWindowFocus: 'always',
     enabled: isQueryEnabled,

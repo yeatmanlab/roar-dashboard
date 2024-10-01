@@ -71,10 +71,10 @@ describe('useDistrictsListQuery', () => {
   });
 
   it('should only fetch districts only once user claims are loaded', async () => {
-    const mockData = ref({});
-    const mockIsLoading = ref(true);
+    const mockClaimsData = ref({});
+    const mockClaimsLoading = ref(true);
 
-    vi.mocked(useUserClaimsQuery).mockReturnValue({ data: mockData, isLoading: mockIsLoading });
+    vi.mocked(useUserClaimsQuery).mockReturnValue({ data: mockClaimsData, isLoading: mockClaimsLoading });
 
     vi.spyOn(VueQuery, 'useQuery');
     vi.spyOn(orgFetcher, 'mockImplementation');
@@ -93,8 +93,8 @@ describe('useDistrictsListQuery', () => {
 
     expect(orgFetcher).not.toHaveBeenCalled();
 
-    mockData.value = mockSuperAdminUserClaims.value;
-    mockIsLoading.value = false;
+    mockClaimsData.value = mockSuperAdminUserClaims.value;
+    mockClaimsLoading.value = false;
 
     await nextTick();
 

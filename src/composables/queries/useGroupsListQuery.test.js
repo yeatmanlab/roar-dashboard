@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { withSetup } from '@/test-support/withSetup.js';
@@ -63,8 +63,11 @@ describe('useGroupsListQuery', () => {
     );
   });
 
-  it('should only fetch groups only once user claims are loaded', async () => {
-    vi.mocked(useUserClaimsQuery).mockReturnValue({ data: {}, isLoading: ref(true) });
+  it('should only fetch data once user claims are available', async () => {
+    const mockClaimsData = ref({});
+    const mockClaimsLoading = ref(true);
+
+    vi.mocked(useUserClaimsQuery).mockReturnValue({ data: mockClaimsData, isLoading: mockClaimsLoading });
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -81,6 +84,13 @@ describe('useGroupsListQuery', () => {
     });
 
     expect(orgFetcher).not.toHaveBeenCalled();
+
+    mockClaimsData.value = mockUserClaims.value;
+    mockClaimsLoading.value = false;
+
+    await nextTick();
+
+    expect(orgFetcher).toHaveBeenCalled();
   });
 
   it('should allow the query to be disabled via the passed query options', () => {

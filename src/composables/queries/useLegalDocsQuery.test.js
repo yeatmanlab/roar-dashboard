@@ -41,4 +41,22 @@ describe('useLegalDocsQuery', () => {
 
     expect(fetchLegalDocs).toHaveBeenCalledWith();
   });
+
+  it('should allow the query to be disabled via the passed query options', () => {
+    const queryOptions = { enabled: false };
+
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useLegalDocsQuery(queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['legal-docs'],
+      queryFn: expect.any(Function),
+      enabled: false,
+    });
+
+    expect(fetchLegalDocs).not.toHaveBeenCalled();
+  });
 });

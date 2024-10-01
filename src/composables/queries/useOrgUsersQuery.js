@@ -1,4 +1,3 @@
-import { ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { fetchUsersByOrg } from '@/helpers/query/users';
 import { ORG_USERS_QUERY_KEY } from '@/constants/queryKeys';
@@ -9,7 +8,7 @@ import { ORG_USERS_QUERY_KEY } from '@/constants/queryKeys';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useOrgUsersQuery = (orgType, orgId, page, orderBy, queryOptions = undefined) => {
-  const itemsPerPage = ref(1000000); // @TODO: Replace with a more reasonable value.
+  const itemsPerPage = 1000000; // @TODO: Replace with a more reasonable value.
 
   return useQuery({
     queryKey: [ORG_USERS_QUERY_KEY, orgType, orgId, page, orderBy],

@@ -1,7 +1,6 @@
+import { toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import { DSGF_ORGS_QUERY_KEY } from '@/constants/queryKeys';
-import { storeToRefs } from 'pinia';
-import { useAuthStore } from '@/store/auth';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
 import { fetchTreeOrgs } from '@/helpers/query/orgs';
 
@@ -17,12 +16,9 @@ import { fetchTreeOrgs } from '@/helpers/query/orgs';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useDsgfOrgQuery = (administrationId, assignedOrgs, queryOptions = undefined) => {
-  const authStore = useAuthStore();
-  const { uid } = storeToRefs(authStore);
-
-  // Ensure the User ID is available and the query is enabled.
-  const queryConditions = [() => !!uid.value];
-  const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
+  // Ensure all necessary data is available before enabling the query.
+  const conditions = [() => !!toValue(administrationId)];
+  const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
 
   return useQuery({
     queryKey: [DSGF_ORGS_QUERY_KEY, administrationId],

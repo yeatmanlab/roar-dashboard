@@ -1,3 +1,4 @@
+import { toValue } from 'vue';
 import axios from 'axios';
 import Papa from 'papaparse';
 import _get from 'lodash/get';
@@ -119,6 +120,17 @@ export const exportCsv = (data, filename) => {
   document.body.removeChild(a);
 };
 
+/**
+ * Fetch a document by its ID
+ *
+ * @param {String} collection - The Firestore collection name.
+ * @param {String} docId - The ID of the document to fetch.
+ * @param {Array<String>} [select] - Optional array of fields to select from the document.
+ * @param {String} [db=FIRESTORE_DATABASES.ADMIN] - The Firestore database to query.
+ * @param {Boolean} [unauthenticated=false] - Whether to use an unauthenticated request.
+ * @param {Boolean} [swallowErrors=false] - Whether to suppress error logging.
+ * @returns {Promise<Object>} The document data or an error message.
+ */
 export const fetchDocById = async (
   collection,
   docId,
@@ -127,13 +139,16 @@ export const fetchDocById = async (
   unauthenticated = false,
   swallowErrors = false,
 ) => {
-  if (!collection || !docId) {
+  const collectionValue = toValue(collection);
+  const docIdValue = toValue(docId);
+
+  if (!toValue(collectionValue) || !toValue(docId)) {
     console.warn(
-      `fetchDocById: Collection or docId not provided. Called with collection "${collection}" and docId "${docId}"`,
+      `fetchDocById: Collection or docId not provided. Called with collection "${collectionValue}" and docId "${docIdValue}"`,
     );
     return {};
   }
-  const docPath = `/${collection}/${docId}`;
+  const docPath = `/${collectionValue}/${docIdValue}`;
   const axiosInstance = getAxiosInstance(db, unauthenticated);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
   const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
@@ -141,8 +156,8 @@ export const fetchDocById = async (
     .get(docPath + queryString)
     .then(({ data }) => {
       return {
-        id: docId,
-        collection,
+        id: docIdValue,
+        collectionValue,
         ..._mapValues(data.fields, (value) => convertValues(value)),
       };
     })
@@ -170,7 +185,7 @@ export const fetchDocById = async (
 export const fetchDocumentsById = async (collection, docIds, select = [], db = FIRESTORE_DATABASES.ADMIN) => {
   const axiosInstance = getAxiosInstance(db);
   const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
-  const documents = docIds.map((docId) => `${baseURL}/${collection}/${docId}`);
+  const documents = toValue(docIds).map((docId) => `${baseURL}/${collection}/${docId}`);
 
   const requestBody = {
     documents,
@@ -185,9 +200,13 @@ export const fetchDocumentsById = async (collection, docIds, select = [], db = F
   return response.data
     .filter(({ found }) => found)
     .map(({ found }) => {
-      const [, , collectionName, docId] = found.name.split('/');
+      // Deconstruct the document path as Firebase conveniently doesn't return basic information like the record ID as
+      // part of the documentation data. Whilst this is a bit hacky, it works.
+      const pathParts = found.name.split('/');
+      const documentId = pathParts.pop();
+      const collectionName = pathParts.pop();
       return {
-        id: docId,
+        id: documentId,
         collection: collectionName,
         ..._mapValues(found.fields, (value) => convertValues(value)),
       };

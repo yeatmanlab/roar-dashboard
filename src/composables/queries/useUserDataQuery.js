@@ -23,8 +23,8 @@ const useUserDataQuery = (userId = undefined, queryOptions = undefined) => {
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [USER_DATA_QUERY_KEY, uid.value, userQueryKeyIndex.value],
-    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid.value),
+    queryKey: [USER_DATA_QUERY_KEY, uid, userQueryKeyIndex],
+    queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid),
     enabled: isQueryEnabled,
     ...options,
   });

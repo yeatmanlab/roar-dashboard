@@ -34,11 +34,12 @@ describe('useUserDataQuery', () => {
   });
 
   it('should call query with correct parameters', () => {
-    const mockUserId = nanoid();
+    const mockUserRoarUid = ref(nanoid());
+    const mockUserQueryKeyIndex = ref(1);
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserId;
-    authStore.userQueryKeyIndex = 1;
+    authStore.roarUid = mockUserRoarUid;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -46,24 +47,28 @@ describe('useUserDataQuery', () => {
       plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
     });
 
-    expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', mockUserId, 1],
-      queryFn: expect.any(Function),
-      enabled: expect.objectContaining({
-        _value: true,
+    expect(VueQuery.useQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid }), mockUserQueryKeyIndex],
+        queryFn: expect.any(Function),
+        enabled: expect.objectContaining({
+          _value: true,
+        }),
       }),
-    });
+    );
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
   });
 
   it('should allow the use of a manual user ID', async () => {
-    const mockUserId = nanoid();
-    const mockStudentUserId = nanoid();
+    const mockUserRoarUid = ref(nanoid());
+    const mockUserQueryKeyIndex = ref(1);
+
+    const mockStudentUserId = ref(nanoid());
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserId;
-    authStore.userQueryKeyIndex = 1;
+    authStore.roarUid = mockUserRoarUid;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -72,22 +77,23 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', mockStudentUserId, 1],
+      queryKey: ['user', expect.objectContaining({ _value: mockStudentUserId }), mockUserQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: true,
       }),
     });
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockStudentUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: mockStudentUserId }));
   });
 
   it('should correctly control the enabled state of the query', async () => {
-    const mockUserId = nanoid();
+    const mockUserRoarUid = ref(nanoid());
+    const mockUserQueryKeyIndex = ref(1);
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = mockUserId;
-    authStore.userQueryKeyIndex = 1;
+    authStore.roarUid = mockUserRoarUid;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     const enableQuery = ref(false);
 
@@ -100,7 +106,7 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', mockUserId, 1],
+      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid }), mockUserQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -113,15 +119,16 @@ describe('useUserDataQuery', () => {
     enableQuery.value = true;
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
   });
 
-  it('should only fetch data if the roarUid is available', async () => {
-    const mockUserId = nanoid();
+  it('should only fetch data once the roarUid is available', async () => {
+    const mockUserRoarUid = ref(null);
+    const mockUserQueryKeyIndex = ref(1);
 
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = null;
-    authStore.userQueryKeyIndex = 1;
+    authStore.roarUid = mockUserRoarUid;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     const queryOptions = { enabled: true };
 
@@ -130,7 +137,7 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', null, 1],
+      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid }), mockUserQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,
@@ -140,16 +147,19 @@ describe('useUserDataQuery', () => {
 
     expect(fetchDocById).not.toHaveBeenCalled();
 
-    authStore.roarUid = mockUserId;
+    mockUserRoarUid.value = nanoid();
     await nextTick();
 
-    expect(fetchDocById).toHaveBeenCalledWith('users', mockUserId);
+    expect(fetchDocById).toHaveBeenCalledWith('users', expect.objectContaining({ _value: authStore.roarUid }));
   });
 
   it('should not let queryOptions override the internally computed value', async () => {
+    const mockUserRoarUid = ref(null);
+    const mockUserQueryKeyIndex = ref(1);
+
     const authStore = useAuthStore(piniaInstance);
-    authStore.roarUid = null;
-    authStore.userQueryKeyIndex = 1;
+    authStore.roarUid = mockUserRoarUid;
+    authStore.userQueryKeyIndex = mockUserQueryKeyIndex;
 
     const queryOptions = { enabled: true };
 
@@ -158,7 +168,7 @@ describe('useUserDataQuery', () => {
     });
 
     expect(VueQuery.useQuery).toHaveBeenCalledWith({
-      queryKey: ['user', null, 1],
+      queryKey: ['user', expect.objectContaining({ _value: authStore.roarUid }), mockUserQueryKeyIndex],
       queryFn: expect.any(Function),
       enabled: expect.objectContaining({
         _value: false,

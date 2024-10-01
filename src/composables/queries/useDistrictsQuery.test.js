@@ -1,3 +1,4 @@
+import { ref, nextTick } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as VueQuery from '@tanstack/vue-query';
 import { nanoid } from 'nanoid';
@@ -29,7 +30,7 @@ describe('useDistrictsQuery', () => {
   });
 
   it('should call query with correct parameters', () => {
-    const districtIds = nanoid();
+    const districtIds = ref([nanoid()]);
 
     vi.spyOn(VueQuery, 'useQuery');
 
@@ -49,7 +50,7 @@ describe('useDistrictsQuery', () => {
   });
 
   it('should allow the query to be disabled via the passed query options', () => {
-    const districtIds = nanoid();
+    const districtIds = ref([nanoid()]);
     const queryOptions = { enabled: false };
 
     vi.spyOn(VueQuery, 'useQuery');
@@ -65,10 +66,38 @@ describe('useDistrictsQuery', () => {
         _value: false,
       }),
     });
+
+    expect(fetchDocumentsById).not.toHaveBeenCalled();
   });
 
-  it('should keep the query disabled if not district IDs are specified', () => {
-    const districtIds = [];
+  it('should only fetch data if the administration ID is available', async () => {
+    const districtIds = ref([]);
+    const queryOptions = { enabled: true };
+
+    vi.spyOn(VueQuery, 'useQuery');
+
+    withSetup(() => useDistrictsQuery(districtIds, queryOptions), {
+      plugins: [[VueQuery.VueQueryPlugin, { queryClient }]],
+    });
+
+    expect(VueQuery.useQuery).toHaveBeenCalledWith({
+      queryKey: ['districts', districtIds],
+      queryFn: expect.any(Function),
+      enabled: expect.objectContaining({
+        _value: false,
+      }),
+    });
+
+    expect(fetchDocumentsById).not.toHaveBeenCalled();
+
+    districtIds.value = [nanoid()];
+    await nextTick();
+
+    expect(fetchDocumentsById).toHaveBeenCalledWith('districts', districtIds);
+  });
+
+  it('should not let queryOptions override the internally computed value', async () => {
+    const districtIds = ref([]);
     const queryOptions = { enabled: true };
 
     vi.spyOn(VueQuery, 'useQuery');

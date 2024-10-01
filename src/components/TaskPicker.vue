@@ -182,11 +182,14 @@ const taskOptions = computed(() => {
 watch(
   () => props.inputVariants,
   (newVariants) => {
+    // @TODO: Fix this as it's not working as expected. When updating the data set in the parent component, the data is
+    // added twice to the selectedVariants array, despite the _union call.
     selectedVariants.value = _union(selectedVariants.value, newVariants);
 
     // Update the conditions for the variants that were pre-existing
     selectedVariants.value = selectedVariants.value.map((variant) => {
       const preExistingInfo = props.preExistingAssessmentInfo.find((info) => info?.variantId === variant?.id);
+
       if (preExistingInfo) {
         return { ...variant, variant: { ...variant?.variant, conditions: preExistingInfo.conditions } };
       }
@@ -205,7 +208,6 @@ const updateVariant = (variantId, conditions) => {
   });
   selectedVariants.value = updatedVariants;
   return;
-  // props.selectedVariant[]
 };
 
 const selectedVariants = ref([]);

@@ -1,6 +1,7 @@
-import { toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { fetchDocsById } from '@/helpers/query/utils';
+import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
+import { hasArrayEntries } from '@/helpers/hasArrayEntries';
+import { fetchDocumentsById } from '@/helpers/query/utils';
 import { ADMINISTRATIONS_QUERY_KEY } from '@/constants/queryKeys';
 import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
@@ -12,19 +13,15 @@ import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
  * @returns {UseQueryResult} The TanStack query result.
  */
 const useAdministrationsQuery = (administrationIds, queryOptions = undefined) => {
+  // Ensure all necessary data is available before enabling the query.
+  const conditions = [() => hasArrayEntries(administrationIds)];
+  const { isQueryEnabled, options } = computeQueryOverrides(conditions, queryOptions);
+
   return useQuery({
-    queryKey: [ADMINISTRATIONS_QUERY_KEY, toValue(administrationIds)],
-    queryFn: () =>
-      fetchDocsById(
-        toValue(administrationIds)?.map((administrationId) => {
-          return {
-            collection: FIRESTORE_COLLECTIONS.ADMINISTRATIONS,
-            docId: administrationId,
-            select: ['name', 'publicName', 'sequential', 'assessments', 'legal'],
-          };
-        }),
-      ),
-    ...queryOptions,
+    queryKey: [ADMINISTRATIONS_QUERY_KEY, administrationIds],
+    queryFn: () => fetchDocumentsById(FIRESTORE_COLLECTIONS.ADMINISTRATIONS, administrationIds),
+    enabled: isQueryEnabled,
+    ...options,
   });
 };
 
