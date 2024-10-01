@@ -45,9 +45,9 @@
                   >{{ $t('navBar.signOut') }}
                 </PvButton>
 
-                <div class="nav-user-wrapper bg-gray-100">
-                  <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }"
-                    ><button
+                <div v-if="authStore.isUserAdmin" class="nav-user-wrapper bg-gray-100">
+                  <router-link :to="{ path: APP_ROUTES.ACCOUNT_PROFILE }">
+                    <button
                       data-cy="button-profile-info"
                       class="no-underline p-1 m-0 text-primary border-none border-round cursor-pointer h-2rem w-2rem text-sm hover:bg-red-900 hover:text-white"
                     >
