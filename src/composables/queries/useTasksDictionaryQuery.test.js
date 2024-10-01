@@ -1,8 +1,7 @@
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { withSetup } from '@/test-support/withSetup.js';
 import * as VueQuery from '@tanstack/vue-query';
-import useTasksQuery from './useTasksQuery';
 import useTasksDictionaryQuery from './useTasksDictionaryQuery';
 
 vi.mock('@/helpers/query/tasks', () => ({
@@ -17,11 +16,6 @@ vi.mock('@tanstack/vue-query', async (getModule) => {
     useQuery: vi.fn().mockImplementation(original.useQuery),
   };
 });
-
-// vi.mock('./useTasksQuery', () => ({
-//   default: vi.fn(),
-// }))
-
 describe('useTasksQuery', () => {
   let queryClient;
 

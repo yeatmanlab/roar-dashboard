@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!studentData" class="flex flex-column justify-content-center align-items-center loading-container">
+  <div v-if="isLoading" class="flex flex-column justify-content-center align-items-center loading-container">
     <AppSpinner style="margin-bottom: 1rem" />
     <span>{{ $t('scoreReports.loading') }}</span>
   </div>
@@ -183,14 +183,15 @@ import { useAuthStore } from '@/store/auth';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useUserRunPageQuery from '@/composables/queries/useUserRunPageQuery';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { taskDisplayNames, addElementToPdf } from '@/helpers/reports';
-import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue';
+import IndividualScoreReportTask from '@/components/reports/IndividualScoreReportTask.vue'; // @TODO: Not used?
 import AppSpinner from '@/components/AppSpinner.vue';
 import NextSteps from '@/assets/NextSteps.pdf';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -213,7 +214,9 @@ const props = defineProps({
 
 const initialized = ref(false);
 
-const { data: studentData } = useUserDataQuery(props.userId, {
+const isLoading = computed(() => isLoadingStudentData.value || isLoadingTasksDictionary.value);
+
+const { data: studentData, isLoading: isLoadingStudentData } = useUserDataQuery(props.userId, {
   enabled: initialized,
 });
 
@@ -223,6 +226,10 @@ const { data: administrationData } = useAdministrationsQuery([props.administrati
 });
 
 const { data: taskData } = useUserRunPageQuery(props.userId, props.administrationId, props.orgType, props.orgId, {
+  enabled: initialized,
+});
+
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
   enabled: initialized,
 });
 
@@ -299,13 +306,14 @@ const formattedTasks = computed(() => {
 });
 
 const studentFirstName = computed(() => {
+  if (!studentData?.value) return '';
   // Using == instead of === to catch both undefined and null values
   if (studentData.value.name?.first == undefined) return studentData.value.username;
   return studentData.value.name.first;
 });
 
 const studentLastName = computed(() => {
-  if (!studentData.value.name) return '';
+  if (!studentData?.value?.name) return '';
   return studentData.value.name.last;
 });
 

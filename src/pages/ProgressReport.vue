@@ -1,8 +1,13 @@
 <template>
   <main class="container main">
     <section class="main-body">
-      <div class="flex justify-content-between align-items-center">
-        <div v-if="!isLoadingAssignments">
+      <div v-if="isLoading" class="loading-wrapper">
+        <AppSpinner style="margin: 1rem 0rem" />
+        <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
+      </div>
+
+      <template v-else>
+        <div class="flex justify-content-between align-items-center">
           <div class="flex flex-column align-items-start mb-4 gap-2">
             <div>
               <div class="uppercase font-light text-gray-500 text-md">{{ props.orgType }} Progress Report</div>
@@ -17,143 +22,141 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="flex flex-row align-items-center gap-4">
-          <div class="uppercase text-sm text-gray-600">VIEW</div>
-          <PvSelectButton
-            v-model="reportView"
-            v-tooltip.top="'View different report'"
-            :options="reportViews"
-            option-disabled="constant"
-            :allow-empty="false"
-            option-label="name"
-            class="flex my-2 select-button"
-            @change="handleViewChange"
-          >
-          </PvSelectButton>
-        </div>
-      </div>
-      <div v-if="isLoadingAssignments" class="loading-wrapper">
-        <AppSpinner style="margin: 1rem 0rem" />
-        <div class="uppercase text-sm text-gray-600 font-light">Loading Progress Datatable</div>
-      </div>
-      <div v-if="assignmentData?.length ?? 0 > 0">
-        <div
-          v-if="adminStats != null"
-          class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5"
-        >
-          <div class="flex flex-column gap-1 mx-5 mb-5">
-            <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
-            <div
-              v-for="{ taskId } of administrationData.assessments"
-              :key="taskId"
-              class="flex justify-content-between align-items-center"
+          <div class="flex flex-row align-items-center gap-4">
+            <div class="uppercase text-sm text-gray-600">VIEW</div>
+            <PvSelectButton
+              v-model="reportView"
+              v-tooltip.top="'View different report'"
+              :options="reportViews"
+              option-disabled="constant"
+              :allow-empty="false"
+              option-label="name"
+              class="flex my-2 select-button"
+              @change="handleViewChange"
             >
-              <div v-if="tasksDictionary[taskId]" class="text-lg font-bold text-gray-600 w-full">
-                {{ tasksDictionary[taskId]?.technicalName ?? taskId }}
-                <span v-if="tasksDictionary[taskId].name" class="font-light uppercase text-sm">
-                  ({{ tasksDictionary[taskId]?.publicName }})
+            </PvSelectButton>
+          </div>
+        </div>
+
+        <div v-if="assignmentData?.length">
+          <div
+            v-if="adminStats != null"
+            class="flex flex-column align-items-around flex-wrap gap-3 rounded bg-gray-100 p-5"
+          >
+            <div class="flex flex-column gap-1 mx-5 mb-5">
+              <div class="text-sm uppercase text-gray-500">Progress by Assessment</div>
+              <div
+                v-for="{ taskId } of administrationData.assessments"
+                :key="taskId"
+                class="flex justify-content-between align-items-center"
+              >
+                <div v-if="tasksDictionary[taskId]" class="text-lg font-bold text-gray-600 w-full">
+                  {{ tasksDictionary[taskId]?.technicalName ?? taskId }}
+                  <span v-if="tasksDictionary[taskId].name" class="font-light uppercase text-sm">
+                    ({{ tasksDictionary[taskId]?.publicName }})
+                  </span>
+                </div>
+                <div v-else class="text-lg font-bold text-gray-600 w-full">
+                  {{ taskId }}
+                </div>
+                <PvChart
+                  type="bar"
+                  :data="setBarChartData(adminStats[taskId])"
+                  :options="setBarChartOptions(adminStats[taskId])"
+                  class="h-2rem lg:w-full"
+                />
+              </div>
+            </div>
+            <div class="flex flex-column mx-5">
+              <div class="text-sm uppercase text-gray-500">Total Assessment Progress</div>
+              <div class="flex justify-content-between align-items-center">
+                <div class="text-xl font-bold text-gray-600 w-full">
+                  Total
+                  <span class="font-light text-sm"> ({{ adminStats.assignment.assigned }} total assignments) </span>
+                </div>
+                <PvChart
+                  type="bar"
+                  :data="setBarChartData(adminStats.assignment)"
+                  :options="setBarChartOptions(adminStats.assignment)"
+                  class="h-3rem lg:w-full"
+                />
+              </div>
+            </div>
+            <div class="flex flex-column align-items-center mx-5">
+              <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded">
+                <div class="legend-entry">
+                  <div class="circle" style="background-color: var(--bright-green)" />
+                  <div>
+                    <div>Completed</div>
+                  </div>
+                </div>
+                <div class="legend-entry">
+                  <div class="circle" style="background-color: var(--yellow-100)" />
+                  <div>
+                    <div>Started</div>
+                  </div>
+                </div>
+                <div class="legend-entry">
+                  <div class="circle" style="background-color: var(--surface-d)" />
+                  <div>
+                    <div>Assigned</div>
+                  </div>
+                </div>
+              </div>
+              <div class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
+            </div>
+          </div>
+          <RoarDataTable
+            v-if="progressReportColumns?.length ?? 0 > 0"
+            :data="filteredTableData"
+            :columns="progressReportColumns"
+            :total-records="filteredTableData?.length"
+            :loading="isLoadingAssignments || isFetchingAssignments"
+            :page-limit="pageLimit"
+            data-cy="roar-data-table"
+            :allow-filtering="true"
+            :reset-filters="resetFilters"
+            :lazy-pre-sorting="orderBy"
+            @export-selected="exportSelected"
+            @export-all="exportAll"
+          >
+            <template #filterbar>
+              <div v-if="districtSchoolsData" class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    id="ms-school-filter"
+                    v-model="filterSchools"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="districtSchoolsData"
+                    option-label="name"
+                    option-value="name"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} schools selected"
+                    data-cy="filter-by-school"
+                  />
+                  <label for="ms-school-filter">Filter by School</label>
                 </span>
               </div>
-              <div v-else class="text-lg font-bold text-gray-600 w-full">
-                {{ taskId }}
+              <div class="flex flex-row gap-2">
+                <span class="p-float-label">
+                  <PvMultiSelect
+                    id="ms-grade-filter"
+                    v-model="filterGrades"
+                    style="width: 20rem; max-width: 25rem"
+                    :options="gradeOptions"
+                    option-label="label"
+                    option-value="value"
+                    :show-toggle-all="false"
+                    selected-items-label="{0} grades selected"
+                    data-cy="filter-by-grade"
+                  />
+                  <label for="ms-school-filter">Filter by Grade</label>
+                </span>
               </div>
-              <PvChart
-                type="bar"
-                :data="setBarChartData(adminStats[taskId])"
-                :options="setBarChartOptions(adminStats[taskId])"
-                class="h-2rem lg:w-full"
-              />
-            </div>
-          </div>
-          <div class="flex flex-column mx-5">
-            <div class="text-sm uppercase text-gray-500">Total Assessment Progress</div>
-            <div class="flex justify-content-between align-items-center">
-              <div class="text-xl font-bold text-gray-600 w-full">
-                Total <span class="font-light text-sm"> ({{ adminStats.assignment.assigned }} total assignments) </span>
-              </div>
-              <PvChart
-                type="bar"
-                :data="setBarChartData(adminStats.assignment)"
-                :options="setBarChartOptions(adminStats.assignment)"
-                class="h-3rem lg:w-full"
-              />
-            </div>
-          </div>
-          <div class="flex flex-column align-items-center mx-5">
-            <div class="flex flex-wrap justify-content-around align-items-center px-2 py-1 rounded">
-              <div class="legend-entry">
-                <div class="circle" style="background-color: var(--bright-green)" />
-                <div>
-                  <div>Completed</div>
-                </div>
-              </div>
-              <div class="legend-entry">
-                <div class="circle" style="background-color: var(--yellow-100)" />
-                <div>
-                  <div>Started</div>
-                </div>
-              </div>
-              <div class="legend-entry">
-                <div class="circle" style="background-color: var(--surface-d)" />
-                <div>
-                  <div>Assigned</div>
-                </div>
-              </div>
-            </div>
-            <div class="font-light uppercase text-xs text-gray-500 my-1">Legend</div>
-          </div>
+            </template>
+          </RoarDataTable>
         </div>
-        <RoarDataTable
-          v-if="progressReportColumns?.length ?? 0 > 0"
-          :data="filteredTableData"
-          :columns="progressReportColumns"
-          :total-records="filteredTableData?.length"
-          :loading="isLoadingAssignments || isFetchingAssignments"
-          :page-limit="pageLimit"
-          data-cy="roar-data-table"
-          :allow-filtering="true"
-          :reset-filters="resetFilters"
-          :lazy-pre-sorting="orderBy"
-          @export-selected="exportSelected"
-          @export-all="exportAll"
-        >
-          <template #filterbar>
-            <div v-if="districtSchoolsData" class="flex flex-row gap-2">
-              <span class="p-float-label">
-                <PvMultiSelect
-                  id="ms-school-filter"
-                  v-model="filterSchools"
-                  style="width: 20rem; max-width: 25rem"
-                  :options="districtSchoolsData"
-                  option-label="name"
-                  option-value="name"
-                  :show-toggle-all="false"
-                  selected-items-label="{0} schools selected"
-                  data-cy="filter-by-school"
-                />
-                <label for="ms-school-filter">Filter by School</label>
-              </span>
-            </div>
-            <div class="flex flex-row gap-2">
-              <span class="p-float-label">
-                <PvMultiSelect
-                  id="ms-grade-filter"
-                  v-model="filterGrades"
-                  style="width: 20rem; max-width: 25rem"
-                  :options="gradeOptions"
-                  option-label="label"
-                  option-value="value"
-                  :show-toggle-all="false"
-                  selected-items-label="{0} grades selected"
-                  data-cy="filter-by-grade"
-                />
-                <label for="ms-school-filter">Filter by Grade</label>
-              </span>
-            </div>
-          </template>
-        </RoarDataTable>
-      </div>
+      </template>
     </section>
   </main>
 </template>
@@ -173,6 +176,7 @@ import useAdministrationsStatsQuery from '@/composables/queries/useAdministratio
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { getDynamicRouterPath } from '@/helpers/getDynamicRouterPath';
 import { exportCsv } from '@/helpers/query/utils';
 import { taskDisplayNames, gradeOptions } from '@/helpers/reports.js';
@@ -184,7 +188,7 @@ import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 const router = useRouter();
 const authStore = useAuthStore();
 
-const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -202,6 +206,8 @@ const props = defineProps({
 });
 
 const initialized = ref(false);
+
+const isLoading = computed(() => isLoadingAssignments.value || isLoadingTasksDictionary.value);
 
 const reportView = ref({ name: 'Progress Report', constant: true });
 const reportViews = [
@@ -243,6 +249,10 @@ if (props.orgType === 'district') {
 const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
+
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
+  enabled: initialized,
+});
 
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
@@ -422,7 +432,7 @@ const exportAll = async () => {
 };
 
 const progressReportColumns = computed(() => {
-  if (assignmentData.value === undefined) return [];
+  if (isLoadingTasksDictionary.value || assignmentData.value === undefined) return [];
 
   const tableColumns = [];
   if (assignmentData.value.find((assignment) => assignment.user?.username)) {

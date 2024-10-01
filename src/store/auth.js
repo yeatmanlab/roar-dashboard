@@ -25,7 +25,6 @@ export const useAuthStore = () => {
         classLinkOAuthRequested: false,
         routeToProfile: false,
         ssoProvider: null,
-        tasksDictionary: {},
         showOptionalAssessments: false,
       };
     },
@@ -75,7 +74,6 @@ export const useAuthStore = () => {
         onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
-            await this.updateTasksDictionary();
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
@@ -88,17 +86,6 @@ export const useAuthStore = () => {
       },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
-      },
-      async updateTasksDictionary() {
-        if (this.isFirekitInit) {
-          const taskDocs = await taskFetcher(true, true);
-          this.tasksDictionary = taskDocs.reduce((acc, doc) => {
-            acc[doc.id] = doc;
-            return acc;
-          });
-        } else {
-          console.warn('Initialize Firekit before updating tasks dictionary.');
-        }
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);

@@ -2,7 +2,7 @@
   <main class="container main">
     <section class="main-body">
       <div>
-        <div class="">
+        <section>
           <div v-if="isLoadingOrgData" class="loading-wrapper">
             <AppSpinner style="margin: 0.3rem 0rem" />
             <div class="uppercase text-sm text-gray-600 font-light">Loading Org Info</div>
@@ -110,7 +110,8 @@
               </div>
             </div>
           </div>
-        </div>
+        </section>
+
         <!-- Loading data spinner -->
         <div v-if="isLoadingAssignments || isFetchingAssignments" class="loading-container my-4">
           <AppSpinner style="margin-bottom: 1rem" />
@@ -213,11 +214,13 @@
           Pale colors indicate that the score may not reflect the reader’s ability because responses were made too
           quickly or the assessment was incomplete.
         </div>
+
         <!-- Subscores tables -->
-        <div v-if="isLoadingAssignments" class="loading-wrapper">
+        <div v-if="isLoadingAssignments || isLoadingTasksDictionary" class="loading-wrapper">
           <AppSpinner style="margin: 1rem 0rem" />
           <div class="uppercase text-sm font-light text-gray-600">Loading Task Reports</div>
         </div>
+
         <PvTabView :active-index="activeTabIndex">
           <PvTabPanel
             v-for="taskId of sortedTaskIds"
@@ -307,6 +310,7 @@ import useAdministrationsQuery from '@/composables/queries/useAdministrationsQue
 import useOrgQuery from '@/composables/queries/useOrgQuery';
 import useDistrictSchoolsQuery from '@/composables/queries/useDistrictSchoolsQuery';
 import useAdministrationAssignmentsQuery from '@/composables/queries/useAdministrationAssignmentsQuery';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { getGrade } from '@bdelab/roar-utils';
 import { exportCsv } from '@/helpers/query/utils';
 import { getTitle } from '@/helpers/query/administrations';
@@ -333,7 +337,7 @@ let TaskReport, DistributionChartOverview, NextSteps;
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   administrationId: {
@@ -449,6 +453,10 @@ if (props.orgType === 'district') {
 const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
+
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery({
+  enabled: initialized,
+});
 
 const { data: userClaims } = useUserClaimsQuery({
   enabled: initialized,
@@ -1060,7 +1068,7 @@ const getTaskStyle = (taskId, backgroundColor, tasks) => {
 // compute and store schoolid -> school name map for schools. store adminId,
 // orgType, orgId for individual score report link
 const scoreReportColumns = computed(() => {
-  if (assignmentData.value === undefined) return [];
+  if (isLoadingTasksDictionary.value || assignmentData.value === undefined) return [];
   const tableColumns = [];
   tableColumns.push({
     header: 'Report',
