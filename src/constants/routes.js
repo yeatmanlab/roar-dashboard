@@ -12,4 +12,5 @@ export const APP_ROUTES = {
   PROGRESS_REPORT: '/administration/:administrationId/:orgType/:orgId',
   SCORE_REPORT: '/scores/:administrationId/:orgType/:orgId',
   STUDENT_REPORT: '/scores/:administrationId/:orgType/:orgId/user/:userId',
+  ACCOUNT_PROFILE: '/profile',
 };

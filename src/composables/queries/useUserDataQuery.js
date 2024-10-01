@@ -16,14 +16,14 @@ import { computed } from 'vue';
  */
 const useUserDataQuery = (userId = undefined, queryOptions = undefined) => {
   const authStore = useAuthStore();
-  const { roarUid, userQueryKeyIndex } = storeToRefs(authStore);
+  const { roarUid } = storeToRefs(authStore);
 
   const uid = computed(() => userId || roarUid.value);
   const queryConditions = [() => !!uid.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
   return useQuery({
-    queryKey: [USER_DATA_QUERY_KEY, uid, userQueryKeyIndex],
+    queryKey: [USER_DATA_QUERY_KEY, uid],
     queryFn: () => fetchDocById(FIRESTORE_COLLECTIONS.USERS, uid),
     enabled: isQueryEnabled,
     ...options,

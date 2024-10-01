@@ -246,29 +246,6 @@ const routes = [
       },
     },
   },
-  // TODO: Make this logic happen on click of sign out button
-  {
-    path: '/signout',
-    name: 'SignOut',
-    async beforeEnter() {
-      const store = useAuthStore();
-      if (store.isAuthenticated) {
-        await store.signOut();
-      }
-      // Clear auth and game store so kids playing on the same device don't run into issues
-      sessionStorage.removeItem('gameStore');
-      sessionStorage.removeItem('authStore');
-      return { name: 'SignIn' };
-    },
-    meta: {
-      pageTitle: {
-        'en-US': pageTitlesUS['signOut'],
-        en: pageTitlesEN['signOut'],
-        es: pageTitlesES['signOut'],
-        'es-CO': pageTitlesCO['signOut'],
-      },
-    },
-  },
   {
     path: '/auth-clever',
     name: 'AuthClever',
@@ -364,11 +341,15 @@ const routes = [
     meta: { pageTitle: 'Student Score Report', requireAdmin: true },
   },
   {
-    path: '/profile',
+    path: APP_ROUTES.ACCOUNT_PROFILE,
     name: 'Profile',
     component: () => import('../pages/AdminProfile.vue'),
     children: [
-      { path: '', name: 'ProfileInfo', component: () => import('../components/views/UserInfoView.vue') },
+      {
+        path: '',
+        name: 'ProfileInfo',
+        component: () => import('../components/views/UserInfoView.vue'),
+      },
       {
         path: 'password',
         name: 'ProfilePassword',
