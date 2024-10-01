@@ -20,12 +20,13 @@ const assignmentSelectFields = [
   'dateAssigned',
   'dateClosed',
   'dateOpened',
-  'readOrgs',
-  'started',
   'id',
-  'sequential',
+  'legal',
   'name',
   'publicName',
+  'readOrgs',
+  'sequential',
+  'started',
 ];
 
 export const getAssignmentsRequestBody = ({
