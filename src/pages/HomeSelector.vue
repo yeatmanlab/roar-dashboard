@@ -40,14 +40,14 @@ const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModa
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, authFromSSO } = storeToRefs(authStore);
+const { roarfirekit, ssoProvider } = storeToRefs(authStore);
 
 const router = useRouter();
 const i18n = useI18n();
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
 
-if (authFromSSO.value) {
+if (ssoProvider.value) {
   console.log('Detected SSO authentication, redirecting...');
   router.replace({ path: APP_ROUTES.SSO });
 }
