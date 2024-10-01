@@ -125,7 +125,6 @@
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
             :groupheaders="true"
-            :lazy-pre-sorting="orderBy"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
             @export-all="exportAll"
@@ -420,23 +419,6 @@ const handleExportToPdf = async () => {
   return;
 };
 
-const orderBy = ref([
-  {
-    field: 'user.grade',
-    order: '1',
-  },
-  {
-    field: 'user.lastName',
-    order: '1',
-  },
-]);
-// If this is a district report, make the schools column first sorted.
-if (props.orgType === 'district') {
-  orderBy.value.unshift({
-    order: '1',
-    field: 'user.schoolName',
-  });
-}
 const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
