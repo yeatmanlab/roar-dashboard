@@ -67,8 +67,8 @@
             </PvButton>
           </div>
         </div>
-        <div v-if="initialized && !isLoadingAdministrations">
-          <PvBlockUI :blocked="isFetchingAdministrations">
+        <div v-if="initialized && !fetchingAdministrations">
+          <PvBlockUI :blocked="fetchingAdministrations">
             <PvDataView
               :key="dataViewKey"
               :value="filteredAdministrations"
@@ -125,7 +125,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { fetchDocById } from '@/helpers/query/utils';
+import { fetchDocById, orderByDefault } from '@/helpers/query/utils';
 import { administrationPageFetcher, getTitle } from '../helpers/query/administrations';
 import CardAdministration from '@/components/CardAdministration.vue';
 import { useAuthStore } from '@/store/auth';
@@ -154,6 +154,7 @@ onMounted(() => {
   if (roarfirekit.value.restConfig) init();
 });
 
+const orderBy = ref(orderByDefault);
 const fetchTestAdministrations = ref(false);
 const testAdminsCached = ref(false);
 
@@ -163,18 +164,23 @@ const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
 
+const isFetchingCachedAdministrations = ref(false);
+
 /**
  * Fetches administrations from the cache or the server
  * @param {Array} queryKey - The query key to use for fetching the data
  * @returns {Promise<unknown>} - The cached or fetched data
  */
 const getAdministrations = async (queryKey) => {
+  isFetchingCachedAdministrations.value = true;
+
   let cachedData = await queryClient.getQueryData(queryKey);
 
   if (!cachedData) {
     cachedData = await queryClient.fetchQuery({
       queryKey,
-      queryFn: () => administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value),
+      queryFn: () =>
+        administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value, orderBy),
       keepPreviousData: true,
       enabled: canQueryAdministrations,
       staleTime: 5 * 60 * 1000, // 5 minutes
@@ -182,6 +188,7 @@ const getAdministrations = async (queryKey) => {
     testAdminsCached.value = true;
   }
 
+  isFetchingCachedAdministrations.value = false;
   return cachedData;
 };
 
@@ -194,13 +201,9 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   cacheTime: Infinity,
 });
 
-const {
-  isLoading: isLoadingAdministrations,
-  isFetching: isFetchingAdministrations,
-  data: administrations,
-} = useQuery({
-  queryKey: ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () => administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value),
+const { isFetching: isFetchingAdministrations, data: administrations } = useQuery({
+  queryKey: ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex, fetchTestAdministrations.value],
+  queryFn: () => administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value, orderBy),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -220,12 +223,14 @@ const {
   },
 });
 
+const fetchingAdministrations = computed(() => {
+  return isFetchingAdministrations.value || isFetchingCachedAdministrations.value;
+});
+
 const filteredAdministrations = ref(administrations.value);
 
 watch(fetchTestAdministrations, async (newState) => {
-  const queryKey = newState
-    ? ['testAdministrations', uid, isSuperAdmin, administrationQueryKeyIndex]
-    : ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex];
+  const queryKey = ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex, newState];
 
   filteredAdministrations.value = await getAdministrations(queryKey);
 });

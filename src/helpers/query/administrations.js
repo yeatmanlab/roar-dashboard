@@ -4,7 +4,7 @@ import _mapValues from 'lodash/mapValues';
 import _without from 'lodash/without';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/store/auth';
-import { convertValues, getAxiosInstance } from './utils';
+import { convertValues, getAxiosInstance, orderByDefault } from './utils';
 import { filterAdminOrgs } from '@/helpers';
 
 export function getTitle(item, isSuperAdmin) {
@@ -95,7 +95,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
   return administrations;
 };
 
-export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false) => {
+export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
   const administrationIds = await roarfirekit.value.getAdministrations({ testData: fetchTestData });
@@ -106,7 +106,7 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
 
   const { data } = await axiosInstance.post(':batchGet', { documents });
 
-  const administrations = _without(
+  const administrationData = _without(
     data.map(({ found }) => {
       if (found) {
         return {
@@ -122,5 +122,24 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     undefined,
   );
 
-  return mapAdministrations({ isSuperAdmin, data: administrations, adminOrgs: exhaustiveAdminOrgs });
+  const administrations = await mapAdministrations({
+    isSuperAdmin,
+    data: administrationData,
+    adminOrgs: exhaustiveAdminOrgs,
+  });
+
+  console.log(`Fetched ${administrations.length} administrations`);
+  console.log(administrations);
+
+  const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
+  const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
+  const sortedAdministrations = administrations
+    .filter((a) => a[orderField] !== undefined)
+    .sort((a, b) => {
+      if (orderDirection === 'ASCENDING') return 2 * +(a[orderField] > b[orderField]) - 1;
+      if (orderDirection === 'DESCENDING') return 2 * +(b[orderField] > a[orderField]) - 1;
+      return 0;
+    });
+
+  return sortedAdministrations;
 };
