@@ -15,7 +15,7 @@ import { fetchDocById } from '@/helpers/query/utils';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const { roarUid, uid, authFromClever } = storeToRefs(authStore);
+const { roarUid, authFromClever } = storeToRefs(authStore);
 
 let userDataCheckInterval;
 
@@ -54,7 +54,7 @@ async function checkForUserType() {
   }
 }
 
-console.log(`Arrived at CleverLanding.vue with uid: ${uid.value} and authFromClever: ${authFromClever.value} `);
+console.log(`Arrived at CleverLanding.vue with uid: ${roarUid.value} and authFromClever: ${authFromClever.value} `);
 authFromClever.value = false;
 userDataCheckInterval = setInterval(checkForUserType, 1000);
 </script>
