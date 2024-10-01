@@ -812,9 +812,11 @@ const computeAssignmentAndRunData = computed(() => {
         return schoolDiff;
       }
 
-      const gradeDiff = a.user.grade - b.user.grade;
-      if (Number.isNaN(gradeDiff)) {
-        const stringGradeDiff = (a.user?.grade ?? '').localeCompare(b.user?.grade ?? '');
+      const gradeDiff = Number(a.user.grade) - Number(b.user.grade);
+      if (isNaN(gradeDiff)) {
+        const gradeA = a.user?.grade?.toString() ?? '';
+        const gradeB = b.user?.grade?.toString() ?? '';
+        const stringGradeDiff = gradeA.localeCompare(gradeB);
         if (stringGradeDiff !== 0) {
           return stringGradeDiff;
         }
