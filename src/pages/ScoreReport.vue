@@ -630,7 +630,7 @@ const computeAssignmentAndRunData = computed(() => {
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
 
-      let numAssignmentsCompleted = 0;
+      let numAssessmentsCompleted = 0;
       const currRowScores = {};
       for (const assessment of assignment.assessments) {
         // General Logic to grab support level, scores, etc
@@ -649,7 +649,7 @@ const computeAssignmentAndRunData = computed(() => {
         }
         // Add filter tags for completed/incomplete
         if (assessment.completedOn != undefined) {
-          numAssignmentsCompleted += 1;
+          numAssessmentsCompleted += 1;
           scoreFilterTags += ' Completed ';
         } else if (assessment.startedOn != undefined) {
           scoreFilterTags += ' Started ';
@@ -795,13 +795,36 @@ const computeAssignmentAndRunData = computed(() => {
 
       // update scores for current row with computed object
       currRow.scores = currRowScores;
-      currRow.numAssignmentsCompleted = numAssignmentsCompleted;
+      currRow.numAssessmentsCompleted = numAssessmentsCompleted;
       // push currRow to assignmentTableDataAcc
       assignmentTableDataAcc.push(currRow);
     }
 
-    // sort by numAssignmentsCompleted
-    assignmentTableDataAcc.sort((a, b) => b.numAssignmentsCompleted - a.numAssignmentsCompleted);
+    // sort by numAssessmentsCompleted
+    assignmentTableDataAcc.sort((a, b) => {
+      const completionDiff = b.numAssessmentsCompleted - a.numAssessmentsCompleted;
+      if (completionDiff !== 0) {
+        return completionDiff;
+      }
+
+      const schoolDiff = (a.user?.schoolName ?? '').localeCompare(b.user?.schoolName ?? '');
+      if (schoolDiff !== 0) {
+        return schoolDiff;
+      }
+
+      const gradeDiff = a.user.grade - b.user.grade;
+      if (Number.isNaN(gradeDiff)) {
+        const stringGradeDiff = (a.user?.grade ?? '').localeCompare(b.user?.grade ?? '');
+        if (stringGradeDiff !== 0) {
+          return stringGradeDiff;
+        }
+      } else if (gradeDiff !== 0) {
+        return gradeDiff;
+      }
+
+      const lastNameDiff = (a.user?.lastName ?? '').localeCompare(b.user?.lastName ?? '');
+      return lastNameDiff;
+    });
 
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
