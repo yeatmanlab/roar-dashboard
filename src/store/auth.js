@@ -13,7 +13,6 @@ export const useAuthStore = () => {
     state: () => {
       return {
         spinner: false,
-        consentSpinner: false,
         firebaseUser: {
           adminFirebaseUser: null,
           appFirebaseUser: null,
@@ -104,9 +103,6 @@ export const useAuthStore = () => {
         } else {
           console.warn('Initialize Firekit before updating tasks dictionary.');
         }
-      },
-      async updateConsentStatus(docName, consentVersion, params = {}) {
-        return await this.roarfirekit.updateConsentStatus(docName, consentVersion, params);
       },
       async registerWithEmailAndPassword({ email, password, userData }) {
         return this.roarfirekit.createStudentWithEmailPassword(email, password, userData);

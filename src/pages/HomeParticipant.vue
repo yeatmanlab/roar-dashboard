@@ -1,10 +1,25 @@
 <template>
   <div>
-    <div v-if="!noGamesAvailable || consentSpinner">
-      <div v-if="isFetching" class="loading-container">
-        <AppSpinner style="margin-bottom: 1rem" />
-        <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
+    <div v-if="isFetching" class="loading-container py-8">
+      <AppSpinner style="margin-bottom: 1rem" />
+      <span>{{ $t('homeParticipant.loadingAssignments') }}</span>
+    </div>
+
+    <div v-else>
+      <div v-if="!hasAssignments">
+        <div class="col-full text-center py-8">
+          <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
+          <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
+          <router-link :to="{ name: 'SignOut' }">
+            <PvButton
+              :label="$t('navBar.signOut')"
+              class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
+              icon="pi pi-sign-out"
+            />
+          </router-link>
+        </div>
       </div>
+
       <div v-else>
         <h2 v-if="userAdministrations?.length == 1" class="p-float-label dropdown-container">
           {{ userAdministrations.at(0).publicName || userAdministrations.at(0).name }}
@@ -71,45 +86,32 @@
         </div>
       </div>
     </div>
-    <div v-else>
-      <div class="col-full text-center">
-        <h1>{{ $t('homeParticipant.noAssignments') }}</h1>
-        <p class="text-center">{{ $t('homeParticipant.contactAdministrator') }}</p>
-        <router-link :to="{ name: 'SignOut' }">
-          <PvButton
-            :label="$t('navBar.signOut')"
-            class="no-underline bg-primary border-none border-round p-2 text-white hover:bg-red-900"
-            icon="pi pi-sign-out"
-          />
-        </router-link>
-      </div>
-    </div>
   </div>
+
   <ConsentModal
     v-if="showConsent && !isLevante"
     :consent-text="confirmText"
     :consent-type="consentType"
-    @accepted="updateConsent"
+    :on-confirm="updateConsent"
   />
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed, toRaw } from 'vue';
+import { onMounted, ref, watch, computed } from 'vue';
 import _filter from 'lodash/filter';
 import _get from 'lodash/get';
 import _find from 'lodash/find';
 import _without from 'lodash/without';
-import _forEach from 'lodash/forEach';
 import _isEmpty from 'lodash/isEmpty';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
-import { useQueryClient } from '@tanstack/vue-query';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
 import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useSurveyReponsesQuery from '@/composables/queries/useSurveyResponsesQuery';
+import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import ConsentModal from '@/components/ConsentModal.vue';
 import GameTabs from '@/components/GameTabs.vue';
 import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
@@ -121,6 +123,9 @@ const consentType = ref('');
 const consentParams = ref({});
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
+
+const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
+
 let unsubscribe;
 const initialized = ref(false);
 const init = () => {
@@ -128,10 +133,8 @@ const init = () => {
   initialized.value = true;
 };
 
-const queryClient = useQueryClient();
-
 const authStore = useAuthStore();
-const { roarfirekit, roarUid, consentSpinner, showOptionalAssessments, userQueryKeyIndex } = storeToRefs(authStore);
+const { roarfirekit, showOptionalAssessments } = storeToRefs(authStore);
 
 unsubscribe = authStore.$subscribe(async (mutation, state) => {
   if (state.roarfirekit.restConfig) init();
@@ -187,7 +190,7 @@ const {
 });
 
 const { data: surveyResponsesData } = useSurveyReponsesQuery({
-  enabled: initialized.value && import.meta.env.MODE === 'LEVANTE',
+  enabled: initialized.value && isLevante,
 });
 
 const isLoading = computed(() => {
@@ -198,21 +201,23 @@ const isFetching = computed(() => {
   return isFetchingUserData.value || isFetchingAssignments.value || isFetchingAdmins.value || isFetchingTasks.value;
 });
 
-const noGamesAvailable = computed(() => {
+const hasAssignments = computed(() => {
   if (isFetching.value || isLoading.value) return false;
-  return assessments.value.length === 0;
+  return assessments.value.length !== 0;
 });
 
 async function checkConsent() {
-  showConsent.value = false;
   const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData?.grade;
+
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
 
   if (!legal?.consent) {
     // Always show consent form for this test student when running Cypress tests
+    // @TODO: Remove this once we update the E2E tests to handle the consent form without persisting state. This would
+    // improve the test relability as enforcing the below condition defeats parts of the test purpose.
     if (userData.value?.id === 'O75V6IcVeiTwW8TRjXb76uydlwV2') {
       consentType.value = 'consent';
       confirmText.value = 'This is a test student. Please do not accept this form.';
@@ -232,38 +237,38 @@ async function checkConsent() {
 
   consentType.value = docType;
 
-  const consentStatus = _get(userData.value, `legal.${consentType.value}`);
+  const consentStatus = userData.value?.legal?.[consentType.value];
   const consentDoc = await authStore.getLegalDoc(docType);
   consentVersion.value = consentDoc.version;
 
-  if (_get(toRaw(consentStatus), consentDoc.version)) {
-    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+  if (consentStatus?.[consentDoc.version]) {
+    const legalDocs = consentStatus?.[consentDoc.version];
+
     let found = false;
     let signedBeforeAugFirst = false;
-    let signedAfterAugFirst = false;
 
-    _forEach(legalDocs, (document) => {
+    const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
+
+    for (const document of legalDocs) {
       const signedDate = new Date(document.dateSigned);
-      const augustFirstThisYear = new Date(currentDate.getFullYear(), 7, 1); // August 1st of the current year
 
       if (document.amount === docAmount && document.expectedTime === docExpectedTime) {
         found = true;
+
         if (signedDate < augustFirstThisYear && currentDate >= augustFirstThisYear) {
           signedBeforeAugFirst = true;
-        } else if (signedDate >= augustFirstThisYear) {
-          signedAfterAugFirst = true;
-          return false; // This stops the loop in Lodash _.forEach
+          break;
         }
       }
+
       if (isNaN(new Date(document.dateSigned)) && currentDate >= augustFirstThisYear) {
         signedBeforeAugFirst = true;
+        break;
       }
-    });
+    }
 
     // If any document is signed after August 1st, do not show the consent form
-    if (signedAfterAugFirst) {
-      showConsent.value = false;
-    } else if (!found || signedBeforeAugFirst) {
+    if (!found || signedBeforeAugFirst) {
       if (docAmount !== '' || docExpectedTime !== '' || signedBeforeAugFirst) {
         confirmText.value = consentDoc.text;
         showConsent.value = true;
@@ -283,14 +288,12 @@ async function updateConsent() {
     expectedTime: selectedAdmin.value?.legal.expectedTime,
     dateSigned: new Date(),
   };
-  try {
-    await authStore.updateConsentStatus(consentType.value, consentVersion.value, consentParams.value).then(async () => {
-      userQueryKeyIndex.value += 1;
-      await queryClient.invalidateQueries(['userData', roarUid, userQueryKeyIndex]);
-    });
-  } catch (e) {
-    console.log("Couldn't update consent value", e);
-  }
+
+  await updateConsentStatus({
+    consentType,
+    consentVersion,
+    consentParams,
+  });
 }
 
 const toggleShowOptionalAssessments = async () => {
@@ -320,7 +323,7 @@ const assessments = computed(() => {
           ...assessment,
           taskData: {
             ..._find(userTasks.value ?? [], { id: assessment.taskId }),
-            variantURL: _get(assessment, 'params.variantURL'),
+            variantURL: assessment?.params?.variantURL,
           },
         };
         return combinedAssessment;
@@ -328,7 +331,7 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore.userData?.userType === 'student' && import.meta.env.MODE === 'LEVANTE') {
+    if (authStore.userData?.userType === 'student' && isLevante) {
       // This is just to mark the card as complete
       if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
         fetchedAssessments.forEach((assessment) => {
@@ -376,20 +379,20 @@ let completeGames = computed(() => {
 
 // Set up studentInfo for sidebar
 const studentInfo = computed(() => {
-  if (isLevante) {
-    return null;
-  }
+  if (isLevante) return null;
+
   return {
-    grade: _get(userData.value, 'studentData.grade'),
+    grade: userData.value?.studentData?.grade,
   };
 });
 
 watch(
-  [selectedAdmin, userAdministrations],
-  async ([updateSelectedAdmin]) => {
-    if (updateSelectedAdmin) {
+  [userData, selectedAdmin, userAdministrations],
+  async ([updatedUserData, updatedSelectedAdmin]) => {
+    if (!_isEmpty(updatedUserData) && updatedSelectedAdmin) {
       await checkConsent();
     }
+
     const selectedAdminId = selectedAdmin.value?.id;
     const allAdminIds = (userAdministrations.value ?? []).map((administration) => administration.id);
     // If there is no selected administration or if the selected administration is not in the list
