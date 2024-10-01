@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
-import { taskFetcher } from '../helpers/query/tasks.js';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
 
 export const useAuthStore = () => {
