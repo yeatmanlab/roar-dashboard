@@ -143,11 +143,15 @@ function isSignedBeforeAugustFirst(signedDate) {
 }
 
 // Only check consent if the user data is loaded
-watch(userData, async (newValue) => {
-  if (!_isEmpty(newValue)) {
-    await checkConsent();
-  }
-});
+watch(
+  [userData, userClaims],
+  async ([newUserData, newUserClaims]) => {
+    if (!_isEmpty(newUserData) && !_isEmpty(newUserClaims)) {
+      await checkConsent();
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(async () => {
   if (requireRefresh.value) {

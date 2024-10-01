@@ -128,9 +128,6 @@ export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrg
     adminOrgs: exhaustiveAdminOrgs,
   });
 
-  console.log(`Fetched ${administrations.length} administrations`);
-  console.log(administrations);
-
   const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
   const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
   const sortedAdministrations = administrations
