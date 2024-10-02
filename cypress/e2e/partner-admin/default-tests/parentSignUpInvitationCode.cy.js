@@ -1,8 +1,8 @@
 const timeout = Cypress.env('timeout');
 const orgs = [
-  // { tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') },
-  // { tabName: 'Schools', orgName: Cypress.env('testPartnerSchoolName') },
-  // { tabName: 'Classes', orgName: Cypress.env('testPartnerClassName') },
+  { tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') },
+  { tabName: 'Schools', orgName: Cypress.env('testPartnerSchoolName') },
+  { tabName: 'Classes', orgName: Cypress.env('testPartnerClassName') },
   { tabName: 'Groups', orgName: Cypress.env('testPartnerGroupName') },
 ];
 
