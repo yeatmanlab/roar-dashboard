@@ -154,11 +154,6 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
-import { storeToRefs } from 'pinia';
-import { batchGetDocs } from '@/helpers/query/utils';
-import { taskDisplayNames } from '@/helpers/reports';
-import { useAuthStore } from '@/store/auth';
-import { removeEmptyOrgs } from '@/helpers';
 import { useRouter } from 'vue-router';
 import _fromPairs from 'lodash/fromPairs';
 import _isEmpty from 'lodash/isEmpty';
@@ -166,15 +161,17 @@ import _mapValues from 'lodash/mapValues';
 import _toPairs from 'lodash/toPairs';
 import _without from 'lodash/without';
 import _zip from 'lodash/zip';
+import { batchGetDocs } from '@/helpers/query/utils';
+import { taskDisplayNames } from '@/helpers/reports';
+import { removeEmptyOrgs } from '@/helpers';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
+import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const router = useRouter();
-
-const authStore = useAuthStore();
-const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -191,6 +188,8 @@ const props = defineProps({
 const confirm = useConfirm();
 const toast = useToast();
 
+const { mutateAsync: deleteAdministration } = useDeleteAdministrationMutation();
+
 const speedDialItems = ref([
   {
     label: 'Delete',
@@ -201,18 +200,22 @@ const speedDialItems = ref([
         message: 'Are you sure you want to delete this administration?',
         icon: 'pi pi-exclamation-triangle',
         accept: async () => {
-          // @TODO: Move to mutation as we cannot rotate query key indexes anymore.
-          await roarfirekit.value.deleteAdministration(props.id).then(() => {
-            toast.add({
-              severity: 'info',
-              summary: 'Confirmed',
-              detail: `Deleted administration ${props.title}`,
-              life: 3000,
-            });
+          await deleteAdministration(props.id);
+
+          toast.add({
+            severity: TOAST_SEVERITIES.INFO,
+            summary: 'Confirmed',
+            detail: `Deleted administration ${props.title}`,
+            life: TOAST_DEFAULT_LIFE_DURATION,
           });
         },
         reject: () => {
-          toast.add({ severity: 'error', summary: 'Rejected', detail: 'Deletion aborted', life: 3000 });
+          toast.add({
+            severity: TOAST_SEVERITIES.ERROR,
+            summary: 'Rejected',
+            detail: `Failed to delete administration ${props.title}`,
+            life: TOAST_DEFAULT_LIFE_DURATION,
+          });
         },
       });
     },
