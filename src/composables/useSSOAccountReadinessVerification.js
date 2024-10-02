@@ -2,6 +2,7 @@ import { ref, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
+import { StatusCodes } from 'http-status-codes';
 import { useAuthStore } from '@/store/auth.js';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { AUTH_USER_TYPE } from '@/constants/auth';
@@ -17,10 +18,9 @@ const POLLING_INTERVAL = 600;
  * is required before being able to utilize the application, this composable is designed to poll the user document until
  * it is ready for use and then redirect the user to the home page.
  *
- * @TODO: Check what "guest" user type means?
- * @TODO: Check if we can fetch the user type from the userClaims query instead of the user document?
- * @TODO: Check why we're only throwing an error if the error code is not 'ERR_BAD_REQUEST'?
- * @TODO: Consider refactoring this function to leverage realtime updates from Firestore instead of polling.
+ * @TODO: Implement a MAX_RETRY_COUNT to prevent infinite polling, incl. a redirect to an error page.
+ * @TODO: Consider refactoring this function to leverage an alternative mechanism such as realtime updates from
+ * Firestore instead of the current polling logic.
  */
 const useSSOAccountReadinessVerification = () => {
   const retryCount = ref(0);
@@ -53,18 +53,20 @@ const useSSOAccountReadinessVerification = () => {
       const userType = userData?.value?.userType;
 
       if (!userType) {
-        console.log(`User type missing for user ${roarUid.value}. Attempt #${retryCount.value}, retrying...`);
+        console.log(`[SSO] User type missing for user ${roarUid.value}. Attempt #${retryCount.value}, retrying...`);
         retryCount.value++;
         return;
       }
 
       if (userType === AUTH_USER_TYPE.GUEST) {
-        console.log(`User ${roarUid.value} identified as ${userType} user. Attempt #${retryCount.value}, retrying...`);
+        console.log(
+          `[SSO] User ${roarUid.value} identified as ${userType} user. Attempt #${retryCount.value}, retrying...`,
+        );
         retryCount.value++;
         return;
       }
 
-      console.log(`User ${roarUid.value} successfully identified as ${userType} user. Routing to home page...`);
+      console.log(`[SSO] User ${roarUid.value} successfully identified as ${userType} user. Routing to home page...`);
 
       // Stop the polling mechanism.
       clearInterval(userDataCheckInterval);
@@ -76,9 +78,11 @@ const useSSOAccountReadinessVerification = () => {
       // Redirect to the home page.
       router.push({ path: APP_ROUTES.HOME });
     } catch (error) {
-      if (error.code !== 'ERR_BAD_REQUEST') {
-        throw error;
-      }
+      // If the error is a 401, we assume the backend is still processing the user document setup and we should retry.
+      if (error.status == StatusCodes.UNAUTHORIZED) return;
+
+      // Otherwise throw the error as it's unexpected.
+      throw error;
     }
   };
 
