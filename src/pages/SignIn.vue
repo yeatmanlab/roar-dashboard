@@ -215,10 +215,10 @@ const modalPassword = ref('');
 
 const authWithClever = () => {
   console.log('---> authWithClever');
-  if (window.Cypress || process.env.NODE_ENV === 'production') {
-    authStore.signInWithCleverRedirect();
-  } else {
+  if (process.env.NODE_ENV === 'development' && !window.Cypress) {
     authStore.signInWithCleverPopup();
+  } else {
+    authStore.signInWithCleverRedirect();
   }
   spinner.value = true;
 };
