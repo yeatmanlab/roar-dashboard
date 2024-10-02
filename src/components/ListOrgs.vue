@@ -100,7 +100,7 @@
             class="bg-primary border-none p-2 text-white hover:bg-red-900"
             @click="copyToClipboard(activationCode)"
           >
-            <i class="pi pi-copy p-2"></i>
+            <i class="pi pi-copy p-2" data-cy="copy-invitation"></i>
           </PvButton>
         </PvInputGroup>
         <div class="flex justify-content-end">
