@@ -30,11 +30,11 @@ const useSignOutMutation = () => {
       sessionStorage.removeItem('authStore');
       sessionStorage.removeItem('gameStore');
 
-      // Redirect to sign-in page.
-      await router.push({ path: APP_ROUTES.SIGN_IN });
-
       // Clear the query client to remove all cached data.
       queryClient.clear();
+
+      // Redirect to sign-in page.
+      router.push({ path: APP_ROUTES.SIGN_IN });
     },
     onError: (err) => {
       Sentry.captureException(err);
