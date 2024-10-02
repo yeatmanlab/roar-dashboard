@@ -1,4 +1,4 @@
-const data = [
+const dataTemplate = [
   {
     user: {
       username: 'CypressTestStudent22',
@@ -5132,4 +5132,4 @@ const data = [
   },
 ];
 
-export default data;
+export default dataTemplate;

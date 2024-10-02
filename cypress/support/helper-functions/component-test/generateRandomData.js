@@ -1,4 +1,6 @@
-import data from '../../../fixtures/component/roar-data-table/data.js';
+// Throwing an error when importing this, not sure why
+// import { randomizeName } from '../../utils.js';
+import dataTemplate from '../../../fixtures/component/roar-data-table/dataTemplate.js';
 import fs from 'fs';
 
 const supportLevels = ['above', 'some', 'below'];
@@ -15,17 +17,6 @@ const otherSupportLevelsMap = {
   Unreliable: { tagColor: '#d6b8c7', tag: 'Unreliable' },
 };
 
-const supportLevelColors = {
-  above: 'green',
-  Green: 'green',
-  some: '#edc037',
-  Yellow: '#edc037',
-  below: '#c93d82',
-  Pink: '#c93d82',
-  Optional: '#03befc',
-  Assessed: '#A4DDED',
-  Unreliable: '#d6b8c7',
-};
 const reliabilityFlags = [
   { accuracyTooLow: 'Accuracy Too Low' },
   { responseTimeTooFast: 'Response Time Too Fast' },
@@ -44,21 +35,9 @@ function getRandomOtherSupportLevel() {
   return otherSupportLevels[Math.floor(Math.random() * otherSupportLevels.length)];
 }
 
-function getSupportLevelColor(supportLevel) {
-  return supportLevelColors[supportLevel];
-}
-
-function getOtherSupportLevelColor(otherSupportLevel) {
-  return supportLevelColors[otherSupportLevel];
-}
-
 function getRandomReliabilityFlags() {
   const flagsArray = reliabilityFlags.filter(() => Math.random() > 0.5);
   return Object.assign({}, ...flagsArray);
-}
-
-function shouldAssignEngagementFlags() {
-  return Math.random() > 0.75;
 }
 
 function getRandomScore() {
@@ -84,7 +63,14 @@ function getRandomProgressLevel() {
   return progressLevels[Math.floor(Math.random() * progressLevels.length)];
 }
 
-for (const dataObj of data) {
+export const randomizeName = (name) => {
+  return `${name}` + ' ' + `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+};
+
+for (const dataObj of dataTemplate) {
+  dataObj.user.firstName = randomizeName('Test');
+  dataObj.user.lastName = randomizeName('User');
+
   for (const score of Object.values(dataObj.scores)) {
     const { supportLevel, tagColor, tag } = supportLevelsMap[getRandomSupportLevel()];
     const { tag: otherTag, tagColor: otherTagColor } = otherSupportLevelsMap[getRandomOtherSupportLevel()];
@@ -101,7 +87,7 @@ for (const dataObj of data) {
     }
 
     score.optional = score.tags.includes('Optional');
-    if (!score.optional) {
+    if (score.optional) {
       score.tags = score.tags.replace('Required', '');
     }
 

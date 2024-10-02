@@ -38,14 +38,14 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { gradeOptions } from '../../../../../src/helpers/reports.js';
-import data from '../data.js';
+import dataTemplate from '../dataTemplate.js';
 import schoolsInfo from '../schools';
 
 const filteredTableData = ref([]);
 const filterSchools = ref([]);
 const filterGrades = ref([]);
 
-const computeAssignmentAndRunData = ref({ assignmentTableData: data });
+const computeAssignmentAndRunData = ref({ assignmentTableData: dataTemplate });
 
 const resetFilters = () => {
   isUpdating.value = true;

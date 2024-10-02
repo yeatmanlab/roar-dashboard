@@ -2,7 +2,6 @@ import RoarDataTable from '../../../src/components/RoarDataTable.vue';
 import FilterBarSlot from '../../fixtures/component/roar-data-table/slots/FilterBarSlot.vue';
 import columns from '../../fixtures/component/roar-data-table/props/columns.js';
 import dataRandomized from '../../fixtures/component/roar-data-table/props/dataRandomized.js';
-import lazyPreSorting from '../../fixtures/component/roar-data-table/props/lazyPreSorting';
 
 const props = {
   columns: columns,
@@ -13,7 +12,6 @@ const props = {
   totalRecords: 57,
   loading: false,
   lazy: false,
-  lazyPreSorting: lazyPreSorting,
   isInsideListOrgs: false,
   groupheaders: true,
 };
@@ -23,6 +21,7 @@ const slots = {
 };
 
 const timeout = Cypress.env('timeout');
+const tableHeaderOffset = 4;
 
 function resetData() {
   props.data = dataRandomized;
@@ -39,48 +38,30 @@ function mockFilterBySchools(schools = []) {
 function mockFilterByGrade(grade) {
   props.data = props.data.filter((object) => object.user.grade === grade);
 }
-function mockFilterByProgressCategory(header, category) {
-  cy.log(`Checking ${header} for ${category}`);
-  props.data = props.data.filter((object) => object.scores[header].tags.includes(category));
-  cy.log(props.data);
+function mockFilterByCategory(task, category) {
+  props.data = props.data.filter((object) => object.scores[task].tags.includes(category));
 }
 
-function mockFilterByScoreCategory(header, category) {}
-
-function mockFIltersByScoreCategory(header, category) {}
-
-// function setFilterByGrade(grade) {
-//   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
-//   cy.wait(0.05 * timeout);
-// }
-
-function setFilterByProgressCategory(header, category) {
-  cy.contains('div.p-column-header-content', header).find('button').click();
-  cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-  cy.get('ul>li').find('.p-tag-value', { timeout: timeout }).contains(category).click();
-  cy.get('button').contains('Apply').click();
-  cy.wait(0.05 * timeout);
+function mockFilterBySupportCategory(task, supportLevel) {
+  props.data = props.data.filter((object) => object.scores[task].supportLevel === supportLevel);
 }
 
-function setFilterByScoreCategory(header, category) {
-  cy.contains('div.p-column-header-content', header).find('button').click();
-  cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-  cy.get('ul > li', { timeout: timeout }).contains(category).click();
-  cy.get('button').contains('Apply').click();
-  cy.wait(0.05 * timeout);
-}
-
-function checkTableColumn(headers, value) {
-  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+function checkTableColumn(headers, values = []) {
+  cy.get('thead th').then(($header) => {
     const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
 
     headers.forEach((header) => {
       const headerIndex = tableHeaders.indexOf(header);
 
       if (headerIndex !== -1) {
-        cy.get('[data-cy="roar-data-table"] tbody').each(($row) => {
-          cy.wrap($row).find('tr').should('contain', value);
+        cy.get('tbody tr ').each(($row) => {
+          cy.wrap($row)
+            .find('td')
+            .eq(headerIndex - tableHeaderOffset)
+            .then(($cell) => {
+              const cellText = $cell.text();
+              cy.wrap(cellText).should('be.oneOf', values);
+            });
         });
       }
     });
@@ -88,36 +69,77 @@ function checkTableColumn(headers, value) {
 }
 
 describe('<RoarDataTable />', () => {
-  before(() => {
-    cy.setAuthStore().as('authStore');
-    // Set the viewport to a desktop screen
-    cy.viewport(1920, 1080);
-    // Mount the component with the props
+  beforeEach(() => {
+    cy.log('Resetting data.');
+    resetData();
   });
   it('Mounts with default data.', () => {
     cy.mount(RoarDataTable, { props: props, slots: slots });
   });
-  // it('Mocks filtering by school.', () => {
-  //   mockFilterBySchool('Maple Test School');
-  //   cy.mount(RoarDataTable, { props: props, slots: slots });
-  //   cy.wait(0.5 * timeout)
-  // });
-  //   it('Mocks filtering by multiple schools.', () => {
-  //     resetData()
-  //   mockFilterBySchools(['Birch Test School', 'Oak Test School']);
-  //   cy.mount(RoarDataTable, { props: props, slots: slots });
-  //   cy.wait(0.5 * timeout)
-  // });
-  // it('Mocks filtering by grade.', () => {
-  //   resetData();
-  //   mockFilterByGrade('6');
-  //   cy.mount(RoarDataTable, { props: props, slots: slots });
-  //   cy.wait(0.5 * timeout);
-  // });
-  // it('Mocks filtering by progress category.', () => {
-  //   resetData();
-  //   mockFilterByProgressCategory('letter', 'Assigned');
-  //   cy.mount(RoarDataTable, { props: props, slots: slots });
-  //   cy.wait(0.5 * timeout);
-  // })
+  it('Mocks filtering by school.', () => {
+    const school = 'Maple Test School';
+    const headers = ['School'];
+
+    mockFilterBySchool(school);
+    cy.mount(RoarDataTable, { props: props, slots: slots });
+
+    cy.wait(0.1 * timeout);
+
+    checkTableColumn(headers, [school]);
+  });
+  it('Mocks filtering by multiple schools.', () => {
+    const headers = ['School'];
+    const schools = ['Birch Test School', 'Oak Test School'];
+
+    mockFilterBySchools(schools);
+
+    cy.mount(RoarDataTable, { props: props, slots: slots });
+    cy.wait(0.1 * timeout);
+
+    checkTableColumn(headers, schools);
+  });
+  it('Mocks filtering by grade.', () => {
+    const headers = ['Grade'];
+    const grade = ['6'];
+
+    mockFilterByGrade('6');
+
+    cy.mount(RoarDataTable, { props: props, slots: slots });
+    cy.wait(0.1 * timeout);
+
+    checkTableColumn(headers, grade);
+  });
+  it('Mocks filtering by support level category', () => {
+    const task = 'letter';
+    const supportLevel = 'Achieved Skill';
+    const headers = ['Username'];
+
+    mockFilterBySupportCategory(task, supportLevel);
+
+    // Get the list of users matching the mock filter
+    const users = props.data.map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props, slots: slots });
+    cy.wait(0.1 * timeout);
+
+    // Check if the users are displayed in the table
+    checkTableColumn(headers, users);
+  });
+  it('Mocks filtering by progress category.', () => {
+    const task = 'morphology';
+    const category = 'Assigned';
+    const headers = ['Username'];
+
+    mockFilterByCategory(task, category);
+
+    // Filter the data by the category, then map the usernames to an array
+    const users = props.data
+      .filter((object) => object.scores[task].tags.includes(category))
+      .map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props, slots: slots });
+    cy.wait(0.1 * timeout);
+
+    checkTableColumn([headers], users);
+  });
 });
