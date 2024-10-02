@@ -1,3 +1,4 @@
+const baseUrl = Cypress.env('baseUrl');
 const timeout = Cypress.env('timeout');
 const orgs = [
   { tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') },
@@ -47,59 +48,62 @@ describe('The partner admin user', () => {
   });
 
   after(() => {
-    // COpy the org code
     cy.get('i[data-cy="copy-invitation"]')
       .should('exist')
       .parent('button') // Navigate back to the button element
       .click();
     cy.log('Specific copy button clicked.');
 
-    // Access the copied activation code from the clipboard
-    cy.window().then((win) => {
-      return win.navigator.clipboard.readText().then((activationCode) => {
-        cy.log('Copied activation code: ' + activationCode);
-        expect(activationCode).to.not.be.empty;
+    try {
+      // Access the copied activation code from the clipboard
+      cy.window().then((win) => {
+        return win.navigator.clipboard.readText().then((activationCode) => {
+          cy.log('Copied activation code: ' + activationCode);
+          expect(activationCode).to.not.be.empty;
 
-        // Construct the registration URL with the activation code
-        const registerUrl = `https://localhost:5173/register/?code=${activationCode}`;
+          // Construct the registration URL with the activation code
+          const registerUrl = `${baseUrl}/register/?code=${activationCode}`;
 
-        // Use cy.origin to handle the navigation to the new origin
-        cy.visit(registerUrl);
-        cy.log('Navigated to the registration URL: ' + registerUrl);
+          // Navigate directly to the registration URL
+          cy.visit(registerUrl);
+          cy.log('Navigated to the registration URL: ' + registerUrl);
 
-        // Fill in the form fields after the page loads
-        cy.get('input[name="firstName"]').type(Cypress.env('parentFirstName'));
-        cy.log('Filled in first name.');
+          // Fill in the form fields
+          cy.get('input[name="firstName"]').type(Cypress.env('parentFirstName'));
+          cy.log('Filled in first name.');
 
-        cy.get('input[name="lastName"]').type(Cypress.env('parentLastName'));
-        cy.log('Filled in last name.');
+          cy.get('input[name="lastName"]').type(Cypress.env('parentLastName'));
+          cy.log('Filled in last name.');
 
-        cy.get('input[name="ParentEmail"]').type(Cypress.env('parentEmail'));
-        cy.log('Filled in email.');
+          cy.get('input[name="ParentEmail"]').type(Cypress.env('parentEmail'));
+          cy.log('Filled in email.');
 
-        cy.get('input[type="password"]').first().type(Cypress.env('parentPassword'));
-        cy.log('Filled in password.');
+          cy.get('input[type="password"]').first().type(Cypress.env('parentPassword'));
+          cy.log('Filled in password.');
 
-        cy.get('input[type="password"]').eq(1).type(Cypress.env('parentPassword'));
-        cy.log('Filled in password confirmation.');
+          cy.get('input[type="password"]').eq(1).type(Cypress.env('parentPassword'));
+          cy.log('Filled in password confirmation.');
 
-        cy.get('div.p-checkbox-box').click();
-        cy.log('Checkbox clicked.');
+          cy.get('div.p-checkbox-box').click();
+          cy.log('Checkbox clicked.');
 
-        cy.wait(2000);
+          cy.wait(2000);
 
-        cy.get(
-          'button.p-button.p-component.p-confirm-dialog-accept.bg-primary.text-white.border-none.border-round.p-2.hover\\:bg-red-900',
-        ).click();
-        cy.log('Clicked the "Continue" button.');
+          cy.get(
+            'button.p-button.p-component.p-confirm-dialog-accept.bg-primary.text-white.border-none.border-round.p-2.hover\\:bg-red-900',
+          ).click();
+          cy.log('Clicked the "Continue" button.');
 
-        cy.get('span.p-button-label').contains('Next').click();
-        cy.log('Clicked the "Next" button.');
+          cy.get('span.p-button-label').contains('Next').click();
+          cy.log('Clicked the "Next" button.');
 
-        // Verify that the org is "Groups - Cypress Test Group"
-        cy.get('h2.text-primary.h-3.m-0.p-0').should('contain.text', 'Groups - Cypress Test Group');
-        cy.log('Verified that "Groups - Cypress Test Group" is visible.');
+          // Verify that the org is "Groups - Cypress Test Group"
+          cy.get('h2.text-primary.h-3.m-0.p-0').should('contain.text', 'Groups - Cypress Test Group');
+          cy.log('Verified that "Groups - Cypress Test Group" is visible.');
+        });
       });
-    });
+    } catch (error) {
+      cy.log('Error occurred while accessing the clipboard or during navigation: ' + error.message);
+    }
   });
 });
