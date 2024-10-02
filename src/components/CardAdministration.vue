@@ -24,24 +24,29 @@
           <PvConfirmPopup />
         </div>
       </div>
+
       <div class="card-admin-details">
         <span class="mr-1"><strong>Dates</strong>:</span>
         <span class="mr-1">
           {{ processedDates.start.toLocaleDateString() }} — {{ processedDates.end.toLocaleDateString() }}
         </span>
       </div>
+
       <div class="card-admin-assessments">
         <span class="mr-1"><strong>Assessments</strong>:</span>
-        <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
-          <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
-          <span
-            v-if="showParams"
-            v-tooltip.top="'Click to view params'"
-            class="pi pi-info-circle cursor-pointer ml-1"
-            style="font-size: 1rem"
-            @click="toggleParams($event, assessmentId)"
-          />
-        </span>
+        <template v-if="!isLoadingTasksDictionary">
+          <span v-for="assessmentId in assessmentIds" :key="assessmentId" class="card-inline-list-item">
+            <span>{{ tasksDictionary[assessmentId]?.publicName ?? assessmentId }}</span>
+            <span
+              v-if="showParams"
+              v-tooltip.top="'Click to view params'"
+              class="pi pi-info-circle cursor-pointer ml-1"
+              style="font-size: 1rem"
+              @click="toggleParams($event, assessmentId)"
+            />
+          </span>
+        </template>
+
         <div v-if="showParams">
           <PvOverlayPanel v-for="assessmentId in assessmentIds" :key="assessmentId" :ref="paramPanelRefs[assessmentId]">
             <div v-if="getAssessment(assessmentId).variantId">
@@ -62,6 +67,7 @@
           </PvOverlayPanel>
         </div>
       </div>
+
       <div v-if="isAssigned">
         <PvButton
           class="mt-2 m-0 bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
@@ -72,6 +78,7 @@
           @click="toggleTable"
         />
       </div>
+
       <PvTreeTable
         v-if="showTable"
         class="mt-3"
@@ -161,12 +168,13 @@ import _without from 'lodash/without';
 import _zip from 'lodash/zip';
 import { setBarChartData, setBarChartOptions } from '@/helpers/plotting';
 import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
 
 const router = useRouter();
 
 const authStore = useAuthStore();
-const { roarfirekit, tasksDictionary } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -273,6 +281,8 @@ const toggleTable = () => {
 const isWideScreen = computed(() => {
   return window.innerWidth > 768;
 });
+
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const { data: orgs, isLoading: isLoadingDsgfOrgs } = useDsgfOrgQuery(props.id, props.assignees, {
   enabled: enableQueries,

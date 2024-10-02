@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent, onUpdated } from 'vue';
+import { computed, onBeforeMount, onMounted, ref, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useRecaptchaProvider } from 'vue-recaptcha';
 import { Head } from '@unhead/vue/components';
@@ -83,10 +83,6 @@ const navbarBlacklist = ref([
   'Crowding',
   'MEP',
 ]);
-
-onUpdated(async () => {
-  await authStore.updateTasksDictionary();
-});
 
 onBeforeMount(async () => {
   await authStore.initFirekit();

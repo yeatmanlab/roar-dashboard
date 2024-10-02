@@ -16,11 +16,9 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import embed from 'vega-embed';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 
-const authStore = useAuthStore();
-const { tasksDictionary } = storeToRefs(authStore);
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const returnGradeCount = computed(() => {
   const gradeCount = [];
@@ -127,7 +125,8 @@ const graphHeight = computed(() => {
 });
 
 const distributionBySupport = computed(() => {
-  let spec = {
+  if (isLoadingTasksDictionary.value) return {};
+  return {
     mark: 'bar',
     height: graphHeight.value,
     width: 350,
@@ -232,8 +231,6 @@ const distributionBySupport = computed(() => {
       ],
     },
   };
-
-  return spec;
 });
 
 const props = defineProps({
