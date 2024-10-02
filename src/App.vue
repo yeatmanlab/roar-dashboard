@@ -87,14 +87,20 @@ const navbarBlacklist = ref([
 onBeforeMount(async () => {
   await authStore.initFirekit();
   authStore.setUser();
+
   await authStore.initStateFromRedirect().then(async () => {
+    // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
+    // @NOTE: Whilst the rest of the application relies on the user's ROAR UID, this callback requires the user's ID
+    // in order for SSO to work and cannot currently be changed without significant refactoring.
     if (authStore.uid) {
       const userData = await fetchDocById('users', authStore.uid);
       const userClaims = await fetchDocById('userClaims', authStore.uid);
+
       authStore.userData = userData;
       authStore.userClaims = userClaims;
     }
   });
+
   isAuthStoreReady.value = true;
 });
 
