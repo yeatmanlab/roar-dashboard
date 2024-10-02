@@ -32,6 +32,7 @@ import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserClaimsQuery from '@/composables/queries/useUserClaimsQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
 import { CONSENT_TYPES } from '@/constants/consentTypes';
+import { APP_ROUTES } from '@/constants/routes';
 
 const HomeParticipant = defineAsyncComponent(() => import('@/pages/HomeParticipant.vue'));
 const HomeAdministrator = defineAsyncComponent(() => import('@/pages/HomeAdministrator.vue'));
@@ -39,19 +40,16 @@ const ConsentModal = defineAsyncComponent(() => import('@/components/ConsentModa
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
 const authStore = useAuthStore();
-const { roarfirekit, authFromClever, authFromClassLink } = storeToRefs(authStore);
+const { roarfirekit, ssoProvider } = storeToRefs(authStore);
 
 const router = useRouter();
 const i18n = useI18n();
 
 const { mutateAsync: updateConsentStatus } = useUpdateConsentMutation();
 
-if (authFromClever.value) {
-  console.log('Detected Clever authentication, routing to CleverLanding page');
-  router.push({ name: 'CleverLanding' });
-} else if (authFromClassLink.value) {
-  console.log('Detected ClassLink authentication, routing to ClassLinkLanding page');
-  router.push({ name: 'ClassLinkLanding' });
+if (ssoProvider.value) {
+  console.log('Detected SSO authentication, redirecting...');
+  router.replace({ path: APP_ROUTES.SSO });
 }
 
 const gameStore = useGameStore();

@@ -5,6 +5,7 @@ import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { initNewFirekit } from '../firebaseInit';
 import { taskFetcher } from '../helpers/query/tasks.js';
+import { AUTH_SSO_PROVIDERS } from '../constants/auth';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
@@ -23,11 +24,7 @@ export const useAuthStore = () => {
         cleverOAuthRequested: false,
         classLinkOAuthRequested: false,
         routeToProfile: false,
-        authFromClever: false,
-        authFromClassLink: false,
-        userQueryKeyIndex: 0,
-        assignmentQueryKeyIndex: 0,
-        administrationQueryKeyIndex: 0,
+        ssoProvider: null,
         tasksDictionary: {},
         showOptionalAssessments: false,
       };
@@ -63,8 +60,8 @@ export const useAuthStore = () => {
     },
     actions: {
       async completeAssessment(adminId, taskId) {
+        //@TODO: Move to mutation since we cannot rotate query keys anymore.
         await this.roarfirekit.completeAssessment(adminId, taskId);
-        this.assignmentQueryKeyIndex += 1;
       },
       setUser() {
         onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
@@ -134,31 +131,31 @@ export const useAuthStore = () => {
       },
       async signInWithGooglePopup() {
         if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('google');
-        }
-      },
-      async signInWithCleverPopup() {
-        this.authFromClever = true;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('clever');
-        }
-      },
-      async signInWithClassLinkPopup() {
-        this.authFromClasslink = true;
-        if (this.isFirekitInit) {
-          return this.roarfirekit.signInWithPopup('classlink');
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.GOOGLE);
         }
       },
       async signInWithGoogleRedirect() {
-        return this.roarfirekit.initiateRedirect('google');
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.GOOGLE);
+      },
+      async signInWithCleverPopup() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLEVER);
+        }
       },
       async signInWithCleverRedirect() {
-        this.authFromClever = true;
-        return this.roarfirekit.initiateRedirect('clever');
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLEVER;
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLEVER);
+      },
+      async signInWithClassLinkPopup() {
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
+        if (this.isFirekitInit) {
+          return this.roarfirekit.signInWithPopup(AUTH_SSO_PROVIDERS.CLASSLINK);
+        }
       },
       async signInWithClassLinkRedirect() {
-        this.authFromClassLink = true;
-        return this.roarfirekit.initiateRedirect('classlink');
+        this.ssoProvider = AUTH_SSO_PROVIDERS.CLASSLINK;
+        return this.roarfirekit.initiateRedirect(AUTH_SSO_PROVIDERS.CLASSLINK);
       },
       async initStateFromRedirect() {
         this.spinner = true;
@@ -179,12 +176,6 @@ export const useAuthStore = () => {
       },
       async forceIdTokenRefresh() {
         await this.roarfirekit.forceIdTokenRefresh();
-      },
-      refreshQueryKeys() {
-        // @TODO: Check if this manual query invalidation is necessary as this appears to cause unecessary refetching.
-        this.userQueryKeyIndex += 1;
-        this.assignmentQueryKeyIndex += 1;
-        this.administrationQueryKeyIndex += 1;
       },
       async sendMyPasswordResetEmail() {
         if (this.email) {

@@ -27,18 +27,6 @@ const routes = [
     },
   },
   {
-    path: '/clever-user',
-    name: 'CleverLanding',
-    component: () => import('../pages/CleverLanding.vue'),
-    meta: { pageTitle: 'Logging You In' },
-  },
-  {
-    path: '/classlink-user',
-    name: 'ClassLinkLanding',
-    component: () => import('../pages/ClassLinkLanding.vue'),
-    meta: { pageTitle: 'Logging You In' },
-  },
-  {
     path: '/game/swr',
     name: 'SWR',
     component: () => import('../components/tasks/TaskSWR.vue'),
@@ -247,6 +235,14 @@ const routes = [
     },
   },
   {
+    path: APP_ROUTES.SSO,
+    name: 'SSO',
+    beforeRouteLeave: [removeQueryParams, removeHash],
+    component: () => import('../pages/SSOAuthPage.vue'),
+    props: (route) => ({ code: route.query.code }), // @TODO: Isn't the code processed by the sign-in page?
+    meta: { pageTitle: 'Signing you in…' },
+  },
+  {
     path: '/auth-clever',
     name: 'AuthClever',
     beforeRouteLeave: [removeQueryParams, removeHash],
@@ -422,6 +418,7 @@ router.beforeEach(async (to, from, next) => {
 
   const allowedUnauthenticatedRoutes = [
     'SignIn',
+    'SSO', //@TODO: Remove before merging
     'Maintenance',
     'AuthClever',
     'AuthClassLink',
