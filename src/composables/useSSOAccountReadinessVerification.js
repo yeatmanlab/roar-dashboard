@@ -23,7 +23,7 @@ const POLLING_INTERVAL = 600;
  * Firestore instead of the current polling logic.
  */
 const useSSOAccountReadinessVerification = () => {
-  const retryCount = ref(0);
+  const retryCount = ref(1);
   let userDataCheckInterval = null;
 
   const router = useRouter();
@@ -46,7 +46,7 @@ const useSSOAccountReadinessVerification = () => {
   const verifyAccountReadiness = async () => {
     try {
       // Skip the first fetch after mount as data is fetched on mount in the useUserDataQuery composable.
-      if (!isFetchedAfterMount.value) {
+      if (isFetchedAfterMount.value) {
         await refetchUserData();
       }
 
