@@ -7,9 +7,6 @@ import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import { AUTH_USER_TYPE } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 
-const router = useRouter();
-const queryClient = useQueryClient();
-
 const POLLING_INTERVAL = 600;
 
 /**
@@ -25,9 +22,12 @@ const POLLING_INTERVAL = 600;
  * @TODO: Check why we're only throwing an error if the error code is not 'ERR_BAD_REQUEST'?
  * @TODO: Consider refactoring this function to leverage realtime updates from Firestore instead of polling.
  */
-export default function useSSOAccountReadinessVerification() {
+const useSSOAccountReadinessVerification = () => {
   const retryCount = ref(0);
   let userDataCheckInterval = null;
+
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
   const authStore = useAuthStore();
   const { roarUid } = storeToRefs(authStore);
@@ -108,4 +108,6 @@ export default function useSSOAccountReadinessVerification() {
     retryCount,
     startPolling,
   };
-}
+};
+
+export default useSSOAccountReadinessVerification;
