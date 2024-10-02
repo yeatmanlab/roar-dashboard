@@ -21,10 +21,10 @@ function checkOrgExists(org) {
 
   // Locate the row with the orgName and click the "Invite Users" button specifically for that org
   cy.contains('td', org.orgName, { timeout: timeout })
-    .parents('tr') // Traverse up to the row element
-    .find('button') // Find the button within that row
+    .parents('tr')
+    .find('button')
     .contains('Invite Users') // Ensure the button contains the text "Invite Users"
-    .click(); // Click the button
+    .click();
 
   cy.log(`Invite Users button clicked for ${org.orgName}.`);
 }
@@ -47,7 +47,7 @@ describe('The partner admin user', () => {
   });
 
   after(() => {
-    // Use the data-cy attribute to target the specific copy button
+    // COpy the org code
     cy.get('i[data-cy="copy-invitation"]')
       .should('exist')
       .parent('button') // Navigate back to the button element
@@ -83,24 +83,20 @@ describe('The partner admin user', () => {
         cy.get('input[type="password"]').eq(1).type(Cypress.env('parentPassword'));
         cy.log('Filled in password confirmation.');
 
-        // Click the checkbox
         cy.get('div.p-checkbox-box').click();
         cy.log('Checkbox clicked.');
 
-        // Wait for 2 seconds before continuing
         cy.wait(2000);
 
-        // Click the "Continue" button
         cy.get(
           'button.p-button.p-component.p-confirm-dialog-accept.bg-primary.text-white.border-none.border-round.p-2.hover\\:bg-red-900',
         ).click();
         cy.log('Clicked the "Continue" button.');
 
-        // Click the "Next" button
         cy.get('span.p-button-label').contains('Next').click();
         cy.log('Clicked the "Next" button.');
 
-        // Assert that the element contains "Groups - Cypress Test Group"
+        // Verify that the org is "Groups - Cypress Test Group"
         cy.get('h2.text-primary.h-3.m-0.p-0').should('contain.text', 'Groups - Cypress Test Group');
         cy.log('Verified that "Groups - Cypress Test Group" is visible.');
       });
