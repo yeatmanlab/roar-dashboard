@@ -323,6 +323,8 @@ const fetchTreeOrgs = async () => {
     return node;
   });
 
+  const districtIds = dsgfOrgs.filter((node) => node.data.orgType === 'district').map((node) => node.data.id);
+
   const dependentSchoolIds = _flattenDeep(dsgfOrgs.map((node) => node.data.schools ?? []));
   const independentSchoolIds =
     dsgfOrgs.length > 0 ? _without(props.assignees.schools, ...dependentSchoolIds) : props.assignees.schools;
@@ -344,13 +346,13 @@ const fetchTreeOrgs = async () => {
   );
 
   const classPromises = [
-    batchGetDocs(independentClassPaths, ['name', 'schoolId']),
+    batchGetDocs(independentClassPaths, ['name', 'schoolId', 'districtId']),
     batchGetDocs(independentClassStatPaths),
   ];
 
   const [classDocs, classStats] = await Promise.all(classPromises);
 
-  const independentClasses = _without(
+  let independentClasses = _without(
     _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
       const { collection = 'classes', ...nodeData } = orgDoc ?? {};
 
@@ -368,6 +370,12 @@ const fetchTreeOrgs = async () => {
     }),
     undefined,
   );
+
+  // These are classes that are directly under a district, without a school
+  // They were eroneously categorized as independent classes but now we need
+  // to remove them from the independent classes array
+  const directReportClasses = independentClasses.filter((node) => districtIds.includes(node.data.districtId));
+  independentClasses = independentClasses.filter((node) => !districtIds.includes(node.data.districtId));
 
   const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === 'district');
   treeTableOrgs.push(...independentSchools);
@@ -388,6 +396,25 @@ const fetchTreeOrgs = async () => {
       }
     } else {
       treeTableOrgs.push(school);
+    }
+  }
+
+  for (const _class of directReportClasses) {
+    const districtId = _class.data.districtId;
+    const districtIndex = treeTableOrgs.findIndex((node) => node.data.id === districtId);
+    if (districtIndex !== -1) {
+      if (treeTableOrgs[districtIndex].children === undefined) {
+        treeTableOrgs[districtIndex].children = [
+          {
+            ..._class,
+            key: `${treeTableOrgs[districtIndex].key}-${_class.key}`,
+          },
+        ];
+      } else {
+        treeTableOrgs[districtIndex].children.push(_class);
+      }
+    } else {
+      treeTableOrgs.push(_class);
     }
   }
 
