@@ -90,7 +90,7 @@
             <span>Google</span>
           </PvButton>
         </div>
-        <div v-if="signInMethods.includes('clever')">
+        <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLEVER)">
           <PvButton
             v-if="!isLevante"
             class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
@@ -101,7 +101,7 @@
             <span>Clever</span>
           </PvButton>
         </div>
-        <div v-if="signInMethods.includes('classlink')">
+        <div v-if="signInMethods.includes(AUTH_SSO_PROVIDERS.CLASSLINK)">
           <PvButton
             v-if="!isLevante"
             class="flex surface-0 p-1 mr-1 border-black-alpha-10 justify-content-center hover:border-primary hover:surface-ground"
@@ -146,6 +146,7 @@ import { useAuthStore } from '@/store/auth';
 import { isMobileBrowser } from '@/helpers';
 import { fetchDocById } from '../helpers/query/utils';
 import RoarModal from '../components/modals/RoarModal.vue';
+import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 import { APP_ROUTES } from '@/constants/routes';
 
 const incorrect = ref(false);
@@ -289,9 +290,9 @@ const openWarningModal = async () => {
 const displaySignInMethods = computed(() => {
   return signInMethods.value.map((method) => {
     if (method === 'password') return 'Password';
-    if (method === 'google') return 'Google';
-    if (method === 'clever') return 'Clever';
-    if (method === 'classlink') return 'ClassLink';
+    if (method === AUTH_SSO_PROVIDERS.GOOGLE) return 'Google';
+    if (method === AUTH_SSO_PROVIDERS.CLEVER) return 'Clever';
+    if (method === AUTH_SSO_PROVIDERS.CLASSLINK) return 'ClassLink';
   });
 });
 

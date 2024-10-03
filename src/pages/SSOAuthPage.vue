@@ -26,15 +26,15 @@ const isCleverProvider = computed(() => ssoProvider.value === AUTH_SSO_PROVIDERS
 
 onBeforeMount(() => {
   if (!ssoProvider.value) {
-    console.error('No SSO provider detected. Redirecting to homepage...');
+    console.error('[SSO] No SSO provider detected. Redirecting to homepage...');
     router.push({ path: APP_ROUTES.HOME });
     return;
   }
 });
 
 onMounted(() => {
-  console.log(`User ${roarUid.value} was redirected to SSO landing page from ${ssoProvider.value}`);
-  console.log('Polling for account readiness...');
+  console.log(`[SSO] User ${roarUid.value} was redirected to SSO landing page from ${ssoProvider.value}`);
+  console.log('[SSO] Polling for account readiness...');
 
   ssoProvider.value = null;
   startPolling();
