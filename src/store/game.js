@@ -22,6 +22,10 @@ export const useGameStore = () => {
         allSpecificPages: [],
         currentPageIndex: 0,
         specificSurveyRelationData: [],
+        // the index of the specific survey relation that is currently being displayed. IE. which class or child of a parent or teacher.
+        specificSurveyRelationIndex: 0,
+        isGeneralSurveyComplete: false,
+        isSpecificSurveyComplete: false,
       };
     },
     actions: {
@@ -62,6 +66,15 @@ export const useGameStore = () => {
       },
       setSpecificSurveyRelationData(data) {
         this.specificSurveyRelationData = data;
+      },
+      setSpecificSurveyRelationIndex(index) {
+        this.specificSurveyRelationIndex = index;
+      },
+      setIsGeneralSurveyComplete(isComplete) {
+        this.isGeneralSurveyComplete = isComplete;
+      },
+      setIsSpecificSurveyComplete(isComplete) {
+        this.isSpecificSurveyComplete = isComplete;
       },
     },
     persist: {

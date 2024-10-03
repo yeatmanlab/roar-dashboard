@@ -121,6 +121,8 @@ import { camelize, getAgeData } from '@bdelab/roar-utils';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import { isLevante } from '@/helpers';
 import _capitalize from 'lodash/capitalize';
+import { useQueryClient } from '@tanstack/vue-query';
+import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 
 const props = defineProps({
   games: { type: Array, required: true },
@@ -130,36 +132,48 @@ const props = defineProps({
 
 const authStore = useAuthStore();
 const gameStore = useGameStore();
+const queryClient = useQueryClient();
+const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
 
 const getGeneralSurveyProgress = computed(() => {
-  if (gameStore.numGeneralPages > 0) {
-    if (gameStore.currentPageIndex < gameStore.numGeneralPages) {
-      return Math.round(((gameStore.currentPageIndex) / (gameStore.numGeneralPages - 1)) * 100);
-    } else {
-      return 100;
-    }
-  }
-  return 0;
+  if (gameStore.isGeneralSurveyComplete) return 100;
+  if (!gameStore.survey) return 0;
+  return Math.round(((gameStore.survey.currentPageNo - 1) / (gameStore.numGeneralPages - 1)) * 100);
 });
 
-const getSpecificSurveyProgress = (loopIndex) => {
-  if (!gameStore.survey) return 0;
-  // haven't started the specific survey yet
-  if (gameStore.currentPageIndex <= gameStore.numGeneralPages) return 0;
+const getSpecificSurveyProgress = computed(() => (loopIndex) => {
+  const localStorageKey = `${LEVANTE_SURVEY_RESPONSES_KEY}-${props.userData.id}`;
+  const localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
+  // console.log('localStorageData: ', localStorageData);
 
-  // console.log('gameStore.numSpecificPages', gameStore.numSpecificPages);
+  if (localStorageData && gameStore.specificSurveyRelationData[loopIndex]) {
+    const specificIdFromServer = gameStore.specificSurveyRelationData[loopIndex].id;
 
-  const specificStartPage = gameStore.numGeneralPages + 1;
-  const loopStartPage = specificStartPage + (loopIndex * gameStore.numSpecificPages);
-  const loopEndPage = loopStartPage + gameStore.numSpecificPages - 1;
+    if (specificIdFromServer === localStorageData.specificId) {
 
-  if (gameStore.currentPageIndex < loopStartPage) return 0;
-  if (gameStore.currentPageIndex > loopEndPage) return 100;
+        if (localStorageData.isComplete) return 100;
 
-  const progress = ((gameStore.currentPageIndex - loopStartPage + 1) / gameStore.numSpecificPages) * 100;
-  // console.log('specific progress', progress);
-  return Math.round(progress);
-};
+        const currentPage = localStorageData.pageNo || 0;
+        const totalPages = gameStore.numSpecificPages || 1;
+
+        return Math.round((currentPage / totalPages) * 100);
+    }
+  }
+
+  // If data not found in localStorage, use surveyData from server
+  if (!surveyData || !Array.isArray(surveyData)) return 0;
+
+  const currentSurvey = surveyData.find(doc => doc.administrationId === selectedAdmin.value.id);
+  if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
+  
+  const specificSurvey = currentSurvey.specific[loopIndex];
+  if (specificSurvey.isComplete) return 100;
+
+  const currentPage = currentSurvey.pageNo || 0;
+  const totalPages = gameStore.numSpecificPages || 1;
+
+  return Math.round((currentPage / totalPages) * 100);
+});
 
 const { t, locale } = useI18n();
 
