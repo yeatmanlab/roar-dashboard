@@ -557,8 +557,12 @@ const onExpand = async (node) => {
     });
 
     // Sort the classes by existence of stats then alphabetically
-    console.log('newNodes', newNodes);
-    (newNodes ?? []).forEach((districtNode) => {
+    // TODO: This fails currently as it tries to set a read only reactive handler
+    // Specifically, setting the `children` key fails because the
+    // schoolNode target is read-only.
+    // Also, I'm pretty sure this is useless now because all classes will have stats
+    // due to preallocation of accounts.
+    for (const districtNode of newNodes ?? []) {
       for (const schoolNode of districtNode?.children ?? []) {
         if (schoolNode.children) {
           schoolNode.children = schoolNode.children.toSorted((a, b) => {
@@ -568,7 +572,7 @@ const onExpand = async (node) => {
           });
         }
       }
-    });
+    }
 
     treeTableOrgs.value = newNodes;
     expanding.value = false;
