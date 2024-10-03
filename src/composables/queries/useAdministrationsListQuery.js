@@ -1,4 +1,4 @@
-import { computed, ref, toValue } from 'vue';
+import { computed, toValue } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import _isEmpty from 'lodash/isEmpty';
 import { computeQueryOverrides } from '@/helpers/computeQueryOverrides';
@@ -23,7 +23,6 @@ const useAdministrationsListQuery = (orderBy, testAdministrationsOnly = false, q
 
   // Get admin status and administation orgs.
   const { isSuperAdmin } = useUserType(userClaims);
-  const administrationOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
   const exhaustiveAdministrationOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 
   // Ensure all necessary data is loaded before enabling the query.
@@ -31,29 +30,17 @@ const useAdministrationsListQuery = (orderBy, testAdministrationsOnly = false, q
   const queryConditions = [() => claimsLoaded.value];
   const { isQueryEnabled, options } = computeQueryOverrides(queryConditions, queryOptions);
 
-  // Set pagination data to fetch all administrations since pagination is not yet supported.
-  const currentPage = ref(0);
-  const itemsPerPage = ref(10000);
-
   // Build query key, based on whether or not we only fetch test administrations.
   const queryKey = computed(() =>
     toValue(testAdministrationsOnly)
-      ? [ADMINISTRATIONS_LIST_QUERY_KEY, 'test-data', currentPage, itemsPerPage, orderBy]
-      : [ADMINISTRATIONS_LIST_QUERY_KEY, currentPage, itemsPerPage, orderBy],
+      ? [ADMINISTRATIONS_LIST_QUERY_KEY, 'test-data', orderBy]
+      : [ADMINISTRATIONS_LIST_QUERY_KEY, orderBy],
   );
 
   return useQuery({
     queryKey,
     queryFn: () =>
-      administrationPageFetcher(
-        orderBy,
-        itemsPerPage,
-        currentPage,
-        isSuperAdmin,
-        administrationOrgs,
-        exhaustiveAdministrationOrgs,
-        testAdministrationsOnly,
-      ),
+      administrationPageFetcher(isSuperAdmin, exhaustiveAdministrationOrgs, testAdministrationsOnly, orderBy),
     enabled: isQueryEnabled,
     ...options,
   });

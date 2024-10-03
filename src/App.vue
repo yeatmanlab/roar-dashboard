@@ -89,10 +89,12 @@ onBeforeMount(async () => {
   authStore.setUser();
   await authStore.initStateFromRedirect().then(async () => {
     if (authStore.uid) {
-      const userData = await fetchDocById('users', authStore.uid);
       const userClaims = await fetchDocById('userClaims', authStore.uid);
-      authStore.userData = userData;
       authStore.userClaims = userClaims;
+    }
+    if (authStore.roarUid) {
+      const userData = await fetchDocById('users', authStore.roarUid);
+      authStore.userData = userData;
     }
   });
   isAuthStoreReady.value = true;

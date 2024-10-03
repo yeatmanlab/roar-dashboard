@@ -243,9 +243,9 @@ export const fetchDocsById = async (documents, db = FIRESTORE_DATABASES.ADMIN) =
 
 export const batchGetDocs = async (docPaths, select = [], db = FIRESTORE_DATABASES.ADMIN) => {
   if (_isEmpty(docPaths)) {
-    console.warn('BatchGetDocs: No document paths provided!');
     return [];
   }
+
   const axiosInstance = getAxiosInstance(db);
   const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
   const documents = docPaths.map((docPath) => `${baseURL}/${docPath}`);

@@ -21,8 +21,8 @@
       </div>
 
       <div v-else>
-        <h2 v-if="userAdministrations?.length == 1" class="p-float-label dropdown-container">
-          {{ userAdministrations.at(0).publicName || userAdministrations.at(0).name }}
+        <h2 v-if="userAssignments?.length == 1" class="p-float-label dropdown-container">
+          {{ userAssignments.at(0).publicName || userAssignments.at(0).name }}
         </h2>
         <div class="flex flex-row-reverse align-items-end gap-2 justify-content-between">
           <div
@@ -39,13 +39,13 @@
             }}</label>
           </div>
           <div
-            v-if="userAdministrations?.length > 0"
+            v-if="userAssignments?.length > 0"
             class="flex flex-row justify-center align-items-center p-float-label dropdown-container gap-4 w-full"
           >
             <div class="assignment-select-container flex flex-row justify-content-between justify-content-start">
               <div class="flex flex-column align-content-start justify-content-start w-3">
                 <PvDropdown
-                  v-if="userAdministrations.every((administration) => administration.publicName)"
+                  v-if="userAssignments.every((administration) => administration.publicName)"
                   v-model="selectedAdmin"
                   :options="sortedUserAdministrations ?? []"
                   option-label="publicName"
@@ -108,7 +108,6 @@ import { useGameStore } from '@/store/game';
 import { storeToRefs } from 'pinia';
 import useUserDataQuery from '@/composables/queries/useUserDataQuery';
 import useUserAssignmentsQuery from '@/composables/queries/useUserAssignmentsQuery';
-import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
 import useTasksQuery from '@/composables/queries/useTasksQuery';
 import useSurveyReponsesQuery from '@/composables/queries/useSurveyResponsesQuery';
 import useUpdateConsentMutation from '@/composables/mutations/useUpdateConsentMutation';
@@ -165,19 +164,8 @@ const {
   enabled: initialized,
 });
 
-const administrationIds = computed(() => (userAssignments.value ?? []).map((assignment) => assignment.id));
-const administrationQueryEnabled = computed(() => !isLoadingAssignments.value && !_isEmpty(administrationIds.value));
-
-const {
-  isLoading: isLoadingAdmins,
-  isFetching: isFetchingAdmins,
-  data: userAdministrations,
-} = useAdministrationsQuery(administrationIds, {
-  enabled: administrationQueryEnabled,
-});
-
 const sortedUserAdministrations = computed(() => {
-  return [...(userAdministrations.value ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  return [...(userAssignments.value ?? [])].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 });
 
 const taskIds = computed(() => (selectedAdmin.value?.assessments ?? []).map((assessment) => assessment.taskId));
@@ -196,11 +184,11 @@ const { data: surveyResponsesData } = useSurveyReponsesQuery({
 });
 
 const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
+  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingTasks.value;
 });
 
 const isFetching = computed(() => {
-  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingAdmins.value || isFetchingTasks.value;
+  return isFetchingUserData.value || isFetchingAssignments.value || isFetchingTasks.value;
 });
 
 const hasAssignments = computed(() => {
@@ -211,7 +199,6 @@ const hasAssignments = computed(() => {
 async function checkConsent() {
   const dob = new Date(userData.value?.studentData?.dob);
   const grade = userData.value?.studentData?.grade;
-
   const currentDate = new Date();
   const age = currentDate.getFullYear() - dob.getFullYear();
   const legal = selectedAdmin.value?.legal;
@@ -361,7 +348,7 @@ const optionalAssessments = computed(() => {
 const isSequential = computed(() => {
   return (
     _get(
-      _find(userAdministrations.value, (administration) => {
+      _find(userAssignments.value, (administration) => {
         return administration.id === selectedAdmin.value.id;
       }),
       'sequential',
@@ -389,19 +376,25 @@ const studentInfo = computed(() => {
 });
 
 watch(
-  [userData, selectedAdmin, userAdministrations],
+  [userData, selectedAdmin, userAssignments],
   async ([updatedUserData, updatedSelectedAdmin]) => {
     if (!_isEmpty(updatedUserData) && updatedSelectedAdmin) {
       await checkConsent();
     }
 
     const selectedAdminId = selectedAdmin.value?.id;
-    const allAdminIds = (userAdministrations.value ?? []).map((administration) => administration.id);
+    const allAdminIds = (userAssignments.value ?? []).map((administration) => administration.id);
     // If there is no selected administration or if the selected administration is not in the list
     // of all administrations choose the first one after sorting alphabetically by publicName
     if (allAdminIds.length > 0 && (!selectedAdminId || !allAdminIds.includes(selectedAdminId))) {
       // Choose the first sorted administration
       selectedAdmin.value = sortedUserAdministrations.value[0];
+    } else {
+      // Although this seems redundant, we ensure that the selected admin is a fresh instance of the admin.
+      // This is relevant in the case that the game store does not flush properly.
+      selectedAdmin.value = sortedUserAdministrations.value.find(
+        (administration) => administration.id === selectedAdminId,
+      );
     }
   },
   { immediate: true },
