@@ -44,7 +44,7 @@
     "@bdelab/roav-mep": "^1.1.21",
     "@bdelab/roav-ran": "^1.0.30",
     "@levante-framework/core-tasks": "^1.0.0-beta.18",
-    "@sentry/browser": "^8.0.0",
+    "@sentry/browser": "^8.33.0",
     "@sentry/integrations": "^7.114.0",
     "@sentry/vite-plugin": "^2.16.1",
     "@sentry/vue": "^7.114.0",
