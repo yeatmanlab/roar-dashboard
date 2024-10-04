@@ -3,7 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
-import { initNewFirekit } from '../firebaseInit';
+import { initializeFirekit } from '../firekit';
 import { AUTH_SSO_PROVIDERS } from '../constants/auth';
 
 export const useAuthStore = () => {
@@ -59,17 +59,13 @@ export const useAuthStore = () => {
       isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
     },
     actions: {
-      async completeAssessment(adminId, taskId) {
-        //@TODO: Move to mutation since we cannot rotate query keys anymore.
-        await this.roarfirekit.completeAssessment(adminId, taskId);
-      },
       async initFirekit() {
         try {
-          this.roarfirekit = await initNewFirekit();
+          this.roarfirekit = await initializeFirekit();
           this.setAuthStateListeners();
         } catch (error) {
-          // @TODO: Improve error handling as this is a critical error.
-          console.error('Error initializing Firekit:', error);
+          // @TODO: Improve error handling, incl. redirect to error page.
+          console.error('Failed to initialize Firekit:', error);
         }
       },
       setAuthStateListeners() {
@@ -88,6 +84,10 @@ export const useAuthStore = () => {
             this.firebaseUser.appFirebaseUser = null;
           }
         });
+      },
+      async completeAssessment(adminId, taskId) {
+        //@TODO: Move to mutation since we cannot rotate query keys anymore.
+        await this.roarfirekit.completeAssessment(adminId, taskId);
       },
       async getLegalDoc(docName) {
         return await this.roarfirekit.getLegalDoc(docName);
