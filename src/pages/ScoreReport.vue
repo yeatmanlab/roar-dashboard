@@ -251,7 +251,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted } from 'vue';
+import FilterBar from '@/components/slots/FilterBar.vue';
 import { storeToRefs } from 'pinia';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -270,6 +271,7 @@ import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { getTitle } from '../helpers/query/administrations';
+import { useFilteredTableData } from '../composables/useFilteredTableData.js';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -286,7 +288,6 @@ import {
   tasksToDisplayCorrectIncorrectDifference,
   includedValidityFlags,
 } from '@/helpers/reports.js';
-import FilterBar from '@/components/slots/FilterBar.vue';
 
 let TaskReport, DistributionChartOverview, NextSteps;
 
@@ -403,8 +404,7 @@ if (props.orgType === 'district') {
     field: 'user.schoolName',
   });
 }
-// const filterSchools = ref([]);
-// const filterGrades = ref([]);
+
 const pageLimit = ref(10);
 
 // User Claims
@@ -820,38 +820,8 @@ const computeAssignmentAndRunData = computed(() => {
   }
 });
 
-const filteredTableData = ref(computeAssignmentAndRunData.value.assignmentTableData);
-
-watch(computeAssignmentAndRunData, (newValue) => {
-  // Update filteredTableData when computedProgressData changes
-  filteredTableData.value = newValue.assignmentTableData;
-});
-
-// Flag to track whether the watcher is already processing an update
-const isUpdating = ref(false);
-
-// Expects an unwrapped array ref for each filter
-const updateFilters = (filterSchools, filterGrades) => {
-  if (isUpdating.value) return;
-
-  isUpdating.value = true;
-  let filteredData = computeAssignmentAndRunData.value.assignmentTableData;
-
-  if (filterSchools.length > 0) {
-    filteredData = filteredData.filter((item) => filterSchools.includes(item.user.schoolName));
-  }
-  if (filterGrades.length > 0) {
-    filteredData = filteredData.filter((item) => filterGrades.includes(item.user.grade));
-  }
-
-  // Update the filteredTableData with the filtered data, or the original data if no filters are applied
-  filteredTableData.value =
-    filterSchools.length === 0 && filterGrades.length === 0
-      ? computeAssignmentAndRunData.value.assignmentTableData
-      : filteredData;
-
-  isUpdating.value = false;
-};
+// Composable to filter table data using FilterBar.vue component which is passed in as a slot to RoarDataTable
+const { filteredTableData, updateFilters } = useFilteredTableData(computeAssignmentAndRunData);
 
 const viewMode = ref('color');
 
