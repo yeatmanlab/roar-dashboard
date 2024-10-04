@@ -3,13 +3,12 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'vue-router';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
-import { initNewFirekit } from '../firebaseInit';
+import { initializeFirekit } from '../firekit';
 import { useGameStore } from '@/store/game';
 import { taskFetcher } from '../helpers/query/tasks.js';
 
 export const useAuthStore = () => {
   return defineStore('authStore', {
-    // id is required so that Pinia can connect the store to the devtools
     id: 'authStore',
     state: () => {
       return {
@@ -65,6 +64,14 @@ export const useAuthStore = () => {
       isUserSuperAdmin: (state) => Boolean(state.userClaims?.claims?.super_admin),
     },
     actions: {
+      async initFirekit() {
+        try {
+          this.roarfirekit = await initializeFirekit();
+        } catch (error) {
+          // @TODO: Improve error handling, incl. redirect to error page.
+          console.error('Failed to initialize Firekit:', error);
+        }
+      },
       async completeAssessment(adminId, taskId) {
         await this.roarfirekit.completeAssessment(adminId, taskId);
         this.assignmentQueryKeyIndex += 1;
@@ -85,11 +92,6 @@ export const useAuthStore = () => {
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
-        });
-      },
-      async initFirekit() {
-        this.roarfirekit = await initNewFirekit().then((firekit) => {
-          return firekit;
         });
       },
       async getLegalDoc(docName) {
