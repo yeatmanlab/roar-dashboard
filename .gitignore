@@ -30,6 +30,10 @@ dev-dist
 *.sln
 *.sw?
 
+# Firebase
+.firebaserc
+.firebase/
+
 # Env
 .env
 .env.local
@@ -38,10 +42,9 @@ dev-dist
 # Test coverage
 coverage
 
-# Other
-.vite/*
-.firebase/
-cypress/downloads
-
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Other
+.vite/*
+cypress/downloads
