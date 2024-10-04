@@ -22,6 +22,7 @@ const tableHeaderOffset = 4;
 let mockFilteredData;
 
 function resetData() {
+  cy.log('Resetting data.');
   props.data = dataRandomized;
   mockFilteredData = JSON.parse(JSON.stringify(props.data));
 }
@@ -77,9 +78,7 @@ function checkTableColumn(headers, values = []) {
 
 describe('<RoarDataTable />', () => {
   beforeEach(() => {
-    cy.log('Resetting data.');
     resetData();
-    cy.viewport(1920, 1080);
   });
   it('Mounts with default data.', () => {
     // Mount the component with the default data
@@ -127,7 +126,7 @@ describe('<RoarDataTable />', () => {
     // Check that the table column matches the mock data
     checkTableColumn(headers, grade);
   });
-  it('Mocks filtering by support level category', () => {
+  it('Mocks filtering by support level Green.', () => {
     const task = 'letter';
     const tag = 'Achieved Skill';
     const assessment = 'ROAR - Letter';
@@ -148,11 +147,163 @@ describe('<RoarDataTable />', () => {
     // Check that the filtered prop data matches the mock data
     checkTableColumn(column, users);
   });
-  it('Mocks filtering by assignment progress category.', () => {
+  it('Mocks filtering by support level Yellow.', () => {
+    const task = 'vocab';
+    const tag = 'Developing Skill';
+    const assessment = 'ROAR - Picture Vocab';
+    const category = 'Yellow';
+    const column = ['Username'];
+
+    // Filter the mock data by the support level category
+    mockFilterBySupportLevelCategory(task, tag);
+
+    // Get the list of users matching the mock filter
+    const users = mockFilteredData.map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props });
+
+    // Filter the prop data by the category using the UI
+    setFilterByCategory(assessment, category);
+
+    // Check that the filtered prop data matches the mock data
+    checkTableColumn(column, users);
+  });
+  it('Mocks filtering by support level Pink.', () => {
+    const task = 'trog';
+    const tag = 'Needs Extra Support';
+    const assessment = 'ROAR - Syntax';
+    const category = 'Pink';
+    const column = ['Username'];
+
+    // Filter the mock data by the support level category
+    mockFilterBySupportLevelCategory(task, tag);
+
+    // Get the list of users matching the mock filter
+    const users = mockFilteredData.map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props });
+
+    // Filter the prop data by the category using the UI
+    setFilterByCategory(assessment, category);
+
+    // Check that the filtered prop data matches the mock data
+    checkTableColumn(column, users);
+  });
+  it('Mocks filtering by assignment Assigned.', () => {
     const task = 'morphology';
     const tag = 'Assigned';
     const assessment = 'ROAR - Morphology';
     const category = 'assigned';
+    const column = ['Username'];
+
+    mockFilterByCategory(task, category);
+
+    // Filter the data by the category, then map the usernames to an array
+    const users = props.data
+      .filter((object) => object.scores[task].tags.includes(tag))
+      .map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props });
+
+    // Filter the prop data by the category using the UI
+    setFilterByCategory(assessment, category);
+
+    // Check that the filtered prop data matches the mock data
+    checkTableColumn(column, users);
+  });
+  it('Mocks filtering by assignment Started.', () => {
+    const task = 'vocab';
+    const tag = 'Started';
+    const assessment = 'ROAR - Picture Vocab';
+    const category = 'started';
+    const column = ['Username'];
+
+    mockFilterByCategory(task, category);
+
+    // Filter the data by the category, then map the usernames to an array
+    const users = props.data
+      .filter((object) => object.scores[task].tags.includes(tag))
+      .map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props });
+
+    // Filter the prop data by the category using the UI
+    setFilterByCategory(assessment, category);
+
+    // Check that the filtered prop data matches the mock data
+    checkTableColumn(column, users);
+  });
+  it('Mocks filtering by assignment Complete.', () => {
+    const task = 'letter';
+    const tag = 'Complete';
+    const assessment = 'ROAR - Letter';
+    const category = 'complete';
+    const column = ['Username'];
+
+    mockFilterByCategory(task, category);
+
+    // Filter the data by the category, then map the usernames to an array
+    const users = props.data
+      .filter((object) => object.scores[task].tags.includes(tag))
+      .map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props });
+
+    // Filter the prop data by the category using the UI
+    setFilterByCategory(assessment, category);
+
+    // Check that the filtered prop data matches the mock data
+    checkTableColumn(column, users);
+  });
+  it('Mocks filtering by assignment Assessed.', () => {
+    const task = 'swr';
+    const tag = 'Assessed';
+    const assessment = 'ROAR - Word';
+    const category = 'Assessed';
+    const column = ['Username'];
+
+    mockFilterByCategory(task, category);
+
+    // Filter the data by the category, then map the usernames to an array
+    const users = props.data
+      .filter((object) => object.scores[task].tags.includes(tag))
+      .map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props });
+
+    // Filter the prop data by the category using the UI
+    setFilterByCategory(assessment, category);
+
+    // Check that the filtered prop data matches the mock data
+    checkTableColumn(column, users);
+  });
+  it('Mocks filtering by assignment Unreliable.', () => {
+    const task = 'sre';
+    const tag = 'Unreliable';
+    const assessment = 'ROAR - Sentence';
+    const category = 'Unreliable';
+    const column = ['Username'];
+
+    mockFilterByCategory(task, category);
+
+    // Filter the data by the category, then map the usernames to an array
+    const users = props.data
+      .filter((object) => object.scores[task].tags.includes(tag))
+      .map((object) => object.user.username);
+
+    cy.mount(RoarDataTable, { props: props });
+
+    // Filter the prop data by the category using the UI
+    setFilterByCategory(assessment, category);
+
+    // Check that the filtered prop data matches the mock data
+    checkTableColumn(column, users);
+  });
+  it('Mocks filtering by assignment Optional.', () => {
+    const task = 'pa';
+    const tag = 'Optional';
+    const assessment = 'ROAR - Phoneme';
+    const category = 'Optional';
     const column = ['Username'];
 
     mockFilterByCategory(task, category);

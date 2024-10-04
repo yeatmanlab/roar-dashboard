@@ -1,5 +1,8 @@
-// Throwing an error when importing this, not sure why
-// import { randomizeName } from '../../utils.js';
+// ********************
+// This function will randomize the data in the dataTemplate.js file and write it to a new file called dataRandomized.js.
+// Run this function to generate test data which can be used with various Cypress component tests.
+// ********************
+
 import dataTemplate from '../../../fixtures/component/roar-data-table/dataTemplate.js';
 import fs from 'fs';
 
@@ -24,15 +27,18 @@ const reliabilityFlags = [
 ];
 
 const progressLevels = ['Assigned', 'Started', 'Completed'];
+const schoolNames = ['Birch Test School', 'Cypress Test School', 'Maple Test School', 'Oak Test School'];
 
-let generateRandomData = [];
+function getRandomElement(array) {
+  return array[Math.floor(Math.random() * array.length)];
+}
 
 function getRandomSupportLevel() {
-  return supportLevels[Math.floor(Math.random() * supportLevels.length)];
+  return getRandomElement(supportLevels);
 }
 
 function getRandomOtherSupportLevel() {
-  return otherSupportLevels[Math.floor(Math.random() * otherSupportLevels.length)];
+  return getRandomElement(otherSupportLevels);
 }
 
 function getRandomReliabilityFlags() {
@@ -49,76 +55,76 @@ function getRandomScore() {
   const percentCorrect = Math.floor((numCorrect / numAttempted) * 100);
   const difference = numAttempted - numCorrect;
   return {
-    rawScore: rawScore,
-    standardScore: standardScore,
-    percentile: percentile,
-    numAttempted: numAttempted,
-    numCorrect: numCorrect,
-    percentCorrect: percentCorrect,
-    difference: difference,
+    rawScore,
+    standardScore,
+    percentile,
+    numAttempted,
+    numCorrect,
+    percentCorrect,
+    difference,
   };
 }
 
 function getRandomProgressLevel() {
-  return progressLevels[Math.floor(Math.random() * progressLevels.length)];
+  return getRandomElement(progressLevels);
 }
 
-export const randomizeName = (name) => {
-  return `${name}` + ' ' + `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
-};
-
-for (const dataObj of dataTemplate) {
-  dataObj.user.firstName = randomizeName('Test');
-  dataObj.user.lastName = randomizeName('User');
-
-  for (const score of Object.values(dataObj.scores)) {
-    const { supportLevel, tagColor, tag } = supportLevelsMap[getRandomSupportLevel()];
-    const { tag: otherTag, tagColor: otherTagColor } = otherSupportLevelsMap[getRandomOtherSupportLevel()];
-
-    score.supportLevel = supportLevel;
-    score.tags += `Required Reliable ${getRandomProgressLevel()} ${tag}`;
-
-    // Randomly assign other support levels, adjust tags and colors accordingly
-    if (Math.random() > 0.5) {
-      score.tags += ` ${otherTag}`;
-      score.tagColor = otherTagColor;
-    } else {
-      score.tagColor = tagColor;
-    }
-
-    score.optional = score.tags.includes('Optional');
-    if (score.optional) {
-      score.tags = score.tags.replace('Required', '');
-    }
-
-    if (score.tags.includes('Unreliable')) {
-      score.engagementFlags = getRandomReliabilityFlags();
-    } else {
-      score.reliable = true;
-      score.tags = score.tags.replace('Reliable', '');
-    }
-
-    // Strip any leading or trailing whitespace
-    score.tags.trim();
-
-    const randomScore = getRandomScore();
-    score['rawScore'] = randomScore.rawScore;
-    score['standardScore'] = randomScore.standardScore;
-    score['percentile'] = randomScore.percentile;
-    score['numAttempted'] = randomScore.numAttempted;
-    score['numCorrect'] = randomScore.numCorrect;
-    score['correctIncorrectDifference'] = randomScore.difference;
-    score['percentCorrect'] = randomScore.percentCorrect;
-  }
-  generateRandomData.push(dataObj);
+function randomizeName(name) {
+  return `${name} ${Math.floor(1000000000 + Math.random() * 9000000000)}`;
 }
 
-const fileTemplate = `const dataRandomized = ${JSON.stringify(generateRandomData)}; export default dataRandomized;`;
+function randomizeData(dataTemplate) {
+  return dataTemplate.map((dataObj) => {
+    dataObj.user.firstName = randomizeName('Test');
+    dataObj.user.lastName = randomizeName('User');
+    dataObj.user.schoolName = getRandomElement(schoolNames);
 
-fs.writeFile('./dataRandomized.js', fileTemplate, (err) => {
-  if (err) {
-    console.error(err);
-    return;
-  }
-  console.log('File has been created');
-});
+    for (const score of Object.values(dataObj.scores)) {
+      const { supportLevel, tagColor, tag } = supportLevelsMap[getRandomSupportLevel()];
+      const { tag: otherTag, tagColor: otherTagColor } = otherSupportLevelsMap[getRandomOtherSupportLevel()];
+
+      score.supportLevel = supportLevel;
+      score.tags += `Required Reliable ${getRandomProgressLevel()} ${tag}`;
+
+      if (Math.random() > 0.5) {
+        score.tags += ` ${otherTag}`;
+        score.tagColor = otherTagColor;
+      } else {
+        score.tagColor = tagColor;
+      }
+
+      score.optional = score.tags.includes('Optional');
+      if (score.optional) {
+        score.tags = score.tags.replace('Required', '');
+      }
+
+      if (score.tags.includes('Unreliable')) {
+        score.engagementFlags = getRandomReliabilityFlags();
+      } else {
+        score.reliable = true;
+        score.tags = score.tags.replace('Reliable', '');
+      }
+
+      score.tags = score.tags.trim();
+
+      const randomScore = getRandomScore();
+      Object.assign(score, randomScore);
+    }
+    return dataObj;
+  });
+}
+
+function writeRandomizedDataToFile(data) {
+  const fileTemplate = `const dataRandomized = ${JSON.stringify(data)}; export default dataRandomized;`;
+
+  fs.writeFile('./dataRandomized.js', fileTemplate, (err) => {
+    if (err) {
+      console.error('Error writing file:', err);
+      return;
+    }
+    console.log('File has been created');
+  });
+}
+
+const generateRandomData = randomizeData(dataTemplate);
+writeRandomizedDataToFile(generateRandomData);
