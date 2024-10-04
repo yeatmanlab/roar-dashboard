@@ -1,5 +1,4 @@
 import RoarDataTable from '../../../src/components/RoarDataTable.vue';
-import FilterBarSlot from '../../../src/components/slots/FilterBar.vue';
 import columns from '../../fixtures/component/roar-data-table/props/columns.js';
 import dataRandomized from '../../fixtures/component/roar-data-table/props/dataRandomized.js';
 
@@ -16,10 +15,6 @@ const props = {
   groupheaders: true,
 };
 
-const slots = {
-  filterbar: FilterBarSlot,
-};
-
 const timeout = Cypress.env('timeout');
 const tableHeaderOffset = 4;
 
@@ -27,8 +22,8 @@ const tableHeaderOffset = 4;
 let mockFilteredData;
 
 function resetData() {
-  mockFilteredData = JSON.parse(JSON.stringify(props.data));
   props.data = dataRandomized;
+  mockFilteredData = JSON.parse(JSON.stringify(props.data));
 }
 
 function mockFilterBySchool(school) {
@@ -50,18 +45,12 @@ function mockFilterByCategory(task, category) {
 function mockFilterBySupportLevelCategory(task, supportLevel) {
   mockFilteredData = mockFilteredData.filter((object) => object.scores[task].supportLevel === supportLevel);
 }
-function setFilterBySchool(school) {
-  cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
-  cy.get('ul > li', { timeout: timeout }).contains(school).click();
-  cy.wait(0.05 * timeout);
-}
 
 function setFilterByCategory(header, category) {
   cy.contains('div.p-column-header-content', header).find('button').click();
   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
   cy.get('ul > li', { timeout: timeout }).contains(category).click();
   cy.get('button').contains('Apply').click();
-  cy.wait(0.05 * timeout);
 }
 
 function checkTableColumn(headers, values = []) {
@@ -93,42 +82,51 @@ describe('<RoarDataTable />', () => {
     cy.viewport(1920, 1080);
   });
   it('Mounts with default data.', () => {
-    cy.mount(RoarDataTable, { props: props, slots: slots });
+    // Mount the component with the default data
+    cy.mount(RoarDataTable, { props: props });
   });
-  // it('Mocks filtering by school.', () => {
-  //   const school = 'Maple Test School';
-  //   const headers = ['School'];
-  //
-  //   mockFilterBySchool(school);
-  //   cy.log('Filtered data:', mockFilteredData);
-  //   cy.mount(RoarDataTable, { props: props, slots: slots });
-  //   setFilterBySchool(school);
-  //   cy.wait(0.1 * timeout);
-  //
-  //   // checkTableColumn(headers, [school]);
-  // });
-  // it('Mocks filtering by multiple schools.', () => {
-  //   const headers = ['School'];
-  //   const schools = ['Birch Test School', 'Oak Test School'];
-  //
-  //   mockFilterBySchools(schools);
-  //
-  //   cy.mount(RoarDataTable, { props: props, slots: slots });
-  //   cy.wait(0.1 * timeout);
-  //
-  //   checkTableColumn(headers, schools);
-  // });
-  // it('Mocks filtering by grade.', () => {
-  //   const headers = ['Grade'];
-  //   const grade = ['6'];
-  //
-  //   mockFilterByGrade('6');
-  //
-  //   cy.mount(RoarDataTable, { props: props, slots: slots });
-  //   cy.wait(0.1 * timeout);
-  //
-  //   checkTableColumn(headers, grade);
-  // });
+  it('Mocks filtering by school.', () => {
+    const school = 'Maple Test School';
+    const headers = ['School'];
+
+    // Filter the mock data by the school
+    mockFilterBySchool(school);
+    props.data = mockFilteredData;
+
+    // Mount the component with the filtered data
+    cy.mount(RoarDataTable, { props: props });
+
+    // Check that the table column matches the mock data
+    checkTableColumn(headers, [school]);
+  });
+  it('Mocks filtering by multiple schools.', () => {
+    const headers = ['School'];
+    const schools = ['Birch Test School', 'Oak Test School'];
+
+    // Filter the mock data by the schools
+    mockFilterBySchools(schools);
+    props.data = mockFilteredData;
+
+    // Mount the component with the filtered data
+    cy.mount(RoarDataTable, { props: props });
+
+    // Check that the table column matches the mock data
+    checkTableColumn(headers, schools);
+  });
+  it('Mocks filtering by grade.', () => {
+    const headers = ['Grade'];
+    const grade = ['6'];
+
+    // Filter the mock data by the grade
+    mockFilterByGrade('6');
+    props.data = mockFilteredData;
+
+    // Mount the component with the filtered data
+    cy.mount(RoarDataTable, { props: props });
+
+    // Check that the table column matches the mock data
+    checkTableColumn(headers, grade);
+  });
   it('Mocks filtering by support level category', () => {
     const task = 'letter';
     const tag = 'Achieved Skill';
@@ -142,10 +140,9 @@ describe('<RoarDataTable />', () => {
     // Get the list of users matching the mock filter
     const users = mockFilteredData.map((object) => object.user.username);
 
-    cy.mount(RoarDataTable, { props: props, slots: slots });
-    cy.wait(0.1 * timeout);
+    cy.mount(RoarDataTable, { props: props });
 
-    // Filter the prop data by the support level category using the UI
+    // Filter the prop data by the category using the UI
     setFilterByCategory(assessment, category);
 
     // Check that the filtered prop data matches the mock data
@@ -165,11 +162,12 @@ describe('<RoarDataTable />', () => {
       .filter((object) => object.scores[task].tags.includes(tag))
       .map((object) => object.user.username);
 
-    cy.mount(RoarDataTable, { props: props, slots: slots });
-    cy.wait(0.1 * timeout);
+    cy.mount(RoarDataTable, { props: props });
 
+    // Filter the prop data by the category using the UI
     setFilterByCategory(assessment, category);
 
+    // Check that the filtered prop data matches the mock data
     checkTableColumn(column, users);
   });
 });

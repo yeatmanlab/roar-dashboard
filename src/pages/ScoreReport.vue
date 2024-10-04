@@ -130,47 +130,7 @@
             @export-selected="exportSelected"
           >
             <template #filterbar>
-              <FilterBar
-                :schools="schoolsInfo"
-                :grades="gradeOptions"
-                :filter-schools="filterSchools"
-                :filter-grades="filterGrades"
-                :update-filters="updateFilters"
-              />
-              <!--              <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">-->
-              <!--                <div v-if="schoolsInfo" class="flex flex-row my-3">-->
-              <!--                  <span class="p-float-label">-->
-              <!--                    <PvMultiSelect-->
-              <!--                      id="ms-school-filter"-->
-              <!--                      v-model="filterSchools"-->
-              <!--                      style="width: 10rem; max-width: 15rem"-->
-              <!--                      :options="schoolsInfo"-->
-              <!--                      option-label="name"-->
-              <!--                      option-value="name"-->
-              <!--                      :show-toggle-all="false"-->
-              <!--                      selected-items-label="{0} schools selected"-->
-              <!--                      data-cy="filter-by-school"-->
-              <!--                    />-->
-              <!--                    <label for="ms-school-filter">Filter by School</label>-->
-              <!--                  </span>-->
-              <!--                </div>-->
-              <!--                <div class="flex flex-row gap-2 my-3">-->
-              <!--                  <span class="p-float-label">-->
-              <!--                    <PvMultiSelect-->
-              <!--                      id="ms-grade-filter"-->
-              <!--                      v-model="filterGrades"-->
-              <!--                      style="width: 10rem; max-width: 15rem"-->
-              <!--                      :options="gradeOptions"-->
-              <!--                      option-label="label"-->
-              <!--                      option-value="value"-->
-              <!--                      :show-toggle-all="false"-->
-              <!--                      selected-items-label="{0} grades selected"-->
-              <!--                      data-cy="filter-by-grade"-->
-              <!--                    />-->
-              <!--                    <label for="ms-school-filter">Filter by Grade</label>-->
-              <!--                  </span>-->
-              <!--                </div>-->
-              <!--              </div>-->
+              <FilterBar :schools="schoolsInfo" :grades="gradeOptions" :update-filters="updateFilters" />
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -426,8 +386,25 @@ const handleExportToPdf = async () => {
   return;
 };
 
-const filterSchools = ref([]);
-const filterGrades = ref([]);
+const orderBy = ref([
+  {
+    field: 'user.grade',
+    order: '1',
+  },
+  {
+    field: 'user.lastName',
+    order: '1',
+  },
+]);
+// If this is a district report, make the schools column first sorted.
+if (props.orgType === 'district') {
+  orderBy.value.unshift({
+    order: '1',
+    field: 'user.schoolName',
+  });
+}
+// const filterSchools = ref([]);
+// const filterGrades = ref([]);
 const pageLimit = ref(10);
 
 // User Claims
@@ -853,65 +830,29 @@ watch(computeAssignmentAndRunData, (newValue) => {
 // Flag to track whether the watcher is already processing an update
 const isUpdating = ref(false);
 
+// Expects an unwrapped array ref for each filter
 const updateFilters = (filterSchools, filterGrades) => {
   if (isUpdating.value) return;
 
+  isUpdating.value = true;
   let filteredData = computeAssignmentAndRunData.value.assignmentTableData;
 
-  if (filterSchools.value.length > 0) {
-    isUpdating.value = true;
-    filteredTableData.value = filteredData.filter((item) => filterSchools.value.includes(item.user.schoolName));
+  if (filterSchools.length > 0) {
+    filteredData = filteredData.filter((item) => filterSchools.includes(item.user.schoolName));
   }
-  if (filterGrades.value.length > 0) {
-    isUpdating.value = true;
-    filteredTableData.value = filteredData.filter((item) => filterGrades.value.includes(item.user.grade));
+  if (filterGrades.length > 0) {
+    filteredData = filteredData.filter((item) => filterGrades.includes(item.user.grade));
   }
+
+  // Update the filteredTableData with the filtered data, or the original data if no filters are applied
+  filteredTableData.value =
+    filterSchools.length === 0 && filterGrades.length === 0
+      ? computeAssignmentAndRunData.value.assignmentTableData
+      : filteredData;
 
   isUpdating.value = false;
 };
 
-watch([filterSchools, filterGrades], updateFilters);
-
-// watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
-//   // If an update is already in progress, return early to prevent recursion
-//   if (isUpdating.value) {
-//     return;
-//   }
-//   if (newSchools.length > 0 || newGrades.length > 0) {
-//     isUpdating.value = true;
-//     //set scoresTableData to filtered data if filter is added
-//     let filteredData = computeAssignmentAndRunData.value.assignmentTableData;
-//
-//     if (newSchools.length > 0) {
-//       filteredData = filteredData.filter((item) => {
-//         return newSchools.includes(item.user.schoolName);
-//       });
-//     }
-//     if (newGrades.length > 0) {
-//       filteredData = filteredData.filter((item) => {
-//         return newGrades.includes(item.user.grade);
-//       });
-//     }
-//     filteredTableData.value = filteredData;
-//
-//     isUpdating.value = false; // Reset the flag after the update
-//   } else {
-//     filteredTableData.value = computeAssignmentAndRunData.value.assignmentTableData;
-//   }
-// });
-
-// const resetFilters = () => {
-//   isUpdating.value = true;
-//
-//   console.log("resetting filters");
-//   console.log('filterSchools', filterSchools.value);
-//   console.log('filterGrades', filterGrades.value);
-//
-//   filterSchools.value = [];
-//   filterGrades.value = [];
-//
-//   isUpdating.value = false;
-// };
 const viewMode = ref('color');
 
 const viewOptions = ref([

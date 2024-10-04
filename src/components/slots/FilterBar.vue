@@ -54,30 +54,17 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
-  filterSchools: {
-    type: Array,
-    required: true,
-  },
-  filterGrades: {
-    type: Array,
-    required: true,
-  },
 });
 
-const filterSchools = ref(props.filterSchools);
-const filterGrades = ref(props.filterGrades);
+const filterSchools = ref([]);
+const filterGrades = ref([]);
 
 const resetFilters = () => {
-  console.log('resetting filters');
-  console.log('filterSchools', filterSchools.value);
-  console.log('filterGrades', filterGrades.value);
-
   filterSchools.value = [];
   filterGrades.value = [];
 };
 
 watch([filterSchools, filterGrades], () => {
-  // Don't need to unwrap the refs here; the parent component will unwrap them
-  props.updateFilters(filterSchools, filterGrades);
+  props.updateFilters(filterSchools.value, filterGrades.value);
 });
 </script>
