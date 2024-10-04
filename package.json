@@ -105,7 +105,7 @@
     "husky": "^8.0.3",
     "prettier": "3.0.3",
     "sass": "^1.50.1",
-    "vite": "^5.4.2",
+    "vite": "^5.4.8",
     "vite-plugin-favicons-inject": "^2.2.0",
     "vite-plugin-mkcert": "^1.17.5",
     "vite-plugin-node-polyfills": "^0.22.0",
