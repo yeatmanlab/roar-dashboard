@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
+import _throttle from 'lodash/throttle';
 import { fetchDocById } from '@/helpers/query/utils';
 import packageLockJson from '../../../package-lock.json';
 
@@ -30,6 +31,8 @@ const gameStarted = ref(false);
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 const { isFirekitInit, roarfirekit, roarUid } = storeToRefs(authStore);
+
+const taskRunning = ref(false);
 
 const initialized = ref(false);
 let unsubscribe;
@@ -86,7 +89,15 @@ watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadin
 
 const { selectedAdmin } = storeToRefs(gameStore);
 
+// async function throttledStartTask() {
+//   console.log('Called throttledStartTask');
+//   _throttle(startTask, 1000, { leading: true, trailing: false });
+// }
+
 async function startTask() {
+  console.log('Starting task. Is Running', taskRunning.value);
+  if (taskRunning.value) return;
+
   try {
     let checkGameStarted = setInterval(function () {
       // Poll for the preload trials progress bar to exist and then begin the game
@@ -98,6 +109,7 @@ async function startTask() {
     }, 100);
 
     const appKit = await authStore.roarfirekit.startAssessment(selectedAdmin.value.id, taskId, version);
+    taskRunning.value = true;
 
     const userDob = _get(userData.value, 'studentData.dob');
     const userDateObj = new Date(userDob);
