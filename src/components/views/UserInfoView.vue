@@ -31,14 +31,13 @@
   </section>
 </template>
 <script setup>
-import { useAuthStore } from '@/store/auth';
+import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery } from '@tanstack/vue-query';
-import { ref, onMounted, computed } from 'vue';
-import EditUsersForm from '../EditUsersForm.vue';
-import { fetchDocById } from '@/helpers/query/utils';
 import _get from 'lodash/get';
+import { useAuthStore } from '@/store/auth';
+import useUserDataQuery from '@/composables/queries/useUserDataQuery';
+import EditUsersForm from '../EditUsersForm.vue';
 
 // +----------------+
 // | Initialization |
@@ -74,12 +73,8 @@ onMounted(() => {
 // +---------+
 // | Queries |
 // +---------+
-const { data: userData } = useQuery({
-  queryKey: ['userData', roarUid],
-  queryFn: () => fetchDocById('users', roarUid.value),
-  keepPrevousData: true,
+const { data: userData } = useUserDataQuery(null, {
   enabled: initialized,
-  staleTime: 1000 * 60 * 5, // 5 minutes
 });
 
 // +------------+
