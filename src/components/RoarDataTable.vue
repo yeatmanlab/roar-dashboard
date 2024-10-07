@@ -95,10 +95,10 @@
           :loading="loading"
           scrollable
           :select-all="selectAll"
+          data-cy="roar-data-table"
           @select-all-change="onSelectAll"
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
-          data-cy="roar-data-table"
         >
           <PvColumnGroup type="header" class="mt-2">
             <PvRow v-if="groupheaders" class="flex mt-2">
