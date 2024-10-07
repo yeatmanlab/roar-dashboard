@@ -34,7 +34,7 @@ jobs:
   # Test
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   test:
-    name: Test
+    name: Unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -67,5 +67,73 @@ jobs:
       - name: Setup node.js/npm
         uses: ./.github/actions/setup-node
 
-      - name: Build
+      - name: Build application
         run: npm run build
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # End-to-end tests
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-latest # Replace with Cypress runner
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        containers: [1, 2]
+    env:
+      VITE_FIREBASE_ADMIN_PROJECT_ID: ${{ secrets.CI_FIREBASE_ADMIN_PROJECT_ID }}
+      VITE_FIREBASE_APP_PROJECT_ID: ${{ secrets.CI_FIREBASE_APP_PROJECT_ID }}
+      VITE_FIREBASE_ADMIN_API_KEY: ${{ secrets.CI_FIREBASE_ADMIN_API_KEY }}
+      VITE_FIREBASE_APP_API_KEY: ${{ secrets.CI_FIREBASE_APP_API_KEY }}
+      VITE_FIREBASE_ADMIN_AUTH_DOMAIN: ${{ secrets.CI_FIREBASE_ADMIN_AUTH_DOMAIN }}
+      VITE_FIREBASE_APP_AUTH_DOMAIN: ${{ secrets.CI_FIREBASE_APP_AUTH_DOMAIN }}
+      VITE_FIREBASE_ADMIN_STORAGE_BUCKET: ${{ secrets.CI_FIREBASE_ADMIN_STORAGE_BUCKET }}
+      VITE_FIREBASE_APP_STORAGE_BUCKET: ${{ secrets.CI_FIREBASE_APP_STORAGE_BUCKET }}
+      VITE_FIREBASE_ADMIN_MESSAGING_SENDER_ID: ${{ secrets.CI_FIREBASE_ADMIN_MESSAGING_SENDER_ID }}
+      VITE_FIREBASE_APP_MESSAGING_SENDER_ID: ${{ secrets.CI_FIREBASE_APP_MESSAGING_SENDER_ID }}
+      VITE_FIREBASE_ADMIN_APP_ID: ${{ secrets.CI_FIREBASE_ADMIN_APP_ID }}
+      VITE_FIREBASE_APP_APP_ID: ${{ secrets.CI_FIREBASE_APP_APP_ID }}
+      VITE_FIREKIT_ADMIN_RECAPTCHA_SITE_KEY: ${{ secrets.CI_FIREKIT_ADMIN_RECAPTCHA_SITE_KEY }}
+      VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY: ${{ secrets.CI_FIREKIT_APP_RECAPTCHA_SITE_KEY }}
+      VITE_FIREKIT_APPCHECK_DEBUG_TOKEN: ${{ secrets.CI_FIREKIT_APPCHECK_DEBUG_TOKEN }}
+      VITE_FIREKIT_VERBOSE_LOGGING_ENABLED: 'true'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup node.js/npm
+        uses: ./.github/actions/setup-node
+
+      - name: Build application
+        env:
+          NODE_ENV: 'test'
+        run: npm run build
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        env:
+          CYPRESS_BASE_URL: 'http://localhost:5173'
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          CLEVER_USERNAME: ${{ secrets.CLEVER_USERNAME }}
+          CLEVER_PASSWORD: ${{ secrets.CLEVER_PASSWORD }}
+          PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
+          PARTNER_ADMIN_PASSWORD: ${{ secrets.PARTNER_ADMIN_PASSWORD }}
+          PARTNER_ADMIN_ID: ${{ secrets.PARTNER_ADMIN_ID }}
+          PARTICIPANT_USERNAME: ${{ secrets.PARTICIPANT_USERNAME}}
+          PARTICIPANT_PASSWORD: ${{ secrets.PARTICIPANT_PASSWORD }}
+          PARTICIPANT_EMAIL: ${{ secrets.PARTICIPANT_EMAIL }}
+          PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          component: true
+          tag: ${{ github.event_name }}
+          build: npm ci && npm run build
+          start: npm run dev
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 120
+          record: true
+          parallel: true
+          spec: |
+            'cypress/e2e/participant/default-tests/**/*'
