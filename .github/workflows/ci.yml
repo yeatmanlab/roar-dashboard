@@ -111,7 +111,10 @@ jobs:
           NODE_ENV: 'test'
         run: npm run build
 
-      - name: Cypress run
+      - name: Install Cypress
+        run: npm i cypress
+
+      - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
           CYPRESS_BASE_URL: 'http://localhost:5173'
@@ -127,8 +130,8 @@ jobs:
           PARTICIPANT_EMAIL_PASSWORD: ${{ secrets.PARTICIPANT_EMAIL_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          component: true
           tag: ${{ github.event_name }}
+          install: false
           start: npm run dev
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
