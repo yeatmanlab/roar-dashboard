@@ -10,9 +10,6 @@ description: Sets up node.js and installs the application's npm dependencies.
 runs:
   using: 'composite'
   steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
     - name: Install Node.js
       uses: actions/setup-node@v4
       with:
