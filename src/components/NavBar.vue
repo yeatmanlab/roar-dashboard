@@ -155,23 +155,20 @@ const computedItems = computed(() => {
 const userDisplayName = computed(() => {
   if (!isLoadingClaims) {
     return '';
+  } else {
+    let email = authStore?.userData?.email;
+    if (email && email.split('@')[1] === 'roar-auth.com') {
+      email = email.split('@')[0];
+    }
+    const displayName = authStore?.userData?.displayName;
+    const username = authStore?.userData?.username;
+    const firstName = authStore?.userData?.name?.first;
+    const userType = isAdmin.value ? 'Admin' : 'User';
+    return `Hi, ${firstName || displayName || username || email || userType}!`;
   }
-
-  let email = authStore?.userData?.email;
-  if (email && email.split('@')[1] === 'roar-auth.com') {
-    email = email.split('@')[0];
-  }
-  const displayName = authStore?.userData?.displayName;
-  const username = authStore?.userData?.username;
-  const firstName = authStore?.userData?.name?.first;
-
-  if (isAdmin.value) {
-    return 'Hi, ' + (displayName || username || email || 'Admin') + '!';
-  }
-
-  return 'Hi, ' + (firstName || displayName || username || email || 'User') + '! 👋';
 });
 
+// @TODO: Replace isAdmin and isSuperAdmin with useUserType composable
 const isAdmin = computed(() => {
   if (userClaims.value?.claims?.super_admin) return true;
   if (_isEmpty(_union(...Object.values(userClaims.value?.claims?.minimalAdminOrgs ?? {})))) return false;

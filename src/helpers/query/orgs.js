@@ -13,7 +13,8 @@ import {
   mapFields,
   orderByDefault,
 } from '@/helpers/query/utils';
-import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { ORG_TYPES, SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 export const getOrgsRequestBody = ({
   orgType,
@@ -62,77 +63,82 @@ export const getOrgsRequestBody = ({
     },
   ];
 
+  requestBody.structuredQuery.where = {
+    compositeFilter: {
+      op: 'AND',
+      filters: [
+        {
+          fieldFilter: {
+            field: { fieldPath: 'archived' },
+            op: 'EQUAL',
+            value: { booleanValue: false },
+          },
+        },
+      ],
+    },
+  };
+
   if (orgName && !(parentDistrict || parentSchool)) {
-    requestBody.structuredQuery.where = {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: 'name' },
         op: 'EQUAL',
         value: { stringValue: orgName },
       },
-    };
+    });
   } else if (orgType === 'schools' && parentDistrict) {
     if (orgName) {
-      requestBody.structuredQuery.where = {
-        compositeFilter: {
-          op: 'AND',
-          filters: [
-            {
-              fieldFilter: {
-                field: { fieldPath: 'name' },
-                op: 'EQUAL',
-                value: { stringValue: orgName },
-              },
-            },
-            {
-              fieldFilter: {
-                field: { fieldPath: 'districtId' },
-                op: 'EQUAL',
-                value: { stringValue: parentDistrict },
-              },
-            },
-          ],
+      requestBody.structuredQuery.where.compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: 'name' },
+            op: 'EQUAL',
+            value: { stringValue: orgName },
+          },
         },
-      };
+        {
+          fieldFilter: {
+            field: { fieldPath: 'districtId' },
+            op: 'EQUAL',
+            value: { stringValue: parentDistrict },
+          },
+        },
+      );
     } else {
-      requestBody.structuredQuery.where = {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: 'districtId' },
           op: 'EQUAL',
           value: { stringValue: parentDistrict },
         },
-      };
+      });
     }
   } else if (orgType === 'classes' && parentSchool) {
     if (orgName) {
-      requestBody.structuredQuery.where = {
-        compositeFilter: {
-          op: 'AND',
-          filters: [
-            {
-              fieldFilter: {
-                field: { fieldPath: 'name' },
-                op: 'EQUAL',
-                value: { stringValue: orgName },
-              },
-            },
-            {
-              fieldFilter: {
-                field: { fieldPath: 'schoolId' },
-                op: 'EQUAL',
-                value: { stringValue: parentSchool },
-              },
-            },
-          ],
+      requestBody.structuredQuery.where.compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: 'name' },
+            op: 'EQUAL',
+            value: { stringValue: orgName },
+          },
         },
-      };
+        {
+          fieldFilter: {
+            field: { fieldPath: 'schoolId' },
+            op: 'EQUAL',
+            value: { stringValue: parentSchool },
+          },
+        },
+      );
     } else {
-      requestBody.structuredQuery.where = {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: 'schoolId' },
           op: 'EQUAL',
           value: { stringValue: parentSchool },
         },
-      };
+      });
     }
   }
 
@@ -430,7 +436,8 @@ export const orgFetchAll = async (
  * @returns {Promise<Array<Object>>} A promise that resolves to an array of org objects.
  */
 export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
-  const orgTypes = ['districts', 'schools', 'groups', 'families'];
+  const orgTypes = [ORG_TYPES.DISTRICTS, ORG_TYPES.SCHOOLS, ORG_TYPES.GROUPS, ORG_TYPES.FAMILIES];
+
   const orgPaths = _flattenDeep(
     orgTypes.map((orgType) => (assignedOrgs[orgType] ?? []).map((orgId) => `${orgType}/${orgId}`) ?? []),
   );
@@ -442,48 +449,67 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
     ),
   );
 
-  const promises = [batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'districtId']), batchGetDocs(statsPaths)];
+  const promises = [
+    batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'archivedSchools', 'archivedClasses', 'districtId']),
+    batchGetDocs(statsPaths),
+  ];
 
   const [orgDocs, statsDocs] = await Promise.all(promises);
 
-  const dsgfOrgs = _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
-    const { classes, schools, collection, ...nodeData } = orgDoc;
-    const node = {
-      key: String(index),
-      data: {
-        orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
-        schools,
-        classes,
-        stats,
-        ...nodeData,
-      },
-    };
-    if (classes)
-      node.children = classes.map((classId) => {
-        return {
-          key: `${node.key}-${classId}`,
-          data: {
-            orgType: 'class',
-            id: classId,
-          },
-        };
-      });
-    return node;
-  });
+  const dsgfOrgs = _without(
+    _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
+      if (!orgDoc || _isEmpty(orgDoc)) {
+        return undefined;
+      }
+      const { classes, schools, archivedSchools, archivedClasses, collection, ...nodeData } = orgDoc;
+      const node = {
+        key: String(index),
+        data: {
+          orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
+          schools,
+          classes,
+          archivedSchools,
+          archivedClasses,
+          stats,
+          ...nodeData,
+        },
+      };
+      if (classes || archivedClasses)
+        node.children = [...(classes ?? []), ...(archivedClasses ?? [])].map((classId) => {
+          return {
+            key: `${node.key}-${classId}`,
+            data: {
+              orgType: SINGULAR_ORG_TYPES.CLASSES,
+              id: classId,
+            },
+          };
+        });
+      return node;
+    }),
+    undefined,
+  );
 
-  const dependentSchoolIds = _flattenDeep(dsgfOrgs.map((node) => node.data.schools ?? []));
+  const districtIds = dsgfOrgs
+    .filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.DISTRICTS)
+    .map((node) => node.data.id);
+
+  const dependentSchoolIds = _flattenDeep(
+    dsgfOrgs.map((node) => [...(node.data.schools ?? []), ...(node.data.archivedSchools ?? [])]),
+  );
   const independentSchoolIds =
     dsgfOrgs.length > 0 ? _without(assignedOrgs.schools, ...dependentSchoolIds) : assignedOrgs.schools;
-  const dependentClassIds = _flattenDeep(dsgfOrgs.map((node) => node.data.classes ?? []));
+  const dependentClassIds = _flattenDeep(
+    dsgfOrgs.map((node) => [...(node.data.classes ?? []), ...(node.data.archivedClasses ?? [])]),
+  );
   const independentClassIds =
     dsgfOrgs.length > 0 ? _without(assignedOrgs.classes, ...dependentClassIds) : assignedOrgs.classes;
 
   const independentSchools = (dsgfOrgs ?? []).filter((node) => {
-    return node.data.orgType === 'school' && independentSchoolIds.includes(node.data.id);
+    return node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && independentSchoolIds.includes(node.data.id);
   });
 
   const dependentSchools = (dsgfOrgs ?? []).filter((node) => {
-    return node.data.orgType === 'school' && !independentSchoolIds.includes(node.data.id);
+    return node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && !independentSchoolIds.includes(node.data.id);
   });
 
   const independentClassPaths = independentClassIds.map((classId) => `classes/${classId}`);
@@ -492,15 +518,15 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
   );
 
   const classPromises = [
-    batchGetDocs(independentClassPaths, ['name', 'schoolId']),
+    batchGetDocs(independentClassPaths, ['name', 'schoolId', 'districtId']),
     batchGetDocs(independentClassStatPaths),
   ];
 
   const [classDocs, classStats] = await Promise.all(classPromises);
 
-  const independentClasses = _without(
+  let independentClasses = _without(
     _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-      const { collection = 'classes', ...nodeData } = orgDoc ?? {};
+      const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
 
       if (_isEmpty(nodeData)) return undefined;
 
@@ -517,7 +543,13 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
     undefined,
   );
 
-  const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === 'district');
+  // These are classes that are directly under a district, without a school
+  // They were eroneously categorized as independent classes but now we need
+  // to remove them from the independent classes array
+  const directReportClasses = independentClasses.filter((node) => districtIds.includes(node.data.districtId));
+  independentClasses = independentClasses.filter((node) => !districtIds.includes(node.data.districtId));
+
+  const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.DISTRICTS);
   treeTableOrgs.push(...independentSchools);
 
   for (const school of dependentSchools) {
@@ -539,9 +571,45 @@ export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
     }
   }
 
+  for (const _class of directReportClasses) {
+    const districtId = _class.data.districtId;
+    const districtIndex = treeTableOrgs.findIndex((node) => node.data.id === districtId);
+    if (districtIndex !== -1) {
+      const directReportSchoolKey = `${treeTableOrgs[districtIndex].key}-9999`;
+      const directReportSchool = {
+        key: directReportSchoolKey,
+        data: {
+          orgType: SINGULAR_ORG_TYPES.SCHOOLS,
+          orgId: '9999',
+          name: 'Direct Report Classes',
+        },
+        children: [
+          {
+            ..._class,
+            key: `${directReportSchoolKey}-${_class.key}`,
+          },
+        ],
+      };
+      if (treeTableOrgs[districtIndex].children === undefined) {
+        treeTableOrgs[districtIndex].children = [directReportSchool];
+      } else {
+        const schoolIndex = treeTableOrgs[districtIndex].children.findIndex(
+          (node) => node.key === directReportSchoolKey,
+        );
+        if (schoolIndex === -1) {
+          treeTableOrgs[districtIndex].children.push(directReportSchool);
+        } else {
+          treeTableOrgs[districtIndex].children[schoolIndex].children.push(_class);
+        }
+      }
+    } else {
+      treeTableOrgs.push(_class);
+    }
+  }
+
   treeTableOrgs.push(...(independentClasses ?? []));
-  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'group'));
-  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === 'family'));
+  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.GROUPS));
+  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.FAMILIES));
 
   (treeTableOrgs ?? []).forEach((node) => {
     // Sort the schools by existance of stats then alphabetically

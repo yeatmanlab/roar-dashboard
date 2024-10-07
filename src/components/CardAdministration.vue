@@ -19,7 +19,6 @@
             button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
             :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
-            data-cy="button-speed-dial"
           />
           <PvConfirmPopup />
         </div>
@@ -101,7 +100,7 @@
         </PvColumn>
         <PvColumn field="id" header="" style="width: 14rem">
           <template #body="{ node }">
-            <div class="flex m-0">
+            <div v-if="node.data.id" class="flex m-0">
               <router-link
                 :to="{
                   name: 'ProgressReport',
@@ -169,6 +168,7 @@ import useDsgfOrgQuery from '@/composables/queries/useDsgfOrgQuery';
 import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import useDeleteAdministrationMutation from '@/composables/mutations/useDeleteAdministrationMutation';
 import { SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const router = useRouter();
@@ -306,7 +306,7 @@ watch(showTable, (newValue) => {
 
 const expanding = ref(false);
 const onExpand = async (node) => {
-  if (node.data.orgType === 'school' && node.children?.length > 0 && !node.data.expanded) {
+  if (node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && node.children?.length > 0 && !node.data.expanded) {
     expanding.value = true;
 
     const classPaths = node.children.map(({ data }) => `classes/${data.id}`);
@@ -328,14 +328,14 @@ const onExpand = async (node) => {
 
     const childNodes = _without(
       _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
-        const { collection = SINGULAR_ORG_TYPES.CLASSES, ...nodeData } = orgDoc ?? {};
+        const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
 
         if (_isEmpty(nodeData)) return undefined;
 
         return {
           key: `${node.key}-${index}`,
           data: {
-            orgType: SINGULAR_ORG_TYPES[collection],
+            orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
             ...(stats && { stats }),
             ...nodeData,
           },
@@ -371,18 +371,23 @@ const onExpand = async (node) => {
       return n;
     });
 
-    // Sort the classes by existance of stats then alphabetically
-    (newNodes ?? []).forEach((districtNode) => {
-      (districtNode?.children ?? []).forEach((schoolNode) => {
+    // Sort the classes by existence of stats then alphabetically
+    // TODO: This fails currently as it tries to set a read only reactive handler
+    // Specifically, setting the `children` key fails because the
+    // schoolNode target is read-only.
+    // Also, I'm pretty sure this is useless now because all classes will have stats
+    // due to preallocation of accounts.
+    for (const districtNode of newNodes ?? []) {
+      for (const schoolNode of districtNode?.children ?? []) {
         if (schoolNode.children) {
-          schoolNode.children.sort((a, b) => {
+          schoolNode.children = schoolNode.children.toSorted((a, b) => {
             if (!a.data.stats) return 1;
             if (!b.data.stats) return -1;
             return a.data.name.localeCompare(b.data.name);
           });
         }
-      });
-    });
+      }
+    }
 
     treeTableOrgs.value = newNodes;
     expanding.value = false;

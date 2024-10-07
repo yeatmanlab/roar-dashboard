@@ -70,7 +70,10 @@
 
         <div v-if="!initialized || isLoadingAdministrations" class="loading-container">
           <AppSpinner class="mb-4" />
-          <span class="uppercase font-light text-sm text-gray-600">Loading Administrations</span>
+          <span class="uppercase font-light text-sm text-gray-600">
+            <template v-if="fetchTestAdministrations">Fetching Test Administrations</template>
+            <template v-else>Fetching Administrations</template>
+          </span>
         </div>
         <div v-else>
           <PvBlockUI :blocked="isFetchingAdministrations">

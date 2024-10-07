@@ -138,7 +138,7 @@ import RoarModal from './modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, roarUid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const toast = useToast();
 
@@ -215,6 +215,12 @@ const columns = ref([
     field: 'userType',
     header: 'User Type',
     dataType: 'string',
+    sort: false,
+  },
+  {
+    field: 'archived',
+    header: 'Archived',
+    dataType: 'boolean',
     sort: false,
   },
   {
@@ -300,7 +306,7 @@ async function updatePassword() {
   if (!v$.value.$invalid) {
     isSubmitting.value = true;
     await roarfirekit.value
-      .updateUserData(roarUid.value, { password: state.password })
+      .updateUserData(currentEditUser.value.id, { password: state.password })
       .then(() => {
         submitted.value = false;
         isSubmitting.value = false;
