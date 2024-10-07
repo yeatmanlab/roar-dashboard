@@ -1,17 +1,19 @@
 import { ref, watch } from 'vue';
+import _once from 'lodash/once';
 
-export function useFilteredTableData(computeAssignmentAndRunData) {
-  // Flag to track whether the watcher is already processing an update
-  const isUpdating = ref(false);
+export function useFilteredTableData(tableData) {
+  // Snapshot the data once before any filters are applied
+  let data = null;
+  const setData = _once(() => {
+    data = tableData.value;
+  });
 
-  const filteredTableData = ref(computeAssignmentAndRunData.value.assignmentTableData);
+  // Create a reactive reference to the table data
+  const filteredTableData = ref(tableData);
 
-  // Expects an unwrapped array ref for each filter
+  // Expects an unwrapped array for each filter
   const updateFilters = (filterSchools, filterGrades) => {
-    if (isUpdating.value) return;
-
-    isUpdating.value = true;
-    let filteredData = computeAssignmentAndRunData.value.assignmentTableData;
+    let filteredData = tableData.value;
 
     if (filterSchools.length > 0) {
       filteredData = filteredData.filter((item) => filterSchools.includes(item.user.schoolName));
@@ -21,17 +23,15 @@ export function useFilteredTableData(computeAssignmentAndRunData) {
     }
 
     // Update the filteredTableData with the filtered data, or the original data if no filters are applied
-    filteredTableData.value =
-      filterSchools.length === 0 && filterGrades.length === 0
-        ? computeAssignmentAndRunData.value.assignmentTableData
-        : filteredData;
-
-    isUpdating.value = false;
+    filteredTableData.value = filterSchools.length === 0 && filterGrades.length === 0 ? data : filteredData;
   };
 
-  watch(computeAssignmentAndRunData, (newValue) => {
-    // Update filteredTableData when computedProgressData changes
-    filteredTableData.value = newValue.assignmentTableData;
+  // Watch for changes to the table data and update the filteredTableData
+  // setData() is called only once to snapshot the data before any filters are applied
+  watch(tableData, (newValue) => {
+    setData();
+
+    filteredTableData.value = newValue;
   });
 
   return { filteredTableData, updateFilters };

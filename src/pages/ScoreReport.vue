@@ -251,7 +251,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import FilterBar from '@/components/slots/FilterBar.vue';
 import { storeToRefs } from 'pinia';
 import { jsPDF } from 'jspdf';
@@ -260,6 +260,7 @@ import _toUpper from 'lodash/toUpper';
 import _round from 'lodash/round';
 import _get from 'lodash/get';
 import _map from 'lodash/map';
+import _once from 'lodash/once';
 import _kebabCase from 'lodash/kebabCase';
 import _pickBy from 'lodash/pickBy';
 import _lowerCase from 'lodash/lowerCase';
@@ -821,7 +822,17 @@ const computeAssignmentAndRunData = computed(() => {
 });
 
 // Composable to filter table data using FilterBar.vue component which is passed in as a slot to RoarDataTable
-const { filteredTableData, updateFilters } = useFilteredTableData(computeAssignmentAndRunData);
+const filteredTableData = ref([]);
+const { updateFilters } = useFilteredTableData(filteredTableData);
+
+// Watch for changes in assignmentTableData and update filteredTableData
+// This will snapshot the assignmentTableData and filter it based on the current filters
+watch(
+  () => computeAssignmentAndRunData.value.assignmentTableData,
+  (newTableData) => {
+    filteredTableData.value = newTableData;
+  },
+);
 
 const viewMode = ref('color');
 
