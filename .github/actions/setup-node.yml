@@ -1,0 +1,31 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/setup-node
+#
+# This action sets up Node.js and installs the application's npm dependencies whilst caching them. This action is
+# designed to be used before executing any npm tasks, such as running unit tests or building the application.
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Setup node.js/npm
+description: Sets up node.js and installs the application's npm dependencies.
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+        cache-dependency-path: package-lock.json
+
+    - name: Restore cached node_modules
+      uses: actions/cache@v5
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.arch }}-${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Install dependencies
+      run: npm ci
+      shell: bash
