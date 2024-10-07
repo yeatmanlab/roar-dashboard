@@ -79,8 +79,8 @@ jobs:
     timeout-minutes: 90
     strategy:
       fail-fast: false
-      matrix:
-        containers: [1, 2]
+      # matrix:
+      #   containers: [1, 2]
     env:
       VITE_FIREBASE_ADMIN_PROJECT_ID: ${{ secrets.CI_VITE_FIREBASE_ADMIN_PROJECT_ID }}
       VITE_FIREBASE_APP_PROJECT_ID: ${{ secrets.CI_VITE_FIREBASE_APP_PROJECT_ID }}
