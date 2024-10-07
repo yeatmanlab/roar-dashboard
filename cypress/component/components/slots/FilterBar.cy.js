@@ -1,4 +1,4 @@
-import FilterBar from '@/components/slots/FilterBar.vue';
+import FilterBar from '../../../../src/components/slots/FilterBar.vue';
 import { ref } from 'vue';
 
 const schools = ref([{ name: 'School A' }, { name: 'School B' }]);
