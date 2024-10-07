@@ -117,7 +117,7 @@ jobs:
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
-          CYPRESS_BASE_URL: 'http://localhost:5173'
+          CYPRESS_BASE_URL: 'https://localhost:5173/'
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           CLEVER_USERNAME: ${{ secrets.CLEVER_USERNAME }}
           CLEVER_PASSWORD: ${{ secrets.CLEVER_PASSWORD }}
