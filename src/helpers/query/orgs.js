@@ -49,77 +49,82 @@ export const getOrgsRequestBody = ({
     },
   ];
 
+  requestBody.structuredQuery.where = {
+    compositeFilter: {
+      op: 'AND',
+      filters: [
+        {
+          fieldFilter: {
+            field: { fieldPath: 'archived' },
+            op: 'EQUAL',
+            value: { booleanValue: false },
+          },
+        },
+      ],
+    },
+  };
+
   if (orgName && !(parentDistrict || parentSchool)) {
-    requestBody.structuredQuery.where = {
+    requestBody.structuredQuery.where.compositeFilter.filters.push({
       fieldFilter: {
         field: { fieldPath: 'name' },
         op: 'EQUAL',
         value: { stringValue: orgName },
       },
-    };
+    });
   } else if (orgType === 'schools' && parentDistrict) {
     if (orgName) {
-      requestBody.structuredQuery.where = {
-        compositeFilter: {
-          op: 'AND',
-          filters: [
-            {
-              fieldFilter: {
-                field: { fieldPath: 'name' },
-                op: 'EQUAL',
-                value: { stringValue: orgName },
-              },
-            },
-            {
-              fieldFilter: {
-                field: { fieldPath: 'districtId' },
-                op: 'EQUAL',
-                value: { stringValue: parentDistrict },
-              },
-            },
-          ],
+      requestBody.structuredQuery.where.compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: 'name' },
+            op: 'EQUAL',
+            value: { stringValue: orgName },
+          },
         },
-      };
+        {
+          fieldFilter: {
+            field: { fieldPath: 'districtId' },
+            op: 'EQUAL',
+            value: { stringValue: parentDistrict },
+          },
+        },
+      );
     } else {
-      requestBody.structuredQuery.where = {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: 'districtId' },
           op: 'EQUAL',
           value: { stringValue: parentDistrict },
         },
-      };
+      });
     }
   } else if (orgType === 'classes' && parentSchool) {
     if (orgName) {
-      requestBody.structuredQuery.where = {
-        compositeFilter: {
-          op: 'AND',
-          filters: [
-            {
-              fieldFilter: {
-                field: { fieldPath: 'name' },
-                op: 'EQUAL',
-                value: { stringValue: orgName },
-              },
-            },
-            {
-              fieldFilter: {
-                field: { fieldPath: 'schoolId' },
-                op: 'EQUAL',
-                value: { stringValue: parentSchool },
-              },
-            },
-          ],
+      requestBody.structuredQuery.where.compositeFilter.filters.push(
+        {
+          fieldFilter: {
+            field: { fieldPath: 'name' },
+            op: 'EQUAL',
+            value: { stringValue: orgName },
+          },
         },
-      };
+        {
+          fieldFilter: {
+            field: { fieldPath: 'schoolId' },
+            op: 'EQUAL',
+            value: { stringValue: parentSchool },
+          },
+        },
+      );
     } else {
-      requestBody.structuredQuery.where = {
+      requestBody.structuredQuery.where.compositeFilter.filters.push({
         fieldFilter: {
           field: { fieldPath: 'schoolId' },
           op: 'EQUAL',
           value: { stringValue: parentSchool },
         },
-      };
+      });
     }
   }
 

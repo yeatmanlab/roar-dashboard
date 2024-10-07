@@ -75,15 +75,15 @@ export const getAxiosInstance = (db = 'admin', unauthenticated = false) => {
   const { roarfirekit } = storeToRefs(authStore);
   const axiosOptions = _get(roarfirekit.value.restConfig, db) ?? {};
 
-  // Add appCheckToken to the headers if it exists in the firekit config
-  const appCheckToken = roarfirekit.value[db]?.appCheckToken;
-
-  if (appCheckToken) {
-    axiosOptions.headers = {
-      ...axiosOptions.headers,
-      'X-Firebase-AppCheck': appCheckToken,
-    };
-  }
+  // // Add appCheckToken to the headers if it exists in the firekit config
+  // const appCheckToken = roarfirekit.value[db]?.appCheckToken;
+  //
+  // if (appCheckToken) {
+  //   axiosOptions.headers = {
+  //     ...axiosOptions.headers,
+  //     'X-Firebase-AppCheck': appCheckToken,
+  //   };
+  // }
 
   if (unauthenticated) {
     delete axiosOptions.headers;
@@ -170,9 +170,9 @@ export const fetchDocsById = async (documents, db = 'admin') => {
 
 export const batchGetDocs = async (docPaths, select = [], db = 'admin') => {
   if (_isEmpty(docPaths)) {
-    console.warn('BatchGetDocs: No document paths provided!');
     return [];
   }
+
   const axiosInstance = getAxiosInstance(db);
   const baseURL = axiosInstance.defaults.baseURL.split('googleapis.com/v1/')[1];
   const documents = docPaths.map((docPath) => `${baseURL}/${docPath}`);

@@ -19,7 +19,6 @@
             button-class="p-button-outlined p-button-sm w-3rem h-3rem border-primary border-1 border-circle bg-transparent hover:surface-300"
             :tooltip-options="{ position: 'top' }"
             :pt="{ button: { size: 'small' } }"
-            data-cy="button-speed-dial"
           />
           <PvConfirmPopup />
         </div>
@@ -94,7 +93,7 @@
         </PvColumn>
         <PvColumn field="id" header="" style="width: 14rem">
           <template #body="{ node }">
-            <div class="flex m-0">
+            <div v-if="node.data.id" class="flex m-0">
               <router-link
                 :to="{
                   name: 'ViewAdministration',
@@ -295,39 +294,56 @@ const fetchTreeOrgs = async () => {
     ),
   );
 
-  const promises = [batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'districtId']), batchGetDocs(statsPaths)];
+  const promises = [
+    batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'archivedSchools', 'archivedClasses', 'districtId']),
+    batchGetDocs(statsPaths),
+  ];
 
   const [orgDocs, statsDocs] = await Promise.all(promises);
 
-  const dsgfOrgs = _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
-    const { classes, schools, collection, ...nodeData } = orgDoc;
-    const node = {
-      key: String(index),
-      data: {
-        orgType: singularOrgTypes[collection],
-        schools,
-        classes,
-        stats,
-        ...nodeData,
-      },
-    };
-    if (classes)
-      node.children = classes.map((classId) => {
-        return {
-          key: `${node.key}-${classId}`,
-          data: {
-            orgType: 'class',
-            id: classId,
-          },
-        };
-      });
-    return node;
-  });
+  const dsgfOrgs = _without(
+    _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
+      if (!orgDoc || _isEmpty(orgDoc)) {
+        return undefined;
+      }
+      const { classes, schools, archivedSchools, archivedClasses, collection, ...nodeData } = orgDoc;
+      const node = {
+        key: String(index),
+        data: {
+          orgType: singularOrgTypes[collection],
+          schools,
+          classes,
+          archivedSchools,
+          archivedClasses,
+          stats,
+          ...nodeData,
+        },
+      };
+      if (classes || archivedClasses)
+        node.children = [...(classes ?? []), ...(archivedClasses ?? [])].map((classId) => {
+          return {
+            key: `${node.key}-${classId}`,
+            data: {
+              orgType: 'class',
+              id: classId,
+            },
+          };
+        });
+      return node;
+    }),
+    undefined,
+  );
 
-  const dependentSchoolIds = _flattenDeep(dsgfOrgs.map((node) => node.data.schools ?? []));
+  const districtIds = dsgfOrgs.filter((node) => node.data.orgType === 'district').map((node) => node.data.id);
+
+  const dependentSchoolIds = _flattenDeep(
+    dsgfOrgs.map((node) => [...(node.data.schools ?? []), ...(node.data.archivedSchools ?? [])]),
+  );
   const independentSchoolIds =
     dsgfOrgs.length > 0 ? _without(props.assignees.schools, ...dependentSchoolIds) : props.assignees.schools;
-  const dependentClassIds = _flattenDeep(dsgfOrgs.map((node) => node.data.classes ?? []));
+  const dependentClassIds = _flattenDeep(
+    dsgfOrgs.map((node) => [...(node.data.classes ?? []), ...(node.data.archivedClasses ?? [])]),
+  );
   const independentClassIds =
     dsgfOrgs.length > 0 ? _without(props.assignees.classes, ...dependentClassIds) : props.assignees.classes;
 
@@ -345,13 +361,13 @@ const fetchTreeOrgs = async () => {
   );
 
   const classPromises = [
-    batchGetDocs(independentClassPaths, ['name', 'schoolId']),
+    batchGetDocs(independentClassPaths, ['name', 'schoolId', 'districtId']),
     batchGetDocs(independentClassStatPaths),
   ];
 
   const [classDocs, classStats] = await Promise.all(classPromises);
 
-  const independentClasses = _without(
+  let independentClasses = _without(
     _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
       const { collection = 'classes', ...nodeData } = orgDoc ?? {};
 
@@ -369,6 +385,12 @@ const fetchTreeOrgs = async () => {
     }),
     undefined,
   );
+
+  // These are classes that are directly under a district, without a school
+  // They were eroneously categorized as independent classes but now we need
+  // to remove them from the independent classes array
+  const directReportClasses = independentClasses.filter((node) => districtIds.includes(node.data.districtId));
+  independentClasses = independentClasses.filter((node) => !districtIds.includes(node.data.districtId));
 
   const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === 'district');
   treeTableOrgs.push(...independentSchools);
@@ -389,6 +411,42 @@ const fetchTreeOrgs = async () => {
       }
     } else {
       treeTableOrgs.push(school);
+    }
+  }
+
+  for (const _class of directReportClasses) {
+    const districtId = _class.data.districtId;
+    const districtIndex = treeTableOrgs.findIndex((node) => node.data.id === districtId);
+    if (districtIndex !== -1) {
+      const directReportSchoolKey = `${treeTableOrgs[districtIndex].key}-9999`;
+      const directReportSchool = {
+        key: directReportSchoolKey,
+        data: {
+          orgType: 'school',
+          orgId: '9999',
+          name: 'Direct Report Classes',
+        },
+        children: [
+          {
+            ..._class,
+            key: `${directReportSchoolKey}-${_class.key}`,
+          },
+        ],
+      };
+      if (treeTableOrgs[districtIndex].children === undefined) {
+        treeTableOrgs[districtIndex].children = [directReportSchool];
+      } else {
+        const schoolIndex = treeTableOrgs[districtIndex].children.findIndex(
+          (node) => node.key === directReportSchoolKey,
+        );
+        if (schoolIndex === -1) {
+          treeTableOrgs[districtIndex].children.push(directReportSchool);
+        } else {
+          treeTableOrgs[districtIndex].children[schoolIndex].children.push(_class);
+        }
+      }
+    } else {
+      treeTableOrgs.push(_class);
     }
   }
 
@@ -498,18 +556,23 @@ const onExpand = async (node) => {
       return n;
     });
 
-    // Sort the classes by existance of stats then alphabetically
-    (newNodes ?? []).forEach((districtNode) => {
-      (districtNode?.children ?? []).forEach((schoolNode) => {
+    // Sort the classes by existence of stats then alphabetically
+    // TODO: This fails currently as it tries to set a read only reactive handler
+    // Specifically, setting the `children` key fails because the
+    // schoolNode target is read-only.
+    // Also, I'm pretty sure this is useless now because all classes will have stats
+    // due to preallocation of accounts.
+    for (const districtNode of newNodes ?? []) {
+      for (const schoolNode of districtNode?.children ?? []) {
         if (schoolNode.children) {
-          schoolNode.children.sort((a, b) => {
+          schoolNode.children = schoolNode.children.toSorted((a, b) => {
             if (!a.data.stats) return 1;
             if (!b.data.stats) return -1;
             return a.data.name.localeCompare(b.data.name);
           });
         }
-      });
-    });
+      }
+    }
 
     treeTableOrgs.value = newNodes;
     expanding.value = false;

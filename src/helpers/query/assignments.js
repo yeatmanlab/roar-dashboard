@@ -20,9 +20,13 @@ const assignmentSelectFields = [
   'dateAssigned',
   'dateClosed',
   'dateOpened',
-  'readOrgs',
-  'started',
   'id',
+  'legal',
+  'name',
+  'publicName',
+  'readOrgs',
+  'sequential',
+  'started',
 ];
 
 export const getAssignmentsRequestBody = ({
@@ -154,90 +158,6 @@ export const getAssignmentsRequestBody = ({
 
   if (!_isEmpty(orderBy)) {
     requestBody.structuredQuery.orderBy = orderBy;
-  }
-
-  if (aggregationQuery) {
-    return {
-      structuredAggregationQuery: {
-        ...requestBody,
-        aggregations: [
-          {
-            alias: 'count',
-            count: {},
-          },
-        ],
-      },
-    };
-  }
-
-  return requestBody;
-};
-
-export const getUsersByAssignmentIdRequestBody = ({
-  adminId,
-  orgType,
-  orgId,
-  filter,
-  aggregationQuery,
-  pageLimit,
-  page,
-  paginate = true,
-  select = userSelectFields,
-}) => {
-  const requestBody = {
-    structuredQuery: {},
-  };
-
-  if (!aggregationQuery) {
-    if (paginate) {
-      requestBody.structuredQuery.limit = pageLimit;
-      requestBody.structuredQuery.offset = page * pageLimit;
-    }
-
-    if (select.length > 0) {
-      requestBody.structuredQuery.select = {
-        fields: select.map((field) => ({ fieldPath: field })),
-      };
-    }
-  }
-
-  requestBody.structuredQuery.from = [
-    {
-      collectionId: 'users',
-      allDescendants: false,
-    },
-  ];
-
-  requestBody.structuredQuery.where = {
-    compositeFilter: {
-      op: 'AND',
-      filters: [
-        {
-          fieldFilter: {
-            field: { fieldPath: `${pluralizeFirestoreCollection(orgType)}.current` },
-            op: 'ARRAY_CONTAINS',
-            value: { stringValue: orgId },
-          },
-        },
-        {
-          fieldFilter: {
-            field: { fieldPath: `assignments.assigned` },
-            op: 'ARRAY_CONTAINS_ANY',
-            value: { arrayValue: { values: [{ stringValue: adminId }] } },
-          },
-        },
-      ],
-    },
-  };
-
-  if (filter) {
-    requestBody.structuredQuery.where.compositeFilter.filters.push({
-      fieldFilter: {
-        field: { fieldPath: filter[0].field },
-        op: 'EQUAL',
-        value: { stringValue: filter[0].value },
-      },
-    });
   }
 
   if (aggregationQuery) {

@@ -67,8 +67,8 @@
             </PvButton>
           </div>
         </div>
-        <div v-if="initialized && !isLoadingAdministrations">
-          <PvBlockUI :blocked="isFetchingAdministrations">
+        <div v-if="initialized && !fetchingAdministrations">
+          <PvBlockUI :blocked="fetchingAdministrations">
             <PvDataView
               :key="dataViewKey"
               :value="filteredAdministrations"
@@ -158,12 +158,13 @@ const orderBy = ref(orderByDefault);
 const fetchTestAdministrations = ref(false);
 const testAdminsCached = ref(false);
 
-const adminOrgs = computed(() => userClaims.value?.claims?.minimalAdminOrgs);
 const exhaustiveAdminOrgs = computed(() => userClaims.value?.claims?.adminOrgs);
 const isSuperAdmin = computed(() => Boolean(userClaims.value?.claims?.super_admin));
 const canQueryAdministrations = computed(() => {
   return initialized.value && !isLoadingClaims.value;
 });
+
+const isFetchingCachedAdministrations = ref(false);
 
 /**
  * Fetches administrations from the cache or the server
@@ -171,21 +172,15 @@ const canQueryAdministrations = computed(() => {
  * @returns {Promise<unknown>} - The cached or fetched data
  */
 const getAdministrations = async (queryKey) => {
+  isFetchingCachedAdministrations.value = true;
+
   let cachedData = await queryClient.getQueryData(queryKey);
 
   if (!cachedData) {
     cachedData = await queryClient.fetchQuery({
       queryKey,
       queryFn: () =>
-        administrationPageFetcher(
-          orderBy,
-          ref(10000),
-          ref(0),
-          isSuperAdmin,
-          adminOrgs,
-          exhaustiveAdminOrgs,
-          fetchTestAdministrations.value,
-        ),
+        administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value, orderBy),
       keepPreviousData: true,
       enabled: canQueryAdministrations,
       staleTime: 5 * 60 * 1000, // 5 minutes
@@ -193,6 +188,7 @@ const getAdministrations = async (queryKey) => {
     testAdminsCached.value = true;
   }
 
+  isFetchingCachedAdministrations.value = false;
   return cachedData;
 };
 
@@ -205,22 +201,9 @@ const { isLoading: isLoadingClaims, data: userClaims } = useQuery({
   cacheTime: Infinity,
 });
 
-const {
-  isLoading: isLoadingAdministrations,
-  isFetching: isFetchingAdministrations,
-  data: administrations,
-} = useQuery({
-  queryKey: ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex],
-  queryFn: () =>
-    administrationPageFetcher(
-      orderBy,
-      ref(10000),
-      ref(0),
-      isSuperAdmin,
-      adminOrgs,
-      exhaustiveAdminOrgs,
-      fetchTestAdministrations,
-    ),
+const { isFetching: isFetchingAdministrations, data: administrations } = useQuery({
+  queryKey: ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex, fetchTestAdministrations.value],
+  queryFn: () => administrationPageFetcher(isSuperAdmin, exhaustiveAdminOrgs, fetchTestAdministrations.value, orderBy),
   keepPreviousData: true,
   enabled: canQueryAdministrations,
   staleTime: 5 * 60 * 1000, // 5 minutes
@@ -240,12 +223,14 @@ const {
   },
 });
 
+const fetchingAdministrations = computed(() => {
+  return isFetchingAdministrations.value || isFetchingCachedAdministrations.value;
+});
+
 const filteredAdministrations = ref(administrations.value);
 
 watch(fetchTestAdministrations, async (newState) => {
-  const queryKey = newState
-    ? ['testAdministrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex]
-    : ['administrations', uid, orderBy, ref(0), ref(10000), isSuperAdmin, administrationQueryKeyIndex];
+  const queryKey = ['administrations', uid, isSuperAdmin, administrationQueryKeyIndex, newState];
 
   filteredAdministrations.value = await getAdministrations(queryKey);
 });

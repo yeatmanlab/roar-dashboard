@@ -72,18 +72,19 @@ onMounted(async () => {
   }
 
   if (roarfirekit.value.restConfig) init();
-  if (isFirekitInit.value && !isLoadingUserData.value) {
-    await startTask();
-  }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', handlePopState);
 });
 
-watch([isFirekitInit, isLoadingUserData], async ([newFirekitInitValue, newLoadingUserData]) => {
-  if (newFirekitInitValue && !newLoadingUserData) await startTask();
-});
+watch(
+  [isFirekitInit, isLoadingUserData],
+  async ([newFirekitInitValue, newLoadingUserData]) => {
+    if (newFirekitInitValue && !newLoadingUserData) await startTask();
+  },
+  { immediate: true },
+);
 
 const { selectedAdmin } = storeToRefs(gameStore);
 

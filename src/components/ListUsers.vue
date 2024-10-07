@@ -223,6 +223,12 @@ const columns = ref([
     sort: false,
   },
   {
+    field: 'archived',
+    header: 'Archived',
+    dataType: 'boolean',
+    sort: false,
+  },
+  {
     header: 'Edit',
     button: true,
     eventName: 'edit-button',
@@ -305,7 +311,7 @@ async function updatePassword() {
   if (!v$.value.$invalid) {
     isSubmitting.value = true;
     await roarfirekit.value
-      .updateUserData(roarUid.value, { password: state.password })
+      .updateUserData(currentEditUser.value.id, { password: state.password })
       .then(() => {
         submitted.value = false;
         isSubmitting.value = false;

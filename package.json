@@ -1,7 +1,7 @@
 {
   "name": "roar-dashboard",
   "private": true,
-  "version": "2.11.18",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
     "build": "export VITE_FIREBASE_DATA_SOURCE=live && vite build",
@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@bdelab/roam-fluency": "1.11.26",
-    "@bdelab/roar-firekit": "^8.0.8",
+    "@bdelab/roar-firekit": "9.1.0",
     "@bdelab/roar-letter": "1.11.8",
     "@bdelab/roar-multichoice": "^1.11.3",
     "@bdelab/roar-pa": "2.2.4",

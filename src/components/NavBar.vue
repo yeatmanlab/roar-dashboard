@@ -160,11 +160,8 @@ const userDisplayName = computed(() => {
     const displayName = authStore?.userData?.displayName;
     const username = authStore?.userData?.username;
     const firstName = authStore?.userData?.name?.first;
-    if (isAdmin.value === true) {
-      return 'Hi, ' + (displayName || username || email || 'Admin') + '!';
-    } else {
-      return 'Hi, ' + (firstName || displayName || username || email || 'User') + '! 👋';
-    }
+    const userType = isAdmin.value ? 'Admin' : 'User';
+    return `Hi, ${firstName || displayName || username || email || userType}!`;
   }
 });
 

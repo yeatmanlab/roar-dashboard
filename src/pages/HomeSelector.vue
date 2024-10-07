@@ -25,6 +25,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
 import _get from 'lodash/get';
+import _isArray from 'lodash/isArray';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
 import { storeToRefs } from 'pinia';
@@ -126,7 +127,8 @@ async function checkConsent() {
       return;
     }
 
-    const legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+    let legalDocs = _get(toRaw(consentStatus), consentDoc.version);
+    legalDocs = _isArray(legalDocs) ? legalDocs : [legalDocs];
     const signedBeforeAugFirst = legalDocs.some((doc) => isSignedBeforeAugustFirst(doc.dateSigned));
 
     if (signedBeforeAugFirst) {
@@ -143,11 +145,15 @@ function isSignedBeforeAugustFirst(signedDate) {
 }
 
 // Only check consent if the user data is loaded
-watch(userData, async (newValue) => {
-  if (!_isEmpty(newValue)) {
-    await checkConsent();
-  }
-});
+watch(
+  [userData, userClaims],
+  async ([newUserData, newUserClaims]) => {
+    if (!_isEmpty(newUserData) && !_isEmpty(newUserClaims)) {
+      await checkConsent();
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(async () => {
   if (requireRefresh.value) {
