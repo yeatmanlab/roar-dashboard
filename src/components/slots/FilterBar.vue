@@ -1,6 +1,10 @@
 <template>
   <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">
-    <button class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900" @click="resetFilters">
+    <button
+      class="my-2 bg-primary p-2 border-none border-round text-white hover:bg-red-900"
+      data-cy="button-reset-filters"
+      @click="resetFilters"
+    >
       Reset Filters
     </button>
     <div v-if="props.schools" class="flex flex-row my-3">
