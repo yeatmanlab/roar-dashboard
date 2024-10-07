@@ -5,8 +5,8 @@
 # designed to be used before executing any npm tasks, such as running unit tests or building the application.
 # –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
 
-name: Setup node.js/npm
-description: Sets up node.js and installs the application's npm dependencies.
+name: Setup environment
+description: Sets up environment by installing Node.js and the application's npm dependencies.
 runs:
   using: 'composite'
   steps:

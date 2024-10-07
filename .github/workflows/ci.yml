@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup node.js/npm
+      - name: Setup environment
         uses: ./.github/actions/setup-node
 
       - name: Run linter
@@ -42,7 +42,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup node.js/npm
+      - name: Setup environment
         uses: ./.github/actions/setup-node
 
       - name: Run unit tests
@@ -64,7 +64,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup node.js/npm
+      - name: Setup environment
         uses: ./.github/actions/setup-node
 
       - name: Build application
@@ -103,7 +103,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup node.js/npm
+      - name: Setup environment
         uses: ./.github/actions/setup-node
 
       - name: Build application
