@@ -11,6 +11,7 @@ const listOrgsUrl = '/list-orgs';
 describe('The partner admin user', () => {
   beforeEach(() => {
     cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
+    cy.navigateTo('/');
     cy.navigateTo(listOrgsUrl, { timeout: timeout });
   });
 
