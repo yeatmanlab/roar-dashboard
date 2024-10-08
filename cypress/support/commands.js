@@ -313,9 +313,9 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
  *
  * @param {number} [timeout=10000] - Optional timeout for each command, defaulting to 10 seconds.
  */
-Cypress.Commands.add('checkOrgExists', (timeout = 10000) => {
+Cypress.Commands.add('checkOrgExists', (org, timeout = 10000) => {
   // Click on the 'Districts' item in the list
-  cy.get('ul > li', { timeout }).contains('Districts', { timeout }).click();
+  cy.get('ul > li', { timeout }).contains(org.tabName, { timeout }).click();
 
   // Verify the partner district name is present in the div
   cy.get('div', { timeout }).should('contain.text', Cypress.env('testPartnerDistrictName'), {
