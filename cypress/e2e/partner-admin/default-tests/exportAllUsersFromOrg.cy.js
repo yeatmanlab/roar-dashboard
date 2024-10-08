@@ -8,7 +8,7 @@ describe('Export Org Users test', () => {
   });
 
   it(`should export ${Cypress.env('testPartnerDistrictName')} organization users as CSV`, () => {
-    cy.checkOrgExists('Districts');
+    cy.checkOrgExists({ tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') });
     cy.get('button').contains('Export Users').click();
     cy.readFile(`${Cypress.env('cypressDownloads')}/cypress-test-district-users-export.csv`);
   });
