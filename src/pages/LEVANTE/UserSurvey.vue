@@ -56,7 +56,7 @@ watch(
       gameStore.currentSurveyAudioSource.stop();
     }
 
-    fetchBuffer(getParsedLocale(newLocale));
+    // fetchBuffer(getParsedLocale(newLocale));
   },
 );
 
@@ -78,7 +78,8 @@ async function playAudio(name) {
 
 <template>
   <div v-if="gameStore.survey && !gameStore.isSavingSurveyResponses && (!gameStore.surveyAudioLoading || authStore.userData.userType === 'student')">
-    <!-- <h1 class="text-2xl font-bold text-black">SURVEY HERE</h1> -->
+    <h1 v-if="authStore.userData.userType !== 'student'" class="text-2xl font-bold text-black text-center">{{ authStore.userData.userType === 'parent' ? `Child with Birth Month ${gameStore.specificSurveyRelationData[gameStore.specificSurveyRelationIndex].birthMonth} and Birth Year ${gameStore.specificSurveyRelationData[gameStore.specificSurveyRelationIndex].birthYear}` : `Class: ${gameStore.specificSurveyRelationData[gameStore.specificSurveyRelationIndex].name}` }}</h1>
+    
     <SurveyComponent :model="gameStore.survey" />
 
     <div v-if="authStore.userData.userType === 'student'">
