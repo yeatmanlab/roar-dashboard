@@ -108,6 +108,16 @@ import ParticipantSidebar from '@/components/ParticipantSidebar.vue';
 import { isLevante } from '@/helpers';
 import useSurveyResponses from '@/composables/useSurveyResponses/useSurveyResponses';
 import { useI18n } from 'vue-i18n';
+import axios from 'axios';
+import { LEVANTE_BUCKET_URL } from '@/constants/bucket';
+import { Model, settings } from 'survey-core';
+import { Converter } from 'showdown';
+import { fetchAudioLinks, } from '@/helpers/survey';
+import { useRouter } from 'vue-router';
+import { useToast } from 'primevue/usetoast';
+import { useQueryClient } from '@tanstack/vue-query';
+import { initializeSurvey, setupSurveyEventHandlers } from '@/helpers/surveyInitialization';
+import { usersPageFetcher } from '@/helpers/query/users';
 
 const showConsent = ref(false);
 const consentVersion = ref('');
@@ -115,6 +125,9 @@ const confirmText = ref('');
 const consentType = ref('');
 const consentParams = ref({});
 const { locale } = useI18n();
+const router = useRouter();
+const toast = useToast();
+const queryClient = useQueryClient();
 
 let unsubscribe;
 const initialized = ref(false);
@@ -312,8 +325,178 @@ const {
 
 const { data: surveyResponsesData } = useSurveyResponses(undefined, isLevante);
 
+
+const audioLinkMap = ref({});
+
+const { isLoading: isLoadingSurvey, data: surveyData } = useQuery({
+  queryKey: ['surveys'],
+  queryFn: async () => {
+    const userType = userData.value.userType;
+
+    if (userType === 'student') {
+      const res = await axios.get(`${LEVANTE_BUCKET_URL}/child_survey.json`);
+      audioLinkMap.value = await fetchAudioLinks('child-survey');
+      return {
+        general: res.data,
+      };
+    } else if (userType === 'teacher') {
+      const resGeneral = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_general.json`);
+      const resClassroom = await axios.get(`${LEVANTE_BUCKET_URL}/teacher_survey_classroom.json`);
+      return {
+        general: resGeneral.data,
+        specific: resClassroom.data,
+      };
+    } else {
+      // parent
+      const resFamily = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_family.json`);
+      const resChild = await axios.get(`${LEVANTE_BUCKET_URL}/parent_survey_child.json`);
+      return {
+        general: resFamily.data,
+        specific: resChild.data,
+      };
+    }
+  },
+  enabled: isLevante && userData?.value?.userType !== 'admin' && initialized,
+  staleTime: 24 * 60 * 60 * 1000, // 24 hours
+});
+
+
+const surveyDependenciesLoaded = computed(() => {
+  return surveyData.value && userData.value && selectedAdmin.value && surveyResponsesData.value
+});
+
+const userType = computed(() => userData.value?.userType);
+
+const specificSurveyData = computed(() => {
+  if (!surveyData.value) return null;
+  return userType.value === 'student' ? null : surveyData.value.specific;
+});
+
+function createSurveyInstance(surveyDataToStartAt) {
+  settings.lazyRender = true;
+  const surveyInstance = new Model(surveyDataToStartAt);
+  // surveyInstance.showNavigationButtons = 'none';
+  surveyInstance.locale = locale.value;
+  return surveyInstance;
+}
+
+function setupMarkdownConverter(surveyInstance) {
+  const converter = new Converter();
+  surveyInstance.onTextMarkdown.add((survey, options) => {
+    let str = converter.makeHtml(options.text);
+    str = str.substring(3, str.length - 4);
+    options.html = str;
+  });
+}
+
+
+watch(surveyDependenciesLoaded, async (isLoaded) => {
+  const isAssessment = selectedAdmin.value?.assessments.some((task) => task.taskId === 'survey');
+  if (!isLoaded || !isAssessment || gameStore.survey) return;
+
+  const surveyResponseDoc = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
+  
+  if (surveyResponseDoc) {
+    if (userType.value === 'student') {
+      const isComplete = surveyResponseDoc.general.isComplete;
+      gameStore.setIsGeneralSurveyComplete(isComplete);
+      if (isComplete) return;
+    } else {
+      gameStore.setIsGeneralSurveyComplete(surveyResponseDoc.general.isComplete);
+
+      const numOfSpecificSurveys = userType.value === 'parent' ? userData.value.childIds.length : userData.value.classes.current.length;
+      
+      if (surveyResponseDoc.specific && surveyResponseDoc.specific.length > 0) {
+        if (surveyResponseDoc.specific.length === numOfSpecificSurveys && surveyResponseDoc.specific.every(relation => relation.isComplete)) {
+          gameStore.setIsSpecificSurveyComplete(true);
+        } else {
+          const incompleteIndex = surveyResponseDoc.specific.findIndex(relation => !relation.isComplete);
+          console.log('incompleteIndex in home participant', incompleteIndex);
+          if (incompleteIndex > -1) {
+            gameStore.setSpecificSurveyRelationIndex(incompleteIndex);
+          } else {
+            gameStore.setSpecificSurveyRelationIndex(surveyResponseDoc.specific.length);
+          }
+        }
+      }
+    }
+  }
+
+  if (userType.value === 'student' && gameStore.isGeneralSurveyComplete) {
+    return
+  } else if (userType.value === 'teacher' || userType.value === 'parent') {
+    if (gameStore.isGeneralSurveyComplete && gameStore.isSpecificSurveyComplete) {
+      return
+    }
+  }
+
+  console.log('specificSurveyRelationIndex after logic', gameStore.specificSurveyRelationIndex);
+
+  const surveyDataToStartAt = userType.value === 'student' || !gameStore.isGeneralSurveyComplete
+    ? surveyData.value.general
+    : surveyData.value.specific;
+
+  // Fetch child docs for parent or class docs for teacher
+  if ((userType.value === 'parent' || userType.value === 'teacher') && !gameStore.isGeneralSurveyComplete) {
+    try {
+      const fetchConfig = userType.value === 'parent'
+        ? userData.value.childIds.map(childId => ({
+            collection: 'users',
+            docId: childId,
+            select: ['birthMonth', 'birthYear'],
+          }))
+        : userData.value.classes.current.map(classId => ({
+            collection: 'classes',
+            docId: classId,
+            select: ['name'],
+          }));
+      
+      const res = await fetchDocsById(fetchConfig);
+      gameStore.setSpecificSurveyRelationData(res);
+    } catch (error) {
+      console.error('Error fetching relation data:', error);
+    }
+  }
+
+  const surveyInstance = createSurveyInstance(surveyDataToStartAt);
+  setupMarkdownConverter(surveyInstance);
+
+  await initializeSurvey({
+    surveyInstance,
+    userType: userType.value,
+    specificSurveyData: specificSurveyData.value,
+    userData: userData.value,
+    gameStore,
+    locale: locale.value,
+    audioLinkMap: audioLinkMap.value,
+    generalSurveyData: surveyData.value.general,
+  });
+
+  setupSurveyEventHandlers({
+    surveyInstance,
+    userType: userType.value,
+    roarfirekit: roarfirekit.value,
+    uid: uid.value,
+    selectedAdminId: selectedAdmin.value.id,
+    gameStore,
+    router,
+    toast,
+    queryClient,
+    userData: userData.value,
+  });
+
+  gameStore.setSurvey(surveyInstance);
+
+}, { immediate: true });
+
 const isLoading = computed(() => {
-  return isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
+  const commonLoading = isLoadingUserData.value || isLoadingAssignments.value || isLoadingAdmins.value || isLoadingTasks.value;
+
+  if (isLevante) {
+    return commonLoading || isLoadingSurvey.value;
+  } else {
+    return commonLoading;
+  }
 });
 
 const isFetching = computed(() => {
@@ -361,16 +544,22 @@ const assessments = computed(() => {
       undefined,
     );
 
-    if (authStore?.userData.userType === 'student' && isLevante) {
-      // This is just to mark the card as complete
-      if (gameStore.isSurveyCompleted || surveyResponsesData.value?.length) {
-        // Find survey doc for the current administration
-        const surveyResponse = surveyResponsesData.value.find((doc) => doc?.administrationId === selectedAdmin.value.id);
-        if (surveyResponse) {
+    if (isLevante) {
+      // Mark the survey as complete as if it was a task
+      if (userType.value === 'student') {
+        if (gameStore.isGeneralSurveyComplete) {
           fetchedAssessments.forEach((assessment) => {
             if (assessment.taskId === 'survey') {
-            assessment.completedOn = new Date();
-          }
+              assessment.completedOn = new Date();
+            }
+          });
+        }
+      } else if (userType.value === 'teacher' || userType.value === 'parent') {
+        if (gameStore.isGeneralSurveyComplete && gameStore.isSpecificSurveyComplete) {
+          fetchedAssessments.forEach((assessment) => {
+            if (assessment.taskId === 'survey') {
+              assessment.completedOn = new Date();
+            }
           });
         }
       }

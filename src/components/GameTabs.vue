@@ -31,6 +31,38 @@
             <div class="roar-game-description">
               <p>{{ getTaskDescription(game.taskId, game.taskData.description) }}</p>
             </div>
+            
+            <div v-if="game.taskId === 'survey'" class="mt-4">
+              <div class="flex align-items-center mb-2">
+                <span class="mr-2 w-4"><b>General</b> {{ 
+                  props.userData.userType === 'teacher' || props.userData.userType === 'parent' ? 
+                  props.userData.userType === 'teacher' ? '- Teacher' : '- Family' : '' }}
+                </span>
+                <PvProgressBar :value="getGeneralSurveyProgress" class="flex-grow-1" />
+              </div>
+
+              <div v-if="props.userData.userType === 'parent'">
+                <div v-for="(child, i) in props.userData?.childIds" :key="child" class="flex flex-wrap align-items-center mb-2">
+                  <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
+                    <b>Child - </b> Birth Month: {{ gameStore.specificSurveyRelationData[i]?.birthMonth }} 
+                    <br class="sm:hidden" />
+                    Birth Year: {{ gameStore.specificSurveyRelationData[i]?.birthYear }}
+                  </span>
+                  <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1 w-full sm:w-auto" />
+                </div>
+              </div>
+
+              <div v-if="props.userData.userType === 'teacher'">
+                <div v-for="(classroom, i) in props.userData?.classes?.current" :key="classroom" class="flex flex-wrap align-items-center mb-2">
+                  <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
+                    <b>Classroom - </b> {{ gameStore.specificSurveyRelationData[i]?.name }}
+                  </span>
+                  <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1 w-full sm:w-auto" />
+                </div>
+              </div>
+            </div>
+
+
             <div class="roar-game-meta">
               <PvTag
                 v-for="(items, metaIndex) in game.taskData.meta"
@@ -89,11 +121,58 @@ import { camelize, getAgeData } from '@bdelab/roar-utils';
 import VideoPlayer from '@/components/VideoPlayer.vue';
 import { isLevante } from '@/helpers';
 import _capitalize from 'lodash/capitalize';
+import { useQueryClient } from '@tanstack/vue-query';
+import { LEVANTE_SURVEY_RESPONSES_KEY } from '@/constants/bucket';
 
 const props = defineProps({
   games: { type: Array, required: true },
   sequential: { type: Boolean, required: false, default: true },
   userData: { type: Object, required: true },
+});
+
+const authStore = useAuthStore();
+const gameStore = useGameStore();
+const queryClient = useQueryClient();
+const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
+
+const getGeneralSurveyProgress = computed(() => {
+  if (gameStore.isGeneralSurveyComplete) return 100;
+  if (!gameStore.survey) return 0;
+  return Math.round(((gameStore.survey.currentPageNo - 1) / (gameStore.numGeneralPages - 1)) * 100);
+});
+
+const getSpecificSurveyProgress = computed(() => (loopIndex) => {
+  const localStorageKey = `${LEVANTE_SURVEY_RESPONSES_KEY}-${props.userData.id}`;
+  const localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
+  // console.log('localStorageData: ', localStorageData);
+
+  if (localStorageData && gameStore.specificSurveyRelationData[loopIndex]) {
+    const specificIdFromServer = gameStore.specificSurveyRelationData[loopIndex].id;
+
+    if (specificIdFromServer === localStorageData.specificId) {
+
+        if (localStorageData.isComplete) return 100;
+
+        const currentPage = localStorageData.pageNo || 0;
+        const totalPages = gameStore.numSpecificPages || 1;
+
+        return Math.round((currentPage / totalPages) * 100);
+    }
+  }
+
+  // If data not found in localStorage, use surveyData from server
+  if (!surveyData || !Array.isArray(surveyData)) return 0;
+
+  const currentSurvey = surveyData.find(doc => doc.administrationId === selectedAdmin.value.id);
+  if (!currentSurvey || !currentSurvey.specific || !currentSurvey.specific[loopIndex]) return 0;
+  
+  const specificSurvey = currentSurvey.specific[loopIndex];
+  if (specificSurvey.isComplete) return 100;
+
+  const currentPage = currentSurvey.pageNo || 0;
+  const totalPages = gameStore.numSpecificPages || 1;
+
+  return Math.round((currentPage / totalPages) * 100);
 });
 
 const { t, locale } = useI18n();
@@ -212,9 +291,6 @@ const gameIndex = computed(() =>
 const displayGameIndex = computed(() => (gameIndex.value === -1 ? 0 : gameIndex.value));
 const allGamesComplete = computed(() => gameIndex.value === -1);
 
-const authStore = useAuthStore();
-const gameStore = useGameStore();
-
 const { selectedAdmin } = storeToRefs(gameStore);
 
 async function routeExternalTask(game) {
@@ -278,4 +354,5 @@ const returnVideoOptions = (videoURL) => {
     min-width: 250px;
   }
 }
+
 </style>

@@ -86,8 +86,8 @@ export const usersPageFetcher = async (userIds, pageLimit, page) => {
   const requestBody = getUsersRequestBody({
     userIds,
     aggregationQuery: false,
-    pageLimit: pageLimit.value,
-    page: page.value,
+    pageLimit: pageLimit || 100,
+    page: page || 1,
     paginate: true,
   });
 
