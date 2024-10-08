@@ -131,7 +131,6 @@
             :page-limit="pageLimit"
             :loading="isLoadingScores || isFetchingScores"
             :groupheaders="true"
-            :lazy-pre-sorting="orderBy"
             data-cy="roar-data-table"
             @reset-filters="resetFilters"
             @export-all="exportData({ selectedRows: $event })"
@@ -426,23 +425,6 @@ const handleExportToPdf = async () => {
   return;
 };
 
-const orderBy = ref([
-  {
-    field: 'user.grade',
-    order: '1',
-  },
-  {
-    field: 'user.lastName',
-    order: '1',
-  },
-]);
-// If this is a district report, make the schools column first sorted.
-if (props.orgType === 'district') {
-  orderBy.value.unshift({
-    order: '1',
-    field: 'user.schoolName',
-  });
-}
 const filterSchools = ref([]);
 const filterGrades = ref([]);
 const pageLimit = ref(10);
@@ -676,7 +658,7 @@ const computeAssignmentAndRunData = computed(() => {
         // swr: { support_level: 'Needs Extra Support', percentile: 10, raw: 10, reliable: true, engagementFlags: {}},
       };
 
-      let numAssignmentsCompleted = 0;
+      let numAssessmentsCompleted = 0;
       const currRowScores = {};
       for (const assessment of assignment.assessments) {
         // General Logic to grab support level, scores, etc
@@ -695,7 +677,7 @@ const computeAssignmentAndRunData = computed(() => {
         }
         // Add filter tags for completed/incomplete
         if (assessment.completedOn != undefined) {
-          numAssignmentsCompleted += 1;
+          numAssessmentsCompleted += 1;
           scoreFilterTags += ' Completed ';
         } else if (assessment.startedOn != undefined) {
           scoreFilterTags += ' Started ';
@@ -841,13 +823,38 @@ const computeAssignmentAndRunData = computed(() => {
 
       // update scores for current row with computed object
       currRow.scores = currRowScores;
-      currRow.numAssignmentsCompleted = numAssignmentsCompleted;
+      currRow.numAssessmentsCompleted = numAssessmentsCompleted;
       // push currRow to assignmentTableDataAcc
       assignmentTableDataAcc.push(currRow);
     }
 
-    // sort by numAssignmentsCompleted
-    assignmentTableDataAcc.sort((a, b) => b.numAssignmentsCompleted - a.numAssignmentsCompleted);
+    // sort by numAssessmentsCompleted
+    assignmentTableDataAcc.sort((a, b) => {
+      const completionDiff = b.numAssessmentsCompleted - a.numAssessmentsCompleted;
+      if (completionDiff !== 0) {
+        return completionDiff;
+      }
+
+      const schoolDiff = (a.user?.schoolName ?? '').localeCompare(b.user?.schoolName ?? '');
+      if (schoolDiff !== 0) {
+        return schoolDiff;
+      }
+
+      const gradeDiff = Number(a.user.grade) - Number(b.user.grade);
+      if (isNaN(gradeDiff)) {
+        const gradeA = a.user?.grade?.toString() ?? '';
+        const gradeB = b.user?.grade?.toString() ?? '';
+        const stringGradeDiff = gradeA.localeCompare(gradeB);
+        if (stringGradeDiff !== 0) {
+          return stringGradeDiff;
+        }
+      } else if (gradeDiff !== 0) {
+        return gradeDiff;
+      }
+
+      const lastNameDiff = (a.user?.lastName ?? '').localeCompare(b.user?.lastName ?? '');
+      return lastNameDiff;
+    });
 
     const filteredRunsByTaskId = _pickBy(runsByTaskIdAcc, (scores, taskId) => {
       return Object.keys(taskInfoById).includes(taskId);
