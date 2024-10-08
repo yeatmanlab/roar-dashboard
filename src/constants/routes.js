@@ -8,4 +8,6 @@
  */
 export const APP_ROUTES = {
   SIGN_IN: '/sign-in',
+  LIST_ORGS: '/list-orgs',
+  HOME: '/',
 };

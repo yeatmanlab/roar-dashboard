@@ -1,6 +1,6 @@
 const baseUrl = Cypress.env('baseUrl');
-const timeout = Cypress.env('timeout');
-const listOrgsUrl = '/list-orgs';
+import { APP_ROUTES } from '../../../../src/constants/routes';
+
 const orgs = [
   {
     tabName: 'Districts',
@@ -8,27 +8,6 @@ const orgs = [
     orgVerified: 'Districts - Cypress Test District',
   },
 ];
-
-function checkOrgExists(org) {
-  // Click the tab that contains the org name
-  cy.get('ul > li', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
-  cy.log('Tab ' + org.tabName + ' found.');
-
-  // Check if the organization exists by confirming the org name in the table
-  cy.get('div', { timeout: timeout }).should('contain.text', org.orgName, {
-    timeout: timeout,
-  });
-  cy.log(`${org.orgName} exists.`);
-
-  // Locate the row with the orgName and click the "Invite Users" button specifically for that org
-  cy.contains('td', org.orgName, { timeout: timeout })
-    .parents('tr')
-    .find('button')
-    .contains('Invite Users') // Ensure the button contains the text "Invite Users"
-    .click();
-
-  cy.log(`Invite Users button clicked for ${org.orgName}.`);
-}
 
 function visitSignUpPage(activationCode) {
   const registerUrl = `${baseUrl}/register/?code=${activationCode}`;
@@ -53,14 +32,23 @@ function completeParentSignUp(org) {
 describe('The partner admin user', () => {
   beforeEach(() => {
     cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
-    cy.visit('/');
-    cy.visit(listOrgsUrl);
+    cy.visit(APP_ROUTES.HOME);
+    cy.visit(APP_ROUTES.LIST_ORGS);
   });
 
   orgs.forEach((org) => {
     context(`when navigating to the ${org.tabName} tab`, () => {
       it(`should see the organization ${org.orgName} and should click on Invite Users`, () => {
-        checkOrgExists(org);
+        cy.checkOrgExists(org);
+
+        // Locate the row with the orgName and click the "Invite Users" button specifically for that org
+        cy.contains('td', org.orgName)
+          .parents('tr')
+          .find('button')
+          .contains('Invite Users') // Ensure the button contains the text "Invite Users"
+          .click();
+
+        cy.log(`Invite Users button clicked for ${org.orgName}.`);
 
         // Invoke the activation code input field to get the value
         cy.get('[data-cy="input-text-activation-code"]')
