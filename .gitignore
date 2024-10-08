@@ -34,7 +34,6 @@ dev-dist
 .firebase/
 
 # Env
-env
 .env*
 !.env.example
 !.env.test.example
