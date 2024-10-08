@@ -95,12 +95,19 @@
         </PvInputGroup>
         <p class="font-bold text-lg">Code:</p>
         <PvInputGroup class="mt-3">
-          <PvInputText style="width: 70%" :value="activationCode" autocomplete="off" readonly />
+          <PvInputText
+            style="width: 70%"
+            :value="activationCode"
+            autocomplete="off"
+            data-cy="input-text-activation-code"
+            readonly
+          />
           <PvButton
             class="bg-primary border-none p-2 text-white hover:bg-red-900"
+            data-cy="button-copy-invitation"
             @click="copyToClipboard(activationCode)"
           >
-            <i class="pi pi-copy p-2" data-cy="copy-invitation"></i>
+            <i class="pi pi-copy p-2"></i>
           </PvButton>
         </PvInputGroup>
         <div class="flex justify-content-end">
