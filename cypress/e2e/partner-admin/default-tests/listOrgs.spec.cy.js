@@ -1,4 +1,4 @@
-const timeout = Cypress.env('timeout');
+import { APP_ROUTES } from '../../../../src/constants/routes';
 const orgs = [
   { tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') },
   { tabName: 'Schools', orgName: Cypress.env('testPartnerSchoolName') },
@@ -6,13 +6,11 @@ const orgs = [
   { tabName: 'Groups', orgName: Cypress.env('testPartnerGroupName') },
 ];
 
-const listOrgsUrl = '/list-orgs';
-
 describe('The partner admin user', () => {
   beforeEach(() => {
     cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
-    cy.navigateTo('/');
-    cy.navigateTo(listOrgsUrl, { timeout: timeout });
+    cy.navigateTo(APP_ROUTES.HOME);
+    cy.navigateTo(APP_ROUTES.LIST_ORGS);
   });
 
   orgs.forEach((org) => {

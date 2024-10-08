@@ -1,12 +1,10 @@
-const timeout = Cypress.env('timeout');
-
-const listOrgsUrl = '/list-orgs';
+import { APP_ROUTES } from '../../../../src/constants/routes';
 
 describe('Export Org Users test', () => {
   beforeEach(() => {
     cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
-    cy.navigateTo('/');
-    cy.navigateTo(listOrgsUrl);
+    cy.navigateTo(APP_ROUTES.HOME);
+    cy.navigateTo(APP_ROUTES.LIST_ORGS);
   });
 
   it(`should export ${Cypress.env('testPartnerDistrictName')} organization users as CSV`, () => {
