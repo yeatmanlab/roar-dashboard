@@ -45,16 +45,14 @@ function inputLoginValues() {
 
 function completeParentSignUp(org) {
   cy.get('div.p-checkbox-box').click();
-
   cy.get('button').contains('Continue').click();
   cy.get('button').contains('Next').click();
-
   cy.get('h2').should('contain.text', org.orgVerified);
 }
 
 describe('The partner admin user', () => {
   beforeEach(() => {
-    cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword')).then(() => {});
+    cy.login(Cypress.env('partnerAdminUsername'), Cypress.env('partnerAdminPassword'));
     cy.visit('/');
     cy.visit(listOrgsUrl);
   });
@@ -64,12 +62,13 @@ describe('The partner admin user', () => {
       it(`should see the organization ${org.orgName} and should click on Invite Users`, () => {
         checkOrgExists(org);
 
-        // Invoke the activation code input field to get the value, then visit the sign-up page
+        // Invoke the activation code input field to get the value
         cy.get('[data-cy="input-text-activation-code"]')
           .invoke('attr', 'value')
           .then((value) => {
             expect(value).to.not.be.empty;
 
+            // Visit the sign-up page with the activation code
             visitSignUpPage(value);
             inputLoginValues();
             completeParentSignUp(org);
