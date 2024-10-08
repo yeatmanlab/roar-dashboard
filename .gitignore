@@ -34,9 +34,10 @@ dev-dist
 .firebase/
 
 # Env
-.env
-.env.local
-.env.test
+env
+.env*
+!.env.example
+!.env.test.example
 
 # Test coverage
 coverage
