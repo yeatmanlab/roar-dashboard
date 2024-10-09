@@ -1,22 +1,55 @@
 import { sentryVitePlugin } from '@sentry/vite-plugin';
-import { fileURLToPath, URL } from 'url';
-import { defineConfig, loadEnv } from 'vite';
-import Vue from '@vitejs/plugin-vue';
-import mkcert from 'vite-plugin-mkcert';
+import { defineConfig } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import mkcert from 'vite-plugin-mkcert';
+import Vue from '@vitejs/plugin-vue';
 import UnheadVite from '@unhead/addons/vite';
 import { config } from '@dotenvx/dotenvx';
+import { fileURLToPath, URL } from 'url';
+import path from 'path';
+import fs from 'fs';
 
-// https://vitejs.dev/config/
+/**
+ * Load dotenv files
+ *
+ * This function extends the default Vite behaviour for dotenv files by loading environment variables from dotenv files
+ * located in the env-configs/ directory. This directory is a submodule containing environment-specific dotenv files,
+ * all encrypted using dotenvx. This function will load the dotenv file corresponding to the current mode (development,
+ * production, etc.) as well as the local mode override file and decrypt the contents into process.env for Vite to use.
+ *
+ * It is worth noting that any fork of the project not using the env-configs submodule can safely use a regular dotenv
+ * file at the root of the project, as Vite will automatically load it.
+ *
+ * @returns {void}
+ */
+const loadDotenvFiles = (mode) => {
+  let envFilePaths = [];
+  const allowOverride = !mode.includes('production') && !mode.includes('staging');
+
+  const modeEnvFilePath = path.resolve(__dirname, `./env-configs/.env.${mode}`);
+  const modeLocalEnvFileName = path.resolve(__dirname, `./env-configs/.env.${mode}.local`);
+
+  if (fs.existsSync(modeEnvFilePath)) envFilePaths.push(modeEnvFilePath);
+  if (allowOverride & fs.existsSync(modeLocalEnvFileName)) envFilePaths.push(modeLocalEnvFileName);
+
+  config({
+    path: envFilePaths,
+    override: allowOverride,
+  });
+};
+
+/**
+ * Vite configuration
+ *
+ * @param {Object} options - Options object passed to defineConfig.
+ * @param {string} options.mode - The current mode (development, production, etc.).
+ * @returns {Object} The Vite configuration object.
+ */
 export default defineConfig(({ mode }) => {
-  // Load environment variables from .env files following the default Vite priority rules.
-  const env = loadEnv(mode, process.cwd(), '');
+  // Trigger custom dotenv file loader for env-configs directory.
+  loadDotenvFiles(mode);
 
-  // Process encrypted environment variables using dotenvx.
-  // @NOTE: We're using "nextjs" as convention as dotenvx does not support a "vite" convention yet, but both are close
-  // to identical in terms of how they prioritize environment variables.
-  config({ env, convention: 'nextjs' });
-
+  // Return default Vite configuration.
   return {
     plugins: [
       Vue({
@@ -31,6 +64,7 @@ export default defineConfig(({ mode }) => {
       ...(process.env.NODE_ENV === 'development' ? [mkcert()] : []),
       ...(process.env.NODE_ENV !== 'development'
         ? [
+            // @TODO: Modify to use environment variables for Sentry configuration.
             sentryVitePlugin({
               org: 'roar-89588e380',
               project: 'dashboard',
