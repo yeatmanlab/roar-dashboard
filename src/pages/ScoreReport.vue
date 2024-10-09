@@ -126,45 +126,11 @@
             :loading="isLoadingScores || isFetchingScores"
             :groupheaders="true"
             data-cy="roar-data-table"
-            @reset-filters="resetFilters"
             @export-all="exportAll"
             @export-selected="exportSelected"
           >
             <template #filterbar>
-              <div class="flex flex-row flex-wrap gap-2 align-items-center justify-content-center">
-                <div v-if="schoolsInfo" class="flex flex-row my-3">
-                  <span class="p-float-label">
-                    <PvMultiSelect
-                      id="ms-school-filter"
-                      v-model="filterSchools"
-                      style="width: 10rem; max-width: 15rem"
-                      :options="schoolsInfo"
-                      option-label="name"
-                      option-value="name"
-                      :show-toggle-all="false"
-                      selected-items-label="{0} schools selected"
-                      data-cy="filter-by-school"
-                    />
-                    <label for="ms-school-filter">Filter by School</label>
-                  </span>
-                </div>
-                <div class="flex flex-row gap-2 my-3">
-                  <span class="p-float-label">
-                    <PvMultiSelect
-                      id="ms-grade-filter"
-                      v-model="filterGrades"
-                      style="width: 10rem; max-width: 15rem"
-                      :options="gradeOptions"
-                      option-label="label"
-                      option-value="value"
-                      :show-toggle-all="false"
-                      selected-items-label="{0} grades selected"
-                      data-cy="filter-by-grade"
-                    />
-                    <label for="ms-school-filter">Filter by Grade</label>
-                  </span>
-                </div>
-              </div>
+              <FilterBar :schools="schoolsInfo" :grades="gradeOptions" :update-filters="updateFilters" />
             </template>
             <span>
               <label for="view-columns" class="view-label">View</label>
@@ -286,6 +252,7 @@
 
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue';
+import FilterBar from '@/components/slots/FilterBar.vue';
 import { storeToRefs } from 'pinia';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -304,6 +271,7 @@ import { assignmentFetchAll } from '@/helpers/query/assignments';
 import { orgFetcher } from '@/helpers/query/orgs';
 import { pluralizeFirestoreCollection } from '@/helpers';
 import { getTitle } from '../helpers/query/administrations';
+import { useFilteredTableData } from '../composables/useFilteredTableData.js';
 import {
   taskDisplayNames,
   taskInfoById,
@@ -419,8 +387,24 @@ const handleExportToPdf = async () => {
   return;
 };
 
-const filterSchools = ref([]);
-const filterGrades = ref([]);
+const orderBy = ref([
+  {
+    field: 'user.grade',
+    order: '1',
+  },
+  {
+    field: 'user.lastName',
+    order: '1',
+  },
+]);
+// If this is a district report, make the schools column first sorted.
+if (props.orgType === 'district') {
+  orderBy.value.unshift({
+    order: '1',
+    field: 'user.schoolName',
+  });
+}
+
 const pageLimit = ref(10);
 
 // User Claims
@@ -836,51 +820,19 @@ const computeAssignmentAndRunData = computed(() => {
   }
 });
 
-const filteredTableData = ref(computeAssignmentAndRunData.value.assignmentTableData);
+// Composable to filter table data using FilterBar.vue component which is passed in as a slot to RoarDataTable
+const filteredTableData = ref([]);
+const { updateFilters } = useFilteredTableData(filteredTableData);
 
-// Flag to track whether the watcher is already processing an update
-const isUpdating = ref(false);
+// Watch for changes in assignmentTableData and update filteredTableData
+// This will snapshot the assignmentTableData and filter it based on the current filters
+watch(
+  () => computeAssignmentAndRunData.value.assignmentTableData,
+  (newTableData) => {
+    filteredTableData.value = newTableData;
+  },
+);
 
-watch(computeAssignmentAndRunData, (newValue) => {
-  // Update filteredTableData when computedProgressData changes
-  filteredTableData.value = newValue.assignmentTableData;
-});
-
-watch([filterSchools, filterGrades], ([newSchools, newGrades]) => {
-  // If an update is already in progress, return early to prevent recursion
-  if (isUpdating.value) {
-    return;
-  }
-  if (newSchools.length > 0 || newGrades.length > 0) {
-    isUpdating.value = true;
-    //set scoresTableData to filtered data if filter is added
-    let filteredData = computeAssignmentAndRunData.value.assignmentTableData;
-
-    if (newSchools.length > 0) {
-      filteredData = filteredData.filter((item) => {
-        return newSchools.includes(item.user.schoolName);
-      });
-    }
-    if (newGrades.length > 0) {
-      filteredData = filteredData.filter((item) => {
-        return newGrades.includes(item.user.grade);
-      });
-    }
-    filteredTableData.value = filteredData;
-
-    isUpdating.value = false; // Reset the flag after the update
-  } else {
-    filteredTableData.value = computeAssignmentAndRunData.value.assignmentTableData;
-  }
-});
-
-const resetFilters = () => {
-  isUpdating.value = true;
-
-  filterSchools.value = [];
-  filterGrades.value = [];
-  isUpdating.value = false;
-};
 const viewMode = ref('color');
 
 const viewOptions = ref([
