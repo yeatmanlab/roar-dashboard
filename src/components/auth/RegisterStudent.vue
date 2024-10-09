@@ -51,7 +51,7 @@
         <section v-else>
           <h2 class="text-primary font-bold">You are registering for:</h2>
           <div class="flex">
-            <h2 class="text-primary h-3 m-0 p-0" style="width: 70%">{{ student.orgName }}</h2>
+            <h2 class="text-primary h-3 m-0 p-0" style="width: 70%" data-cy="org-name">{{ student.orgName }}</h2>
             <PvButton
               class="bg-primary border-none border-round p-2 text-white hover:surface-300 hover:text-black-alpha-90"
               label="Is this not right?"

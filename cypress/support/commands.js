@@ -304,6 +304,29 @@ Cypress.Commands.add('playOptionalGame', (game, administration, optional) => {
 });
 
 /**
+ * Custom command to check if a partner district exists in the organization list.
+ *
+ * This command performs the following actions:
+ * 1. Locates and clicks on the 'Districts' option in a list.
+ * 2. Verifies if the partner district name (retrieved from Cypress environment variables) exists in a specific `div` element.
+ * 3. Logs a message confirming that the district exists.
+ *
+ * @param {number} [timeout=10000] - Optional timeout for each command, defaulting to 10 seconds.
+ */
+Cypress.Commands.add('checkOrgExists', (org, timeout = 10000) => {
+  // Click on the 'Districts' item in the list
+  cy.get('ul > li', { timeout }).contains(org.tabName, { timeout }).click();
+
+  // Verify the partner district name is present in the div
+  cy.get('div', { timeout }).should('contain.text', Cypress.env('testPartnerDistrictName'), {
+    timeout,
+  });
+
+  // Log the district name exists
+  cy.log(`${Cypress.env('testPartnerDistrictName')} exists.`);
+});
+
+/**
  * Create a mock store for the user type specified.
  * @param {string} userType - The type of user to create a mock store for. One of 'superAdmin', 'partnerAdmin', or 'participant'. Defaults to 'participant'.
  * @returns {void}
