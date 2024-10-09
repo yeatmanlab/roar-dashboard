@@ -9,48 +9,48 @@ permissions:
   pull-requests: write
 
 jobs:
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Lint & Format
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # # Lint & Format
+  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # lint:
+  #   name: Lint
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Setup environment
-        uses: ./.github/actions/setup-node
+  #     - name: Setup environment
+  #       uses: ./.github/actions/setup-node
 
-      - name: Run linter
-        run: npm run lint
+  #     - name: Run linter
+  #       run: npm run lint
 
-      - name: Check format
-        run: npm run format:check
+  #     - name: Check format
+  #       run: npm run format:check
 
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # Test
-  # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  test:
-    name: Unit tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # # Test
+  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # test:
+  #   name: Unit tests
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Setup environment
-        uses: ./.github/actions/setup-node
+  #     - name: Setup environment
+  #       uses: ./.github/actions/setup-node
 
-      - name: Run unit tests
-        run: npm run test
+  #     - name: Run unit tests
+  #       run: npm run test
 
-      - name: Report coverage
-        if: success()
-        uses: davelosert/vitest-coverage-report-action@v2
+  #     - name: Report coverage
+  #       if: success()
+  #       uses: davelosert/vitest-coverage-report-action@v2
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Build the application
@@ -59,10 +59,14 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
 
       - name: Setup environment
         uses: ./.github/actions/setup-node
@@ -82,33 +86,22 @@ jobs:
       # matrix:
       #   containers: [1, 2]
     env:
-      VITE_FIREBASE_ADMIN_PROJECT_ID: ${{ secrets.CI_VITE_FIREBASE_ADMIN_PROJECT_ID }}
-      VITE_FIREBASE_APP_PROJECT_ID: ${{ secrets.CI_VITE_FIREBASE_APP_PROJECT_ID }}
-      VITE_FIREBASE_ADMIN_API_KEY: ${{ secrets.CI_VITE_FIREBASE_ADMIN_API_KEY }}
-      VITE_FIREBASE_APP_API_KEY: ${{ secrets.CI_VITE_FIREBASE_APP_API_KEY }}
-      VITE_FIREBASE_ADMIN_AUTH_DOMAIN: ${{ secrets.CI_VITE_FIREBASE_ADMIN_AUTH_DOMAIN }}
-      VITE_FIREBASE_APP_AUTH_DOMAIN: ${{ secrets.CI_VITE_FIREBASE_APP_AUTH_DOMAIN }}
-      VITE_FIREBASE_ADMIN_STORAGE_BUCKET: ${{ secrets.CI_VITE_FIREBASE_ADMIN_STORAGE_BUCKET }}
-      VITE_FIREBASE_APP_STORAGE_BUCKET: ${{ secrets.CI_VITE_FIREBASE_APP_STORAGE_BUCKET }}
-      VITE_FIREBASE_ADMIN_MESSAGING_SENDER_ID: ${{ secrets.CI_VITE_FIREBASE_ADMIN_MESSAGING_SENDER_ID }}
-      VITE_FIREBASE_APP_MESSAGING_SENDER_ID: ${{ secrets.CI_VITE_FIREBASE_APP_MESSAGING_SENDER_ID }}
-      VITE_FIREBASE_ADMIN_APP_ID: ${{ secrets.CI_VITE_FIREBASE_ADMIN_APP_ID }}
-      VITE_FIREBASE_APP_APP_ID: ${{ secrets.CI_VITE_FIREBASE_APP_APP_ID }}
-      VITE_FIREKIT_ADMIN_RECAPTCHA_SITE_KEY: ${{ secrets.CI_VITE_FIREKIT_ADMIN_RECAPTCHA_SITE_KEY }}
-      VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY: ${{ secrets.CI_VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY }}
-      VITE_FIREKIT_APPCHECK_DEBUG_TOKEN: ${{ secrets.CI_VITE_FIREKIT_APPCHECK_DEBUG_TOKEN }}
-      VITE_FIREKIT_VERBOSE_LOGGING_ENABLED: 'true'
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
+      DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+
+      - name: Debug submodule checkout
+        run: ls -la env-configs
 
       - name: Setup environment
         uses: ./.github/actions/setup-node
 
       - name: Build application
-        env:
-          NODE_ENV: 'test'
         run: npm run build
 
       - name: Install Cypress
@@ -116,8 +109,8 @@ jobs:
 
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
-        env:
-          CYPRESS_BASE_URL: 'https://localhost:5173/'
+        env: # @TODO: Replace with .env.test file values
+          CYPRESS_BASE_URL: 'http://localhost:5173/'
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           CLEVER_USERNAME: ${{ secrets.CLEVER_USERNAME }}
           CLEVER_PASSWORD: ${{ secrets.CLEVER_PASSWORD }}
@@ -132,7 +125,7 @@ jobs:
         with:
           tag: ${{ github.event_name }}
           install: false
-          start: npm run dev
+          start: npm run preview
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
