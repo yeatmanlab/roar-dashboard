@@ -2,4 +2,4 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 npx dotenvx ext precommit
-npm run check-format
+npm run format:check
