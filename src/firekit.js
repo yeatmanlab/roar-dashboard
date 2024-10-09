@@ -120,12 +120,6 @@ export async function initializeFirekit() {
   const firekit = new RoarFirekit({
     roarConfig: firekitConfig,
     authPersistence: 'session',
-    markRawConfig: {
-      // @TODO: Check what this is for?
-      auth: false,
-      db: false,
-      functions: false,
-    },
     verboseLogging: VITE_FIREKIT_VERBOSE_LOGGING_ENABLED === true,
   });
 
