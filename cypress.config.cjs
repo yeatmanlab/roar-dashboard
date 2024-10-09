@@ -4,18 +4,31 @@ const { nodePolyfills } = require('vite-plugin-node-polyfills');
 const vitePreprocessor = require('cypress-vite');
 const UnheadVite = require('@unhead/addons/vite');
 const path = require('path');
+const fs = require('fs');
 
-// Load environment variables from .env.test located in the root of the project
-require('dotenv').config({ path: path.resolve(__dirname, '.env.test') });
+// Load environment variables
+// Using a similar approach as in vite.config.js, we conditionally load the .env.test files from the env-configs/
+// directory and the root of the project. This is done to properly support dotenvx.
+let envFilePaths = [];
+const mainTestEnv = path.resolve(__dirname, './env-configs/.env.test');
+const fallbackTestEnv = path.resolve(__dirname, './.env.test');
+
+if (fs.existsSync(mainTestEnv)) envFilePaths.push(mainTestEnv);
+if (fs.existsSync(fallbackTestEnv)) envFilePaths.push(fallbackTestEnv);
+
+require('@dotenvx/dotenvx').config({ path: envFilePaths })
 
 module.exports = defineConfig({
-  projectId: 'cobw62',
+  projectId: process.env.CYPRESS_PROJECT_ID,
 
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     experimentalRunAllSpecs: true,
     experimentalMemoryManagement: true,
-    retries: 2,
+    retries: {
+      runMode: 2,
+      openMode: 0
+    },
     setupNodeEvents(on, config) {
       on('task', {
         log(message) {
@@ -23,7 +36,13 @@ module.exports = defineConfig({
           return null;
         },
       });
-      on('file:preprocessor', vitePreprocessor());
+
+      on('file:preprocessor', 
+        vitePreprocessor({
+          mode: 'development',
+        })
+      );
+      
       return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
     },
   },
@@ -72,23 +91,21 @@ module.exports = defineConfig({
     firestoreAppUrl:
       'https://firestore.googleapis.com/v1/projects/gse-roar-assessment-dev/databases/(default)/documents',
     timeout: 10000,
-    sessionCookieName: process.env.SESSION_COOKIE_NAME,
-    sessionCookieValue: process.env.SESSION_COOKIE_VALUE,
-    superAdminUsername: process.env.SUPER_ADMIN_USERNAME,
-    superAdminPassword: process.env.SUPER_ADMIN_PASSWORD,
-    superAdminId: process.env.SUPER_ADMIN_ID,
-    partnerAdminUsername: process.env.PARTNER_ADMIN_USERNAME,
-    partnerAdminPassword: process.env.PARTNER_ADMIN_PASSWORD,
-    partnerAdminId: process.env.PARTNER_ADMIN_ID,
-    participantUsername: process.env.PARTICIPANT_USERNAME,
-    participantPassword: process.env.PARTICIPANT_PASSWORD,
-    participantUid: process.env.PARTICIPANT_UID,
-    participantEmail: process.env.PARTICIPANT_EMAIL,
-    participantEmailPassword: process.env.PARTICIPANT_EMAIL_PASSWORD,
+    superAdminUsername: process.env.CYPRESS_SUPER_ADMIN_USERNAME,
+    superAdminPassword: process.env.CYPRESS_SUPER_ADMIN_PASSWORD,
+    superAdminId: process.env.CYPRESS_SUPER_ADMIN_ID,
+    partnerAdminUsername: process.env.CYPRESS_PARTNER_ADMIN_USERNAME,
+    partnerAdminPassword: process.env.CYPRESS_PARTNER_ADMIN_PASSWORD,
+    partnerAdminId: process.env.CYPRESS_PARTNER_ADMIN_ID,
+    participantUsername: process.env.CYPRESS_PARTICIPANT_USERNAME,
+    participantPassword: process.env.CYPRESS_PARTICIPANT_PASSWORD,
+    participantUid: process.env.CYPRESS_PARTICIPANT_UID,
+    participantEmail: process.env.CYPRESS_PARTICIPANT_EMAIL,
+    participantEmailPassword: process.env.CYPRESS_PARTICIPANT_EMAIL_PASSWORD,
     cleverOAuthLink: 'https://clever.com/oauth/authorize',
     cleverSchoolName: '61e8aee84cf0e71b14295d45',
-    cleverUsername: process.env.CLEVER_USERNAME,
-    cleverPassword: process.env.CLEVER_PASSWORD,
+    cleverUsername: process.env.CYPRESS_CLEVER_USERNAME,
+    cleverPassword: process.env.CYPRESS_CLEVER_PASSWORD,
     testAdministrationName: 'Cypress Test Administration',
     testAdministrationId: 'kKUSypkMc36mPEzleDE6',
     testAdministratorFirstName: 'Cypress Test Administrator First Name',
