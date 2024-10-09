@@ -105,7 +105,7 @@
 //     language: 'es',
 //   },
 //   {
-//     name: 'Roar - Syntax',
+//     name: 'ROAR - Syntax',
 //     app: 'core-tasks',
 //     spec: playSyntax,
 //     language: 'en',
