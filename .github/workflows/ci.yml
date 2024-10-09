@@ -67,6 +67,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'true'
+          token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Setup environment
         uses: ./.github/actions/setup-node
@@ -94,6 +95,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'true'
+          token: ${{ secrets.CI_GITHUB_PAT }}
 
       - name: Debug submodule checkout
         run: ls -la env-configs
