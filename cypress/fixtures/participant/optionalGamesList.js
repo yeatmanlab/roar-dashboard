@@ -1,5 +1,5 @@
-import { playSRE } from '../support/helper-functions/roar-sre/sreHelpers.js';
-import { playSWR } from '../support/helper-functions/roar-swr/swrHelpers.js';
+import { playSRE } from '../../support/helper-functions/roar-sre/sreHelpers.js';
+import { playSWR } from '../../support/helper-functions/roar-swr/swrHelpers.js';
 
 // Current zzzCypressTestOptionalRoarApps contains the following optional games
 // To add more optional games, recreate the administration with the desired games,
