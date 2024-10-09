@@ -47,8 +47,8 @@ const {
   VITE_FIREBASE_APP_MESSAGING_SENDER_ID,
   VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY,
   VITE_FIREKIT_APPCHECK_DEBUG_TOKEN = undefined,
-  VITE_FIREKIT_VERBOSE_LOGGING_ENABLED = false, // @TODO: Parse as bools!
-  VITE_FIREBASE_EMULATOR_ENABLED = false, // @TODO: Parse as bools!
+  VITE_FIREKIT_VERBOSE_LOGGING_ENABLED = false,
+  VITE_FIREBASE_EMULATOR_ENABLED = false,
 } = import.meta.env;
 
 // Define the App Check debug token
@@ -65,50 +65,51 @@ const APP_CHECK_DEBUG_TOKEN =
 // Define the Firekit configuration object
 // If the project is running in the emulator, only a subset of the configuration is required. Otherwise, the ROAR
 // Firekit requires the full configuration object to be passed in during initialization.
-const firekitConfig = VITE_FIREBASE_EMULATOR_ENABLED
-  ? {
-      admin: {
-        projectId: `demo-${VITE_FIREBASE_ADMIN_PROJECT_ID}`,
-        apiKey: 'fake-admin-emulator-api-key',
-        emulatorPorts: {
-          db: AdminFirebaseConfig.emulators.firestore.port,
-          auth: AdminFirebaseConfig.emulators.auth.port,
-          functions: AdminFirebaseConfig.emulators.functions.port,
+const firekitConfig =
+  VITE_FIREBASE_EMULATOR_ENABLED === 'true'
+    ? {
+        admin: {
+          projectId: `demo-${VITE_FIREBASE_ADMIN_PROJECT_ID}`,
+          apiKey: 'fake-admin-emulator-api-key',
+          emulatorPorts: {
+            db: AdminFirebaseConfig.emulators.firestore.port,
+            auth: AdminFirebaseConfig.emulators.auth.port,
+            functions: AdminFirebaseConfig.emulators.functions.port,
+          },
         },
-      },
-      app: {
-        projectId: `demo-${VITE_FIREBASE_APP_PROJECT_ID}`,
-        apiKey: 'fake-app-emulator-api-key',
-        emulatorPorts: {
-          db: AppFirebaseConfig.emulators.firestore.port,
-          auth: AppFirebaseConfig.emulators.auth.port,
-          functions: AppFirebaseConfig.emulators.functions.port,
+        app: {
+          projectId: `demo-${VITE_FIREBASE_APP_PROJECT_ID}`,
+          apiKey: 'fake-app-emulator-api-key',
+          emulatorPorts: {
+            db: AppFirebaseConfig.emulators.firestore.port,
+            auth: AppFirebaseConfig.emulators.auth.port,
+            functions: AppFirebaseConfig.emulators.functions.port,
+          },
         },
-      },
-    }
-  : {
-      admin: {
-        projectId: VITE_FIREBASE_ADMIN_PROJECT_ID,
-        appId: VITE_FIREBASE_ADMIN_APP_ID,
-        apiKey: VITE_FIREBASE_ADMIN_API_KEY,
-        authDomain: VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
-        storageBucket: VITE_FIREBASE_ADMIN_STORAGE_BUCKET,
-        messagingSenderId: VITE_FIREBASE_ADMIN_MESSAGING_SENDER_ID,
-        siteKey: VITE_FIREKIT_ADMIN_RECAPTCHA_SITE_KEY,
-        debugToken: APP_CHECK_DEBUG_TOKEN,
-        measurementId: VITE_ANALYTICS_ADMIN_MEASUREMENT_ID,
-      },
-      app: {
-        projectId: VITE_FIREBASE_APP_PROJECT_ID,
-        appId: VITE_FIREBASE_APP_APP_ID,
-        apiKey: VITE_FIREBASE_APP_API_KEY,
-        authDomain: VITE_FIREBASE_APP_AUTH_DOMAIN,
-        storageBucket: VITE_FIREBASE_APP_STORAGE_BUCKET,
-        messagingSenderId: VITE_FIREBASE_APP_MESSAGING_SENDER_ID,
-        siteKey: VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY,
-        debugToken: APP_CHECK_DEBUG_TOKEN,
-      },
-    };
+      }
+    : {
+        admin: {
+          projectId: VITE_FIREBASE_ADMIN_PROJECT_ID,
+          appId: VITE_FIREBASE_ADMIN_APP_ID,
+          apiKey: VITE_FIREBASE_ADMIN_API_KEY,
+          authDomain: VITE_FIREBASE_ADMIN_AUTH_DOMAIN,
+          storageBucket: VITE_FIREBASE_ADMIN_STORAGE_BUCKET,
+          messagingSenderId: VITE_FIREBASE_ADMIN_MESSAGING_SENDER_ID,
+          siteKey: VITE_FIREKIT_ADMIN_RECAPTCHA_SITE_KEY,
+          debugToken: APP_CHECK_DEBUG_TOKEN,
+          measurementId: VITE_ANALYTICS_ADMIN_MEASUREMENT_ID,
+        },
+        app: {
+          projectId: VITE_FIREBASE_APP_PROJECT_ID,
+          appId: VITE_FIREBASE_APP_APP_ID,
+          apiKey: VITE_FIREBASE_APP_API_KEY,
+          authDomain: VITE_FIREBASE_APP_AUTH_DOMAIN,
+          storageBucket: VITE_FIREBASE_APP_STORAGE_BUCKET,
+          messagingSenderId: VITE_FIREBASE_APP_MESSAGING_SENDER_ID,
+          siteKey: VITE_FIREKIT_APP_RECAPTCHA_SITE_KEY,
+          debugToken: APP_CHECK_DEBUG_TOKEN,
+        },
+      };
 
 /**
  * Initialize a new Firekit instance.
@@ -125,7 +126,7 @@ export async function initializeFirekit() {
       db: false,
       functions: false,
     },
-    verboseLogging: VITE_FIREKIT_VERBOSE_LOGGING_ENABLED,
+    verboseLogging: VITE_FIREKIT_VERBOSE_LOGGING_ENABLED === true,
   });
 
   return await firekit.init();
