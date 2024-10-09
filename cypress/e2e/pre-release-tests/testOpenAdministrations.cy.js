@@ -105,7 +105,7 @@
 //     language: 'es',
 //   },
 //   {
-//     name: 'Words and Pictures Game',
+//     name: 'Roar - Syntax',
 //     app: 'core-tasks',
 //     spec: playSyntax,
 //     language: 'en',
