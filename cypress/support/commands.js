@@ -27,14 +27,14 @@ Cypress.Commands.add('login', (username, password) => {
         cy.window().then((win) => {
           const sessionStorageKeys = Object.keys(win.sessionStorage);
 
-          const adminAuthUserKeyPattern = /^firebase:authUser:\w+:admin$/;
-          const appAuthUserKeyPattern = /^firebase:authUser:\w+:app$/;
+          const adminAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:admin$');
+          const appAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:app$');
 
           const hasAdminAuthUserKey = sessionStorageKeys.some((key) => adminAuthUserKeyPattern.test(key));
           const hasAppAuthUserKey = sessionStorageKeys.some((key) => appAuthUserKeyPattern.test(key));
 
-          expect(hasAdminAuthUserKey, 'Session storage should contain a firebase:authUser:{uid}:admin key').to.be.true;
-          expect(hasAppAuthUserKey, 'Session storage should contain a firebase:authUser:{uid}:app key').to.be.true;
+          expect(hasAdminAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:admin key').to.be.true;
+          expect(hasAppAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:app key').to.be.true;
         });
       },
     },
