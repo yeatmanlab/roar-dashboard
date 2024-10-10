@@ -16,7 +16,7 @@ const fallbackTestEnv = path.resolve(__dirname, './.env.test');
 if (fs.existsSync(mainTestEnv)) envFilePaths.push(mainTestEnv);
 if (fs.existsSync(fallbackTestEnv)) envFilePaths.push(fallbackTestEnv);
 
-require('@dotenvx/dotenvx').config({ path: envFilePaths })
+require('@dotenvx/dotenvx').config({ path: envFilePaths });
 
 module.exports = defineConfig({
   projectId: process.env.CYPRESS_PROJECT_ID,
@@ -27,7 +27,7 @@ module.exports = defineConfig({
     experimentalMemoryManagement: true,
     retries: {
       runMode: 2,
-      openMode: 0
+      openMode: 0,
     },
     setupNodeEvents(on, config) {
       on('task', {
@@ -37,12 +37,13 @@ module.exports = defineConfig({
         },
       });
 
-      on('file:preprocessor', 
+      on(
+        'file:preprocessor',
         vitePreprocessor({
           mode: 'development',
-        })
+        }),
       );
-      
+
       return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
     },
   },
