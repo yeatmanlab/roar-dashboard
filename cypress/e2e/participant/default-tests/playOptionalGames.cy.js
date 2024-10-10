@@ -1,4 +1,4 @@
-import { optionalGames } from '../../../fixtures/optionalGamesList';
+import { optionalGames } from '../../../fixtures/participant/optionalGamesList.js';
 import { isCurrentVersion } from '../../../support/utils';
 
 const administration = Cypress.env('testOptionalRoarAppsAdministration');

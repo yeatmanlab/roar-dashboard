@@ -1,6 +1,6 @@
 export const languageOptions = {
   en: {
-    gameTab: 'ROAR - Picture Vocabulary',
+    gameTab: 'ROAR - Picture Vocab',
     url: '/game/vocab',
   },
   // es: {
