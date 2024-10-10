@@ -9,48 +9,48 @@ permissions:
   pull-requests: write
 
 jobs:
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # # Lint & Format
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # lint:
-  #   name: Lint
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 5
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Lint & Format
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Setup environment
-  #       uses: ./.github/actions/setup-node
+      - name: Setup environment
+        uses: ./.github/actions/setup-node
 
-  #     - name: Run linter
-  #       run: npm run lint
+      - name: Run linter
+        run: npm run lint
 
-  #     - name: Check format
-  #       run: npm run format:check
+      - name: Check format
+        run: npm run format:check
 
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # # Test
-  # # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  # test:
-  #   name: Unit tests
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 5
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Test
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Setup environment
-  #       uses: ./.github/actions/setup-node
+      - name: Setup environment
+        uses: ./.github/actions/setup-node
 
-  #     - name: Run unit tests
-  #       run: npm run test
+      - name: Run unit tests
+        run: npm run test
 
-  #     - name: Report coverage
-  #       if: success()
-  #       uses: davelosert/vitest-coverage-report-action@v2
+      - name: Report coverage
+        if: success()
+        uses: davelosert/vitest-coverage-report-action@v2
 
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # Build the application
@@ -84,8 +84,8 @@ jobs:
     timeout-minutes: 90
     strategy:
       fail-fast: false
-      # matrix:
-      #   containers: [1, 2]
+      matrix:
+        containers: [1, 2]
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
@@ -114,6 +114,7 @@ jobs:
         env: # @TODO: Replace with .env.test file values
           CYPRESS_BASE_URL: 'http://localhost:4173/'
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          COMMIT_INFO_MESSAGE: ${{ github.event.pull_request.title }}
           CLEVER_USERNAME: ${{ secrets.CLEVER_USERNAME }}
           CLEVER_PASSWORD: ${{ secrets.CLEVER_PASSWORD }}
           PARTNER_ADMIN_USERNAME: ${{ secrets.PARTNER_ADMIN_USERNAME }}
@@ -134,3 +135,4 @@ jobs:
           parallel: true
           spec: |
             'cypress/e2e/participant/default-tests/**/*'
+            'cypress/e2e/partner-admin/default-tests/**/*'
