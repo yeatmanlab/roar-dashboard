@@ -577,11 +577,17 @@ const computeAssignmentAndRunData = computed(() => {
     const runsByTaskIdAcc = {};
 
     for (const { assignment, user } of assignmentData.value) {
+      // We can't garentee that the user's school is still in the current list of schools
+      //   So we'll find the school both in the 'all' list as well as assignment.readOrgs
+      const userSchools = user.schools?.all;
+      const assignmentOrgs = assignment.readOrgs.schools;
+      const matchingSchools = userSchools?.filter((schoolId) => assignmentOrgs.includes(schoolId));
+
       // for each row, compute: username, firstName, lastName, assessmentPID, grade, school, all the scores, and routeParams for report link
       const grade = user.studentData?.grade;
       // compute schoolName
       let schoolName = '';
-      const schoolId = user?.schools?.current[0];
+      const schoolId = matchingSchools[0];
       if (schoolId) {
         schoolName = schoolNameDictionary.value[schoolId];
       }
@@ -765,7 +771,7 @@ const computeAssignmentAndRunData = computed(() => {
           taskId,
           user: {
             grade: grade,
-            schoolName: schoolsDictWithGrade.value[schoolId],
+            schoolName: schoolsDictWithGrade.value[schoolId] ?? '0 Unknown School',
           },
           tag_color: tag_color,
         };
