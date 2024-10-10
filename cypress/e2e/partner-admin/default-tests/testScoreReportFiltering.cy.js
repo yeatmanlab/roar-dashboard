@@ -9,7 +9,7 @@
 // const roarDemoAdministrationId = Cypress.env('testPartnerAdministrationId');
 // const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
 // const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
-// const timeout = Cypress.env('timeout');
+//
 // const baseUrl = Cypress.config().baseUrl;
 // const headers = ['School'];
 
@@ -24,30 +24,30 @@
 //
 
 // function clickScoreButton(adminId) {
-//   cy.get('button', { timeout: timeout }).contains('Scores').first().click();
+//   cy.get('button').contains('Scores').first().click();
 //   cy.url({ timeout: timeout }).should('eq', `${baseUrl}/scores/${adminId}/district/${roarDemoDistrictId}`);
 // }
 
 //
 
 // function setFilterBySchool(school) {
-//   cy.get('[data-cy="filter-by-school"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(school).click();
+//   cy.get('[data-cy="filter-by-school"]').click();
+//   cy.get('ul > li').contains(school).click();
 //   cy.wait(0.05 * timeout);
 // }
 
 //
 
 // function setFilterByGrade(grade) {
-//   cy.get('[data-cy="filter-by-grade"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(grade).click();
+//   cy.get('[data-cy="filter-by-grade"]').click();
+//   cy.get('ul > li').contains(grade).click();
 //   cy.wait(0.05 * timeout);
 // }
 
 // function setFilterByProgressCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
-//   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-//   cy.get('ul>li').find('.p-tag-value', { timeout: timeout }).contains(category).click();
+//   cy.get('[data-cy="score-filter-dropdown"]').click();
+//   cy.get('ul>li').find('.p-tag-value').contains(category).click();
 //   cy.get('button').contains('Apply').click();
 //   cy.wait(0.05 * timeout);
 // }
@@ -56,8 +56,8 @@
 
 // function setFilterByScoreCategory(header, category) {
 //   cy.contains('div.p-column-header-content', header).find('button').click();
-//   cy.get('[data-cy="score-filter-dropdown"]', { timeout: timeout }).click();
-//   cy.get('ul > li', { timeout: timeout }).contains(category).click();
+//   cy.get('[data-cy="score-filter-dropdown"]').click();
+//   cy.get('ul > li').contains(category).click();
 //   cy.get('button').contains('Apply').click();
 //   cy.wait(0.05 * timeout);
 // }

@@ -1,8 +1,6 @@
 import { languageOptions } from './languageOptions';
 import { signInWithClever } from '../participant/participant-helpers';
 
-const timeout = Cypress.env('timeout');
-
 function clickButton(selector) {
   cy.get(selector).then(($btn) => {
     if ($btn.length > 0) {
@@ -12,7 +10,7 @@ function clickButton(selector) {
 }
 
 function checkGameTab(language, task) {
-  cy.get('.p-tabview', { timeout: timeout }).contains(languageOptions[language][task].gameTab).should('exist');
+  cy.get('.p-tabview').contains(languageOptions[language][task].gameTab).should('exist');
 }
 
 function clickThroughInstructions() {
@@ -22,7 +20,7 @@ function clickThroughInstructions() {
 }
 
 function makeChoiceOrContinue(gameCompleteText) {
-  cy.wait(0.2 * timeout);
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.get('body').then((body) => {
     const text = body.text().replace(/\s\s+/g, ' ').trim();
     cy.log(`Found text: ${text}`);
@@ -45,10 +43,10 @@ function makeChoiceOrContinue(gameCompleteText) {
 function startGame(administration, language, optional, task, auth) {
   Cypress.on('uncaught:exception', () => false);
 
-  cy.visit('/', { timeout: 2 * timeout });
+  cy.visit('/');
   if (auth === 'username') {
     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
-    cy.visit('/', { timeout: 2 * timeout });
+    cy.visit('/');
   }
   if (auth === 'clever') {
     signInWithClever();
@@ -62,16 +60,14 @@ function startGame(administration, language, optional, task, auth) {
   checkGameTab(language, task);
   cy.visit(languageOptions[language][task].url);
 
-  cy.get('.jspsych-btn', { timeout: 12 * timeout })
-    .should('be.visible')
-    .click();
+  cy.get('.jspsych-btn').should('be.visible').click();
 
-  cy.wait(0.1 * timeout);
+  cy.wait(0.1 * Cypress.env('timeout'));
   Cypress.on('uncaught:exception', () => {
     return false;
   });
 
-  cy.get('.primary', { timeout: timeout }).should('be.visible').click();
+  cy.get('.primary').should('be.visible').click();
 }
 
 export function playSyntax({
@@ -91,7 +87,7 @@ export function playSyntax({
   cy.log('Game finished successfully.');
 
   cy.visit('/');
-  cy.wait(0.2 * timeout);
+  cy.wait(0.2 * Cypress.env('timeout'));
   cy.selectAdministration(administration);
 
   if (optional === true) {

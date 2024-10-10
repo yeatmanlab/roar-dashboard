@@ -1,7 +1,7 @@
 function clickOrgTabs() {
   const tabs = ['Districts', 'Schools', 'Classes', 'Groups'];
   for (let i = 0; i < tabs.length; i++) {
-    cy.get('span.p-tabview-title', { timeout: 1000 }).should('contain.text', tabs[i]).click({ multiple: true });
+    cy.get('span.p-tabview-title').should('contain.text', tabs[i]).click({ multiple: true });
     cy.log('Tab ' + tabs[i] + ' found.');
   }
 }

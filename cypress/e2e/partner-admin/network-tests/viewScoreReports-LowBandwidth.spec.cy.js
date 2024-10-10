@@ -3,7 +3,7 @@ const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName
 const testPartnerAdministrationId = Cypress.env('testPartnerAdministrationId');
 const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
 const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
-const timeout = Cypress.env('timeout');
+
 const baseUrl = Cypress.config().baseUrl;
 const testUserList = Cypress.env('testUserList');
 const testAssignments = Cypress.env('testAssignmentsList');
@@ -11,15 +11,12 @@ const testAssignments = Cypress.env('testAssignmentsList');
 function checkUrl() {
   cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
   cy.navigateTo('/');
-  cy.url({ timeout: 3 * timeout }).should('eq', `${baseUrl}/`);
+  cy.url().should('eq', `${baseUrl}/`);
 }
 
 function clickScoreButton() {
-  cy.get('button', { timeout: timeout }).contains('Scores').first().click();
-  cy.url({ timeout: 3 * timeout }).should(
-    'eq',
-    `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`,
-  );
+  cy.get('button').contains('Scores').first().click();
+  cy.url().should('eq', `${baseUrl}/scores/${testPartnerAdministrationId}/district/${testDistrictId}`);
 }
 
 function checkAssignmentColumns() {
@@ -35,13 +32,13 @@ function checkAssignmentColumns() {
 describe('The partner admin can view score reports for a given administration.', () => {
   it('Selects an administration and views its score report.', () => {
     checkUrl();
-    cy.wait(0.3 * timeout);
+    cy.wait(0.3 * Cypress.env('timeout'));
     cy.getAdministrationCard(testPartnerAdministrationName);
-    cy.wait(0.3 * timeout);
+    cy.wait(0.3 * Cypress.env('timeout'));
     clickScoreButton();
-    cy.wait(0.3 * timeout);
+    cy.wait(0.3 * Cypress.env('timeout'));
     cy.checkUserList(testUserList);
-    cy.wait(timeout);
+    cy.wait(Cypress.env('timeout'));
     checkAssignmentColumns(testAssignments);
   });
 });

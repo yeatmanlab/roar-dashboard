@@ -1,4 +1,3 @@
-const timeout = Cypress.env('timeout');
 const orgs = [
   { tabName: 'Districts', orgName: Cypress.env('testPartnerDistrictName') },
   { tabName: 'Schools', orgName: Cypress.env('testPartnerSchoolName') },
@@ -9,22 +8,20 @@ const orgs = [
 const listOrgsUrl = '/list-orgs';
 
 function checkOrgExists(org) {
-  cy.get('ul > li', { timeout: timeout }).contains(org.tabName, { timeout: timeout }).click();
+  cy.get('ul > li').contains(org.tabName).click();
   cy.log('Tab ' + org.tabName + ' found.');
 
-  cy.get('div', { timeout: timeout }).should('contain.text', org.orgName, {
-    timeout: timeout,
-  });
+  cy.get('div').should('contain.text', org.orgName);
   cy.log(`${org.orgName} exists.`);
 }
 
 describe('The partner admin user', () => {
   beforeEach(() => {
     cy.login(Cypress.env('PARTNER_ADMIN_USERNAME'), Cypress.env('PARTNER_ADMIN_PASSWORD'));
-    cy.wait(0.2 * timeout);
+    cy.wait(0.2 * Cypress.env('timeout'));
     cy.navigateTo('/');
-    cy.wait(0.2 * timeout);
-    cy.navigateTo(listOrgsUrl, { timeout: timeout });
+    cy.wait(0.2 * Cypress.env('timeout'));
+    cy.navigateTo(listOrgsUrl);
     // cy.get('button').contains('Organizations').click();
     // cy.get('button').contains('List Organizations').click();
   });

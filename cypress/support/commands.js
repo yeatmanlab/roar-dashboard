@@ -11,7 +11,7 @@ Cypress.Commands.add('login', (username, password) => {
   cy.session(
     [username],
     () => {
-      cy.visit('/', { timeout: Cypress.env('timeout') });
+      cy.visit('/');
 
       cy.get('[data-cy="input-username-email"]').type(username, { log: false });
       cy.get('[data-cy="input-password"]').type(password, { log: false });
@@ -50,7 +50,7 @@ Cypress.Commands.add('login', (username, password) => {
 //  */
 // Cypress.Commands.add('loginWithEmail', (username, password) => {
 //   cy.session([username, password], () => {
-//     cy.visit('/', { timeout: Cypress.env('timeout') });
+//     cy.visit('/');
 //     // Set username to email, check for existence of 'sign in using password' button)
 //     cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
 //     cy.contains('Sign-in using password');
@@ -65,7 +65,7 @@ Cypress.Commands.add('login', (username, password) => {
 //     cy.get('[data-cy="sign-in-with-password"]').click();
 //     cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
 //     cy.get('button')
-//       .contains('Go!', { timeout: Cypress.env('timeout') })
+//       .contains('Go!')
 //       .click();
 //     cy.log('Login successful.').wait(3000);
 //   });
@@ -76,8 +76,8 @@ Cypress.Commands.add('login', (username, password) => {
  */
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="button-sign-out"]').click();
-  cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
-  cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.config().baseUrl}/signin`);
+  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
+  cy.url().should('eq', `${Cypress.config().baseUrl}/signin`);
   cy.log('Logout successful.');
 });
 
@@ -89,7 +89,7 @@ Cypress.Commands.add('logout', () => {
  */
 Cypress.Commands.add('navigateTo', (page) => {
   cy.log(`Navigating to \`${Cypress.config().baseUrl}${page}`);
-  cy.visit(page, { timeout: Cypress.env('timeout') });
+  cy.visit(page);
   cy.url().should('eq', `${Cypress.config().baseUrl}${page}`);
 });
 
@@ -175,14 +175,12 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
     cy.log('Retries exceeded, administration not found, exiting test...');
     return;
   }
-  cy.get('[data-cy="dropdown-select-administration"]', { timeout: 2 * Cypress.env('timeout') }).click();
-  cy.get('body', { timeout: 2 * Cypress.env('timeout') })
+  cy.get('[data-cy="dropdown-select-administration"]').click();
+  cy.get('body')
     .invoke('text')
     .then((text) => {
       if (text.includes(testAdministration)) {
-        cy.get('.p-dropdown-item', { timeout: 2 * Cypress.env('timeout') })
-          .contains(testAdministration)
-          .click();
+        cy.get('.p-dropdown-item').contains(testAdministration).click();
         cy.log('Selected administration:', testAdministration);
         cy.agreeToConsent();
       } else {
@@ -198,15 +196,15 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
  * @param {string} testAdministration - The name of the administration to search for.
  */
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
-  cy.get('[data-cy=search-input]', { timeout: Cypress.env('timeout') }).type(`${testAdministration}{enter}`);
+  cy.get('[data-cy=search-input]').type(`${testAdministration}{enter}`);
   // cy.get('ul > li').contains(`Name (${sort})`).click();
 
-  cy.get('[data-cy="h2-card-admin-title"]', { timeout: Cypress.env('timeout') })
+  cy.get('[data-cy="h2-card-admin-title"]')
     .filter((index, element) => {
       return Cypress.$(element).text().includes(testAdministration);
     })
     .should('have.length', 2)
-    .find('button', { timeout: Cypress.env('timeout') })
+    .find('button')
     .contains('Show details')
     .click();
 });
@@ -296,7 +294,7 @@ Cypress.Commands.add(
  * @param {Array<string>} userList - The list of users to check.
  */
 Cypress.Commands.add('checkUserList', (userList) => {
-  cy.get('[data-cy="roar-data-table"] tbody tr', { timeout: Cypress.env('timeout') }).each((row) => {
+  cy.get('[data-cy="roar-data-table"] tbody tr').each((row) => {
     cy.wrap(row)
       .find('td.p-frozen-column')
       .then((cell) => {
