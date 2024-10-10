@@ -13,7 +13,7 @@
                   name="noActivationCode"
                   @change="updateActivationCode"
                 />
-                <label for="noActivationCode" class="ml-2">I don't have code</label>
+                <label for="noActivationCode" class="ml-2">I don't have a code</label>
               </div>
             </div>
             <PvInputGroup v-if="!student.noActivationCode">
@@ -545,10 +545,10 @@ const validateCode = async (studentCode, outerIndex = 0) => {
     console.error('Failed to validate activation code', error);
 
     if (!state.students[outerIndex].noActivationCode || props.code) {
-      dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have code"`;
+      dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have a code"`;
     } else {
       dialogMessage.value =
-        'The code does not belong to any organization \n Please enter a valid code or select: \n "I don`t have code "';
+        'The code does not belong to any organization \n Please enter a valid code or select: \n "I don\'t have a code"';
     }
 
     showErrorDialog();
