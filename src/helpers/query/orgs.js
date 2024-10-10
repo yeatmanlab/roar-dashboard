@@ -1,6 +1,20 @@
+import { toValue } from 'vue';
 import _intersection from 'lodash/intersection';
 import _uniq from 'lodash/uniq';
-import { convertValues, fetchDocById, getAxiosInstance, mapFields, orderByDefault } from './utils';
+import _flattenDeep from 'lodash/flattenDeep';
+import _isEmpty from 'lodash/isEmpty';
+import _without from 'lodash/without';
+import _zip from 'lodash/zip';
+import {
+  batchGetDocs,
+  convertValues,
+  fetchDocById,
+  getAxiosInstance,
+  mapFields,
+  orderByDefault,
+} from '@/helpers/query/utils';
+import { ORG_TYPES, SINGULAR_ORG_TYPES } from '@/constants/orgTypes';
+import { FIRESTORE_COLLECTIONS } from '@/constants/firebase';
 
 export const getOrgsRequestBody = ({
   orgType,
@@ -241,13 +255,15 @@ export const orgFetcher = async (
   selectedDistrict,
   isSuperAdmin,
   adminOrgs,
-  select = ['name', 'id', 'currentActivationCode'],
+  select = ['name', 'id', 'tags', 'currentActivationCode'],
 ) => {
+  const districtId = toValue(selectedDistrict);
+
   if (isSuperAdmin.value) {
     const axiosInstance = getAxiosInstance();
     const requestBody = getOrgsRequestBody({
       orgType: orgType,
-      parentDistrict: orgType === 'schools' ? selectedDistrict.value : null,
+      parentDistrict: orgType === 'schools' ? districtId : null,
       aggregationQuery: false,
       paginate: false,
       select: select,
@@ -256,7 +272,7 @@ export const orgFetcher = async (
     if (orgType === 'districts') {
       console.log(`Fetching ${orgType}`);
     } else if (orgType === 'schools') {
-      console.log(`Fetching ${orgType} for ${selectedDistrict.value}`);
+      console.log(`Fetching ${orgType} for ${districtId}`);
     }
 
     return axiosInstance.post(':runQuery', requestBody).then(({ data }) => mapFields(data));
@@ -292,8 +308,8 @@ export const orgFetcher = async (
 
       return Promise.all(promises);
     } else if (orgType === 'schools') {
-      const districtDoc = await fetchDocById('districts', selectedDistrict.value, ['schools']);
-      if ((adminOrgs.value['districts'] ?? []).includes(selectedDistrict.value)) {
+      const districtDoc = await fetchDocById('districts', districtId, ['schools']);
+      if ((adminOrgs.value['districts'] ?? []).includes(districtId)) {
         const promises = (districtDoc.schools ?? []).map((schoolId) => {
           return fetchDocById('schools', schoolId, select);
         });
@@ -362,6 +378,7 @@ export const orgPageFetcher = async (
     }
 
     const orgIds = adminOrgs.value[activeOrgType.value] ?? [];
+    // @TODO: Refactor to a single query for all orgs instead of multiple parallel queries.
     const promises = orgIds.map((orgId) => fetchDocById(activeOrgType.value, orgId));
     const orderField = (orderBy?.value ?? orderByDefault)[0].field.fieldPath;
     const orderDirection = (orderBy?.value ?? orderByDefault)[0].direction;
@@ -409,4 +426,201 @@ export const orgFetchAll = async (
       adminOrgs,
     );
   }
+};
+
+/**
+ * Fetches Districts Schools Groups Families (DSGF) Org data for a given administration.
+ *
+ * @param {String} administrationId – The ID of the administration to fetch DSGF orgs data for.
+ * @param {Object} assignedOrgs – The orgs assigned to the administration being processed.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of org objects.
+ */
+export const fetchTreeOrgs = async (administrationId, assignedOrgs) => {
+  const orgTypes = [ORG_TYPES.DISTRICTS, ORG_TYPES.SCHOOLS, ORG_TYPES.GROUPS, ORG_TYPES.FAMILIES];
+
+  const orgPaths = _flattenDeep(
+    orgTypes.map((orgType) => (assignedOrgs[orgType] ?? []).map((orgId) => `${orgType}/${orgId}`) ?? []),
+  );
+
+  const statsPaths = _flattenDeep(
+    orgTypes.map(
+      (orgType) =>
+        (assignedOrgs[orgType] ?? []).map((orgId) => `administrations/${administrationId}/stats/${orgId}`) ?? [],
+    ),
+  );
+
+  const promises = [
+    batchGetDocs(orgPaths, ['name', 'schools', 'classes', 'archivedSchools', 'archivedClasses', 'districtId']),
+    batchGetDocs(statsPaths),
+  ];
+
+  const [orgDocs, statsDocs] = await Promise.all(promises);
+
+  const dsgfOrgs = _without(
+    _zip(orgDocs, statsDocs).map(([orgDoc, stats], index) => {
+      if (!orgDoc || _isEmpty(orgDoc)) {
+        return undefined;
+      }
+      const { classes, schools, archivedSchools, archivedClasses, collection, ...nodeData } = orgDoc;
+      const node = {
+        key: String(index),
+        data: {
+          orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
+          schools,
+          classes,
+          archivedSchools,
+          archivedClasses,
+          stats,
+          ...nodeData,
+        },
+      };
+      if (classes || archivedClasses)
+        node.children = [...(classes ?? []), ...(archivedClasses ?? [])].map((classId) => {
+          return {
+            key: `${node.key}-${classId}`,
+            data: {
+              orgType: SINGULAR_ORG_TYPES.CLASSES,
+              id: classId,
+            },
+          };
+        });
+      return node;
+    }),
+    undefined,
+  );
+
+  const districtIds = dsgfOrgs
+    .filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.DISTRICTS)
+    .map((node) => node.data.id);
+
+  const dependentSchoolIds = _flattenDeep(
+    dsgfOrgs.map((node) => [...(node.data.schools ?? []), ...(node.data.archivedSchools ?? [])]),
+  );
+  const independentSchoolIds =
+    dsgfOrgs.length > 0 ? _without(assignedOrgs.schools, ...dependentSchoolIds) : assignedOrgs.schools;
+  const dependentClassIds = _flattenDeep(
+    dsgfOrgs.map((node) => [...(node.data.classes ?? []), ...(node.data.archivedClasses ?? [])]),
+  );
+  const independentClassIds =
+    dsgfOrgs.length > 0 ? _without(assignedOrgs.classes, ...dependentClassIds) : assignedOrgs.classes;
+
+  const independentSchools = (dsgfOrgs ?? []).filter((node) => {
+    return node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && independentSchoolIds.includes(node.data.id);
+  });
+
+  const dependentSchools = (dsgfOrgs ?? []).filter((node) => {
+    return node.data.orgType === SINGULAR_ORG_TYPES.SCHOOLS && !independentSchoolIds.includes(node.data.id);
+  });
+
+  const independentClassPaths = independentClassIds.map((classId) => `classes/${classId}`);
+  const independentClassStatPaths = independentClassIds.map(
+    (classId) => `administrations/${administrationId}/stats/${classId}`,
+  );
+
+  const classPromises = [
+    batchGetDocs(independentClassPaths, ['name', 'schoolId', 'districtId']),
+    batchGetDocs(independentClassStatPaths),
+  ];
+
+  const [classDocs, classStats] = await Promise.all(classPromises);
+
+  let independentClasses = _without(
+    _zip(classDocs, classStats).map(([orgDoc, stats], index) => {
+      const { collection = FIRESTORE_COLLECTIONS.CLASSES, ...nodeData } = orgDoc ?? {};
+
+      if (_isEmpty(nodeData)) return undefined;
+
+      const node = {
+        key: String(dsgfOrgs.length + index),
+        data: {
+          orgType: SINGULAR_ORG_TYPES[collection.toUpperCase()],
+          ...(stats && { stats }),
+          ...nodeData,
+        },
+      };
+      return node;
+    }),
+    undefined,
+  );
+
+  // These are classes that are directly under a district, without a school
+  // They were eroneously categorized as independent classes but now we need
+  // to remove them from the independent classes array
+  const directReportClasses = independentClasses.filter((node) => districtIds.includes(node.data.districtId));
+  independentClasses = independentClasses.filter((node) => !districtIds.includes(node.data.districtId));
+
+  const treeTableOrgs = dsgfOrgs.filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.DISTRICTS);
+  treeTableOrgs.push(...independentSchools);
+
+  for (const school of dependentSchools) {
+    const districtId = school.data.districtId;
+    const districtIndex = treeTableOrgs.findIndex((node) => node.data.id === districtId);
+    if (districtIndex !== -1) {
+      if (treeTableOrgs[districtIndex].children === undefined) {
+        treeTableOrgs[districtIndex].children = [
+          {
+            ...school,
+            key: `${treeTableOrgs[districtIndex].key}-${school.key}`,
+          },
+        ];
+      } else {
+        treeTableOrgs[districtIndex].children.push(school);
+      }
+    } else {
+      treeTableOrgs.push(school);
+    }
+  }
+
+  for (const _class of directReportClasses) {
+    const districtId = _class.data.districtId;
+    const districtIndex = treeTableOrgs.findIndex((node) => node.data.id === districtId);
+    if (districtIndex !== -1) {
+      const directReportSchoolKey = `${treeTableOrgs[districtIndex].key}-9999`;
+      const directReportSchool = {
+        key: directReportSchoolKey,
+        data: {
+          orgType: SINGULAR_ORG_TYPES.SCHOOLS,
+          orgId: '9999',
+          name: 'Direct Report Classes',
+        },
+        children: [
+          {
+            ..._class,
+            key: `${directReportSchoolKey}-${_class.key}`,
+          },
+        ],
+      };
+      if (treeTableOrgs[districtIndex].children === undefined) {
+        treeTableOrgs[districtIndex].children = [directReportSchool];
+      } else {
+        const schoolIndex = treeTableOrgs[districtIndex].children.findIndex(
+          (node) => node.key === directReportSchoolKey,
+        );
+        if (schoolIndex === -1) {
+          treeTableOrgs[districtIndex].children.push(directReportSchool);
+        } else {
+          treeTableOrgs[districtIndex].children[schoolIndex].children.push(_class);
+        }
+      }
+    } else {
+      treeTableOrgs.push(_class);
+    }
+  }
+
+  treeTableOrgs.push(...(independentClasses ?? []));
+  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.GROUPS));
+  treeTableOrgs.push(...dsgfOrgs.filter((node) => node.data.orgType === SINGULAR_ORG_TYPES.FAMILIES));
+
+  (treeTableOrgs ?? []).forEach((node) => {
+    // Sort the schools by existance of stats then alphabetically
+    if (node.children) {
+      node.children.sort((a, b) => {
+        if (!a.data.stats) return 1;
+        if (!b.data.stats) return -1;
+        return a.data.name.localeCompare(b.data.name);
+      });
+    }
+  });
+
+  return treeTableOrgs;
 };

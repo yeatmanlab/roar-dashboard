@@ -40,14 +40,14 @@
       <button
         v-if="providerIds.includes('oidc.clever')"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="unlinkAccount('clever')"
+        @click="unlinkAccount(AUTH_SSO_PROVIDERS.CLEVER)"
       >
         Unlink
       </button>
       <button
         v-else
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="linkAccount('clever')"
+        @click="linkAccount(AUTH_SSO_PROVIDERS.CLEVER)"
       >
         Link
       </button>
@@ -65,14 +65,14 @@
       <button
         v-if="providerIds.includes('oidc.classlink')"
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="unlinkAccount('classlink')"
+        @click="unlinkAccount(AUTH_SSO_PROVIDERS.CLASSLINK)"
       >
         Unlink
       </button>
       <button
         v-else
         class="border-none border-round bg-primary text-white p-2 my-2 hover:surface-400 mr-2"
-        @click="linkAccount('classlink')"
+        @click="linkAccount(AUTH_SSO_PROVIDERS.CLASSLINK)"
       >
         Link
       </button>
@@ -98,10 +98,11 @@
 </template>
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useAuthStore } from '@/store/auth';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/store/auth';
+import { AUTH_SSO_PROVIDERS } from '@/constants/auth';
 
 // +----------------+
 // | Initialization |

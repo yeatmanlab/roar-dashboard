@@ -1,3 +1,4 @@
+import { toValue } from 'vue';
 import _chunk from 'lodash/chunk';
 import _last from 'lodash/last';
 import _mapValues from 'lodash/mapValues';
@@ -98,7 +99,7 @@ const mapAdministrations = async ({ isSuperAdmin, data, adminOrgs }) => {
 export const administrationPageFetcher = async (isSuperAdmin, exhaustiveAdminOrgs, fetchTestData = false, orderBy) => {
   const authStore = useAuthStore();
   const { roarfirekit } = storeToRefs(authStore);
-  const administrationIds = await roarfirekit.value.getAdministrations({ testData: fetchTestData });
+  const administrationIds = await roarfirekit.value.getAdministrations({ testData: toValue(fetchTestData) });
 
   const axiosInstance = getAxiosInstance();
   const documentPrefix = axiosInstance.defaults.baseURL.replace('https://firestore.googleapis.com/v1/', '');
