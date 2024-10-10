@@ -1,6 +1,6 @@
 export const generatedSpecTemplate = (adminName) => {
   return `
-  import { testSpecs } from "../../../fixtures/taskTestSpecs.js";
+  import { testSpecs } from "../../../fixtures/super-admin/taskTestSpecs.js";
   const timeout = Cypress.env('timeout');
   
   function checkOptionalGame(spec, admin) {
@@ -8,7 +8,7 @@ export const generatedSpecTemplate = (adminName) => {
       if ($body.find('[data-cy="switch-show-optional-assessments"]').length > 0) {
         cy.log('Optional assessments button found, switching to optional assessments');
         cy.switchToOptionalAssessments();
-        cy.wait(0.3 * timeout);
+        cy.wait(0.1 * timeout);
         cy.get('.p-tabview').invoke('text').then((text) => {
             if (text.includes(spec.name)) {
               cy.log(\`Initializing test for optional game: \${spec.name}\`);
