@@ -437,7 +437,7 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
     : surveyData.value.specific;
 
   // Fetch child docs for parent or class docs for teacher
-  if ((userType.value === 'parent' || userType.value === 'teacher') && !gameStore.isGeneralSurveyComplete) {
+  if ((userType.value === 'parent' || userType.value === 'teacher') && gameStore.isGeneralSurveyComplete) {
     try {
       const fetchConfig = userType.value === 'parent'
         ? userData.value.childIds.map(childId => ({
@@ -452,6 +452,7 @@ watch(surveyDependenciesLoaded, async (isLoaded) => {
           }));
       
       const res = await fetchDocsById(fetchConfig);
+      console.log('res', res)
       gameStore.setSpecificSurveyRelationData(res);
     } catch (error) {
       console.error('Error fetching relation data:', error);

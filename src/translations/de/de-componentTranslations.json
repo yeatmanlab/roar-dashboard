@@ -76,6 +76,13 @@
     "surveyDescriptionTeacherPart1": "This survey will take approximately 5-10 minutes to complete and asks about your background and beliefs about teaching.",
     "surveyNameTeacherPart2": "Umfrage - Klassenzimmer",
     "surveyDescriptionTeacherPart2": "This survey will take approximately 5-10 minutes to complete and asks questions about the classroom(s) you teach.",
+    "surveyProgressGeneral": "Allgemein",
+    "surveyProgressGeneralParent": "Familie",
+    "surveyProgressSpecificParent": "Kind",
+    "surveyProgressSpecificParentMonth": "Monat",
+    "surveyProgressSpecificParentYear": "Jahr",
+    "surveyProgressGeneralTeacher": "Lehrer",
+    "surveyProgressSpecificTeacher": "Klassenzimmer",
     "mefsName": "Löwe und Affe",
     "mefsDescription": "Formen und Farben zuordnen.",
     "vocabName": "Vokabeln",
@@ -116,5 +123,10 @@
     "emailPlaceholder": "ihre.email@beispiel.org (optional)",
     "messageLabel": "Beschreibung",
     "messagePlaceholder": "Was ist das Problem? Was wollten Sie stattdessen erleben? Vielen Dank für Ihr Feedback."
+  },
+  "userSurvey": {
+    "specificRelationDescriptionChildA": "Für Kind mit Geburtsmonat",
+    "specificRelationDescriptionChildB": "und Geburtsjahr",
+    "specificRelationDescriptionClass": "Für Klasse"
   }
 }
