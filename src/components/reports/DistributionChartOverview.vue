@@ -5,11 +5,7 @@
 <script setup>
 import { computed, onMounted } from 'vue';
 import embed from 'vega-embed';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-
-const authStore = useAuthStore();
-const { tasksDictionary } = storeToRefs(authStore);
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 
 const props = defineProps({
   initialized: {
@@ -48,6 +44,8 @@ const props = defineProps({
   },
 });
 
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
+
 const supportLevelsOverview = computed(() => {
   if (!props.runs) return [];
   let values = {};
@@ -66,15 +64,17 @@ const supportLevelsOverview = computed(() => {
     .map(([support_level, count]) => ({ category: support_level, value: count }));
 });
 
-const overviewDistributionChart = (taskId) => {
-  const spec = {
+const overviewDistributionChart = computed(() => {
+  if (isLoadingTasksDictionary.value) return {};
+
+  return {
     mark: 'arc',
     height: 190,
     width: 190,
     spacing: 10,
     background: null,
     title: {
-      text: `${tasksDictionary.value[taskId].publicName ?? taskId}`,
+      text: `${tasksDictionary.value[props.taskId].publicName ?? props.taskId}`,
       subtitle: `Count by Support Level`,
       anchor: 'middle',
       fontSize: 20,
@@ -109,11 +109,10 @@ const overviewDistributionChart = (taskId) => {
       arc: { innerRadius: 0 },
     },
   };
-  return spec;
-};
+});
 
 const draw = async () => {
-  let chartSpecSupport = overviewDistributionChart(props.taskId, props.runs, props.mode);
+  let chartSpecSupport = overviewDistributionChart.value;
   await embed(`#roar-dist-chart-overview-${props.taskId}`, chartSpecSupport);
 };
 
