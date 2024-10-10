@@ -16,7 +16,7 @@ const fallbackTestEnv = path.resolve(__dirname, './.env.test');
 if (fs.existsSync(mainTestEnv)) envFilePaths.push(mainTestEnv);
 if (fs.existsSync(fallbackTestEnv)) envFilePaths.push(fallbackTestEnv);
 
-require('@dotenvx/dotenvx').config({ path: envFilePaths });
+const envConfig = require('@dotenvx/dotenvx').config({ path: envFilePaths });
 
 module.exports = defineConfig({
   projectId: process.env.CYPRESS_PROJECT_ID,
@@ -30,6 +30,16 @@ module.exports = defineConfig({
       openMode: 0,
     },
     setupNodeEvents(on, config) {
+      // Inject environment variables parsed by dotenvx into the Cypress environment. This is necessary as Cypress
+      // itself does not load environment variables from .env files. The dotenvx package is used to load the .env files
+      // Note: To mimick the default Cypress behaviour, only inject the parsed variables that start with CYPRESS_ and
+      // remove that prefix before setting them in the Cypress environment.
+      for (const [key, value] of Object.entries(envConfig.parsed)) {
+        if (key.startsWith('CYPRESS_')) {
+          config.env[key.replace('CYPRESS_', '')] = value;
+        }
+      }
+
       on('task', {
         log(message) {
           console.log(message);
@@ -44,7 +54,9 @@ module.exports = defineConfig({
         }),
       );
 
-      return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
+      require('cypress-fs/plugins')(on);
+
+      return config;
     },
   },
 
@@ -81,7 +93,8 @@ module.exports = defineConfig({
       },
     },
     setupNodeEvents(on, config) {
-      return require('./node_modules/cypress-fs/plugins/index.js')(on, config);
+      require('cypress-fs/plugins')(on);
+      return config;
     },
   },
 
