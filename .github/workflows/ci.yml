@@ -133,6 +133,7 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
+          browser: chrome
           spec: |
-            'cypress/e2e/participant/default-tests/**/*'
-            'cypress/e2e/partner-admin/default-tests/**/*'
+            cypress/e2e/participant/default-tests/**/*.cy.js
+            cypress/e2e/partner-admin/default-tests/**/*.cy.js
