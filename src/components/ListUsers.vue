@@ -20,7 +20,7 @@
               <div class="flex flex-wrap gap-2 justify-content-between">
                 <div class="uppercase font-light font-sm text-gray-400 mb-1">Student Count</div>
                 <div class="text-xl text-gray-600">
-                  <b> {{ users.length }} </b>
+                  <b> {{ users?.length }} </b>
                 </div>
               </div>
             </div>
@@ -124,22 +124,21 @@
 </template>
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue';
-import { useAuthStore } from '@/store/auth';
-import { useToast } from 'primevue/usetoast';
-import _isEmpty from 'lodash/isEmpty';
-import { useQuery } from '@tanstack/vue-query';
-import AppSpinner from './AppSpinner.vue';
 import { storeToRefs } from 'pinia';
-import { fetchUsersByOrg } from '@/helpers/query/users';
-import { singularizeFirestoreCollection } from '@/helpers';
 import { useVuelidate } from '@vuelidate/core';
 import { required, sameAs, minLength } from '@vuelidate/validators';
+import { useToast } from 'primevue/usetoast';
+import _isEmpty from 'lodash/isEmpty';
+import { useAuthStore } from '@/store/auth';
+import useOrgUsersQuery from '@/composables/queries/useOrgUsersQuery';
+import { singularizeFirestoreCollection } from '@/helpers';
+import AppSpinner from './AppSpinner.vue';
 import EditUsersForm from './EditUsersForm.vue';
 import RoarModal from './modals/RoarModal.vue';
 
 const authStore = useAuthStore();
 
-const { roarfirekit, roarUid } = storeToRefs(authStore);
+const { roarfirekit } = storeToRefs(authStore);
 const initialized = ref(false);
 const toast = useToast();
 
@@ -165,12 +164,8 @@ const {
   isLoading,
   isFetching,
   data: users,
-} = useQuery({
-  queryKey: ['usersByOrgPage', roarUid, props.orgType, props.orgId, page, orderBy],
-  queryFn: () => fetchUsersByOrg(props.orgType, props.orgId, ref(1000000), page, orderBy),
-  keepPreviousData: true,
+} = useOrgUsersQuery(props.orgType, props.orgId, page, orderBy, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
 const columns = ref([
