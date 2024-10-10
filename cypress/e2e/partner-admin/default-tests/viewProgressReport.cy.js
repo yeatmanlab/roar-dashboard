@@ -3,8 +3,8 @@ const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName
 const testAdministrationId = Cypress.env('testAdministrationId');
 const timeout = Cypress.env('timeout');
 const baseUrl = Cypress.config('baseUrl');
-const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
-const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
+const testPartnerAdminUsername = cypress.env('PARTNER_ADMIN_USERNAME');
+const testPartnerAdminPassword = cypress.env('PARTNER_ADMIN_PASSWORD');
 const testUserList = Cypress.env('testUserList');
 const testAssignments = Cypress.env('testAssignmentsList');
 

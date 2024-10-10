@@ -1,7 +1,7 @@
 const timeout = Cypress.env('timeout');
 describe('Playing Video', () => {
   it('plays-video', () => {
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.login(cypress.env('PARTICIPANT_USERNAME'), cypress.env('PARTICIPANT_PASSWORD'));
     cy.visit('/', { timeout: 2 * timeout });
     cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));
     cy.get('.tabview-nav-link-label', { timeout: 2 * timeout })

@@ -5,7 +5,7 @@ const timeout = Cypress.env('timeout');
 describe('Testing play through of vocab, cva, letter, and multichoice games as a participant', () => {
   games.forEach((game) => {
     it(`${game.name} Play through Test`, () => {
-      cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+      cy.login(cypress.env('PARTICIPANT_USERNAME'), cypress.env('PARTICIPANT_PASSWORD'));
       cy.visit('/', { timeout: 2 * timeout });
 
       cy.selectAdministration(Cypress.env('testRoarAppsAdministration'));

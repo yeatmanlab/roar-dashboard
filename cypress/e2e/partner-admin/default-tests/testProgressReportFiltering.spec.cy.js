@@ -12,8 +12,8 @@
 // const roarTestAdministrationId = Cypress.env('testRoarAppsAdministrationId');
 // const timeout = Cypress.env('timeout');
 // const baseUrl = Cypress.env('baseUrl');
-// const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
-// const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
+// const testPartnerAdminUsername = cypress.env('PARTNER_ADMIN_USERNAME');
+// const testPartnerAdminPassword = cypress.env('PARTNER_ADMIN_PASSWORD');
 // const testUserList = Cypress.env('testUserList');
 // const testAssignments = Cypress.env('testAssignmentsList');
 // const headers = ['School'];

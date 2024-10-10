@@ -14,7 +14,7 @@ export const playSRE = ({
   });
   cy.visit('/', { timeout: 2 * timeout });
   if (auth === 'username') {
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.login(cypress.env('PARTICIPANT_USERNAME'), cypress.env('PARTICIPANT_PASSWORD'));
     cy.visit('/', { timeout: 2 * timeout });
   }
   if (auth === 'clever') {
