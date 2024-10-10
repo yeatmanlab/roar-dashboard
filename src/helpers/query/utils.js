@@ -137,7 +137,6 @@ export const fetchDocById = async (
   select,
   db = FIRESTORE_DATABASES.ADMIN,
   unauthenticated = false,
-  swallowErrors = false,
 ) => {
   const collectionValue = toValue(collection);
   const docIdValue = toValue(docId);
@@ -148,27 +147,19 @@ export const fetchDocById = async (
     );
     return {};
   }
+
   const docPath = `/${collectionValue}/${docIdValue}`;
   const axiosInstance = getAxiosInstance(db, unauthenticated);
   const queryParams = (select ?? []).map((field) => `mask.fieldPaths=${field}`);
   const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-  return axiosInstance
-    .get(docPath + queryString)
-    .then(({ data }) => {
-      return {
-        id: docIdValue,
-        collectionValue,
-        ..._mapValues(data.fields, (value) => convertValues(value)),
-      };
-    })
-    .catch((error) => {
-      if (!swallowErrors) {
-        console.error(error);
-      }
-      return {
-        data: `${error.code === '404' ? 'Document not found' : error.message}`,
-      };
-    });
+
+  const { data } = await axiosInstance.get(docPath + queryString);
+
+  return {
+    id: docIdValue,
+    collectionValue,
+    ..._mapValues(data.fields, (value) => convertValues(value)),
+  };
 };
 
 /**
