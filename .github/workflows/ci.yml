@@ -116,7 +116,7 @@ jobs:
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env: # @TODO: Replace with .env.test file values
-          CYPRESS_BASE_URL: 'http://localhost:4173/'
+          CYPRESS_BASE_URL: 'http://localhost:4173'
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           COMMIT_INFO_MESSAGE: ${{ github.event.pull_request.title }}
           CLEVER_USERNAME: ${{ secrets.CLEVER_USERNAME }}
