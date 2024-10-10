@@ -1,3 +1,4 @@
+import { toValue, toRaw } from 'vue';
 import _find from 'lodash/find';
 import _flatten from 'lodash/flatten';
 import _get from 'lodash/get';
@@ -9,7 +10,6 @@ import _without from 'lodash/without';
 import _isEmpty from 'lodash/isEmpty';
 import { convertValues, getAxiosInstance, getProjectId, mapFields } from './utils';
 import { pluralizeFirestoreCollection } from '@/helpers';
-import { toRaw } from 'vue';
 
 const userSelectFields = ['name', 'assessmentPid', 'username', 'studentData', 'schools', 'classes'];
 
@@ -978,6 +978,13 @@ export const assignmentPageFetcher = async (
   }
 };
 
+/**
+/**
+ * Fetches the assignments that are currently open for a user.
+ *
+ * @param {ref<String>} roarUid - A Vue ref containing the user's ROAR ID.
+ * @returns {Promise<Array>} - A promise that resolves to an array of open assignments for the user.
+ */
 export const getUserAssignments = async (roarUid) => {
   const adminAxiosInstance = getAxiosInstance();
   const assignmentRequest = getAssignmentsRequestBody({
@@ -985,11 +992,14 @@ export const getUserAssignments = async (roarUid) => {
     paginate: false,
     isCollectionGroupQuery: false,
   });
-  return await adminAxiosInstance.post(`/users/${roarUid}:runQuery`, assignmentRequest).then(async ({ data }) => {
-    const assignmentData = mapFields(data);
-    const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
-    return openAssignments;
-  });
+  const userId = toValue(roarUid);
+  return await adminAxiosInstance
+    .post(`/users/${toValue(userId)}:runQuery`, assignmentRequest)
+    .then(async ({ data }) => {
+      const assignmentData = mapFields(data);
+      const openAssignments = assignmentData.filter((assignment) => new Date(assignment.dateOpened) <= new Date());
+      return openAssignments;
+    });
 };
 
 export const assignmentFetchAll = async (adminId, orgType, orgId, includeScores = false) => {

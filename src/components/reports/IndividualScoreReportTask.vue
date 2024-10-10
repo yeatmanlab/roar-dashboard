@@ -1,145 +1,151 @@
 <template>
-  <div v-for="task in computedTaskData" :key="task" class="flex flex-column align-items-end justify-content-start">
-    <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
-      <div class="flex flex-column md:flex-row align-items-center justify-content-center">
-        <div class="flex flex-column justify-content-center align-items-center mt-2">
-          <div class="header-task-name">{{ tasksDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
-          <div class="text-xs uppercase font-thin text-gray-400">
-            {{ task[task.scoreToDisplay].name }}
-          </div>
-          <div class="flex gap-2 mb-2">
-            <div
-              v-for="tag in task.tags"
-              :key="tag"
-              class="flex flex-row w-full align-items-center justify-content-center"
-            >
-              <PvTag
-                v-tooltip.top="tag.tooltip"
-                :icon="tag.icon"
-                :value="tag.value"
-                :severity="tag.severity"
-                class="text-xs"
-              />
+  <template v-if="!isLoadingTasksDictionary">
+    <div v-for="task in computedTaskData" :key="task" class="flex flex-column align-items-end justify-content-start">
+      <div class="flex flex-column align-items-center justify-content-center mb-1 p-1 score-card">
+        <div class="flex flex-column md:flex-row align-items-center justify-content-center">
+          <div class="flex flex-column justify-content-center align-items-center mt-2">
+            <div class="header-task-name">{{ tasksDictionary[task.taskId]?.publicName ?? task.taskId }}</div>
+            <div class="text-xs uppercase font-thin text-gray-400">
+              {{ task[task.scoreToDisplay].name }}
             </div>
+            <div class="flex gap-2 mb-2">
+              <div
+                v-for="tag in task.tags"
+                :key="tag"
+                class="flex flex-row w-full align-items-center justify-content-center"
+              >
+                <PvTag
+                  v-tooltip.top="tag.tooltip"
+                  :icon="tag.icon"
+                  :value="tag.value"
+                  :severity="tag.severity"
+                  class="text-xs"
+                />
+              </div>
+            </div>
+            <PvKnob
+              :value-template="
+                task.scoreToDisplay == 'percentileScore' ? getPercentileSuffix(task.percentileScore.value) : undefined
+              "
+              :model-value="task[task.scoreToDisplay].value"
+              :size="180"
+              :range-color="gray"
+              :value-color="task[task.scoreToDisplay].supportColor"
+              :min="task[task.scoreToDisplay].min"
+              :max="task[task.scoreToDisplay].max"
+            />
           </div>
-          <PvKnob
-            :value-template="
-              task.scoreToDisplay == 'percentileScore' ? getPercentileSuffix(task.percentileScore.value) : undefined
-            "
-            :model-value="task[task.scoreToDisplay].value"
-            :size="180"
-            :range-color="gray"
-            :value-color="task[task.scoreToDisplay].supportColor"
-            :min="task[task.scoreToDisplay].min"
-            :max="task[task.scoreToDisplay].max"
-          />
+        </div>
+
+        <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
+          <i18n-t keypath="scoreReports.rawTaskDescription" tag="span">
+            <template #firstName>
+              {{ studentFirstName }}
+            </template>
+            <template #rawScore>
+              <strong>{{ task.rawScore.value }}</strong>
+            </template>
+            <template #taskName>
+              {{ taskDisplayNames[task.taskId]?.extendedName }}
+            </template>
+            <template #taskDescription>
+              {{ extendedDescriptions[task.taskId] }}
+            </template>
+          </i18n-t>
+        </div>
+        <div v-else-if="grade >= 6" class="px-4 py-2 score-description">
+          <i18n-t keypath="scoreReports.standardTaskDescription" tag="span">
+            <template #firstName>
+              {{ studentFirstName }}
+            </template>
+            <template #standardScore>
+              <strong>{{ Math.round(task.standardScore.value) }}</strong>
+            </template>
+            <template #supportCategory>
+              <strong>{{
+                getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
+              }}</strong>
+            </template>
+            <template #taskName>
+              {{ taskDisplayNames[task.taskId]?.extendedName }}
+            </template>
+            <template #taskDescription>
+              {{ extendedDescriptions[task.taskId] }}
+            </template>
+          </i18n-t>
+        </div>
+
+        <div v-else class="px-4 py-2 score-description">
+          <i18n-t keypath="scoreReports.percentileTaskDescription" tag="span">
+            <template #firstName>
+              {{ studentFirstName }}
+            </template>
+            <template #percentile>
+              <strong>{{ getPercentileWithSuffix(Math.round(task?.percentileScore.value)) }} percentile</strong>
+            </template>
+            <template #supportCategory>
+              <strong>{{
+                getSupportLevelLanguage(grade, task.percentileScore.value, task.rawScore.value, task.taskId)
+              }}</strong>
+            </template>
+            <template #taskName>
+              {{ taskDisplayNames[task.taskId]?.extendedName }}
+            </template>
+            <template #taskDescription>
+              {{ extendedDescriptions[task.taskId] }}
+            </template>
+          </i18n-t>
+        </div>
+        <div v-if="!rawOnlyTasks.includes(task.taskId)">
+          <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+            <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
+              <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
+                <div class="flex justify-content-between score-table">
+                  <div class="mr-2">
+                    <b>{{ key }}</b
+                    ><span v-if="rangeMax" class="text-500"> ({{ rangeMin }}-{{ rangeMax }}):</span>
+                    <span v-else>:</span>
+                  </div>
+                  <div class="ml-2">
+                    <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
+                  </div>
+                </div>
+              </div>
+            </PvAccordionTab>
+          </PvAccordion>
+        </div>
+        <div v-if="task.taskId === 'letter'">
+          <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
+            <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
+              <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
+                <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
+                  <div class="mr-2">
+                    <b>{{ key }}</b
+                    ><span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span>
+                    <span v-else>:</span>
+                  </div>
+                  <div class="ml-2">
+                    <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
+                  </div>
+                </div>
+              </div>
+            </PvAccordionTab>
+          </PvAccordion>
         </div>
       </div>
-
-      <div v-if="rawOnlyTasks.includes(task.taskId)" class="score-description px-4 py-2">
-        <i18n-t keypath="scoreReports.rawTaskDescription" tag="span">
-          <template #firstName>
-            {{ studentFirstName }}
-          </template>
-          <template #rawScore>
-            <strong>{{ task.rawScore.value }}</strong>
-          </template>
-          <template #taskName>
-            {{ taskDisplayNames[task.taskId]?.extendedName }}
-          </template>
-          <template #taskDescription>
-            {{ extendedDescriptions[task.taskId] }}
-          </template>
-        </i18n-t>
-      </div>
-      <div v-else-if="grade >= 6" class="px-4 py-2 score-description">
-        <i18n-t keypath="scoreReports.standardTaskDescription" tag="span">
-          <template #firstName>
-            {{ studentFirstName }}
-          </template>
-          <template #standardScore>
-            <strong>{{ Math.round(task.standardScore.value) }}</strong>
-          </template>
-          <template #supportCategory>
-            <strong>{{
-              getSupportLevelLanguage(grade, task?.percentileScore.value, task?.rawScore.value, task.taskId)
-            }}</strong>
-          </template>
-          <template #taskName>
-            {{ taskDisplayNames[task.taskId]?.extendedName }}
-          </template>
-          <template #taskDescription>
-            {{ extendedDescriptions[task.taskId] }}
-          </template>
-        </i18n-t>
-      </div>
-
-      <div v-else class="px-4 py-2 score-description">
-        <i18n-t keypath="scoreReports.percentileTaskDescription" tag="span">
-          <template #firstName>
-            {{ studentFirstName }}
-          </template>
-          <template #percentile>
-            <strong>{{ getPercentileWithSuffix(Math.round(task?.percentileScore.value)) }} percentile</strong>
-          </template>
-          <template #supportCategory>
-            <strong>{{
-              getSupportLevelLanguage(grade, task.percentileScore.value, task.rawScore.value, task.taskId)
-            }}</strong>
-          </template>
-          <template #taskName>
-            {{ taskDisplayNames[task.taskId]?.extendedName }}
-          </template>
-          <template #taskDescription>
-            {{ extendedDescriptions[task.taskId] }}
-          </template>
-        </i18n-t>
-      </div>
-      <div v-if="!rawOnlyTasks.includes(task.taskId)">
-        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
-          <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
-            <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
-              <div class="flex justify-content-between score-table">
-                <div class="mr-2">
-                  <b>{{ key }}</b
-                  ><span v-if="rangeMax" class="text-500"> ({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
-                </div>
-                <div class="ml-2">
-                  <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
-                </div>
-              </div>
-            </div>
-          </PvAccordionTab>
-        </PvAccordion>
-      </div>
-      <div v-if="task.taskId === 'letter'">
-        <PvAccordion class="my-2 w-full" :active-index="expanded ? 0 : null">
-          <PvAccordionTab :header="$t('scoreReports.scoreBreakdown')">
-            <div v-for="[key, rawScore, rangeMin, rangeMax] in task.scoresArray" :key="key">
-              <div v-if="!isNaN(rawScore)" class="flex justify-content-between score-table">
-                <div class="mr-2">
-                  <b>{{ key }}</b
-                  ><span v-if="rangeMax" class="text-500">({{ rangeMin }}-{{ rangeMax }}):</span> <span v-else>:</span>
-                </div>
-                <div class="ml-2">
-                  <b>{{ isNaN(rawScore) ? rawScore : Math.round(rawScore) }}</b>
-                </div>
-              </div>
-            </div>
-          </PvAccordionTab>
-        </PvAccordion>
-      </div>
     </div>
-  </div>
+  </template>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import _lowerCase from 'lodash/lowerCase';
 import _startCase from 'lodash/startCase';
 import _toUpper from 'lodash/toUpper';
 import _get from 'lodash/get';
 import { getGrade } from '@bdelab/roar-utils';
+import useTasksDictionaryQuery from '@/composables/queries/useTasksDictionaryQuery';
 import {
   rawOnlyTasks,
   taskDisplayNames,
@@ -148,12 +154,6 @@ import {
   getRawScoreRange,
   getScoreKeys,
 } from '@/helpers/reports';
-import { useI18n } from 'vue-i18n';
-import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
-
-const authStore = useAuthStore();
-const { tasksDictionary } = storeToRefs(authStore);
 
 const props = defineProps({
   studentData: {
@@ -171,6 +171,8 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+
+const { data: tasksDictionary, isLoading: isLoadingTasksDictionary } = useTasksDictionaryQuery();
 
 const studentFirstName = computed(() => {
   if (props.studentData?.name && props.studentData?.name?.first) return props.studentData.name.first;

@@ -12,7 +12,7 @@ import { useThrottleFn } from '@vueuse/core';
  * @param {Function} options.onTimeout – The timeout callback function.
  * @returns {Object} Object containing the countdown timer and reset function.
  */
-export function useInactivityTimeout({ idleThreshold, countdownDuration, onIdle, onTimeout }) {
+export default function useInactivityTimeout({ idleThreshold, countdownDuration, onIdle, onTimeout }) {
   const timeoutThreshold = Math.max(0, Math.floor(Number(idleThreshold) + Number(countdownDuration)));
 
   const isTabActive = ref(true);

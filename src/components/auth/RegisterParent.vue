@@ -131,7 +131,7 @@
         v-if="showConsent"
         :consent-text="consentText"
         consent-type="consent"
-        @accepted="handleConsentAccept"
+        :on-confirm="handleConsentAccept"
       />
       <div class="form-submit2">
         <PvButton
