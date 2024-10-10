@@ -10,6 +10,6 @@ describe('The partner admin can select and export progress reports for a given a
     cy.get('button').contains('Progress').first().click();
 
     cy.get('button').contains('Export Whole Table').click();
-    cy.readFile('cypress/downloads/roar-progress-partner-test-administration-cypress-test-district.csv');
+    cy.readFile(`cypress/downloads/roar-progress-partner-test-administration-cypress-test-district.csv`);
   });
 });

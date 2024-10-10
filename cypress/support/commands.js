@@ -77,7 +77,7 @@ Cypress.Commands.add('login', (username, password) => {
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="button-sign-out"]').click();
   cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
-  cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.config('baseUrl')}/signin`);
+  cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.config().baseUrl}/signin`);
   cy.log('Logout successful.');
 });
 
@@ -88,9 +88,9 @@ Cypress.Commands.add('logout', () => {
  * @param {boolean} [login=false] - Whether to log in before navigating.
  */
 Cypress.Commands.add('navigateTo', (page) => {
-  cy.log(`Navigating to \`${Cypress.config('baseUrl')}${page}`);
+  cy.log(`Navigating to \`${Cypress.config().baseUrl}${page}`);
   cy.visit(page, { timeout: Cypress.env('timeout') });
-  cy.url().should('eq', `${Cypress.config('baseUrl')}${page}`);
+  cy.url().should('eq', `${Cypress.config().baseUrl}${page}`);
 });
 
 /**

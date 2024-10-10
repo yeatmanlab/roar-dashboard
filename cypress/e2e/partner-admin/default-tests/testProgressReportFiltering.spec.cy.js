@@ -11,7 +11,7 @@
 // const roarTestAdministrationName = Cypress.env('testRoarAppsAdministration');
 // const roarTestAdministrationId = Cypress.env('testRoarAppsAdministrationId');
 // const timeout = Cypress.env('timeout');
-// const baseUrl = Cypress.env('baseUrl');
+// const baseUrl = Cypress.config().baseUrl;
 // const testPartnerAdminUsername = cypress.env('PARTNER_ADMIN_USERNAME');
 // const testPartnerAdminPassword = cypress.env('PARTNER_ADMIN_PASSWORD');
 // const testUserList = Cypress.env('testUserList');

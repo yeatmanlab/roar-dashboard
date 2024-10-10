@@ -86,6 +86,7 @@ module.exports = defineConfig({
   },
 
   env: {
+    baseUrl: process.env.CYPRESS_BASE_URL ?? 'https://localhost:5173',
     firestoreUrl: 'https://firestore.googleapis.com/**/*',
     firestoreAdminUrl: 'https://firestore.googleapis.com/v1/projects/gse-roar-admin-dev/databases/(default)/documents',
     firestoreAppUrl:
@@ -93,6 +94,8 @@ module.exports = defineConfig({
     timeout: 10000,
     cleverOAuthLink: 'https://clever.com/oauth/authorize',
     cleverSchoolName: '61e8aee84cf0e71b14295d45',
+    cleverUsername: process.env.CYPRESS_CLEVER_USERNAME,
+    cleverPassword: process.env.CYPRESS_CLEVER_PASSWORD,
     testAdministrationName: 'Cypress Test Administration',
     testAdministrationId: 'kKUSypkMc36mPEzleDE6',
     testAdministratorFirstName: 'Cypress Test Administrator First Name',
@@ -142,6 +145,7 @@ module.exports = defineConfig({
     testOptionalRoarAppsAdministrationId: 'Fuy4nQaMu6YmfNg1eBYH',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
+    // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50 and push the test_legal_doc user
     testUserList: (() => {
       const list = Array.from({ length: 51 }, (_, i) => `CypressTestStudent${i}`);
       list.push('test_legal_doc');
