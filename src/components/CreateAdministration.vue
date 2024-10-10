@@ -91,10 +91,9 @@
 
         <OrgPicker :orgs="orgsList" @selection="selection($event)" />
 
-        <PvConfirmDialog group="errors" class="confirm">
+        <PvConfirmDialog group="errors" class="confirm" :draggable="false">
           <template #message>
             <span class="flex flex-column">
-              <span>{{ pickListError }}</span>
               <span v-if="nonUniqueTasks.length > 0" class="flex flex-column">
                 <span>Task selections must be unique.</span>
                 <span class="mt-2">The following tasks are not unique:</span>
@@ -106,12 +105,14 @@
             </span>
           </template>
         </PvConfirmDialog>
+
         <TaskPicker
           :all-variants="variantsByTaskId"
           :input-variants="preSelectedVariants"
-          :pre-existing-assessment-info="preExistingAssessmentInfo"
+          :pre-existing-assessment-info="existingAssessments"
           @variants-changed="handleVariantsChanged"
         />
+
         <div v-if="!isLevante" class="mt-2 flex w-full">
           <ConsentPicker :legal="state.legal" @consent-selected="handleConsentSelected" />
           <small v-if="submitted && v$.consent.$invalid && v$.consent.$invalid" class="p-error mt-2"
@@ -157,8 +158,11 @@
               class="text-white bg-primary border-none border-round h-3rem p-3 hover:bg-red-900"
               data-cy="button-create-administration"
               style="margin: 0"
+              :disabled="isSubmitting"
               @click="submit"
-            />
+            >
+              <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-2"></i> {{ submitLabel }}
+            </PvButton>
           </div>
         </div>
       </div>
@@ -167,18 +171,17 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref, toRaw, watch } from 'vue';
+import { computed, onMounted, reactive, ref, toRaw, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useToast } from 'primevue/usetoast';
-import { useQuery, useQueryClient } from '@tanstack/vue-query';
+import { useConfirm } from 'primevue/useconfirm';
 import _filter from 'lodash/filter';
 import _isEmpty from 'lodash/isEmpty';
 import _toPairs from 'lodash/toPairs';
 import _uniqBy from 'lodash/uniqBy';
 import _forEach from 'lodash/forEach';
 import _find from 'lodash/find';
-import _get from 'lodash/get';
 import _isEqual from 'lodash/isEqual';
 import _union from 'lodash/union';
 import _groupBy from 'lodash/groupBy';
@@ -186,22 +189,31 @@ import _values from 'lodash/values';
 import { useVuelidate } from '@vuelidate/core';
 import { required, requiredIf } from '@vuelidate/validators';
 import { useAuthStore } from '@/store/auth';
-import OrgPicker from '@/components/OrgPicker.vue';
-import { fetchDocById, fetchDocsById } from '@/helpers/query/utils';
-import { variantsFetcher } from '@/helpers/query/tasks';
+import useAdministrationsQuery from '@/composables/queries/useAdministrationsQuery';
+import useDistrictsQuery from '@/composables/queries/useDistrictsQuery';
+import useSchoolsQuery from '@/composables/queries/useSchoolsQuery';
+import useClassesQuery from '@/composables/queries/useClassesQuery';
+import useGroupsQuery from '@/composables/queries/useGroupsQuery';
+import useFamiliesQuery from '@/composables/queries/useFamiliesQuery';
+import useTaskVariantsQuery from '@/composables/queries/useTaskVariantsQuery';
+import useUpsertAdministrationMutation from '@/composables/mutations/useUpsertAdministrationMutation';
 import TaskPicker from './TaskPicker.vue';
-import { useConfirm } from 'primevue/useconfirm';
 import ConsentPicker from './ConsentPicker.vue';
+import OrgPicker from '@/components/OrgPicker.vue';
+import { APP_ROUTES } from '@/constants/routes';
+import { TOAST_SEVERITIES, TOAST_DEFAULT_LIFE_DURATION } from '@/constants/toasts';
 
 const isLevante = import.meta.env.MODE === 'LEVANTE';
+
 const initialized = ref(false);
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
-const queryClient = useQueryClient();
-const authStore = useAuthStore();
 
-const { roarfirekit, administrationQueryKeyIndex } = storeToRefs(authStore);
+const { mutate: upsertAdministration, isPending: isSubmitting } = useUpsertAdministrationMutation();
+
+const authStore = useAuthStore();
+const { roarfirekit } = storeToRefs(authStore);
 
 const props = defineProps({
   adminId: { type: String, required: false, default: null },
@@ -230,9 +242,9 @@ const submitLabel = computed(() => {
   return 'Create Administration';
 });
 
-//      +------------------------------------------+
-// -----| Queries for grabbing variants |-----
-//      +------------------------------------------+
+// +------------------------------------------------------------------------------------------------------------------+
+// | Fetch Variants with Params
+// +------------------------------------------------------------------------------------------------------------------+
 const findVariantWithParams = (variants, params) => {
   // TODO: implement tie breakers if found.length > 1
   return _find(variants, (variant) => {
@@ -242,183 +254,64 @@ const findVariantWithParams = (variants, params) => {
   });
 };
 
-const { data: allVariants } = useQuery({
-  queryKey: ['variants', 'all'],
-  queryFn: () => variantsFetcher(true),
-  keepPreviousData: true,
+const { data: allVariants } = useTaskVariantsQuery(true, {
   enabled: initialized,
-  staleTime: 5 * 60 * 1000, // 5 minutes
 });
 
-//      +------------------------------------------+
-// -----| Queries for grabbing pre-existing admins |-----
-//      +------------------------------------------+
-
-const queryKeys = [
-  ['administration', props.adminId],
-  ['variants', 'all'],
-  ['districts', props.adminId],
-  ['schools', 'minimalOrgs', props.adminId],
-  ['classes', 'minimal', props.adminId],
-  ['groups', props.adminId],
-  ['families', props.adminId],
-];
-
-const shouldGrabAdminInfo = computed(() => {
-  return initialized.value && Boolean(props.adminId);
+// +------------------------------------------------------------------------------------------------------------------+
+// | Fetch pre-existing administration data when editing an administration
+// +------------------------------------------------------------------------------------------------------------------+
+// Fetch the data of the currently being edited administration, incl. its assigned assessments.
+const fetchAdminitrations = computed(() => initialized.value && !!props.adminId);
+const { data: existingAdministrationData } = useAdministrationsQuery([props.adminId], {
+  enabled: fetchAdminitrations,
+  select: (data) => data[0],
 });
 
-const preExistingAssessmentInfo = computed(() => {
-  return _get(preExistingAdminInfo.value, 'assessments', []);
+const existingAssessments = computed(() => {
+  return existingAdministrationData?.value?.assessments ?? [];
 });
 
-// Grab districts from preExistingAdminInfo.minimalOrgs.districts
-const districtsToGrab = computed(() => {
-  const districtIds = _get(preExistingAdminInfo.value, 'minimalOrgs.districts', []);
-  return districtIds.map((districtId) => {
-    return {
-      collection: 'districts',
-      docId: districtId,
-      select: ['name'],
-    };
-  });
+// Fetch the districts assigned to the administration.
+const districtIds = computed(() => existingAdministrationData?.value?.minimalOrgs?.districts ?? []);
+
+const { data: existingDistrictsData } = useDistrictsQuery(districtIds, {
+  enabled: initialized,
 });
 
-const shouldGrabDistricts = computed(() => {
-  return initialized.value && districtsToGrab.value.length > 0;
+// Fetch the schools assigned to the administration.
+const schoolIds = computed(() => existingAdministrationData.value?.minimalOrgs?.schools ?? []);
+
+const { data: existingSchoolsData } = useSchoolsQuery(schoolIds, {
+  enabled: initialized,
 });
 
-// grab schools from preExistingAdminInfo.minimalOrgs.schools
-const schoolsToGrab = computed(() => {
-  const schoolIds = _get(preExistingAdminInfo.value, 'minimalOrgs.schools', []);
-  return schoolIds.map((schoolId) => {
-    return {
-      collection: 'schools',
-      docId: schoolId,
-      select: ['name'],
-    };
-  });
+// Fetch the classes assigned to the administration.
+const classIds = computed(() => existingAdministrationData.value?.minimalOrgs?.classes ?? []);
+
+const { data: existingClassesData } = useClassesQuery(classIds, {
+  enabled: initialized,
 });
 
-const shouldGrabSchools = computed(() => {
-  return initialized.value && schoolsToGrab.value.length > 0;
+// Fetch the groups assigned to the administration.
+const groupIds = computed(() => existingAdministrationData.value?.minimalOrgs?.groups ?? []);
+
+const { data: existingGroupData } = useGroupsQuery(groupIds, {
+  enabled: initialized,
 });
 
-// Grab classes from preExistingAdminInfo.minimalOrgs.classes
-const classesToGrab = computed(() => {
-  const classIds = _get(preExistingAdminInfo.value, 'minimalOrgs.classes', []);
-  return classIds.map((classId) => {
-    return {
-      collection: 'classes',
-      docId: classId,
-      select: ['name'],
-    };
-  });
+// Fetch the families assigned to the administration.
+const familyIds = computed(() => existingAdministrationData.value?.minimalOrgs?.families ?? []);
+
+const { data: existingFamiliesData } = useFamiliesQuery(familyIds, {
+  enabled: initialized,
 });
 
-const shouldGrabClasses = computed(() => {
-  return initialized.value && classesToGrab.value.length > 0;
-});
-
-// Grab groups from preExistingAdminInfo.minimalOrgs.groups
-const groupsToGrab = computed(() => {
-  const groupIds = _get(preExistingAdminInfo.value, 'minimalOrgs.groups', []);
-  return groupIds.map((id) => {
-    return {
-      collection: 'groups',
-      docId: id,
-      select: ['name'],
-    };
-  });
-});
-
-const shouldGrabGroups = computed(() => {
-  return initialized.value && groupsToGrab.value.length > 0;
-});
-
-// Grab families from preExistingAdminInfo.families
-const familiesToGrab = computed(() => {
-  const familyIds = _get(preExistingAdminInfo.value, 'minimalOrgs.families', []);
-  return familyIds.map((id) => {
-    return {
-      collection: 'families',
-      docId: id,
-      select: ['name'],
-    };
-  });
-});
-
-const shouldGrabFamilies = computed(() => {
-  return initialized.value && familiesToGrab.value.length > 0;
-});
-
-const resetAllQueries = async () => {
-  for (const key of queryKeys) {
-    await queryClient.resetQueries(key);
-  }
-};
-
-const invalidateAllQueries = async () => {
-  for (const key of queryKeys) {
-    await queryClient.invalidateQueries(key);
-  }
-};
-
-const { data: preExistingAdminInfo } = useQuery({
-  queryKey: ['administration', props.adminId],
-  queryFn: () => fetchDocById('administrations', props.adminId),
-  keepPreviousData: true,
-  enabled: shouldGrabAdminInfo,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: preDistricts } = useQuery({
-  queryKey: ['districts', props.adminId],
-  queryFn: () => fetchDocsById(districtsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabDistricts,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: preSchools } = useQuery({
-  queryKey: ['schools', 'minimalOrgs', props.adminId],
-  queryFn: () => fetchDocsById(schoolsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabSchools,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: preClasses } = useQuery({
-  queryKey: ['classes', 'minimal', props.adminId],
-  queryFn: () => fetchDocsById(classesToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabClasses,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: preGroups } = useQuery({
-  queryKey: ['groups', props.adminId],
-  queryFn: () => fetchDocsById(groupsToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabGroups,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-const { data: preFamilies } = useQuery({
-  queryKey: ['families', props.adminId],
-  queryFn: () => fetchDocsById(familiesToGrab.value),
-  keepPreviousData: true,
-  enabled: shouldGrabFamilies,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
-
-//      +---------------------------------+
-// -----| Form state and validation rules |-----
-//      +---------------------------------+
+// +------------------------------------------------------------------------------------------------------------------+
+// | Form state and validation rules
+// +------------------------------------------------------------------------------------------------------------------+
 let noConsent = ref('');
 
-const pickListError = ref('');
-const orgError = ref('');
 const submitted = ref(false);
 const isTestData = ref(false);
 
@@ -453,8 +346,8 @@ const rules = {
 const v$ = useVuelidate(rules, state);
 
 const minStartDate = computed(() => {
-  if (props.adminId && preExistingAdminInfo.value?.dateOpened) {
-    return new Date(preExistingAdminInfo.value.dateOpened);
+  if (props.adminId && existingAdministrationData.value?.dateOpened) {
+    return new Date(existingAdministrationData.value.dateOpened);
   }
   return new Date();
 });
@@ -466,16 +359,16 @@ const minEndDate = computed(() => {
   return new Date();
 });
 
-//      +---------------------------------+
-// -----|          Org Selection          |-----
-//      +---------------------------------+
+// +------------------------------------------------------------------------------------------------------------------+
+// | Org Selection
+// +------------------------------------------------------------------------------------------------------------------+
 const orgsList = computed(() => {
   return {
-    districts: preDistricts.value,
-    schools: preSchools.value,
-    classes: preClasses.value,
-    groups: preGroups.value,
-    families: preFamilies.value,
+    districts: existingDistrictsData.value,
+    schools: existingSchoolsData.value,
+    classes: existingClassesData.value,
+    groups: existingGroupData.value,
+    families: existingFamiliesData.value,
   };
 });
 
@@ -485,9 +378,9 @@ const selection = (selected) => {
   }
 };
 
-//      +---------------------------------+
-// -----|       Assessment Selection      |-----
-//      +---------------------------------+
+// +------------------------------------------------------------------------------------------------------------------+
+// | Assessment Selection
+// +------------------------------------------------------------------------------------------------------------------+
 const variants = ref([]);
 const preSelectedVariants = ref([]);
 const nonUniqueTasks = ref('');
@@ -533,9 +426,9 @@ const checkForRequiredOrgs = (orgs) => {
   return Boolean(filtered.length);
 };
 
-//      +---------------------------------+
-// -----|         Form submission         |-----
-//      +---------------------------------+
+// +------------------------------------------------------------------------------------------------------------------+
+// | Form submission
+// +------------------------------------------------------------------------------------------------------------------+
 const removeNull = (obj) => {
   // eslint-disable-next-line no-unused-vars
   return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== null));
@@ -547,91 +440,99 @@ const removeUndefined = (obj) => {
 };
 
 const submit = async () => {
-  pickListError.value = '';
-  submitted.value = true;
   const isFormValid = await v$.value.$validate();
-  if (isFormValid) {
-    const submittedAssessments = variants.value.map((assessment) =>
-      removeUndefined({
-        variantId: assessment.variant.id,
-        variantName: assessment.variant.name,
-        taskId: assessment.task.id,
-        params: toRaw(assessment.variant.params),
-        // Exclude conditions key if there are no conditions to be set.
-        ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
-      }),
-    );
-
-    const tasksUnique = checkForUniqueTasks(submittedAssessments);
-    if (tasksUnique && !_isEmpty(submittedAssessments)) {
-      const orgs = {
-        districts: toRaw(state.districts).map((org) => org.id),
-        schools: toRaw(state.schools).map((org) => org.id),
-        classes: toRaw(state.classes).map((org) => org.id),
-        groups: toRaw(state.groups).map((org) => org.id),
-        families: toRaw(state.families).map((org) => org.id),
-      };
-
-      const orgsValid = checkForRequiredOrgs(orgs);
-      if (orgsValid) {
-        const dateClose = new Date(state.dateClosed);
-        dateClose.setHours(23, 59, 59, 999);
-        const args = {
-          name: toRaw(state).administrationName,
-          publicName: toRaw(state).administrationPublicName,
-          assessments: submittedAssessments,
-          dateOpen: toRaw(state).dateStarted,
-          dateClose,
-          sequential: toRaw(state).sequential,
-          orgs: orgs,
-          isTestData: isTestData.value,
-          legal: {
-            consent: toRaw(state).consent ?? null,
-            assent: toRaw(state).assent ?? null,
-            amount: toRaw(state).amount ?? '',
-            expectedTime: toRaw(state).expectedTime ?? '',
-          },
-        };
-        if (props.adminId) args.administrationId = props.adminId;
-
-        await roarfirekit.value
-          .createAdministration(args)
-          .then(() => {
-            toast.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: props.adminId ? 'Administration updated' : 'Administration created',
-              life: 3000,
-            });
-            administrationQueryKeyIndex.value += 1;
-            router.push({ name: 'Home' });
-          })
-          .catch((error) => {
-            toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 3000 });
-            console.error('Error creating administration:', error.message);
-          });
-      } else {
-        console.log('need at least one org');
-        orgError.value = 'At least one organization needs to be selected.';
-      }
-    } else {
-      getNonUniqueTasks(submittedAssessments);
-      confirm.require({
-        group: 'errors',
-        header: 'Task Selections',
-        icon: 'pi pi-question-circle',
-        acceptLabel: 'Close',
-        acceptIcon: 'pi pi-times',
-      });
-    }
-  } else {
-    console.log('form is invalid');
+  if (!isFormValid) {
+    return;
   }
+
+  const submittedAssessments = variants.value.map((assessment) =>
+    removeUndefined({
+      variantId: assessment.variant.id,
+      variantName: assessment.variant.name,
+      taskId: assessment.task.id,
+      params: toRaw(assessment.variant.params),
+      // Exclude conditions key if there are no conditions to be set.
+      ...(toRaw(assessment.variant.conditions || undefined) && { conditions: toRaw(assessment.variant.conditions) }),
+    }),
+  );
+
+  const tasksUnique = checkForUniqueTasks(submittedAssessments);
+
+  if (!tasksUnique || _isEmpty(submittedAssessments)) {
+    getNonUniqueTasks(submittedAssessments);
+    confirm.require({
+      group: 'errors',
+      header: 'Task Selections',
+      icon: 'pi pi-question-circle',
+      acceptLabel: 'Close',
+      acceptIcon: 'pi pi-times',
+    });
+    return;
+  }
+
+  const orgs = {
+    districts: toRaw(state.districts).map((org) => org.id),
+    schools: toRaw(state.schools).map((org) => org.id),
+    classes: toRaw(state.classes).map((org) => org.id),
+    groups: toRaw(state.groups).map((org) => org.id),
+    families: toRaw(state.families).map((org) => org.id),
+  };
+
+  const orgsValid = checkForRequiredOrgs(orgs);
+  if (!orgsValid) {
+    // @TODO: Add error handling, i.e. confirmation dialog like the one for non-unique tasks?
+    return;
+  }
+
+  const dateClose = new Date(state.dateClosed);
+  dateClose.setHours(23, 59, 59, 999);
+
+  const args = {
+    name: toRaw(state).administrationName,
+    publicName: toRaw(state).administrationPublicName,
+    assessments: submittedAssessments,
+    dateOpen: toRaw(state).dateStarted,
+    dateClose,
+    sequential: toRaw(state).sequential,
+    orgs: orgs,
+    isTestData: isTestData.value,
+    legal: {
+      consent: toRaw(state).consent ?? null,
+      assent: toRaw(state).assent ?? null,
+      amount: toRaw(state).amount ?? '',
+      expectedTime: toRaw(state).expectedTime ?? '',
+    },
+  };
+
+  if (props.adminId) args.administrationId = props.adminId;
+
+  await upsertAdministration(args, {
+    onSuccess: () => {
+      toast.add({
+        severity: TOAST_SEVERITIES.SUCCESS,
+        summary: 'Success',
+        detail: props.adminId ? 'Administration updated' : 'Administration created',
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+
+      router.push({ path: APP_ROUTES.HOME });
+    },
+    onError: (error) => {
+      toast.add({
+        severity: TOAST_SEVERITIES.ERROR,
+        summary: 'Error',
+        detail: error.message,
+        life: TOAST_DEFAULT_LIFE_DURATION,
+      });
+
+      console.error('Error creating administration:', error.message);
+    },
+  });
 };
 
-//      +-----------------------------------+
-// -----| Lifecycle hooks and subscriptions |-----
-//      +-----------------------------------+
+// +------------------------------------------------------------------------------------------------------------------+
+// | Lifecycle hooks and subscriptions
+// +------------------------------------------------------------------------------------------------------------------+
 let unsubscribe;
 const init = () => {
   if (unsubscribe) unsubscribe();
@@ -644,18 +545,9 @@ unsubscribe = authStore.$subscribe(async (mutation, state) => {
 
 onMounted(async () => {
   if (roarfirekit.value.restConfig) init();
-  // Invalidate the query to allow a re-fetch of the data after editing an administration
-  await invalidateAllQueries();
 });
 
-onUnmounted(async () => {
-  if (!submitted.value) {
-    // Reset the query to allow a clean re-fetch of the data if exiting the page without submitting (editing)
-    await resetAllQueries();
-  }
-});
-
-watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
+watch([existingAdministrationData, allVariants], ([adminInfo, allVariantInfo]) => {
   if (adminInfo && !_isEmpty(allVariantInfo)) {
     state.administrationName = adminInfo.name;
     state.administrationPublicName = adminInfo.publicName;
@@ -679,60 +571,6 @@ watch([preExistingAdminInfo, allVariants], ([adminInfo, allVariantInfo]) => {
     if (state.consent === 'No Consent') {
       noConsent.value = state.consent;
     }
-  }
-});
-
-// Set up watchers for changes to orgs as a result of editing an administration
-watch(districtsToGrab, async (updatedValue) => {
-  if (updatedValue.length !== 0) {
-    // Invalidate the districts query and re-fetch the data based on the updated value
-    await queryClient.invalidateQueries(['districts', props.adminId]);
-    const fetchedDistricts = await queryClient.fetchQuery(['districts', props.adminId], () =>
-      fetchDocsById(updatedValue),
-    );
-    state.districts = fetchedDistricts ?? [];
-  }
-});
-
-watch(schoolsToGrab, async (updatedValue) => {
-  if (updatedValue.length !== 0) {
-    // Invalidate the schools query and re-fetch the data based on the updated value
-    await queryClient.invalidateQueries(['schools', 'minimalOrgs', props.adminId]);
-    const fetchedSchools = await queryClient.fetchQuery(['schools', 'minimalOrgs', props.adminId], () =>
-      fetchDocsById(updatedValue),
-    );
-    state.schools = fetchedSchools ?? [];
-  }
-});
-
-watch(classesToGrab, async (updatedValue) => {
-  if (updatedValue.length !== 0) {
-    // Invalidate the classes query and re-fetch the data based on the updated value
-    await queryClient.invalidateQueries(['classes', 'minimal', props.adminId]);
-    const fetchedClasses = await queryClient.fetchQuery(['classes', 'minimal', props.adminId], () =>
-      fetchDocsById(updatedValue),
-    );
-    state.classes = fetchedClasses ?? [];
-  }
-});
-
-watch(groupsToGrab, async (updatedValue) => {
-  if (updatedValue.length !== 0) {
-    // Invalidate the groups query and re-fetch the data based on the updated value
-    await queryClient.invalidateQueries(['groups', props.adminId]);
-    const fetchedGroups = await queryClient.fetchQuery(['groups', props.adminId], () => fetchDocsById(updatedValue));
-    state.groups = fetchedGroups ?? [];
-  }
-});
-
-watch(familiesToGrab, async (updatedValue) => {
-  if (updatedValue.length !== 0) {
-    // Invalidate the families query and re-fetch the data based on the updated value
-    await queryClient.invalidateQueries(['families', props.adminId]);
-    const fetchedFamilies = await queryClient.fetchQuery(['families', props.adminId], () =>
-      fetchDocsById(updatedValue),
-    );
-    state.families = fetchedFamilies ?? [];
   }
 });
 </script>
@@ -863,11 +701,11 @@ watch(familiesToGrab, async (updatedValue) => {
 }
 .p-radiobutton.p-component.p-radiobutton-checked {
   position: relative;
-  width: 20px; /* adjust as needed */
-  height: 20px; /* adjust as needed */
+  width: 20px;
+  height: 20px;
   background-color: var(--primary-color);
   border-color: var(--primary-color) !important;
-  border-radius: 50%; /* make the element itself circular */
+  border-radius: 50%;
 }
 
 .p-radiobutton.p-component.p-radiobutton-checked::before {
@@ -875,10 +713,10 @@ watch(familiesToGrab, async (updatedValue) => {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 5px; /* adjust size of the inner circle as needed */
-  height: 5px; /* adjust size of the inner circle as needed */
-  background-color: white; /* color of the inner circle */
-  border-radius: 50%; /* make the inner element circular */
-  transform: translate(-50%, -50%); /* center the inner circle */
+  width: 5px;
+  height: 5px;
+  background-color: white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

@@ -16,17 +16,15 @@
 
 <script setup>
 import { useConfirm } from 'primevue/useconfirm';
-import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { useInactivityTimeout } from '@/composables/useInactivityTimeout/useInactivityTimeout';
-import { useAuthStore } from '@/store/auth';
-import { APP_ROUTES } from '@/constants/routes';
+import useInactivityTimeout from '@/composables/useInactivityTimeout/useInactivityTimeout';
+import useSignOutMutation from '@/composables/mutations/useSignOutMutation';
 import { AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD, AUTH_SESSION_TIMEOUT_COUNTDOWN_DURATION } from '@/constants/auth';
 
-const authStore = useAuthStore();
 const confirm = useConfirm();
-const router = useRouter();
 const i18n = useI18n();
+
+const { mutate: signOut } = useSignOutMutation();
 
 const { countdownTimer, resetTimer } = useInactivityTimeout({
   idleThreshold: AUTH_SESSION_TIMEOUT_IDLE_THRESHOLD,
@@ -42,8 +40,7 @@ const { countdownTimer, resetTimer } = useInactivityTimeout({
     });
   },
   onTimeout: async () => {
-    await authStore.signOut();
-    router.push({ path: APP_ROUTES.SIGN_IN });
+    await signOut();
   },
 });
 </script>
