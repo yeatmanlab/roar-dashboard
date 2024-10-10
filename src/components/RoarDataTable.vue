@@ -95,6 +95,7 @@
           :loading="loading"
           scrollable
           :select-all="selectAll"
+          data-cy="roar-data-table"
           @select-all-change="onSelectAll"
           @row-select="onSelectionChange"
           @row-unselect="onSelectionChange"
@@ -292,6 +293,7 @@
                     <PvTriStateCheckbox v-model="filterModel.value" input-id="booleanFilter" style="padding-top: 2px" />
                     <label for="booleanFilter">{{ col.header + '?' }}</label>
                   </div>
+
                   <div v-if="col.dataType === 'score'">
                     <PvDropdown
                       v-model="filterModel.value"
@@ -750,7 +752,7 @@ const refFilters = ref(computedFilters.value.computedFilters);
 
 const resetFilters = () => {
   refFilters.value = computedFilters.value.computedFilters;
-  emit('reset-filters');
+  // emit('reset-filters');
 };
 
 let toolTipByHeader = (header) => {
