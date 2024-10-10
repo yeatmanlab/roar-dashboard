@@ -31,7 +31,7 @@
       flex-direction: column;
 
       > *:not(.roar-game-footer) {
-        margin-inline: 2rem;
+        margin-inline: 1.5rem;
       }
     }
 
@@ -70,7 +70,7 @@
 
     .roar-game-footer {
       padding-block: 1rem;
-      padding-inline: 2rem;
+      padding-inline: 1.5rem;
       border-top: 1px solid var(--surface-d);
       border-bottom-left-radius: 4px;
       display: inline-flex;

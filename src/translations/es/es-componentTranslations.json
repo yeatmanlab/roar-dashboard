@@ -77,6 +77,13 @@
     "surveyDescriptionTeacherPart1": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos. Las preguntas indagan por sus antecedentes y creencias sobre la enseñanza.",
     "surveyNameTeacherPart2": "Encuesta de profesores - Salón",
     "surveyDescriptionTeacherPart2": "Estimamos que diligenciar la siguiente encuesta le tomará aproximadamente 5-10 minutos y se le hará preguntas sobre el salón o los salones en los que imparte.",
+    "surveyProgressGeneral": "General",
+    "surveyProgressGeneralParent": "Familia",
+    "surveyProgressSpecificParent": "Niño",
+    "surveyProgressSpecificParentMonth": "Mes",
+    "surveyProgressSpecificParentYear": "Año",
+    "surveyProgressGeneralTeacher": "Profesor",
+    "surveyProgressSpecificTeacher": "Aula",
     "mefsName": "León y Mono",
     "mefsDescription": "Empareja las formas y los colores.",
     "vocabName": "Vocabulario",
@@ -117,5 +124,10 @@
     "emailPlaceholder": "tu.email@example.org (opcional)",
     "messageLabel": "Descripción",
     "messagePlaceholder": "¿Cuál es el problema? ¿Qué querías experimentar en su lugar? Gracias por compartir."
+  },
+  "userSurvey": {
+    "specificRelationDescriptionChildA": "Para niño(a) con mes de nacimiento",
+    "specificRelationDescriptionChildB": "y año de nacimiento",
+    "specificRelationDescriptionClass": "Para la clase"
   }
 }
