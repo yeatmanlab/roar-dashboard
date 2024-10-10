@@ -84,7 +84,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   e2e:
     name: End-to-end tests
-    runs-on: ubuntu-latest # Replace with Cypress runner
+    runs-on: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0-edge-129.0.2792.65-1
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -115,7 +115,7 @@ jobs:
 
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
-        env: # @TODO: Replace with .env.test file values
+        env:
           CYPRESS_BASE_URL: 'http://localhost:4173'
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
