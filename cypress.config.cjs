@@ -102,10 +102,10 @@ module.exports = defineConfig({
     participantUid: process.env.CYPRESS_PARTICIPANT_UID,
     participantEmail: process.env.CYPRESS_PARTICIPANT_EMAIL,
     participantEmailPassword: process.env.CYPRESS_PARTICIPANT_EMAIL_PASSWORD,
-    cleverUsername: process.env.CYPRESS_CLEVER_USERNAME,
-    cleverPassword: process.env.CYPRESS_CLEVER_PASSWORD,
     cleverOAuthLink: 'https://clever.com/oauth/authorize',
     cleverSchoolName: '61e8aee84cf0e71b14295d45',
+    cleverUsername: process.env.CYPRESS_CLEVER_USERNAME,
+    cleverPassword: process.env.CYPRESS_CLEVER_PASSWORD,
     testAdministrationName: 'Cypress Test Administration',
     testAdministrationId: 'kKUSypkMc36mPEzleDE6',
     testAdministratorFirstName: 'Cypress Test Administrator First Name',
@@ -149,12 +149,14 @@ module.exports = defineConfig({
     testGrade: 'Grade 5',
     stanfordUniversityAddress: '450 Jane Stanford Way, Stanford, CA 94305, USA',
     testTag: 'stanford university',
+    cypressDownloads: 'cypress/downloads',
     testRoarAppsAdministration: 'Cypress Test Roar Apps Administration',
     testRoarAppsAdministrationId: 'K8UaI8p79Dntj5Z2CJk8',
     testOptionalRoarAppsAdministration: 'Cypress Test Optional Roar Apps Administration',
     testOptionalRoarAppsAdministrationId: 'Fuy4nQaMu6YmfNg1eBYH',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
+    // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50 and push the test_legal_doc user
     testUserList: (() => {
       const list = Array.from({ length: 51 }, (_, i) => `CypressTestStudent${i}`);
       list.push('test_legal_doc');
