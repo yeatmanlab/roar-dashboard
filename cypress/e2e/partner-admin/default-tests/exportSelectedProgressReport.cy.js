@@ -1,5 +1,5 @@
-const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
-const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
+const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
+const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 
 describe('The partner admin can select and export progress reports for a given administration.', () => {
@@ -13,6 +13,6 @@ describe('The partner admin can select and export progress reports for a given a
     cy.get('.p-checkbox-box').first().click();
 
     cy.get('button').contains('Export Selected').click();
-    cy.readFile(`${Cypress.env('cypressDownloads')}/roar-progress-selected.csv`);
+    cy.readFile(`cypress/downloads/roar-progress-selected.csv`);
   });
 });

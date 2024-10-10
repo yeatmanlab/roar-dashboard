@@ -169,7 +169,7 @@ export function playFluencyARF({
   if (auth === 'clever') {
     signInWithClever();
   } else if (auth === 'username') {
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
     cy.visit('/');
   }
 
@@ -210,7 +210,7 @@ export function playFluencyCALF({
   if (auth === 'clever') {
     signInWithClever();
   } else if (auth === 'username') {
-    cy.login(Cypress.env('participantUsername'), Cypress.env('participantPassword'));
+    cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
     cy.visit('/');
   }
 

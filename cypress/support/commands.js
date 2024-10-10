@@ -8,55 +8,76 @@ import { createMockStore } from './utils.js';
  * @param {string} password - The password to log in with.
  */
 Cypress.Commands.add('login', (username, password) => {
-  cy.session([username, password], () => {
-    cy.visit('/', { timeout: Cypress.env('timeout') });
-    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('button')
-      .contains('Go!', { timeout: Cypress.env('timeout') })
-      .click();
-    cy.log('Login successful.');
-    cy.wait(3000);
-  });
+  cy.session(
+    [username],
+    () => {
+      cy.visit('/', { timeout: Cypress.env('timeout') });
+
+      cy.get('[data-cy="input-username-email"]').type(username, { log: false });
+      cy.get('[data-cy="input-password"]').type(password, { log: false });
+
+      cy.get('button').contains('Go!').click();
+
+      cy.url().should('eq', `${Cypress.config().baseUrl}/`);
+
+      cy.log('Login successful.');
+    },
+    {
+      validate: () => {
+        cy.window().then((win) => {
+          const sessionStorageKeys = Object.keys(win.sessionStorage);
+
+          const adminAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:admin$');
+          const appAuthUserKeyPattern = new RegExp('^firebase:authUser:.+:app$');
+
+          const hasAdminAuthUserKey = sessionStorageKeys.some((key) => adminAuthUserKeyPattern.test(key));
+          const hasAppAuthUserKey = sessionStorageKeys.some((key) => appAuthUserKeyPattern.test(key));
+
+          expect(hasAdminAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:admin key').to.be.true;
+          expect(hasAppAuthUserKey, 'Session storage should contain a firebase:authUser:{id}:app key').to.be.true;
+        });
+      },
+    },
+  );
 });
 
-/**
- * Logs in a user using email-based authentication flow.
- * Handles different sign-in methods including email/password and magic link.
- *
- * @param {string} username - The email to log in with.
- * @param {string} password - The password to log in with.
- */
-Cypress.Commands.add('loginWithEmail', (username, password) => {
-  cy.session([username, password], () => {
-    cy.visit('/', { timeout: Cypress.env('timeout') });
-    // Set username to email, check for existence of 'sign in using password' button)
-    cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
-    cy.contains('Sign-in using password');
+// /**
+//  * Logs in a user using email-based authentication flow.
+//  * Handles different sign-in methods including email/password and magic link.
+//  *
+//  * @param {string} username - The email to log in with.
+//  * @param {string} password - The password to log in with.
+//  */
+// Cypress.Commands.add('loginWithEmail', (username, password) => {
+//   cy.session([username, password], () => {
+//     cy.visit('/', { timeout: Cypress.env('timeout') });
+//     // Set username to email, check for existence of 'sign in using password' button)
+//     cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
+//     cy.contains('Sign-in using password');
 
-    // Click button to switch to email / password sign in
-    cy.get('[data-cy="sign-in-with-password"]').click();
+//     // Click button to switch to email / password sign in
+//     cy.get('[data-cy="sign-in-with-password"]').click();
 
-    // Click button to switch to email magic link sign in
-    cy.get('[data-cy="sign-in-with-email-link"]').click();
+//     // Click button to switch to email magic link sign in
+//     cy.get('[data-cy="sign-in-with-email-link"]').click();
 
-    // Click button to switch to email / password sign in and log in
-    cy.get('[data-cy="sign-in-with-password"]').click();
-    cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
-    cy.get('button')
-      .contains('Go!', { timeout: Cypress.env('timeout') })
-      .click();
-    cy.log('Login successful.').wait(3000);
-  });
-});
+//     // Click button to switch to email / password sign in and log in
+//     cy.get('[data-cy="sign-in-with-password"]').click();
+//     cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
+//     cy.get('button')
+//       .contains('Go!', { timeout: Cypress.env('timeout') })
+//       .click();
+//     cy.log('Login successful.').wait(3000);
+//   });
+// });
 
 /**
  * Logs out the current user and verifies redirection to the sign-in page.
  */
 Cypress.Commands.add('logout', () => {
-  cy.get('[data-cy="button-sign-out"]', { timeout: Cypress.env('timeout') }).click();
+  cy.get('[data-cy="button-sign-out"]').click();
   cy.get('h1', { timeout: Cypress.env('timeout') }).should('contain.text', 'Welcome to ROAR!');
-  cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/signin`);
+  cy.url({ timeout: Cypress.env('timeout') }).should('eq', `${Cypress.config().baseUrl}/signin`);
   cy.log('Logout successful.');
 });
 
@@ -67,9 +88,9 @@ Cypress.Commands.add('logout', () => {
  * @param {boolean} [login=false] - Whether to log in before navigating.
  */
 Cypress.Commands.add('navigateTo', (page) => {
-  cy.log(`Navigating to \`${Cypress.env('baseUrl')}${page}`);
+  cy.log(`Navigating to \`${Cypress.config().baseUrl}${page}`);
   cy.visit(page, { timeout: Cypress.env('timeout') });
-  cy.url().should('eq', `${Cypress.env('baseUrl')}${page}`);
+  cy.url().should('eq', `${Cypress.config().baseUrl}${page}`);
 });
 
 /**

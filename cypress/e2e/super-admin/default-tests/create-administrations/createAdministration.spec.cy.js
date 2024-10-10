@@ -82,7 +82,7 @@ function selectAndAssignAdministration(variant) {
 }
 
 function checkAdministrationCreated() {
-  cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.env('baseUrl')}/`);
+  cy.url({ timeout: 2 * Cypress.env('timeout') }).should('eq', `${Cypress.config().baseUrl}/`);
   cy.get('[data-cy="dropdown-sort-administrations"]', { timeout: 2 * Cypress.env('timeout') }).click();
   cy.get('ul > li', { timeout: Cypress.env('timeout') })
     .contains('Creation date (descending)')
@@ -99,7 +99,7 @@ describe('The admin user can create an administration and assign it to a distric
     'Logs into the dashboard, navigates to the Create Administrations component,' +
       'creates a new administration, and assigns it to a test district.',
     () => {
-      cy.login(Cypress.env('superAdminUsername'), Cypress.env('superAdminPassword'));
+      cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
       cy.wait(0.3 * timeout);
       cy.navigateTo('/create-administration');
       typeAdministrationName();
