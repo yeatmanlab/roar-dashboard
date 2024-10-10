@@ -17,6 +17,7 @@ export default mergeConfig(
       dir: 'src/',
       watch: false,
       setupFiles: ['./vitest.setup.js'],
+      clearMocks: true,
       coverage: {
         enabled: true,
         provider: 'istanbul',
