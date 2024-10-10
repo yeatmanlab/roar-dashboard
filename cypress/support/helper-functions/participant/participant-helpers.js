@@ -10,7 +10,7 @@ export function signInWithClever() {
     cy.get('input[title="School name"]', { timeout: 6 * innerTimeout }).type(Cypress.env('cleverSchoolName'));
     cy.get('ul > li', { timeout: innerTimeout }).contains(Cypress.env('cleverSchoolName')).click();
     // Find the username input field and input the username
-    cy.get('input#username', { timeout: innerTimeout }).type(cypress.env('CLEVER_USERNAME'));
+    cy.get('input#username', { timeout: innerTimeout }).type(Cypress.env('CLEVER_USERNAME'));
     cy.wait(0.2 * innerTimeout);
 
     // Input password

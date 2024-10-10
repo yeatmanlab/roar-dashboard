@@ -4,7 +4,7 @@ describe(
   'The admin user can navigate to the view administration page, ' + 'and can see search for an administration',
   () => {
     it('Activates the admin sidebar, then searches for an administration.', () => {
-      cy.login(cypress.env('SUPER_ADMIN_USERNAME'), cypress.env('SUPER_ADMIN_PASSWORD'));
+      cy.login(Cypress.env('SUPER_ADMIN_USERNAME'), Cypress.env('SUPER_ADMIN_PASSWORD'));
       cy.navigateTo('/');
       cy.get("[data-cy='search-input']").type(`${roarDemoAdministrationName}{enter}`);
       cy.get('body').contains('You searched for');

@@ -55,10 +55,10 @@ export const createMockStore = (userType = 'participant') => {
     superAdmin: {},
     partnerAdmin: {},
     participant: {
-      uid: cypress.env('PARTICIPANT_UID'),
-      username: cypress.env('PARTICIPANT_USERNAME'),
-      password: cypress.env('PARTICIPANT_PASSWORD'),
-      email: cypress.env('PARTICIPANT_EMAIL'),
+      uid: Cypress.env('PARTICIPANT_UID'),
+      username: Cypress.env('PARTICIPANT_USERNAME'),
+      password: Cypress.env('PARTICIPANT_PASSWORD'),
+      email: Cypress.env('PARTICIPANT_EMAIL'),
       name: {
         first: 'Cypress',
         last: 'Student',

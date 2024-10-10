@@ -1,5 +1,5 @@
-const testPartnerAdminUsername = cypress.env('PARTNER_ADMIN_USERNAME');
-const testPartnerAdminPassword = cypress.env('PARTNER_ADMIN_PASSWORD');
+const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
+const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 
 describe('The partner admin can select and export progress reports for a given administration.', () => {

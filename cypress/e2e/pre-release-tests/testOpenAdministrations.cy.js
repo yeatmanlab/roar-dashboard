@@ -181,7 +181,7 @@
 //   it('Tests the open administrations', () => {
 //     // Clear all saved sessions and log in as a participant
 //     Cypress.session.clearAllSavedSessions();
-//     cy.login(cypress.env('PARTICIPANT_USERNAME'), cypress.env('PARTICIPANT_PASSWORD'));
+//     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
 //     cy.visit('/', { timeout: 2 * timeout });
 //
 //     cy.get('@openAdmins').then((openAdmins) => {

@@ -40,7 +40,7 @@ export function startGame(administration, language, optional, auth) {
   Cypress.on('uncaught:exception', () => false);
   cy.visit('/', { timeout: 2 * timeout });
   if (auth === 'username') {
-    cy.login(cypress.env('PARTICIPANT_USERNAME'), cypress.env('PARTICIPANT_PASSWORD'));
+    cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
     cy.visit('/', { timeout: 2 * timeout });
   }
   if (auth === 'clever') {
