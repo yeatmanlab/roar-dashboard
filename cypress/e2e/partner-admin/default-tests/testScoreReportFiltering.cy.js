@@ -10,7 +10,7 @@
 // const testPartnerAdminUsername = Cypress.env('partnerAdminUsername');
 // const testPartnerAdminPassword = Cypress.env('partnerAdminPassword');
 // const timeout = Cypress.env('timeout');
-// const baseUrl = Cypress.config('baseUrl');
+// const baseUrl = Cypress.env('baseUrl');
 // const headers = ['School'];
 
 //
