@@ -534,7 +534,7 @@ const validateCode = async (studentCode, outerIndex = 0) => {
   try {
     const activationCode = await fetchDocById('activationCodes', studentCode, undefined, 'admin', true, true);
 
-    if (activationCode?.orgId) {
+    if (activationCode.orgId) {
       state.students[outerIndex].orgName = `${_capitalize(activationCode.orgType)} - ${
         activationCode.orgName ?? activationCode.orgId
       }`;
@@ -544,8 +544,8 @@ const validateCode = async (studentCode, outerIndex = 0) => {
   } catch (error) {
     console.error('Failed to validate activation code', error);
 
-    if ((!state.students[outerIndex].noActivationCode || props.code) && studentCode) {
-      dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I don't have a code"`;
+    if (!state.students[outerIndex].noActivationCode || props.code) {
+      dialogMessage.value = `The code ${studentCode} does not belong to any organization \n please enter a valid code or select: "I do not have a code"`;
     } else {
       dialogMessage.value =
         'The code does not belong to any organization \n Please enter a valid code or select: \n "I don\'t have a code"';
