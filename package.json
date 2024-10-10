@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build --mode development",
+    "preview": "vite preview --mode development",
     "build:levante-dev": "vite build -m LEVANTE",
     "dev:levante": "vite --force --host -m LEVANTE",
     "deploy:levante-dev": "npm run build:levante-dev && firebase use levante-admin-dev && firebase deploy --only hosting --config levante-dev-firebase.json",
@@ -22,7 +23,6 @@
     "postversion": "GIT_REMOTE=$(git remote -v | grep \"yeatmanlab/roar-dashboard.git \\(push\\)\" | cut -f 1) && git push $GIT_REMOTE && git push $GIT_REMOTE --tags",
     "prepare": "husky install",
     "preversion": "npm run lint",
-    "preview": "vite preview",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "version": "npm run format && git add -A"
@@ -95,7 +95,7 @@
     "@vitejs/plugin-vue": "^5.1.2",
     "@vitest/coverage-istanbul": "^2.0.5",
     "cypress": "^13.14.1",
-    "cypress-fs": "^0.2.5",
+    "cypress-fs": "^0.2.6",
     "cypress-vite": "^1.5.0",
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^9.0.0",

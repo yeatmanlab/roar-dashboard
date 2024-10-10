@@ -120,7 +120,7 @@ export async function initializeFirekit() {
   const firekit = new RoarFirekit({
     roarConfig: firekitConfig,
     authPersistence: 'session',
-    verboseLogging: VITE_FIREKIT_VERBOSE_LOGGING_ENABLED === true,
+    verboseLogging: VITE_FIREKIT_VERBOSE_LOGGING_ENABLED === 'true',
   });
 
   return await firekit.init();

@@ -4,6 +4,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -21,15 +25,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup environment
+        uses: ./.github/actions/setup-node
 
       - name: Run linter
         run: npm run lint
@@ -41,7 +38,7 @@ jobs:
   # Test
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   test:
-    name: Test
+    name: Unit tests
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -49,15 +46,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup environment
+        uses: ./.github/actions/setup-node
 
       - name: Run unit tests
         run: npm run test
@@ -73,20 +63,72 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+          submodules: true
+          token: ${{ secrets.CI_GITHUB_PAT }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup environment
+        uses: ./.github/actions/setup-node
 
-      - name: Build
+      - name: Build application
         run: npm run build
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # End-to-end tests
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        containers: [1, 2]
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
+      DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Debug submodule checkout
+        run: ls -la env-configs
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-node
+
+      - name: Build application
+        run: npm run build
+
+      - name: Install Cypress
+        run: npm i cypress
+
+      - name: Execute Cypress tests
+        uses: cypress-io/github-action@v6
+        env:
+          CYPRESS_BASE_URL: 'http://localhost:4173'
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag: ${{ github.event_name }},e2e
+          install: false
+          start: npm run preview
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 120
+          record: true
+          parallel: true
+          browser: chrome
+          spec: |
+            cypress/e2e/participant/default-tests/**/*.cy.js
+            cypress/e2e/partner-admin/default-tests/**/*.cy.js

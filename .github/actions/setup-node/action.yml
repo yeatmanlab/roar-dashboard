@@ -1,0 +1,44 @@
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+# roar-dashboard/setup-node
+#
+# This action sets up Node.js and installs the application's npm dependencies whilst caching them. This action is
+# designed to be used before executing any npm tasks, such as running unit tests or building the application.
+# –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– #
+
+name: Setup environment
+description: Sets up environment by installing Node.js and the application's npm dependencies.
+runs:
+  using: 'composite'
+  steps:
+    # Install Node.js and cache global npm modules
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+        cache-dependency-path: package-lock.json
+
+    # Cache and restore the application's node_modules
+    # Important: We use identical cache and restore keys to avoid npm module snowballing.
+    # See more on https://glebbahmutov.com/blog/do-not-let-npm-cache-snowball/
+    - name: Cache node_modules
+      id: node-modules-cache
+      uses: actions/cache@v4
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-modules-${{ github.ref }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-modules-${{ github.ref }}-
+
+    # Install npm dependencies if cache was not hit
+    - name: Install dependencies
+      if: ${{ steps.node-modules-cache.outputs.cache-hit != 'true' }}
+      run: npm ci
+      shell: bash
+
+    # Output cache hit status
+    - name: Restore dependencies from cache
+      if: ${{ steps.cache-npm.outputs.cache-hit == 'true' }}
+      continue-on-error: false
+      run: npm list
+      shell: bash
