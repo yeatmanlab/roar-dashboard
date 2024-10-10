@@ -38,7 +38,7 @@ runs:
 
     # Output cache hit status
     - name: Restore dependencies from cache
-      if: ${{ steps.cache-npm.outputs.cache-hit = 'true' }}
+      if: ${{ steps.cache-npm.outputs.cache-hit == 'true' }}
       continue-on-error: false
       run: npm list
       shell: bash
