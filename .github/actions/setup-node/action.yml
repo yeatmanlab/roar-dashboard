@@ -30,6 +30,18 @@ runs:
         restore-keys: |
           ${{ runner.os }}-node-modules-${{ github.ref }}-
 
+    # Cache and restore the Cypress binary
+    # Important: We use identical cache and restore keys to avoid npm module snowballing.
+    # See more on https://glebbahmutov.com/blog/do-not-let-npm-cache-snowball/
+    - name: Cache node_modules
+      id: cypress-binary-cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/Cypress
+        key: ${{ runner.os }}-cypress-binary-${{ github.ref }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-cypress-binary-${{ github.ref }}-
+
     # Install npm dependencies if cache was not hit
     - name: Install dependencies
       if: ${{ steps.node-modules-cache.outputs.cache-hit != 'true' }}
