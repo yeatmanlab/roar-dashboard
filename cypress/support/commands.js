@@ -124,9 +124,26 @@ Cypress.Commands.add('waitForAdministrationsList', () => {
       return Cypress.$('main [data-cy="administrations-list"] ').length;
     },
     {
-      verbose: true,
       errorMsg: 'Failed to find the administrations list before timeout',
       timeout: 600000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
+ * Wait for the participant homepage to load.
+ */
+Cypress.Commands.add('waitForParticipantHomepage', () => {
+  // Note: Especially during SSO auth flows, the application takes a while to load. Until this is resolved, we need to
+  // work with a slightly excessive timeout to ensure we allow the application to complete the auth flow.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('[data-cy="home-participant__administration"]').length > 0;
+    },
+    {
+      errorMsg: 'Failed to load the participant home page before timeout',
+      timeout: 60000,
       interval: 1000,
     },
   );
