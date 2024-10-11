@@ -3,7 +3,7 @@
     <!-- Sidebar -->
     <div :class="sidebarOpen ? 'sidebar-container-open' : 'sidebar-container-collapsed'">
       <div class="flex flex-column">
-        <router-link to="/profile">
+        <router-link v-if="!isLevante" to="/profile">
           <div class="sidebar-button">
             <i class="pi pi-user" /><span v-if="sidebarOpen">Your Info</span>
           </div></router-link
@@ -23,6 +23,11 @@
         <router-link v-if="isAdmin" to="/profile/offline"
           ><div class="sidebar-button">
             <i class="pi pi-wifi" /><span v-if="sidebarOpen">Offline Settings</span>
+          </div></router-link
+        >
+        <router-link to="/profile/settings"
+          ><div class="sidebar-button">
+            <i class="pi pi-cog" /><span v-if="sidebarOpen">{{ t('profile.settings.settings') }}</span>
           </div></router-link
         >
       </div>
@@ -54,7 +59,10 @@ import { useQuery } from '@tanstack/vue-query';
 import { fetchDocById } from '@/helpers/query/utils';
 import _isEmpty from 'lodash/isEmpty';
 import _union from 'lodash/union';
+import { isLevante } from '@/helpers';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
 const authStore = useAuthStore();
 const { roarfirekit, uid } = storeToRefs(authStore);
 const sidebarOpen = ref(true);

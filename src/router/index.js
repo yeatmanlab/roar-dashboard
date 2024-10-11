@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import { useSurveyStore } from '@/store/survey';
 import _get from 'lodash/get';
 import { pageTitlesEN, pageTitlesUS, pageTitlesES, pageTitlesCO } from '@/translations/exports';
 import { isLevante } from '@/helpers';
@@ -265,16 +266,23 @@ const routes = [
     path: '/signout',
     name: 'SignOut',
     async beforeEnter() {
+      console.log('signing out');
+
       const authStore = useAuthStore();
       if (authStore.isAuthenticated) {
         await authStore.signOut();
       }
-      // Clear auth and game store so kids playing on the same device don't run into issues
-      sessionStorage.removeItem('gameStore');
-      sessionStorage.removeItem('authStore');
 
       const gameStore = useGameStore();
       gameStore.$reset();
+
+      const surveyStore = useSurveyStore();
+      surveyStore.$reset();
+
+      // Clear auth and game store so kids playing on the same device don't run into issues
+      sessionStorage.removeItem('gameStore');
+      sessionStorage.removeItem('authStore');
+      sessionStorage.removeItem('surveyStore');
 
       return { name: 'SignIn' };
     },
@@ -404,6 +412,11 @@ const routes = [
         name: 'OfflineSettings',
         component: () => import('../components/views/OfflineSettings.vue'),
         meta: { requireAdmin: true },
+      },
+      {
+        path: 'settings',
+        name: 'ProfileSettings',
+        component: () => import('../components/views/Settings.vue'),
       },
     ],
     meta: { pageTitle: 'Profile' },
