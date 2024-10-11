@@ -94,6 +94,6 @@ describe('Partner Admin: Score Reports', () => {
 
     // Validate that the exported file exists.
     // @TODO: Extend to validate contents of the file.
-    cy.readFile(`cypress/downloads/roar-progress-selected.csv`);
+    cy.readFile(`cypress/downloads/roar-scores-partner-test-administration-cypress-test-district-selected.csv`);
   });
 });
