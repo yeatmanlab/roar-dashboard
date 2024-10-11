@@ -117,14 +117,14 @@ jobs:
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
-          CYPRESS_BASE_URL: 'http://localhost:4173'
+          CYPRESS_BASE_URL: 'http://127.0.0.1:4173'
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag: ${{ github.event_name }},e2e
           install: false
-          start: npm run preview
+          start: npm run preview -- --host
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
@@ -172,7 +172,7 @@ jobs:
       - name: Execute Cypress tests
         uses: cypress-io/github-action@v6
         env:
-          CYPRESS_BASE_URL: 'http://localhost:4173'
+          CYPRESS_BASE_URL: 'http://127.0.0.1:4173'
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -180,7 +180,7 @@ jobs:
           component: true
           tag: ${{ github.event_name }},component
           install: false
-          start: npm run preview
+          start: npm run preview -- --host
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
