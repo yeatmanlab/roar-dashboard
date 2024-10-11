@@ -127,5 +127,12 @@
     "specificRelationDescriptionChildA": "For child with Birth Month",
     "specificRelationDescriptionChildB": "and Birth Year",
     "specificRelationDescriptionClass": "For class"
+  },
+  "profile": {
+    "settings": {
+      "settings": "Settings",
+      "language": "Language",
+      "languageDescription": "Select the language you want to use in the dashboard. This will ONLY change the language of the dashboard and surveys, not the tasks."
+    }
   }
 }

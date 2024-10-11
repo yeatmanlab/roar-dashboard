@@ -129,5 +129,12 @@
     "specificRelationDescriptionChildA": "Para niño(a) con mes de nacimiento",
     "specificRelationDescriptionChildB": "y año de nacimiento",
     "specificRelationDescriptionClass": "Para la clase"
+  },
+  "profile": {
+    "settings": {
+      "settings": "Configuraciones",
+      "language": "Idioma",
+      "languageDescription": "Selecciona el idioma que deseas usar en el panel. Esto SOLO cambiará el idioma del panel y las encuestas, no las tareas."
+    }
   }
 }

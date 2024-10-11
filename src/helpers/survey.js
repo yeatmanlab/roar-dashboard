@@ -56,7 +56,7 @@ export function getParsedLocale(locale) {
     }
   };
 
-  export function restoreSurveyData({ surveyInstance, uid, selectedAdmin, surveyResponsesData, gameStore }) {
+  export function restoreSurveyData({ surveyInstance, uid, selectedAdmin, surveyResponsesData, surveyStore }) {
     // Try to get data from localStorage first
     const prevData = window.localStorage.getItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
     if (prevData) {
@@ -68,10 +68,10 @@ export function getParsedLocale(locale) {
       // If not in localStorage, try to find data from the server
       const surveyResponse = surveyResponsesData.find((doc) => doc?.administrationId === selectedAdmin);
       if (surveyResponse) {
-        if (!gameStore.isGeneralSurveyComplete) {
+        if (!surveyStore.isGeneralSurveyComplete) {
           surveyInstance.data = surveyResponse.general.responses;
         } else {
-          const specificIndex = gameStore.specificSurveyRelationIndex;
+          const specificIndex = surveyStore.specificSurveyRelationIndex;
           surveyInstance.data = surveyResponse.specific[specificIndex].responses;
         }
 
@@ -92,11 +92,9 @@ export function getParsedLocale(locale) {
     selectedAdmin, 
     questionName, 
     responseValue, 
-    numGeneralPages, 
-    numSpecificPages,
     specificIds,
     userType,
-    gameStore
+    surveyStore
   }) {  
     const currentPageNo = survey.currentPageNo;
 
@@ -132,10 +130,10 @@ export function getParsedLocale(locale) {
       console.log('selectedAdmin: ', selectedAdmin);
 
 
-      if (!gameStore.isGeneralSurveyComplete) {
+      if (!surveyStore.isGeneralSurveyComplete) {
         newData.responses[questionName] = responseValue;
       } else {
-        const specificIndex = gameStore.specificSurveyRelationIndex;
+        const specificIndex = surveyStore.specificSurveyRelationIndex;
         console.log('specificIndex in saveSurveyData: ', specificIndex);
         newData.specificId = specificIds[specificIndex];
         newData.responses[questionName] = responseValue;
@@ -162,12 +160,14 @@ export function getParsedLocale(locale) {
     sender, 
     roarfirekit, 
     uid, 
-    gameStore, 
-    router, 
+    surveyStore, 
+    selectedAdmin,
+    router,
     toast, 
     queryClient, 
     specificIds, 
-    userType 
+    userType,
+    gameStore 
   }) {
     const allQuestions = sender.getAllQuestions();
     const unansweredQuestions = {};
@@ -176,9 +176,6 @@ export function getParsedLocale(locale) {
 
     // NOTE: Values from the second object overwrite values from the first
     const responsesWithAllQuestions = _merge(unansweredQuestions, sender.data);
-
-
-    console.log('isGeneralSurveyComplete in final: ', gameStore.isGeneralSurveyComplete);
 
     // Structure the data
     const structuredResponses = {
@@ -193,44 +190,44 @@ export function getParsedLocale(locale) {
     console.log('structuredResponses: ', structuredResponses);
 
     // Update specificId if it's a specific survey
-    if (gameStore.isGeneralSurveyComplete) {
+    if (surveyStore.isGeneralSurveyComplete) {
       structuredResponses.isGeneral = false;
-      const specificIndex = gameStore.specificSurveyRelationIndex;
+      const specificIndex = surveyStore.specificSurveyRelationIndex;
       structuredResponses.specificId = specificIds[specificIndex];
     }
 
     // turn on loading state
-    gameStore.setIsSavingSurveyResponses(true);
+    surveyStore.setIsSavingSurveyResponses(true);
 
     // call cloud function to save the survey results
     try {
       await roarfirekit.saveSurveyResponses({
         surveyData: structuredResponses,
-        administrationId: gameStore?.selectedAdmin?.id ?? null,
+        administrationId: selectedAdmin ?? null,
       });
 
       // Clear localStorage after successful submission
       window.localStorage.removeItem(`${LEVANTE_SURVEY_RESPONSES_KEY}-${uid}`);
 
-      // update game store to let game tabs know
+      // update survey store to let survey tabs know
       if (userType === 'student') {
-        gameStore.setSurveyCompleted();
+        surveyStore.setIsGeneralSurveyComplete(true);
       } else {
-        if (!gameStore.isGeneralSurveyComplete) {
-          gameStore.setIsGeneralSurveyComplete(true);
-        } else if (gameStore.specificSurveyRelationIndex === gameStore.specificSurveyRelationData.length - 1) {
-          gameStore.setIsSpecificSurveyComplete(true);
+        if (!surveyStore.isGeneralSurveyComplete) {
+          surveyStore.setIsGeneralSurveyComplete(true);
+        } else if (surveyStore.specificSurveyRelationIndex === surveyStore.specificSurveyRelationData.length - 1) {
+          surveyStore.setIsSpecificSurveyComplete(true);
         }
       }
 
-      gameStore.setSpecificSurveyRelationIndex(gameStore.specificSurveyRelationIndex + 1);
+      surveyStore.setSpecificSurveyRelationIndex(surveyStore.specificSurveyRelationIndex + 1);
 
       queryClient.invalidateQueries({ queryKey: ['surveyResponses', uid] });
 
       gameStore.requireHomeRefresh();
-      // router.push({ name: 'Home' });
+      router.push({ name: 'Home' });
     } catch (error) {
-      gameStore.setIsSavingSurveyResponses(false);
+      surveyStore.setIsSavingSurveyResponses(false);
       console.error(error);
       toast.add({
         severity: 'error',

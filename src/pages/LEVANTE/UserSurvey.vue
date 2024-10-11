@@ -1,94 +1,60 @@
 <script setup>
 import 'survey-core/defaultV2.min.css';
-import { Model } from 'survey-core';
-import { ref, computed, watch } from 'vue';
-import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
-import { storeToRefs } from 'pinia';
 import AppSpinner from '@/components/AppSpinner.vue';
-import { useRouter } from 'vue-router';
-import { useGameStore } from '@/store/game';
-import { Converter } from 'showdown';
+import { useSurveyStore } from '@/store/survey';
 import { useI18n } from 'vue-i18n';
-import { BufferLoader, AudioContext } from '@/helpers/audio';
-import { useToast } from 'primevue/usetoast';
-import { useQueryClient } from '@tanstack/vue-query';
-import _merge from 'lodash/merge';
-import useSurveyResponses from '@/composables/useSurveyResponses/useSurveyResponses';
+import { AudioContext } from '@/helpers/audio';
 import { getParsedLocale } from '@/helpers/survey';
-
+import { onBeforeRouteLeave } from 'vue-router';
+import { isLevante } from '@/helpers';
 
 
 const authStore = useAuthStore();
-const { roarfirekit, uid } = storeToRefs(authStore);
-const fetchedSurvey = ref(null);
-const survey = ref(null);
-const isSavingResponses = ref(false);
-const gameStore = useGameStore();
-const converter = new Converter();
+const surveyStore = useSurveyStore();
 const { locale } = useI18n();
-const audioPlayerBuffers = ref({});
-const audioLoading = ref(false);
-const router = useRouter();
 const context = new AudioContext();
-const audioLinks = ref({});
-const toast = useToast();
-const queryClient = useQueryClient();
-let shouldFetchSurveyResponses = false;
 
 
-
-const { isLoading, data: surveyResponsesData, refetch: refetchSurveyResponses } = useSurveyResponses(undefined, shouldFetchSurveyResponses);
-
-
-
-// Watch for changes in vue-i18n locale and update SurveyJS
-watch(
-  () => locale.value,
-  (newLocale) => {
-    const surveyInstance = gameStore.survey;
-    surveyInstance.locale = newLocale;
-
-    gameStore.setSurvey(surveyInstance);
-
-    // stop any current audio playing
-    if (gameStore.currentSurveyAudioSource) {
-      gameStore.currentSurveyAudioSource.stop();
+onBeforeRouteLeave((to, from) => {
+  const surveyStore = useSurveyStore();
+  
+  if (isLevante && surveyStore.currentSurveyAudioSource) {
+        surveyStore.currentSurveyAudioSource.stop();
     }
-
-    // fetchBuffer(getParsedLocale(newLocale));
-  },
+  }
 );
+
 
 async function playAudio(name) {
   const currentLocale = getParsedLocale(locale.value);
-  if (gameStore.currentSurveyAudioSource) {
-    await gameStore.currentSurveyAudioSource.stop();
+  if (surveyStore.currentSurveyAudioSource) {
+    await surveyStore.currentSurveyAudioSource.stop();
   }
   const source = context.createBufferSource();
-  gameStore.currentSurveyAudioSource = source;
-  source.buffer = gameStore.surveyAudioPlayerBuffers[currentLocale][name];
+  surveyStore.currentSurveyAudioSource = source;
+  source.buffer = surveyStore.surveyAudioPlayerBuffers[currentLocale][name];
   source.connect(context.destination);
   source.start(0);
 }
 
-console.log('specificSurveyRelationData', gameStore.specificSurveyRelationData)
-console.log('specificSurveyRelationIndex', gameStore.specificSurveyRelationIndex)
-console.log('speciufic relation:', gameStore.specificSurveyRelationData[gameStore.specificSurveyRelationIndex])
+console.log('specificSurveyRelationData', surveyStore.specificSurveyRelationData)
+console.log('specificSurveyRelationIndex', surveyStore.specificSurveyRelationIndex)
+console.log('specific relation:', surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex])
 
 
 </script>
 
 <template>
-  <div v-if="gameStore.survey && !gameStore.isSavingSurveyResponses && (!gameStore.surveyAudioLoading || authStore.userData.userType === 'student')">
-    <h1 v-if="authStore.userData.userType !== 'student' && gameStore.isGeneralSurveyComplete" class="text-2xl font-bold text-black text-center">
-      {{ authStore.userData.userType === 'parent' ? `${$t('userSurvey.specificRelationDescriptionChildA')} ${gameStore.specificSurveyRelationData[gameStore.specificSurveyRelationIndex].birthMonth} ${$t('userSurvey.specificRelationDescriptionChildB')} ${gameStore.specificSurveyRelationData[gameStore.specificSurveyRelationIndex].birthYear}` : `${$t('userSurvey.specificRelationDescriptionClass')} ${gameStore.specificSurveyRelationData[gameStore.specificSurveyRelationIndex].name}` }}
+  <div v-if="surveyStore.survey && !surveyStore.isSavingSurveyResponses && (!surveyStore.surveyAudioLoading || authStore.userData.userType === 'student')">
+    <h1 v-if="authStore.userData.userType !== 'student' && surveyStore.isGeneralSurveyComplete" class="text-2xl font-bold text-black text-center">
+      {{ authStore.userData.userType === 'parent' ? `${$t('userSurvey.specificRelationDescriptionChildA')} ${surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthMonth} ${$t('userSurvey.specificRelationDescriptionChildB')} ${surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].birthYear}` : `${$t('userSurvey.specificRelationDescriptionClass')} ${surveyStore.specificSurveyRelationData[surveyStore.specificSurveyRelationIndex].name}` }}
     </h1>
     
-    <SurveyComponent :model="gameStore.survey" />
+    <SurveyComponent :model="surveyStore.survey" />
 
     <div v-if="authStore.userData.userType === 'student'">
-      <div v-for="page in gameStore.survey.pages" :key="page.name">
+      <div v-for="page in surveyStore.survey.pages" :key="page.name">
         <div v-for="item in page.elements[0].elements || page.elements" :key="item.name">
           <PvButton
             :id="'audio-button-' + item.name"
@@ -101,7 +67,7 @@ console.log('speciufic relation:', gameStore.specificSurveyRelationData[gameStor
     </div>
   </div>
 
-  <AppSpinner v-if="!gameStore.survey || gameStore.isSavingSurveyResponses || (gameStore.surveyAudioLoading && authStore.userData.userType !== 'student')" />
+  <AppSpinner v-if="!surveyStore.survey || surveyStore.isSavingSurveyResponses || (surveyStore.surveyAudioLoading && authStore.userData.userType !== 'student')" />
 </template>
 
 <style>

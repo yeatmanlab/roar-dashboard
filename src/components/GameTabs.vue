@@ -62,26 +62,35 @@
                 props.userData.userType === 'teacher' || props.userData.userType === 'parent' ? 
                 props.userData.userType === 'teacher' ? $t('gameTabs.surveyProgressGeneralTeacher') : $t('gameTabs.surveyProgressGeneralParent') : '' }}
               </span>
-              <PvProgressBar :value="getGeneralSurveyProgress" class="flex-grow-1" />
+              <PvProgressBar 
+                :value="getGeneralSurveyProgress" 
+                class="flex-grow-1" 
+              />
             </div>
 
             <div v-if="props.userData.userType === 'parent'">
               <div v-for="(child, i) in props.userData?.childIds" :key="child" class="flex flex-wrap align-items-center mb-2">
                 <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
-                  <b>{{ $t('gameTabs.surveyProgressSpecificParent') }} - </b> {{ $t('gameTabs.surveyProgressSpecificParentMonth') }}: {{ gameStore.specificSurveyRelationData[i]?.birthMonth }} 
+                  <b>{{ $t('gameTabs.surveyProgressSpecificParent') }} - </b> {{ $t('gameTabs.surveyProgressSpecificParentMonth') }}: {{ surveyStore.specificSurveyRelationData[i]?.birthMonth }} 
                   <br class="sm:hidden" />
-                  {{ $t('gameTabs.surveyProgressSpecificParentYear') }}: {{ gameStore.specificSurveyRelationData[i]?.birthYear }}
+                  {{ $t('gameTabs.surveyProgressSpecificParentYear') }}: {{ surveyStore.specificSurveyRelationData[i]?.birthYear }}
                 </span>
-                <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1 w-full sm:w-auto" />
+                <PvProgressBar 
+                  :value="getSpecificSurveyProgress(i)" 
+                  class="flex-grow-1 w-full sm:w-auto incomplete-progress-bar"
+                />
               </div>
             </div>
 
             <div v-if="props.userData.userType === 'teacher'">
               <div v-for="(classroom, i) in props.userData?.classes?.current" :key="classroom" class="flex flex-wrap align-items-center mb-2">
                 <span class="mr-2 w-full sm:w-4 mb-1 sm:mb-0">
-                  <b>Classroom - </b> {{ gameStore.specificSurveyRelationData[i]?.name }}
+                  <b>Classroom - </b> {{ surveyStore.specificSurveyRelationData[i]?.name }}
                 </span>
-                <PvProgressBar :value="getSpecificSurveyProgress(i)" class="flex-grow-1 w-full sm:w-auto" />
+                <PvProgressBar 
+                  :value="getSpecificSurveyProgress(i)" 
+                  class="flex-grow-1 w-full sm:w-auto"
+                />
               </div>
             </div>
           </div>
@@ -115,6 +124,7 @@ import _find from 'lodash/find';
 import _findIndex from 'lodash/findIndex';
 import { useAuthStore } from '@/store/auth';
 import { useGameStore } from '@/store/game';
+import { useSurveyStore } from '@/store/survey';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { camelize, getAgeData } from '@bdelab/roar-utils';
@@ -132,29 +142,29 @@ const props = defineProps({
 
 const authStore = useAuthStore();
 const gameStore = useGameStore();
+const surveyStore = useSurveyStore();
 const queryClient = useQueryClient();
 const surveyData = queryClient.getQueryData(['surveyResponses', props.userData.id]);
 
 const getGeneralSurveyProgress = computed(() => {
-  if (gameStore.isGeneralSurveyComplete) return 100;
-  if (!gameStore.survey) return 0;
-  return Math.round(((gameStore.survey.currentPageNo - 1) / (gameStore.numGeneralPages - 1)) * 100);
+  if (surveyStore.isGeneralSurveyComplete) return 100;
+  if (!surveyStore.survey) return 0;
+  return Math.round(((surveyStore.survey.currentPageNo - 1) / (surveyStore.numGeneralPages - 1)) * 100);
 });
 
 const getSpecificSurveyProgress = computed(() => (loopIndex) => {
   const localStorageKey = `${LEVANTE_SURVEY_RESPONSES_KEY}-${props.userData.id}`;
   const localStorageData = JSON.parse(localStorage.getItem(localStorageKey) || '{}');
-  // console.log('localStorageData: ', localStorageData);
 
-  if (localStorageData && gameStore.specificSurveyRelationData[loopIndex]) {
-    const specificIdFromServer = gameStore.specificSurveyRelationData[loopIndex].id;
+  if (localStorageData && surveyStore.specificSurveyRelationData[loopIndex]) {
+    const specificIdFromServer = surveyStore.specificSurveyRelationData[loopIndex].id;
 
     if (specificIdFromServer === localStorageData.specificId) {
 
         if (localStorageData.isComplete) return 100;
 
         const currentPage = localStorageData.pageNo || 0;
-        const totalPages = gameStore.numSpecificPages || 1;
+        const totalPages = surveyStore.numSpecificPages || 1;
 
         return Math.round((currentPage / totalPages) * 100);
     }
@@ -170,7 +180,7 @@ const getSpecificSurveyProgress = computed(() => (loopIndex) => {
   if (specificSurvey.isComplete) return 100;
 
   const currentPage = currentSurvey.pageNo || 0;
-  const totalPages = gameStore.numSpecificPages || 1;
+  const totalPages = surveyStore.numSpecificPages || 1;
 
   return Math.round((currentPage / totalPages) * 100);
 });
@@ -401,4 +411,5 @@ const returnVideoOptions = (videoURL) => {
     margin-right: 0; // Add this line
   }
 }
+
 </style>
