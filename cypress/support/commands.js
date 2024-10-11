@@ -1,6 +1,8 @@
 import 'cypress-wait-until';
 import { createMockStore } from './utils.js';
 
+const baseUrl = Cypress.config().baseUrl;
+
 /**
  * Logs in a user using the provided username and password.
  * Utilizes Cypress sessions to persist login state across tests.
@@ -19,7 +21,7 @@ Cypress.Commands.add('login', (username, password) => {
 
       cy.get('button').contains('Go!').click();
 
-      cy.url().should('eq', `${Cypress.config().baseUrl}/`);
+      cy.url().should('eq', `${baseUrl}/`);
 
       cy.log('Login successful.');
     },
@@ -42,7 +44,7 @@ Cypress.Commands.add('login', (username, password) => {
   );
 
   cy.visit('/');
-  cy.url().should('eq', `${Cypress.config().baseUrl}/`);
+  cy.url().should('eq', `${baseUrl}/`);
 });
 
 // /**
@@ -80,7 +82,7 @@ Cypress.Commands.add('login', (username, password) => {
  */
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="button-sign-out"]').click();
-  cy.url().should('eq', `${Cypress.config().baseUrl}/signin`);
+  cy.url().should('eq', `${baseUrl}/signin`);
   cy.get('h1').should('contain.text', 'Welcome to ROAR!');
   cy.log('Logout successful.');
 });
@@ -91,9 +93,8 @@ Cypress.Commands.add('logout', () => {
  * @param {string} page - The path to navigate to.
  */
 Cypress.Commands.add('navigateTo', (page) => {
-  cy.log(`Navigating to \`${Cypress.config().baseUrl}${page}`);
   cy.visit(page);
-  cy.url().should('eq', `${Cypress.config().baseUrl}${page}`);
+  cy.url().should('eq', `${baseUrl}${page}`);
 });
 
 /**
