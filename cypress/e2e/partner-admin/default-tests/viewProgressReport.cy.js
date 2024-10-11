@@ -1,55 +1,63 @@
+const baseUrl = Cypress.config().baseUrl;
+
 const testDistrictId = Cypress.env('testDistrictId');
 const testPartnerAdministrationName = Cypress.env('testPartnerAdministrationName');
 const testAdministrationId = Cypress.env('testAdministrationId');
-
-const baseUrl = Cypress.config('baseUrl');
 const testPartnerAdminUsername = Cypress.env('PARTNER_ADMIN_USERNAME');
 const testPartnerAdminPassword = Cypress.env('PARTNER_ADMIN_PASSWORD');
 const testUserList = Cypress.env('testUserList');
 const testAssignments = Cypress.env('testAssignmentsList');
 
-function checkUrl() {
-  cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
-  cy.navigateTo('/');
-  cy.url().should('eq', `${baseUrl}/`);
-}
-
-function clickProgressButton() {
-  cy.get('button').contains('Progress').first().click();
-  cy.url().should('eq', `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`);
-}
-
-function checkProgressTags(headers) {
-  cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
-    const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
-
-    headers.forEach((header) => {
-      const headerIndex = tableHeaders.indexOf(header);
-
-      if (headerIndex !== -1) {
-        cy.get('[data-cy="roar-data-table"] tbody tr').each(($row) => {
-          cy.wrap($row)
-            .find('td')
-            .eq(headerIndex)
-            .then((headerCell) => {
-              cy.wrap(headerCell).find('span.p-tag.p-component').should('exist');
-            });
-        });
-      }
-    });
-  });
-}
-
-describe('The partner admin can view progress reports for a given administration.', () => {
+describe('Partner Admin: Progress Reports', () => {
   it('Selects an administration and views its progress report', () => {
-    checkUrl();
-    cy.wait(0.3 * Cypress.env('timeout'));
+    // Login as a partner admin.
+    cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
+    cy.visit('/');
+    cy.url().should('eq', `${baseUrl}/`);
+
+    // Wait until the administrations list is loaded.
+    // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+    // the whole list to be loaded and that can take a while, hence the long timeout.
+    cy.waitUntil(
+      () => {
+        return Cypress.$('main [data-cy="administrations-list"] ').length;
+      },
+      {
+        verbose: true,
+        errorMsg: 'Failed to find the administrations list before timeout',
+        timeout: 600000,
+        interval: 1000,
+      },
+    );
+
+    // Select the test administration and open the details page.
     cy.getAdministrationCard(testPartnerAdministrationName);
-    cy.wait(0.3 * Cypress.env('timeout'));
-    clickProgressButton();
-    cy.wait(0.3 * Cypress.env('timeout'));
+
+    // Open the progress report.
+    cy.get('button').contains('Progress').first().click();
+    cy.url().should('eq', `${baseUrl}/administration/${testAdministrationId}/district/${testDistrictId}`);
+
+    // Validate that all test users are present in the progress report.
     cy.checkUserList(testUserList);
-    cy.wait(0.3 * Cypress.env('timeout'));
-    checkProgressTags(testAssignments);
+
+    // Validate that all test assignments are present in the progress report.
+    cy.get('[data-cy="roar-data-table"] thead th').then(($header) => {
+      const tableHeaders = $header.map((index, elem) => Cypress.$(elem).text()).get();
+
+      testAssignments.forEach((header) => {
+        const headerIndex = tableHeaders.indexOf(header);
+
+        if (headerIndex !== -1) {
+          cy.get('[data-cy="roar-data-table"] tbody tr').each(($row) => {
+            cy.wrap($row)
+              .find('td')
+              .eq(headerIndex)
+              .then((headerCell) => {
+                cy.wrap(headerCell).find('span.p-tag.p-component').should('exist');
+              });
+          });
+        }
+      });
+    });
   });
 });

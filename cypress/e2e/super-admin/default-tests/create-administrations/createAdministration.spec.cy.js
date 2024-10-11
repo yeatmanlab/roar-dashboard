@@ -76,7 +76,7 @@ function checkAdministrationCreated() {
   cy.url().should('eq', `${Cypress.config().baseUrl}/`);
   cy.get('[data-cy="dropdown-sort-administrations"]').click();
   cy.get('ul > li').contains('Creation date (descending)').click();
-  cy.get('[data-cy="h2-card-admin-title"]').should('contain.text', randomAdministrationName);
+  cy.get('[data-cy="administration-card__title"]').should('contain.text', randomAdministrationName);
   cy.log('Administration successfully created.');
 }
 

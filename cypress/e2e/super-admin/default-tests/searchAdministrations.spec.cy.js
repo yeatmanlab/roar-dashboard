@@ -8,7 +8,7 @@ describe(
       cy.navigateTo('/');
       cy.get("[data-cy='search-input']").type(`${roarDemoAdministrationName}{enter}`);
       cy.get('body').contains('You searched for');
-      cy.get('[data-cy="h2-card-admin-title"]').contains(roarDemoAdministrationName);
+      cy.get('[data-cy="administration-card__title"]').contains(roarDemoAdministrationName);
     });
   },
 );

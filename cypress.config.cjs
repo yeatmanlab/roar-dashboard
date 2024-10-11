@@ -158,8 +158,9 @@ module.exports = defineConfig({
     testOptionalRoarAppsAdministrationId: 'Fuy4nQaMu6YmfNg1eBYH',
     testSpanishRoarAppsAdministration: 'Cypress Test Spanish Roar Apps Administration',
     testSpanishRoarAppsAdministrationId: '',
-    // Generate a list of test users CypressTestStudent0, CypressTestStudent1, ..., CypressTestStudent50 and push the test_legal_doc user
     testUserList: (() => {
+      // Generate a list of test users and push the test_legal_doc user to the end of the list.
+      // These users exist in the Firestore dev database and are used in the tests.
       const list = Array.from({ length: 51 }, (_, i) => `CypressTestStudent${i}`);
       list.push('test_legal_doc');
       return list;

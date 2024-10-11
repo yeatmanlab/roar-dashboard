@@ -1,3 +1,4 @@
+import 'cypress-wait-until';
 import { createMockStore } from './utils.js';
 
 /**
@@ -85,7 +86,6 @@ Cypress.Commands.add('logout', () => {
  * Navigates to a specified page, optionally logging in first.
  *
  * @param {string} page - The path to navigate to.
- * @param {boolean} [login=false] - Whether to log in before navigating.
  */
 Cypress.Commands.add('navigateTo', (page) => {
   cy.log(`Navigating to \`${Cypress.config().baseUrl}${page}`);
@@ -197,16 +197,16 @@ Cypress.Commands.add('selectAdministration', function selectAdministration(testA
  */
 Cypress.Commands.add('getAdministrationCard', (testAdministration) => {
   cy.get('[data-cy=search-input]').type(`${testAdministration}{enter}`);
-  // cy.get('ul > li').contains(`Name (${sort})`).click();
 
-  cy.get('[data-cy="h2-card-admin-title"]')
+  cy.get('[data-cy="administration-card"]')
     .filter((index, element) => {
-      return Cypress.$(element).text().includes(testAdministration);
+      return Cypress.$(element).find('[data-cy="administration-card__title"]').text().includes(testAdministration);
     })
-    .should('have.length', 2)
-    .find('button')
-    .contains('Show details')
-    .click();
+    .then(($cards) => {
+      cy.wrap($cards).should('have.length.greaterThan', 0);
+
+      cy.wrap($cards.get(0)).find('button').contains('Show details').click();
+    });
 });
 
 /**
@@ -298,11 +298,12 @@ Cypress.Commands.add('checkUserList', (userList) => {
     cy.wrap(row)
       .find('td.p-frozen-column')
       .then((cell) => {
-        // The following cleans the non-breaking space character and any whitespace from the cell text
+        // Clean the non-breaking space character and any whitespace from the cell text.
         const cellText = cell
           .text()
           .replace(/&nbsp;/g, '')
           .trim();
+
         expect(userList).to.include(cellText);
       });
   });
