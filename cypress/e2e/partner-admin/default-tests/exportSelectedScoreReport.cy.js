@@ -14,7 +14,7 @@ describe('The partner admin can select and export progress reports for a given a
 
     cy.get('button').contains('Export Selected').click();
     cy.readFile(
-      `${Cypress.env('cypressDownloads')}/roar-scores-partner-test-administration-cypress-test-district-selected.csv`,
+      `${Cypress.env('cypressDownloads')}/roar-scores-selected-partner-test-administration-cypress-test-district.csv`,
     );
   });
 });
