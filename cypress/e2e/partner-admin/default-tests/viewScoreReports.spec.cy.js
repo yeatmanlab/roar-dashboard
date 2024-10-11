@@ -11,8 +11,6 @@ describe('Partner Admin: Score Reports', () => {
   it('Selects an administration and views its score report', () => {
     // Login as a partner admin.
     cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
-    cy.navigateTo('/');
-    cy.url().should('eq', `${baseUrl}/`);
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for

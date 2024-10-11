@@ -12,8 +12,6 @@ describe('Partner Admin: Progress Reports', () => {
   it('Selects an administration and views its progress report', () => {
     // Login as a partner admin.
     cy.login(testPartnerAdminUsername, testPartnerAdminPassword);
-    cy.visit('/');
-    cy.url().should('eq', `${baseUrl}/`);
 
     // Wait until the administrations list is loaded.
     // Note: As the application currently does not support paginated fetching of administrations, we have to wait for

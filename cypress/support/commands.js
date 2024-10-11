@@ -40,6 +40,9 @@ Cypress.Commands.add('login', (username, password) => {
       },
     },
   );
+
+  cy.visit('/');
+  cy.url().should('eq', `${Cypress.config().baseUrl}/`);
 });
 
 // /**
