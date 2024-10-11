@@ -82,7 +82,7 @@ jobs:
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
   # End-to-end tests
   # ––––––––––––––––––––––––––––––––––––––––––––––– #
-  e2e:
+  e2e-tests:
     name: End-to-end tests
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -91,6 +91,9 @@ jobs:
       matrix:
         browser: [chrome, edge]
         containers: [1, 2]
+    container:
+      image: cypress/browsers:node-20.14.0-chrome-126.0.6478.114-1-ff-127.0.1-edge-126.0.2592.61-1
+      options: --user 1001
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
@@ -101,9 +104,6 @@ jobs:
         with:
           submodules: 'true'
           token: ${{ secrets.CI_GITHUB_PAT }}
-
-      - name: Debug submodule checkout
-        run: ls -la env-configs
 
       - name: Setup environment
         uses: ./.github/actions/setup-node
@@ -133,3 +133,58 @@ jobs:
           spec: |
             cypress/e2e/participant/default-tests/**/*.cy.js
             cypress/e2e/partner-admin/default-tests/**/*.cy.js
+
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  # Component Tests
+  # ––––––––––––––––––––––––––––––––––––––––––––––– #
+  component-tests:
+    name: Component tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, edge]
+        containers: [1, 2]
+    container:
+      image: cypress/browsers:node-20.14.0-chrome-126.0.6478.114-1-ff-127.0.1-edge-126.0.2592.61-1
+      options: --user 1001
+    env:
+      DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
+      DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+          token: ${{ secrets.CI_GITHUB_PAT }}
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-node
+
+      - name: Build application
+        run: npm run build
+
+      - name: Install Cypress
+        run: npm i cypress
+
+      - name: Execute Cypress tests
+        uses: cypress-io/github-action@v6
+        env:
+          CYPRESS_BASE_URL: 'http://localhost:4173'
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          component: true
+          tag: ${{ github.event_name }},component
+          install: false
+          start: npm run preview
+          wait-on: ${{ env.CYPRESS_BASE_URL }}
+          wait-on-timeout: 120
+          record: true
+          parallel: true
+          browser: ${{ matrix.browser }}
+          spec: |
+            cypress/component/**/*.cy.js
