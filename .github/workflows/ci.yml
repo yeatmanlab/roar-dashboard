@@ -124,7 +124,7 @@ jobs:
         with:
           tag: ${{ github.event_name }},e2e
           install: false
-          start: npm run preview
+          start: npm run preview -- --host
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
@@ -180,7 +180,7 @@ jobs:
           component: true
           tag: ${{ github.event_name }},component
           install: false
-          start: npm run preview
+          start: npm run preview -- --host
           wait-on: ${{ env.CYPRESS_BASE_URL }}
           wait-on-timeout: 120
           record: true
