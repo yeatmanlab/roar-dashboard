@@ -78,19 +78,20 @@ Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
 
       cy.get('input#username').type(username);
       cy.get('input#password').type(password, { log: false });
+      cy.wait(1000); // Add a delay to simulate user input, as Clever SSO is sensitive to rapid input.
       cy.get('button#UsernamePasswordForm--loginButton').click();
     },
   );
 
+  cy.url().should('include', `${baseUrl}/`);
+
   cy.get('[data-cy="app-spinner"]').should('be.visible');
 
-  cy.waitUntil(() => Cypress.$('[data-cy="home-participant__administration"]').length > 0, {
-    timeout: 60000,
-    interval: 1000,
-    errorMsg: 'Failed to load the participant home page before timeout',
-  });
+  cy.waitForParticipantHomepage();
 
   cy.url().should('eq', `${baseUrl}/`);
+
+  cy.log('SSO login successful.');
 });
 
 /**

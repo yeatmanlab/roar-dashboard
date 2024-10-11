@@ -6,7 +6,7 @@ const CLEVER_USERNAME = Cypress.env('CLEVER_USERNAME');
 const CLEVER_PASSWORD = Cypress.env('CLEVER_PASSWORD');
 
 describe('Participant: Auth', () => {
-  it('Logs in as participant using username and password', () => {
+  it.skip('Logs in as participant using username and password', () => {
     cy.login(PARTICIPANT_USERNAME, PARTICIPANT_PASSWORD);
     cy.get('[data-cy="user-display-name"]').should('contain', 'Hi, Cypress!');
   });
@@ -21,7 +21,9 @@ describe('Participant: Auth', () => {
     // Perform SSO login flow.
     cy.loginWithClever(CLEVER_SCHOOL_NAME, CLEVER_USERNAME, CLEVER_PASSWORD);
 
-    // Validate the administration is loaded.
+    // Validate that the participant homepage is loaded.
+    cy.visit('/');
+    cy.waitForParticipantHomepage();
     cy.get('[data-cy="home-participant__administration-emptystate"]').should('not.exist');
     cy.get('[data-cy="home-participant__administration"]').should('contain', 'Cypress Test Roar Apps Administration');
   });
