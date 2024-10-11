@@ -25,6 +25,8 @@ export const useAuthStore = () => {
         routeToProfile: false,
         ssoProvider: null,
         showOptionalAssessments: false,
+        adminAuthStateListener: null,
+        appAuthStateListener: null,
       };
     },
     getters: {
@@ -61,8 +63,17 @@ export const useAuthStore = () => {
         //@TODO: Move to mutation since we cannot rotate query keys anymore.
         await this.roarfirekit.completeAssessment(adminId, taskId);
       },
-      setUser() {
-        onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
+      async initFirekit() {
+        try {
+          this.roarfirekit = await initNewFirekit();
+          this.setAuthStateListeners();
+        } catch (error) {
+          // @TODO: Improve error handling as this is a critical error.
+          console.error('Error initializing Firekit:', error);
+        }
+      },
+      setAuthStateListeners() {
+        this.adminAuthStateListener = onAuthStateChanged(this.roarfirekit?.admin.auth, async (user) => {
           if (user) {
             this.localFirekitInit = true;
             this.firebaseUser.adminFirebaseUser = user;
@@ -70,17 +81,12 @@ export const useAuthStore = () => {
             this.firebaseUser.adminFirebaseUser = null;
           }
         });
-        onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
+        this.appAuthStateListener = onAuthStateChanged(this.roarfirekit?.app.auth, async (user) => {
           if (user) {
             this.firebaseUser.appFirebaseUser = user;
           } else {
             this.firebaseUser.appFirebaseUser = null;
           }
-        });
-      },
-      async initFirekit() {
-        this.roarfirekit = await initNewFirekit().then((firekit) => {
-          return firekit;
         });
       },
       async getLegalDoc(docName) {
@@ -182,7 +188,6 @@ export const useAuthStore = () => {
         return this.roarfirekit.createLevanteUsersWithEmailPassword(userData);
       },
     },
-    // persist: true
     persist: {
       storage: sessionStorage,
       debug: false,

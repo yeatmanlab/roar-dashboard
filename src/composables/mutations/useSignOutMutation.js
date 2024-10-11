@@ -33,6 +33,10 @@ const useSignOutMutation = () => {
       // Clear the query client to remove all cached data.
       queryClient.clear();
 
+      // Re-initialize Firekit. This is necessary to ensure that Firekit is properly reset after
+      // sign-out in order to allow a new user to sign in.
+      await authStore.initFirekit();
+
       // Redirect to sign-in page.
       router.push({ path: APP_ROUTES.SIGN_IN });
     },
