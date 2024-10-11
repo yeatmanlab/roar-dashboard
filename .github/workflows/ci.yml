@@ -89,6 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        browser: [chrome, edge]
         containers: [1, 2]
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
@@ -128,7 +129,6 @@ jobs:
           wait-on-timeout: 120
           record: true
           parallel: true
-          browser: chrome
           spec: |
             cypress/e2e/participant/default-tests/**/*.cy.js
             cypress/e2e/partner-admin/default-tests/**/*.cy.js
