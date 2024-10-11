@@ -80,8 +80,8 @@ Cypress.Commands.add('login', (username, password) => {
  */
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy="button-sign-out"]').click();
-  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
   cy.url().should('eq', `${Cypress.config().baseUrl}/signin`);
+  cy.get('h1').should('contain.text', 'Welcome to ROAR!');
   cy.log('Logout successful.');
 });
 
