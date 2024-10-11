@@ -51,8 +51,9 @@
           label="Export Selected"
           :badge="selectedRows?.length?.toString()"
           :disabled="selectedRows.length === 0"
-          class="m-1 m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
+          class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           @click="exportCSV(true, $event)"
+          data-cy="data-table__export-selected-btn"
         />
         <PvButton
           v-if="allowExport"
@@ -60,6 +61,7 @@
           label="Export Whole Table"
           class="m-1 h-3rem bg-primary text-white border-none border-round h-2rem text-sm hover:bg-red-900"
           @click="exportCSV(false, $event)"
+          data-cy="data-table__export-table-btn"
         />
       </span>
     </div>
