@@ -145,7 +145,7 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chrome, edge]
-        containers: [1, 2]
+        # containers: [1, 2] # TODO: Enable once we have more component tests.
     container:
       image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0-edge-129.0.2792.65-1
       options: --user 1001
