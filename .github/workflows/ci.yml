@@ -91,9 +91,6 @@ jobs:
       matrix:
         browser: [chrome, edge]
         containers: [1, 2]
-    container:
-      image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0-edge-129.0.2792.65-1
-      options: --user 1001
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
@@ -122,7 +119,7 @@ jobs:
           COMMIT_INFO_MESSAGE: '${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})'
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: ${{ github.event_name }},e2e
+          tag: ${{ github.event_name }},e2e,${{ matrix.browser }}
           install: false
           start: npm run preview -- --host
           wait-on: ${{ env.CYPRESS_BASE_URL }}
@@ -130,6 +127,7 @@ jobs:
           record: true
           parallel: true
           browser: ${{ matrix.browser }}
+          ci-build-id: ${{ github.run_id }}-e2e-${{ matrix.browser }}
           spec: |
             cypress/e2e/participant/default-tests/**/*.cy.js
             cypress/e2e/partner-admin/default-tests/**/*.cy.js
@@ -145,10 +143,6 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chrome, edge]
-        # containers: [1, 2] # TODO: Enable once we have more component tests.
-    container:
-      image: cypress/browsers:node-20.18.0-chrome-129.0.6668.89-1-ff-131.0-edge-129.0.2792.65-1
-      options: --user 1001
     env:
       DOTENV_PRIVATE_KEY_DEVELOPMENT: ${{ secrets.DOTENV_PRIVATE_KEY_DEVELOPMENT }}
       DOTENV_PRIVATE_KEY_TEST: ${{ secrets.DOTENV_PRIVATE_KEY_TEST }}
@@ -178,7 +172,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           component: true
-          tag: ${{ github.event_name }},component
+          tag: ${{ github.event_name }},component,${{ matrix.browser }}
           install: false
           start: npm run preview -- --host
           wait-on: ${{ env.CYPRESS_BASE_URL }}
@@ -186,5 +180,6 @@ jobs:
           record: true
           parallel: true
           browser: ${{ matrix.browser }}
+          ci-build-id: ${{ github.run_id }}-e2e-${{ matrix.browser }}
           spec: |
             cypress/component/**/*.cy.js
