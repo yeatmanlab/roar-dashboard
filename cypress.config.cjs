@@ -6,6 +6,30 @@ const UnheadVite = require('@unhead/addons/vite');
 const path = require('path');
 const fs = require('fs');
 
+/**
+ * Injects environment variables parsed by dotenvx into the Cypress environment.
+ *
+ * This is necessary as Cypress itself does not load environment variables from .env files. The dotenvx package is used
+ * to load the .env files. To mimick the default Cypress behaviour, only inject the parsed variables that start with
+ * CYPRESS_ and remove that prefix before setting them in the Cypress environment.
+ *
+ * @param {Object} config – The Cypress configuration object.
+ * @returns {Object} The modified Cypress configuration object.
+ */
+const injectEnvVars = (config, envVars) => {
+  // Inject environment variables parsed by dotenvx into the Cypress environment. This is necessary as Cypress
+  // itself does not load environment variables from .env files. The dotenvx package is used to load the .env files
+  // Note: To mimick the default Cypress behaviour, only inject the parsed variables that start with CYPRESS_ and
+  // remove that prefix before setting them in the Cypress environment.
+  for (const [key, value] of Object.entries(envVars)) {
+    if (key.startsWith('CYPRESS_')) {
+      config.env[key.replace('CYPRESS_', '')] = value;
+    }
+  }
+
+  return config;
+};
+
 // Load environment variables
 // Using a similar approach as in vite.config.js, we conditionally load the .env.test files from the env-configs/
 // directory and the root of the project. This is done to properly support dotenvx.
@@ -30,15 +54,7 @@ module.exports = defineConfig({
       openMode: 0,
     },
     setupNodeEvents(on, config) {
-      // Inject environment variables parsed by dotenvx into the Cypress environment. This is necessary as Cypress
-      // itself does not load environment variables from .env files. The dotenvx package is used to load the .env files
-      // Note: To mimick the default Cypress behaviour, only inject the parsed variables that start with CYPRESS_ and
-      // remove that prefix before setting them in the Cypress environment.
-      for (const [key, value] of Object.entries(envConfig.parsed)) {
-        if (key.startsWith('CYPRESS_')) {
-          config.env[key.replace('CYPRESS_', '')] = value;
-        }
-      }
+      injectEnvVars(config, envConfig.parsed);
 
       on('task', {
         log(message) {
@@ -93,6 +109,7 @@ module.exports = defineConfig({
       },
     },
     setupNodeEvents(on, config) {
+      injectEnvVars(config, envConfig.parsed);
       require('cypress-fs/plugins')(on);
       return config;
     },
