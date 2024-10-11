@@ -94,6 +94,25 @@ Cypress.Commands.add('navigateTo', (page) => {
 });
 
 /**
+ * Waits for the administrations list to load.
+ */
+Cypress.Commands.add('waitForAdministrationsList', () => {
+  // Note: As the application currently does not support paginated fetching of administrations, we have to wait for
+  // the whole list to be loaded and that can take a while, hence the long timeout.
+  cy.waitUntil(
+    () => {
+      return Cypress.$('main [data-cy="administrations-list"] ').length;
+    },
+    {
+      verbose: true,
+      errorMsg: 'Failed to find the administrations list before timeout',
+      timeout: 600000,
+      interval: 1000,
+    },
+  );
+});
+
+/**
  * Selects a test district, school, class, and group within a multi-level dropdown.
  *
  * @param {string} [testDistrictName=Cypress.env('testDistrictName')] - Name of the district to select.
