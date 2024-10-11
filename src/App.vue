@@ -86,7 +86,6 @@ const navbarBlacklist = ref([
 
 onBeforeMount(async () => {
   await authStore.initFirekit();
-  authStore.setUser();
 
   await authStore.initStateFromRedirect().then(async () => {
     // @TODO: Refactor this callback as we should ideally use the useUserClaimsQuery and useUserDataQuery composables.
