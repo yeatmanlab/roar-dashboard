@@ -1,4 +1,4 @@
-import { generatedSpecTemplate } from '../../fixtures/generatedTestTemplate';
+import { generatedSpecTemplate } from '../../fixtures/super-admin/generatedTestTemplate.js';
 import { getDevFirebase } from '../../support/devFirebase';
 import { getOpenAdministrations } from '../../support/query';
 

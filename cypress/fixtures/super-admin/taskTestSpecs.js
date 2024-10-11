@@ -1,10 +1,13 @@
-import { playSWR } from '../support/helper-functions/roar-swr/swrHelpers';
-import { playSRE } from '../support/helper-functions/roar-sre/sreHelpers';
-import { playLetter } from '../support/helper-functions/roar-letter/letterHelpers';
-import { playPA } from '../support/helper-functions/roar-pa/paHelpers';
-import { playFluencyARF, playFluencyCALF } from '../support/helper-functions/roam-fluency/fluencyHelpers';
-import { playMorphology, playWrittenVocabulary } from '../support/helper-functions/roar-multichoice/multichoiceHelpers';
-import { playVocabulary } from '../support/helper-functions/roar-vocab/vocabHelpers';
+import { playSWR } from '../../support/helper-functions/roar-swr/swrHelpers.js';
+import { playSRE } from '../../support/helper-functions/roar-sre/sreHelpers.js';
+import { playLetter } from '../../support/helper-functions/roar-letter/letterHelpers.js';
+import { playPA } from '../../support/helper-functions/roar-pa/paHelpers.js';
+import { playFluencyARF, playFluencyCALF } from '../../support/helper-functions/roam-fluency/fluencyHelpers.js';
+import {
+  playMorphology,
+  playWrittenVocabulary,
+} from '../../support/helper-functions/roar-multichoice/multichoiceHelpers.js';
+import { playVocabulary } from '../../support/helper-functions/roar-vocab/vocabHelpers.js';
 
 export const testSpecs = [
   {
