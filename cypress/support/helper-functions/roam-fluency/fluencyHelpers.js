@@ -1,5 +1,4 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
 
 const participantId = '123456789';
 const questionInput = '42';
@@ -166,7 +165,7 @@ export function playFluencyARF({
 
   cy.visit('/');
   if (auth === 'clever') {
-    signInWithClever();
+    cy.loginWithClever(Cypress.env('cleverSchoolName'), Cypress.env('CLEVER_USERNAME'), Cypress.env('CLEVER_PASSWORD'));
   } else if (auth === 'username') {
     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
     cy.visit('/');
@@ -205,7 +204,7 @@ export function playFluencyCALF({
 
   cy.visit('/');
   if (auth === 'clever') {
-    signInWithClever();
+    cy.loginWithClever(Cypress.env('cleverSchoolName'), Cypress.env('CLEVER_USERNAME'), Cypress.env('CLEVER_PASSWORD'));
   } else if (auth === 'username') {
     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
     cy.visit('/');

@@ -1,5 +1,6 @@
 import 'cypress-wait-until';
 import { createMockStore } from './utils.js';
+import { APP_ROUTES } from '../../src/constants/routes.js';
 
 const baseUrl = Cypress.config().baseUrl;
 
@@ -14,7 +15,7 @@ Cypress.Commands.add('login', (username, password) => {
   cy.session(
     [username],
     () => {
-      cy.visit('/');
+      cy.visit(APP_ROUTES.HOME);
 
       cy.get('[data-cy="input-username-email"]').type(username, { log: false });
       cy.get('[data-cy="input-password"]').type(password, { log: false });
@@ -47,35 +48,50 @@ Cypress.Commands.add('login', (username, password) => {
   cy.url().should('eq', `${baseUrl}/`);
 });
 
-// /**
-//  * Logs in a user using email-based authentication flow.
-//  * Handles different sign-in methods including email/password and magic link.
-//  *
-//  * @param {string} username - The email to log in with.
-//  * @param {string} password - The password to log in with.
-//  */
-// Cypress.Commands.add('loginWithEmail', (username, password) => {
-//   cy.session([username, password], () => {
-//     cy.visit('/');
-//     // Set username to email, check for existence of 'sign in using password' button)
-//     cy.get('[data-cy="input-username-email"]').type(username, { log: false, timeout: Cypress.env('timeout') });
-//     cy.contains('Sign-in using password');
+/**
+ * Logs in a user using Clever SSO.
+ *
+ * @param {string} schoolName - The name of the school to log in with.
+ * @param {string} username - The username to log in with.
+ * @param {string} password - The password to log in with.
+ */
+Cypress.Commands.add('loginWithClever', (schoolName, username, password) => {
+  const CLEVER_SSO_URL = Cypress.env('cleverOAuthLink');
 
-//     // Click button to switch to email / password sign in
-//     cy.get('[data-cy="sign-in-with-password"]').click();
+  cy.visit(APP_ROUTES.HOME);
+  cy.url().should('eq', `${baseUrl}${APP_ROUTES.SIGN_IN}`);
 
-//     // Click button to switch to email magic link sign in
-//     cy.get('[data-cy="sign-in-with-email-link"]').click();
+  cy.get('[data-cy="sign-in__clever-sso"]').contains('Clever').click();
 
-//     // Click button to switch to email / password sign in and log in
-//     cy.get('[data-cy="sign-in-with-password"]').click();
-//     cy.get('[data-cy="input-password"]').type(password, { log: false, timeout: Cypress.env('timeout') });
-//     cy.get('button')
-//       .contains('Go!')
-//       .click();
-//     cy.log('Login successful.').wait(3000);
-//   });
-// });
+  cy.origin(
+    CLEVER_SSO_URL,
+    {
+      args: {
+        schoolName,
+        username,
+        password,
+      },
+    },
+    ({ schoolName, username, password }) => {
+      cy.get('input[title="School name"]').type(schoolName);
+      cy.get('ul > li').contains(schoolName).click();
+
+      cy.get('input#username').type(username);
+      cy.get('input#password').type(password, { log: false });
+      cy.get('button#UsernamePasswordForm--loginButton').click();
+    },
+  );
+
+  cy.get('[data-cy="app-spinner"]').should('be.visible');
+
+  cy.waitUntil(() => Cypress.$('[data-cy="home-participant__administration"]').length > 0, {
+    timeout: 60000,
+    interval: 1000,
+    errorMsg: 'Failed to load the participant home page before timeout',
+  });
+
+  cy.url().should('eq', `${baseUrl}/`);
+});
 
 /**
  * Logs out the current user and verifies redirection to the sign-in page.
@@ -88,7 +104,7 @@ Cypress.Commands.add('logout', () => {
 });
 
 /**
- * Navigates to a specified page, optionally logging in first.
+ * Navigates to a specified page.
  *
  * @param {string} page - The path to navigate to.
  */

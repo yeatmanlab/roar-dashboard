@@ -1,5 +1,4 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
 
 function clickButton(selector) {
   cy.get(selector).then(($btn) => {
@@ -41,7 +40,7 @@ export function startGame(administration, language, optional, task, auth) {
     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
     cy.visit('/');
   } else {
-    signInWithClever();
+    cy.loginWithClever(Cypress.env('cleverSchoolName'), Cypress.env('CLEVER_USERNAME'), Cypress.env('CLEVER_PASSWORD'));
   }
 
   cy.selectAdministration(administration);

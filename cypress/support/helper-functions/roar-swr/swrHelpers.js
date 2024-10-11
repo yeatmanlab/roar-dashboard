@@ -1,5 +1,4 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
 
 export const playSWR = ({
   administration = Cypress.env('testRoarAppsAdministration'),
@@ -14,7 +13,7 @@ export const playSWR = ({
   }
   if (auth === 'clever') {
     cy.visit('/');
-    signInWithClever();
+    cy.loginWithClever(Cypress.env('cleverSchoolName'), Cypress.env('CLEVER_USERNAME'), Cypress.env('CLEVER_PASSWORD'));
   }
 
   cy.selectAdministration(administration);

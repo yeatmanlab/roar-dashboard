@@ -1,5 +1,4 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
 
 function checkGameTab(language) {
   cy.get('.p-tabview').contains(languageOptions[language].gameTab).should('exist');
@@ -55,7 +54,7 @@ function startGame(administration, language, optional, auth) {
     cy.visit('/');
   }
   if (auth === 'clever') {
-    signInWithClever();
+    cy.loginWithClever(Cypress.env('cleverSchoolName'), Cypress.env('CLEVER_USERNAME'), Cypress.env('CLEVER_PASSWORD'));
   }
 
   cy.selectAdministration(administration);

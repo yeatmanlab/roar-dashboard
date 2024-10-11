@@ -1,5 +1,4 @@
 import { languageOptions } from './languageOptions';
-import { signInWithClever } from '../participant/participant-helpers';
 
 export function handleFullScreenError() {
   Cypress.on('uncaught:exception', () => {
@@ -128,7 +127,7 @@ export function playPA({
 } = {}) {
   cy.visit('/');
   if (auth === 'clever') {
-    signInWithClever();
+    cy.loginWithClever(Cypress.env('cleverSchoolName'), Cypress.env('CLEVER_USERNAME'), Cypress.env('CLEVER_PASSWORD'));
   }
   if (auth === 'username') {
     cy.login(Cypress.env('PARTICIPANT_USERNAME'), Cypress.env('PARTICIPANT_PASSWORD'));
